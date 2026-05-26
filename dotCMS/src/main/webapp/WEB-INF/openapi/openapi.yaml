@@ -3073,16 +3073,19 @@ paths:
       - AI
   /v1/analytics/content/event:
     post:
-      description: Validates the siteAuth query parameter and asynchronously forwards
-        POST requests to /v1/analytics/event/** to the dot-ca-event-manager service
-        at /v1/event/**. All query parameters and the request body are preserved.
+      description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
+        \ resolves the active site, injects site_id into context, and asynchronously\
+        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
+        \ path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
           application/json:
             schema:
               type: string
-        description: Sub-path after /event/
+        description: JSON request body with a `context.site_auth` value and event
+          payload
+        required: true
       responses:
         "200":
           content:
@@ -3100,7 +3103,7 @@ paths:
           content:
             application/json: {}
           description: Internal server error or upstream unreachable
-      summary: Proxy analytics event POST request with site auth validation
+      summary: Proxy analytics event ingest with site auth validation
       tags:
       - Content Analytics
   /v1/analytics/content/siteauth/generate/{siteId}:
@@ -3133,7 +3136,9 @@ paths:
   /v1/analytics/{path}:
     get:
       description: "Forwards any authenticated GET request to /v1/analytics/** to\
-        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters."
+        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters.\
+        \ Requests are site-permission gated: the caller must have READ on the site\
+        \ resolved from ?siteId=, ?host_id=, or the session fallback."
       operationId: proxyAnalyticsGetRequest
       parameters:
       - description: Path to forward to the upstream analytics service
@@ -3152,10 +3157,19 @@ paths:
                 description: dotCMS response envelope containing the upstream analytics
                   data
           description: Successful upstream response
+        "400":
+          content:
+            application/json: {}
+          description: Site identifier could not be resolved
         "401":
           content:
             application/json: {}
           description: Unauthorized – backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ permission on the resolved site (error code
+            SITE_ACCESS_DENIED)
         "500":
           content:
             application/json: {}
@@ -5202,6 +5216,14 @@ paths:
       - System Configuration
   /v1/configuration/config:
     get:
+      description: "Returns a map of configuration key to value for each requested\
+        \ key that is present in the server whitelist. Boolean feature-flag keys (those\
+        \ in BOOLEAN_FEATURE_FLAGS) are normalised to the lowercase strings \"true\"\
+        \ or \"false\" regardless of how they are stored in the properties file; undefined\
+        \ flags return the sentinel string \"NOT_FOUND\". Keys prefixed with \"number:\"\
+        \ return an Integer, \"list:\" returns an array of strings, \"boolean:\" returns\
+        \ a native JSON boolean. All other whitelisted keys return their raw string\
+        \ value. Keys not on the whitelist are silently excluded."
       operationId: getConfigVariables
       parameters:
       - in: query
@@ -5209,11 +5231,24 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: "Map of configuration key to value. Value type depends\
+                  \ on the key: normalised string \"true\"/\"false\" for boolean feature\
+                  \ flags, \"NOT_FOUND\" for undefined flags, Integer for number:-prefixed\
+                  \ keys, array for list:-prefixed keys, native boolean for boolean:-prefixed\
+                  \ keys, raw string otherwise."
+                example:
+                  FEATURE_FLAG_EXPERIMENTS: "true"
+                  EMAIL_SYSTEM_ADDRESS: admin@example.com
+                  FEATURE_FLAG_UVE_STYLE_EDITOR: NOT_FOUND
+          description: Map of key to configuration value
+        "401":
+          description: User is not authenticated
+      summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
   /v1/configuration/locale:
@@ -19556,6 +19591,46 @@ paths:
       summary: Finds workflow actions by content inode
       tags:
       - Workflow
+  /v1/workflow/contenttypes/schemes:
+    get:
+      description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
+        \ grouped by content type for a list of content type identifiers. Each entry\
+        \ in the response maps a resolved content type to its associated schemes.\
+        \ Unknown or invalid IDs are silently skipped — only successfully resolved\
+        \ content types appear in the result (note: the single-content-type endpoint\
+        \ returns 404 for an unknown ID; this batch endpoint omits it instead). Maximum\
+        \ 100 tokens per request (checked before deduplication)."
+      operationId: getWorkflowSchemesByContentTypeList
+      parameters:
+      - description: "Content type identifiers. Repeat the parameter (?contentTypeIds=a&contentTypeIds=b)\
+          \ or comma-separate values (?contentTypeIds=a,b). Both formats may be mixed.\
+          \ Max 100 distinct IDs."
+        in: query
+        name: contentTypeIds
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
+          description: Schemes returned successfully
+        "400":
+          description: More than 100 content type IDs supplied
+        "401":
+          description: User does not have permission
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow schemes for multiple content types
+      tags:
+      - Workflow
   /v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions:
     get:
       description: "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions)\
@@ -24833,6 +24908,27 @@ components:
           type: string
         variable:
           type: string
+    ContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        contentTypeId:
+          type: string
+          description: Identifier of the content type
+        contentTypeSchemes:
+          type: array
+          description: Workflow schemes associated with the content type
+          items:
+            $ref: "#/components/schemas/WorkflowScheme"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/WorkflowScheme"
+            last:
+              $ref: "#/components/schemas/WorkflowScheme"
+      required:
+      - contentTypeId
+      - contentTypeSchemes
     ContentView:
       type: object
       properties:
@@ -27816,6 +27912,18 @@ components:
           $ref: "#/components/schemas/VariantResult"
         last:
           $ref: "#/components/schemas/VariantResult"
+    ImmutableListWorkflowScheme:
+      type: array
+      description: Workflow schemes associated with the content type
+      items:
+        $ref: "#/components/schemas/WorkflowScheme"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/WorkflowScheme"
+        last:
+          $ref: "#/components/schemas/WorkflowScheme"
     ImmutableMapDoubleQuantilePair:
       type: object
       additionalProperties:
@@ -30445,6 +30553,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTypeWorkflowSchemesView"
         errors:
           type: array
           items:

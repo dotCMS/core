@@ -30,25 +30,32 @@ on:
 jobs:
   link-issue:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     env:
       GH_TOKEN: ${{ github.token }}
-    
+      PR_BRANCH: ${{ inputs.pr_branch }}
+      PR_URL: ${{ inputs.pr_url }}
+      PR_TITLE: ${{ inputs.pr_title }}
+      PR_BODY: ${{ inputs.pr_body }}
+      PR_AUTHOR: ${{ inputs.pr_author }}
+      PR_MERGED: ${{ inputs.pr_merged }}
+
     steps:
       - name: Debug workflow inputs
         run: |
-          echo "PR Branch: ${{ inputs.pr_branch }}"
-          echo "PR URL: ${{ inputs.pr_url }}"
-          echo "PR Title: ${{ inputs.pr_title }}"
-          echo "PR Body: ${{ inputs.pr_body }}"
-          echo "PR Author: ${{ inputs.pr_author }}"
-          echo "PR Merged: ${{ inputs.pr_merged }}"
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
+          echo "PR Branch: $PR_BRANCH"
+          echo "PR URL: $PR_URL"
+          echo "PR Title: $PR_TITLE"
+          echo "PR Body: $PR_BODY"
+          echo "PR Author: $PR_AUTHOR"
+          echo "PR Merged: $PR_MERGED"
 
       - name: Check if PR already has linked issues
         id: check_existing_issues
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           
           # Get PR details
@@ -96,7 +103,7 @@ jobs:
       - name: Extract issue number from branch name
         id: extract_issue_number
         run: |
-          branch_name="${{ inputs.pr_branch }}"
+          branch_name="$PR_BRANCH"
           issue_number=""
           
           # Try multiple patterns to extract issue number (more flexible but specific)
@@ -117,49 +124,185 @@ jobs:
 
       - name: Determine final issue number
         id: determine_issue
+        env:
+          HAS_LINKED_ISSUES: ${{ steps.check_existing_issues.outputs.has_linked_issues }}
+          LINKED_ISSUE_NUMBER: ${{ steps.check_existing_issues.outputs.linked_issue_number }}
+          LINK_METHOD: ${{ steps.check_existing_issues.outputs.link_method }}
+          BRANCH_ISSUE_NUMBER: ${{ steps.extract_issue_number.outputs.issue_number }}
         run: |
-          # Priority: 1) Manually linked issues (Development section or PR body), 2) Branch name extraction
-          if [[ "${{ steps.check_existing_issues.outputs.has_linked_issues }}" == "true" ]]; then
-            final_issue_number="${{ steps.check_existing_issues.outputs.linked_issue_number }}"
-            link_method="${{ steps.check_existing_issues.outputs.link_method }}"
+          # Priority:
+          #   1) check_existing_issues: timeline (Development section) or PR body plain-keyword regex
+          #   2) closingIssuesReferences GraphQL: GitHub's own parser, catches markdown-linked refs
+          #      the regex misses (e.g. "fixes [#123](url)"). This must outrank branch-name
+          #      heuristics — author intent in the PR body should win over a branch pattern.
+          #   3) Branch name extraction: heuristic of last resort.
+          if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
+            final_issue_number="$LINKED_ISSUE_NUMBER"
+            link_method="$LINK_METHOD"
             echo "Using manually linked issue: $final_issue_number (via $link_method)"
-          elif [[ -n "${{ steps.extract_issue_number.outputs.issue_number }}" ]]; then
-            final_issue_number="${{ steps.extract_issue_number.outputs.issue_number }}"
-            echo "Using issue from branch name: $final_issue_number"
           else
-            echo "::error::No issue number found in Development section, PR body, or branch name"
-            echo "::error::Please link an issue using one of these methods:"
-            echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
-            echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
-            echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
-            echo "failure_detected=true" >> "$GITHUB_OUTPUT"
+            pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
+            closing_issue=""
+            if [[ -z "$pr_number" ]]; then
+              echo "::warning::Could not extract PR number from PR_URL=$PR_URL; skipping closingIssuesReferences lookup"
+            else
+              owner="${GITHUB_REPOSITORY%/*}"
+              repo="${GITHUB_REPOSITORY#*/}"
+              gh_err=$(mktemp)
+              closing_issue=$(gh api graphql \
+                -F owner="$owner" \
+                -F name="$repo" \
+                -F num="$pr_number" \
+                -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){closingIssuesReferences(first:1){nodes{number}}}}}' \
+                --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // ""' 2>"$gh_err") || {
+                echo "::warning::closingIssuesReferences GraphQL lookup failed:"
+                cat "$gh_err"
+                closing_issue=""
+              }
+              rm -f "$gh_err"
+            fi
+
+            if [[ -n "$closing_issue" && "$closing_issue" != "null" ]]; then
+              final_issue_number="$closing_issue"
+              echo "Using issue from GitHub closingIssuesReferences (PR body / sidebar link): $final_issue_number"
+            elif [[ -n "$BRANCH_ISSUE_NUMBER" ]]; then
+              final_issue_number="$BRANCH_ISSUE_NUMBER"
+              echo "Using issue from branch name: $final_issue_number"
+            else
+              echo "::error::No issue number found in Development section, PR body, GitHub linked issues, or branch name"
+              echo "::error::Please link an issue using one of these methods:"
+              echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
+              echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
+              echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
+              echo "failure_detected=true" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          fi
+
+          echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
+
+      # Gates run before any side effects so that a PR whose linked issue is
+      # missing required metadata does not get its body patched or have a
+      # PR-list comment posted on the issue thread.
+
+      - name: Remove failure comment if issue is now resolved
+        run: |
+          pr_url="$PR_URL"
+          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
+
+          # Check for existing failure comment
+          existing_comments=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments")
+
+          # Find failure comment by looking for the distinctive header
+          failure_comment_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Issue Linking Required"))) | .id' | head -1)
+
+          if [[ -n "$failure_comment_id" && "$failure_comment_id" != "null" ]]; then
+            echo "Found existing failure comment: $failure_comment_id"
+
+            # Delete the failure comment since the issue is now resolved
+            curl -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/comments/$failure_comment_id"
+
+            echo "Removed failure comment from PR #$pr_number (issue now resolved)"
+          else
+            echo "No failure comment found to remove"
+          fi
+
+      - name: Validate linked issue has team label
+        id: validate_issue
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
+        run: |
+          issue_number="$ISSUE_NUMBER"
+
+          # Distinguish API/permission errors from a genuine missing-label result —
+          # otherwise a transient 5xx, a deleted issue, or a scope problem would
+          # all surface as "no team label" and start a cycle where authors add
+          # the label but the next run still fails.
+          gh_err=$(mktemp)
+          if ! labels=$(gh issue view "$issue_number" --repo "${{ github.repository }}" --json labels --jq '.labels[].name' 2>"$gh_err"); then
+            echo "::error::Failed to fetch labels for linked issue #$issue_number:"
+            cat "$gh_err"
+            rm -f "$gh_err"
             exit 1
           fi
-          
-          echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
+          rm -f "$gh_err"
+
+          team_label=$(echo "$labels" | grep -E '^Team : ' | head -1)
+
+          if [[ -z "$team_label" ]]; then
+            echo "::error::Linked issue #$issue_number has no 'Team : *' label"
+            echo "::error::Apply a team label (e.g., 'Team : Scout', 'Team : Platform') to the linked issue"
+            echo "validation_failed=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          echo "Linked issue #$issue_number has team label: $team_label"
+
+      - name: Remove issue-validation failure comment if resolved
+        run: |
+          pr_url="$PR_URL"
+          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
+
+          existing_comments=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments")
+          validation_comment_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Linked Issue Needs Team Label"))) | .id' | head -1)
+
+          if [[ -n "$validation_comment_id" && "$validation_comment_id" != "null" ]]; then
+            curl -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/issues/comments/$validation_comment_id"
+            echo "Removed issue-validation failure comment from PR #$pr_number (linked issue now has team label)"
+          else
+            echo "No issue-validation failure comment found to remove"
+          fi
 
       - name: Get existing issue comments
         id: get_comments
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
           # Fetch comments and write to temp file to avoid multiline JSON issues in GitHub Actions outputs
           curl -s \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.determine_issue.outputs.final_issue_number }}/comments \
+              "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER/comments" \
             | jq -c . > /tmp/issue_comments.json
 
           echo "comments_file=/tmp/issue_comments.json" >> "$GITHUB_OUTPUT"
 
       - name: Check if comment already exists
         id: check_comment
+        env:
+          COMMENTS_FILE: ${{ steps.get_comments.outputs.comments_file }}
         run: |
-          comments_file="${{ steps.get_comments.outputs.comments_file }}"
-          pr_url="${{ inputs.pr_url }}"
+          comments_file="$COMMENTS_FILE"
+          pr_url="$PR_URL"
+
+          # Escape markdown link characters in the user-supplied PR title so an
+          # adversarial title like 'Fix bug](https://evil)' can't redirect the bot link.
+          escaped_title=$(printf '%s' "$PR_TITLE" | sed -e 's/\\/\\\\/g' -e 's/\[/\\[/g' -e 's/\]/\\]/g')
+
+          # Random heredoc delimiter — prevents collision if user-supplied content
+          # (PR titles in previous list entries) contains a literal "EOF" line.
+          delim="ghadelimiter_$(openssl rand -hex 16)"
 
           # Check if our bot comment already exists (read from file instead of env var)
           existing_comment=$(jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("PRs linked to this issue"))) | .id' "$comments_file" | head -1)
-          
+
           if [[ -n "$existing_comment" && "$existing_comment" != "null" ]]; then
             echo "Found existing comment: $existing_comment"
             echo "existing_comment_id=$existing_comment" >> "$GITHUB_OUTPUT"
@@ -167,50 +310,53 @@ jobs:
             echo "No existing comment found"
             echo "existing_comment_id=" >> "$GITHUB_OUTPUT"
           fi
-          
+
           # Get existing PR list from the comment if it exists
           if [[ -n "$existing_comment" && "$existing_comment" != "null" ]]; then
             existing_body=$(jq -r --arg id "$existing_comment" '.[] | select(.id == ($id | tonumber)) | .body' "$comments_file")
-            
+
             # Extract existing PR lines (lines starting with "- [")
             existing_pr_lines=$(echo "$existing_body" | grep "^- \[" | sort -u)
-            
-            # Check if current PR is already in the list
-            if echo "$existing_pr_lines" | grep -q "$pr_url"; then
+
+            # Check if current PR is already in the list. Match against the literal
+            # markdown-link terminator `($pr_url)` so a URL is not seen as a prefix of
+            # another PR's URL (e.g. /pull/10 substring-matching /pull/100), and so
+            # regex metacharacters in the URL are not interpreted.
+            if echo "$existing_pr_lines" | grep -qF "($pr_url)"; then
               echo "PR already exists in comment, keeping existing list"
               {
-                echo "pr_list<<EOF"
-                printf "## PRs linked to this issue\n\n%s" "$existing_pr_lines"
-                echo "EOF"
+                echo "pr_list<<$delim"
+                printf "## PRs linked to this issue\n\n%s\n" "$existing_pr_lines"
+                echo "$delim"
               } >> "$GITHUB_OUTPUT"
             else
               # Add new PR to the list
-              new_pr_line="- [${{ inputs.pr_title }}](${{ inputs.pr_url }}) by @${{ inputs.pr_author }}"
-              if [[ "${{ inputs.pr_merged }}" == "true" ]]; then
+              new_pr_line="- [${escaped_title}](${PR_URL}) by @${PR_AUTHOR}"
+              if [[ "$PR_MERGED" == "true" ]]; then
                 new_pr_line="$new_pr_line ✅"
               fi
-              
+
               # Combine existing and new PR lines
               all_pr_lines=$(echo -e "$existing_pr_lines\n$new_pr_line" | sort -u)
               new_body=$(printf "## PRs linked to this issue\n\n%s" "$all_pr_lines")
               {
-                echo "pr_list<<EOF"
+                echo "pr_list<<$delim"
                 echo "$new_body"
-                echo "EOF"
+                echo "$delim"
               } >> "$GITHUB_OUTPUT"
             fi
           else
             # Create new PR list
-            new_pr_line="- [${{ inputs.pr_title }}](${{ inputs.pr_url }}) by @${{ inputs.pr_author }}"
-            if [[ "${{ inputs.pr_merged }}" == "true" ]]; then
+            new_pr_line="- [${escaped_title}](${PR_URL}) by @${PR_AUTHOR}"
+            if [[ "$PR_MERGED" == "true" ]]; then
               new_pr_line="$new_pr_line ✅"
             fi
-            
+
             new_body=$(printf "## PRs linked to this issue\n\n%s" "$new_pr_line")
             {
-              echo "pr_list<<EOF"
+              echo "pr_list<<$delim"
               echo "$new_body"
-              echo "EOF"
+              echo "$delim"
             } >> "$GITHUB_OUTPUT"
           fi
 
@@ -227,12 +373,18 @@ jobs:
         with:
           comment-id: ${{ steps.check_comment.outputs.existing_comment_id }}
           body: ${{ steps.check_comment.outputs.pr_list }}
+          # Replace the comment body — the action's default `append` mode tacks the new
+          # body onto the old one, causing the "PRs linked to this issue" block to
+          # accumulate on every re-run (issue #35794 hit 10 stacked copies).
+          edit-mode: replace
 
       - name: Link PR to issue
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
+          issue_number="$ISSUE_NUMBER"
           
           # Get current PR body
           current_pr=$(curl -s \
@@ -243,8 +395,8 @@ jobs:
           
           current_body=$(echo "$current_pr" | jq -r '.body // ""')
           
-          # Check if issue reference already exists
-          if ! echo "$current_body" | grep -q "#$issue_number"; then
+          # Check if issue reference already exists (word-boundary match so #10 does not match #100)
+          if ! echo "$current_body" | grep -qE "(^|[^0-9])#${issue_number}([^0-9]|\$)"; then
             # Add issue reference to PR body
             if [[ -n "$current_body" && "$current_body" != "null" ]]; then
               new_body=$(printf "%s\n\nThis PR fixes: #%s" "$current_body" "$issue_number")
@@ -265,42 +417,24 @@ jobs:
             echo "Issue #$issue_number already referenced in PR #$pr_number body"
           fi
 
-      - name: Remove failure comment if issue is now resolved
+      - name: Add failure comment to PR
+        if: failure() && steps.determine_issue.outputs.failure_detected == 'true'
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          
-          # Check for existing failure comment
+
+          # Skip if a failure comment already exists (avoid duplicates on synchronize/edited re-runs)
           existing_comments=$(curl -s \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments")
-          
-          # Find failure comment by looking for the distinctive header
-          failure_comment_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Issue Linking Required"))) | .id' | head -1)
-          
-          if [[ -n "$failure_comment_id" && "$failure_comment_id" != "null" ]]; then
-            echo "Found existing failure comment: $failure_comment_id"
-            
-            # Delete the failure comment since the issue is now resolved
-            curl -X DELETE \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "https://api.github.com/repos/${{ github.repository }}/issues/comments/$failure_comment_id"
-            
-            echo "Removed failure comment from PR #$pr_number (issue now resolved)"
-          else
-            echo "No failure comment found to remove"
+          existing_failure_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Issue Linking Required"))) | .id' | head -1)
+          if [[ -n "$existing_failure_id" && "$existing_failure_id" != "null" ]]; then
+            echo "Failure comment $existing_failure_id already exists on PR #$pr_number; skipping"
+            exit 0
           fi
 
-      - name: Add failure comment to PR
-        if: failure() && steps.determine_issue.outputs.failure_detected == 'true'
-        run: |
-          pr_url="${{ inputs.pr_url }}"
-          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          
           comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
             "## ❌ Issue Linking Required" \
             "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes." \
@@ -331,5 +465,43 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments" \
             -d "{\"body\":$(echo "$comment_body" | jq -R -s .)}"
-          
+
           echo "Added failure comment to PR #$pr_number"
+
+      - name: Add issue-validation failure comment to PR
+        if: failure() && steps.validate_issue.outputs.validation_failed == 'true'
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
+        run: |
+          pr_url="$PR_URL"
+          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
+          issue_number="$ISSUE_NUMBER"
+
+          # Skip if a validation failure comment already exists
+          existing_comments=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments")
+          existing_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Linked Issue Needs Team Label"))) | .id' | head -1)
+          if [[ -n "$existing_id" && "$existing_id" != "null" ]]; then
+            echo "Validation failure comment $existing_id already exists on PR #$pr_number; skipping"
+            exit 0
+          fi
+
+          comment_body=$(printf "%s\n\n%s\n\n%s\n%s\n\n%s\n%s" \
+            "## ❌ Linked Issue Needs Team Label" \
+            "This PR is linked to issue #$issue_number, but that issue has **no \`Team : *\` label**. Every linked issue must be owned by a team for tracking and triage." \
+            "### How to fix this:" \
+            "Apply a \`Team : *\` label to the linked issue (e.g., \`Team : Scout\`, \`Team : Platform\`, \`Team : Falcon\`, \`Team : Maintenance\`). Then push a new commit or edit the PR description to re-run this check." \
+            "---" \
+            "*This comment was automatically generated by the issue linking workflow*")
+
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments" \
+            -d "{\"body\":$(echo "$comment_body" | jq -R -s .)}"
+
+          echo "Added issue-validation failure comment to PR #$pr_number"

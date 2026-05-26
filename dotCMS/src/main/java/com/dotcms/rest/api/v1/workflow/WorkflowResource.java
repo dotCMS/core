@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -199,6 +200,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
 public class WorkflowResource {
 
     public  final static String VERSION       = "1.0";
+    private static final int    MAX_CONTENT_TYPE_IDS = 100;
     private static final String LISTING       = "listing";
     private static final String EDITING       = "editing";
     private static final String ASSIGN        = "assign";
@@ -535,6 +537,120 @@ public class WorkflowResource {
 
         }
     } // findAllSchemesAndSchemesByContentType.
+
+    /**
+     * Returns workflow schemes grouped by content type for a list of content type identifiers.
+     * Unknown or invalid IDs are silently skipped — the response only contains entries for IDs
+     * that were successfully resolved. At most {@value #MAX_CONTENT_TYPE_IDS} distinct IDs may
+     * be requested in a single call; exceeding this limit returns 400.
+     * Returns 401 if the user does not have the required backend permissions.
+     *
+     * @param request        {@link HttpServletRequest}
+     * @param response       {@link HttpServletResponse}
+     * @param contentTypeIds content type identifiers — repeat the parameter
+     *                       ({@code ?contentTypeIds=a&contentTypeIds=b}) or comma-separate values
+     *                       ({@code ?contentTypeIds=a,b}); both formats are supported and may be mixed
+     * @return {@link Response} containing a list of {@link ContentTypeWorkflowSchemesView},
+     *         one entry per resolved content type
+     */
+    @GET
+    @Path("/contenttypes/schemes")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getWorkflowSchemesByContentTypeList",
+            summary = "Find workflow schemes for multiple content types",
+            description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
+                    "grouped by content type for a list of content type identifiers. " +
+                    "Each entry in the response maps a resolved content type to its associated schemes. " +
+                    "Unknown or invalid IDs are silently skipped — only successfully resolved content types appear in the result " +
+                    "(note: the single-content-type endpoint returns 404 for an unknown ID; this batch endpoint omits it instead). " +
+                    "Maximum " + MAX_CONTENT_TYPE_IDS + " tokens per request (checked before deduplication).",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Schemes returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContentTypeWorkflowSchemesView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "More than " + MAX_CONTENT_TYPE_IDS + " content type IDs supplied"),
+                    @ApiResponse(responseCode = "401", description = "User does not have permission")
+            }
+    )
+    public final Response findAllSchemesByContentTypeList(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("contentTypeIds") @Parameter(
+                    description = "Content type identifiers. Repeat the parameter " +
+                            "(?contentTypeIds=a&contentTypeIds=b) or comma-separate values " +
+                            "(?contentTypeIds=a,b). Both formats may be mixed. Max " +
+                            MAX_CONTENT_TYPE_IDS + " distinct IDs."
+            ) final List<String> contentTypeIds) {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        try {
+
+            Logger.debug(this, "Getting the workflow schemes by content type list");
+
+            final String rawIds = String.join(",",
+                    contentTypeIds == null ? Collections.emptyList() : contentTypeIds);
+
+            final String[] rawTokens = rawIds.split(",");
+
+            if (rawTokens.length > MAX_CONTENT_TYPE_IDS) {
+                throw new IllegalArgumentException(
+                        "contentTypeIds exceeds the maximum allowed size of " + MAX_CONTENT_TYPE_IDS);
+            }
+
+            final List<String> ids = Arrays.stream(rawTokens)
+                    .map(String::trim)
+                    .filter(UtilMethods::isSet)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            final List<String> skippedIds = new ArrayList<>();
+
+            final List<ContentTypeWorkflowSchemesView> result = ids.stream()
+                    .map(contentTypeId -> {
+                        try {
+                            return ContentTypeWorkflowSchemesView.builder()
+                                    .contentTypeId(contentTypeId)
+                                    .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(
+                                            contentTypeId, user))
+                                    .build();
+                        } catch (DotWorkflowException e) {
+                            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                                skippedIds.add(contentTypeId);
+                                return null;
+                            }
+                            throw e; // permission errors and unexpected causes propagate
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (!skippedIds.isEmpty()) {
+                Logger.warn(this.getClass(), "Skipped " + skippedIds.size() +
+                        " unknown content type ID(s): " + skippedIds);
+            }
+
+            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
+
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findAllSchemesByContentTypeList: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+
+        }
+    } // findAllSchemesByContentTypeList.
 
     /**
      * Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission.
@@ -3172,7 +3288,7 @@ public class WorkflowResource {
           .requestAndResponse(request, response)
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
-      
+
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -4912,7 +5028,7 @@ public class WorkflowResource {
           if(constant instanceof ConstantField)
             contentlet.getMap().put(constant.variable(), constant.values());
         }
-        
+
         return contentlet;
     } // populateContentlet.
 

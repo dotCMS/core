@@ -18,6 +18,41 @@ export function getDownloadLink(blob: Blob, fileName: string): HTMLAnchorElement
     return anchor;
 }
 
+export interface ApiSnippetParams {
+    url: string;
+    body: unknown;
+}
+
+/**
+ * Build a curl POST snippet for a JSON API call.
+ * Escapes single quotes in the body using POSIX shell quoting.
+ */
+export function buildCurlSnippet({ url, body }: ApiSnippetParams): string {
+    const safeBody = JSON.stringify(body).replace(/'/g, `'\\''`);
+    return [
+        `curl -X POST "${url}" \\`,
+        `  -H "Content-Type: application/json" \\`,
+        `  -H "Authorization: Bearer <your-api-token>" \\`,
+        `  -d '${safeBody}'`
+    ].join('\n');
+}
+
+/**
+ * Build a browser fetch() POST snippet for a JSON API call.
+ */
+export function buildFetchSnippet({ url, body }: ApiSnippetParams): string {
+    const formatted = JSON.stringify(body, null, 2);
+    return [
+        `const response = await fetch('${url}', {`,
+        `  method: 'POST',`,
+        `  credentials: 'include',`,
+        `  headers: { 'Content-Type': 'application/json' },`,
+        `  body: JSON.stringify(${formatted})`,
+        `});`,
+        `const data = await response.json();`
+    ].join('\n');
+}
+
 // Replace {n} in the string with the strings in the args array
 export function formatMessage(message: string, args: string[]): string {
     return message.replace(/{(\d+)}/g, (match, number) => {
