@@ -1,5 +1,5 @@
 ---
-name: review-pr
+name: triage-pr-review
 description: Fetch ALL code-review feedback for a dotCMS PR (inline review threads, top-level bot/human comments, review summaries), surface Critical 🔴 and High 🟠 findings, and evaluate each one for relevance and necessity against what the PR actually changed.
 argument-hint: <pr-number|pr-url>
 context: fork
