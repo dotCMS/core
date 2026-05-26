@@ -64,7 +64,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"{{hostname}}\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"{{hostname}}\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0,\n        \"languageId\":1\n\t\t\n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
