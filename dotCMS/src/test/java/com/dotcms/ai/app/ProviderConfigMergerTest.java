@@ -12,22 +12,42 @@ public class ProviderConfigMergerTest {
     // containsMasked
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a JSON string with a masked sentinel value,
+     * When containsMasked is called,
+     * Then it returns true.
+     */
     @Test
     public void test_containsMasked_withMaskedValue_returnsTrue() {
         assertTrue(ProviderConfigMerger.containsMasked("{\"apiKey\":\"*****\"}"));
     }
 
+    /**
+     * Given a JSON string with a real (non-masked) credential value,
+     * When containsMasked is called,
+     * Then it returns false.
+     */
     @Test
     public void test_containsMasked_withoutMaskedValue_returnsFalse() {
         assertFalse(ProviderConfigMerger.containsMasked("{\"apiKey\":\"sk-real-key\"}"));
     }
 
+    /**
+     * Given a blank or null input,
+     * When containsMasked is called,
+     * Then it returns false.
+     */
     @Test
     public void test_containsMasked_blankInput_returnsFalse() {
         assertFalse(ProviderConfigMerger.containsMasked(""));
         assertFalse(ProviderConfigMerger.containsMasked(null));
     }
 
+    /**
+     * Given a JSON string with four stars instead of five,
+     * When containsMasked is called,
+     * Then it returns false since the sentinel is exactly five stars.
+     */
     @Test
     public void test_containsMasked_partialMatch_doesNotMatch() {
         // "****" (4 stars) is not the sentinel — must be exactly "*****" (5)
@@ -38,27 +58,52 @@ public class ProviderConfigMergerTest {
     // containsMaskedCredential
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a JSON string with a masked apiKey at the top level,
+     * When containsMaskedCredential is called,
+     * Then it returns true.
+     */
     @Test
     public void test_containsMaskedCredential_maskedApiKey_returnsTrue() {
         assertTrue(ProviderConfigMerger.containsMaskedCredential("{\"apiKey\":\"*****\"}"));
     }
 
+    /**
+     * Given a JSON string with a masked apiKey nested inside a section object,
+     * When containsMaskedCredential is called,
+     * Then it returns true.
+     */
     @Test
     public void test_containsMaskedCredential_maskedNestedApiKey_returnsTrue() {
         assertTrue(ProviderConfigMerger.containsMaskedCredential("{\"chat\":{\"apiKey\":\"*****\"}}"));
     }
 
+    /**
+     * Given a JSON string where a non-credential field (rolePrompt) has the sentinel value,
+     * When containsMaskedCredential is called,
+     * Then it returns false since only credential fields are checked.
+     */
     @Test
     public void test_containsMaskedCredential_maskedNonCredentialField_returnsFalse() {
         // rolePrompt with ***** is not a credential field — must not block the save
         assertFalse(ProviderConfigMerger.containsMaskedCredential("{\"chat\":{\"rolePrompt\":\"*****\",\"apiKey\":\"sk-real\"}}"));
     }
 
+    /**
+     * Given a JSON string with real (non-masked) credential values,
+     * When containsMaskedCredential is called,
+     * Then it returns false.
+     */
     @Test
     public void test_containsMaskedCredential_realCredentials_returnsFalse() {
         assertFalse(ProviderConfigMerger.containsMaskedCredential("{\"apiKey\":\"sk-real\",\"model\":\"gpt-4o\"}"));
     }
 
+    /**
+     * Given a blank or null input,
+     * When containsMaskedCredential is called,
+     * Then it returns false.
+     */
     @Test
     public void test_containsMaskedCredential_blankInput_returnsFalse() {
         assertFalse(ProviderConfigMerger.containsMaskedCredential(""));
@@ -69,6 +114,11 @@ public class ProviderConfigMergerTest {
     // merge — stored is blank
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a blank or null storedJson,
+     * When merge is called,
+     * Then the incoming JSON is returned unchanged.
+     */
     @Test
     public void test_merge_blankStored_returnsNewJsonUnchanged() {
         final String newJson = "{\"chat\":{\"apiKey\":\"sk-new\"}}";
@@ -80,6 +130,11 @@ public class ProviderConfigMergerTest {
     // merge — no masked values
     // -------------------------------------------------------------------------
 
+    /**
+     * Given incoming and stored JSON with no sentinel values,
+     * When merge is called,
+     * Then the incoming values win and are returned unchanged.
+     */
     @Test
     public void test_merge_noMaskedValues_returnsNewJsonStructure() throws Exception {
         final String newJson    = "{\"chat\":{\"apiKey\":\"sk-new\",\"model\":\"gpt-4o\"}}";
@@ -97,6 +152,11 @@ public class ProviderConfigMergerTest {
     // merge — masked top-level credential field
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a top-level credential field with the sentinel value in the incoming JSON,
+     * When merge is called,
+     * Then the real value from the stored JSON is restored.
+     */
     @Test
     public void test_merge_maskedTopLevelCredentialField_restoredFromStored() {
         final String newJson    = "{\"apiKey\":\"*****\"}";
@@ -108,6 +168,11 @@ public class ProviderConfigMergerTest {
         assertFalse(result.contains("*****"));
     }
 
+    /**
+     * Given a non-credential field with the sentinel value in the incoming JSON,
+     * When merge is called,
+     * Then the sentinel is left as-is since only credential fields are restored.
+     */
     @Test
     public void test_merge_maskedNonCredentialField_leftAsIs() {
         // Only CREDENTIAL_FIELDS are restored — other fields with ***** stay as-is
@@ -124,6 +189,11 @@ public class ProviderConfigMergerTest {
     // merge — masked nested credential field
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a nested credential field with the sentinel value and a non-credential field with a real value,
+     * When merge is called,
+     * Then the credential is restored from stored while the non-credential field keeps the incoming value.
+     */
     @Test
     public void test_merge_maskedNestedApiKey_restoredFromStored() {
         final String newJson    = "{\"chat\":{\"apiKey\":\"*****\",\"model\":\"gpt-4o\"}}";
@@ -136,6 +206,11 @@ public class ProviderConfigMergerTest {
         assertFalse(result.contains("*****"));
     }
 
+    /**
+     * Given a config with all three sections (chat, embeddings, image) each with masked credentials,
+     * When merge is called,
+     * Then all credentials are restored from stored and non-credential fields keep the incoming values.
+     */
     @Test
     public void test_merge_allThreeSections_maskedCredsRestored() {
         final String newJson = "{"
@@ -164,6 +239,11 @@ public class ProviderConfigMergerTest {
     // merge — masked field not present in stored
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a masked credential field in the incoming JSON that is absent from the stored JSON,
+     * When merge is called,
+     * Then the sentinel is kept as-is since there is no stored value to restore.
+     */
     @Test
     public void test_merge_maskedFieldAbsentInStored_leftAsIs() {
         final String newJson    = "{\"chat\":{\"secretAccessKey\":\"*****\"}}";
@@ -175,6 +255,11 @@ public class ProviderConfigMergerTest {
         assertTrue(result.contains("*****"));
     }
 
+    /**
+     * Given a Vertex AI config with a masked credentialsJson in the incoming JSON,
+     * When merge is called,
+     * Then the real service account JSON is restored from the stored config.
+     */
     @Test
     public void test_merge_maskedCredentialsJson_restoredFromStored() {
         final String realJson = "{\"type\":\"service_account\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\nABC\\n-----END PRIVATE KEY-----\\n\"}";
@@ -191,6 +276,11 @@ public class ProviderConfigMergerTest {
     // merge — storedJson is valid JSON but not an object
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a storedJson that is a valid JSON array (not an object),
+     * When merge is called,
+     * Then the incoming JSON is returned unchanged to avoid persisting the sentinel value.
+     */
     @Test
     public void test_merge_storedJsonIsArray_returnsNewJsonUnchanged() {
         final String newJson    = "{\"chat\":{\"apiKey\":\"*****\"}}";
@@ -203,6 +293,11 @@ public class ProviderConfigMergerTest {
         assertEquals(newJson, result);
     }
 
+    /**
+     * Given a storedJson that is the JSON literal "null",
+     * When merge is called,
+     * Then the incoming JSON is returned unchanged.
+     */
     @Test
     public void test_merge_storedJsonIsNull_returnsNewJsonUnchanged() {
         final String newJson    = "{\"chat\":{\"apiKey\":\"*****\"}}";
@@ -217,6 +312,11 @@ public class ProviderConfigMergerTest {
     // merge — invalid JSON
     // -------------------------------------------------------------------------
 
+    /**
+     * Given an invalid (non-parseable) incoming JSON,
+     * When merge is called,
+     * Then the incoming value is returned unchanged.
+     */
     @Test
     public void test_merge_invalidNewJson_returnsNewJsonUnchanged() {
         final String badJson    = "not-valid-json";
@@ -225,6 +325,11 @@ public class ProviderConfigMergerTest {
         assertEquals(badJson, ProviderConfigMerger.merge(badJson, storedJson));
     }
 
+    /**
+     * Given an invalid (non-parseable) stored JSON,
+     * When merge is called,
+     * Then the incoming JSON is returned unchanged.
+     */
     @Test
     public void test_merge_invalidStoredJson_returnsNewJsonUnchanged() {
         final String newJson  = "{\"chat\":{\"apiKey\":\"*****\"}}";
