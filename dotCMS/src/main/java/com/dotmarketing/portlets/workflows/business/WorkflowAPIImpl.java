@@ -59,6 +59,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotIndexWindowLimitException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -176,7 +177,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.felix.framework.OSGIUtil;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -2768,9 +2768,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		).build();
 		}catch (Exception e){
 			final Throwable rootCause = ExceptionUtil.getRootCause(e);
-			if(rootCause instanceof QueryPhaseExecutionException){
-				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
-				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
+			if(rootCause instanceof DotIndexWindowLimitException){
+				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, rootCause.getMessage()));
 			} else {
 				Logger.error(getClass(),"Unexpected Error fetching contentlets from ES", e);
 			}

@@ -111,7 +111,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         } catch (final OpenSearchException e) {
             if (e.error() != null && "illegal_argument_exception".equals(e.error().type())
                     && e.error().reason() != null && e.error().reason().contains("Result window")) {
-                throw new DotIndexWindowLimitException(e);
+                final String indexName = searchRequest.index() != null
+                        ? String.join(",", searchRequest.index()) : "unknown";
+                Logger.debug(this.getClass(), String.format("Index window limit exceeded in '%s'", indexName));
+                throw new DotIndexWindowLimitException(indexName, e);
             }
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");

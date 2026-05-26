@@ -34,7 +34,6 @@ import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -107,8 +106,12 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             return hits;
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
-            if (e instanceof QueryPhaseExecutionException) {
-                throw new DotIndexWindowLimitException(e);
+            if (e instanceof ElasticsearchStatusException
+                    && e.getMessage() != null && e.getMessage().contains("Result window")) {
+                final String indexName = searchRequest.indices() != null
+                        ? String.join(",", searchRequest.indices()) : "unknown";
+                Logger.debug(this.getClass(), String.format("Index window limit exceeded in '%s'", indexName));
+                throw new DotIndexWindowLimitException(indexName, e);
             }
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");

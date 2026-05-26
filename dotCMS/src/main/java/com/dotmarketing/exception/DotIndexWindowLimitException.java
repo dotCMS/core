@@ -12,4 +12,8 @@ public class DotIndexWindowLimitException extends DotRuntimeException {
     public DotIndexWindowLimitException(final Throwable cause) {
         super("Result window exceeded: query offset surpasses max_result_window", cause);
     }
+
+    public DotIndexWindowLimitException(final String index, final Throwable cause) {
+        super(String.format("Result window exceeded in index '%s': query offset surpasses max_result_window", index), cause);
+    }
 }
