@@ -417,6 +417,18 @@ class DotFieldInterceptorManager {
                         if (dijitWidget?.setValue) {
                             dijitWidget.setValue(value);
                         }
+
+                        const element = document.getElementById(variable);
+                        if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+                            const strValue = String(value ?? '');
+                            if (element.setFromAngular) {
+                                element.setFromAngular(strValue);
+                            } else {
+                                element.value = strValue;
+                            }
+                            element.dispatchEvent(new Event('input', { bubbles: true }));
+                            element.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
                     });
                 });
             });
