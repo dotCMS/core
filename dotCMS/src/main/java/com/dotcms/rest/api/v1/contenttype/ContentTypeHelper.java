@@ -511,7 +511,7 @@ public class ContentTypeHelper implements Serializable {
                 contentType, contentTypeInternationalization
         ).mapObject();
         if (renderCustomFields) {
-            this.includeRenderedCustomFields(contentTypeMap, user, contentletInode);
+            this.includeRenderedCustomFields(contentTypeMap, contentType, user, contentletInode);
         }
         try {
             // Add the detail page path to the map
@@ -531,40 +531,52 @@ public class ContentTypeHelper implements Serializable {
      * Custom Field. When it does that, it adds a new attribute named {@code 'rendered'} with the
      * generated HTML/JavaScript code.
      * <p>
-     * If a contentlet inode is provided, contentlet-specific Velocity variables ({@code $inode},
-     * {@code $identifier}, {@code $lang}, {@code $contentlet}) will be available during rendering,
-     * matching the behavior of the legacy content editor.
+     * The following Velocity variables are always available during rendering:
+     * {@code $structure} (the Content Type) and {@code $field} (the current field being rendered).
+     * <p>
+     * If a contentlet inode is provided, contentlet-specific variables ({@code $inode},
+     * {@code $identifier}, {@code $lang}, {@code $contentlet}) are also injected, matching the
+     * behavior of the legacy content editor.
      *
      * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
      *                        including its fields.
+     * @param contentType     The {@link ContentType} object being rendered.
      * @param user            The {@link User} requesting this information.
      * @param contentletInode Optional contentlet inode for enriching the Velocity context.
      */
     @SuppressWarnings("unchecked")
     private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap,
+                                             final ContentType contentType,
                                              final User user,
                                              final String contentletInode) {
         final List<Map<String, Object>> fieldsMap = (List<Map<String, Object>>) contentTypeMap.get("fields");
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         final Contentlet contentlet = loadContentletIfPresent(contentletInode, user);
-        fieldsMap.forEach(field -> {
-            if (field.get("clazz").equals(ImmutableCustomField.class.getName())
-                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.COMPONENT)) {
+        final Map<String, Field> fieldsByVar = contentType.fields().stream()
+                .collect(Collectors.toMap(Field::variable, f -> f, (a, b) -> a));
+        fieldsMap.forEach(fieldMap -> {
+            if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
+                    && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
                 try {
                     final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
+                    velocityContext.put("structure", contentType);
+                    final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
+                    if (fieldObj != null) {
+                        velocityContext.put("field", fieldObj);
+                    }
                     if (contentlet != null) {
                         velocityContext.put("inode", contentlet.getInode());
                         velocityContext.put("identifier", contentlet.getIdentifier());
                         velocityContext.put("lang", contentlet.getLanguageId());
                         velocityContext.put("contentlet", contentlet);
                     }
-                    final String textValue = (String) field.getOrDefault("values", BLANK);
+                    final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
                     final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
-                    field.put("rendered", htmlString);
+                    fieldMap.put("rendered", htmlString);
                 } catch (final Exception e) {
                     Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
-                            "'%s': %s", field.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                            "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
                 }
             }
         });
