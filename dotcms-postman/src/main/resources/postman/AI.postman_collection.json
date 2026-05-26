@@ -2370,7 +2370,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\"\n}",
+              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\",\n    \"language\": {{defaultLanguageId}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3813,7 +3813,41 @@
         "type": "text/javascript",
         "packages": {},
         "exec": [
-          ""
+          "// [issue #35780] Resolve default language id once per run so tests that depend on",
+          "// the server-side default-language do not break when getDefaultLanguage() returns",
+          "// the LANG__404 sentinel (id=-1) in a fresh test environment.",
+          "if (!pm.environment.get('defaultLanguageId')) {",
+          "    const serverURL = pm.environment.get('serverURL');",
+          "    const username = pm.environment.get('user');",
+          "    const password = pm.environment.get('password');",
+          "    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "    pm.sendRequest({",
+          "        url: `${serverURL}/api/v2/languages/_getdefault`,",
+          "        method: 'GET',",
+          "        header: {",
+          "            'accept': 'application/json',",
+          "            'Authorization': `Basic ${basicAuth}`",
+          "        }",
+          "    }, function (err, response) {",
+          "        if (err) {",
+          "            throw new Error('Could not resolve default language: ' + err);",
+          "        }",
+          "        if (response.code !== 200) {",
+          "            throw new Error('Could not resolve default language: HTTP ' + response.code);",
+          "        }",
+          "        const body = response.json();",
+          "        let id = body && body.entity && body.entity.id;",
+          "        if (!id || id <= 0) {",
+          "            // _getdefault can return the LANG__404 sentinel (id=-1) in fresh",
+          "            // test environments. Fall back to English (id=1), which is always",
+          "            // present in dotCMS starter data. See issue #35780.",
+          "            console.log('Default language returned invalid id (' + id + '), falling back to English (id=1)');",
+          "            id = 1;",
+          "        }",
+          "        pm.environment.set('defaultLanguageId', id);",
+          "        console.log('defaultLanguageId = ' + id);",
+          "    });",
+          "}"
         ]
       }
     },
