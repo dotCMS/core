@@ -15,7 +15,7 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-analytics-bar-chart/dot-analytics-bar-chart.component';
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
 import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import {
@@ -25,7 +25,7 @@ import {
 
 /**
  * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
- * It includes the engagement rate, trend chart, and platforms table.
+ * It includes KPIs, breakdown doughnut, browser/device/language stacked engagement charts.
  * Each block (KPIs, breakdown, platforms) has independent loading and error state.
  */
 @Component({
@@ -36,7 +36,7 @@ import {
         DotMessagePipe,
         DotAnalyticsPieChartComponent,
         DotAnalyticsMetricComponent,
-        DotAnalyticsBarChartComponent,
+        DotAnalyticsBarEngagementChartComponent,
         DotAnalyticsSparklineComponent
     ],
     templateUrl: './dot-analytics-engagement-report.component.html',

@@ -188,7 +188,7 @@ jobs:
   report:
     name: Report
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [ release-prepare, deployment, finalize ]
+    needs: [ release-prepare, deployment, release, finalize ]
     if: always()
     steps:
       - name: Checkout core
@@ -197,6 +197,84 @@ jobs:
           ref: main
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      # Compute QA-coverage warning for the Slack message. Every step here is
+      # best-effort (continue-on-error: true) so a transient failure cannot
+      # block the release announcement; the Slack step renders the
+      # announcement with no QA section if `qa_warning` is empty.
+      #
+      # Skips non-standard releases (LTS / CLI / non-v-prefixed) to match the
+      # behavior of the AI release-notes phase. These releases don't have a
+      # reliable previous-tag for comparison.
+      - name: Setup Node.js
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install QA-status script dependencies
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        run: npm ci
+
+      - name: Compute QA-coverage warning
+        id: qa
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ needs.release-prepare.outputs.release_tag }}
+          # Full markdown report lands on the workflow run summary; the
+          # Slack counts link here.
+          DETAIL_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MAPPINGS_PATH: ${{ github.workspace }}/.github/data/slack-mappings.json
+        run: |
+          set +e
+          # 1) Full markdown report → workflow run summary
+          npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format markdown 2>>/tmp/qa-stderr.log >> "${GITHUB_STEP_SUMMARY}"
+          rc_md=$?
+          if [ $rc_md -ne 0 ]; then
+            echo "::warning::release-qa-status (markdown) exited with ${rc_md}; report summary may be incomplete"
+          fi
+
+          # 2) Compact Slack snippet → step output for the next step
+          output=$(npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format slack \
+            --mappings "${MAPPINGS_PATH}" \
+            --detail-url "${DETAIL_URL}" 2>>/tmp/qa-stderr.log)
+          rc_slack=$?
+          if [ $rc_slack -ne 0 ]; then
+            echo "::warning::release-qa-status (slack) exited with ${rc_slack}; omitting QA section from Slack message"
+            cat /tmp/qa-stderr.log || true
+            output=""
+          fi
+          {
+            echo 'qa_warning<<__RELEASE_QA_WARNING_EOF__'
+            if [ -n "${output}" ]; then
+              printf '%s\n' "${output}"
+            fi
+            echo '__RELEASE_QA_WARNING_EOF__'
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
@@ -208,5 +286,5 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]${{ steps.qa.outputs.qa_warning }}"
         if: success() && github.event.inputs.notify_slack == 'true'

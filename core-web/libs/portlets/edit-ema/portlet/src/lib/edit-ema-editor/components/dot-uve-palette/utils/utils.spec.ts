@@ -576,7 +576,9 @@ describe('Dot UVE Palette Utils', () => {
                 offset: '0',
                 itemsPerPage: 30,
                 lang: '1',
-                filter: 'news'
+                filter: 'news',
+                sortField: 'modDate',
+                sortOrder: 'DESC'
             });
         });
 
@@ -662,6 +664,21 @@ describe('Dot UVE Palette Utils', () => {
             const result = buildESContentParams(searchParams);
 
             expect(result.itemsPerPage).toBe(30);
+        });
+
+        it('should always sort by modDate DESC', () => {
+            const searchParams = {
+                selectedContentType: 'Banner',
+                variantId: '',
+                language: 1,
+                page: 1,
+                filter: ''
+            };
+
+            const result = buildESContentParams(searchParams);
+
+            expect(result.sortField).toBe('modDate');
+            expect(result.sortOrder).toBe('DESC');
         });
 
         it('should handle complex filter strings', () => {

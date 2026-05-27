@@ -242,10 +242,10 @@ export function withContent() {
                                     const { contentType } = contentlet;
 
                                     return forkJoin({
-                                        contentType:
-                                            dotContentTypeService.getContentTypeWithRender(
-                                                contentType
-                                            ),
+                                        contentType: dotContentTypeService.getContentTypeWithRender(
+                                            contentType,
+                                            inode
+                                        ),
                                         // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,

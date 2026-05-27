@@ -235,8 +235,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
 
 
 /**
@@ -348,12 +348,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public ESSearchResults esSearch(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
@@ -2381,29 +2383,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
                 //Search for related content in other versions of the same contentlet
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName,
                                 DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() == null) {
+            if (response.hits().hits().isEmpty()) {
                 return result;
             }
 
-            for (final SearchHit sh : response.getHits()) {
-                final Map<String, Object> sourceMap = sh.getSourceAsMap();
+            for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
+                final Map<String, Object> sourceMap = sh.sourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(
                             relationshipName));
@@ -2475,25 +2477,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() != null) {
-                for (final SearchHit sh : response.getHits()) {
-                    final Map<String, Object> sourceMap = sh.getSourceAsMap();
+            if (!response.hits().hits().isEmpty()) {
+                for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
+                    final Map<String, Object> sourceMap = sh.sourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
                         final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(

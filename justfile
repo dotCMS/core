@@ -1,4 +1,5 @@
 set positional-arguments := true
+import? 'justfile.local'
 home_dir := env_var('HOME')
 # Introduction and Setup
 # If homebrew is not installed, run the following command:
