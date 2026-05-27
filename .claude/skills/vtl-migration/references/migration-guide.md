@@ -2,13 +2,14 @@
 
 ## Table of Contents
 1. [The New DotCustomFieldApi](#the-new-dotcustomfieldapi)
-2. [Migration Rules](#migration-rules)
-3. [Styling with DaisyUI](#styling-with-daisyui)
-4. [Best Practices](#best-practices)
-5. [Step-by-Step Checklist](#step-by-step-checklist)
-6. [Common Pitfalls](#common-pitfalls)
-7. [Special Cases](#special-cases)
-8. [Complete Migration Examples](#complete-migration-examples)
+2. [Server-Side Velocity Context Variables](#server-side-velocity-context-variables)
+3. [Migration Rules](#migration-rules)
+4. [Styling with DaisyUI](#styling-with-daisyui)
+5. [Best Practices](#best-practices)
+6. [Step-by-Step Checklist](#step-by-step-checklist)
+7. [Common Pitfalls](#common-pitfalls)
+8. [Special Cases](#special-cases)
+9. [Complete Migration Examples](#complete-migration-examples)
 
 ---
 
@@ -56,6 +57,156 @@ DotCustomFieldApi.ready(() => {
 | `disable()` | Prevents user interaction and applies disabled styling |
 
 Always wrap all field access code inside `DotCustomFieldApi.ready()` to ensure the API is initialized.
+
+---
+
+## Server-Side Velocity Context Variables
+
+Custom field VTL templates can access **server-side context variables** that dotCMS injects into the Velocity context when rendering the field. These variables are resolved on the server before HTML reaches the browser. They are **not** JavaScript values and must not be confused with `DotCustomFieldApi.getField()`.
+
+### Available variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `$inode` | `String` | The contentlet's inode (version ID) |
+| `$identifier` | `String` | The contentlet's persistent identifier |
+| `$lang` | `long` | The contentlet's language ID |
+| `$contentlet` | `Contentlet` | The full Contentlet object |
+| `$structure` | `ContentType` | The content type (structure) |
+| `$field` | `Field` | The current field being rendered |
+
+### When each variable is available
+
+| Variable | New content | Existing content |
+|---|---|---|
+| `$structure` | Yes | Yes |
+| `$field` | Yes | Yes |
+| `$inode` | No | Yes |
+| `$identifier` | No | Yes |
+| `$lang` | No | Yes |
+| `$contentlet` | No | Yes |
+
+When creating new content, there is no contentlet yet — `$inode`, `$identifier`, `$lang`, and `$contentlet` are empty or unset. Always guard usage with `#if($utilMethods.isSet($inode))` when the template depends on contentlet context.
+
+### Rendering paths (new editor)
+
+Both new-editor rendering paths inject the same variables as the legacy editor:
+
+| Path | Endpoint / JSP | Notes |
+|---|---|---|
+| **Component mode** | `GET /api/v1/contenttype/render/id/{idOrVar}?inode={inode}` | Pass the contentlet inode as query param when editing existing content |
+| **Iframe mode** | `legacy-custom-field.jsp?inode={inode}` | Loads contentlet from query param and injects variables into Velocity context |
+
+The legacy editor (`edit_contentlet.jsp` + `EditContentletAction`) sets the same variables via `request.setAttribute`, which Velocity exposes automatically.
+
+### Legacy editor mapping
+
+| VTL variable | Legacy source |
+|---|---|
+| `$inode` | `edit_contentlet.jsp` → `request.setAttribute("inode", ...)` |
+| `$identifier` | `EditContentletAction.java` → `request.setAttribute("identifier", ...)` |
+| `$lang` | `EditContentletAction.java` → `request.setAttribute("lang", ...)` |
+| `$contentlet` | `edit_contentlet.jsp` → `request.setAttribute("contentlet", ...)` |
+| `$structure` | `edit_contentlet.jsp` → `request.setAttribute("structure", ...)` |
+| `$field` | `edit_contentlet.jsp` → `request.setAttribute("field", ...)` per field loop |
+
+Migrators do not need to change these variables — they work the same in both editors when the contentlet context is present.
+
+### Example 1: Debug / info panel
+
+Use this pattern to verify that all context variables resolve correctly:
+
+```html
+<p>
+  <strong>inode:</strong> $inode
+</p>
+<p>
+  <strong>identifier:</strong> $identifier
+</p>
+<p>
+  <strong>lang:</strong> $lang
+</p>
+<p>
+  <strong>contentlet:</strong> $contentlet
+</p>
+<p>
+  <strong>structure:</strong> $structure
+</p>
+<p>
+  <strong>field:</strong> $field
+</p>
+```
+
+When testing via REST API, call:
+
+```
+GET /api/v1/contenttype/render/id/{contentTypeVar}?inode={contentletInode}
+```
+
+The `rendered` property on each custom field in the response should show resolved values instead of literal `$inode`, `$structure`, etc.
+
+### Example 2: Conditional UI based on contentlet state
+
+Show different UI for published vs draft content:
+
+```html
+#if($utilMethods.isSet($contentlet))
+  #if($contentlet.isLive())
+    <p class="text-sm text-success">This content is published. Changes will create a new working version.</p>
+  #else
+    <p class="text-sm text-warning">This content is a draft.</p>
+  #end
+
+  <input type="hidden" id="contentIdentifier" value="$identifier" />
+  <input type="hidden" id="contentLang" value="$lang" />
+#else
+  <p class="text-sm text-base-content/70">Save the content first to enable advanced options.</p>
+#end
+```
+
+### Example 3: Use field metadata from `$field`
+
+Access properties of the current field being rendered:
+
+```html
+<p class="text-sm">
+  Field: <strong>$field.name</strong> (variable: <code>$field.variable</code>)
+</p>
+
+#if($utilMethods.isSet($field.defaultValue))
+  <p class="text-xs text-base-content/60">Default: $field.defaultValue</p>
+#end
+```
+
+### Example 4: Pass server values into JavaScript
+
+VTL runs on the server; JavaScript runs in the browser. To use contentlet context in JS, embed resolved values at render time:
+
+```html
+#if($utilMethods.isSet($inode))
+<script type="application/javascript">
+  const CONTENT_INODE = '$inode';
+  const CONTENT_IDENTIFIER = '$identifier';
+
+  DotCustomFieldApi.ready(() => {
+    // Use CONTENT_INODE in API calls, analytics, etc.
+    console.log('Editing content:', CONTENT_INODE);
+  });
+</script>
+#end
+```
+
+**Important:** Never assume `$inode` or `$identifier` exist on new content. Always wrap JS that depends on them in `#if($utilMethods.isSet($inode))`.
+
+### What to preserve during migration
+
+**DO NOT change:**
+- References to `$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`
+- VTL conditionals that guard on these variables
+- Hidden inputs or data attributes populated from these variables
+
+**DO change:**
+- Only the JavaScript API calls (`DotCustomFieldApi`, Dojo/Dijit) and styling approach — not the server-side VTL context usage
 
 ---
 
@@ -590,6 +741,7 @@ Be consistent when writing `<script>` tags in migrated VTL files:
 
 **DO NOT change:**
 - VTL variables: `${fieldId}`, `$maxChar`, `$variableName`
+- Server-side context variables: `$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`
 - Business logic and algorithms
 - HTML structure (except removing dojoType/dijit attributes)
 - Comments (but translate to English if written in another language)
