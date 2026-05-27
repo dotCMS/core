@@ -420,12 +420,13 @@ class DotFieldInterceptorManager {
 
                         const element = document.getElementById(variable);
                         if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+                            if (element.type === 'hidden') return;
                             const strValue = String(value ?? '');
                             if (element.setFromAngular) {
                                 element.setFromAngular(strValue);
-                            } else {
-                                element.value = strValue;
+                                return;
                             }
+                            element.value = strValue;
                             element.dispatchEvent(new Event('input', { bubbles: true }));
                             element.dispatchEvent(new Event('change', { bubbles: true }));
                         }
