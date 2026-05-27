@@ -34,10 +34,10 @@ import { ImagePropertiesPopoverComponent } from './components/image-popover/imag
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
-import { TableColumnPopoverComponent } from './components/table-handles/table-column-popover.component';
-import { TableRowPopoverComponent } from './components/table-handles/table-row-popover.component';
-import { TableSelectionPopoverComponent } from './components/table-handles/table-selection-popover.component';
+import { TableColumnPopoverComponent } from './components/table-popover/table-column-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
+import { TableRowPopoverComponent } from './components/table-popover/table-row-popover.component';
+import { TableSelectionPopoverComponent } from './components/table-popover/table-selection-popover.component';
 import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
