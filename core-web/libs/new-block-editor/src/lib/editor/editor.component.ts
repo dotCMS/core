@@ -36,6 +36,7 @@ import { SlashMenuComponent } from './components/slash-menu/slash-menu.component
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
 import { TableColumnPopoverComponent } from './components/table-handles/table-column-popover.component';
 import { TableRowPopoverComponent } from './components/table-handles/table-row-popover.component';
+import { TableSelectionPopoverComponent } from './components/table-handles/table-selection-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
 import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
@@ -158,6 +159,7 @@ function normalizeEditorContent(
         TablePopoverComponent,
         TableColumnPopoverComponent,
         TableRowPopoverComponent,
+        TableSelectionPopoverComponent,
         TablePropertiesPopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
@@ -227,6 +229,7 @@ function normalizeEditorContent(
                     <dot-table-popover [editor]="ed" />
                     <dot-table-column-popover [editor]="ed" />
                     <dot-table-row-popover [editor]="ed" />
+                    <dot-table-selection-popover [editor]="ed" />
                     <dot-table-properties-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />

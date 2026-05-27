@@ -90,12 +90,18 @@ export function createEditorExtensions(
                       cell: {
                           popovers: injector.get(EditorPopoverService),
                           columnAriaLabel: t('dot.block.editor.table.handle.column.aria-label'),
-                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label')
+                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label'),
+                          selectionAriaLabel: t(
+                              'dot.block.editor.table.handle.selection.aria-label'
+                          )
                       },
                       header: {
                           popovers: injector.get(EditorPopoverService),
                           columnAriaLabel: t('dot.block.editor.table.handle.column.aria-label'),
-                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label')
+                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label'),
+                          selectionAriaLabel: t(
+                              'dot.block.editor.table.handle.selection.aria-label'
+                          )
                       }
                   }),
                   TableActiveCellsPlugin

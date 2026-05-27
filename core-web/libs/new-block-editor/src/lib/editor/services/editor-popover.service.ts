@@ -6,6 +6,7 @@ export type PopoverId =
     | 'table'
     | 'table-column'
     | 'table-row'
+    | 'table-selection'
     | 'table-properties'
     | 'emoji'
     | 'asset-by-url';
@@ -151,6 +152,17 @@ export class EditorPopoverService {
         this.zone.run(() => {
             this.tableRowPayload.set(payload);
             this.activePopover.set({ id: 'table-row', clientRectFn });
+        });
+    }
+
+    /**
+     * Opens the multi-cell selection popover (merge cells / split cell). Anchored to the
+     * selection handle (right edge of the bottom-right cell of the active CellSelection).
+     * No payload — the popover reads `editor.can().mergeCells()` / `splitCell()` directly.
+     */
+    openTableSelection(clientRectFn: () => DOMRect | null): void {
+        this.zone.run(() => {
+            this.activePopover.set({ id: 'table-selection', clientRectFn });
         });
     }
 

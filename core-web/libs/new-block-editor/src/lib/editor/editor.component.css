@@ -297,11 +297,21 @@
     transform: translateY(-50%);
 }
 
+:host ::ng-deep .tiptap .dot-cell-handle--selection {
+    top: 50%;
+    right: -12px;
+    transform: translateY(-50%);
+}
+
 /*
  * Visibility rules — the TableActiveCellsPlugin marks every cell in the cursor's
  * column with `is-active-column` and every cell in the cursor's row with `is-active-row`.
+ * For multi-cell `CellSelection`, only the bottom-right cell of the selection gets
+ * `is-selection-anchor` (column / row decorations are skipped in that branch).
+ *
  * Column handle only shows on the first-row cell of the active column; row handle only
- * shows on the first cell of the active row.
+ * shows on the first cell of the active row; selection handle only shows on the chosen
+ * anchor cell.
  */
 :host ::ng-deep .tiptap tbody > tr:first-child > .is-active-column > .dot-cell-handle--col {
     display: inline-flex;
@@ -309,6 +319,19 @@
 
 :host ::ng-deep .tiptap tbody > tr > .is-active-row:first-child > .dot-cell-handle--row {
     display: inline-flex;
+}
+
+:host ::ng-deep .tiptap .is-selection-anchor > .dot-cell-handle--selection {
+    display: inline-flex;
+}
+
+/*
+ * Even-row-count selections: the plugin anchors to the cell at floor(N/2) from the top.
+ * Override the default `top: 50%` so the handle sits at the cell's top border — which is
+ * the boundary between the two middle rows = the selection's vertical center.
+ */
+:host ::ng-deep .tiptap .is-selection-anchor--edge > .dot-cell-handle--selection {
+    top: 0;
 }
 
 /* ─── Placeholders ──────────────────────────────────────── */

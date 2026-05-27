@@ -51,6 +51,7 @@ interface CellExtensionOptions {
     /** i18n labels for the handle buttons; supplied at extension-construction time. */
     columnAriaLabel: string;
     rowAriaLabel: string;
+    selectionAriaLabel: string;
 }
 
 const CELL_ATTRS_TO_SYNC = ['colspan', 'rowspan', 'colwidth', 'align', 'scope'] as const;
@@ -77,11 +78,16 @@ function makeCellNodeViewFactory(
 
         const colHandle = makeHandleButton('column', 'more_horiz', options.columnAriaLabel);
         const rowHandle = makeHandleButton('row', 'more_vert', options.rowAriaLabel);
+        const selectionHandle = makeHandleButton(
+            'selection',
+            'drag_indicator',
+            options.selectionAriaLabel
+        );
 
         const content = document.createElement('div');
         content.className = 'dot-cell-content';
 
-        cell.append(colHandle, rowHandle, content);
+        cell.append(colHandle, rowHandle, selectionHandle, content);
 
         const resolveCellPos = (): number | null => {
             const pos = typeof getPos === 'function' ? getPos() : null;
@@ -108,6 +114,15 @@ function makeCellNodeViewFactory(
                 popovers.openTableRow(() => rowHandle.getBoundingClientRect(), {
                     cellPos: pos
                 });
+            });
+            // The selection handle is only visible when this cell carries the
+            // `is-selection-anchor` decoration (multi-cell CellSelection). The CellSelection
+            // itself stays alive across the click via mousedown.preventDefault, so the merge
+            // / split commands invoked from the popover see the right selection.
+            selectionHandle.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                popovers.openTableSelection(() => selectionHandle.getBoundingClientRect());
             });
         }
 
@@ -146,13 +161,14 @@ function makeCellNodeViewFactory(
 }
 
 function makeHandleButton(
-    kind: 'column' | 'row',
+    kind: 'column' | 'row' | 'selection',
     icon: string,
     ariaLabel: string
 ): HTMLButtonElement {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `dot-cell-handle dot-cell-handle--${kind === 'column' ? 'col' : 'row'}`;
+    const modifier = kind === 'column' ? 'col' : kind === 'row' ? 'row' : 'selection';
+    button.className = `dot-cell-handle dot-cell-handle--${modifier}`;
     button.setAttribute('contenteditable', 'false');
     button.setAttribute('tabindex', '-1');
     button.setAttribute('aria-label', ariaLabel);
@@ -179,7 +195,8 @@ const DotTableCell = TableCell.extend<CellExtensionOptions>({
             ...this.parent?.(),
             popovers: null,
             columnAriaLabel: 'Column actions',
-            rowAriaLabel: 'Row actions'
+            rowAriaLabel: 'Row actions',
+            selectionAriaLabel: 'Selection actions'
         };
     },
     addNodeView() {
@@ -193,7 +210,8 @@ const DotTableHeader = TableHeader.extend<CellExtensionOptions>({
             ...this.parent?.(),
             popovers: null,
             columnAriaLabel: 'Column actions',
-            rowAriaLabel: 'Row actions'
+            rowAriaLabel: 'Row actions',
+            selectionAriaLabel: 'Selection actions'
         };
     },
     addAttributes() {
