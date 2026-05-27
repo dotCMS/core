@@ -117,7 +117,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -170,7 +170,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -223,7 +223,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2638,7 +2638,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{relatedContentTypeVarName}}\",\n       \"title\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"myImage\":\"{{imageContentIdentifier}}\"\n    }\n}",
+                  "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n       \"contentType\":\"{{relatedContentTypeVarName}}\",\n       \"title\":\"Content With Image\", \n       \"contentHost\":\"default\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"myImage\":\"{{imageContentIdentifier}}\"\n    }\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -2696,7 +2696,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{relationshipContentTypeVarName}}\",\n       \"title\":\"content related\",\n       \"rel\":\"{{contentImgIdentifier}}\",\n       \"indexPolicy\":\"WAIT_FOR\"\n    }\n}",
+                  "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n       \"contentType\":\"{{relationshipContentTypeVarName}}\",\n       \"title\":\"content related\",\n       \"rel\":\"{{contentImgIdentifier}}\",\n       \"indexPolicy\":\"WAIT_FOR\"\n    }\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -4488,7 +4488,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"hostFolder\": \"{{siteIdTestHost}}\",\n        \"title\": \"Test Page Host variables\",\n        \"url\": \"testpagehostvariables\",\n        \"template\":\"{{templateIdToPublishedHost}}\",\n        \"sortOrder\":1,\n        \"cachettl\":\"0\",\n        \"friendlyName\":\"testpagehostvariables\"\n\n    }\n}"
+              "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n        \"contentType\": \"htmlpageasset\",\n        \"hostFolder\": \"{{siteIdTestHost}}\",\n        \"title\": \"Test Page Host variables\",\n        \"url\": \"testpagehostvariables\",\n        \"template\":\"{{templateIdToPublishedHost}}\",\n        \"sortOrder\":1,\n        \"cachettl\":\"0\",\n        \"friendlyName\":\"testpagehostvariables\"\n\n    }\n}"
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
@@ -4600,7 +4600,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4652,7 +4652,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"textContent\",\n        \"contentHost\":\"default\",\n        \"body\":\"Text Content Body\"\n        \n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"textContent\",\n        \"contentHost\":\"default\",\n        \"body\":\"Text Content Body\"\n        \n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5118,7 +5118,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"First Test Page\",\n        \"url\": \"{{firstPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"First Test Page\",\n        \"cachettl\": 0\n    }\n}",
+              "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"First Test Page\",\n        \"url\": \"{{firstPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"First Test Page\",\n        \"cachettl\": 0\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5171,7 +5171,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Content\",\n        \"contentHost\": \"default\",\n        \"body\": \"Text Content Body\"\n    }\n}",
+              "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Content\",\n        \"contentHost\": \"default\",\n        \"body\": \"Text Content Body\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5335,7 +5335,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"Second Test Page\",\n        \"url\": \"{{secondPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"Second Test Page\",\n        \"cachettl\": 0\n    }\n}",
+              "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"Second Test Page\",\n        \"url\": \"{{secondPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"Second Test Page\",\n        \"cachettl\": 0\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5520,7 +5520,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{$randomBankAccount}}\",\n        \"url\":\"testPageCopy{{$randomBankAccount}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{$randomBankAccount}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{$randomBankAccount}}\",\n        \"url\":\"testPageCopy{{$randomBankAccount}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{$randomBankAccount}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5812,7 +5812,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPagePermission{{pagePost}}\",\n        \"url\":\"testPagePermission{{pagePost}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPagePermission{{pagePost}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+              "raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"languageId\": 1,\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPagePermission{{pagePost}}\",\n        \"url\":\"testPagePermission{{pagePost}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPagePermission{{pagePost}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6151,7 +6151,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"{{testPageTitle}}\",\n        \"url\": \"{{testPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"{{testPageTitle}}\",\n        \"cachettl\": 0\n    }\n}\n",
+              "raw": "{\n    \"contentlet\": {\n\t\t\"languageId\": 1,\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"{{testPageTitle}}\",\n        \"url\": \"{{testPageUrl}}\",\n        \"hostFolder\": \"default\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"{{testPageTitle}}\",\n        \"cachettl\": 0\n    }\n}\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7136,7 +7136,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
+          "raw": "{\n\t\"contentlet\":{\n\t\t\"languageId\": 1,\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"PageAsset SystemTemplate\",\n        \"url\": \"pageassetsystemtemplate\",\n        \"friendlyName\":\"pageassetsystemtemplate\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\n\t}\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -7276,43 +7276,7 @@
           "               console.log(jwt);",
           "           }",
           "       });",
-          "   }",
-          "",
-          "// [issue #35780] Ensure a valid default language once per run. Fresh test",
-          "// environments can have the LANG__404 sentinel (id=-1) as the default, which",
-          "// breaks every content-creating test that omits languageId (the server falls",
-          "// back to that bad default and FK-fails on insert). Force English (id=1) as",
-          "// the default so the whole collection runs against a valid language.",
-          "if (!pm.environment.get('defaultLanguageEnsured')) {",
-          "    const baseUrl = pm.environment.get('serverURL');",
-          "    const u = pm.environment.get('user');",
-          "    const p = pm.environment.get('password');",
-          "    const auth = Buffer.from(`${u}:${p}`).toString('base64');",
-          "    pm.sendRequest({",
-          "        url: `${baseUrl}/api/v2/languages/1/_makedefault`,",
-          "        method: 'PUT',",
-          "        header: {",
-          "            'accept': 'application/json',",
-          "            'content-type': 'application/json',",
-          "            'Authorization': `Basic ${auth}`",
-          "        },",
-          "        body: {",
-          "            mode: 'raw',",
-          "            raw: JSON.stringify({ fireTransferAssetsJob: false })",
-          "        }",
-          "    }, function (err, response) {",
-          "        if (err) {",
-          "            console.log('Ensure default language failed: ' + err);",
-          "            return;",
-          "        }",
-          "        if (response.code === 200) {",
-          "            pm.environment.set('defaultLanguageEnsured', 'true');",
-          "            console.log('Ensured default language English (id=1)');",
-          "        } else {",
-          "            console.log('Ensure default language returned HTTP ' + response.code);",
-          "        }",
-          "    });",
-          "}"
+          "   }"
         ]
       }
     },
