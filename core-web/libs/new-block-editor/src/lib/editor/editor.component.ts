@@ -34,10 +34,8 @@ import { ImagePropertiesPopoverComponent } from './components/image-popover/imag
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
-import { TableColumnPopoverComponent } from './components/table-popover/table-column-popover.component';
+import { TableHandlePopoverComponent } from './components/table-popover/table-handle-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
-import { TableRowPopoverComponent } from './components/table-popover/table-row-popover.component';
-import { TableSelectionPopoverComponent } from './components/table-popover/table-selection-popover.component';
 import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
@@ -157,9 +155,7 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TablePopoverComponent,
-        TableColumnPopoverComponent,
-        TableRowPopoverComponent,
-        TableSelectionPopoverComponent,
+        TableHandlePopoverComponent,
         TablePropertiesPopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
@@ -227,9 +223,7 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-popover [editor]="ed" />
-                    <dot-table-column-popover [editor]="ed" />
-                    <dot-table-row-popover [editor]="ed" />
-                    <dot-table-selection-popover [editor]="ed" />
+                    <dot-table-handle-popover [editor]="ed" />
                     <dot-table-properties-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />

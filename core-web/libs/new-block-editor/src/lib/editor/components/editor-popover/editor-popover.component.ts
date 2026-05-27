@@ -44,7 +44,13 @@ import { EditorPopoverService, type PopoverId } from '../../services/editor-popo
     `
 })
 export class EditorPopoverComponent {
-    readonly popoverId = input.required<PopoverId>();
+    /**
+     * Accepts a single popover id or an array of ids. The shell is "open" when the
+     * service's active popover matches any of the listed ids — used by the unified
+     * `dot-table-handle-popover` to host the column / row / selection variants under
+     * a single shell.
+     */
+    readonly popoverId = input.required<PopoverId | readonly PopoverId[]>();
 
     private readonly manager = inject(EditorPopoverService);
     private readonly el = inject(ElementRef<HTMLElement>);
@@ -52,8 +58,15 @@ export class EditorPopoverComponent {
     private readonly doc = inject(DOCUMENT);
     private readonly injector = inject(Injector);
 
-    protected readonly isOpen = computed(
-        () => this.manager.activePopover()?.id === this.popoverId()
+    /** True when the service's active id matches this shell's id (or any of them). */
+    private matchesActive(activeId: PopoverId | undefined): boolean {
+        if (activeId == null) return false;
+        const ids = this.popoverId();
+        return Array.isArray(ids) ? ids.includes(activeId) : ids === activeId;
+    }
+
+    protected readonly isOpen = computed(() =>
+        this.matchesActive(this.manager.activePopover()?.id)
     );
     protected readonly floatX = signal(0);
     protected readonly floatY = signal(0);
@@ -66,7 +79,7 @@ export class EditorPopoverComponent {
         // user scrolls instead of getting stranded at its initial viewport spot.
         effect((onCleanup) => {
             const active = this.manager.activePopover();
-            if (!active || active.id !== this.popoverId()) {
+            if (!active || !this.matchesActive(active.id)) {
                 untracked(() => this.positioned.set(false));
                 return;
             }
