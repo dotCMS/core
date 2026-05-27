@@ -15,33 +15,11 @@ import { BlockEditorNode } from '@dotcms/types';
   selector: 'app-callout',
   standalone: true,
   template: `
-    <aside class="callout">
-      <span class="callout__icon" aria-hidden="true">💡</span>
-      <p class="callout__text">{{ text }}</p>
+    <aside
+      class="flex items-start gap-3 my-4 py-4 px-5 rounded-lg border-l-4 border-pink-500 bg-pink-50">
+      <span class="text-xl leading-6" aria-hidden="true">💡</span>
+      <p class="m-0 italic text-pink-800">{{ text }}</p>
     </aside>
-  `,
-  styles: `
-    .callout {
-      display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
-      margin: 1rem 0;
-      padding: 1rem 1.25rem;
-      border-left: 4px solid hotpink;
-      border-radius: 0.5rem;
-      background: rgba(255, 105, 180, 0.08);
-    }
-
-    .callout__icon {
-      font-size: 1.25rem;
-      line-height: 1.5;
-    }
-
-    .callout__text {
-      margin: 0;
-      font-style: italic;
-      color: #9d174d;
-    }
   `,
 })
 export class CalloutComponent {
