@@ -18,6 +18,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [DotCMSLayoutBody](#dotcmslayoutbody)
     -   [DotCMSEditableText](#dotcmseditabletext)
     -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
+    -   [DotCMSBlockEditorRendererNative](#dotcmsblockeditorrenderernative)
     -   [DotCMSShowWhen](#dotcmsshowwhen)
     -   [DotCMSEditablePageService](#dotcmseditablepageservice)
 -   [Troubleshooting](#troubleshooting)
@@ -539,6 +540,8 @@ export class MyBannerComponent {
 
 ### DotCMSBlockEditorRenderer
 
+> ⚠️ **Deprecated.** Use [`DotCMSBlockEditorRendererNative`](#dotcmsblockeditorrenderernative) instead. The original renderer wraps every semantic tag in a custom element (for example, a dispatcher element sits between `<ul>` and its `<li>` children), which breaks the `list → listitem` relationship required by the HTML spec and assistive technology. `DotCMSBlockEditorRendererNative` keeps the **identical** public input API — migration is just swapping the tag and import. This component is retained for backward compatibility and will be removed in a future major version.
+
 `DotCMSBlockEditorRenderer` is a component for rendering [Block Editor](https://dev.dotcms.com/docs/block-editor) content from dotCMS with support for custom block renderers.
 
 | Input             | Type                 | Required | Description                                                                                                |
@@ -582,6 +585,54 @@ export class MyBannerComponent {
 
 📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/angular/src/lib/components/DotCMSBlockEditorRenderer).
 
+### DotCMSBlockEditorRendererNative
+
+`DotCMSBlockEditorRendererNative` is the accessible, semantic-DOM successor to [`DotCMSBlockEditorRenderer`](#dotcmsblockeditorrenderer). It renders [Block Editor](https://dev.dotcms.com/docs/block-editor) content as **clean semantic HTML** — `<ul><li><p>…</p></li></ul>` — with no custom wrapper elements between semantic tags.
+
+#### Why migrate
+
+The original renderer wraps every block in a custom element and places a recursive dispatcher element *between* a `<ul>` and its `<li>` children. That extra element breaks the `list → listitem` relationship that the HTML spec and assistive technology rely on, and accessibility scanners flag it as excessive nested wrapper elements. `DotCMSBlockEditorRendererNative` makes the host element the real semantic tag and recurses through `ng-template` outlets that render as HTML comment nodes (invisible to the accessibility tree), so `<li>` stays a true DOM child of `<ul>`.
+
+It exposes the **same inputs** and the **same `customRenderers` contract** as the deprecated component — migration is a one-line swap of the tag and import.
+
+| Input             | Type                 | Required | Description                                                                                                |
+|-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
+| `blocks`          | `BlockEditorContent` | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
+| `customRenderers` | `CustomRenderer`     | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
+| `class`           | `string`            | ❌       | CSS class to apply to the container                                                                        |
+| `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
+
+#### Usage
+
+```typescript
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
+
+const CUSTOM_RENDERERS = {
+    customBlock: import('./custom-block.component').then((c) => c.CustomBlockComponent),
+    h1: import('./custom-h1.component').then((c) => c.CustomH1Component)
+};
+
+@Component({
+    selector: 'app-your-component',
+    imports: [DotCMSBlockEditorRendererNativeComponent],
+    template: `
+        <dotcms-block-editor-renderer-native
+            [blocks]="contentlet.myBlockEditorField"
+            [customRenderers]="customRenderers()" />
+    `
+})
+export class MyBannerComponent {
+    @Input() contentlet: DotCMSBasicContentlet;
+    readonly customRenderers = signal(CUSTOM_RENDERERS);
+}
+```
+
+#### Recommendations
+
+-   Prefer this component over [`DotCMSBlockEditorRenderer`](#dotcmsblockeditorrenderer) for all new work.
+-   Should not be used with [`DotCMSEditableText`](#dotcmseditabletext).
+-   Take into account the CSS cascade can affect the look and feel of your blocks.
 
 ### DotCMSShowWhen
 

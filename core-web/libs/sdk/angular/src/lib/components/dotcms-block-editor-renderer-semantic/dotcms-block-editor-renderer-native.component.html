@@ -1,0 +1,186 @@
+@if ($blockEditorState().error && $isInEditMode()) {
+    <div data-testid="invalid-blocks-message">
+        {{ $blockEditorState().error }}
+    </div>
+} @else if (!$blockEditorState().error) {
+    <div [class]="class" [style]="style">
+        <ng-container *ngTemplateOutlet="nodeList; context: { $implicit: blocks.content }" />
+    </div>
+}
+
+<!-- Renders a list of nodes by dispatching each one. -->
+<ng-template #nodeList let-content>
+    @for (node of content; track node) {
+        <ng-container *ngTemplateOutlet="dispatch; context: { $implicit: node }" />
+    }
+</ng-template>
+
+<!--
+    Dispatches a single node to its semantic tag. The host ng-container of each
+    ngTemplateOutlet renders as an HTML comment node, so a list item stays a true
+    DOM child of its list element — the property that makes this AT-proof.
+-->
+<ng-template #dispatch let-node>
+    @if (customRenderers?.[node.type]) {
+        <ng-container
+            *ngTemplateOutlet="
+                customRender;
+                context: { customRender: customRenderers?.[node.type], node: node }
+            " />
+    } @else {
+        @switch (node.type) {
+            @case (BLOCKS.PARAGRAPH) {
+                <p dotParagraph [style]="node.attrs">
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </p>
+            }
+
+            @case (BLOCKS.TEXT) {
+                <dotcms-block-editor-renderer-text [marks]="node.marks" [text]="node.text || ''" />
+            }
+
+            @case (BLOCKS.HEADING) {
+                @switch (asLevel(node.attrs?.['level'])) {
+                    @case ('1') {
+                        <h1 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h1>
+                    }
+                    @case ('2') {
+                        <h2 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h2>
+                    }
+                    @case ('3') {
+                        <h3 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h3>
+                    }
+                    @case ('4') {
+                        <h4 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h4>
+                    }
+                    @case ('5') {
+                        <h5 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h5>
+                    }
+                    @case ('6') {
+                        <h6 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h6>
+                    }
+                    @default {
+                        <h1 [style]="node.attrs">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h1>
+                    }
+                }
+            }
+
+            @case (BLOCKS.BULLET_LIST) {
+                <ul dotBulletList>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </ul>
+            }
+
+            @case (BLOCKS.ORDERED_LIST) {
+                <ol dotOrderedList>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </ol>
+            }
+
+            @case (BLOCKS.LIST_ITEM) {
+                <li dotListItem>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </li>
+            }
+
+            @case (BLOCKS.BLOCK_QUOTE) {
+                <blockquote dotBlockQuote>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </blockquote>
+            }
+
+            @case (BLOCKS.CODE_BLOCK) {
+                <pre dotCodeBlock>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" /></pre>
+            }
+
+            @case (BLOCKS.HARDBREAK) {
+                <br />
+            }
+
+            @case (BLOCKS.HORIZONTAL_RULE) {
+                <hr />
+            }
+
+            @case (BLOCKS.DOT_IMAGE) {
+                <dotcms-block-editor-renderer-image [attrs]="node.attrs || {}" />
+            }
+
+            @case (BLOCKS.DOT_VIDEO) {
+                <dotcms-block-editor-renderer-video [attrs]="node.attrs || {}" />
+            }
+
+            @case (BLOCKS.TABLE) {
+                <dotcms-block-editor-renderer-table [content]="node.content" />
+            }
+
+            @case (BLOCKS.GRID_BLOCK) {
+                <dotcms-block-editor-renderer-grid-block
+                    [node]="node"
+                    [customRenderers]="customRenderers" />
+            }
+
+            @case (BLOCKS.DOT_CONTENT) {
+                <dotcms-block-editor-renderer-contentlet
+                    [node]="node"
+                    [customRenderers]="customRenderers" />
+            }
+
+            @default {
+                <dotcms-block-editor-renderer-unknown [node]="node" />
+            }
+        }
+    }
+</ng-template>
+
+<ng-template #customRender let-customRender="customRender" let-node="node">
+    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }" />
+</ng-template>

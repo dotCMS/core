@@ -1,13 +1,13 @@
 import { Component, computed, input, OnChanges, signal } from '@angular/core';
 
-import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular';
+import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
 import { BlogContentlet } from '../blog.component';
 import { UVE_MODE } from '@dotcms/types';
 import { NgOptimizedImage } from '@angular/common';
 import { enableBlockEditorInline, getUVEState } from '@dotcms/uve';
 @Component({
   selector: 'app-blog-post',
-  imports: [DotCMSBlockEditorRendererComponent, NgOptimizedImage],
+  imports: [DotCMSBlockEditorRendererNativeComponent, NgOptimizedImage],
   templateUrl: './blog-post.component.html',
   styleUrl: './blog-post.component.css',
 })
