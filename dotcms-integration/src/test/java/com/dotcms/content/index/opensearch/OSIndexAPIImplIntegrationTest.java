@@ -531,35 +531,55 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Given scenario: The cluster is reachable.
-     * Expected: {@link OSIndexAPIImpl#getClusterHealth()} returns a non-null map without throwing.
-     *           Once the method is fully implemented the map will carry real health data per index.
+     * Given scenario: A live index exists in OpenSearch.
+     * Expected: {@link OSIndexAPIImpl#getClusterHealth()} returns an entry for that index with
+     *           a non-null status string and non-negative shard/replica counts.
      */
     @Test
-    public void test_getClusterHealth_shouldReturnNonNull() {
+    public void test_getClusterHealth_shouldReturnHealthForCreatedIndex() throws Exception {
+        osIndexAPI.createIndex(IDX_LIVE, 1);
+
         final java.util.Map<String, com.dotcms.content.index.domain.ClusterIndexHealth> health =
                 osIndexAPI.getClusterHealth();
 
         assertNotNull("getClusterHealth must never return null", health);
-        Logger.info(this, "✅ test_getClusterHealth_shouldReturnNonNull passed"
-                + " – entries: " + health.size());
+        assertTrue("Health map must contain the live index", health.containsKey(IDX_LIVE));
+
+        final com.dotcms.content.index.domain.ClusterIndexHealth liveHealth = health.get(IDX_LIVE);
+        assertNotNull("Health status must not be null",      liveHealth.status());
+        assertFalse("Health status must not be empty",       liveHealth.status().isBlank());
+        assertTrue("numberOfShards must be positive",        liveHealth.numberOfShards()   > 0);
+        assertTrue("numberOfReplicas must be non-negative",  liveHealth.numberOfReplicas() >= 0);
+        Logger.info(this, "✅ test_getClusterHealth_shouldReturnHealthForCreatedIndex passed"
+                + " – status: " + liveHealth.status()
+                + ", shards: "  + liveHealth.numberOfShards()
+                + ", replicas: " + liveHealth.numberOfReplicas());
     }
 
     /**
-     * Given scenario: At least one index exists.
-     * Expected: {@link OSIndexAPIImpl#getIndicesStats()} returns a non-null map without throwing.
-     *           Once the method is fully implemented the map will carry real per-index statistics.
+     * Given scenario: Live and working indices exist in OpenSearch.
+     * Expected: {@link OSIndexAPIImpl#getIndicesStats()} returns an entry for each with a
+     *           non-negative document count, non-negative raw size, and non-empty size string.
      */
     @Test
-    public void test_getIndicesStats_shouldReturnNonNull() throws Exception {
+    public void test_getIndicesStats_shouldReturnStatsForCreatedIndices() throws Exception {
         osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(IDX_WORKING, 1);
 
         final java.util.Map<String, com.dotcms.content.index.domain.IndexStats> stats =
                 osIndexAPI.getIndicesStats();
 
         assertNotNull("getIndicesStats must never return null", stats);
-        Logger.info(this, "✅ test_getIndicesStats_shouldReturnNonNull passed"
-                + " – entries: " + stats.size());
+        assertTrue("Stats map must contain the live index",    stats.containsKey(IDX_LIVE));
+        assertTrue("Stats map must contain the working index", stats.containsKey(IDX_WORKING));
+
+        final com.dotcms.content.index.domain.IndexStats liveStats = stats.get(IDX_LIVE);
+        assertTrue("Document count must be non-negative", liveStats.documentCount() >= 0);
+        assertTrue("Raw size must be non-negative",       liveStats.sizeRaw()       >= 0);
+        assertNotNull("Human-readable size must not be null",  liveStats.size());
+        assertFalse("Human-readable size must not be empty",   liveStats.size().isBlank());
+        Logger.info(this, "✅ test_getIndicesStats_shouldReturnStatsForCreatedIndices passed"
+                + " – live: " + liveStats.documentCount() + " docs / " + liveStats.size());
     }
 
     /**
