@@ -44,7 +44,7 @@
     "slack_id": "U01NX13C0Q2"
   },
   {
-    "github_user": "swicken-dotcms",
+    "github_user": "swicken",
     "slack_id": "U01M8SU62NR"
   },
   {
@@ -130,5 +130,9 @@
   {
     "github_user": "hassandotcms",
     "slack_id": "U095M9B8HC6"
+  },
+  {
+    "github_user": "adrianjm-dotCMS",
+    "slack_id": "U09LGQVCBLK"
   }
 ]
