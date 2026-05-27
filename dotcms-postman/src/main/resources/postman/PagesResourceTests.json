@@ -283,7 +283,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": ["api", "v1", "page", "{{pageIdentifier}}", "content"]
             },
@@ -323,7 +323,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -332,6 +332,18 @@
                 "{{pageIdentifier}}",
                 "content",
                 "tree"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "Validate the content was added properly"
@@ -453,7 +465,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": ["api", "v1", "page", "{{pageIdentifier}}", "content"]
             },
@@ -514,7 +526,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -523,6 +535,18 @@
                 "{{pageIdentifier}}",
                 "content",
                 "tree"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "Validate the content was added properly"
@@ -2817,7 +2841,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{page_id}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{page_id}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": ["api", "v1", "page", "{{page_id}}", "content"]
                 },
@@ -2866,6 +2890,12 @@
                     {
                       "key": "depth",
                       "value": "2"
+                    }
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
                     }
                   ]
                 },
@@ -3385,7 +3415,7 @@
                   "raw": "[{\"identifier\":\"//default/application/containers/system/\",\"uuid\":\"1\",\"contentletsId\":[\"ffba6c6b2e90ce4dcc2a553c6b860822\",\"844cdd64de4fd9418613b3b53f860c6f\"]}]"
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/773c1d064bfedacf26986a67ee90b490/content",
+                  "raw": "{{serverURL}}/api/v1/page/773c1d064bfedacf26986a67ee90b490/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -3393,6 +3423,12 @@
                     "page",
                     "773c1d064bfedacf26986a67ee90b490",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 },
                 "description": "Reorder the page contents."
@@ -3527,7 +3563,7 @@
               "raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3535,6 +3571,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "@Path(\"{pageId}/content\")"
@@ -3581,7 +3623,7 @@
               "raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"d4ed1990-b151-42ca-9bca-0725b07260de\"]},{\"identifier\":\"//demo.dotcms.com/application/containers/default/\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\",\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"]}]"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3589,6 +3631,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "Adds Content to a Page, the container, template, page and contentlets are imported.\n\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = container Banner\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7e = Banner contentlet\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = Container as File Default\nf827c41a-5689-4733-b4d7-916d3a31c9c6 = Rich Text Contentlet\n7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7 = Widget Contentlet"
@@ -3624,7 +3672,7 @@
               "raw": "[{\"identifier\":\"5a07f889-4536-4956-aa6e-e7967969ec3f\",\"uuid\":\"1\",\"contentletsId\":[\"f827c41a-5689-4733-b4d7-916d3a31c9c6\"]}]"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3632,6 +3680,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "@Path(\"{pageId}/content\")"
@@ -3671,7 +3725,7 @@
               "raw": "[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentletsId\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentletsId\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+              "raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3679,6 +3733,12 @@
                 "page",
                 "2c12fe7e6-d338-49d5-973b-2d974d57015b",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "@Path(\"{pageId}/content\")"
@@ -3721,7 +3781,7 @@
               "raw": ""
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3729,6 +3789,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "@Path(\"{pageId}/content\")"
@@ -3771,7 +3837,7 @@
               "raw": "[{\"id222\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid22\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3779,6 +3845,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "@Path(\"{pageId}/content\")"
@@ -3829,7 +3901,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
+              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -3837,6 +3909,12 @@
                 "page",
                 "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             },
             "description": "This test is for when users make a request sending at the Body the same container and uuid diff times.\nThis will merge all those contentlets and save the page successfully."
@@ -4711,7 +4789,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": ["api", "v1", "page", "{{pageIdentifier}}", "content"]
             }
@@ -4757,7 +4835,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -4766,6 +4844,18 @@
                 "{{pageIdentifier}}",
                 "content",
                 "tree"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -4855,7 +4945,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -4864,6 +4954,12 @@
                 "{{pageIdentifier}}",
                 "content",
                 "tree"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -5003,7 +5099,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{pageDeepCopyIdentifier}}/content/tree",
+              "raw": "{{serverURL}}/api/v1/page/{{pageDeepCopyIdentifier}}/content/tree?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -5012,6 +5108,12 @@
                 "{{pageDeepCopyIdentifier}}",
                 "content",
                 "tree"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -5231,7 +5333,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -5239,6 +5341,12 @@
                 "page",
                 "{{firstPageIdentifier}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -5395,7 +5503,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{secondPageIdentifier}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{secondPageIdentifier}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -5403,6 +5511,12 @@
                 "page",
                 "{{secondPageIdentifier}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -6770,7 +6884,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{p1IdMovingLayoutBUG}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{p1IdMovingLayoutBUG}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -6778,6 +6892,12 @@
                 "page",
                 "{{p1IdMovingLayoutBUG}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
@@ -6883,7 +7003,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{p2IdMovingLayoutBUG}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{p2IdMovingLayoutBUG}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -6891,6 +7011,12 @@
                 "page",
                 "{{p2IdMovingLayoutBUG}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },
