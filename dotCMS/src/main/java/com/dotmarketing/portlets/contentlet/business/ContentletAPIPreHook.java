@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.index.ESCoupled;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -36,11 +35,8 @@ import java.util.Set;
  * return false then the method will throw an exception up the stack. Stopping the progress.
  * When possible you should always return true and let the methods go about their business.
  */
-@ESCoupled(
-    reason = "Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures. " +
-             "Remove hook methods when deprecated ContentletAPI signatures are removed at R7.",
-    remove = {"esSearch", "esSearchRaw"}
-)
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPreHook {
 
 	/**

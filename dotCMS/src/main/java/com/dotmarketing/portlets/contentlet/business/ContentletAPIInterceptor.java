@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.index.ESCoupled;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
@@ -65,11 +64,8 @@ import java.util.Set;
  * @since 1.6.5c
  *
  */
-@ESCoupled(
-    reason = "Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria. " +
-             "Remove ES-typed overloads and migrate to ContentSearchResults<T>.",
-    remove = {"esSearch", "esSearchRaw"}
-)
+// ES-DECOMMISSION: Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria.
+// Remove esSearch, esSearchRaw — migrate to ContentSearchResults<T>.
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();

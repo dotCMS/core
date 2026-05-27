@@ -14,18 +14,15 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.index.ESCoupled;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
+// ES-DECOMMISSION: Implements ActionListener<BulkResponse> and references ES bulk action types directly.
+// Decommission entire class — migrate callers to the vendor-neutral IndexBulkListener.
 @Deprecated(forRemoval = true)
-@ESCoupled(
-    reason = "Implements ActionListener<BulkResponse> and references ES bulk action types directly. " +
-             "Decommission entire class — migrate callers to the vendor-neutral IndexBulkListener."
-)
 class BulkActionListener implements ActionListener<BulkResponse> {
 
     BulkActionListener(final Map<String, ReindexEntry> workingRecords) {

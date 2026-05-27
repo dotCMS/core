@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.index.ESCoupled;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -40,11 +39,8 @@ import java.util.Set;
  * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI
  * methods except now they also take the return type as the first parameter.
  */
-@ESCoupled(
-    reason = "Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures. " +
-             "Remove hook methods when deprecated ContentletAPI signatures are removed at R7.",
-    remove = {"esSearch", "esSearchRaw"}
-)
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPostHook {
 
 	/**
