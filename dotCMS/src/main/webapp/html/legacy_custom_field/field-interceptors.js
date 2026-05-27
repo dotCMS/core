@@ -176,10 +176,36 @@ class DotFieldInterceptorManager {
         input.type = 'hidden';
         input.name = variable;
         input.id = variable;
+        input.setAttribute('data-dot-hidden', 'true');
         input.setAttribute('dojoType', 'dijit.form.TextBox');
         input.value = value || '';
         this.bodyElement.appendChild(input);
         return this.addSmartInterceptor(input, variable);
+    }
+
+    /**
+     * Finds the visible input or textarea for a field, excluding manager-owned hidden inputs.
+     * @param {string} variable - Field variable name
+     * @returns {HTMLInputElement|HTMLTextAreaElement|null}
+     */
+    findVisibleFieldElement(variable) {
+        const escaped = CSS.escape(variable);
+        const element = document.querySelector(
+            `#${escaped}:not([data-dot-hidden]), input[name="${variable}"]:not([type="hidden"]), textarea[name="${variable}"]`
+        );
+        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+            return element;
+        }
+        return null;
+    }
+
+    /**
+     * Dispatches input and change events so iframe listeners (jQuery, select2, etc.) react.
+     * @param {HTMLInputElement|HTMLTextAreaElement} element - Target element
+     */
+    dispatchFieldChangeEvents(element) {
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     /**
@@ -418,17 +444,16 @@ class DotFieldInterceptorManager {
                             dijitWidget.setValue(value);
                         }
 
-                        const element = document.getElementById(variable);
-                        if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
-                            if (element.type === 'hidden') return;
+                        // Text inputs and textareas only; select/checkbox/radio out of scope (#35839)
+                        const element = this.findVisibleFieldElement(variable);
+                        if (element) {
                             const strValue = String(value ?? '');
                             if (element.setFromAngular) {
                                 element.setFromAngular(strValue);
-                                return;
+                            } else {
+                                element.value = strValue;
                             }
-                            element.value = strValue;
-                            element.dispatchEvent(new Event('input', { bubbles: true }));
-                            element.dispatchEvent(new Event('change', { bubbles: true }));
+                            this.dispatchFieldChangeEvents(element);
                         }
                     });
                 });
