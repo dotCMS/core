@@ -146,10 +146,24 @@ function buildSelectionAnchorDecoration(
     const cellNode = tableNode.nodeAt(cellOffset);
     if (!cellNode) return null;
 
+    // For an even row count we'd normally use the `--edge` variant (handle at the top
+    // border of the lower-half cell, which lines up with the selection's vertical center).
+    // BUT when the anchor cell is **merged across that boundary** — i.e. the cell at the
+    // anchor row is the same cell as the one in the row above — the "boundary" is inside
+    // a single cell, not between cells. The handle at the cell's top border lands at the
+    // top of the merged cell, not at its center. Detect that case and fall back to the
+    // centered variant so `top: 50%` places the handle at the merged cell's visual middle
+    // — which IS the selection's vertical center for a single merged-cell selection.
     const isOdd = rowCount % 2 === 1;
-    const className = isOdd
-        ? 'is-selection-anchor'
-        : 'is-selection-anchor is-selection-anchor--edge';
+    const anchorCellSpansBoundary =
+        !isOdd &&
+        anchorRow > rect.top &&
+        map.map[(anchorRow - 1) * map.width + anchorCol] === cellOffset;
+
+    const className =
+        isOdd || anchorCellSpansBoundary
+            ? 'is-selection-anchor'
+            : 'is-selection-anchor is-selection-anchor--edge';
 
     return Decoration.node(cellPos, cellPos + cellNode.nodeSize, { class: className });
 }
