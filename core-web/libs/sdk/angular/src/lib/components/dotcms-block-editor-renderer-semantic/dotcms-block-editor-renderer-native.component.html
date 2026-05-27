@@ -37,7 +37,11 @@
             }
 
             @case (BLOCKS.TEXT) {
-                <dotcms-block-editor-renderer-text [marks]="node.marks" [text]="node.text || ''" />
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: node.marks, text: node.text || '' }
+                    " />
             }
 
             @case (BLOCKS.HEADING) {
@@ -183,4 +187,87 @@
 
 <ng-template #customRender let-customRender="customRender" let-node="node">
     <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }" />
+</ng-template>
+
+<!--
+    Renders a text node and its marks as native inline elements (<strong>, <u>,
+    <em>, <a>, ...) with no wrapper element. Recurses through itself (rendered as a
+    comment node) one mark at a time, so stacked marks nest directly:
+    <u><strong>text</strong></u>.
+-->
+<ng-template #textRun let-marks="marks" let-text="text">
+    @switch (marks?.[0]?.type) {
+        @case ('link') {
+            <a
+                [attr.href]="markAttrs(marks)['href'] || ''"
+                [attr.target]="markAttrs(marks)['target'] || ''"
+                [attr.title]="markAttrs(marks)['title'] || null"
+                [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
+                [attr.rel]="markAttrs(marks)['rel'] || null"
+                [class]="markAttrs(marks)['class'] || null">
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </a>
+        }
+        @case ('bold') {
+            <strong>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </strong>
+        }
+        @case ('underline') {
+            <u>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </u>
+        }
+        @case ('italic') {
+            <em>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </em>
+        }
+        @case ('strike') {
+            <s>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </s>
+        }
+        @case ('superscript') {
+            <sup>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </sup>
+        }
+        @case ('subscript') {
+            <sub>
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            </sub>
+        }
+        @default {
+            {{ text }}
+        }
+    }
 </ng-template>

@@ -1,7 +1,7 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, Input, signal } from '@angular/core';
 
-import { UVE_MODE, BlockEditorNode } from '@dotcms/types';
+import { UVE_MODE, BlockEditorNode, BlockEditorMark } from '@dotcms/types';
 import { BlockEditorState, BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
 import { isValidBlocks } from '@dotcms/uve/internal';
@@ -19,7 +19,6 @@ import { DotContentletBlock } from '../dotcms-block-editor-renderer/blocks/dot-c
 import { DotGridBlock } from '../dotcms-block-editor-renderer/blocks/grid-block.component';
 import { DotImageBlock } from '../dotcms-block-editor-renderer/blocks/image.component';
 import { DotTableBlock } from '../dotcms-block-editor-renderer/blocks/table.component';
-import { DotTextBlock } from '../dotcms-block-editor-renderer/blocks/text.component';
 import { DotUnknownBlockComponent } from '../dotcms-block-editor-renderer/blocks/unknown.component';
 import { DotVideoBlock } from '../dotcms-block-editor-renderer/blocks/video.component';
 import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-editor-renderer.component';
@@ -61,7 +60,6 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
         DotSemanticListItem,
         DotSemanticBlockQuote,
         DotSemanticCodeBlock,
-        DotTextBlock,
         DotImageBlock,
         DotVideoBlock,
         DotTableBlock,
@@ -97,5 +95,15 @@ export class DotCMSBlockEditorRendererNativeComponent {
      */
     asLevel(level: number | string | undefined): string {
         return level != null ? String(level) : '1';
+    }
+
+    /** The marks after the current (outermost) one — used to recurse inward. */
+    restMarks(marks: BlockEditorMark[] | undefined): BlockEditorMark[] {
+        return marks?.slice(1) ?? [];
+    }
+
+    /** The attributes of the current (outermost) mark. */
+    markAttrs(marks: BlockEditorMark[] | undefined): Record<string, string> {
+        return (marks?.[0]?.attrs as Record<string, string>) || {};
     }
 }

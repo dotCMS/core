@@ -97,6 +97,58 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             ]);
             expect(spectator.query('strong')).toBeTruthy();
         });
+
+        it('should nest stacked marks with no wrapper element between them', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'Few',
+                            marks: [
+                                { type: 'underline', attrs: {} },
+                                { type: 'bold', attrs: {} }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            // <u> directly contains <strong> directly containing the raw text —
+            // no dotcms-block-editor-renderer*-text element anywhere.
+            const u = spectator.query('u');
+            expect(u).toBeTruthy();
+            expect((u?.children[0] as HTMLElement)?.tagName.toLowerCase()).toBe('strong');
+            expect(u?.querySelector('strong')?.textContent?.trim()).toBe('Few');
+            expect(spectator.query('dotcms-block-editor-renderer-native-text')).toBeNull();
+            expect(spectator.query('dotcms-block-editor-renderer-text')).toBeNull();
+        });
+
+        it('should render a link mark as a native <a> with its class', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'link',
+                            marks: [
+                                {
+                                    type: 'link',
+                                    attrs: { href: '/foo', class: 'cta' }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            const a = spectator.query('a');
+            expect(a).toBeTruthy();
+            expect(a?.getAttribute('href')).toBe('/foo');
+            expect(a?.classList.contains('cta')).toBe(true);
+        });
     });
 
     describe('Headings', () => {
