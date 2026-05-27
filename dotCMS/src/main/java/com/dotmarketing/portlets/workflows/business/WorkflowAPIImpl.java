@@ -2768,6 +2768,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		).build();
 		}catch (Exception e){
 			final Throwable rootCause = ExceptionUtil.getRootCause(e);
+			// ES-DECOMMISSION (Phase 3): Migration to OpenSearch was evaluated here.
+			// No typed equivalent of QueryPhaseExecutionException exists in the OpenSearch Java client 3.x —
+			// the window-limit condition surfaces as OpenSearchException with a structured error body,
+			// but detecting it at this call-site would require parsing error messages, which is fragile.
+			// Decision: keep this ES-specific check as-is until Phase 3, when the ES layer is removed
+			// and the catch block is replaced or dropped entirely alongside ContentletAPI cleanup.
 			if(rootCause instanceof QueryPhaseExecutionException){
 				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
 				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
