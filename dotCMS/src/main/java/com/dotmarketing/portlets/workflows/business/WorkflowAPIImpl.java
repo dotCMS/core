@@ -176,7 +176,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.felix.framework.OSGIUtil;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -2767,19 +2766,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				contentletAPI.search(luceneQueryWithSteps, limit, offset, null, user, !RESPECT_FRONTEND_ROLES)
 		).build();
 		}catch (Exception e){
-			final Throwable rootCause = ExceptionUtil.getRootCause(e);
-			// ES-DECOMMISSION (Phase 3): Migration to OpenSearch was evaluated here.
-			// No typed equivalent of QueryPhaseExecutionException exists in the OpenSearch Java client 3.x —
-			// the window-limit condition surfaces as OpenSearchException with a structured error body,
-			// but detecting it at this call-site would require parsing error messages, which is fragile.
-			// Decision: keep this ES-specific check as-is until Phase 3, when the ES layer is removed
-			// and the catch block is replaced or dropped entirely alongside ContentletAPI cleanup.
-			if(rootCause instanceof QueryPhaseExecutionException){
-				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
-				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
-			} else {
-				Logger.error(getClass(),"Unexpected Error fetching contentlets from ES", e);
-			}
+			// A single generic message covers both the window-limit case (offset > max_result_window)
+			// and any other unexpected search failure. The ES-specific QueryPhaseExecutionException
+			// branch was removed because: (a) it never fires via the REST client — the client wraps
+			// all server errors as ElasticsearchStatusException — and (b) no typed OS equivalent exists
+			// in OpenSearch Java client 3.x. Detection at this call-site would require fragile message
+			// parsing. Full vendor-neutral handling belongs at the factory layer (Phase 3).
+			Logger.warnAndDebug(getClass(),
+					String.format("Unexpected error fetching contentlets at offset=%d — "
+							+ "possibly an index window-limit exceeded if offset surpasses max_result_window. %s",
+							offset, e.getMessage()), e);
 		}
 
 		return Collections.emptyList();
