@@ -76,9 +76,13 @@ class VertexAiModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public StreamingChatModel buildStreamingChatModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
-        if (config.timeout() != null || config.maxRetries() != null) {
+        if (config.timeout() != null) {
             Logger.warn(VertexAiModelProviderStrategy.class,
-                    "timeout and maxRetries are not applied to Vertex AI streaming providers and will be ignored");
+                    "timeout is not supported for Vertex AI streaming providers and will be ignored");
+        }
+        if (config.maxRetries() != null) {
+            Logger.warn(VertexAiModelProviderStrategy.class,
+                    "maxRetries is not supported for Vertex AI streaming providers and will be ignored");
         }
         if (config.credentialsJson() != null && !config.credentialsJson().isBlank()) {
             Logger.debug(VertexAiModelProviderStrategy.class, "building streaming chat model for Vertex AI with credentialsJson auth");
@@ -133,7 +137,7 @@ class VertexAiModelProviderStrategy implements ModelProviderStrategy {
                 builder.setCredentials(credentials);
             } catch (final IOException e) {
                 throw new IllegalArgumentException(
-                        "vertex_ai: credentialsJson is not valid", e);
+                        "vertex_ai: failed to parse credentialsJson", e);
             }
         } else {
             Logger.debug(VertexAiModelProviderStrategy.class, "authenticating Vertex AI with Application Default Credentials");
