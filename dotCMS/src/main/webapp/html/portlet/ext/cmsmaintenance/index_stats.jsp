@@ -122,16 +122,20 @@ if (!"null".equals(dbOsReindexLive)   && !"n/a".equals(dbOsReindexLive))     osS
 // Per-index: determine provider origin
 Map<String, String> indexOrigin = new LinkedHashMap<>();
 for (String idx : indices) {
-    boolean inEs    = esStoreNames.contains(idx);
-    boolean inOs    = osStoreNames.contains(idx);
+    String  bare      = stripCluster.apply(idx);
+    boolean inEs      = esStoreNames.contains(bare);
+    boolean inOs      = osStoreNames.contains(bare);
     boolean hasStats  = indexInfo.get(idx) != null;
     boolean hasHealth = map.get(idx) != null;
+    boolean isClosed  = closedIndices.contains(idx);
     String origin;
-    if (inEs && inOs)        origin = "ES-store + OS-store (same name, deduped)";
-    else if (inEs)           origin = "ES-store (indicies table)";
-    else if (inOs)           origin = "OS-store (versioned_indices table)";
-    else if (hasStats)       origin = "ES-cluster only (not in DB — ORPHAN?)";
-    else                     origin = "UNKNOWN — not in ES-store, not in OS-store, no ES stats";
+    if (inEs && inOs)           origin = "ES-store + OS-store (same name, deduped)";
+    else if (inEs)              origin = "ES-store (indicies table)";
+    else if (inOs)              origin = "OS-store (versioned_indices table)";
+    else if (hasStats)          origin = "Stale ES index (in cluster, not in active DB — orphan)";
+    else if (hasHealth && isClosed) origin = "Stale CLOSED ES index (closed in cluster, not in DB)";
+    else if (hasHealth)         origin = "Stale ES index (in cluster health, no stats — possibly closed)";
+    else                        origin = "UNKNOWN — not found in any data source";
     indexOrigin.put(idx, origin);
 }
 
