@@ -110,7 +110,10 @@ export class AiImagePromptFormComponent implements OnChanges {
         this.form = new FormGroup({
             text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
             type: new FormControl(PromptType.INPUT, Validators.required),
-            size: new FormControl('1024x1024', Validators.required)
+            size: new FormControl('1024x1024', [
+                Validators.required,
+                Validators.pattern(/^\d+x\d+$/)
+            ])
         });
 
         const typeControl = this.form.get('type');

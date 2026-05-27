@@ -14,7 +14,7 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAIImageOrientation, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 
 import {
     DotEmptyContainerComponent,
@@ -52,10 +52,10 @@ export class AiImagePromptGalleryComponent implements OnChanges {
     activeImageIndex = 0;
 
     /**
-     * The orientation of the images. helps to define the initial placeholder
+     * The image size string (e.g. "1024x1024"). Used to set the placeholder CSS class.
      */
     @Input()
-    orientation = DotAIImageOrientation.HORIZONTAL;
+    orientation = '1024x1024';
 
     /**
      * An event that is emitted when the active image index changes.

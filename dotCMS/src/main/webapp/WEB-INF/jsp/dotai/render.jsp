@@ -358,7 +358,7 @@
                     </tr>
                     <tr>
                         <th style="width:30%"><b>Size:</b></th>
-                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024" style="min-width:200px;"></td>
+                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024" pattern="^\d+x\d+$" title="Format: widthxheight (e.g. 1024x1024)" style="min-width:200px;"></td>
                     </tr>
                     <tr>
                         <td colspan="2" style="text-align: center">
