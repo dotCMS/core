@@ -43,6 +43,11 @@ export class BlogPostComponent implements OnChanges {
     ),
     Destination: import('./customRenderers/destination/destination.component').then(
       (c) => c.DestinationComponent,
+    ),
+    // Override the built-in `bulletList` block with a custom renderer
+    // (hot-pink bullets) to demonstrate customRenderers on the native renderer.
+    bulletList: import('./customRenderers/bullet-list/bullet-list.component').then(
+      (c) => c.BulletListComponent,
     )
   };
 
