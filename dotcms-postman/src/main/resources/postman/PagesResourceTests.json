@@ -2891,12 +2891,6 @@
                       "key": "depth",
                       "value": "2"
                     }
-                  ],
-                  "query": [
-                    {
-                      "key": "language_id",
-                      "value": "1"
-                    }
                   ]
                 },
                 "description": "Check the metadata of the related content, it should not be null and have the correct values"
