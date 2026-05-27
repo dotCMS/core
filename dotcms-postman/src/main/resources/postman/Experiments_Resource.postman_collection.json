@@ -1393,7 +1393,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -1401,6 +1401,12 @@
                     "page",
                     "{{page_version_keep_contentlet}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -1640,7 +1646,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?variantName=dotexperiment-{{experimentShortId}}-variant-1",
+                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?variantName=dotexperiment-{{experimentShortId}}-variant-1&language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -1653,6 +1659,10 @@
                     {
                       "key": "variantName",
                       "value": "dotexperiment-{{experimentShortId}}-variant-1"
+                    },
+                    {
+                      "key": "language_id",
+                      "value": "1"
                     }
                   ]
                 }
@@ -2371,7 +2381,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -2379,6 +2389,12 @@
                     "page",
                     "{{add_contentlet_default_specific_variant_page_id}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -2692,7 +2708,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -2700,6 +2716,12 @@
                     "page",
                     "{{add_contentlet_default_specific_variant_page_id}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -12818,7 +12840,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -12826,6 +12848,12 @@
                 "page",
                 "{{page_version_spanish_content}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },

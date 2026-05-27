@@ -252,12 +252,17 @@ export function renderSlack(
 }
 
 /** Build the four-bucket count line. Each cell deep-links to its bucket
- *  anchor on the detail page when detailUrl is set. */
+ *  anchor on the detail page when detailUrl is set.
+ *
+ *  GitHub's markdown sanitizer prefixes anchor ids in the job summary with
+ *  `user-content-`, so the working fragment is `#user-content-<anchor>` even
+ *  though the source markdown declares `<a id="<anchor>">`. Linking to the
+ *  bare `#<anchor>` lands at the top of the page. */
 function slackCounts(s: ReleaseQAReport['summary'], detailUrl?: string): string {
   const cell = (label: string, n: number, key: BucketKey): string => {
     const text = `${label}: ${n}`;
     if (!detailUrl) return text;
-    return `<${detailUrl}#${STATUS_HEADERS[key].anchor}|${text}>`;
+    return `<${detailUrl}#user-content-${STATUS_HEADERS[key].anchor}|${text}>`;
   };
   return [
     cell('failed QA', s.failed, 'failed'),
