@@ -38,10 +38,11 @@ export class BlogPostComponent implements OnChanges {
     Activity: import('./customRenderers/activity/activity.component').then(
       (c) => c.ActivityComponent,
     ),
-    // Override the built-in `bulletList` block with a custom renderer
-    // (hot-pink bullets) to demonstrate customRenderers on the native renderer.
-    bulletList: import('./customRenderers/bullet-list/bullet-list.component').then(
-      (c) => c.BulletListComponent,
+    // Override the built-in `blockquote` block with a self-contained custom
+    // renderer (a 💡 callout card) to demonstrate customRenderers on the
+    // native renderer.
+    blockquote: import('./customRenderers/callout/callout.component').then(
+      (c) => c.CalloutComponent,
     ),
   };
 
