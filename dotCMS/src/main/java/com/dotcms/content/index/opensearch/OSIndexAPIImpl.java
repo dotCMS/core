@@ -362,14 +362,71 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public Map<String, com.dotcms.content.index.domain.IndexStats> getIndicesStats() {
-        Logger.info(this.getClass(), "getIndicesStats not yet implemented for OpenSearch");
-        return new HashMap<>();
+        try {
+            final org.opensearch.client.opensearch.indices.IndicesStatsResponse response =
+                    clientProvider.getClient().indices()
+                            .stats(r -> r.index(clusterPrefix.get() + "*")
+                                        .expandWildcards(ExpandWildcard.Open));
+            final Map<String, com.dotcms.content.index.domain.IndexStats> result = new HashMap<>();
+            for (final Map.Entry<String, org.opensearch.client.opensearch.indices.stats.IndicesStats> entry
+                    : response.indices().entrySet()) {
+                final String fullName = entry.getKey();
+                if (!hasClusterPrefix(fullName)) {
+                    continue;
+                }
+                final String name = removeClusterIdFromName(fullName);
+                final org.opensearch.client.opensearch.indices.stats.IndexStats primaries =
+                        entry.getValue().primaries();
+                final long count    = primaries.docs()  != null ? primaries.docs().count()          : 0L;
+                final long rawBytes = primaries.store() != null ? primaries.store().sizeInBytes()    : 0L;
+                result.put(name, com.dotcms.content.index.domain.IndexStats.builder()
+                        .indexName(name)
+                        .documentCount(count)
+                        .sizeRaw(rawBytes)
+                        .size(toHumanReadableSize(rawBytes))
+                        .build());
+            }
+            return result;
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error fetching OS indices stats: " + e.getMessage(), e);
+            return new HashMap<>();
+        }
     }
 
     @Override
     public Map<String, ClusterIndexHealth> getClusterHealth() {
-        Logger.info(this.getClass(), "getClusterHealth not yet fully implemented for OpenSearch");
-        return new HashMap<>();
+        try {
+            final org.opensearch.client.opensearch.cluster.HealthResponse response =
+                    clientProvider.getClient().cluster()
+                            .health(r -> r.index(clusterPrefix.get() + "*")
+                                         .level(org.opensearch.client.opensearch.cluster.health.ClusterHealthLevel.Indices));
+            final Map<String, ClusterIndexHealth> result = new HashMap<>();
+            for (final Map.Entry<String, org.opensearch.client.opensearch.cluster.health.IndexHealthStats> entry
+                    : response.indices().entrySet()) {
+                final String fullName = entry.getKey();
+                if (!hasClusterPrefix(fullName)) {
+                    continue;
+                }
+                final String name = removeClusterIdFromName(fullName);
+                final org.opensearch.client.opensearch.cluster.health.IndexHealthStats health = entry.getValue();
+                result.put(name, ClusterIndexHealth.builder()
+                        .numberOfShards(health.numberOfShards())
+                        .numberOfReplicas(health.numberOfReplicas())
+                        .status(health.status() != null ? health.status().name() : "n/a")
+                        .build());
+            }
+            return result;
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error fetching OS cluster health: " + e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
+    private static String toHumanReadableSize(final long bytes) {
+        if (bytes < 1_024L)         return bytes + "b";
+        if (bytes < 1_048_576L)     return String.format("%.1fkb", bytes / 1_024.0);
+        if (bytes < 1_073_741_824L) return String.format("%.1fmb", bytes / 1_048_576.0);
+        return                             String.format("%.1fgb", bytes / 1_073_741_824.0);
     }
 
     @Override

@@ -129,9 +129,23 @@ public class IndexAPIImpl implements IndexAPI {
     // Read operations — uniform pattern: router.read(impl -> ...)
     // -------------------------------------------------------------------------
 
+    /**
+     * Returns the merged index-stats map from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as
+     * {@link #getClusterHealth()}. In dual-write phases (Phase 1/2) stats are collected
+     * from both ES and OS so that OS indices appear with real data in the portlet.
+     * On key collision the OS entry wins.</p>
+     */
     @Override
     public Map<String, IndexStats> getIndicesStats() {
-        return router.read(IndexAPI::getIndicesStats);
+        final List<IndexAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.get(0).getIndicesStats();
+        }
+        final Map<String, IndexStats> merged = new HashMap<>(esImpl.getIndicesStats());
+        merged.putAll(osImpl.getIndicesStats());
+        return merged;
     }
 
     @Override
