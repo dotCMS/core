@@ -14,37 +14,37 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
             @if (attrs?.['caption']) {
                 <caption>{{ attrs?.['caption'] }}</caption>
             }
-            <thead>
-                @for (rowNode of content?.slice(0, 1); track rowNode.type) {
-                    <tr>
-                        @for (cellNode of rowNode.content; track cellNode.type) {
-                            <th
-                                [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
-                                [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1"
-                                [attr.scope]="cellNode.attrs?.['scope'] || null">
-                                <ng-container
-                                    *ngComponentOutlet="
-                                        blockEditorItem;
-                                        inputs: { content: cellNode.content }
-                                    " />
-                            </th>
-                        }
-                    </tr>
-                }
-            </thead>
             <tbody>
-                @for (rowNode of content?.slice(1); track rowNode.type) {
+                @for (rowNode of content; track $index) {
                     <tr>
-                        @for (cellNode of rowNode.content; track cellNode.type) {
-                            <td
-                                [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
-                                [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
-                                <ng-container
-                                    *ngComponentOutlet="
-                                        blockEditorItem;
-                                        inputs: { content: cellNode.content }
-                                    " />
-                            </td>
+                        @for (cellNode of rowNode.content; track $index) {
+                            <!--
+                                Cell type — not row index — decides th vs td. Matches the
+                                VTL renderer (storyblock/render.vtl) so headless markup
+                                stays consistent with server-rendered pages.
+                            -->
+                            @if (cellNode.type === 'tableHeader') {
+                                <th
+                                    [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                    [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1"
+                                    [attr.scope]="cellNode.attrs?.['scope'] || null">
+                                    <ng-container
+                                        *ngComponentOutlet="
+                                            blockEditorItem;
+                                            inputs: { content: cellNode.content }
+                                        " />
+                                </th>
+                            } @else {
+                                <td
+                                    [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                    [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
+                                    <ng-container
+                                        *ngComponentOutlet="
+                                            blockEditorItem;
+                                            inputs: { content: cellNode.content }
+                                        " />
+                                </td>
+                            }
                         }
                     </tr>
                 }
