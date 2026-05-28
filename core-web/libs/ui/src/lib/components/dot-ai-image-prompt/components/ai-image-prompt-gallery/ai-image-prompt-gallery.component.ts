@@ -55,7 +55,7 @@ export class AiImagePromptGalleryComponent implements OnChanges {
      * The image size string (e.g. "1024x1024"). Used to set the placeholder CSS class.
      */
     @Input()
-    orientation = '1024x1024';
+    size = '1024x1024';
 
     /**
      * An event that is emitted when the active image index changes.

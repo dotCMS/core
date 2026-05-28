@@ -9,7 +9,6 @@ import {
     DotCMSContentlet,
     AiPluginResponse,
     DotAIImageContent,
-    DotAIImageOrientation,
     DotAIImageResponse,
     DotAiProviderConfig
 } from '@dotcms/dotcms-models';
@@ -80,7 +79,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = DotAIImageOrientation.HORIZONTAL
+        size: string = '1024x1024'
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
