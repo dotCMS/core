@@ -1140,7 +1140,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: expect.stringContaining('url=index')
+                        url: expect.stringMatching(/^\/dotAdmin\/#.*url=index/)
                     })
                 );
             });

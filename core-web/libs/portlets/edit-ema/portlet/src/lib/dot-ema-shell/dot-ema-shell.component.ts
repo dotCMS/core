@@ -214,6 +214,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (page && status === UVE_STATUS.LOADED) {
             // untracked: prevents URL-only signal changes from re-triggering the breadcrumb.
             const url = untracked(() => {
+                if (!this.uveStore.pageParams()) return null;
+
                 const params = this.uveStore.pageFriendlyParams();
                 const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
                 const cleanedParams = normalizeQueryParams(params, baseClientHost);
@@ -222,13 +224,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 return `/dotAdmin/#${urlTree.toString()}`;
             });
 
-            this.#globalStore.addNewBreadcrumb({
-                label: page.title,
-                url,
-                id: `${page.identifier}`
-            });
+            if (url) {
+                this.#globalStore.addNewBreadcrumb({
+                    label: page.title,
+                    url,
+                    id: `${page.identifier}`
+                });
+            }
         }
     });
+
     ngOnInit(): void {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
