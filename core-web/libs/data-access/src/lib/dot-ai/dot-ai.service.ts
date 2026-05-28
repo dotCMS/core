@@ -79,7 +79,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = '1024x1024'
+        size = '1024x1024'
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
