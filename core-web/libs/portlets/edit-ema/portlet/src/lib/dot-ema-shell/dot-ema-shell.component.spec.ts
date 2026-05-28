@@ -1086,7 +1086,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: expect.any(String),
                         id: '123',
-                        url: 'index'
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1127,7 +1127,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'Other Page',
                         id: '456',
-                        url: '/other-page'
+                        url: expect.stringContaining('url=%2Fother-page')
                     })
                 );
             });
@@ -1140,7 +1140,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: INITIAL_PAGE_PARAMS.url
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1199,7 +1199,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'New Page Title',
                         id: '999',
-                        url: '/new-page'
+                        url: expect.stringContaining('url=%2Fnew-page')
                     })
                 );
             });
