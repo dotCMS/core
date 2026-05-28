@@ -597,10 +597,10 @@ It exposes the **same inputs** and the **same `customRenderers` contract** as th
 
 | Input             | Type                 | Required | Description                                                                                                |
 |-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
-| `blocks`          | `BlockEditorContent` | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
-| `customRenderers` | `CustomRenderer`     | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
-| `class`           | `string`            | ❌       | CSS class to apply to the container                                                                        |
-| `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
+| `blocks`          | `BlockEditorNode`               | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
+| `customRenderers` | `CustomRenderer`                | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
+| `class`           | `string`                        | ❌       | CSS class to apply to the container                                                                        |
+| `style`           | `string \| Record<string, string>` | ❌   | Inline styles for the container                                                                            |
 
 #### Usage
 
