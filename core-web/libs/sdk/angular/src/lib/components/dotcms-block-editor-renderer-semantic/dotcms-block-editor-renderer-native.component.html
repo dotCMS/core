@@ -101,13 +101,19 @@
                         </h6>
                     }
                     @default {
-                        <h1 [style.text-align]="node.attrs?.['textAlign'] || null">
+                        <!--
+                            Unknown level: fall back to <h2>, not <h1>. An
+                            unexpected <h1> in an article tanks the heading
+                            outline that assistive technology relies on, and
+                            articles typically already have a page <h1>.
+                        -->
+                        <h2 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
                                     context: { $implicit: node.content }
                                 " />
-                        </h1>
+                        </h2>
                     }
                 }
             }
@@ -198,19 +204,33 @@
 <ng-template #textRun let-marks="marks" let-text="text">
     @switch (marks?.[0]?.type) {
         @case ('link') {
-            <a
-                [attr.href]="markAttrs(marks)['href'] || null"
-                [attr.target]="markAttrs(marks)['target'] || null"
-                [attr.title]="markAttrs(marks)['title'] || null"
-                [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
-                [attr.rel]="markAttrs(marks)['rel'] || null"
-                [class]="markAttrs(marks)['class'] || null">
+            @if (markAttrs(marks)['href']) {
+                <a
+                    [attr.href]="markAttrs(marks)['href']"
+                    [attr.target]="markAttrs(marks)['target'] || null"
+                    [attr.title]="markAttrs(marks)['title'] || null"
+                    [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
+                    [attr.rel]="markAttrs(marks)['rel'] || null"
+                    [class]="markAttrs(marks)['class'] || null">
+                    <ng-container
+                        *ngTemplateOutlet="
+                            textRun;
+                            context: { marks: restMarks(marks), text: text }
+                        " />
+                </a>
+            } @else {
+                <!--
+                    Malformed link mark with no href: a hrefless <a> isn't a
+                    link to assistive tech (no role, not focusable). Skip the
+                    element and recurse — any remaining marks (bold, etc.)
+                    still render around the text.
+                -->
                 <ng-container
                     *ngTemplateOutlet="
                         textRun;
                         context: { marks: restMarks(marks), text: text }
                     " />
-            </a>
+            }
         }
         @case ('bold') {
             <strong>

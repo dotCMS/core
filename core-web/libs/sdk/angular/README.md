@@ -546,10 +546,10 @@ export class MyBannerComponent {
 
 | Input             | Type                 | Required | Description                                                                                                |
 |-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
-| `blocks`          | `BlockEditorContent` | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
+| `blocks`          | `BlockEditorNode`    | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
 | `customRenderers` | `CustomRenderer`     | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
-| `className`       | `string`            | ❌       | CSS class to apply to the container                                                                        |
-| `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
+| `class`           | `string`             | ❌       | CSS class to apply to the container                                                                        |
+| `style`           | `string \| Record<string, string>` | ❌ | Inline styles for the container                                                          |
 
 #### Usage
 
@@ -594,6 +594,8 @@ export class MyBannerComponent {
 The original renderer wraps every block in a custom element and places a recursive dispatcher element *between* a `<ul>` and its `<li>` children. That extra element breaks the `list → listitem` relationship that the HTML spec and assistive technology rely on, and accessibility scanners flag it as excessive nested wrapper elements. `DotCMSBlockEditorRendererNative` makes the host element the real semantic tag and recurses through `ng-template` outlets that render as HTML comment nodes (invisible to the accessibility tree), so `<li>` stays a true DOM child of `<ul>`.
 
 It exposes the **same inputs** and the **same `customRenderers` contract** as the deprecated component — migration is a one-line swap of the tag and import.
+
+> **Known scope:** the wrapper-removal applies to top-level blocks. Lists rendered **inside table cells or grid columns** still go through the legacy block component internally, so an `<ul>` inside a `<td>`/grid cell will still have a wrapper element between the list and its items. This will be addressed in a follow-up.
 
 | Input             | Type                 | Required | Description                                                                                                |
 |-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|

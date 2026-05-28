@@ -149,8 +149,14 @@ describe('DotCMSBlockEditorRendererNativeComponent', () => {
             expect(component.asLevel('2')).toBe('2');
         });
 
-        it('should default to "1" when undefined', () => {
-            expect(component.asLevel(undefined)).toBe('1');
+        it('should return "" for an undefined level so the template falls back to <h2>', () => {
+            expect(component.asLevel(undefined)).toBe('');
+        });
+
+        it('should return "" for an out-of-range level', () => {
+            expect(component.asLevel(7)).toBe('');
+            expect(component.asLevel('0')).toBe('');
+            expect(component.asLevel('bogus')).toBe('');
         });
     });
 });

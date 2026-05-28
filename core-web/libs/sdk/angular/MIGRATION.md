@@ -49,6 +49,8 @@ Use `DotCMSBlockEditorRendererNativeComponent` (`<dotcms-block-editor-renderer-n
 ```
 
 > ⚠️ The rendered DOM differs by design: the new component removes the `dotcms-block-editor-renderer-*` wrapper elements. If you styled or queried those wrappers, update those selectors to target the semantic tags (`ul`, `ol`, `li`, `p`, `h1`–`h6`, `blockquote`, `pre`) instead.
+>
+> The native renderer only forwards a node's **`textAlign`** attribute to the host element's `text-align` style. Any other inline-style attributes that the legacy renderer would have copied through (via `[style]="node.attrs"`) are dropped, including non-CSS attrs like `level` that were silently leaking onto the `style` attribute before. If you relied on arbitrary `attrs` reaching the DOM as styles, set them in CSS (or via a custom renderer) instead.
 
 ## Step-by-Step Migration Process
 Before starting, if you are using the `@dotcms/client` library in your Angular project, please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.

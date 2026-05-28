@@ -1,5 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode, BlockEditorMark } from '@dotcms/types';
 import { BlockEditorState, BlockEditorDefaultBlocks } from '@dotcms/types/internal';
@@ -68,7 +68,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
         DotUnknownBlockComponent
     ]
 })
-export class DotCMSBlockEditorRendererNativeComponent {
+export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
     @Input() blocks!: BlockEditorNode;
     @Input() customRenderers: CustomRenderer | undefined;
     @Input() class: string | undefined;
@@ -77,7 +77,7 @@ export class DotCMSBlockEditorRendererNativeComponent {
     $blockEditorState = signal<BlockEditorState>({ error: null });
     $isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
 
-    BLOCKS = BlockEditorDefaultBlocks;
+    protected readonly BLOCKS = BlockEditorDefaultBlocks;
 
     ngOnInit() {
         const state = isValidBlocks(this.blocks);
@@ -92,9 +92,12 @@ export class DotCMSBlockEditorRendererNativeComponent {
     /**
      * Normalizes a heading `level` attribute (which may be a number such as `6`
      * or a string such as `'6'`) to a string for use in the heading `@switch`.
+     * Returns `''` for missing or out-of-range levels so the template falls
+     * through to the safe `@default` case (`<h2>`).
      */
     asLevel(level: number | string | undefined): string {
-        return level != null ? String(level) : '1';
+        const normalized = level != null ? String(level) : '';
+        return /^[1-6]$/.test(normalized) ? normalized : '';
     }
 
     /** The marks after the current (outermost) one — used to recurse inward. */
@@ -104,6 +107,6 @@ export class DotCMSBlockEditorRendererNativeComponent {
 
     /** The attributes of the current (outermost) mark. */
     markAttrs(marks: BlockEditorMark[] | undefined): Record<string, string> {
-        return (marks?.[0]?.attrs as Record<string, string>) || {};
+        return marks?.[0]?.attrs ?? {};
     }
 }

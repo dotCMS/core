@@ -150,7 +150,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(a?.classList.contains('cta')).toBe(true);
         });
 
-        it('should omit href/target on a link mark when its attrs are missing', () => {
+        it('should fall back to plain text when a link mark has no href', () => {
             render([
                 {
                     type: BlockEditorDefaultBlocks.PARAGRAPH,
@@ -164,11 +164,33 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
                 }
             ]);
 
-            const a = spectator.query('a');
-            expect(a).toBeTruthy();
-            // No empty self-link (`href=""`) or meaningless `target=""`.
-            expect(a?.hasAttribute('href')).toBe(false);
-            expect(a?.hasAttribute('target')).toBe(false);
+            // A hrefless <a> isn't a link to assistive tech (no role, not
+            // focusable). The renderer skips the element entirely instead of
+            // emitting a styled span that looks like a link.
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('p')?.textContent?.trim()).toBe('link');
+        });
+
+        it('should still render inner marks when an outer link mark has no href', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'bold',
+                            marks: [
+                                { type: 'link', attrs: {} },
+                                { type: 'bold', attrs: {} }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            // The hrefless link drops out, but inner marks survive.
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('strong')?.textContent?.trim()).toBe('bold');
         });
 
         it('should preserve known marks beneath an unknown mark type', () => {
@@ -217,9 +239,12 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(spectator.query('h6')).toBeTruthy();
         });
 
-        it('should default to <h1> when level is missing', () => {
+        it('should default to <h2> when level is unknown', () => {
+            // An unexpected <h1> in an article tanks the heading outline AT
+            // relies on, so unknown levels fall back to <h2>, not <h1>.
             render([{ type: BlockEditorDefaultBlocks.HEADING, content: [] }]);
-            expect(spectator.query('h1')).toBeTruthy();
+            expect(spectator.query('h2')).toBeTruthy();
+            expect(spectator.query('h1')).toBeNull();
         });
 
         it('should apply textAlign as text-align without leaking the level attr as CSS', () => {
