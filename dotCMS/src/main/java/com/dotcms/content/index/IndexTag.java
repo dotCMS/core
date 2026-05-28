@@ -16,8 +16,8 @@ import java.util.Optional;
  * <ul>
  *   <li>{@link #OS} — suffix {@code ".os"}, e.g. {@code cluster_08abc3.live_20240315.os}
  *       (DB storage only — callers always receive the stripped logical name)</li>
- *   <li>{@link #ES} — prefix {@code "es::"}, e.g. {@code es::cluster_08abc3.live_20240315}
- *       (used only as a routing constant; ES names are never tagged in DB storage)</li>
+ *   <li>{@link #ES} — no marker (empty prefix and suffix); used only as a routing constant
+ *       so that untagged legacy Elasticsearch names resolve to the ES provider</li>
  * </ul>
  *
  * <h2>DB uniqueness artifact</h2>
@@ -54,10 +54,12 @@ public enum IndexTag {
     OS("", ".os"),
 
     /**
-     * Marks an index name as originating from the legacy Elasticsearch backend.
-     * Used only as a routing constant — ES names are never tagged in DB storage.
+     * Routing constant for the legacy Elasticsearch backend.
+     * No marker is applied: both prefix and suffix are empty, so {@link #tag} is a no-op
+     * and {@link #isTagged} always returns {@code false}. Untagged names resolve to ES
+     * via {@link #resolve(String)} defaulting to this constant.
      */
-    ES("es::", "");
+    ES("", "");
 
     // -------------------------------------------------------------------------
     // State
