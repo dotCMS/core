@@ -595,6 +595,7 @@ public class TaskLocatorUtil {
         .add(Task250113CreatePostgresJobQueueTables.class)
 		.add(Task250603UpdateIdentifierParentPathCheckTrigger.class)
 		.add(Task250604UpdateFolderInodes.class)
+        .add(Task250604UpdateFolderInodes.class)
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
         .add(Task250828CreateCustomAttributeTable.class)
         .add(Task251029RemoveContentTypesLegacyPortletFromLayouts.class)
@@ -608,6 +609,7 @@ public class TaskLocatorUtil {
         .add(Task260407AddBaseTypeColumnToIdentifier.class)
         .add(Task260505AddPluginsPortletToMenu.class)
         .build();
+
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
