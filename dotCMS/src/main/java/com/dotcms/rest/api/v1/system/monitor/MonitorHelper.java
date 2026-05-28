@@ -1,16 +1,14 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.health.api.HealthService;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -23,6 +21,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.OutputStream;
@@ -251,31 +250,42 @@ class MonitorHelper {
     }
 
     /**
-     * Determines if the database server is healthy by executing a simple query.
+     * Looks up the unified {@link HealthService} via CDI. A request only reaches this helper
+     * through the Jersey REST stack, which runs after CDI is up — so if this lookup fails the
+     * application is not healthy and the caller should treat the subsystem as DOWN.
+     */
+    HealthService healthService() {
+        return CDI.current().select(HealthService.class).get();
+    }
+
+    /**
+     * Determines if the database server is healthy by delegating to the unified health system
+     * so the legacy monitor endpoint and {@code /readyz} return the same answer.
      *
      * @return If the database server is healthy, returns {@code true}.
      */
     boolean isDBHealthy()  {
-            return Try.of(()->
-                            new DotConnect().setSQL("SELECT 1 as count")
-                    .loadInt("count"))
-                    .onFailure(e->Logger.warnAndDebug(MonitorHelper.class, "unable to connect to db:" + e.getMessage(),e))
-                    .getOrElse(0) > 0;
+        try {
+            return healthService().isDatabaseHealthy();
+        } catch (final Exception e) {
+            Logger.warnAndDebug(MonitorHelper.class,
+                    "unable to query health service for DB: " + ExceptionUtil.getErrorMessage(e), e);
+            return false;
+        }
     }
 
     /**
-     * Determines if dotCMS can connect to Elasticsearch by checking the ES Server cluster
-     * statistics. If they're available, it means dotCMS can connect to ES.
+     * Determines if dotCMS can connect to Elasticsearch by delegating to the unified health
+     * system (same probe as {@code /readyz}).
      *
      * @return If dotCMS can connect to Elasticsearch, returns {@code true}.
      */
     boolean canConnectToES() {
         try {
-            final ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
-            return stats != null && stats.clusterName() != null;
+            return healthService().isSearchServiceHealthy();
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(),
-                    "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);
+                    "unable to query health service for ES: " + ExceptionUtil.getErrorMessage(e), e);
             return false;
         }
     }
@@ -297,16 +307,17 @@ class MonitorHelper {
 
 
     /**
-     * Determines if the cache is healthy by checking if the SYSTEM_HOST identifier is available.
+     * Determines if the cache is healthy by delegating to the unified health system (same probe
+     * as {@code /readyz}).
      *
      * @return If the cache is healthy, returns {@code true}.
      */
     boolean isCacheHealthy()  {
         try {
-            APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-            return UtilMethods.isSet(APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST).getId());
+            return healthService().isHealthCheckUp("cache");
         } catch (final Exception e){
-            Logger.warnAndDebug(this.getClass(), "unable to find SYSTEM_HOST: " + e.getMessage(), e);
+            Logger.warnAndDebug(this.getClass(),
+                    "unable to query health service for cache: " + ExceptionUtil.getErrorMessage(e), e);
             return false;
         }
     }

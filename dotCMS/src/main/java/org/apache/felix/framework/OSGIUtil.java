@@ -136,6 +136,9 @@ public class OSGIUtil {
     private Framework felixFramework;
     private String felixExtraPackagesFile;
     private WorkflowAPIOsgiService workflowOsgiService;
+    // Epoch millis at which initializeFramework() last completed. 0 means OSGI has not finished initializing.
+    // Read by health checks to compute the bundle-start grace period.
+    private volatile long osgiInitCompletedAt = 0L;
 
     //List of jar prefixes of the jars to be included in the osgi-extra.conf file
     public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
@@ -403,8 +406,13 @@ public class OSGIUtil {
         System.setProperty(WebKeys.OSGI_ENABLED, Boolean.TRUE.toString());
         System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI,
                 String.valueOf(System.currentTimeMillis() - start));
+        osgiInitCompletedAt = System.currentTimeMillis();
 
         return felixFramework;
+    }
+
+    public long getOsgiInitCompletedAt() {
+        return osgiInitCompletedAt;
     }
 
     private void startWatchingUploadFolder(final String uploadFolder) {
@@ -828,6 +836,7 @@ public class OSGIUtil {
             Logger.warn(this, "Error while stopping felix!", e);
         }finally {
             felixFramework=null;
+            osgiInitCompletedAt = 0L;
         }
     }
 

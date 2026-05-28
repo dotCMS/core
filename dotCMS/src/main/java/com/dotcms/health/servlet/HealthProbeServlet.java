@@ -3,6 +3,7 @@ package com.dotcms.health.servlet;
 import com.dotcms.health.checks.ApplicationHealthCheck;
 import com.dotcms.health.checks.CdiInitializationHealthCheck;
 import com.dotcms.health.checks.GarbageCollectionHealthCheck;
+import com.dotcms.health.checks.OsgiBundlesHealthCheck;
 import com.dotcms.health.checks.ServletContainerHealthCheck;
 import com.dotcms.health.checks.ShutdownHealthCheck;
 import com.dotcms.health.checks.SystemHealthCheck;
@@ -200,7 +201,11 @@ public class HealthProbeServlet extends AbstractManagementServlet {
             // Shutdown status check - readiness only (fails when shutdown begins to stop new traffic)
             ShutdownHealthCheck shutdownCheck = new ShutdownHealthCheck();
             healthStateManager.registerHealthCheck(shutdownCheck);
-            
+
+            // OSGi bundle start check - readiness only (fails rollout if a plugin does not reach ACTIVE)
+            OsgiBundlesHealthCheck osgiBundlesCheck = new OsgiBundlesHealthCheck();
+            healthStateManager.registerHealthCheck(osgiBundlesCheck);
+
             Logger.info(this, "Core health checks registered successfully");
         } catch (Exception e) {
             Logger.error(this, "Failed to register core health checks", e);
