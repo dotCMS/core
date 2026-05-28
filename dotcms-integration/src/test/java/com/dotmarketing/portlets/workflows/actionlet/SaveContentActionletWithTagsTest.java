@@ -509,4 +509,37 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         Assert.assertTrue("txt should be cleared",
                 UtilMethods.isEmpty(loaded.getStringProperty("txt")));
     }
+
+    /**
+     * Method to test: {@link Contentlet#resetLoadedTags()} on the load path.
+     * Given Scenario: A contentlet's tags are loaded (which sets the loadedTags guard), then the
+     * underlying tag_inode rows change. A second setTags() is a no-op because of the guard.
+     * Expected Result: After resetLoadedTags(), setTags() re-reads tag_inode and reflects the new
+     * tag. Without the reset the change never surfaces on this instance — the gap the bulk workflow
+     * path hits when setTags() runs before checkin reconciles the tags.
+     */
+    @Test
+    public void test_resetLoadedTagsEnablesRereadOfTagInode() throws Exception {
+
+        final Contentlet saved = fireSave(newContentlet(defaultLanguageId(), null));
+        final String inode = saved.getInode();
+
+        final Contentlet loaded =
+                APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+        loaded.setTags();                       // loadedTags guard is now set; no tag yet
+        Assert.assertNull(loaded.getStringProperty("tag"));
+
+        // Change tag_inode out-of-band, then prove the guard blocks the re-read.
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final Tag tag = new TagDataGen().name("added-out-of-band" + System.currentTimeMillis())
+                .site(systemHost).nextPersisted();
+        APILocator.getTagAPI().addContentletTagInode(tag, inode, "tag");
+
+        loaded.setTags();                       // skipped: loadedTags still true
+        Assert.assertNull("guard must block re-read until reset", loaded.getStringProperty("tag"));
+
+        loaded.resetLoadedTags();
+        loaded.setTags();                       // now re-reads the reconciled tag_inode
+        Assert.assertEquals(tag.getTagName(), loaded.getStringProperty("tag"));
+    }
 }
