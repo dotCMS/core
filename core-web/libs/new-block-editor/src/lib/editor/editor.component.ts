@@ -2,17 +2,17 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
 
 import { DOCUMENT } from '@angular/common';
 import {
+    booleanAttribute,
     ChangeDetectionStrategy,
     Component,
-    Injector,
-    OnDestroy,
-    booleanAttribute,
     computed,
     effect,
     forwardRef,
     inject,
+    Injector,
     input,
     numberAttribute,
+    OnDestroy,
     output,
     signal
 } from '@angular/core';
@@ -137,12 +137,7 @@ function normalizeEditorContent(
         EditorModalService,
         EditorToolbarStore,
         ContentletEditUrlService,
-        // Component-scoped DialogService so each editor instance has its own PrimeNG
-        // dynamic-dialog factory; prevents the AI image prompt opened from one editor
-        // from accidentally being closed by another editor on the same page.
         DialogService,
-        // Component-scoped ConfirmationService pairs 1:1 with the local <p-confirmdialog>
-        // below — keeps two editors on the same page from sharing confirmation state.
         ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
@@ -473,7 +468,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] max-w-7xl h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
+            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
             : 'relative rounded-lg border border-gray-200'
     );
 
