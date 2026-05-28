@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, signalMethod } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
 import {
@@ -11,7 +11,6 @@ import {
     OnDestroy,
     OnInit,
     signal,
-    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -34,7 +33,7 @@ import {
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -207,32 +206,31 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#updateLocation(cleanedParams);
     });
 
-    readonly $updateBreadcrumbEffect = effect(() => {
+    readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
         const page = this.uveStore.pageAsset()?.page;
         const status = this.uveStore.uveStatus();
 
-        if (page && status === UVE_STATUS.LOADED) {
-            // untracked: prevents URL-only signal changes from re-triggering the breadcrumb.
-            const url = untracked(() => {
-                if (!this.uveStore.pageParams()) return null;
-
-                const params = this.uveStore.pageFriendlyParams();
-                const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
-                const cleanedParams = normalizeQueryParams(params, baseClientHost);
-                const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
-
-                return `/dotAdmin/#${urlTree.toString()}`;
-            });
-
-            if (url) {
-                this.#globalStore.addNewBreadcrumb({
-                    label: page.title,
-                    url,
-                    id: `${page.identifier}`
-                });
-            }
-        }
+        return page && status === UVE_STATUS.LOADED ? page : null;
     });
+
+    readonly $updateBreadcrumb = signalMethod<DotCMSPage | null>((page) => {
+        if (!page || !this.uveStore.pageParams()) return;
+
+        const params = this.uveStore.pageFriendlyParams();
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+
+        this.#globalStore.addNewBreadcrumb({
+            label: page.title,
+            url: `/dotAdmin/#${urlTree.toString()}`,
+            id: `${page.identifier}`
+        });
+    });
+
+    constructor() {
+        this.$updateBreadcrumb(this.$breadcrumbPage);
+    }
 
     ngOnInit(): void {
         const params = this.#getPageParams();
