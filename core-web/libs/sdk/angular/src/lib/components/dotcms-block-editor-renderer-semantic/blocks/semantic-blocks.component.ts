@@ -17,41 +17,53 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
     selector: 'ul[dotBulletList]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class DotSemanticBulletList {}
 
 @Component({
     selector: 'ol[dotOrderedList]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class DotSemanticOrderedList {}
 
 @Component({
     selector: 'li[dotListItem]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class DotSemanticListItem {}
 
 @Component({
     selector: 'p[dotParagraph]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class DotSemanticParagraph {}
 
 @Component({
     selector: 'blockquote[dotBlockQuote]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class DotSemanticBlockQuote {}
 
 @Component({
     selector: 'pre[dotCodeBlock]',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<code><ng-content /></code>`
+    template: `
+        <code><ng-content /></code>
+    `
 })
 export class DotSemanticCodeBlock {}

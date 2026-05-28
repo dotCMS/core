@@ -74,9 +74,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             render([
                 {
                     type: BlockEditorDefaultBlocks.PARAGRAPH,
-                    content: [
-                        { type: BlockEditorDefaultBlocks.TEXT, text: 'Hello', marks: [] }
-                    ]
+                    content: [{ type: BlockEditorDefaultBlocks.TEXT, text: 'Hello', marks: [] }]
                 }
             ]);
             expect(spectator.query('p')?.textContent).toContain('Hello');
@@ -306,9 +304,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(
                 spectator.element.querySelector('[class*="dotcms-block-editor-renderer-"]')
             ).toBeNull();
-            expect(spectator.element.innerHTML).not.toContain(
-                'dotcms-block-editor-renderer-block'
-            );
+            expect(spectator.element.innerHTML).not.toContain('dotcms-block-editor-renderer-block');
         });
 
         it('should render an ordered list as <ol><li>', () => {

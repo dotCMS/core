@@ -288,74 +288,50 @@
                     still render around the text.
                 -->
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             }
         }
         @case ('bold') {
             <strong>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </strong>
         }
         @case ('underline') {
             <u>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </u>
         }
         @case ('italic') {
             <em>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </em>
         }
         @case ('strike') {
             <s>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </s>
         }
         @case ('superscript') {
             <sup>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </sup>
         }
         @case ('subscript') {
             <sub>
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             </sub>
         }
         @default {
             @if (marks?.length) {
                 <!-- Unknown mark type: skip it but keep rendering any marks beneath. -->
                 <ng-container
-                    *ngTemplateOutlet="
-                        textRun;
-                        context: { marks: restMarks(marks), text: text }
-                    " />
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
             } @else {
                 {{ text }}
             }
