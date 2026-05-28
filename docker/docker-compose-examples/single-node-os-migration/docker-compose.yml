@@ -39,7 +39,7 @@ services:
   # REST API  → http://localhost:9200
   # ---------------------------------------------------------------------------
   opensearch1:
-    image: opensearchproject/opensearch:1
+    image: opensearchproject/opensearch:1.3
     environment:
       cluster.name: "opensearch1-cluster"
       discovery.type: "single-node"
@@ -75,7 +75,7 @@ services:
   # UI → http://localhost:5601
   # ---------------------------------------------------------------------------
   opensearch1-dashboards:
-    image: opensearchproject/opensearch-dashboards:1
+    image: opensearchproject/opensearch-dashboards:1.3
     environment:
       OPENSEARCH_HOSTS: '["https://opensearch1:9200"]'
       opensearch.ssl.verificationMode: "none"
