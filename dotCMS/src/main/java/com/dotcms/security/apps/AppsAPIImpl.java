@@ -189,23 +189,101 @@ public class AppsAPIImpl implements AppsAPI {
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
                     key, user.getUserId(), host.getIdentifier()));
         }
-        Optional<char[]> optionalChars = secretsStore
-                .getValue(internalKey(key, host));
-        if (optionalChars.isPresent()) {
-            //We really don't want to cache the json object to protect the secrets.
-            //Caching happens on the layers below.
-            return Optional.of(readJson(optionalChars.get()));
-        } else {
-            //fallback
-            if (fallbackOnSystemHost) {
-                optionalChars = secretsStore
-                        .getValue(internalKey(key, APILocator.systemHost()));
-                if (optionalChars.isPresent()) {
-                    return Optional.of(readJson(optionalChars.get()));
-                }
+        return resolveSecrets(key, fallbackOnSystemHost, host);
+    }
+
+    /**
+     * Resolves an app's secrets for a site by walking the 5-tier, specificity-first precedence model
+     * independently for each declared/stored param. Env vars (tiers 1, 3, 4) and stored values
+     * (tiers 2, 5) are merged per-param so an app can be fully provisioned from the environment with
+     * no stored blob, while a deliberate per-host stored value still wins over a global env var.
+     * <p>
+     * Precedence (highest to lowest):
+     * <ol>
+     *   <li>host-specific env — {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}} (locks the UI field)</li>
+     *   <li>host-specific stored / UI value</li>
+     *   <li>System Host env — {@code DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY}}</li>
+     *   <li>legacy global env — {@code APP_{APP_KEY}_PARAM_{APP_VALUE_KEY}} (deprecation warning)</li>
+     *   <li>System Host stored value</li>
+     * </ol>
+     * When {@code fallbackOnSystemHost} is {@code false}, the System Host tiers (3 and 5) are skipped.
+     * Env tiers are only consulted for registered apps (a deployed {@link AppDescriptor} is required
+     * to enumerate the param names used for construct-and-lookup).
+     *
+     * @param key                  the app key (matches {@link AppDescriptor#getKey()})
+     * @param fallbackOnSystemHost whether the System Host tiers participate
+     * @param host                 the site being resolved
+     * @return the merged {@link AppSecrets}, or {@link Optional#empty()} when nothing resolves
+     */
+    private Optional<AppSecrets> resolveSecrets(final String key,
+            final boolean fallbackOnSystemHost, final Host host) throws DotDataException {
+
+        // Stored tiers (tier-2 host, tier-5 System Host) — raw, without the legacy env overlay so the
+        // env tiers can be applied explicitly at the correct precedence below.
+        final Map<String, Secret> hostStored = readStoredSecrets(internalKey(key, host));
+        final Map<String, Secret> systemStored = fallbackOnSystemHost
+                ? readStoredSecrets(internalKey(key, APILocator.systemHost()))
+                : Map.of();
+
+        // Descriptor params drive env construct-and-lookup; env provisioning requires registration.
+        final AppDescriptor appDescriptor = getAppDescriptorMap().get(key.toLowerCase());
+        final Map<String, ParamDescriptor> params =
+                null != appDescriptor ? appDescriptor.getParams() : Map.of();
+        final String hostName = host.getHostname();
+        final boolean envEligible = null != appDescriptor && isSet(hostName);
+
+        final Set<String> paramNames = new LinkedHashSet<>(params.keySet());
+        paramNames.addAll(hostStored.keySet());
+        if (fallbackOnSystemHost) {
+            paramNames.addAll(systemStored.keySet());
+        }
+
+        final AppSecrets.Builder builder = AppSecrets.builder().withKey(key);
+        boolean anyResolved = false;
+        for (final String paramName : paramNames) {
+            final ParamDescriptor describedParam = params.get(paramName);
+            Optional<Secret> resolved = Optional.empty();
+
+            // Tier 1 — host-specific env (locks the field).
+            if (envEligible) {
+                resolved = AppsUtil.hostEnvSecret(key, hostName, paramName, describedParam);
+            }
+            // Tier 2 — host-specific stored value.
+            if (resolved.isEmpty()) {
+                resolved = Optional.ofNullable(hostStored.get(paramName));
+            }
+            // Tier 3 — System Host env (suppressed when fallbackOnSystemHost is false).
+            if (resolved.isEmpty() && fallbackOnSystemHost && null != appDescriptor) {
+                resolved = AppsUtil.systemHostEnvSecret(key, paramName, describedParam);
+            }
+            // Tier 4 — legacy global env (deprecation warning).
+            if (resolved.isEmpty() && null != appDescriptor) {
+                resolved = AppsUtil.legacyEnvSecret(key, paramName, describedParam);
+            }
+            // Tier 5 — System Host stored value (suppressed when fallbackOnSystemHost is false).
+            if (resolved.isEmpty() && fallbackOnSystemHost) {
+                resolved = Optional.ofNullable(systemStored.get(paramName));
+            }
+
+            if (resolved.isPresent()) {
+                builder.withSecret(paramName, resolved.get());
+                anyResolved = true;
             }
         }
-        return Optional.empty();
+        return anyResolved ? Optional.of(builder.build()) : Optional.empty();
+    }
+
+    /**
+     * Reads and deserializes a stored secrets blob by internal key, without applying the legacy env
+     * overlay (the tier-aware resolver applies env tiers explicitly). Secret values are intentionally
+     * not cached. Returns an empty map when no blob exists.
+     */
+    private Map<String, Secret> readStoredSecrets(final String internalKey) throws DotDataException {
+        final Optional<char[]> optionalChars = secretsStore.getValue(internalKey);
+        if (optionalChars.isEmpty()) {
+            return Map.of();
+        }
+        return readJson(optionalChars.get(), false).getSecrets();
     }
 
     /**

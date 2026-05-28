@@ -42,6 +42,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -114,10 +115,29 @@ public class AppsUtil {
      * @throws DotDataException
      */
     static AppSecrets readJson(final char[] chars) throws DotDataException {
+        return readJson(chars, true);
+    }
+
+    /**
+     * Deserializes a stored secrets blob. When {@code applyLegacyEnvOverlay} is {@code true} the
+     * legacy {@code APP_..._PARAM_...} env overlay is applied to each secret (historical override
+     * behavior, retained for existing callers). When {@code false} the raw stored values are
+     * returned without any env overlay — used by the tier-aware resolution path in
+     * {@code AppsAPIImpl.getSecrets}, which applies the env tiers explicitly at the correct
+     * precedence (host-stored beats legacy env).
+     *
+     * @param chars                 the char-array JSON representation of the stored blob
+     * @param applyLegacyEnvOverlay whether to overlay the legacy env values onto the secrets
+     * @return the deserialized {@link AppSecrets}
+     */
+    static AppSecrets readJson(final char[] chars, final boolean applyLegacyEnvOverlay)
+            throws DotDataException {
         try {
             final byte [] bytes = charsToBytesUTF(chars);
             final AppSecrets appSecrets = mapper.readValue(bytes, AppSecrets.class);
-            appSecrets.getSecrets().entrySet().forEach(secret -> updateEnvValue(secret, appSecrets));
+            if (applyLegacyEnvOverlay) {
+                appSecrets.getSecrets().entrySet().forEach(secret -> updateEnvValue(secret, appSecrets));
+            }
             return appSecrets;
         } catch (IOException e) {
             throw new DotDataException(e);
@@ -644,6 +664,155 @@ public class AppsUtil {
                         .withEnvValue(discoverEnvVarValue(key, paramName, pd.getEnvVar()))
                         .build())
                 .orElse(null);
+    }
+
+    /**
+     * Builds the host-specific environment variable name for an app param following the
+     * {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}} convention.
+     * <p>
+     * The three segments are concatenated and normalized through {@link Config#envKey(String)}
+     * so that casing, separators (dots/dashes) and doubled/trailing underscores are handled by
+     * the single canonical normalization routine (no parallel normalization logic). The
+     * {@code DOT_} prefix is applied by {@link Config#envKey(String)}.
+     * <p>
+     * Example: {@code envVarName("dotcms-app", "demo.dotcms.com", "clientId")} resolves to
+     * {@code DOT_DOTCMS_APP_DEMO_DOTCMS_COM_CLIENTID}.
+     *
+     * @param appKey   the registered app key (matches {@code AppDescriptor.getKey()})
+     * @param hostName the dotCMS site name
+     * @param valueKey the declared param/value key
+     * @return the normalized environment variable name
+     */
+    public static String envVarName(final String appKey, final String hostName, final String valueKey) {
+        return Config.envKey(String.join("_", appKey, hostName, valueKey));
+    }
+
+    /**
+     * Segment used to address the System Host (global) form of an env var. The global tier is not a
+     * special hostless name: it is the System Host expressed through the same
+     * {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}} convention, e.g.
+     * {@code DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY}}.
+     */
+    public static final String SYSTEM_HOST_ENV_SEGMENT = "SYSTEM_HOST";
+
+    /**
+     * Tracks which legacy {@code APP_..._PARAM_...} env vars have already logged a deprecation
+     * warning, so the warning fires at most once per JVM lifetime per app-key + value-key pair
+     * (getSecrets can run on every request and would otherwise flood the logs).
+     */
+    private static final Set<String> LEGACY_ENV_DEPRECATION_LOGGED = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Builds a {@link Secret} carrying an environment-sourced value with {@code fromEnv=true},
+     * inheriting the param's declared {@link Type} and hidden flag from the descriptor (so SECRET
+     * masking is preserved regardless of value source). The raw env string is used verbatim — no
+     * type coercion is applied.
+     *
+     * @param envValue        the raw environment value (already verified non-blank)
+     * @param describedParam  the declared param descriptor, or {@code null} when unknown
+     * @param locked          when {@code true} the value is stored as the env-var value so that
+     *                        {@link AbstractProperty#isEditable()} returns {@code false} (tier-1
+     *                        host-specific lock); when {@code false} the field stays editable
+     *                        (tier-3 / tier-4 do not lock the UI)
+     * @return an env-backed {@link Secret}
+     */
+    private static Secret envSecret(final String envValue,
+                                    final ParamDescriptor describedParam,
+                                    final boolean locked) {
+        final Type type = describedParam != null ? describedParam.getType() : Type.STRING;
+        final Boolean hidden = describedParam != null ? describedParam.getHidden() : Boolean.FALSE;
+        final Secret.Builder builder = Secret.builder()
+                .withType(type)
+                .withHidden(hidden)
+                .withFromEnv(true);
+        if (locked) {
+            builder.withEnvValue(envValue);
+        } else {
+            builder.withValue(envValue);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Tier-1 (host-specific env) lookup: {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}}. A present
+     * value locks the UI field (read-only) because the infra explicitly targeted this host+param.
+     * Construct-and-lookup against a known param name — never parses arbitrary env var names. Reads
+     * through {@link Config#getStringProperty(String, String)} — never {@code System.getenv()}.
+     *
+     * @param appKey         the registered app key (matches {@code AppDescriptor.getKey()})
+     * @param hostName       the dotCMS site name
+     * @param valueKey       the declared param/value key
+     * @param describedParam the declared param descriptor, or {@code null}
+     * @return an {@link Optional} env-backed {@link Secret}, or empty when absent/blank
+     */
+    public static Optional<Secret> hostEnvSecret(final String appKey,
+                                                 final String hostName,
+                                                 final String valueKey,
+                                                 final ParamDescriptor describedParam) {
+        final String envValue = Config.getStringProperty(envVarName(appKey, hostName, valueKey), null);
+        if (isNotSet(envValue)) {
+            return Optional.empty();
+        }
+        return Optional.of(envSecret(envValue, describedParam, true));
+    }
+
+    /**
+     * Tier-3 (global / System Host env) lookup: {@code DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY}}.
+     * Does NOT lock the UI field — a host-specific stored value (tier-2) is allowed to win over this
+     * global env var (specificity-first precedence).
+     *
+     * @param appKey         the registered app key
+     * @param valueKey       the declared param/value key
+     * @param describedParam the declared param descriptor, or {@code null}
+     * @return an {@link Optional} env-backed {@link Secret}, or empty when absent/blank
+     */
+    public static Optional<Secret> systemHostEnvSecret(final String appKey,
+                                                       final String valueKey,
+                                                       final ParamDescriptor describedParam) {
+        final String envValue =
+                Config.getStringProperty(envVarName(appKey, SYSTEM_HOST_ENV_SEGMENT, valueKey), null);
+        if (isNotSet(envValue)) {
+            return Optional.empty();
+        }
+        return Optional.of(envSecret(envValue, describedParam, false));
+    }
+
+    /**
+     * Tier-4 (legacy global env) lookup using the pre-existing {@link #guessEnvVar(String, String)}
+     * pattern ({@code APP_{APP_KEY}_PARAM_{APP_VALUE_KEY}}, resolved by {@link Config} as
+     * {@code DOT_APP_..._PARAM_...}). Retained for backward compatibility; logs a throttled
+     * deprecation warning and does NOT lock the UI field.
+     *
+     * @param appKey         the registered app key
+     * @param valueKey       the declared param/value key
+     * @param describedParam the declared param descriptor, or {@code null}
+     * @return an {@link Optional} env-backed {@link Secret}, or empty when absent/blank
+     */
+    public static Optional<Secret> legacyEnvSecret(final String appKey,
+                                                   final String valueKey,
+                                                   final ParamDescriptor describedParam) {
+        final String guessed = guessEnvVar(appKey, valueKey);
+        final String envValue = Config.getStringProperty(guessed, null);
+        if (isNotSet(envValue)) {
+            return Optional.empty();
+        }
+        logLegacyEnvDeprecation(appKey, valueKey, guessed);
+        return Optional.of(envSecret(envValue, describedParam, false));
+    }
+
+    /**
+     * Logs the legacy env-var deprecation warning at most once per JVM per app-key + value-key pair.
+     */
+    private static void logLegacyEnvDeprecation(final String appKey,
+                                                final String valueKey,
+                                                final String guessedEnvVar) {
+        if (LEGACY_ENV_DEPRECATION_LOGGED.add(appKey + "|" + valueKey)) {
+            Logger.warn(AppsUtil.class, String.format(
+                    "App secret resolved from deprecated env var '%s' for app '%s' param '%s'. "
+                            + "Migrate to DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY} "
+                            + "(or DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY} for the global form).",
+                    Config.envKey(guessedEnvVar), appKey, valueKey));
+        }
     }
 
     /**

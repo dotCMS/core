@@ -53,6 +53,7 @@ public final class Secret extends AbstractProperty<char[]> {
         @JsonProperty("envshow")
         private Boolean envShow;
         private char[] envValue;
+        private boolean fromEnv;
 
         private Builder() {
         }
@@ -95,8 +96,15 @@ public final class Secret extends AbstractProperty<char[]> {
             return withEnvValue(StringUtils.toCharArray(envValue));
         }
 
+        public Builder withFromEnv(final boolean fromEnv) {
+            this.fromEnv = fromEnv;
+            return this;
+        }
+
         public Secret build() {
-            return new Secret(value, hidden, type, envVar, envShow, envValue);
+            final Secret secret = new Secret(value, hidden, type, envVar, envShow, envValue);
+            secret.setFromEnv(fromEnv);
+            return secret;
         }
 
     }
