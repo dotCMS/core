@@ -81,4 +81,24 @@ public class AppsUtilHostEnvSecretTest {
 
         assertFalse("Expected no Secret when env var is empty", resolved.isPresent());
     }
+
+    /**
+     * Characterizes how comma-containing values round-trip through {@code Config.getStringProperty},
+     * which splits on commas and re-joins with {@code ","}. A simple comma value is preserved.
+     *
+     * <p><b>Known limitation:</b> because env values are read through {@code Config.getStringProperty}
+     * (comma is the list separator), values where a comma is followed by whitespace (e.g.
+     * {@code "a, b"}) are normalized by the underlying configuration (whitespace around the separator
+     * may be trimmed). Secret values that must preserve arbitrary comma/whitespace layout should not
+     * rely on env provisioning. This is documented as a constraint of the env-provisioning surface.</p>
+     */
+    @Test
+    public void test_hostEnvSecret_comma_value_is_preserved() {
+        Config.setProperty(envVarName(), "foo,bar");
+
+        final Optional<Secret> resolved = AppsUtil.hostEnvSecret(APP_KEY, HOST_NAME, VALUE_KEY, null);
+
+        assertTrue("Expected a resolved Secret for a comma value", resolved.isPresent());
+        assertEquals("foo,bar", resolved.get().getString());
+    }
 }

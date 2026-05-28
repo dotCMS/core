@@ -63,6 +63,21 @@ public class AppsUtil {
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     public static final String APPS_IMPORT_EXPORT_DEFAULT_PASSWORD = "APPS_IMPORT_EXPORT_DEFAULT_PASSWORD";
 
+    /**
+     * Segment used to address the System Host (global) form of an env var. The global tier is not a
+     * special hostless name: it is the System Host expressed through the same
+     * {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}} convention, e.g.
+     * {@code DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY}}.
+     */
+    public static final String SYSTEM_HOST_ENV_SEGMENT = "SYSTEM_HOST";
+
+    /**
+     * Tracks which legacy {@code APP_..._PARAM_...} env vars have already logged a deprecation
+     * warning, so the warning fires at most once per JVM lifetime per app-key + value-key pair
+     * (getSecrets can run on every request and would otherwise flood the logs).
+     */
+    private static final Set<String> LEGACY_ENV_DEPRECATION_LOGGED = ConcurrentHashMap.newKeySet();
+
     private AppsUtil() {
     }
 
@@ -688,21 +703,6 @@ public class AppsUtil {
     }
 
     /**
-     * Segment used to address the System Host (global) form of an env var. The global tier is not a
-     * special hostless name: it is the System Host expressed through the same
-     * {@code DOT_{APP_KEY}_{HOSTNAME}_{APP_VALUE_KEY}} convention, e.g.
-     * {@code DOT_{APP_KEY}_SYSTEM_HOST_{APP_VALUE_KEY}}.
-     */
-    public static final String SYSTEM_HOST_ENV_SEGMENT = "SYSTEM_HOST";
-
-    /**
-     * Tracks which legacy {@code APP_..._PARAM_...} env vars have already logged a deprecation
-     * warning, so the warning fires at most once per JVM lifetime per app-key + value-key pair
-     * (getSecrets can run on every request and would otherwise flood the logs).
-     */
-    private static final Set<String> LEGACY_ENV_DEPRECATION_LOGGED = ConcurrentHashMap.newKeySet();
-
-    /**
      * Builds a {@link Secret} carrying an environment-sourced value with {@code fromEnv=true},
      * inheriting the param's declared {@link Type} and hidden flag from the descriptor (so SECRET
      * masking is preserved regardless of value source). The raw env string is used verbatim — no
@@ -720,7 +720,7 @@ public class AppsUtil {
                                     final ParamDescriptor describedParam,
                                     final boolean locked) {
         final Type type = describedParam != null ? describedParam.getType() : Type.STRING;
-        final Boolean hidden = describedParam != null ? describedParam.getHidden() : Boolean.FALSE;
+        final boolean hidden = describedParam != null && describedParam.isHidden();
         final Secret.Builder builder = Secret.builder()
                 .withType(type)
                 .withHidden(hidden)
@@ -749,6 +749,15 @@ public class AppsUtil {
                                                  final String hostName,
                                                  final String valueKey,
                                                  final ParamDescriptor describedParam) {
+        // Guard: a site whose name normalizes to the System Host segment (e.g. "system-host") would
+        // produce the same env var name as the tier-3 global form. Skip tier-1 for it to avoid the
+        // host-specific lookup being indistinguishable from the global one.
+        if (Config.envKey(hostName).equals(Config.envKey(SYSTEM_HOST_ENV_SEGMENT))) {
+            Logger.warn(AppsUtil.class, String.format(
+                    "Site '%s' normalizes to the reserved SYSTEM_HOST env segment; "
+                            + "host-specific (tier-1) env provisioning is disabled for it.", hostName));
+            return Optional.empty();
+        }
         final String envValue = Config.getStringProperty(envVarName(appKey, hostName, valueKey), null);
         if (isNotSet(envValue)) {
             return Optional.empty();

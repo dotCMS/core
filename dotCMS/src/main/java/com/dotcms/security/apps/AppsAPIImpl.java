@@ -120,8 +120,9 @@ public class AppsAPIImpl implements AppsAPI {
                         StringPool.BLANK))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         // Include apps provisioned solely from env vars (no stored blob) for this site.
+        final String hostName = host.getHostname();
         for (final String appKey : getAppDescriptorMap().keySet()) {
-            if (hasEnvBackedSecrets(appKey, host.getIdentifier())) {
+            if (hasEnvBackedSecretsForHostName(appKey, hostName)) {
                 keys.add(appKey);
             }
         }
@@ -177,8 +178,9 @@ public class AppsAPIImpl implements AppsAPI {
         // Include apps provisioned solely from env vars: scan valid sites x registered apps lazily.
         final Set<String> registeredAppKeys = getAppDescriptorMap().keySet();
         for (final String siteId : validSites) {
+            final String hostName = resolveHostName(siteId); // resolve once per site, not per app
             for (final String appKey : registeredAppKeys) {
-                if (hasEnvBackedSecrets(appKey, siteId)) {
+                if (hasEnvBackedSecretsForHostName(appKey, hostName)) {
                     result.computeIfAbsent(siteId, k -> new HashSet<>()).add(appKey);
                 }
             }
@@ -344,14 +346,28 @@ public class AppsAPIImpl implements AppsAPI {
      * @return {@code true} when at least one declared param resolves from an env var
      */
     private boolean hasEnvBackedSecrets(final String serviceKey, final String hostIdentifier) {
+        return hasEnvBackedSecretsForHostName(serviceKey, resolveHostName(hostIdentifier));
+    }
+
+    /**
+     * Resolves a site's hostname from its identifier, or {@code null} if it cannot be resolved.
+     */
+    private String resolveHostName(final String hostIdentifier) {
+        return Try.of(() -> hostAPI.find(hostIdentifier, APILocator.systemUser(), false))
+                .map(Host::getHostname)
+                .getOrNull();
+    }
+
+    /**
+     * Same as {@link #hasEnvBackedSecrets(String, String)} but takes an already-resolved hostname so
+     * callers iterating many apps for the same site (e.g. {@code appKeysByHost}) resolve the host
+     * once instead of per app.
+     */
+    private boolean hasEnvBackedSecretsForHostName(final String serviceKey, final String hostName) {
         final AppDescriptor appDescriptor = getAppDescriptorMap().get(serviceKey.toLowerCase());
         if (null == appDescriptor) {
             return false;
         }
-        final String hostName = Try.of(() ->
-                        hostAPI.find(hostIdentifier, APILocator.systemUser(), false))
-                .map(Host::getHostname)
-                .getOrNull();
         for (final Entry<String, ParamDescriptor> param : appDescriptor.getParams().entrySet()) {
             final String paramName = param.getKey();
             final ParamDescriptor describedParam = param.getValue();
@@ -402,6 +418,10 @@ public class AppsAPIImpl implements AppsAPI {
             secrets.keySet().removeAll(propOrSecretName); //we simply remove the secret by name and then persist the remaining.
 
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
+                // Never write env-backed values into the stored blob; they stay env-resolved at read.
+                if (entry.getValue().isFromEnv()) {
+                    continue;
+                }
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
             saveSecrets(builder.withKey(key).build(), host, user);
@@ -428,6 +448,10 @@ public class AppsAPIImpl implements AppsAPI {
             final AppSecrets.Builder builder = new AppSecrets.Builder();
 
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
+                // Never copy env-backed values into the stored blob; they stay env-resolved at read.
+                if (entry.getValue().isFromEnv()) {
+                    continue;
+                }
                 //Replace all existing secret/property that must be copied as it is.
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
@@ -491,9 +515,15 @@ public class AppsAPIImpl implements AppsAPI {
 
         Map<String, Secret> secretsOut = new HashMap<>();
         for (Map.Entry<String, Secret> entry : secretsToSave.getSecrets().entrySet()) {
+            final Secret existing = existingSecrets.get(entry.getKey());
             if (entry.getValue().getHidden() && SecretViewSerializer.HIDDEN_SECRET_MASK.equals(
-                    entry.getValue().getString()) && existingSecrets.get(entry.getKey()) != null) {
-                secretsOut.put(entry.getKey(), existingSecrets.get(entry.getKey()));
+                    entry.getValue().getString()) && existing != null) {
+                // The submitted value is the unchanged mask. If the existing value is env-backed,
+                // do not promote it into the stored blob — leave it out so it stays env-resolved.
+                if (existing.isFromEnv()) {
+                    continue;
+                }
+                secretsOut.put(entry.getKey(), existing);
             } else {
                 secretsOut.put(entry.getKey(), entry.getValue());
             }

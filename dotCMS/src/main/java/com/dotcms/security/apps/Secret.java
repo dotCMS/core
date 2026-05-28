@@ -30,8 +30,8 @@ public final class Secret extends AbstractProperty<char[]> {
     }
 
     public void destroy() {
-        Arrays.fill(value, (char) 0);
-        Optional.ofNullable(envVarValue).ifPresent(value -> Arrays.fill(value, (char) 0));
+        Optional.ofNullable(value).ifPresent(chars -> Arrays.fill(chars, (char) 0));
+        Optional.ofNullable(envVarValue).ifPresent(chars -> Arrays.fill(chars, (char) 0));
     }
 
     public static Builder builder() {
