@@ -1,5 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import { Component, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, OnInit, signal } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode, BlockEditorMark } from '@dotcms/types';
 import { BlockEditorState, BlockEditorDefaultBlocks } from '@dotcms/types/internal';
@@ -46,6 +46,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
 @Component({
     selector: 'dotcms-block-editor-renderer-native',
     templateUrl: './dotcms-block-editor-renderer-native.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         NgTemplateOutlet,
         NgComponentOutlet,
