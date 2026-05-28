@@ -50,7 +50,7 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     private final IndexAPI osIndexAPI;
 
     private String physicalName(final String index) {
-        final String clustered = physicalName(index);
+        final String clustered = osIndexAPI.getNameWithClusterIDPrefix(index);
         return IndexTag.OS.isTagged(clustered) ? clustered : IndexTag.OS.tag(clustered);
     }
 
