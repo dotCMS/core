@@ -249,7 +249,9 @@ public class AppsAPIImpl implements AppsAPI {
                 : Map.of();
 
         // Descriptor params drive env construct-and-lookup; env provisioning requires registration.
-        final AppDescriptor appDescriptor = getAppDescriptorMap().get(key.toLowerCase());
+        // Key may be null/blank (e.g. the global service); only env tiers need a descriptor.
+        final AppDescriptor appDescriptor =
+                isSet(key) ? getAppDescriptorMap().get(key.toLowerCase()) : null;
         final Map<String, ParamDescriptor> params =
                 null != appDescriptor ? appDescriptor.getParams() : Map.of();
         final String hostName = host.getHostname();
@@ -415,9 +417,11 @@ public class AppsAPIImpl implements AppsAPI {
             final AppSecrets serviceSecrets = secretsForService.get();
             final Map<String, Secret> secrets = serviceSecrets.getSecrets();
 
-            secrets.keySet().removeAll(propOrSecretName); //we simply remove the secret by name and then persist the remaining.
-
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
+                // Drop the secret(s) being deleted; persist the remaining.
+                if (propOrSecretName.contains(entry.getKey())) {
+                    continue;
+                }
                 // Never write env-backed values into the stored blob; they stay env-resolved at read.
                 if (entry.getValue().isFromEnv()) {
                     continue;
