@@ -7,6 +7,7 @@ import static com.dotcms.util.DotPreconditions.checkArgument;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
@@ -332,7 +333,8 @@ public class ESIndexAPI implements IndexAPI {
 	}
 
 	private String getIndexTimestamp(final String indexName) {
-		return Try.of(()->indexName.substring(indexName.lastIndexOf("_") + 1)).getOrNull();
+		final String base = IndexTag.strip(indexName); // strip .os suffix if present
+		return Try.of(() -> base.substring(base.lastIndexOf("_") + 1)).getOrNull();
 	}
 
 
