@@ -30,7 +30,7 @@
     } @else {
         @switch (node.type) {
             @case (BLOCKS.PARAGRAPH) {
-                <p dotParagraph [style]="node.attrs">
+                <p dotParagraph [style.text-align]="node.attrs?.['textAlign'] || null">
                     <ng-container
                         *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
                 </p>
@@ -47,7 +47,7 @@
             @case (BLOCKS.HEADING) {
                 @switch (asLevel(node.attrs?.['level'])) {
                     @case ('1') {
-                        <h1 [style]="node.attrs">
+                        <h1 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -56,7 +56,7 @@
                         </h1>
                     }
                     @case ('2') {
-                        <h2 [style]="node.attrs">
+                        <h2 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -65,7 +65,7 @@
                         </h2>
                     }
                     @case ('3') {
-                        <h3 [style]="node.attrs">
+                        <h3 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -74,7 +74,7 @@
                         </h3>
                     }
                     @case ('4') {
-                        <h4 [style]="node.attrs">
+                        <h4 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -83,7 +83,7 @@
                         </h4>
                     }
                     @case ('5') {
-                        <h5 [style]="node.attrs">
+                        <h5 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -92,7 +92,7 @@
                         </h5>
                     }
                     @case ('6') {
-                        <h6 [style]="node.attrs">
+                        <h6 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -101,7 +101,7 @@
                         </h6>
                     }
                     @default {
-                        <h1 [style]="node.attrs">
+                        <h1 [style.text-align]="node.attrs?.['textAlign'] || null">
                             <ng-container
                                 *ngTemplateOutlet="
                                     nodeList;
@@ -199,8 +199,8 @@
     @switch (marks?.[0]?.type) {
         @case ('link') {
             <a
-                [attr.href]="markAttrs(marks)['href'] || ''"
-                [attr.target]="markAttrs(marks)['target'] || ''"
+                [attr.href]="markAttrs(marks)['href'] || null"
+                [attr.target]="markAttrs(marks)['target'] || null"
                 [attr.title]="markAttrs(marks)['title'] || null"
                 [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
                 [attr.rel]="markAttrs(marks)['rel'] || null"
@@ -267,7 +267,16 @@
             </sub>
         }
         @default {
-            {{ text }}
+            @if (marks?.length) {
+                <!-- Unknown mark type: skip it but keep rendering any marks beneath. -->
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: restMarks(marks), text: text }
+                    " />
+            } @else {
+                {{ text }}
+            }
         }
     }
 </ng-template>

@@ -149,6 +149,49 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(a?.getAttribute('href')).toBe('/foo');
             expect(a?.classList.contains('cta')).toBe(true);
         });
+
+        it('should omit href/target on a link mark when its attrs are missing', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'link',
+                            marks: [{ type: 'link', attrs: {} }]
+                        }
+                    ]
+                }
+            ]);
+
+            const a = spectator.query('a');
+            expect(a).toBeTruthy();
+            // No empty self-link (`href=""`) or meaningless `target=""`.
+            expect(a?.hasAttribute('href')).toBe(false);
+            expect(a?.hasAttribute('target')).toBe(false);
+        });
+
+        it('should preserve known marks beneath an unknown mark type', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'still bold',
+                            marks: [
+                                { type: 'mystery' as unknown as string, attrs: {} },
+                                { type: 'bold', attrs: {} }
+                            ] as BlockEditorNode['marks']
+                        }
+                    ]
+                }
+            ]);
+
+            const strong = spectator.query('strong');
+            expect(strong).toBeTruthy();
+            expect(strong?.textContent?.trim()).toBe('still bold');
+        });
     });
 
     describe('Headings', () => {
@@ -177,6 +220,22 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
         it('should default to <h1> when level is missing', () => {
             render([{ type: BlockEditorDefaultBlocks.HEADING, content: [] }]);
             expect(spectator.query('h1')).toBeTruthy();
+        });
+
+        it('should apply textAlign as text-align without leaking the level attr as CSS', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.HEADING,
+                    attrs: { level: 2, textAlign: 'center' },
+                    content: []
+                }
+            ]);
+
+            const h2 = spectator.query('h2') as HTMLElement;
+            expect(h2).toBeTruthy();
+            expect(h2.style.textAlign).toBe('center');
+            // `level` is not a CSS property and must never reach the style attribute.
+            expect(h2.getAttribute('style')).not.toContain('level');
         });
     });
 
