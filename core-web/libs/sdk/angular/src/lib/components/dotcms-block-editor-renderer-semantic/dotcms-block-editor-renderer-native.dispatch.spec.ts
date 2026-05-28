@@ -445,6 +445,22 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(figure?.style.float).toBe('right');
         });
 
+        it('should constrain the <img> to its <figure> wrapper so wide images cannot overflow', () => {
+            // Regression cover: a float-wrapped <figure> sets width: 50% on the
+            // wrapper, but without max-width on the <img> a large source image
+            // renders at its intrinsic size and overlaps surrounding text.
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', textWrap: 'right' },
+                    content: []
+                }
+            ]);
+            const img = spectator.query('figure img') as HTMLImageElement;
+            expect(img.style.maxWidth).toBe('100%');
+            expect(img.style.height).toBe('auto');
+        });
+
         it('should render a real <video> for dotVideo, with no wrapper element', () => {
             render([
                 {

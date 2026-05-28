@@ -162,7 +162,10 @@
 
             @case (BLOCKS.DOT_IMAGE) {
                 <figure [style]="imageStyle(node.attrs)">
-                    <img [alt]="node.attrs?.['alt']" [src]="node.attrs?.['src']" />
+                    <img
+                        [alt]="node.attrs?.['alt']"
+                        [src]="node.attrs?.['src']"
+                        style="max-width: 100%; height: auto" />
                 </figure>
             }
 
