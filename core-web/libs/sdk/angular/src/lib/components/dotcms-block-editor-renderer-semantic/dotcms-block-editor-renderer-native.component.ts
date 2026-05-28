@@ -141,13 +141,15 @@ export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
 
     /**
      * The column span (1–12) for a grid column. Falls back to `6` for malformed
-     * `columns` attrs, matching the legacy renderer.
+     * `columns` attrs or for an out-of-range column index, matching the legacy
+     * renderer.
      */
     columnSpan(attrs: BlockEditorNode['attrs'], index: number): number {
         const rawCols = Array.isArray(attrs?.['columns']) ? attrs['columns'] : [6, 6];
         const valid =
             rawCols.length === 2 &&
             rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v));
-        return valid ? rawCols[index] : 6;
+        const span = valid ? rawCols[index] : 6;
+        return typeof span === 'number' ? span : 6;
     }
 }

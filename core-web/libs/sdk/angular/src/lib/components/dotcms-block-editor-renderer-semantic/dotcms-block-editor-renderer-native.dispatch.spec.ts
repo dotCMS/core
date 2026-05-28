@@ -603,6 +603,28 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(columns[1].style.gridColumn).toContain('span 8');
         });
 
+        it('should fall back to span 6 when a grid column has no matching columns entry', () => {
+            // Regression cover: when `content` has more columns than `attrs.columns`
+            // describes (or `columns` is missing), the out-of-range lookup used to
+            // return `undefined` and render as `span undefined`. It now falls back
+            // to 6, matching the legacy renderer and the documented behavior.
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.GRID_BLOCK,
+                    attrs: { columns: [4, 8] },
+                    content: [
+                        { type: 'gridColumn', content: [] },
+                        { type: 'gridColumn', content: [] },
+                        { type: 'gridColumn', content: [] }
+                    ]
+                }
+            ]);
+
+            const columns = spectator.queryAll('[data-type="gridColumn"]') as HTMLElement[];
+            expect(columns[2].style.gridColumn).toContain('span 6');
+            expect(columns[2].style.gridColumn).not.toContain('undefined');
+        });
+
         it('should render the contentlet component', () => {
             render([
                 {
