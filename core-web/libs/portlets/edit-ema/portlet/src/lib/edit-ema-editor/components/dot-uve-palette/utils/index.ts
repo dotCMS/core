@@ -112,9 +112,9 @@ export function buildPaletteMenuItems({
             items: [
                 {
                     label: 'uve.palette.menu.sort.option.popular',
-                    command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                    command: () => onSortSelect({ orderby: 'usage', direction: 'DESC' }),
                     isActive: getSortActiveClass(
-                        { orderby: 'usage', direction: 'ASC' },
+                        { orderby: 'usage', direction: 'DESC' },
                         currentSort
                     )
                 },
