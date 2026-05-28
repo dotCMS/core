@@ -8,7 +8,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -1168,14 +1168,24 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
-                // Navigate to Page B
+                // Hold the response to inspect the LOADING window
+                const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
+
+                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
+                spectator.detectChanges();
+
+                // While LOADING, stale Page A data is present — breadcrumb must not fire
+                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+
+                // Resolve with Page B data
                 const pageBResponse = {
                     ...MOCK_RESPONSE_HEADLESS,
                     page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Page B', identifier: '456' }
                 };
-                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(pageBResponse));
+                pendingRequest$.next(pageBResponse);
+                pendingRequest$.complete();
 
-                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
 

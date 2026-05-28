@@ -212,16 +212,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const status = this.uveStore.uveStatus();
 
         if (page && status === UVE_STATUS.LOADED) {
-            // untracked: (a) prevents URL-only changes from re-triggering the breadcrumb,
-            // (b) avoids a TypeError when ngOnDestroy calls resetPageParams() (pageParams = null)
-            // before Angular tears down the effect asynchronously.
+            // untracked: prevents URL-only signal changes from re-triggering the breadcrumb.
             const url = untracked(() => {
                 const params = this.uveStore.pageFriendlyParams();
                 const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
                 const cleanedParams = normalizeQueryParams(params, baseClientHost);
-                const paramsString = new URLSearchParams(cleanedParams).toString();
+                const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
 
-                return `/dotAdmin/#/edit-page/content?${paramsString}`;
+                return `/dotAdmin/#${urlTree.toString()}`;
             });
 
             this.#globalStore.addNewBreadcrumb({
