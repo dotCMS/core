@@ -575,9 +575,9 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
                 }
             ]);
 
-            const bodyCells = Array.from(
-                spectator.queryAll('tbody td') as HTMLElement[]
-            ).map((td) => td.textContent?.trim());
+            const bodyCells = Array.from(spectator.queryAll('tbody td') as HTMLElement[]).map(
+                (td) => td.textContent?.trim()
+            );
             expect(bodyCells).toEqual(['x', 'y', 'z']);
         });
 
