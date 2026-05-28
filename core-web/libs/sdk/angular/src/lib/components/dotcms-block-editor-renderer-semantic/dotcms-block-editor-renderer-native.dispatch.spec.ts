@@ -353,42 +353,126 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
     });
 
     describe('Media / table / grid / contentlet', () => {
-        it('should render the image component', () => {
+        it('should render a real <figure><img> for dotImage, with no wrapper element', () => {
             render([
                 {
                     type: BlockEditorDefaultBlocks.DOT_IMAGE,
-                    attrs: { src: 'image.jpg' },
+                    attrs: { src: 'image.jpg', alt: 'a picture' },
                     content: []
                 }
             ]);
-            expect(spectator.query('dotcms-block-editor-renderer-image')).toBeTruthy();
+
+            const figure = spectator.query('figure');
+            expect(figure).toBeTruthy();
+            const img = figure?.querySelector('img');
+            expect(img?.getAttribute('src')).toBe('image.jpg');
+            expect(img?.getAttribute('alt')).toBe('a picture');
+            expect(spectator.query('dotcms-block-editor-renderer-image')).toBeNull();
         });
 
-        it('should render the video component', () => {
+        it('should apply float for textWrap on a dotImage figure', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', textWrap: 'right' },
+                    content: []
+                }
+            ]);
+            const figure = spectator.query('figure') as HTMLElement;
+            expect(figure?.style.float).toBe('right');
+        });
+
+        it('should render a real <video> for dotVideo, with no wrapper element', () => {
             render([
                 {
                     type: BlockEditorDefaultBlocks.DOT_VIDEO,
-                    attrs: { src: 'video.mp4' },
+                    attrs: { src: 'video.mp4', mimeType: 'video/mp4' },
                     content: []
                 }
             ]);
-            expect(spectator.query('dotcms-block-editor-renderer-video')).toBeTruthy();
+
+            const video = spectator.query('video');
+            expect(video).toBeTruthy();
+            expect(video?.querySelector('source')?.getAttribute('src')).toBe('video.mp4');
+            expect(video?.querySelector('source')?.getAttribute('type')).toBe('video/mp4');
+            expect(spectator.query('dotcms-block-editor-renderer-video')).toBeNull();
         });
 
-        it('should render the table component', () => {
+        it('should render a real <table> for the table block, with no wrapper element', () => {
             render([{ type: BlockEditorDefaultBlocks.TABLE, content: [] }]);
-            expect(spectator.query('dotcms-block-editor-renderer-table')).toBeTruthy();
+            expect(spectator.query('table')).toBeTruthy();
+            expect(spectator.query('dotcms-block-editor-renderer-table')).toBeNull();
         });
 
-        it('should render the grid block component', () => {
+        it('should render a <ul> directly inside <td> with no wrapper element between', () => {
+            // Regression cover: table cells used to delegate to the legacy item
+            // component, which inserted a dispatcher element between <td> and
+            // the list. The native dispatch must keep <td><ul><li> intact.
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.TABLE,
+                    content: [
+                        {
+                            type: 'tableRow',
+                            content: [
+                                {
+                                    type: 'tableCell',
+                                    content: [
+                                        {
+                                            type: BlockEditorDefaultBlocks.BULLET_LIST,
+                                            content: [
+                                                {
+                                                    type: BlockEditorDefaultBlocks.LIST_ITEM,
+                                                    content: [
+                                                        {
+                                                            type: BlockEditorDefaultBlocks.PARAGRAPH,
+                                                            content: [
+                                                                {
+                                                                    type: BlockEditorDefaultBlocks.TEXT,
+                                                                    text: 'cell',
+                                                                    marks: []
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            const ul = spectator.query('table ul');
+            expect(ul).toBeTruthy();
+            const elementChildren = Array.from(ul?.children ?? []);
+            expect(elementChildren.length).toBe(1);
+            expect(elementChildren[0].tagName.toLowerCase()).toBe('li');
+        });
+
+        it('should render real <div>s for grid columns, with no wrapper element and the right column spans', () => {
             render([
                 {
                     type: BlockEditorDefaultBlocks.GRID_BLOCK,
-                    attrs: { columns: [6, 6] },
-                    content: []
+                    attrs: { columns: [4, 8] },
+                    content: [
+                        { type: 'gridColumn', content: [] },
+                        { type: 'gridColumn', content: [] }
+                    ]
                 }
             ]);
-            expect(spectator.query('dotcms-block-editor-renderer-grid-block')).toBeTruthy();
+
+            const grid = spectator.query('[data-type="gridBlock"]') as HTMLElement;
+            expect(grid).toBeTruthy();
+            expect(spectator.query('dotcms-block-editor-renderer-grid-block')).toBeNull();
+
+            const columns = spectator.queryAll('[data-type="gridColumn"]') as HTMLElement[];
+            expect(columns.length).toBe(2);
+            expect(columns[0].style.gridColumn).toContain('span 4');
+            expect(columns[1].style.gridColumn).toContain('span 8');
         });
 
         it('should render the contentlet component', () => {
@@ -399,6 +483,8 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
                     content: []
                 }
             ]);
+            // Contentlet is intentionally still dispatched to a component for now —
+            // it has more logic and routes to user-provided custom renderers.
             expect(spectator.query('dotcms-block-editor-renderer-contentlet')).toBeTruthy();
         });
     });

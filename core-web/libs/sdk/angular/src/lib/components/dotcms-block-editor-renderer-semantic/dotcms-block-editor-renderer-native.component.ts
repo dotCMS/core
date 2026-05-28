@@ -16,11 +16,7 @@ import {
 } from './blocks/semantic-blocks.component';
 
 import { DotContentletBlock } from '../dotcms-block-editor-renderer/blocks/dot-contentlet.component';
-import { DotGridBlock } from '../dotcms-block-editor-renderer/blocks/grid-block.component';
-import { DotImageBlock } from '../dotcms-block-editor-renderer/blocks/image.component';
-import { DotTableBlock } from '../dotcms-block-editor-renderer/blocks/table.component';
 import { DotUnknownBlockComponent } from '../dotcms-block-editor-renderer/blocks/unknown.component';
-import { DotVideoBlock } from '../dotcms-block-editor-renderer/blocks/video.component';
 import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-editor-renderer.component';
 
 /**
@@ -60,10 +56,6 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
         DotSemanticListItem,
         DotSemanticBlockQuote,
         DotSemanticCodeBlock,
-        DotImageBlock,
-        DotVideoBlock,
-        DotTableBlock,
-        DotGridBlock,
         DotContentletBlock,
         DotUnknownBlockComponent
     ]
@@ -108,5 +100,43 @@ export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
     /** The attributes of the current (outermost) mark. */
     markAttrs(marks: BlockEditorMark[] | undefined): Record<string, string> {
         return marks?.[0]?.attrs ?? {};
+    }
+
+    /**
+     * Wrapper style for a `dotImage` `<figure>`, derived from the node's
+     * `textWrap` (float left/right) or `textAlign` attribute.
+     */
+    imageStyle(attrs: BlockEditorNode['attrs']): Record<string, string> {
+        const textWrap = attrs?.['textWrap'];
+        const textAlign = attrs?.['textAlign'];
+
+        if (textWrap === 'left') {
+            return { float: 'left', width: '50%', margin: '0 1rem 1rem 0' };
+        }
+        if (textWrap === 'right') {
+            return { float: 'right', width: '50%', margin: '0 0 1rem 1rem' };
+        }
+        if (textAlign) {
+            return { 'text-align': textAlign };
+        }
+
+        return {};
+    }
+
+    /** Poster URL for a `dotVideo` `<video>` (from `attrs.data.thumbnail`). */
+    videoPoster(attrs: BlockEditorNode['attrs']): string | undefined {
+        return attrs?.['data']?.['thumbnail'];
+    }
+
+    /**
+     * The column span (1–12) for a grid column. Falls back to `6` for malformed
+     * `columns` attrs, matching the legacy renderer.
+     */
+    columnSpan(attrs: BlockEditorNode['attrs'], index: number): number {
+        const rawCols = Array.isArray(attrs?.['columns']) ? attrs['columns'] : [6, 6];
+        const valid =
+            rawCols.length === 2 &&
+            rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v));
+        return valid ? rawCols[index] : 6;
     }
 }

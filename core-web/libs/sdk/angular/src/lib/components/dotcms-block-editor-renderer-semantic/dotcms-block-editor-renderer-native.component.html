@@ -161,21 +161,83 @@
             }
 
             @case (BLOCKS.DOT_IMAGE) {
-                <dotcms-block-editor-renderer-image [attrs]="node.attrs || {}" />
+                <figure [style]="imageStyle(node.attrs)">
+                    <img [alt]="node.attrs?.['alt']" [src]="node.attrs?.['src']" />
+                </figure>
             }
 
             @case (BLOCKS.DOT_VIDEO) {
-                <dotcms-block-editor-renderer-video [attrs]="node.attrs || {}" />
+                <video
+                    [controls]="true"
+                    preload="metadata"
+                    [poster]="videoPoster(node.attrs)"
+                    [width]="node.attrs?.['width']"
+                    [height]="node.attrs?.['height']">
+                    <track default kind="captions" srclang="en" />
+                    <source [src]="node.attrs?.['src']" [type]="node.attrs?.['mimeType']" />
+                    Your browser does not support the
+                    <code>video</code>
+                    element.
+                </video>
             }
 
             @case (BLOCKS.TABLE) {
-                <dotcms-block-editor-renderer-table [content]="node.content" />
+                <table>
+                    <thead>
+                        @for (rowNode of node.content?.slice(0, 1); track rowNode.type) {
+                            <tr>
+                                @for (cellNode of rowNode.content; track cellNode.type) {
+                                    <th
+                                        [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                        [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                nodeList;
+                                                context: { $implicit: cellNode.content }
+                                            " />
+                                    </th>
+                                }
+                            </tr>
+                        }
+                    </thead>
+                    <tbody>
+                        @for (rowNode of node.content?.slice(1); track rowNode.type) {
+                            <tr>
+                                @for (cellNode of rowNode.content; track cellNode.type) {
+                                    <td
+                                        [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                        [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                nodeList;
+                                                context: { $implicit: cellNode.content }
+                                            " />
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
 
             @case (BLOCKS.GRID_BLOCK) {
-                <dotcms-block-editor-renderer-grid-block
-                    [node]="node"
-                    [customRenderers]="customRenderers" />
+                <div
+                    data-type="gridBlock"
+                    class="grid-block"
+                    style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem">
+                    @for (column of node.content; track $index) {
+                        <div
+                            data-type="gridColumn"
+                            class="grid-block__column"
+                            [style.grid-column]="'span ' + columnSpan(node.attrs, $index)">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: column.content }
+                                " />
+                        </div>
+                    }
+                </div>
             }
 
             @case (BLOCKS.DOT_CONTENT) {

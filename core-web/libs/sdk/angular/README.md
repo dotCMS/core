@@ -545,9 +545,7 @@ export class MyBannerComponent {
 
 #### Why it matters
 
-The host element is the real semantic tag (`<ul>`, `<li>`, `<p>`, `<h1>`–`<h6>`, ...) and recursion is done through `ng-template` outlets that render as HTML comment nodes (invisible to the accessibility tree), so `<li>` stays a true DOM child of `<ul>` — the relationship the HTML spec and assistive technology require, and that accessibility scanners flag when broken.
-
-> **Known scope:** the wrapper-removal applies to top-level blocks. Lists rendered **inside table cells or grid columns** still go through the legacy block component internally, so an `<ul>` inside a `<td>`/grid cell will still have a wrapper element between the list and its items. This will be addressed in a follow-up.
+The host element is the real semantic tag (`<ul>`, `<li>`, `<p>`, `<h1>`–`<h6>`, ...) and recursion is done through `ng-template` outlets that render as HTML comment nodes (invisible to the accessibility tree), so `<li>` stays a true DOM child of `<ul>` — the relationship the HTML spec and assistive technology require, and that accessibility scanners flag when broken. This applies inside table cells and grid columns too: `<td><ul><li>…` stays intact.
 
 | Input             | Type                 | Required | Description                                                                                                |
 |-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
