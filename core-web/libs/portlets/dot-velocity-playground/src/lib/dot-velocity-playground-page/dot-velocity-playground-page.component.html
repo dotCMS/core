@@ -1,0 +1,110 @@
+<div
+    class="flex items-center gap-3 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 flex-shrink-0"
+    data-testid="velocity-playground-toolbar">
+    <p-button
+        [label]="'velocityPlayground.action.run' | dm"
+        icon="pi pi-play"
+        [loading]="store.isLoading()"
+        [disabled]="!store.canRun()"
+        (onClick)="onRun()"
+        data-testid="velocity-playground-run-btn" />
+
+    <div class="flex items-center gap-2">
+        <label for="velocity-playground-wrap" class="text-sm text-color-secondary">
+            {{ 'velocityPlayground.action.wrap' | dm }}
+        </label>
+        <p-toggleSwitch
+            inputId="velocity-playground-wrap"
+            [ngModel]="store.wrapCode()"
+            (ngModelChange)="store.setWrapCode($event)"
+            data-testid="velocity-playground-wrap-toggle" />
+    </div>
+
+    <div class="flex items-center gap-2">
+        <label for="velocity-playground-history" class="text-sm text-color-secondary">
+            {{ 'velocityPlayground.history.label' | dm }}
+        </label>
+        <p-select
+            inputId="velocity-playground-history"
+            [options]="$historyOptions()"
+            [ngModel]="null"
+            (ngModelChange)="onHistoryChange($event)"
+            [placeholder]="'velocityPlayground.history.placeholder' | dm"
+            [disabled]="!store.hasHistory()"
+            optionLabel="label"
+            optionValue="value"
+            appendTo="body"
+            [showClear]="false"
+            styleClass="w-64"
+            data-testid="velocity-playground-history-select" />
+        <p-button
+            text
+            size="small"
+            icon="pi pi-trash"
+            [label]="'velocityPlayground.action.clearHistory' | dm"
+            [disabled]="!store.hasHistory()"
+            (onClick)="store.clearHistory()"
+            data-testid="velocity-playground-clear-history-btn" />
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+        @if (store.elapsedMs() !== null) {
+            <p-tag
+                icon="pi pi-clock"
+                severity="info"
+                [value]="store.elapsedMs() + ' ms'"
+                data-testid="velocity-playground-timing-chip" />
+        }
+        @if (store.hasOutput()) {
+            <p-tag
+                severity="secondary"
+                [value]="store.outputContentType().toUpperCase()"
+                data-testid="velocity-playground-content-type-chip" />
+        }
+    </div>
+</div>
+
+<p-splitter
+    [panelSizes]="store.splitterRatio()"
+    [pt]="splitterPt"
+    (onResizeEnd)="onSplitterResize($event)"
+    data-testid="velocity-playground-splitter">
+    <ng-template pTemplate>
+        <div class="flex flex-col h-full overflow-hidden">
+            <ngx-monaco-editor
+                class="flex-1 min-h-0"
+                [ngModel]="store.code()"
+                (ngModelChange)="store.setCode($event)"
+                (onInit)="onEditorInit()"
+                [options]="$editorOptions()"
+                data-testid="velocity-playground-editor" />
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate>
+        <div class="flex flex-col h-full overflow-hidden">
+            @if (store.hasError()) {
+                <p-message
+                    severity="error"
+                    icon="pi pi-exclamation-triangle"
+                    [pt]="{ root: { class: '!rounded-none border-x-0 border-t-0' } }"
+                    data-testid="velocity-playground-error-banner">
+                    {{ store.errorMessage() }}
+                </p-message>
+            }
+            @if (store.status() === ComponentStatus.INIT && !store.hasError()) {
+                <div
+                    class="flex-1 flex items-center justify-center text-color-secondary text-sm"
+                    data-testid="velocity-playground-empty-output">
+                    {{ 'velocityPlayground.output.empty' | dm }}
+                </div>
+            } @else {
+                <ngx-monaco-editor
+                    class="flex-1 min-h-0"
+                    [ngModel]="store.output()"
+                    [options]="$outputOptions()"
+                    data-testid="velocity-playground-output-editor" />
+            }
+        </div>
+    </ng-template>
+</p-splitter>
