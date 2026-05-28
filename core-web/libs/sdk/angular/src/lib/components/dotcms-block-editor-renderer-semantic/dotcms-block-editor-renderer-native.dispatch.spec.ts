@@ -148,6 +148,73 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(a?.classList.contains('cta')).toBe(true);
         });
 
+        it('should default rel to "noopener noreferrer" when target="_blank" and no rel is set', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'link',
+                            marks: [
+                                {
+                                    type: 'link',
+                                    attrs: { href: 'https://example.com', target: '_blank' }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            const a = spectator.query('a');
+            expect(a?.getAttribute('target')).toBe('_blank');
+            expect(a?.getAttribute('rel')).toBe('noopener noreferrer');
+        });
+
+        it('should preserve an author-supplied rel even when target="_blank"', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'link',
+                            marks: [
+                                {
+                                    type: 'link',
+                                    attrs: {
+                                        href: 'https://example.com',
+                                        target: '_blank',
+                                        rel: 'nofollow'
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('a')?.getAttribute('rel')).toBe('nofollow');
+        });
+
+        it('should not emit a rel attribute when target is not "_blank"', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'link',
+                            marks: [{ type: 'link', attrs: { href: '/foo' } }]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('a')?.hasAttribute('rel')).toBe(false);
+        });
+
         it('should fall back to plain text when a link mark has no href', () => {
             render([
                 {
@@ -447,6 +514,71 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             const elementChildren = Array.from(ul?.children ?? []);
             expect(elementChildren.length).toBe(1);
             expect(elementChildren[0].tagName.toLowerCase()).toBe('li');
+        });
+
+        it('should render each table cell at its correct position when cells are updated', () => {
+            // Regression cover: the table @for loops used to track by node.type,
+            // which is identical for every row/cell ("tableRow" / "tableCell").
+            // Angular's keyed diff then reused the wrong DOM node on updates,
+            // making cell N show content from cell N-1. Tracking by $index
+            // keeps each cell pinned to its position.
+            const buildRow = (a: string, b: string, c: string) => ({
+                type: 'tableRow',
+                content: [
+                    {
+                        type: 'tableCell',
+                        content: [
+                            {
+                                type: BlockEditorDefaultBlocks.PARAGRAPH,
+                                content: [
+                                    { type: BlockEditorDefaultBlocks.TEXT, text: a, marks: [] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        type: 'tableCell',
+                        content: [
+                            {
+                                type: BlockEditorDefaultBlocks.PARAGRAPH,
+                                content: [
+                                    { type: BlockEditorDefaultBlocks.TEXT, text: b, marks: [] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        type: 'tableCell',
+                        content: [
+                            {
+                                type: BlockEditorDefaultBlocks.PARAGRAPH,
+                                content: [
+                                    { type: BlockEditorDefaultBlocks.TEXT, text: c, marks: [] }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.TABLE,
+                    content: [buildRow('h1', 'h2', 'h3'), buildRow('a', 'b', 'c')]
+                }
+            ]);
+
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.TABLE,
+                    content: [buildRow('h1', 'h2', 'h3'), buildRow('x', 'y', 'z')]
+                }
+            ]);
+
+            const bodyCells = Array.from(
+                spectator.queryAll('tbody td') as HTMLElement[]
+            ).map((td) => td.textContent?.trim());
+            expect(bodyCells).toEqual(['x', 'y', 'z']);
         });
 
         it('should render real <div>s for grid columns, with no wrapper element and the right column spans', () => {

@@ -184,9 +184,9 @@
             @case (BLOCKS.TABLE) {
                 <table>
                     <thead>
-                        @for (rowNode of node.content?.slice(0, 1); track rowNode.type) {
+                        @for (rowNode of node.content?.slice(0, 1); track $index) {
                             <tr>
-                                @for (cellNode of rowNode.content; track cellNode.type) {
+                                @for (cellNode of rowNode.content; track $index) {
                                     <th
                                         [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
                                         [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
@@ -201,9 +201,9 @@
                         }
                     </thead>
                     <tbody>
-                        @for (rowNode of node.content?.slice(1); track rowNode.type) {
+                        @for (rowNode of node.content?.slice(1); track $index) {
                             <tr>
-                                @for (cellNode of rowNode.content; track cellNode.type) {
+                                @for (cellNode of rowNode.content; track $index) {
                                     <td
                                         [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
                                         [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
@@ -272,7 +272,10 @@
                     [attr.target]="markAttrs(marks)['target'] || null"
                     [attr.title]="markAttrs(marks)['title'] || null"
                     [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
-                    [attr.rel]="markAttrs(marks)['rel'] || null"
+                    [attr.rel]="
+                        markAttrs(marks)['rel'] ||
+                            (markAttrs(marks)['target'] === '_blank' ? 'noopener noreferrer' : null)
+                    "
                     [class]="markAttrs(marks)['class'] || null">
                     <ng-container
                         *ngTemplateOutlet="
