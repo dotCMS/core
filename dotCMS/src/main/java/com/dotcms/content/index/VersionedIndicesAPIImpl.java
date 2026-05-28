@@ -48,7 +48,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     /**
      * {@inheritDoc}
      *
-     * <p>Names are returned with the {@code os::} vendor tag stripped. The tag is a DB-only
+     * <p>Names are returned with the {@code .os} vendor suffix stripped. The suffix is a DB-only
      * storage artifact used for uniqueness; all consumers receive clean cluster-prefixed names
      * (e.g. {@code cluster_xxx.working_ts}) ready for direct OS client or routing use.</p>
      */
@@ -63,7 +63,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return Optional.of(cached);
         }
 
-        // Load from database, strip the os:: tag before exposing to consumers
+        // Load from database, strip the .os suffix before exposing to consumers
         Optional<VersionedIndices> stripped = indicesFactory.loadIndices(version)
                 .map(VersionedIndicesAPIImpl::stripTags);
 
@@ -86,7 +86,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return cached;
         }
 
-        // Load from database, strip os:: tags before exposing to consumers
+        // Load from database, strip .os suffixes before exposing to consumers
         List<VersionedIndices> loaded = indicesFactory.loadAllIndices().stream()
                 .map(VersionedIndicesAPIImpl::stripTags)
                 .collect(Collectors.toList());
@@ -100,8 +100,8 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     /**
      * {@inheritDoc}
      *
-     * <p>Callers may pass stripped (no {@code os::}) or already-tagged names —
-     * this method always ensures the {@code os::} tag is present before writing to the
+     * <p>Callers may pass stripped (no {@code .os}) or already-tagged names —
+     * this method always ensures the {@code .os} suffix is present before writing to the
      * database (for uniqueness), and caches the stripped form for subsequent loads.</p>
      */
     @WrapInTransaction
@@ -109,7 +109,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
-        // Ensure os:: tag is present in DB (idempotent — tag() never double-tags)
+        // Ensure .os suffix is present in DB (idempotent — tag() never double-tags)
         indicesFactory.saveIndices(tagOS(indicesInfo));
 
         // Cache the stripped form so loadIndices cache hits return clean names
@@ -207,7 +207,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return Optional.of(cached);
         }
 
-        // Load from database, strip os:: tags before exposing to consumers
+        // Load from database, strip .os suffixes before exposing to consumers
         Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices()
                 .map(VersionedIndicesAPIImpl::stripTags);
 
@@ -235,12 +235,12 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     }
 
     // =========================================================================
-    // Tag helpers — encapsulate os:: as a DB-only artifact
+    // Tag helpers — encapsulate .os suffix as a DB-only artifact
     // =========================================================================
 
     /**
      * Returns a copy of {@code indices} with all name fields stripped of any vendor tag
-     * (e.g. {@code os::cluster_xxx.name} → {@code cluster_xxx.name}).
+     * (e.g. {@code cluster_xxx.name.os} → {@code cluster_xxx.name}).
      * This is the form exposed to all consumers of {@link VersionedIndicesAPI}.
      */
     private static VersionedIndices stripTags(final VersionedIndices indices) {
@@ -255,7 +255,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     }
 
     /**
-     * Returns a copy of {@code indices} with all name fields tagged with {@code os::}
+     * Returns a copy of {@code indices} with all name fields tagged with the {@code .os} suffix
      * (idempotent — already-tagged names are unchanged).
      * This is the form written to the database for uniqueness.
      */

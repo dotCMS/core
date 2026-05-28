@@ -118,25 +118,31 @@ cluster_08abc3567e.live_20260305193221
 cluster_08abc3567e.working_20260305193221
 ```
 
-Both ES and OS follow the same logical name pattern. The difference is only at the DB storage layer:
+Both ES and OS follow the same logical name pattern. The difference is only at the DB storage layer (PK uniqueness):
 
-| Layer                         | ES name                             | OS name                                    |
-|-------------------------------|-------------------------------------|--------------------------------------------|
-| Stored in DB                  | `cluster_08abc3.working_20230101`   | `os::cluster_08abc3.working_20260406`      |
-| Everywhere else (all callers) | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406`          |
+| Layer                         | ES name                             | OS name                                         |
+|-------------------------------|-------------------------------------|-------------------------------------------------|
+| Stored in DB                  | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406.os`            |
+| Everywhere else (all callers) | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406`               |
 
-#### `os::` tag ownership rule
+#### `.os` suffix ownership rule
 
-The `os::` tag is a **DB uniqueness artifact** — it prevents name collisions between ES and OS rows
-in the shared `indicies` table. It is **exclusively managed by `VersionedIndicesAPIImpl`**:
+The `.os` suffix is a **DB uniqueness artifact** — it prevents primary-key collisions between ES
+and OS rows in the shared `indicies` table (`index_name` is the PK). It is **exclusively managed
+by `VersionedIndicesAPIImpl`**:
 
-- **`saveIndices`** always adds `os::` before writing (idempotent via `IndexTag.OS.tag()`).
+- **`saveIndices`** always appends `.os` before writing (idempotent via `IndexTag.OS.tag()`).
 - **All load methods** (`loadIndices`, `loadAllIndices`, `loadNonVersionedIndices`) always strip
-  `os::` before returning — the cache also stores stripped names.
+  the `.os` suffix before returning — the cache also stores stripped names.
 
-**No other class in the codebase adds or removes the `os::` tag.**
+**No other class in the codebase adds or removes the `.os` suffix.**
 Callers of `VersionedIndicesAPI` always receive clean, client-ready names.
-`toPhysicalName` on both ES and OS providers produces `cluster_{id}.name` — no tag involved.
+`toPhysicalName` on both ES and OS providers produces `cluster_{id}.name` — no suffix involved.
+
+**Why suffix, not prefix**: The logical name (`cluster_{id}.{type}_{timestamp}`) is fully readable
+without any leading marker. Stripping is `name.substring(0, len - 3)` and detection is
+`name.endsWith(".os")`. Collision-free guarantee: logical names always end in `_YYYYMMDDHHMMSS`
+(numeric) — they can never naturally end in `.os`.
 
 ### What lives in the index
 | Content                    | Live | Working |
@@ -226,8 +232,9 @@ There must be **one and only one** routing point per functional area. Never dupl
 ## Index Operation Dispatch Model
 
 Two semantically distinct operation types govern how index names determine routing.
-Getting this wrong is the root cause of the class of bugs where `os::` prefixed names
-reach `ESIndexAPI` and produce malformed index names like `cluster_<id>.os::cluster_<id>.working_...`.
+Getting this wrong is the root cause of the class of bugs where DB-suffixed names
+(e.g. `cluster_<id>.working_….os`) leak out of `VersionedIndicesAPIImpl` and reach
+`ESIndexAPI`, producing malformed physical names.
 
 ### Phase-dispatched operations ("broadcast")
 
@@ -239,7 +246,7 @@ Used for coordinated schema and data operations that must keep all active provid
 - `createContentIndex` — index creation during bootstrap or reindex
 
 **Rule**: pass a **plain logical name** (`working_20240101`) or a **cluster-prefixed physical name**
-(`cluster_<id>.working_20240101`). Never pass an `os::`-tagged name.
+(`cluster_<id>.working_20240101`). Never pass a DB-suffixed name (`cluster_<id>.working_….os`).
 
 `PhaseRouter.write()` / `router.writeChecked()` fan-out to all write providers for the current phase.
 Each provider's `getNameWithClusterIDPrefix()` handles its own physical name construction.
@@ -256,8 +263,8 @@ router.write(impl -> impl.putMapping(physicalName(indexName), mapping));
 Used for direct operations against a specific provider's index: diagnostics, catchup creation,
 provider-specific reads, or any operation where the caller already knows which backend owns the index.
 
-**Rule**: keep the `os::` tag on the name. Use `IndexTag.resolve(name)` to select the provider,
-then strip the tag **inside the call** (not before routing).
+**Rule**: keep the `.os` suffix on the name. Use `IndexTag.resolve(name)` to select the provider,
+then strip the suffix **inside the call** (not before routing).
 
 ```java
 // Correct — tag decides provider, strip happens inside
@@ -326,15 +333,15 @@ private void putContentTypeMapping(ContentType ct, Map<String,JSONObject> fields
 |---|---|---|
 | `working_20240101` (plain logical) | `router.write(…)` | Migration phase |
 | `cluster_<id>.working_…` (physical, no tag) | `router.write(…)` | Migration phase |
-| `os::cluster_<id>.working_…` (vendor-tagged) | `IndexTag.resolve(name)` → select provider directly | Vendor tag |
+| `cluster_<id>.working_….os` (vendor-tagged, DB form) | `IndexTag.resolve(name)` → select provider directly | Vendor tag |
 
 ### Why the tag is not a routing key
 
-Under the current design `os::` never appears outside of `VersionedIndicesAPIImpl`.
+Under the current design the `.os` DB suffix never appears outside of `VersionedIndicesAPIImpl`.
 All routing decisions use an **explicit `IndexTag` parameter** passed by the caller — never the
-presence or absence of `os::` in an index name string.
+presence or absence of a vendor suffix in an index name string.
 
-The tag-dispatch pattern (reading `os::` from a name via `IndexTag.resolve()`) remains valid for
+The tag-dispatch pattern (reading the `.os` suffix via `IndexTag.resolve()`) remains valid for
 hypothetical future use cases, but no production code path currently relies on it.
 
 ---

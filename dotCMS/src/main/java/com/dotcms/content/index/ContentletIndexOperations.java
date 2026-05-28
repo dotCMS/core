@@ -121,7 +121,7 @@ public interface ContentletIndexOperations {
      *
      * <p>Prepends the cluster-ID prefix: {@code cluster_{id}.name}
      * (e.g. {@code cluster_08abc3.working_20240101}).
-     * Both ES and OS providers use the same format; the {@code os::} vendor tag is
+     * Both ES and OS providers use the same format; the {@code .os} DB suffix is
      * managed exclusively by {@link VersionedIndicesAPI} — it is never part of a name
      * returned or accepted by this method.</p>
      *
