@@ -175,12 +175,20 @@ public class AppsAPIImpl implements AppsAPI {
         final Map<String, Set<String>> result = stream.collect(Collectors.groupingBy(
                 strings -> strings[0],
                 Collectors.mapping(strings -> strings[1], Collectors.toCollection(HashSet::new))));
-        // Include apps provisioned solely from env vars: scan valid sites x registered apps lazily.
+        // Include apps provisioned from env vars. Global tiers (System Host / legacy) are
+        // host-independent, so compute them once and apply to every site; only the host-specific
+        // tier-1 is evaluated per site.
         final Set<String> registeredAppKeys = getAppDescriptorMap().keySet();
+        final Set<String> globalEnvApps = registeredAppKeys.stream()
+                .filter(this::hasGlobalEnvBackedSecrets)
+                .collect(Collectors.toCollection(HashSet::new));
         for (final String siteId : validSites) {
+            for (final String appKey : globalEnvApps) {
+                result.computeIfAbsent(siteId, k -> new HashSet<>()).add(appKey);
+            }
             final String hostName = resolveHostName(siteId); // resolve once per site, not per app
             for (final String appKey : registeredAppKeys) {
-                if (hasEnvBackedSecretsForHostName(appKey, hostName)) {
+                if (hasHostEnvBackedSecrets(appKey, hostName)) {
                     result.computeIfAbsent(siteId, k -> new HashSet<>()).add(appKey);
                 }
             }
@@ -363,28 +371,44 @@ public class AppsAPIImpl implements AppsAPI {
     /**
      * Same as {@link #hasEnvBackedSecrets(String, String)} but takes an already-resolved hostname so
      * callers iterating many apps for the same site (e.g. {@code appKeysByHost}) resolve the host
-     * once instead of per app.
+     * once instead of per app. Checks both host-specific (tier-1) and global (tier-3/4) env tiers.
      */
     private boolean hasEnvBackedSecretsForHostName(final String serviceKey, final String hostName) {
+        return hasHostEnvBackedSecrets(serviceKey, hostName)
+                || hasGlobalEnvBackedSecrets(serviceKey);
+    }
+
+    /**
+     * Whether any declared param of the app resolves from a host-specific (tier-1) env var for the
+     * given hostname. Must be evaluated per site.
+     */
+    private boolean hasHostEnvBackedSecrets(final String serviceKey, final String hostName) {
+        if (!isSet(hostName)) {
+            return false;
+        }
         final AppDescriptor appDescriptor = getAppDescriptorMap().get(serviceKey.toLowerCase());
         if (null == appDescriptor) {
             return false;
         }
-        for (final Entry<String, ParamDescriptor> param : appDescriptor.getParams().entrySet()) {
-            final String paramName = param.getKey();
-            final ParamDescriptor describedParam = param.getValue();
-            if (isSet(hostName)
-                    && AppsUtil.hostEnvSecret(serviceKey, hostName, paramName, describedParam).isPresent()) {
-                return true;
-            }
-            if (AppsUtil.systemHostEnvSecret(serviceKey, paramName, describedParam).isPresent()) {
-                return true;
-            }
-            if (AppsUtil.legacyEnvSecret(serviceKey, paramName, describedParam).isPresent()) {
-                return true;
-            }
+        return appDescriptor.getParams().entrySet().stream().anyMatch(param ->
+                AppsUtil.hostEnvSecret(serviceKey, hostName, param.getKey(), param.getValue())
+                        .isPresent());
+    }
+
+    /**
+     * Whether any declared param of the app resolves from a global env tier — System Host (tier-3)
+     * or legacy (tier-4). These are host-independent, so the result is the same for every site and
+     * can be computed once.
+     */
+    private boolean hasGlobalEnvBackedSecrets(final String serviceKey) {
+        final AppDescriptor appDescriptor = getAppDescriptorMap().get(serviceKey.toLowerCase());
+        if (null == appDescriptor) {
+            return false;
         }
-        return false;
+        return appDescriptor.getParams().entrySet().stream().anyMatch(param ->
+                AppsUtil.systemHostEnvSecret(serviceKey, param.getKey(), param.getValue()).isPresent()
+                        || AppsUtil.legacyEnvSecret(serviceKey, param.getKey(), param.getValue())
+                        .isPresent());
     }
 
     /**
@@ -510,27 +534,38 @@ public class AppsAPIImpl implements AppsAPI {
     AppSecrets maintainHiddenValues(final AppSecrets secretsToSave, Optional<AppSecrets> existingAppSecrets)
             throws DotDataException, DotSecurityException {
 
-        if (existingAppSecrets.isEmpty()) {
-            return secretsToSave;
-        }
-
-        Map<String, Secret> existingSecrets = existingAppSecrets.get().getSecrets();
+        // Note: we do not early-return when existing is empty — a submitted hidden mask must never be
+        // persisted even when there is no existing stored value (e.g. the param is backed only by a
+        // tier-3 System Host env var, which this fallbackOnSystemHost=false read does not surface).
+        final Map<String, Secret> existingSecrets =
+                existingAppSecrets.map(AppSecrets::getSecrets).orElse(Map.of());
         AppSecrets.Builder builder = new AppSecrets.Builder().withKey(secretsToSave.getKey());
 
         Map<String, Secret> secretsOut = new HashMap<>();
         for (Map.Entry<String, Secret> entry : secretsToSave.getSecrets().entrySet()) {
             final Secret existing = existingSecrets.get(entry.getKey());
-            if (entry.getValue().getHidden() && SecretViewSerializer.HIDDEN_SECRET_MASK.equals(
-                    entry.getValue().getString()) && existing != null) {
-                // The submitted value is the unchanged mask. If the existing value is env-backed,
-                // do not promote it into the stored blob — leave it out so it stays env-resolved.
-                if (existing.isFromEnv()) {
-                    continue;
+            final boolean submittedMask = entry.getValue().isHidden()
+                    && SecretViewSerializer.HIDDEN_SECRET_MASK.equals(entry.getValue().getString());
+            if (submittedMask) {
+                // The submitted value is the unchanged mask ("keep current"). NEVER persist the
+                // literal mask. Retain the existing value only when it is a real stored secret;
+                // if it is absent or env-backed, drop it so the param stays env-resolved (e.g. a
+                // tier-3 System Host env value not present in this fallbackOnSystemHost=false read).
+                if (existing != null && !existing.isFromEnv()) {
+                    secretsOut.put(entry.getKey(), existing);
                 }
-                secretsOut.put(entry.getKey(), existing);
-            } else {
-                secretsOut.put(entry.getKey(), entry.getValue());
+                continue;
             }
+            // Non-mask submit that exactly matches an env-backed existing value is an unchanged
+            // env value re-submitted by the form (the inbound DTO can't carry fromEnv). Don't
+            // snapshot it into the stored blob; leave it env-resolved. A genuinely changed value
+            // differs and is persisted (a host-specific stored value legitimately wins per
+            // specificity precedence).
+            if (existing != null && existing.isFromEnv()
+                    && entry.getValue().getString().equals(existing.getString())) {
+                continue;
+            }
+            secretsOut.put(entry.getKey(), entry.getValue());
         }
         return builder.withSecrets(secretsOut).build();
 

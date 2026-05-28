@@ -78,6 +78,12 @@ public class AppsUtil {
      */
     private static final Set<String> LEGACY_ENV_DEPRECATION_LOGGED = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Tracks site names that already logged the SYSTEM_HOST-collision warning, so it fires at most
+     * once per JVM per offending site (hostEnvSecret runs per request per param).
+     */
+    private static final Set<String> SYSTEM_HOST_COLLISION_LOGGED = ConcurrentHashMap.newKeySet();
+
     private AppsUtil() {
     }
 
@@ -753,9 +759,11 @@ public class AppsUtil {
         // produce the same env var name as the tier-3 global form. Skip tier-1 for it to avoid the
         // host-specific lookup being indistinguishable from the global one.
         if (Config.envKey(hostName).equals(Config.envKey(SYSTEM_HOST_ENV_SEGMENT))) {
-            Logger.warn(AppsUtil.class, String.format(
-                    "Site '%s' normalizes to the reserved SYSTEM_HOST env segment; "
-                            + "host-specific (tier-1) env provisioning is disabled for it.", hostName));
+            if (SYSTEM_HOST_COLLISION_LOGGED.add(hostName)) {
+                Logger.warn(AppsUtil.class, String.format(
+                        "Site '%s' normalizes to the reserved SYSTEM_HOST env segment; "
+                                + "host-specific (tier-1) env provisioning is disabled for it.", hostName));
+            }
             return Optional.empty();
         }
         final String envValue = Config.getStringProperty(envVarName(appKey, hostName, valueKey), null);

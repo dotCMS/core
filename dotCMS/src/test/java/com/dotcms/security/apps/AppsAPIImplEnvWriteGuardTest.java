@@ -105,4 +105,86 @@ public class AppsAPIImplEnvWriteGuardTest {
                 result.getSecrets().containsKey(PARAM));
         assertEquals("stored-value", result.getSecrets().get(PARAM).getString());
     }
+
+    /**
+     * Incoming: hidden param submitted as the mask, with NO existing config at all (e.g. a tier-3
+     * System Host env param not surfaced by the fallbackOnSystemHost=false read).
+     * Expected: the literal mask is never persisted.
+     */
+    @Test
+    public void test_maintainHiddenValues_never_persists_mask_when_no_existing() throws Exception {
+        final AppsAPIImpl api = newApi();
+
+        final Secret incoming = Secret.builder()
+                .withType(Type.STRING)
+                .withHidden(true)
+                .withValue(SecretViewSerializer.HIDDEN_SECRET_MASK)
+                .build();
+        final AppSecrets toSave = AppSecrets.builder().withKey(APP_KEY)
+                .withSecret(PARAM, incoming).build();
+
+        final AppSecrets result = api.maintainHiddenValues(toSave, Optional.empty());
+
+        assertFalse("The literal mask must never be persisted, even with no existing value",
+                result.getSecrets().containsKey(PARAM));
+    }
+
+    /**
+     * Incoming: non-hidden value identical to an env-backed existing value (unchanged form re-submit).
+     * Expected: not snapshotted into the stored blob (stays env-resolved).
+     */
+    @Test
+    public void test_maintainHiddenValues_drops_unchanged_env_value() throws Exception {
+        final AppsAPIImpl api = newApi();
+
+        final Secret incoming = Secret.builder()
+                .withType(Type.STRING)
+                .withValue("from-env")
+                .build();
+        final AppSecrets toSave = AppSecrets.builder().withKey(APP_KEY)
+                .withSecret(PARAM, incoming).build();
+
+        final Secret envExisting = Secret.builder()
+                .withType(Type.STRING)
+                .withValue("from-env")
+                .withFromEnv(true)
+                .build();
+        final AppSecrets existing = AppSecrets.builder().withKey(APP_KEY)
+                .withSecret(PARAM, envExisting).build();
+
+        final AppSecrets result = api.maintainHiddenValues(toSave, Optional.of(existing));
+
+        assertFalse("Unchanged env value must not be snapshotted into the stored blob",
+                result.getSecrets().containsKey(PARAM));
+    }
+
+    /**
+     * Incoming: non-hidden value DIFFERENT from an env-backed existing value (admin changed it).
+     * Expected: persisted (a host-specific stored value legitimately wins per specificity).
+     */
+    @Test
+    public void test_maintainHiddenValues_persists_changed_env_value() throws Exception {
+        final AppsAPIImpl api = newApi();
+
+        final Secret incoming = Secret.builder()
+                .withType(Type.STRING)
+                .withValue("admin-set")
+                .build();
+        final AppSecrets toSave = AppSecrets.builder().withKey(APP_KEY)
+                .withSecret(PARAM, incoming).build();
+
+        final Secret envExisting = Secret.builder()
+                .withType(Type.STRING)
+                .withValue("from-env")
+                .withFromEnv(true)
+                .build();
+        final AppSecrets existing = AppSecrets.builder().withKey(APP_KEY)
+                .withSecret(PARAM, envExisting).build();
+
+        final AppSecrets result = api.maintainHiddenValues(toSave, Optional.of(existing));
+
+        assertTrue("A changed value must be persisted as a host-specific stored secret",
+                result.getSecrets().containsKey(PARAM));
+        assertEquals("admin-set", result.getSecrets().get(PARAM).getString());
+    }
 }
