@@ -498,10 +498,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
         final VersionedIndices indices = indicesOpt.get();
         final boolean hasWorking = indices.working()
-                .map(name -> Try.of(() -> impl.osImpl().indexExists(name)).getOrElse(false))
+                .map(name -> Try.of(() -> impl.osImpl().indexExists(
+                        operationsOS.toPhysicalName(name))).getOrElse(false))
                 .orElse(false);
         final boolean hasLive = indices.live()
-                .map(name -> Try.of(() -> impl.osImpl().indexExists(name)).getOrElse(false))
+                .map(name -> Try.of(() -> impl.osImpl().indexExists(
+                        operationsOS.toPhysicalName(name))).getOrElse(false))
                 .orElse(false);
 
         if (!hasWorking) {
@@ -531,6 +533,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 + " Restore OS connectivity or manually reset FEATURE_FLAG_OPEN_SEARCH_PHASE,"
                                 + " then restart dotCMS.");
                     }
+
                     Logger.error(this.getClass(), "OpenSearch migration halted: invalid configuration detected at startup."
                             + " Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE,"
                             + " then restart dotCMS.");
@@ -685,6 +688,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final boolean esNeeded = !isMigrationComplete() && !indexReadyES();
         final boolean osNeeded = isMigrationStarted() && !indexReadyOS();
 
+        if (!esNeeded && osNeeded) {
+            // Migration catchup: ES already has indices — derive OS names from ES to avoid
+            // timestamp divergence (e.g. working_20240101 → working_20240101.os, not _20240606).
+            return initOSCatchup();
+        }
+
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
         bootstrapAndPoint(ts, esNeeded, osNeeded);
 
@@ -725,6 +734,52 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+
+    /**
+     * Migration-catchup bootstrap: ES indices already exist; create matching OS shadows.
+     *
+     * <p>Reads the current ES working/live names from {@link IndiciesAPI}, strips the
+     * cluster prefix, then creates OS indices with the same base name (+ {@code .os} suffix
+     * applied by {@code bootstrapAndPointOS}). This eliminates timestamp divergence that
+     * would occur if OS bootstrap used a freshly generated timestamp independent of ES.</p>
+     *
+     * <p>Falls back to a fresh timestamp if no ES index is found (e.g. data-loss scenario),
+     * logging a warning so the operator can investigate.</p>
+     */
+    private IndexStartResult initOSCatchup() throws DotDataException {
+        final IndiciesInfo esInfo = legacyIndiciesAPI.loadIndicies();
+        if (esInfo == null || !UtilMethods.isSet(esInfo.getWorking())) {
+            Logger.warn(this,
+                    "OS catchup: no ES working index found; bootstrapping OS with fresh timestamp");
+            final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
+                    .format(LocalDateTime.now());
+            bootstrapAndPointOS(IndexType.WORKING.getPrefix() + "_" + ts,
+                                IndexType.LIVE.getPrefix()    + "_" + ts);
+            return ImmutableIndexStartResult.builder()
+                    .indexSuffixES("").indexSuffixOS(ts).build();
+        }
+        final String workingLogical = stripClusterPrefix(esInfo.getWorking());
+        final String liveLogical = UtilMethods.isSet(esInfo.getLive())
+                ? stripClusterPrefix(esInfo.getLive()) : workingLogical;
+        Logger.info(this, "OS catchup: mirroring ES names — working=" + workingLogical
+                + ", live=" + liveLogical);
+        bootstrapAndPointOS(workingLogical, liveLogical);
+        final int lastUnder = workingLogical.lastIndexOf('_');
+        final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
+        return ImmutableIndexStartResult.builder()
+                .indexSuffixES("").indexSuffixOS(suffix).build();
+    }
+
+    /**
+     * Strips the {@code cluster_XXXXXXXXXX.} prefix from a DB-stored physical index name,
+     * returning the logical name used for OS/ES client calls.
+     *
+     * <p>Example: {@code cluster_e0f4fa027f.working_20240101} → {@code working_20240101}</p>
+     */
+    private static String stripClusterPrefix(final String physicalName) {
+        final int dot = physicalName != null ? physicalName.indexOf('.') : -1;
+        return dot >= 0 ? physicalName.substring(dot + 1) : physicalName;
+    }
 
     /**
      * Creates the ES working and live indices for the given logical names and registers
@@ -2590,12 +2645,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * The default index to hit is ES
      */
     long getIndexDocumentCount(final String indexName, final IndexTag tag) {
-        final String name = indexAPI.getNameWithClusterIDPrefix(indexName);
-        ContentletIndexOperations operations = router.esImpl();
-        if (tag == IndexTag.OS) {
-            operations = router.osImpl();
-        }
-        return operations.getIndexDocumentCount(name);
+        final ContentletIndexOperations operations =
+                tag == IndexTag.OS ? router.osImpl() : router.esImpl();
+        return operations.getIndexDocumentCount(operations.toPhysicalName(indexName));
     }
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {

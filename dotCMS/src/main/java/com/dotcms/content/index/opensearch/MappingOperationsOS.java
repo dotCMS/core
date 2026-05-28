@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.MappingOperationsES;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexMappingRestOperations;
+import com.dotcms.content.index.IndexTag;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +49,11 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     private final OSClientProvider clientProvider;
     private final IndexAPI osIndexAPI;
 
+    private String physicalName(final String index) {
+        final String clustered = physicalName(index);
+        return IndexTag.OS.isTagged(clustered) ? clustered : IndexTag.OS.tag(clustered);
+    }
+
     /** CDI-managed default constructor. */
     public MappingOperationsOS() {
         this(CDIUtils.getBeanThrows(OSClientProvider.class),
@@ -70,7 +76,7 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
         boolean allAcknowledged = true;
         for (final String index : indexes) {
-            final String prefixed = osIndexAPI.getNameWithClusterIDPrefix(index);
+            final String prefixed = physicalName(index);
             final String endpoint = "/" + prefixed + "/_mapping";
             try (Response response = clientProvider.getClient().generic()
                     .execute(Requests.builder()
@@ -91,7 +97,7 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
 
     @Override
     public String getMapping(final String index) throws IOException {
-        final String prefixed = osIndexAPI.getNameWithClusterIDPrefix(index);
+        final String prefixed = physicalName(index);
         final GetMappingResponse response = clientProvider.getClient()
                 .indices()
                 .getMapping(r -> r.index(prefixed));
@@ -114,7 +120,7 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     @Override
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
-        final String prefixed = osIndexAPI.getNameWithClusterIDPrefix(index);
+        final String prefixed = physicalName(index);
         final GetFieldMappingResponse response = clientProvider.getClient()
                 .indices()
                 .getFieldMapping(r -> r.index(prefixed).fields(fieldName));
