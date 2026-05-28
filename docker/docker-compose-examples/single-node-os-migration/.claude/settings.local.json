@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(chmod +x *)",
-      "WebSearch",
-      "Bash(docker compose *)"
-    ]
-  }
-}
