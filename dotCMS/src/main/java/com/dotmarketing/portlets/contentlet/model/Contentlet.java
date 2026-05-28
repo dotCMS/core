@@ -1582,6 +1582,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
+	 * Clears the {@code loadedTags} guard so the next {@link #setTags()} call re-reads the tag
+	 * fields from the {@code tag_inode} table instead of being skipped. This must be invoked after
+	 * the tag relationships have been reconciled during a checkin (see
+	 * {@code ESContentletAPIImpl#relateTags}), so a contentlet instance whose tags were loaded
+	 * before the save — e.g. the bulk workflow path that calls {@link #setTags()} prior to
+	 * checkin — does not keep serving a stale, pre-save snapshot.
+	 */
+	public void resetLoadedTags() {
+		this.loadedTags = false;
+	}
+
+	/**
 	 * This method is used to keep track of the null values added to the internal map
 	 * @param property
 	 */

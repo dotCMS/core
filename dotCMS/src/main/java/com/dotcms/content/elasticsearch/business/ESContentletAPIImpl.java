@@ -5807,6 +5807,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
             contentlet = relateTags(contentlet, tagsValues, tagsHost);
+            // tag_inode is now authoritative for this contentlet; clear the loadedTags guard so any
+            // later setTags() (e.g. the response/display transform) re-reads the reconciled state
+            // instead of a snapshot taken before checkin (issue #35861, bulk workflow path).
+            contentlet.resetLoadedTags();
 
             APILocator.getVersionableAPI().setWorking(contentlet);
 
@@ -7435,6 +7439,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setProperty(conVariable, value);
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
+                    if (Field.FieldType.TAG.toString().equals(field.getFieldType())) {
+                        // Tags live in the tag_inode table, not in the contentlet's field. Copying
+                        // the tag string into the target would make a new language version (or any
+                        // copy) inherit the source's tags (issue #35861). Tag relationships are
+                        // reconciled from tag_inode on save/load, so the value is not propagated here.
+                        continue;
+                    }
                     if (isFieldTypeString(field)) {
                         if (checkIsUnique && field.isUnique()) {
                             value = value +
