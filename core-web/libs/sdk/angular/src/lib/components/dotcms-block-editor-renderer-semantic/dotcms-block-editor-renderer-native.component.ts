@@ -1,5 +1,5 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
-import { Component, Input, OnInit, signal } from '@angular/core';
+import { Component, input, OnInit, signal } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode, BlockEditorMark } from '@dotcms/types';
 import { BlockEditorState, BlockEditorDefaultBlocks } from '@dotcms/types/internal';
@@ -61,10 +61,17 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
     ]
 })
 export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
-    @Input() blocks!: BlockEditorNode;
-    @Input() customRenderers: CustomRenderer | undefined;
-    @Input() class: string | undefined;
-    @Input() style: string | Record<string, string> | undefined;
+    /** The Block Editor `doc` node to render. */
+    readonly blocks = input<BlockEditorNode>();
+    /** Map of `node.type` → component to override the built-in render path. */
+    readonly customRenderers = input<CustomRenderer | undefined>(undefined);
+    /**
+     * CSS class on the wrapper element. Aliased as `class` so consumers can
+     * pass `[class]="…"` like a normal Angular class binding.
+     */
+    readonly cssClass = input<string | undefined>(undefined, { alias: 'class' });
+    /** Inline style on the wrapper element. */
+    readonly style = input<string | Record<string, string> | undefined>(undefined);
 
     $blockEditorState = signal<BlockEditorState>({ error: null });
     $isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
@@ -72,7 +79,10 @@ export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
     protected readonly BLOCKS = BlockEditorDefaultBlocks;
 
     ngOnInit() {
-        const state = isValidBlocks(this.blocks);
+        // `isValidBlocks` declares `blocks: BlockEditorNode` but its first guard
+        // handles `undefined` — the cast lines up the types without changing the
+        // published `@dotcms/uve` signature.
+        const state = isValidBlocks(this.blocks() as BlockEditorNode);
 
         if (state.error) {
             console.error('Error in dotcms-block-editor-renderer-native: ', state.error);

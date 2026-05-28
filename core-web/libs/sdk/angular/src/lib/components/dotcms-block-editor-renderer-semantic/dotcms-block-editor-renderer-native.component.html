@@ -3,8 +3,8 @@
         {{ $blockEditorState().error }}
     </div>
 } @else if (!$blockEditorState().error) {
-    <div [class]="class" [style]="style">
-        <ng-container *ngTemplateOutlet="nodeList; context: { $implicit: blocks.content }" />
+    <div [class]="cssClass()" [style]="style()">
+        <ng-container *ngTemplateOutlet="nodeList; context: { $implicit: blocks()?.content }" />
     </div>
 }
 
@@ -21,11 +21,11 @@
     DOM child of its list element — the property that makes this AT-proof.
 -->
 <ng-template #dispatch let-node>
-    @if (customRenderers?.[node.type]) {
+    @if (customRenderers()?.[node.type]) {
         <ng-container
             *ngTemplateOutlet="
                 customRender;
-                context: { customRender: customRenderers?.[node.type], node: node }
+                context: { customRender: customRenderers()?.[node.type], node: node }
             " />
     } @else {
         @switch (node.type) {
@@ -240,10 +240,12 @@
                 </div>
             }
 
+
+
             @case (BLOCKS.DOT_CONTENT) {
                 <dotcms-block-editor-renderer-contentlet
                     [node]="node"
-                    [customRenderers]="customRenderers" />
+                    [customRenderers]="customRenderers()" />
             }
 
             @default {
