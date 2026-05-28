@@ -42,9 +42,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Key;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,10 +114,18 @@ public class AppsAPIImpl implements AppsAPI {
                     user.getUserId(), host.getIdentifier())
             );
         }
-        return secretsStore.listKeys().stream().filter(s -> s.startsWith(host.getIdentifier()))
+        final Set<String> keys = secretsStore.listKeys().stream()
+                .filter(s -> s.startsWith(host.getIdentifier()))
                 .map(s -> s.replace(host.getIdentifier() + HOST_SECRET_KEY_SEPARATOR,
                         StringPool.BLANK))
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        // Include apps provisioned solely from env vars (no stored blob) for this site.
+        for (final String appKey : getAppDescriptorMap().keySet()) {
+            if (hasEnvBackedSecrets(appKey, host.getIdentifier())) {
+                keys.add(appKey);
+            }
+        }
+        return new ArrayList<>(keys);
     }
 
     /**
@@ -153,16 +163,27 @@ public class AppsAPIImpl implements AppsAPI {
      */
     private Map<String, Set<String>> appKeysByHost(final boolean filterNonExisting)
             throws DotSecurityException, DotDataException {
+        final Set<String> validSites = getValidSites();
         Stream<String[]> stream = secretsStore.listKeys().stream()
                 .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
                 .filter(strings -> strings.length == 2);
         if (filterNonExisting) {
-            final Set<String> validSites = getValidSites();
             stream = stream.filter(strings -> validSites.contains(strings[0]));
         }
-        return stream.collect(Collectors.groupingBy(strings -> strings[0],
-                Collectors.mapping(strings -> strings[1], Collectors.toSet())));
+        final Map<String, Set<String>> result = stream.collect(Collectors.groupingBy(
+                strings -> strings[0],
+                Collectors.mapping(strings -> strings[1], Collectors.toCollection(HashSet::new))));
+        // Include apps provisioned solely from env vars: scan valid sites x registered apps lazily.
+        final Set<String> registeredAppKeys = getAppDescriptorMap().keySet();
+        for (final String siteId : validSites) {
+            for (final String appKey : registeredAppKeys) {
+                if (hasEnvBackedSecrets(appKey, siteId)) {
+                    result.computeIfAbsent(siteId, k -> new HashSet<>()).add(appKey);
+                }
+            }
+        }
+        return result;
     }
     /**
      * {@inheritDoc}
@@ -303,7 +324,49 @@ public class AppsAPIImpl implements AppsAPI {
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
                     serviceKey, user.getUserId(), hostIdentifier));
         }
-        return secretsStore.containsKey(internalKey(serviceKey, hostIdentifier));
+        return secretsStore.containsKey(internalKey(serviceKey, hostIdentifier))
+                || hasEnvBackedSecrets(serviceKey, hostIdentifier);
+    }
+
+    /**
+     * Lazily detects whether any environment variable backs the given app on the given site, so an
+     * app provisioned solely from env vars (no stored blob) is still reported as configured by the
+     * listing/presence methods. Env detection requires a registered {@link AppDescriptor} (its params
+     * drive construct-and-lookup). For each declared param the host-specific (tier-1), System Host
+     * (tier-3) and legacy global (tier-4) env vars are checked; the System Host and legacy tiers are
+     * global, so they make every site report as configured (mirroring the stored System Host cascade).
+     * <p>
+     * No startup index is built: lookups go through {@link Config} which holds env vars in memory
+     * after startup, so this stays correct for sites created at runtime.
+     *
+     * @param serviceKey     the app key
+     * @param hostIdentifier the site identifier
+     * @return {@code true} when at least one declared param resolves from an env var
+     */
+    private boolean hasEnvBackedSecrets(final String serviceKey, final String hostIdentifier) {
+        final AppDescriptor appDescriptor = getAppDescriptorMap().get(serviceKey.toLowerCase());
+        if (null == appDescriptor) {
+            return false;
+        }
+        final String hostName = Try.of(() ->
+                        hostAPI.find(hostIdentifier, APILocator.systemUser(), false))
+                .map(Host::getHostname)
+                .getOrNull();
+        for (final Entry<String, ParamDescriptor> param : appDescriptor.getParams().entrySet()) {
+            final String paramName = param.getKey();
+            final ParamDescriptor describedParam = param.getValue();
+            if (isSet(hostName)
+                    && AppsUtil.hostEnvSecret(serviceKey, hostName, paramName, describedParam).isPresent()) {
+                return true;
+            }
+            if (AppsUtil.systemHostEnvSecret(serviceKey, paramName, describedParam).isPresent()) {
+                return true;
+            }
+            if (AppsUtil.legacyEnvSecret(serviceKey, paramName, describedParam).isPresent()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
