@@ -736,38 +736,67 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     /**
-     * Migration-catchup bootstrap: ES indices already exist; create matching OS shadows.
+     * Recovers or bootstraps OS indices when they are absent from the cluster.
      *
-     * <p>Reads the current ES working/live names from {@link IndiciesAPI}, strips the
-     * cluster prefix, then creates OS indices with the same base name (+ {@code .os} suffix
-     * applied by {@code bootstrapAndPointOS}). This eliminates timestamp divergence that
-     * would occur if OS bootstrap used a freshly generated timestamp independent of ES.</p>
-     *
-     * <p>Falls back to a fresh timestamp if no ES index is found (e.g. data-loss scenario),
-     * logging a warning so the operator can investigate.</p>
+     * <p>Three cases in priority order:</p>
+     * <ol>
+     *   <li><b>OS DB record exists, cluster index missing</b> (Phase 3 disaster-recovery or
+     *       restart after partial failure): recreate the OS index using the name already
+     *       registered in {@link VersionedIndicesAPI}. This is the authoritative source in
+     *       Phase 3 — reading from the ES store would give a stale or cleaned-up name.</li>
+     *   <li><b>OS DB empty, ES DB has a record</b> (migration catchup, Phases 1/2): mirror
+     *       the ES logical name so both indices share the same base name.  This prevents
+     *       timestamp divergence (e.g. {@code working_20240101} ES → {@code working_20240101.os},
+     *       not {@code working_20260528.os}).</li>
+     *   <li><b>Both empty</b> (fresh install or data-loss): generate a new timestamp and
+     *       log a warning so the operator can investigate.</li>
+     * </ol>
      */
     private IndexStartResult initOSCatchup() throws DotDataException {
-        final IndiciesInfo esInfo = legacyIndiciesAPI.loadIndicies();
-        if (esInfo == null || !UtilMethods.isSet(esInfo.getWorking())) {
-            Logger.warn(this,
-                    "OS catchup: no ES working index found; bootstrapping OS with fresh timestamp");
-            final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
-                    .format(LocalDateTime.now());
-            bootstrapAndPointOS(IndexType.WORKING.getPrefix() + "_" + ts,
-                                IndexType.LIVE.getPrefix()    + "_" + ts);
+        // Case 1: OS DB record exists → recreate the cluster index with the registered name.
+        // loadDefaultVersionedIndices() strips .os before returning — names are logical here.
+        final Optional<VersionedIndices> osDbRecord =
+                Try.of(versionedIndicesAPI::loadDefaultVersionedIndices)
+                   .getOrElse(Optional.empty());
+        final Optional<String> osWorking = osDbRecord.flatMap(VersionedIndices::working);
+        if (osWorking.isPresent()) {
+            final String workingLogical = stripClusterPrefix(osWorking.get());
+            final String liveLogical = osDbRecord.flatMap(VersionedIndices::live)
+                    .map(ContentletIndexAPIImpl::stripClusterPrefix)
+                    .orElse(workingLogical);
+            Logger.info(this, "OS recovery: recreating missing OS cluster index — working="
+                    + workingLogical + ", live=" + liveLogical);
+            bootstrapAndPointOS(workingLogical, liveLogical);
+            final int lastUnder = workingLogical.lastIndexOf('_');
+            final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
             return ImmutableIndexStartResult.builder()
-                    .indexSuffixES("").indexSuffixOS(ts).build();
+                    .indexSuffixES("").indexSuffixOS(suffix).build();
         }
-        final String workingLogical = stripClusterPrefix(esInfo.getWorking());
-        final String liveLogical = UtilMethods.isSet(esInfo.getLive())
-                ? stripClusterPrefix(esInfo.getLive()) : workingLogical;
-        Logger.info(this, "OS catchup: mirroring ES names — working=" + workingLogical
-                + ", live=" + liveLogical);
-        bootstrapAndPointOS(workingLogical, liveLogical);
-        final int lastUnder = workingLogical.lastIndexOf('_');
-        final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
+
+        // Case 2: OS DB empty — mirror ES names (migration catchup, Phases 1/2).
+        final IndiciesInfo esInfo = legacyIndiciesAPI.loadIndicies();
+        if (esInfo != null && UtilMethods.isSet(esInfo.getWorking())) {
+            final String workingLogical = stripClusterPrefix(esInfo.getWorking());
+            final String liveLogical = UtilMethods.isSet(esInfo.getLive())
+                    ? stripClusterPrefix(esInfo.getLive()) : workingLogical;
+            Logger.info(this, "OS catchup: mirroring ES names — working=" + workingLogical
+                    + ", live=" + liveLogical);
+            bootstrapAndPointOS(workingLogical, liveLogical);
+            final int lastUnder = workingLogical.lastIndexOf('_');
+            final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
+            return ImmutableIndexStartResult.builder()
+                    .indexSuffixES("").indexSuffixOS(suffix).build();
+        }
+
+        // Case 3: no record in either store — fresh install or data-loss scenario.
+        Logger.warn(this, "OS catchup: no OS or ES index record found;"
+                + " bootstrapping OS with fresh timestamp");
+        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
+                .format(LocalDateTime.now());
+        bootstrapAndPointOS(IndexType.WORKING.getPrefix() + "_" + ts,
+                            IndexType.LIVE.getPrefix()    + "_" + ts);
         return ImmutableIndexStartResult.builder()
-                .indexSuffixES("").indexSuffixOS(suffix).build();
+                .indexSuffixES("").indexSuffixOS(ts).build();
     }
 
     /**
