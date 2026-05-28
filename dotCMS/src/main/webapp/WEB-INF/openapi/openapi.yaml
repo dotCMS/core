@@ -8322,6 +8322,13 @@ paths:
         name: live
         schema:
           type: boolean
+      - description: "Optional contentlet inode. When provided, contentlet-specific\
+          \ Velocity variables ($inode, $identifier, $lang, etc.) will be available\
+          \ when rendering Custom Fields."
+        in: query
+        name: inode
+        schema:
+          type: string
       responses:
         "200":
           content:
