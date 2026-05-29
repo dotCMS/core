@@ -3,6 +3,7 @@ package com.dotcms.content.index.opensearch;
 import com.dotcms.content.elasticsearch.business.ContentletIndexOperationsES;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import java.io.IOException;
@@ -31,9 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.Refresh;
 import org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery;
+import org.opensearch.client.opensearch.cluster.PutClusterSettingsRequest;
 import org.opensearch.client.opensearch.core.BulkRequest;
 import org.opensearch.client.opensearch.core.BulkResponse;
 import org.opensearch.client.opensearch.core.CountRequest;
@@ -197,6 +200,32 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // =========================================================================
     // Index lifecycle
     // =========================================================================
+
+    /**
+     * Applies OS-specific cluster settings required before the first content write.
+     *
+     * <p>Currently applies {@code action.auto_create_index = false} when
+     * {@code OS_DISABLE_AUTO_CREATE_INDEX=true} is set. This setting is opt-in
+     * so that existing installations that share an OS cluster with other apps are
+     * not affected until the operator explicitly enables it.</p>
+     */
+    @Override
+    public void applyBootstrapSettings() {
+        if (!IndexConfigHelper.getBoolean(OSIndexProperty.DISABLE_AUTO_CREATE_INDEX, false)) {
+            return;
+        }
+        try {
+            getClientProvider().getClient().cluster().putSettings(
+                    PutClusterSettingsRequest.of(b -> b
+                            .persistent(Map.of(
+                                    "action.auto_create_index", JsonData.of(false)))));
+            Logger.info(this, "OS bootstrap setting applied: action.auto_create_index = false");
+        } catch (final Exception e) {
+            Logger.warn(this,
+                    "Could not apply OS bootstrap setting action.auto_create_index=false: "
+                    + e.getMessage(), e);
+        }
+    }
 
     @Override
     public IndexAPI indexAPI() {

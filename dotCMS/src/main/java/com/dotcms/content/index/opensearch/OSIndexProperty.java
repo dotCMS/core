@@ -164,7 +164,27 @@ public enum OSIndexProperty {
      * Enable in-memory caching of search query results.
      * No ES equivalent.
      */
-    CACHE_SEARCH_QUERIES("OS_CACHE_SEARCH_QUERIES", null);
+    CACHE_SEARCH_QUERIES("OS_CACHE_SEARCH_QUERIES", null),
+
+    // -------------------------------------------------------------------------
+    // Bootstrap / cluster settings
+    // -------------------------------------------------------------------------
+
+    /**
+     * Opt-in: disable automatic index creation on the OS cluster at startup
+     * ({@code action.auto_create_index = false}).
+     *
+     * <p>When {@code true}, any write to a non-existent index returns
+     * {@code index_not_found_exception} instead of silently creating a new
+     * unmapped index. Useful for catching wrong-index-name bugs early.</p>
+     *
+     * <p>Default: {@code false} — the cluster default is preserved and no
+     * {@code PUT /_cluster/settings} call is made at startup.</p>
+     *
+     * <p>Set via environment variable or {@code dotmarketing-config.properties}:
+     * {@code OS_DISABLE_AUTO_CREATE_INDEX=true}</p>
+     */
+    DISABLE_AUTO_CREATE_INDEX("OS_DISABLE_AUTO_CREATE_INDEX", null);
 
     // -------------------------------------------------------------------------
 

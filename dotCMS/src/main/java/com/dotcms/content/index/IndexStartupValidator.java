@@ -6,9 +6,6 @@ import com.dotcms.content.index.opensearch.OSIndexProperty;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import java.util.Map;
-import org.opensearch.client.json.JsonData;
-import org.opensearch.client.opensearch.cluster.PutClusterSettingsRequest;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -78,7 +75,6 @@ public class IndexStartupValidator {
     public void validate() {
         validateOSVersion();
         validateEndpointSeparation();
-        disableAutoCreateIndex();
     }
 
     // -------------------------------------------------------------------------
@@ -114,35 +110,6 @@ public class IndexStartupValidator {
             throw new DotRuntimeException(
                     "OpenSearch cluster is not reachable: " + e.getMessage()
                     + ". Check OS_ENDPOINTS configuration.", e);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Cluster settings
-    // -------------------------------------------------------------------------
-
-    /**
-     * Disables automatic index creation on the OS cluster ({@code action.auto_create_index = false}).
-     *
-     * <p>Without this, any write to a non-existent index silently creates it with default
-     * mappings. This masks routing bugs (wrong index name, stale cache) that would otherwise
-     * surface immediately as {@code index_not_found_exception}.</p>
-     *
-     * <p>Called once at startup, after version and endpoint checks pass. Non-fatal: a failure
-     * only logs WARN so a misconfigured permission does not block dotCMS from starting.</p>
-     */
-    private void disableAutoCreateIndex() {
-        try {
-            osClientProvider.getClient().cluster().putSettings(
-                    PutClusterSettingsRequest.of(b -> b
-                            .persistent(Map.of(
-                                    "action.auto_create_index", JsonData.of(false)))));
-            Logger.info(this, "OS cluster setting applied: action.auto_create_index = false");
-        } catch (final Exception e) {
-            Logger.warn(this,
-                    "Could not apply OS cluster setting action.auto_create_index=false — "
-                    + "writes to missing indices will be silently auto-created: "
-                    + e.getMessage(), e);
         }
     }
 
