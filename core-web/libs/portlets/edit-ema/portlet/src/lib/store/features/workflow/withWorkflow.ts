@@ -208,21 +208,21 @@ export function withWorkflow() {
                                           ).content
                                         : undefined;
 
-                                pageStore.setPageAsset({
-                                    pageAsset: pageResponse.pageAsset,
-                                    ...(content !== undefined && { content })
-                                });
-
-                                return dotLanguagesService.getLanguagesUsedPage(
-                                    pageResponse.pageAsset.page.identifier
-                                );
-                            }),
-                            tap((languages) => {
-                                patchState(store, {
-                                    pageLanguages: languages,
-                                    uveStatus: UVE_STATUS.LOADED,
-                                    workflowLockIsLoading: false
-                                });
+                                return dotLanguagesService
+                                    .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)
+                                    .pipe(
+                                        tap((languages) => {
+                                            pageStore.setPageAsset({
+                                                pageAsset: pageResponse.pageAsset,
+                                                ...(content !== undefined && { content })
+                                            });
+                                            patchState(store, {
+                                                pageLanguages: languages,
+                                                uveStatus: UVE_STATUS.LOADED,
+                                                workflowLockIsLoading: false
+                                            });
+                                        })
+                                    );
                             }),
                             catchError(({ status: errorStatus }: HttpErrorResponse) => {
                                 patchState(store, {

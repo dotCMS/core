@@ -12,7 +12,7 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -352,6 +352,58 @@ describe('withPageApi', () => {
             expect(getGraphQLPageSpy).toHaveBeenCalled();
             expect(getSpy).not.toHaveBeenCalled();
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should update pageLanguages with result from getLanguagesUsedPage after reload', () => {
+            const freshLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ];
+
+            patchState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: false }
+                ]
+            });
+
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(of(freshLanguages));
+
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageLanguages()).toEqual(freshLanguages);
+        });
+
+        it('should set pageAsset and pageLanguages atomically so pageTranslateProps reflects the translated status from the server', () => {
+            // Regression test for #35647: before the fix, setPageAsset fired before
+            // getLanguagesUsedPage responded, so pageTranslateProps read stale pageLanguages
+            // with translated: false, incorrectly triggering the "Create language version?" dialog.
+            const freshLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ];
+
+            patchState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: false }
+                ]
+            });
+
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(of(freshLanguages));
+
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            store.pageReload();
+            spectator.flushEffects();
+
+            // pageTranslateProps uses untracked(() => store.pageLanguages()) — it only reacts
+            // to pageAsset changes. If pageAsset and pageLanguages are not updated together,
+            // this computed would still see translated: false from the stale pageLanguages.
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
         });
     });
 });

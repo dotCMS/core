@@ -288,34 +288,34 @@ export function withPageApi(deps: WithPageApiDeps) {
                         }),
                         switchMap(() => {
                             const isGraphQL = !!deps.requestMetadata();
+                            let graphQLContent: Record<string, unknown> | undefined;
+
                             const pageRequest = !isGraphQL
                                 ? dotPageApiService.get(store.pageParams())
                                 : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
-                                      tap((response) =>
-                                          deps.setPageAsset({
-                                              pageAsset: response.pageAsset,
-                                              content: response.content
-                                          })
-                                      ),
+                                      tap((response) => {
+                                          graphQLContent = response.content;
+                                      }),
                                       map((response) => response.pageAsset)
                                   );
 
                             return pageRequest.pipe(
-                                tap((pageAsset) => {
-                                    if (!isGraphQL) {
-                                        deps.setPageAsset({ pageAsset });
-                                    }
-                                }),
                                 switchMap((pageAsset) => {
-                                    return dotLanguagesService.getLanguagesUsedPage(
-                                        pageAsset.page.identifier
-                                    );
-                                }),
-                                tap((languages) => {
-                                    patchState(store, {
-                                        pageLanguages: languages,
-                                        uveStatus: UVE_STATUS.LOADED
-                                    });
+                                    return dotLanguagesService
+                                        .getLanguagesUsedPage(pageAsset.page.identifier)
+                                        .pipe(
+                                            tap((languages) => {
+                                                const payload =
+                                                    graphQLContent !== undefined
+                                                        ? { pageAsset, content: graphQLContent }
+                                                        : { pageAsset };
+                                                deps.setPageAsset(payload);
+                                                patchState(store, {
+                                                    pageLanguages: languages,
+                                                    uveStatus: UVE_STATUS.LOADED
+                                                });
+                                            })
+                                        );
                                 }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;

@@ -16,6 +16,7 @@ import {
     DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
@@ -256,6 +257,69 @@ describe('withLoad', () => {
 
                 expect(store.$lockOptions()?.shouldShowButton).toBe(false);
             });
+        });
+    });
+
+    describe('reloadPageAfterLockChange – atomicity', () => {
+        it('should update pageLanguages together with pageAsset after lock so pageTranslateProps reflects current translated status', () => {
+            // Regression test for #35647: before the fix, setPageAsset fired before
+            // getLanguagesUsedPage responded. If an effect flush happened in that window,
+            // pageTranslateProps would read stale pageLanguages (translated: false) and
+            // incorrectly show the "Create language version?" dialog.
+            const staleLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: false }
+            ];
+            const freshLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ];
+
+            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
+                of(MOCK_RESPONSE_HEADLESS)
+            );
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(of(freshLanguages));
+
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+
+            patchState(store, { pageLanguages: staleLanguages });
+
+            store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, false, false);
+            spectator.flushEffects();
+
+            expect(store.pageLanguages()).toEqual(freshLanguages);
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
+        });
+
+        it('should update pageLanguages together with pageAsset after unlock so pageTranslateProps reflects current translated status', () => {
+            const staleLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: false }
+            ];
+            const freshLanguages: DotLanguage[] = [
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ];
+
+            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
+                of(MOCK_RESPONSE_HEADLESS)
+            );
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(of(freshLanguages));
+
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+
+            patchState(store, { pageLanguages: staleLanguages });
+
+            // isLocked: true, isCurrentUser: true → unlock path
+            store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, true, true);
+            spectator.flushEffects();
+
+            expect(store.pageLanguages()).toEqual(freshLanguages);
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
         });
     });
 
