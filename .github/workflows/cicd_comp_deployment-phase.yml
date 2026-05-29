@@ -398,3 +398,18 @@ jobs:
             > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
             > *Introduced by:* <${{ steps.pr_info.outputs.pr_url }}|${{ steps.pr_info.outputs.pr_ref }}>
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # Send Slack failure notification if SDK publish failed
+      - name: Slack Notification (SDK publish failure)
+        if: failure() && steps.sdks_publish.outcome == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK publish FAILED on trunk!*
+            >
+            > The automated SDK `@next` publish failed. The packages were *not* updated on the NPM registry.
+            > *Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

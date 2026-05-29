@@ -44,16 +44,29 @@ import { EditorPopoverService, type PopoverId } from '../../services/editor-popo
     `
 })
 export class EditorPopoverComponent {
-    readonly popoverId = input.required<PopoverId>();
+    /**
+     * Accepts a single popover id or an array of ids. The shell is "open" when the
+     * service's active popover matches any of the listed ids — used by the unified
+     * `dot-table-handle-popover` to host the column / row / selection variants under
+     * a single shell.
+     */
+    readonly popoverId = input.required<PopoverId | readonly PopoverId[]>();
 
-    private readonly manager = inject(EditorPopoverService);
-    private readonly el = inject(ElementRef<HTMLElement>);
-    private readonly zone = inject(NgZone);
-    private readonly doc = inject(DOCUMENT);
-    private readonly injector = inject(Injector);
+    readonly #manager = inject(EditorPopoverService);
+    readonly #el = inject(ElementRef<HTMLElement>);
+    readonly #zone = inject(NgZone);
+    readonly #doc = inject(DOCUMENT);
+    readonly #injector = inject(Injector);
 
-    protected readonly isOpen = computed(
-        () => this.manager.activePopover()?.id === this.popoverId()
+    /** True when the service's active id matches this shell's id (or any of them). */
+    #matchesActive(activeId: PopoverId | undefined): boolean {
+        if (activeId == null) return false;
+        const ids = this.popoverId();
+        return Array.isArray(ids) ? ids.includes(activeId) : ids === activeId;
+    }
+
+    protected readonly isOpen = computed(() =>
+        this.#matchesActive(this.#manager.activePopover()?.id)
     );
     protected readonly floatX = signal(0);
     protected readonly floatY = signal(0);
@@ -65,8 +78,8 @@ export class EditorPopoverComponent {
         // so the popover stays anchored to its trigger rect (e.g. the cursor line) as the
         // user scrolls instead of getting stranded at its initial viewport spot.
         effect((onCleanup) => {
-            const active = this.manager.activePopover();
-            if (!active || active.id !== this.popoverId()) {
+            const active = this.#manager.activePopover();
+            if (!active || !this.#matchesActive(active.id)) {
                 untracked(() => this.positioned.set(false));
                 return;
             }
@@ -78,13 +91,13 @@ export class EditorPopoverComponent {
             };
 
             const update = () => {
-                computePosition(virtualEl, this.el.nativeElement, {
+                computePosition(virtualEl, this.#el.nativeElement, {
                     placement: 'bottom-start',
                     strategy: 'fixed',
                     middleware: [flip(), shift({ padding: 8 })]
                 }).then(({ x, y }) => {
                     const wasPositioned = untracked(() => this.positioned());
-                    this.zone.run(() => {
+                    this.#zone.run(() => {
                         untracked(() => {
                             this.floatX.set(x);
                             this.floatY.set(y);
@@ -94,8 +107,8 @@ export class EditorPopoverComponent {
                     if (!wasPositioned) {
                         // Defer to next render so the visibility binding is painted
                         // before .focus() runs — otherwise it no-ops on a hidden element.
-                        afterNextRender(() => this.focusFirstInput(), {
-                            injector: this.injector
+                        afterNextRender(() => this.#focusFirstInput(), {
+                            injector: this.#injector
                         });
                     }
                 });
@@ -106,12 +119,12 @@ export class EditorPopoverComponent {
             // never fires. Add a manual capture-phase scroll listener — same pattern the
             // slash menu uses — so the popover re-positions when the editor container scrolls.
             const onScroll = () => update();
-            this.doc.addEventListener('scroll', onScroll, { passive: true, capture: true });
+            this.#doc.addEventListener('scroll', onScroll, { passive: true, capture: true });
 
-            const cleanup = autoUpdate(virtualEl, this.el.nativeElement, update);
+            const cleanup = autoUpdate(virtualEl, this.#el.nativeElement, update);
             onCleanup(() => {
                 cleanup();
-                this.doc.removeEventListener('scroll', onScroll, { capture: true });
+                this.#doc.removeEventListener('scroll', onScroll, { capture: true });
             });
         });
 
@@ -120,29 +133,29 @@ export class EditorPopoverComponent {
             if (!this.isOpen()) return;
 
             const onKey = (e: KeyboardEvent) => {
-                if (e.key === 'Escape') this.zone.run(() => this.manager.close());
+                if (e.key === 'Escape') this.#zone.run(() => this.#manager.close());
             };
             const onMouse = (e: MouseEvent) => {
                 const target = e.target as Element | null;
                 if (!target) return;
-                if (this.el.nativeElement.contains(target)) return;
+                if (this.#el.nativeElement.contains(target)) return;
                 // PrimeNG overlay panels (e.g. <p-select> with appendTo="body") render outside
                 // this shell's DOM but logically belong to a control inside an open popover.
                 // Treat clicks inside them as inside the popover so the popover stays open.
                 if (target.closest('.p-overlay, .p-select-overlay')) return;
-                this.zone.run(() => this.manager.close());
+                this.#zone.run(() => this.#manager.close());
             };
-            this.doc.addEventListener('keydown', onKey);
-            this.doc.addEventListener('mousedown', onMouse);
+            this.#doc.addEventListener('keydown', onKey);
+            this.#doc.addEventListener('mousedown', onMouse);
             onCleanup(() => {
-                this.doc.removeEventListener('keydown', onKey);
-                this.doc.removeEventListener('mousedown', onMouse);
+                this.#doc.removeEventListener('keydown', onKey);
+                this.#doc.removeEventListener('mousedown', onMouse);
             });
         });
     }
 
-    private focusFirstInput(): void {
-        const target = this.el.nativeElement.querySelector(
+    #focusFirstInput(): void {
+        const target = this.#el.nativeElement.querySelector(
             'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
         ) as HTMLElement | null;
         target?.focus();
