@@ -39,7 +39,7 @@ services:
   # REST API  → http://localhost:9200
   # ---------------------------------------------------------------------------
   opensearch1:
-    image: opensearchproject/opensearch:1.3
+    image: opensearchproject/opensearch:1.3.20
     environment:
       cluster.name: "opensearch1-cluster"
       discovery.type: "single-node"
@@ -75,7 +75,7 @@ services:
   # UI → http://localhost:5601
   # ---------------------------------------------------------------------------
   opensearch1-dashboards:
-    image: opensearchproject/opensearch-dashboards:1.3
+    image: opensearchproject/opensearch-dashboards:1
     environment:
       OPENSEARCH_HOSTS: '["https://opensearch1:9200"]'
       opensearch.ssl.verificationMode: "none"
@@ -100,7 +100,7 @@ services:
       discovery.type: "single-node"
       bootstrap.memory_lock: "true"
       OPENSEARCH_JAVA_OPTS: "-Xmx1G"
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "Dev!Strong-OSAdmin-2026"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "Dev!Search3-Kx9mP-2026"
     ulimits:
       memlock:
         soft: -1
@@ -116,7 +116,7 @@ services:
     networks:
       - search_net
     healthcheck:
-      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:Dev!Strong-OSAdmin-2026 | grep -q cluster_name"]
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:Dev!Search3-Kx9mP-2026 | grep -q cluster_name"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -137,7 +137,7 @@ services:
       OPENSEARCH_HOSTS: '["https://opensearch3:9200"]'
       opensearch.ssl.verificationMode: "none"
       opensearch.username: "admin"
-      opensearch.password: "Dev!Strong-OSAdmin-2026"
+      opensearch.password: "Dev!Search3-Kx9mP-2026"
     ports:
       - "5602:5601"
     networks:
@@ -180,7 +180,7 @@ services:
       OS_HOST: "opensearch3"
       OS_PORT: "9200"
       OS_ADMIN_USER: "admin"
-      OS_ADMIN_PASS: "Dev!Strong-OSAdmin-2026"
+      OS_ADMIN_PASS: "Dev!Search3-Kx9mP-2026"
       OS_PASSWORD: "Dev!dotcms-EsUser-2026"
       OS_CUSTOMER: "dotcms"
       OS_DEBUG: "true"
