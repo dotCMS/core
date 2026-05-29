@@ -113,7 +113,6 @@
                     [label]="'velocityPlayground.action.run' | dm"
                     icon="pi pi-play"
                     [loading]="store.isLoading()"
-                    [disabled]="!store.canRun()"
                     (onClick)="onRun()"
                     data-testid="velocity-playground-run-btn" />
             </div>
