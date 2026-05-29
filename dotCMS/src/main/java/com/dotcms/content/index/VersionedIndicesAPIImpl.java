@@ -64,12 +64,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         // Load from database, strip the .os suffix before exposing to consumers
-        Optional<VersionedIndices> stripped = indicesFactory.loadIndices(version)
-                .map(VersionedIndicesAPIImpl::stripTags);
-
-        stripped.ifPresent(cache::put);
-
-        return stripped;
+        Optional<VersionedIndices> loaded = indicesFactory.loadIndices(version);
+        loaded.ifPresent(cache::put);
+        return loaded;
     }
 
     /**
@@ -87,10 +84,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         // Load from database, strip .os suffixes before exposing to consumers
-        List<VersionedIndices> loaded = indicesFactory.loadAllIndices().stream()
-                .map(VersionedIndicesAPIImpl::stripTags)
-                .collect(Collectors.toList());
-
+        List<VersionedIndices> loaded = indicesFactory.loadAllIndices();
         // Cache the result
         cache.putAllVersions(loaded);
 
@@ -113,7 +107,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         indicesFactory.saveIndices(tagOS(indicesInfo));
 
         // Cache the stripped form so loadIndices cache hits return clean names
-        cache.put(stripTags(indicesInfo));
+        cache.put(indicesInfo);
 
         // Invalidate all versions cache since it's now stale
         cache.invalidateAllVersionsCache();
@@ -208,9 +202,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         // Load from database, strip .os suffixes before exposing to consumers
-        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices()
-                .map(VersionedIndicesAPIImpl::stripTags);
-
+        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices();
         loaded.ifPresent(cache::putLegacyIndices);
 
         return loaded;
@@ -232,26 +224,6 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     public void clearCache() {
         cache.clearCache();
         Logger.info(this, "VersionedIndicesAPI cache cleared");
-    }
-
-    // =========================================================================
-    // Tag helpers — encapsulate .os suffix as a DB-only artifact
-    // =========================================================================
-
-    /**
-     * Returns a copy of {@code indices} with all name fields stripped of any vendor tag
-     * (e.g. {@code cluster_xxx.name.os} → {@code cluster_xxx.name}).
-     * This is the form exposed to all consumers of {@link VersionedIndicesAPI}.
-     */
-    private static VersionedIndices stripTags(final VersionedIndices indices) {
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
-        builder.version(indices.version());
-        indices.live()          .map(IndexTag::strip).ifPresent(builder::live);
-        indices.working()       .map(IndexTag::strip).ifPresent(builder::working);
-        indices.reindexLive()   .map(IndexTag::strip).ifPresent(builder::reindexLive);
-        indices.reindexWorking().map(IndexTag::strip).ifPresent(builder::reindexWorking);
-        indices.siteSearch()    .map(IndexTag::strip).ifPresent(builder::siteSearch);
-        return builder.build();
     }
 
     /**
