@@ -325,7 +325,14 @@
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // Set velocity variable if not already set
+                    if (contentlet != null && UtilMethods.isSet(contentlet.getInode())) {
+                        velocityContext.put("inode", contentlet.getInode());
+                        velocityContext.put("identifier", contentlet.getIdentifier());
+                        velocityContext.put("lang", contentlet.getLanguageId());
+                        velocityContext.put("contentlet", contentlet);
+                        velocityContext.put("structure", contentType);
+                    }
+                    velocityContext.put("field", field);
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);

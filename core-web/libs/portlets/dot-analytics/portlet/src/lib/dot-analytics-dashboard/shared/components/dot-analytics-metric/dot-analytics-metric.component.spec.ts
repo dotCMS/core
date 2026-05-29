@@ -485,7 +485,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.detectChanges();
 
         const container = spectator.query(byTestId('metric-projected-content'));
-        expect(container).toHaveClass('invisible');
+        expect(container).toHaveClass('hidden');
         expect(container).toHaveClass('pointer-events-none');
     });
 });

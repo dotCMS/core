@@ -183,6 +183,16 @@ public class EmbeddingsFactory {
      * @param extractedText the text to check
      * @return true if embeddings exist, false otherwise
      */
+    public boolean indexExists(final String indexName) {
+        try (final Connection conn = getPGVectorConnection();
+             final PreparedStatement statement = conn.prepareStatement(EmbeddingsSQL.INDEX_EXISTS)) {
+            statement.setObject(1, indexName);
+            return statement.executeQuery().next();
+        } catch (SQLException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         try (final Connection conn = getPGVectorConnection();
              final PreparedStatement statement =

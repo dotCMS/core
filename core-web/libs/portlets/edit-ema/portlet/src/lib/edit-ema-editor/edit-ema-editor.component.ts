@@ -353,6 +353,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
     readonly $lockOptions = this.uveStore.$lockOptions;
     readonly $showLockOverlay = computed(() => {
+        const mode = this.uveStore.viewMode();
+        if (mode !== UVE_MODE.EDIT) {
+            return false;
+        }
+
         const lockOptions = this.$lockOptions();
 
         const lockFeatureEnabled = this.uveStore.$lockFeatureEnabled();

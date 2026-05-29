@@ -8,7 +8,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -69,7 +69,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
@@ -1141,6 +1141,65 @@ describe('DotEmaShellComponent', () => {
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
                         url: INITIAL_PAGE_PARAMS.url
+                    })
+                );
+            });
+
+            it('should not throw when resetPageParams() nulls pageParams and a tracked dep re-fires the effect', async () => {
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                // ngOnDestroy calls resetPageParams() (pageParams = null) but Angular tears
+                // down effects asynchronously, so the effect can re-run in that window.
+                // Cycling uveStatus on a tracked dep simulates that re-fire with null pageParams.
+                store.resetPageParams();
+                patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                patchState(store, { uveStatus: UVE_STATUS.LOADED });
+
+                expect(() => spectator.detectChanges()).not.toThrow();
+            });
+
+            it('should not update breadcrumb with stale data while page is loading, then update once loaded', async () => {
+                // Initialize with the first page fully loaded
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                // Hold the HTTP response so we can inspect state during LOADING
+                const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
+
+                // Navigate to a new page
+                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/new-page' });
+                spectator.detectChanges();
+
+                // While status is LOADING, stale pageAsset is present but breadcrumb must not be updated
+                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+
+                // Resolve the HTTP response with the new page's data
+                const newPageResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'New Page Title',
+                        identifier: '999'
+                    }
+                };
+                pendingRequest$.next(newPageResponse);
+                pendingRequest$.complete();
+
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                // After loading completes, breadcrumb must reflect the new page
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'New Page Title',
+                        id: '999',
+                        url: '/new-page'
                     })
                 );
             });

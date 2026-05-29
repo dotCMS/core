@@ -84,10 +84,8 @@ import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -189,13 +187,12 @@ public class WorkflowHelper {
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, queryWithDatesFormatted);
             //We should only be considering Working content.
-            final SearchResponse response = LicenseManager.getInstance().isCommunity()?
-                    this.contentletAPI.esSearch(query,
-                                    false, user, false).getResponse():
-                    this.contentletAPI
-                            .esSearchRaw(StringUtils.lowercaseStringExceptMatchingTokens(query,
+            final ContentSearchResponse response = LicenseManager.getInstance().isCommunity()?
+                    this.contentletAPI.search(query, false, user, false).getResponse():
+                    this.contentletAPI.searchRaw(
+                            StringUtils.lowercaseStringExceptMatchingTokens(query,
                                     ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
-                                    false, user, false);
+                            false, user, false);
             //Query must be sent lowercase. It's a must.
 
             Logger.debug(getClass(), () -> "luceneQuery: " + sanitizedQuery);
@@ -229,21 +226,16 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      */
     @CloseDBIfOpened
-    private BulkActionView buildBulkActionView (final SearchResponse response,
+    private BulkActionView buildBulkActionView (final ContentSearchResponse response,
                                                 final User user) throws DotDataException, DotSecurityException {
 
         final Set<String> archivedSchemes = workflowAPI.findArchivedSchemes().stream().map(WorkflowScheme::getId).collect(Collectors.toSet());
 
-        final Aggregations aggregations     = response.getAggregations();
         final Map<String, Long> stepCounts  = new HashMap<>();
 
-        for (final Aggregation aggregation : aggregations.asList()) {
-
-            if (aggregation instanceof ParsedStringTerms) {
-                ((ParsedStringTerms) aggregation)
-                .getBuckets().forEach(
-                    bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
-                );
+        for (final Map.Entry<String, java.util.List<AggregationBucket>> entry : response.aggregations().entrySet()) {
+            for (final AggregationBucket bucket : entry.getValue()) {
+                stepCounts.put(bucket.key(), bucket.docCount());
             }
         }
 
