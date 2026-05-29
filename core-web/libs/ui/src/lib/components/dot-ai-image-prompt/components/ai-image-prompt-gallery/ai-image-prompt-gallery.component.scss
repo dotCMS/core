@@ -14,6 +14,7 @@
     align-items: center;
     border-radius: common.$border-radius-md;
     align-self: center;
+    aspect-ratio: 1/1;
 
     &.s1024x1792 {
         aspect-ratio: 1/1.25;
@@ -38,12 +39,16 @@ p-galleria {
 
 :host ::ng-deep {
     .ai-image-gallery__img {
-        width: 100%;
+        max-width: 100%;
         max-height: 32rem;
         border-radius: common.$border-radius-md;
     }
 
-    p-galleriacontent {
+    p-galleriacontent,
+    .p-galleria,
+    .p-galleria-content,
+    .p-galleria-items-container,
+    .p-galleria-items {
         width: 100%;
     }
 
@@ -51,15 +56,24 @@ p-galleria {
         display: flex;
         justify-content: center;
         align-items: center;
+        width: 100%;
+    }
+
+    .p-image {
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 
     dot-empty-container {
         width: 100%;
+        min-height: 20rem;
         display: flex;
         justify-content: center;
+        align-items: center;
 
-        .message__icon {
-            color: colors.$red;
+        .pi {
+            width: inherit;
         }
     }
 
