@@ -208,7 +208,6 @@ export function withWorkflow() {
                                           ).content
                                         : undefined;
 
-
                                 const pageAssetPayload = {
                                     pageAsset: pageResponse.pageAsset,
                                     ...(content !== undefined && { content })
