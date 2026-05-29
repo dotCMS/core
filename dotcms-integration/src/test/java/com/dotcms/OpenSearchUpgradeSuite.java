@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseSwitchIT;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigrationIT;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
@@ -42,6 +43,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OSClientProviderIntegrationTest.class,
         OSClientConfigTest.class,
         ContentletIndexAPIImplMigrationIT.class,
+        ContentletIndexAPIImplPhaseSwitchIT.class,
         OSSearchAPIImplIntegrationTest.class
 })
 public class OpenSearchUpgradeSuite {
