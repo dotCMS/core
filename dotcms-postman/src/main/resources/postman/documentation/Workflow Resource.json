@@ -349,11 +349,11 @@
 							"});",
 							"",
 							"pm.test(\"Body matches string\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"schemes\");",
+							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
 							"});",
 							"",
 							"pm.test(\"Body matches string\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"schemes\");",
+							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
 							"});"
 						],
 						"type": "text/javascript",
