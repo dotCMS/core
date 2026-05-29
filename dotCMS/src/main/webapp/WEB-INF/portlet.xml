@@ -388,6 +388,7 @@
         <portlet-name>velocity_playground</portlet-name>
         <display-name>Velocity Playground</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/velocity-playground</portlet-url>
         <init-param>
             <name>view-path</name>
             <value>/velocity-playground</value>
