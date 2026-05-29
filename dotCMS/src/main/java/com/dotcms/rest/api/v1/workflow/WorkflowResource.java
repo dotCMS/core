@@ -632,17 +632,22 @@ public class WorkflowResource {
                 }
             }
 
-            final List<ContentTypeWorkflowSchemesView> result = resolvedTypes.values().stream()
-                    .map(ct -> ContentTypeWorkflowSchemesView.builder()
+            final List<ContentTypeWorkflowSchemesView> result = new ArrayList<>();
+            for (final ContentType ct : resolvedTypes.values()) {
+                try {
+                    result.add(ContentTypeWorkflowSchemesView.builder()
                             .contentTypeId(ct.id())
                             .contentTypeVariable(ct.variable())
-                            .schemes(this.workflowHelper.findSchemesByContentType(ct.id(), user))
-                            .build())
-                    .collect(Collectors.toList());
+                            .schemes(this.workflowAPI.findSchemesForContentType(ct))
+                            .build());
+                } catch (DotDataException e) {
+                    skippedIds.add(ct.id());
+                }
+            }
 
             if (!skippedIds.isEmpty()) {
-                Logger.warn(this.getClass(), "Skipped " + skippedIds.size() +
-                        " unknown content type ID(s): " + skippedIds);
+                Logger.warn(this, "Skipped " + skippedIds.size() +
+                        " content type ID(s) due to lookup errors: " + skippedIds);
             }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
