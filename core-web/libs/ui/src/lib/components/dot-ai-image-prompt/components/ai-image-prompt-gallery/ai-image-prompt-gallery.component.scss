@@ -47,12 +47,25 @@ p-galleria {
         width: 100%;
     }
 
-    dot-empty-container .message__icon {
-        color: colors.$red;
+    .p-galleria-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    dot-empty-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+
+        .message__icon {
+            color: colors.$red;
+        }
     }
 
     .message__principal-wrapper {
-        padding: 0 4.5rem;
+        padding: 0 2rem;
+        text-align: center;
     }
 
     .p-image-preview {
