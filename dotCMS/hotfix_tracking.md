@@ -98,6 +98,7 @@ This maintenance release includes the following code fixes:
 92. https://github.com/dotCMS/core/issues/34888 : Rules include endpoint improve Error Message : return proper HTTP error (400/404) for invalid id instead of server error #34888
 93. https://github.com/dotCMS/core/issues/34786 : Disable exposed /api/application.wadl endpoint #34786
 94. https://github.com/dotCMS/core/issues/35235 : fix(security): Upgrade vulnerable dependencies flagged by OWASP Dependency Check #35235
+95. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
 
 
 

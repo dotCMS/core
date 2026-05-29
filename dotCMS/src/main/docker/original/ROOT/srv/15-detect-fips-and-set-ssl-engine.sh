@@ -7,7 +7,14 @@
 #
 # The Tomcat Native APR library (libtcnative-1) version 1.2.35 is incompatible
 # with OpenSSL 3.x when running in FIPS mode, causing segmentation faults.
+# Setting SSLEngine=off alone is insufficient: libtcnative-1 still loads
+# libcrypto.so.3 and calls OpenSSL for non-SSL operations (e.g. random number
+# generation), which triggers the same FIPS provider crash.
 #
+# When FIPS mode is detected, the AprLifecycleListener is removed from
+# server.xml at runtime (before Tomcat starts) so that libtcnative-1 is never
+# loaded by Tomcat at all. server.xml lives under /srv/dotserver/tomcat/conf/
+# which is owned by the dotcms user, so no root privileges are needed.
 # Configuration Options:
 # ----------------------
 # 1. Automatic FIPS Detection (default behavior):
@@ -53,6 +60,21 @@ elif [[ "${FIPS_ENABLED}" == "true" ]]; then
     echo "[FIPS Detection] Automatically disabling APR SSL Engine due to FIPS mode"
     echo "[FIPS Detection] This prevents JVM crashes with OpenSSL 3.x in FIPS environments"
     echo "[FIPS Detection] Tomcat will use Java JSSE for SSL/TLS instead"
+    # SSLEngine=off alone does not prevent libtcnative-1 from loading libcrypto.so.3
+    # and calling OpenSSL for non-SSL operations. Remove the AprLifecycleListener
+    # from server.xml so Tomcat never loads the native library at all.
+    # server.xml is under /srv (owned by dotcms user) so no root access is needed.
+    TOMCAT_SERVER_XML="${TOMCAT_HOME:-/srv/dotserver/tomcat}/conf/server.xml"
+    if [[ -f "${TOMCAT_SERVER_XML}" ]]; then
+        sed -i '/AprLifecycleListener/d' "${TOMCAT_SERVER_XML}"
+        if ! grep -q 'AprLifecycleListener' "${TOMCAT_SERVER_XML}"; then
+            echo "[FIPS Detection] AprLifecycleListener removed from server.xml — libtcnative-1 will not be loaded"
+        else
+            echo "[FIPS Detection] WARNING: Failed to remove AprLifecycleListener from ${TOMCAT_SERVER_XML} — JVM may still crash"
+        fi
+    else
+        echo "[FIPS Detection] WARNING: server.xml not found at ${TOMCAT_SERVER_XML} — libtcnative-1 may still load"
+    fi
     export CMS_SSL_ENGINE="off"
 else
     # Default: Keep APR SSL Engine enabled for performance benefits
