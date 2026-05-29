@@ -135,21 +135,6 @@ public interface ContentletIndexOperations {
     }
 
     /**
-     * Applies vendor-specific cluster or index settings that must be in place before
-     * the first content write. Called once during application bootstrap by the router,
-     * after the provider's connectivity and version checks have passed.
-     *
-     * <p>The default implementation is a no-op so that providers with no bootstrap
-     * settings to apply (e.g. Elasticsearch) do not need to override this method.</p>
-     *
-     * <p>Implementations must be idempotent — the method may be called on every startup,
-     * and applying the same setting twice must produce the same result as applying it once.</p>
-     */
-    default void applyBootstrapSettings() {
-        // no-op for providers that have no cluster-level bootstrap requirements
-    }
-
-    /**
      * Creates a search index with the provider-specific default settings and content mapping.
      *
      * <p>Each implementation loads its own settings file ({@code es-content-settings.json} or

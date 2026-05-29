@@ -538,8 +538,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                             + " Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE,"
                             + " then restart dotCMS.");
                     haltMigration();
-                } else {
-                    operationsOS.applyBootstrapSettings();
                 }
             }
 
