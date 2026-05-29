@@ -14,6 +14,9 @@
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@ page import="com.dotcms.content.index.domain.IndexStats" %>
+<%@ page import="com.dotcms.content.index.IndexTag" %>
+<%@ page import="com.dotcms.content.index.opensearch.OSIndexAPIImpl" %>
+<%@ page import="com.dotcms.cdi.CDIUtils" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -47,6 +50,15 @@ List<String> newIdx =idxApi.getNewIndex();
 List<String> indices=idxApi.listDotCMSIndices();
 List<String> closedIndices=idxApi.listDotCMSClosedIndices();
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
+
+// Fetch OS stats and health — ES maps only cover ES-backed indices.
+Map<String, IndexStats> osIndexInfo = java.util.Collections.emptyMap();
+Map<String, ClusterIndexHealth> osMap = java.util.Collections.emptyMap();
+try {
+    IndexAPI osapi = CDIUtils.getBeanThrows(OSIndexAPIImpl.class);
+    osIndexInfo = osapi.getIndicesStats();
+    osMap       = osapi.getClusterHealth();
+} catch (Exception ignored) { /* OS not running or not configured */ }
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -100,15 +112,19 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				</tr>
 			</thead>
 			<%for(String x : indices){%>
-				<%ClusterIndexHealth health = map.get(x); %>
-				<%IndexStats status = indexInfo.get(x); %>
+				<%-- ES maps are keyed by plain names; OS maps are keyed by names with .os suffix.
+				     Try ES first, fall back to OS map for .os-suffixed indices. --%>
+				<%ClusterIndexHealth health = map.get(x) != null ? map.get(x) : osMap.get(x); %>
+				<%IndexStats status = indexInfo.get(x) != null ? indexInfo.get(x) : osIndexInfo.get(x); %>
 
-				<%boolean active =currentIdx.contains(x);%>
-				<%boolean building =newIdx.contains(x);%>
+				<%-- currentIdx/newIdx use stripped names (no .os); normalise before comparing. --%>
+				<%String xStripped = IndexTag.strip(x);%>
+				<%boolean active =currentIdx.contains(x) || currentIdx.contains(xStripped);%>
+				<%boolean building =newIdx.contains(x) || newIdx.contains(xStripped);%>
 				<%	Date d = null;
 					String myDate = null;
 					try{
-						 myDate = x.split("_")[1];
+						 myDate = xStripped.split("_")[1];
 						d = dater.parse(myDate);
 
 						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
@@ -178,10 +194,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =currentIdx.contains(x);%>
-			<%boolean building =newIdx.contains(x);%>
+			<%String xStripped2 = IndexTag.strip(x);%>
+			<%boolean active =currentIdx.contains(x) || currentIdx.contains(xStripped2);%>
+			<%boolean building =newIdx.contains(x) || newIdx.contains(xStripped2);%>
 
-			<%ClusterIndexHealth health = map.get(x); %>
+			<%ClusterIndexHealth health = map.get(x) != null ? map.get(x) : osMap.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
 
