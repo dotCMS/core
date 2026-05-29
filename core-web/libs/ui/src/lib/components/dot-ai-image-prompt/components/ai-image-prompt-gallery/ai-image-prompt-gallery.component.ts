@@ -77,9 +77,15 @@ export class AiImagePromptGalleryComponent implements OnChanges {
     };
 
     ngOnChanges(changes: SimpleChanges): void {
-        const error = changes.images?.currentValue?.[this.activeImageIndex]?.error;
+        const currentImages = changes.images?.currentValue ?? this.images;
+        const currentIndex = changes.activeImageIndex?.currentValue ?? this.activeImageIndex;
+        const error = currentImages?.[currentIndex]?.error;
         if (error) {
             this.emptyConfiguration.title = this.dotMessageService.get(error);
+        } else {
+            this.emptyConfiguration.title = this.dotMessageService.get(
+                'block-editor.extension.ai-image.error'
+            );
         }
     }
 }

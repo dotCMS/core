@@ -1,21 +1,21 @@
 import { Component, computed, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
-
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 /**
  * Component that displays error states for analytics when the service is not properly configured.
  * Shows appropriate messages based on enterprise license status and health check results.
  */
 @Component({
     selector: 'dot-analytics-error',
-    imports: [DotEmptyContainerComponent],
+    imports: [DotEmptyContainerComponent, DotMessagePipe],
     templateUrl: './dot-analytics-error.component.html'
 })
 export default class DotAnalyticsErrorComponent {
     private readonly route = inject(ActivatedRoute);
+    private readonly router = inject(Router);
     private readonly dotMessageService = inject(DotMessageService);
 
     /**
@@ -30,13 +30,19 @@ export default class DotAnalyticsErrorComponent {
     });
 
     /**
+     * Navigates back to the analytics dashboard; the route guard runs healthCheck again.
+     */
+    onRetry(): void {
+        this.router.navigate(['/analytics']);
+    }
+
+    /**
      * Gets the appropriate error configuration based on health status and enterprise license
      */
     private getErrorConfig(
         status: HealthStatusTypes,
         isEnterprise: boolean
     ): PrincipalConfiguration {
-        // If not enterprise, show license error regardless of health status
         if (!isEnterprise) {
             return {
                 title: this.dotMessageService.get('analytics.search.no.license'),
@@ -45,8 +51,19 @@ export default class DotAnalyticsErrorComponent {
             };
         }
 
-        // Enterprise license configurations based on health status
-        const enterpriseConfigs: Record<HealthStatusTypes, PrincipalConfiguration> = {
+        const defaultConfig: PrincipalConfiguration = {
+            title: this.dotMessageService.get('analytics.error.not.available'),
+            subtitle: this.dotMessageService.get('analytics.error.not.available.subtitle'),
+            icon: 'pi-exclamation-triangle'
+        };
+
+        const enterpriseConfigs: Partial<Record<HealthStatusTypes, PrincipalConfiguration>> = {
+            [HealthStatusTypes.NOT_AVAILABLE]: defaultConfig,
+            [HealthStatusTypes.ERROR]: {
+                title: this.dotMessageService.get('analytics.error.network.error'),
+                subtitle: this.dotMessageService.get('analytics.error.network.error.subtitle'),
+                icon: 'pi-times-circle'
+            },
             [HealthStatusTypes.NOT_CONFIGURED]: {
                 title: this.dotMessageService.get('analytics.search.no.configured'),
                 subtitle: this.dotMessageService.get('analytics.search.no.configured.subtitle'),
@@ -64,8 +81,6 @@ export default class DotAnalyticsErrorComponent {
             }
         };
 
-        return (
-            enterpriseConfigs[status] || enterpriseConfigs[HealthStatusTypes.CONFIGURATION_ERROR]
-        );
+        return enterpriseConfigs[status] ?? defaultConfig;
     }
 }

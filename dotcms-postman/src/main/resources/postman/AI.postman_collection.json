@@ -1839,7 +1839,7 @@
                   "    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
                   "    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
                   "    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
-                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.5);",
+                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
                   "    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
@@ -2370,7 +2370,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\"\n}",
+              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\",\n    \"language\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3328,7 +3328,6 @@
                   "",
                   "pm.test(\"Response contains properties\", function () {",
                   "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
-                  "    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
                   "});",
                   ""
                 ],
@@ -3813,9 +3812,7 @@
       "script": {
         "type": "text/javascript",
         "packages": {},
-        "exec": [
-          ""
-        ]
+        "exec": [        ]
       }
     },
     {

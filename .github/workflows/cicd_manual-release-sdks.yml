@@ -120,6 +120,20 @@ jobs:
           publish-latest: 'true'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 'Slack Notification (SDK release announcement)'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_green_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) officially released!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.deploy-javascript-sdk.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
+            > *Release type:* `${{ inputs.version-type }}`  |  *Triggered by:* `${{ github.actor }}`
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
       - name: 'Open post-release PR to bump VERSION on main'
         env:
           RELEASE_VERSION: ${{ steps.compute_version.outputs.release_version }}

@@ -26,22 +26,28 @@ const EXAMPLE_CONFIG = {
         model: 'gpt-4o',
         maxTokens: 16384,
         temperature: 1.0,
-        maxRetries: 3,
-        rolePrompt: 'You are dotCMSbot, an AI assistant to help content creators.',
-        textPrompt: 'Use Descriptive writing style.'
+        maxRetries: 3
     },
     embeddings: {
         provider: 'openai',
         apiKey: 'sk-...',
-        model: 'text-embedding-ada-002',
-        listenerIndexer: { default: 'blog,news,webPageContent' }
+        model: 'text-embedding-ada-002'
     },
     image: {
         provider: 'openai',
         apiKey: 'sk-...',
-        model: 'dall-e-3',
-        size: '1792x1024',
-        imagePrompt: 'Use 16:9 aspect ratio.'
+        model: 'gpt-image-1'
+    },
+    settings: {
+        rolePrompt: 'You are dotCMSbot, an AI assistant to help content creators.',
+        textPrompt: 'Use Descriptive writing style.',
+        imagePrompt: 'Use 16:9 aspect ratio.',
+        imageSize: '1024x1024',
+        listenerIndexer: { default: 'blog,news,webPageContent' },
+        completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
+        completionTextPrompt:
+            'Answer this question\n"$!{prompt}?"\n\nby using only the information in the following text:\n"""\n$!{supportingContent} \n"""\n',
+        embeddingsSearchThreshold: 0.25
     }
 };
 

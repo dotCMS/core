@@ -2,6 +2,7 @@ package com.dotcms.ai.api;
 
 import com.dotcms.ai.rest.forms.EmbeddingsForm;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -47,12 +48,16 @@ public class BulkEmbeddingsRunner implements Runnable {
                         .stream()
                         .filter(f -> embeddingsForm.fieldsAsList().contains(f.variable().toLowerCase()))
                         .collect(Collectors.toList());
+                final Host host = Try
+                        .of(() -> APILocator.getHostAPI().find(
+                                contentlet.getHost(), APILocator.systemUser(), false))
+                        .getOrElse(APILocator.systemHost());
                 // if a velocity template is passed in, use it.  Otherwise, try the fields
-                if (!APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(
+                if (!APILocator.getDotAIAPI().getEmbeddingsAPI(host).generateEmbeddingsForContent(
                         contentlet,
                         embeddingsForm.velocityTemplate,
                         embeddingsForm.indexName)) {
-                    APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
+                    APILocator.getDotAIAPI().getEmbeddingsAPI(host).generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to embed content:" + inode + " error:" + e.getMessage(), e);

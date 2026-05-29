@@ -302,10 +302,10 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull: true
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
-            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
@@ -368,9 +368,27 @@ jobs:
             > `npm i -g @dotcms/dotcli@${{ steps.cli_publish.outputs.npm-package-version-tag }}`
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
+      # Extract PR info from the merge commit message for SDK notification
+      - name: Extract PR from commit message
+        id: pr_info
+        if: success() && steps.sdks_publish.outputs.published == 'true'
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oP '#\K[0-9]+' | head -1 || true)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "pr_url=${{ github.server_url }}/${{ github.repository }}/pull/$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_ref=#${PR_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_url=${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "pr_ref=$(echo '${{ github.sha }}' | cut -c1-7)" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
       # Send Slack notification for SDK publication (if required)
       - name: Slack Notification (SDK announcement)
         if: success() && steps.sdks_publish.outputs.published == 'true'
+        continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
@@ -378,4 +396,5 @@ jobs:
             > :large_orange_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) published!
             >
             > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
+            > *Introduced by:* <${{ steps.pr_info.outputs.pr_url }}|${{ steps.pr_info.outputs.pr_ref }}>
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}

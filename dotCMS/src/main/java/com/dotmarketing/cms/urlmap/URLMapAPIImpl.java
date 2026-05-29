@@ -1,6 +1,5 @@
 package com.dotmarketing.cms.urlmap;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -29,7 +28,6 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
-import javax.servlet.http.HttpServletRequest;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -45,12 +43,6 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     private final ContentTypeAPI typeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-
-    /** Request-attribute key prefix for caching the resolved contentlet within a single request. */
-    private static final String REQUEST_CACHE_KEY = URLMapAPIImpl.class.getName() + ".contentlet:";
-    /** Sentinel stored in the request cache to represent a "not found" result without using null. */
-    private static final Contentlet CONTENTLET_NOT_FOUND = new Contentlet();
-
     private static final Lazy<PathMatcher[]> ignorePaths = Lazy.of(() -> {
         String[] patterns = Config.getStringArrayProperty("urlmap.ignore.glob.patterns", new String[]{"/application/**", "/api/**", "/dA/**", "/dotAdmin/**", "/html/**"});
         PathMatcher[] paths = new PathMatcher[patterns.length];
@@ -95,23 +87,6 @@ public class URLMapAPIImpl implements URLMapAPI {
      */
     private Contentlet getContentlet(final UrlMapContext urlMapContext) throws DotSecurityException {
 
-        // isUrlPattern() and processURLMap() are both called on the same HTTP request.
-        // Cache the resolved Contentlet in request scope so the second call reuses the first result
-        // (each call issues up to 2 ES queries with the cross-site fallback in place).
-        final String cacheKey = REQUEST_CACHE_KEY
-                + urlMapContext.getUri() + "|"
-                + urlMapContext.getHost().getIdentifier() + "|"
-                + urlMapContext.getLanguageId() + "|"
-                + urlMapContext.getMode().name();
-
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        if (request != null) {
-            final Object cached = request.getAttribute(cacheKey);
-            if (cached != null) {
-                return cached == CONTENTLET_NOT_FOUND ? null : (Contentlet) cached;
-            }
-        }
-
         Contentlet matchingContentlet = null;
 
         try {
@@ -135,10 +110,6 @@ public class URLMapAPIImpl implements URLMapAPI {
             Logger.error(this.getClass(), String.format("An error occurred when finding contentlet matches for URL " +
                     "Map [%s]", urlMapContext.getUri()), e);
             return null;
-        }
-
-        if (request != null) {
-            request.setAttribute(cacheKey, matchingContentlet != null ? matchingContentlet : CONTENTLET_NOT_FOUND);
         }
 
         return matchingContentlet;
@@ -167,13 +138,10 @@ public class URLMapAPIImpl implements URLMapAPI {
             // look for it on the current host
             final Identifier myHostIdentifier = this.identifierAPI.find(currentHost, identifier.getPath());
             if (myHostIdentifier == null || !UtilMethods.isSet(myHostIdentifier.getId())) {
-                // No page at the same path on the current site — fall back to the configured
-                // detail page identifier (e.g. a shared page on a global host).
                 Logger.info(this.getClass(),
-                        "No detail page found at path '" + identifier.getPath() + "' on Site '"
-                                + currentHost.getHostname() + "'. Falling back to configured detail page for Content Type '"
-                                + contentType.name() + "'.");
-                return Optional.of(identifier);
+                        "No valid detail page for Content Type '" + contentType.name()
+                                + "'. Looking for a detail page=" + identifier.getPath() + " on Site " + currentHost.getHostname());
+                return Optional.empty();
             }
 
             return Optional.of(myHostIdentifier);
@@ -298,20 +266,9 @@ public class URLMapAPIImpl implements URLMapAPI {
 
         Contentlet contentlet = null;
 
-        // First search restricted to current host (and SYSTEM_HOST). If the content lives on a
-        // different site but is referenced from this site's pages (cross-site URL map scenario),
-        // the host-restricted query returns nothing. In that case, fall back to a site-agnostic
-        // query so the content can still be found and rendered against the current site's detail page.
-        List<Contentlet> contentletSearches =
-                ContentUtils.pull(this.buildContentQuery(matches, contentType, context, true), 0, 2, "score", this.wuserAPI.getSystemUser(), true);
-
-        if (contentletSearches.isEmpty()) {
-            Logger.debug(this.getClass(), String.format(
-                    "No URL-mapped contentlet found on current site '%s'. Retrying without host restriction.",
-                    context.getHost().getHostname().replaceAll("[\\r\\n\\t]", "_")));
-            contentletSearches =
-                    ContentUtils.pull(this.buildContentQuery(matches, contentType, context, false), 0, 2, "score", this.wuserAPI.getSystemUser(), true);
-        }
+        final String query = this.buildContentQuery(matches, contentType, context);
+        final List<Contentlet> contentletSearches =
+                ContentUtils.pull(query, 0, 2, "score", this.wuserAPI.getSystemUser(), true);
 
         if (!contentletSearches.isEmpty()) {
 
@@ -375,18 +332,15 @@ public class URLMapAPIImpl implements URLMapAPI {
      * Builds the Lucene query used to find the specific {@link Contentlet} that matches a given URL Map for a
      * Content Type.
      *
-     * @param matches          The set of URL Maps that match a specific Content Type.
-     * @param contentType      The Content Type that matches the URL Map.
-     * @param context          The instance of the URL Map Context.
-     * @param restrictToHost   When {@code true}, limits results to the current site and SYSTEM_HOST.
-     *                         Pass {@code false} for a cross-site fallback that searches all sites.
+     * @param matches     The set of URL Maps that match a specific Content Type.
+     * @param contentType The Content Type that matches the URL Map.
+     * @param context     The instance of the URL Map Context.
      * @return The Lucene query that will return a potential match for the URL Map.
      */
     private String buildContentQuery(
             final Matches matches,
             final ContentType contentType,
-            final UrlMapContext context,
-            final boolean restrictToHost) {
+            final UrlMapContext context) {
 
         final StringBuilder query = new StringBuilder();
 
@@ -394,15 +348,12 @@ public class URLMapAPIImpl implements URLMapAPI {
                 .append(contentType.variable())
                 .append(" +" + ESMappingConstants.VARIANT + ":")
                 .append(VariantAPI.DEFAULT_VARIANT.name())
-                .append(" +deleted:false ");
-
-        if (restrictToHost) {
-            query.append(" +(conhost:")
-                    .append(context.getHost().getIdentifier())
-                    .append(" OR conhost:")
-                    .append(Host.SYSTEM_HOST)
-                    .append(")");
-        }
+                .append(" +deleted:false ")
+                .append(" +(conhost:")
+                .append(context.getHost().getIdentifier())
+                .append(" OR conhost:")
+                .append(Host.SYSTEM_HOST)
+                .append(")");
         if (context.getMode().showLive) {
             query.append(" +live:true ");
         } else {

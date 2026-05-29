@@ -14,6 +14,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
@@ -40,12 +41,14 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
+    styleUrl: './dot-edit-content-sidebar.component.scss',
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
         TabsModule,
+        TooltipModule,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
         ConfirmDialogModule,

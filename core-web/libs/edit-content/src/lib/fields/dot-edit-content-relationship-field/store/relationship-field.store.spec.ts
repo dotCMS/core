@@ -1,6 +1,6 @@
 import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -9,11 +9,13 @@ import {
     DotFieldService,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
-import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
 import { RelationshipFieldStore } from './relationship-field.store';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 describe('RelationshipFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof RelationshipFieldStore>>;
@@ -61,6 +63,9 @@ describe('RelationshipFieldStore', () => {
             mockProvider(DotFieldService),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn()
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -576,6 +581,190 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('locale resolution (targetLanguageId)', () => {
+            const mockLanguage: DotLanguage = {
+                id: 42,
+                language: 'Spanish',
+                languageCode: 'es',
+                isoCode: 'es-ES'
+            };
+
+            let dotEditContentService: InstanceType<typeof DotEditContentService>;
+            let relationshipFieldService: RelationshipFieldService;
+            let mockField: ReturnType<typeof createFakeRelationshipField>;
+
+            beforeEach(() => {
+                dotEditContentService = spectator.inject(DotEditContentService);
+                relationshipFieldService = spectator.inject(RelationshipFieldService);
+                mockField = createFakeRelationshipField({
+                    variable: 'relationship_field',
+                    relationships: {
+                        cardinality: 0,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+            });
+
+            it('should skip locale resolution when targetLanguageId is not provided', () => {
+                const items = [createFakeContentlet({ inode: 'inode1', identifier: 'id1' })];
+                store.setData(items);
+
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({ field: mockField, contentlet: null });
+
+                expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+            });
+
+            it('should skip locale resolution when dataToProcess is empty', () => {
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+            });
+
+            it('should call getContentById for each item when targetLanguageId is provided', () => {
+                const items = [
+                    createFakeContentlet({ inode: 'inode1', identifier: 'id1' }),
+                    createFakeContentlet({ inode: 'inode2', identifier: 'id2' })
+                ];
+                store.setData(items);
+
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'id1',
+                    languageId: 42
+                });
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'id2',
+                    languageId: 42
+                });
+            });
+
+            it('should patch language to the full DotLanguage object on each resolved item', () => {
+                const items = [createFakeContentlet({ inode: 'inode1', identifier: 'id1' })];
+                store.setData(items);
+
+                const fetched = createFakeContentlet({ inode: 'resolved', identifier: 'id1' });
+                jest.spyOn(dotEditContentService, 'getContentById').mockReturnValue(of(fetched));
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect((store.data()[0] as { language: DotLanguage }).language).toEqual(
+                    mockLanguage
+                );
+            });
+
+            it('should fall back to the original item when getContentById fails', () => {
+                const original = createFakeContentlet({ inode: 'inode1', identifier: 'id1' });
+                store.setData([original]);
+
+                jest.spyOn(dotEditContentService, 'getContentById').mockReturnValue(
+                    throwError(() => new Error('Not found'))
+                );
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(store.data()[0].inode).toBe('inode1');
+            });
+
+            it('should use existingData (captured before reset) when contentlet is null', () => {
+                const existingItems = [
+                    createFakeContentlet({ inode: 'existing1', identifier: 'exist-id' })
+                ];
+                store.setData(existingItems);
+
+                jest.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'exist-id',
+                    languageId: 42
+                });
+            });
+        });
+
         describe('initialization edge cases', () => {
             it('should handle initialization with empty contentlet', () => {
                 const emptyContentlet = createFakeContentlet({
@@ -640,6 +829,9 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         mockProvider(DotFieldService),
         mockProvider(DotHttpErrorManagerService, {
             handle: jest.fn()
+        }),
+        mockProvider(DotEditContentService, {
+            getContentById: jest.fn().mockReturnValue(of({}))
         })
     ];
 

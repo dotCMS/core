@@ -27,7 +27,6 @@ import {
     getDragItemData,
     createReorderMenuURL,
     getOrientation,
-    getWrapperMeasures,
     normalizeQueryParams,
     convertUTCToLocalTime,
     escapeHtmlAttributeValue,
@@ -1383,41 +1382,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getWrapperMeasures', () => {
-        it('should return correct measures for landscape orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '1200',
-                cssWidth: '800',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
-            expect(result).toEqual({ width: '800px', height: '1200px' });
-        });
-
-        it('should use percentage unit for default inode', () => {
-            const device: DotDevice = {
-                cssHeight: '100',
-                cssWidth: '100',
-                inode: 'default'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '100%', height: '100%' });
         });
     });
 

@@ -60,6 +60,19 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
     9: DotCMSBaseTypesContentTypes.DOTASSET
 };
 
+/**
+ * Inverse of `MAP_NUMBERS_TO_BASE_TYPES` — base type variable → numeric key.
+ * Avoids `Object.entries(...).find(...)` linear scans when persisting filters.
+ *
+ * Typed as `Partial<...>` because the map only covers the 9 entries above; if
+ * `DotCMSBaseTypesContentTypes` ever gains a new variant, callers will need
+ * to handle a possible `undefined` (the existing `.filter(Boolean)` guards do).
+ */
+export const MAP_BASE_TYPES_TO_NUMBERS: Partial<Record<DotCMSBaseTypesContentTypes, string>> =
+    Object.fromEntries(
+        Object.entries(MAP_NUMBERS_TO_BASE_TYPES).map(([key, value]) => [value, key])
+    );
+
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
 

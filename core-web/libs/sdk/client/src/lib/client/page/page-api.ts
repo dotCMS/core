@@ -9,16 +9,11 @@ import {
     DotErrorPage,
     DotHttpClient,
     DotHttpError,
-    DotRequestOptions
+    DotRequestOptions,
+    UVE_MODE
 } from '@dotcms/types';
 
-import {
-    buildPageQuery,
-    buildQuery,
-    fetchGraphQL,
-    fetchStyleEditorSchemas,
-    mapContentResponse
-} from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
@@ -152,7 +147,8 @@ export class PageClient extends BaseApiClient {
         const requestVariables: Record<string, unknown> = {
             // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
             url: normalizedUrl,
-            mode,
+            // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
+            mode: UVE_MODE[mode],
             languageId,
             personaId,
             fireRules,
@@ -220,9 +216,9 @@ export class PageClient extends BaseApiClient {
                 );
 
                 if (structuredError) {
-                    const code = structuredError.extensions!.code!;
+                    const code = structuredError.extensions?.code;
                     const status =
-                        structuredError.extensions!.status ??
+                        structuredError.extensions?.status ??
                         (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
                     const message =
                         code === 'NOT_FOUND'
@@ -253,6 +249,8 @@ export class PageClient extends BaseApiClient {
                 ? graphqlToPageEntity(response.data.page)
                 : null;
 
+            const styleEditorSchemas = pageResponse ? pageResponse.page.styleEditorSchemas : [];
+
             if (!pageResponse) {
                 throw new DotErrorPage(
                     `Page '${normalizedUrl}' was not found`,
@@ -268,13 +266,6 @@ export class PageClient extends BaseApiClient {
                 );
             }
 
-            const styleEditorSchemas = await fetchStyleEditorSchemas(
-                pageResponse.page.identifier,
-                this.config,
-                this.requestOptions,
-                this.httpClient
-            );
-
             // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
@@ -286,7 +277,7 @@ export class PageClient extends BaseApiClient {
                     variables: requestVariables
                 },
                 errors: response.errors?.length ? response.errors : undefined,
-                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
+                ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
             if (error instanceof DotErrorPage) {

@@ -982,6 +982,61 @@ public class ContentResourceIntegrationTest {
     }
 
     /**
+     * Method to test: {@link ContentResource#getContentletReferences}
+     * <p>
+     * Given scenario: An unauthenticated (anonymous) HTTP request hits the endpoint,
+     * which requires {@code AnonymousAccess.NONE}.
+     * <p>
+     * Expected result: {@link com.dotcms.rest.exception.SecurityException} is thrown,
+     * mapping to HTTP 401 — anonymous callers are rejected before any content lookup.
+     */
+    @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+    public void test_getContentletReferences_anonymousRequest_throwsUnauthorized()
+            throws Exception {
+        final Language english = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode())
+                .languageId(english.getId()).nextPersisted();
+
+        new ContentResource().getContentletReferences(
+                createAnonymousRequest(), mock(HttpServletResponse.class),
+                content.getIdentifier(), "");
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getAllContentletReferencesCount}
+     * <p>
+     * Given scenario: An unauthenticated (anonymous) HTTP request hits the endpoint,
+     * which requires {@code AnonymousAccess.NONE}.
+     * <p>
+     * Expected result: {@link com.dotcms.rest.exception.SecurityException} is thrown,
+     * mapping to HTTP 401 — anonymous callers are rejected before any count lookup.
+     */
+    @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+    public void test_getAllContentletReferencesCount_anonymousRequest_throwsUnauthorized()
+            throws Exception {
+        final Language english = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode())
+                .languageId(english.getId()).nextPersisted();
+
+        new ContentResource().getAllContentletReferencesCount(
+                createAnonymousRequest(), mock(HttpServletResponse.class),
+                content.getIdentifier());
+    }
+
+    /**
+     * Creates an unauthenticated (anonymous) HttpServletRequest with no user or auth header.
+     */
+    private static HttpServletRequest createAnonymousRequest() {
+        return new MockAttributeRequest(
+                new MockSessionRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()
+                ).request()
+        ).request();
+    }
+
+    /**
      * Creates an authenticated HttpServletRequest with admin credentials.
      */
     private static HttpServletRequest createAuthenticatedRequest() {

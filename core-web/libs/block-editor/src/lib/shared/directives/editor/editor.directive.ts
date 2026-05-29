@@ -14,6 +14,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Content, Editor, JSONContent } from '@tiptap/core';
 
+import { getEditorElement } from '../../utils';
+
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'tiptap[editor], [tiptap][editor], tiptap-editor[editor], [tiptapEditor][editor]',
@@ -46,7 +48,8 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
             return;
         }
 
-        this.editor.chain().setContent(value, true).run();
+        // v3 replaced the boolean second arg with an options object.
+        this.editor.chain().setContent(value, { emitUpdate: true }).run();
     }
 
     // Registers a callback function that is called when the control's value changes in the UI.
@@ -83,14 +86,18 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
         this.el.nativeElement.innerHTML = '';
 
         // insert the editor in the dom
-        this.el.nativeElement.appendChild(this.editor.options.element.firstChild as ChildNode);
+        const editorElement = getEditorElement(this.editor);
+        if (editorElement?.firstChild) {
+            this.el.nativeElement.appendChild(editorElement.firstChild as ChildNode);
+        }
 
         // update the options for the editor
         this.editor.setOptions({ element: this.el.nativeElement });
 
         // update content to the editor
         if (innerHTML) {
-            this.editor.chain().setContent(innerHTML, false).run();
+            // v3 replaced the boolean second arg with an options object.
+            this.editor.chain().setContent(innerHTML, { emitUpdate: false }).run();
         }
 
         // register blur handler to update `touched` property

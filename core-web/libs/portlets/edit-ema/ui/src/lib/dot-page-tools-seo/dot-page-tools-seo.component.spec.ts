@@ -33,7 +33,7 @@ describe('DotPageToolsSeoComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'editpage.toolbar.nav.page.tools': 'Page Tools'
+                    'editpage.toolbar.nav.page.tools': 'Page Health'
                 })
             },
             DotMessagePipe

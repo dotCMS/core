@@ -235,8 +235,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
 
 
 /**
@@ -348,12 +348,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public ESSearchResults esSearch(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
@@ -2381,29 +2383,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
                 //Search for related content in other versions of the same contentlet
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName,
                                 DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() == null) {
+            if (response.hits().hits().isEmpty()) {
                 return result;
             }
 
-            for (final SearchHit sh : response.getHits()) {
-                final Map<String, Object> sourceMap = sh.getSourceAsMap();
+            for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
+                final Map<String, Object> sourceMap = sh.sourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(
                             relationshipName));
@@ -2475,25 +2477,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() != null) {
-                for (final SearchHit sh : response.getHits()) {
-                    final Map<String, Object> sourceMap = sh.getSourceAsMap();
+            if (!response.hits().hits().isEmpty()) {
+                for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
+                    final Map<String, Object> sourceMap = sh.sourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
                         final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(
@@ -8629,14 +8631,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (!foundInRelationships && UtilMethods.isSet(contentlet.getIdentifier())) {
                     // Check if there are existing related content records for this relationship
                     try {
-                        final List<Contentlet> existingRelatedContent = getRelatedContent(contentlet, rel,
-                                checkParent, APILocator.systemUser(), false);
-                        hasExistingRelatedContent = existingRelatedContent != null && !existingRelatedContent.isEmpty();
+                        hasExistingRelatedContent = !FactoryLocator.getRelationshipFactory()
+                                .dbRelatedContent(rel, contentlet, checkParent, false, null, 1, 0)
+                                .isEmpty();
                         if (hasExistingRelatedContent) {
                             Logger.debug(this, String.format("Required %s relationship [%s] not present in contentRelationships but found existing related content for contentlet [%s]",
                                     (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
                         }
-                    } catch (final DotDataException | DotSecurityException e) {
+                    } catch (final DotDataException e) {
                         Logger.error(this, String.format("Could not check existing related content for relationship [%s] and contentlet [%s]",
                                 rel.getRelationTypeValue(), contentletId), e);
                     }
@@ -8662,7 +8664,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && contentsInRelationship.size() > 0) {
+                        .ordinal() && !contentsInRelationship.isEmpty()) {
                     hasError |= !isValidOneToOneRelationship(contentlet, builder, relationship,
                             contentsInRelationship);
 
@@ -8696,27 +8698,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         try {
-                            // In order to get the related content we should use method getRelatedContent
-                            // that has -boolean pullByParent- as parameter so we can pass -false-
-                            // to get related content where we are parents.
-                            final List<Contentlet> relatedContents = getRelatedContent(
-                                    contentInRelationship, relationship, false,
-                                    APILocator.getUserAPI()
-                                            .getSystemUser(), true, 1, 0, null);
-                            // If there's a 1-N relationship and the parent
-                            // content is relating to a child that already has
-                            // a parent...
+                            // For ONE_TO_MANY, check if the child already has a different parent.
+                            // Skip for other cardinalities — avoids N×M query explosion via the relationship cache.
                             if (relationship.getCardinality()
-                                    == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                                    && !relatedContents.isEmpty()
-                                    && !relatedContents.get(0).getIdentifier()
-                                    .equals(contentlet.getIdentifier())) {
-                                final String errorMessage = String.format("ERROR! Parent content [%s] cannot be related to child content [%s] because it is already related to parent content [%s]",
-                                        contentletId, contentInRelationship.getIdentifier(), relatedContents.get(0).getIdentifier());
-                                Logger.error(this, errorMessage);
-                                hasError = true;
-                                builder.addBadCardinalityRelationship(relationship,
-                                        contentsInRelationship);
+                                    == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()) {
+                                final List<Contentlet> relatedContents = FactoryLocator
+                                        .getRelationshipFactory()
+                                        .dbRelatedContent(relationship, contentInRelationship,
+                                                false, false, null, 1, 0);
+                                if (!relatedContents.isEmpty()
+                                        && !relatedContents.get(0).getIdentifier()
+                                        .equals(contentlet.getIdentifier())) {
+                                    final String errorMessage = String.format("ERROR! Parent content [%s] cannot be related to child content [%s] because it is already related to parent content [%s]",
+                                            contentletId, contentInRelationship.getIdentifier(), relatedContents.get(0).getIdentifier());
+                                    Logger.error(this, errorMessage);
+                                    hasError = true;
+                                    builder.addBadCardinalityRelationship(relationship,
+                                            contentsInRelationship);
+                                }
                             }
 
                             if (!contentInRelationship.getContentTypeId()

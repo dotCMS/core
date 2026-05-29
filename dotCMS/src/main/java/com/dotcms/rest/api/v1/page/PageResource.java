@@ -39,7 +39,7 @@ import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1072,7 +1072,7 @@ public class PageResource {
 
         final String esQuery = getPageByPathESQuery(path);
 
-        final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
+        final ContentSearchResults<Contentlet> esresult = esapi.search(esQuery, live, user, live);
         final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
                 .stream()
                 .map(contentlet -> {
@@ -1276,7 +1276,7 @@ public class PageResource {
 
     private Collection<Contentlet> applyFilters(
             final boolean workingSite,
-            final ESSearchResults esresult) throws DotDataException {
+            final ContentSearchResults<Contentlet> esresult) throws DotDataException {
 
         final Collection<Contentlet> contentlets = this.removeMultiLangVersion(esresult);
         return workingSite ? filterByWorkingSite(contentlets) : contentlets;
@@ -1922,64 +1922,6 @@ public class PageResource {
                     );
                 })
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Returns the {@code DOT_STYLE_EDITOR_SCHEMA} metadata for each content type that is currently
-     * present on the specified page. Only content types that actually have a
-     * {@code DOT_STYLE_EDITOR_SCHEMA} entry in their metadata are included in the response. Returns
-     * an empty list when no such schemas are found.
-     *
-     * <p>Example:
-     * <pre>GET /api/v1/page/{pageId}/contenttype-schema</pre>
-     *
-     * @param request  The current {@link HttpServletRequest}.
-     * @param response The current {@link HttpServletResponse}.
-     * @param pageId   Identifier of the HTML Page whose content type schemas are requested.
-     * @return List of parsed JSON style editor schema objects - empty when none are found.
-     */
-    @Operation(
-            operationId = "getPageContentTypeSchemas",
-            summary = "Get style editor schemas for content types on a page",
-            description =
-                    "Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct content type "
-                            + "present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA entry "
-                            + "are excluded. Returns an empty list when no schemas are found."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Content type schemas retrieved successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityContentTypeSchemaView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User does not have READ permission on the page"),
-            @ApiResponse(responseCode = "404", description = "Page not found"),
-            @ApiResponse(responseCode = "500", description = "Error retrieving schema data")
-    })
-    @GET
-    @Path("/{pageId}/contenttype-schema")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getPageContentTypeSchemas(
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @Parameter(description = "Identifier of the HTML Page", required = true)
-            @PathParam("pageId") final String pageId)
-            throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, () -> "Getting content type schemas for page: " + pageId);
-
-        final User user = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init()
-                .getUser();
-
-        final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
-
-        APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
-
-        return Response.ok(new ResponseEntityContentTypeSchemaView(
-                pageResourceHelper.getStyleEditorSchemasInPage(pageId))).build();
     }
 
 } // E:O:F:PageResource

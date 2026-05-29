@@ -117,4 +117,17 @@ export class NewEditContentFormPage {
         await this.page.waitForLoadState('domcontentloaded');
         await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
     }
+
+    /**
+     * Navigates to create a new file-asset content with a folderPath query param.
+     * File asset types don't expose data-testid="title", so this waits for the
+     * built-in hostFolder field instead.
+     */
+    async goToNewFileAssetWithFolderPath(contentType: string, folderPath: string) {
+        await this.page.goto(`/dotAdmin/#/content/new/${contentType}?folderPath=${folderPath}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page
+            .getByTestId('field-hostFolder')
+            .waitFor({ state: 'visible', timeout: 15000 });
+    }
 }

@@ -69,13 +69,21 @@
                                 [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
                                 data-testId="column">
                                 @for (field of column.fields; track field) {
-                                    <dot-edit-content-field
-                                        [contentType]="contentType"
-                                        [contentlet]="contentlet"
-                                        [field]="field"
-                                        [class.hidden]="hiddenFields[field.variable]"
-                                        (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
-                                        data-testId="field" />
+                                    @if (
+                                        isPreservedField(field.fieldType)
+                                            ? $shouldRenderPreservedFields()
+                                            : $shouldRenderFields()
+                                    ) {
+                                        <dot-edit-content-field
+                                            [contentType]="contentType"
+                                            [contentlet]="contentlet"
+                                            [field]="field"
+                                            [class.hidden]="hiddenFields[field.variable]"
+                                            (disabledWYSIWYGChange)="
+                                                onDisabledWYSIWYGChange($event)
+                                            "
+                                            data-testId="field" />
+                                    }
                                 }
                             </div>
                         }

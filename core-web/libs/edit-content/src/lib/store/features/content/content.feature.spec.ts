@@ -45,6 +45,7 @@ describe('ContentFeature', () => {
     let spectator: SpectatorService<any>;
 
     let store: any;
+    let globalStore: GlobalStore;
     let contentTypeService: SpyObject<DotContentTypeService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
@@ -84,6 +85,7 @@ describe('ContentFeature', () => {
     beforeEach(() => {
         spectator = createStore();
         store = spectator.service;
+        globalStore = spectator.inject(GlobalStore);
         contentTypeService = spectator.inject(DotContentTypeService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
@@ -343,6 +345,18 @@ describe('ContentFeature', () => {
                 'edit.content.sidebar.information.error.initializing.content'
             );
         }));
+
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
+            patchState(store, { isDialogMode: true });
+            (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(title.setTitle).not.toHaveBeenCalled();
+            expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+        }));
     });
 
     describe('initializeExistingContent', () => {
@@ -409,6 +423,28 @@ describe('ContentFeature', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
+            patchState(store, { isDialogMode: true });
+            (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(title.setTitle).not.toHaveBeenCalled();
+            expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+        }));
+
+        it('should pass inode to getContentTypeWithRender for Velocity variable resolution', fakeAsync(() => {
+            store.initializeExistingContent({ inode: testInode });
+            tick();
+
+            expect(contentTypeService.getContentTypeWithRender).toHaveBeenCalledWith(
+                mockContentlet.contentType,
+                testInode
+            );
         }));
 
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {

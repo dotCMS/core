@@ -84,5 +84,8 @@ export * from './lib/validators/dotValidators';
 // Animations
 export * from './lib/animations/fade.animations';
 
+// Monaco editor presets
+export * from './lib/monaco/editor-options';
+
 // Theme
 export * from './lib/theme';

@@ -33,6 +33,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -187,7 +188,8 @@ describe('DotContentTypesEditComponent', () => {
                 DotMenuService,
                 DotEventsService,
                 FieldService,
-                Location
+                Location,
+                { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
         };
     };
@@ -521,6 +523,7 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                    { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } },
                     ConfirmationService,
                     DotAlertConfirmService,
                     DotContentTypesInfoService,
