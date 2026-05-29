@@ -246,18 +246,37 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
             // For OIDC, the id_token MUST be present and MUST validate. Refusing to proceed here
             // means a man-in-the-middle or rogue IdP can't log a user in by intercepting just the code.
+            final Map<String, Object> verifiedClaims;
             if (config.isOidc()) {
                 if (!UtilMethods.isSet(idToken)) {
                     throw new com.dotmarketing.exception.DotRuntimeException(
                             "OIDC token response did not include an id_token — refusing to authenticate");
                 }
-                provider.validateIdTokenAndExtractSubject(idToken, expectedNonce);
+                verifiedClaims = provider.validateIdTokenAndExtractClaims(idToken, expectedNonce);
                 OIDCProvider.validateAtHash(idToken, accessToken);
+            } else {
+                verifiedClaims = null;
             }
 
             final boolean frontEndLogin = Boolean.TRUE.equals(session.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
             final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
-            final User user = oauthHelper.resolveOrProvisionUser(provider, accessToken, userInfo, config, frontEndLogin);
+
+            // The id_token is the only signed, audience- and nonce-bound artifact in this flow;
+            // the userinfo response is not. OIDC Core §5.3.2 requires the userinfo subject to
+            // equal the id_token subject — enforce it so a substituted access token can't pivot
+            // provisioning onto a different identity than the one we cryptographically verified.
+            if (verifiedClaims != null) {
+                final Object idSub = verifiedClaims.get("sub");
+                final Object userInfoSub = userInfo == null ? null : userInfo.get("sub");
+                if (idSub != null && userInfoSub != null
+                        && !String.valueOf(idSub).equals(String.valueOf(userInfoSub))) {
+                    throw new com.dotmarketing.exception.DotRuntimeException(
+                            "OIDC userinfo subject does not match the verified id_token subject — refusing to authenticate");
+                }
+            }
+
+            final User user = oauthHelper.resolveOrProvisionUser(
+                    provider, accessToken, userInfo, verifiedClaims, config, frontEndLogin);
 
             if (!AuthAccessDeniedUtil.hasRequiredRole(user, frontEndLogin)) {
                 AuthAccessDeniedUtil.sendNoAccessPage(response, user);

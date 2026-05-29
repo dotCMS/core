@@ -23,11 +23,13 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import java.security.Key;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -432,6 +434,36 @@ public class DotAuthResourceTest {
         // a 401/403 response — either way, NOT a 200 OK.
         assertTrue(rsp.getStatus() >= 400,
                 "Expected a non-2xx response when the user is rejected, got " + rsp.getStatus());
+    }
+
+    // --- import ------------------------------------------------------------
+
+    /**
+     * Regression: dotAuth OAuth (and headless) configs store secrets directly and have no
+     * Apps descriptor YAML — only SAML does. Import must NOT require a descriptor, mirroring
+     * the save path. Previously this threw a 400 ("No App Descriptor found for `dotAuth`").
+     */
+    @Test
+    public void importDotAuthFile_imports_oauth_without_requiring_app_descriptor() throws Exception {
+        final AppSecrets oauthSecrets = AppSecrets.builder()
+                .withKey(OAUTH_KEY)
+                .withSecret("clientId", "abc")
+                .build();
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class);
+             MockedStatic<AppsUtil> appsUtil = Mockito.mockStatic(AppsUtil.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            appsUtil.when(() -> AppsUtil.importSecrets(any(), any()))
+                    .thenReturn(Map.of(Host.SYSTEM_HOST, List.of(oauthSecrets)));
+
+            final int imported = resource.importDotAuthFile(
+                    java.nio.file.Paths.get("ignored.export"), mock(Key.class), user);
+
+            assertEquals(1, imported);
+            verify(appsAPI).saveSecrets(any(AppSecrets.class), eq(systemHost), eq(user));
+            // The descriptor lookup is the regression: import must not gate on it.
+            verify(appsAPI, never()).getAppDescriptor(any(), any());
+        }
     }
 
     private static PaginatedArrayList<Host> paginatedList(final Host... hosts) {
