@@ -208,19 +208,38 @@ export function withWorkflow() {
                                           ).content
                                         : undefined;
 
+
+                                const pageAssetPayload = {
+                                    pageAsset: pageResponse.pageAsset,
+                                    ...(content !== undefined && { content })
+                                };
+
                                 return dotLanguagesService
                                     .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)
                                     .pipe(
                                         tap((languages) => {
-                                            pageStore.setPageAsset({
-                                                pageAsset: pageResponse.pageAsset,
-                                                ...(content !== undefined && { content })
-                                            });
+                                            // pageLanguages must land before setPageAsset so
+                                            // that pageTranslateProps (which reacts to pageAsset
+                                            // but reads pageLanguages via untracked) always sees
+                                            // a consistent languages slice when it recomputes.
                                             patchState(store, {
                                                 pageLanguages: languages,
                                                 uveStatus: UVE_STATUS.LOADED,
                                                 workflowLockIsLoading: false
                                             });
+                                            pageStore.setPageAsset(pageAssetPayload);
+                                        }),
+                                        catchError(() => {
+                                            // Languages fetch failed: still apply the fresh
+                                            // page asset with the current (stale) languages so
+                                            // the user sees the page rather than an error screen.
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.LOADED,
+                                                workflowLockIsLoading: false
+                                            });
+                                            pageStore.setPageAsset(pageAssetPayload);
+
+                                            return EMPTY;
                                         })
                                     );
                             }),

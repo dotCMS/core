@@ -301,19 +301,37 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                             return pageRequest.pipe(
                                 switchMap((pageAsset) => {
+                                    // Preserve original semantics: GraphQL always passes `content`
+                                    // (even when undefined) so setPageAsset clears previous content
+                                    // via the `'content' in payload` discriminant in withPage.ts.
+                                    const payload = isGraphQL
+                                        ? { pageAsset, content: graphQLContent }
+                                        : { pageAsset };
+
                                     return dotLanguagesService
                                         .getLanguagesUsedPage(pageAsset.page.identifier)
                                         .pipe(
                                             tap((languages) => {
-                                                const payload =
-                                                    graphQLContent !== undefined
-                                                        ? { pageAsset, content: graphQLContent }
-                                                        : { pageAsset };
-                                                deps.setPageAsset(payload);
+                                                // pageLanguages must land before setPageAsset so
+                                                // that pageTranslateProps (which reacts to pageAsset
+                                                // but reads pageLanguages via untracked) always sees
+                                                // a consistent languages slice when it recomputes.
                                                 patchState(store, {
                                                     pageLanguages: languages,
                                                     uveStatus: UVE_STATUS.LOADED
                                                 });
+                                                deps.setPageAsset(payload);
+                                            }),
+                                            catchError(() => {
+                                                // Languages fetch failed: still apply the fresh
+                                                // page asset with the current (stale) languages so
+                                                // the user sees the page rather than an error screen.
+                                                patchState(store, {
+                                                    uveStatus: UVE_STATUS.LOADED
+                                                });
+                                                deps.setPageAsset(payload);
+
+                                                return EMPTY;
                                             })
                                         );
                                 }),
