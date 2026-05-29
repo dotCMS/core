@@ -340,7 +340,9 @@ public class DotAuthOAuthExchangeResource implements Serializable {
 
             final User user;
             try {
-                user = oauthHelper.resolveOrProvisionUser(provider, null, claims, effectiveConfig, /* frontEndLogin */ true);
+                // The userinfo map here IS the signature-verified id_token claim set, so it
+                // doubles as the authoritative source for the email_verified trust decision.
+                user = oauthHelper.resolveOrProvisionUser(provider, null, claims, claims, effectiveConfig, /* frontEndLogin */ true);
             } catch (final DotRuntimeException e) {
                 if (e.getMessage() != null
                         && (e.getMessage().contains("is not active")

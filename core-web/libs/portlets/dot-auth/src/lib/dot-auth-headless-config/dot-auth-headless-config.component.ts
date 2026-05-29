@@ -1,12 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    computed,
-    effect,
-    inject,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -21,11 +13,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAuthHeadlessSectionComponent, HeadlessChange } from '../dot-auth-config/components';
 import { DotAuthConfigStore } from '../dot-auth-config/store/dot-auth-config.store';
-
-interface TocSection {
-    id: string;
-    label: string;
-}
 
 @Component({
     selector: 'dot-auth-headless-config',
@@ -51,19 +38,6 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
     readonly #messages = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly activeSection = signal<string>('headless-overview');
-
-    readonly tocSections = computed<TocSection[]>(() => {
-        const m = (key: string) => this.#dotMessageService.get(key);
-        return [
-            { id: 'headless-overview', label: m('dotauth.toc.headless.overview') },
-            { id: 'headless-tokens', label: m('dotauth.toc.headless.tokens') },
-            { id: 'headless-idps', label: m('dotauth.toc.headless.idps') },
-            { id: 'headless-origins', label: m('dotauth.toc.headless.origins') },
-            { id: 'headless-tokens-active', label: m('dotauth.toc.headless.emergency') }
-        ];
-    });
-
     readonly #pendingSaveToast = signal(false);
 
     constructor() {
@@ -86,11 +60,6 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
         this.store.load(DOT_AUTH_SYSTEM_HOST);
     }
 
-    scrollToSection(id: string): void {
-        this.activeSection.set(id);
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
     save(): void {
         const started = this.store.saveHeadless();
         if (started) {
@@ -100,7 +69,7 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
 
     back(): void {
         if (!this.store.headlessDirty()) {
-            void this.#router.navigate(['../'], { relativeTo: this.#route });
+            this.#goToList();
             return;
         }
         this.#confirm.confirm({
@@ -108,8 +77,15 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
             message: this.#dotMessageService.get('dotauth.confirm.leave.message'),
             acceptLabel: this.#dotMessageService.get('dotauth.action.leave'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
-            accept: () => void this.#router.navigate(['../'], { relativeTo: this.#route })
+            accept: () => this.#goToList()
         });
+    }
+
+    // Navigate relative to the parent (shell) route rather than a relative
+    // `['../']`, which trips an infinite loop in Angular's `..` segment
+    // resolution from multi-segment config routes.
+    #goToList(): void {
+        void this.#router.navigate(['.'], { relativeTo: this.#route.parent });
     }
 
     confirmRevoke(): void {

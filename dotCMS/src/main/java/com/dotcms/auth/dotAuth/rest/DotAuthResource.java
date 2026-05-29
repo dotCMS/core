@@ -835,7 +835,8 @@ public class DotAuthResource {
         return selected;
     }
 
-    private int importDotAuthFile(final java.nio.file.Path importFile, final Key key, final User user)
+    // Package-private for unit testing (see DotAuthResourceTest).
+    int importDotAuthFile(final java.nio.file.Path importFile, final Key key, final User user)
             throws Exception {
         int count = 0;
         final Map<String, List<AppSecrets>> importedSecretsBySiteId =
@@ -858,9 +859,10 @@ public class DotAuthResource {
                 if (DotAuthConstants.HEADLESS_APP_KEY.equals(canonicalKey) && !host.isSystemHost()) {
                     throw new BadRequestException("Headless dotAuth config may only be imported to SYSTEM_HOST");
                 }
-                appsAPI.getAppDescriptor(canonicalKey, user)
-                        .orElseThrow(() -> new BadRequestException(
-                                "No App Descriptor found for `" + canonicalKey + "`"));
+                // No App Descriptor check here: dotAuth OAuth/headless configs store secrets
+                // directly (no descriptor YAML exists, only SAML has one), mirroring the save
+                // path which never requires a descriptor. canonicalDotAuthAppKey already
+                // restricts canonicalKey to the known dotAuth keys.
                 appsAPI.saveSecrets(AppSecrets.builder()
                         .withKey(canonicalKey)
                         .withSecrets(appSecrets.getSecrets())
