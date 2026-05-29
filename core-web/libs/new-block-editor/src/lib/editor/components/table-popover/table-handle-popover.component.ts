@@ -73,8 +73,7 @@ interface ActionEntry {
                     @let action = ACTIONS[key];
                     <button
                         type="button"
-                        class="popover-item"
-                        [class.popover-item--danger]="action.variant === 'danger'"
+                        [class]="actionClass(action)"
                         [disabled]="action.disabled?.() ?? false"
                         [attr.aria-disabled]="action.disabled?.() ?? false"
                         [attr.data-testid]="action.testid"
@@ -87,8 +86,8 @@ interface ActionEntry {
                 }
 
                 @if (showScopeSelect()) {
-                    <div class="popover-field">
-                        <label class="popover-field__label" for="tbl-col-scope">
+                    <div class="flex flex-col gap-1 px-3 py-2">
+                        <label class="text-xs font-medium text-gray-700" for="tbl-col-scope">
                             {{ 'dot.block.editor.toolbar.table.header-scope' | dm }}
                         </label>
                         <p-select
@@ -106,45 +105,12 @@ interface ActionEntry {
     `,
     styles: [
         `
-            .popover-item {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                width: 100%;
-                padding: 0.5rem 0.75rem;
-                font-size: 0.875rem;
-                color: rgb(55 65 81);
-                cursor: pointer;
-                background: transparent;
-                border: none;
-                text-align: left;
-            }
-            .popover-item:hover:not(:disabled) {
-                background: rgb(238 242 255);
-            }
-            .popover-item:disabled {
-                color: rgb(156 163 175);
-                cursor: not-allowed;
-            }
-            .popover-item--danger {
-                color: rgb(185 28 28);
-            }
-            .popover-item--danger:hover:not(:disabled) {
-                background: rgb(254 226 226);
-            }
-            .popover-field {
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-                padding: 0.5rem 0.75rem;
-            }
-            .popover-field__label {
-                font-size: 0.75rem;
-                font-weight: 500;
-                color: rgb(55 65 81);
-            }
-            /* Stretch PrimeNG's <p-select> to the full popover width.
-               styleClass="popover-field__select" lands on the .p-select root. */
+            /*
+             * PrimeNG escape hatch — can't be Tailwind. The component renders its own root
+             * with class .p-select; we need to stretch that element to fill the popover.
+             * styleClass="popover-field__select" lands on the .p-select root, then this
+             * rule pierces Angular view encapsulation to override PrimeNG's default width.
+             */
             :host ::ng-deep .popover-field__select.p-select,
             :host ::ng-deep .popover-field__select .p-select {
                 width: 100%;
@@ -326,6 +292,21 @@ export class TableHandlePopoverComponent implements OnDestroy {
     }
 
     // ── Click + command helpers ──────────────────────────────────────────────
+
+    /**
+     * Tailwind utility classes for a menu-item button. Splits the static base classes from
+     * the per-variant color set so the disabled / hover states cascade cleanly without
+     * fighting `:disabled` ordering rules.
+     */
+    protected actionClass(action: ActionEntry): string {
+        const base =
+            'flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:hover:bg-transparent';
+        const variant =
+            action.variant === 'danger'
+                ? 'text-red-700 hover:bg-red-100 disabled:text-red-300'
+                : 'text-gray-700 hover:bg-indigo-50 disabled:text-gray-400';
+        return `${base} ${variant}`;
+    }
 
     protected run(event: MouseEvent, handler: () => void): void {
         event.preventDefault();

@@ -215,10 +215,20 @@
 :host ::ng-deep .tiptap td,
 :host ::ng-deep .tiptap th {
     border: 1px solid #e5e7eb;
-    padding: 8px 12px;
+    padding: 4px 8px;
     vertical-align: top;
     position: relative;
     min-width: 80px;
+}
+
+/*
+ * Tailwind Typography's `prose` adds vertical margins to <p> globally; inside a table
+ * cell those margins compound with the cell's padding and make every cell feel bloated.
+ * Reset paragraph margins inside the NodeView's content wrapper so the cell padding
+ * (4px 8px above) is the only spacing.
+ */
+:host ::ng-deep .tiptap .dot-cell-content > * {
+    margin: 0;
 }
 
 :host ::ng-deep .tiptap th {
