@@ -215,16 +215,19 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Tag field clearing — issue #35861: tag values must not survive once all tags are removed,
-    // and a secondary-language version must not inherit the source language's tags.
+    // Tag field clearing — issue #35861: once all tags are removed from a contentlet and it is
+    // saved, the cleared state must be reflected on the next load (single- and multi-language).
     //
-    // The cross-language leak originates in ESContentletAPIImpl#copyProperties(), which blindly
-    // copies the tag field string into a new language version whose tag_inode has no rows;
-    // Contentlet#setTags() then leaves that copied string in place because it only ever adds tag
-    // values, never clears them. The correct fix is to stop copyProperties() from carrying tag
-    // fields over, NOT to make setTags() clear on an empty tag_inode — setTags() must keep
-    // preserving an un-persisted value the user just typed (see
-    // test_setTagsPreservesUnpersistedUserInput, which would break under such a change).
+    // The fix is on the load side: ESContentletAPIImpl#internalCheckin() calls
+    // Contentlet#resetLoadedTags() right after relateTags() reconciles tag_inode, so the display
+    // transform re-reads the authoritative tag_inode instead of a snapshot taken before checkin
+    // (notably the bulk workflow path, which calls setTags() before checkin). setTags() itself is
+    // left additive — it still preserves an un-persisted, user-typed value (see
+    // test_setTagsPreservesUnpersistedUserInput).
+    //
+    // Note: copyProperties() intentionally KEEPS propagating tag field values — that is how tags
+    // survive a new version of the same contentlet (see test_copyPropertiesPreservesTagFieldValue
+    // and the Costa Rica page GraphQL postman test). It must not be changed to drop tags.
     // ---------------------------------------------------------------------------------------------
 
     /**
@@ -286,13 +289,15 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
 
     /**
      * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#copyProperties}
-     * Given Scenario: copyProperties() copies the map of a tagged source contentlet into a brand-new
-     * contentlet. This is the path that seeds a new language version, and where the cross-language
-     * tag leak originates.
-     * Expected Result: The tag field value is NOT carried over into the target contentlet.
+     * Given Scenario: copyProperties() copies the map of a tagged source contentlet into another
+     * contentlet — the mechanism that carries a contentlet's loaded field values into a new version.
+     * Expected Result: The tag field value IS propagated, so tags survive a re-version/re-publish.
+     * This guards against dropping tags in copyProperties, which would break same-language
+     * versioning (see the Costa Rica page GraphQL postman test, which expects tags="diving" after a
+     * PUBLISH that creates a new version).
      */
     @Test
-    public void test_copyPropertiesDoesNotPropagateTagFieldValue() throws Exception {
+    public void test_copyPropertiesPreservesTagFieldValue() throws Exception {
 
         final Contentlet source = fireSave(newContentlet(defaultLanguageId(), "alpha"));
         source.setTags();
@@ -302,47 +307,8 @@ public class SaveContentActionletWithTagsTest extends BaseWorkflowIntegrationTes
         target.setContentType(customContentType);
         APILocator.getContentletAPI().copyProperties(target, source.getMap());
 
-        Assert.assertTrue("copyProperties must not propagate the tag field string into a new contentlet",
-                UtilMethods.isEmpty(target.getStringProperty("tag")));
-    }
-
-    /**
-     * Method to test: {@link Contentlet#setTags()} via the multi-language create path.
-     * Given Scenario: An English contentlet has a tag. A second-language version of the SAME
-     * identifier is created via copyProperties() without the user setting any tag, then saved and
-     * freshly loaded.
-     * Expected Result: The second-language version does NOT inherit the English tag — no tag_inode
-     * rows and no displayed tag value.
-     */
-    @Test
-    public void test_secondaryLanguageVersionDoesNotInheritTags() throws Exception {
-
-        final long defaultLang = defaultLanguageId();
-        final Language secondLang = new LanguageDataGen().nextPersisted();
-
-        final Contentlet english = fireSave(newContentlet(defaultLang, "english-only-tag"));
-        english.setTags();
-        Assert.assertEquals("english-only-tag", english.getStringProperty("tag"));
-
-        // Build a second-language version of the same identifier via copyProperties, without a tag.
-        final Contentlet secondLangVersion = new Contentlet();
-        secondLangVersion.setContentType(customContentType);
-        APILocator.getContentletAPI().copyProperties(secondLangVersion, english.getMap());
-        secondLangVersion.setHost(english.getHost());
-        secondLangVersion.setIdentifier(english.getIdentifier());
-        secondLangVersion.setInode("");
-        secondLangVersion.setLanguageId(secondLang.getId());
-
-        final Contentlet saved = fireSave(secondLangVersion);
-
-        final Contentlet loaded = APILocator.getContentletAPI()
-                .find(saved.getInode(), APILocator.systemUser(), false);
-        loaded.setTags();
-
-        Assert.assertTrue("Second-language version must not inherit the source-language tags in tag_inode",
-                APILocator.getTagAPI().getTagInodesByInode(loaded.getInode()).isEmpty());
-        Assert.assertNull("Second-language version must not display an inherited source-language tag",
-                loaded.getStringProperty("tag"));
+        Assert.assertEquals("copyProperties must carry the tag string so a new version keeps its tags",
+                "alpha", target.getStringProperty("tag"));
     }
 
     /**

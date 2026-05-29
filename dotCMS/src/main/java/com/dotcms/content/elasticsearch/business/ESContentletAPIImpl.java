@@ -7439,13 +7439,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setProperty(conVariable, value);
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
-                    if (Field.FieldType.TAG.toString().equals(field.getFieldType())) {
-                        // Tags live in the tag_inode table, not in the contentlet's field. Copying
-                        // the tag string into the target would make a new language version (or any
-                        // copy) inherit the source's tags (issue #35861). Tag relationships are
-                        // reconciled from tag_inode on save/load, so the value is not propagated here.
-                        continue;
-                    }
                     if (isFieldTypeString(field)) {
                         if (checkIsUnique && field.isUnique()) {
                             value = value +
