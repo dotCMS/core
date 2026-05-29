@@ -1,0 +1,346 @@
+@if ($blockEditorState().error && $isInEditMode()) {
+    <div data-testid="invalid-blocks-message">
+        {{ $blockEditorState().error }}
+    </div>
+} @else if (!$blockEditorState().error) {
+    <div [class]="cssClass()" [style]="style()">
+        <ng-container *ngTemplateOutlet="nodeList; context: { $implicit: blocks()?.content }" />
+    </div>
+}
+
+<!-- Renders a list of nodes by dispatching each one. -->
+<ng-template #nodeList let-content>
+    @for (node of content; track node) {
+        <ng-container *ngTemplateOutlet="dispatch; context: { $implicit: node }" />
+    }
+</ng-template>
+
+<!--
+    Dispatches a single node to its semantic tag. The host ng-container of each
+    ngTemplateOutlet renders as an HTML comment node, so a list item stays a true
+    DOM child of its list element — the property that makes this AT-proof.
+-->
+<ng-template #dispatch let-node>
+    @if (customRenderers()?.[node.type]) {
+        <ng-container
+            *ngTemplateOutlet="
+                customRender;
+                context: { customRender: customRenderers()?.[node.type], node: node }
+            " />
+    } @else {
+        @switch (node.type) {
+            @case (BLOCKS.PARAGRAPH) {
+                <p dotParagraph [style.text-align]="node.attrs?.['textAlign'] || null">
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </p>
+            }
+
+            @case (BLOCKS.TEXT) {
+                <ng-container
+                    *ngTemplateOutlet="
+                        textRun;
+                        context: { marks: node.marks, text: node.text || '' }
+                    " />
+            }
+
+            @case (BLOCKS.HEADING) {
+                @switch (asLevel(node.attrs?.['level'])) {
+                    @case ('1') {
+                        <h1 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h1>
+                    }
+                    @case ('2') {
+                        <h2 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h2>
+                    }
+                    @case ('3') {
+                        <h3 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h3>
+                    }
+                    @case ('4') {
+                        <h4 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h4>
+                    }
+                    @case ('5') {
+                        <h5 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h5>
+                    }
+                    @case ('6') {
+                        <h6 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h6>
+                    }
+                    @default {
+                        <!--
+                            Unknown level: fall back to <h2>, not <h1>. An
+                            unexpected <h1> in an article tanks the heading
+                            outline that assistive technology relies on, and
+                            articles typically already have a page <h1>.
+                        -->
+                        <h2 [style.text-align]="node.attrs?.['textAlign'] || null">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: node.content }
+                                " />
+                        </h2>
+                    }
+                }
+            }
+
+            @case (BLOCKS.BULLET_LIST) {
+                <ul dotBulletList>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </ul>
+            }
+
+            @case (BLOCKS.ORDERED_LIST) {
+                <ol dotOrderedList>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </ol>
+            }
+
+            @case (BLOCKS.LIST_ITEM) {
+                <li dotListItem>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </li>
+            }
+
+            @case (BLOCKS.BLOCK_QUOTE) {
+                <blockquote dotBlockQuote>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" />
+                </blockquote>
+            }
+
+            @case (BLOCKS.CODE_BLOCK) {
+                <pre dotCodeBlock>
+                    <ng-container
+                        *ngTemplateOutlet="nodeList; context: { $implicit: node.content }" /></pre>
+            }
+
+            @case (BLOCKS.HARDBREAK) {
+                <br />
+            }
+
+            @case (BLOCKS.HORIZONTAL_RULE) {
+                <hr />
+            }
+
+            @case (BLOCKS.DOT_IMAGE) {
+                <figure [style]="imageStyle(node.attrs)">
+                    <img
+                        [alt]="node.attrs?.['alt']"
+                        [src]="node.attrs?.['src']"
+                        style="max-width: 100%; height: auto" />
+                </figure>
+            }
+
+            @case (BLOCKS.DOT_VIDEO) {
+                <video
+                    [controls]="true"
+                    preload="metadata"
+                    [poster]="videoPoster(node.attrs)"
+                    [width]="node.attrs?.['width']"
+                    [height]="node.attrs?.['height']">
+                    <track default kind="captions" srclang="en" />
+                    <source [src]="node.attrs?.['src']" [type]="node.attrs?.['mimeType']" />
+                    Your browser does not support the
+                    <code>video</code>
+                    element.
+                </video>
+            }
+
+            @case (BLOCKS.TABLE) {
+                <table>
+                    <thead>
+                        @for (rowNode of node.content?.slice(0, 1); track $index) {
+                            <tr>
+                                @for (cellNode of rowNode.content; track $index) {
+                                    <th
+                                        [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                        [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                nodeList;
+                                                context: { $implicit: cellNode.content }
+                                            " />
+                                    </th>
+                                }
+                            </tr>
+                        }
+                    </thead>
+                    <tbody>
+                        @for (rowNode of node.content?.slice(1); track $index) {
+                            <tr>
+                                @for (cellNode of rowNode.content; track $index) {
+                                    <td
+                                        [attr.colspan]="cellNode.attrs?.['colspan'] || 1"
+                                        [attr.rowspan]="cellNode.attrs?.['rowspan'] || 1">
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                nodeList;
+                                                context: { $implicit: cellNode.content }
+                                            " />
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @case (BLOCKS.GRID_BLOCK) {
+                <div
+                    data-type="gridBlock"
+                    class="grid-block"
+                    style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem">
+                    @for (column of node.content; track $index) {
+                        <div
+                            data-type="gridColumn"
+                            class="grid-block__column"
+                            [style.grid-column]="'span ' + columnSpan(node.attrs, $index)">
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    nodeList;
+                                    context: { $implicit: column.content }
+                                " />
+                        </div>
+                    }
+                </div>
+            }
+
+            @case (BLOCKS.DOT_CONTENT) {
+                <dotcms-block-editor-renderer-contentlet
+                    [node]="node"
+                    [customRenderers]="customRenderers()" />
+            }
+
+            @default {
+                <dotcms-block-editor-renderer-unknown [node]="node" />
+            }
+        }
+    }
+</ng-template>
+
+<ng-template #customRender let-customRender="customRender" let-node="node">
+    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }" />
+</ng-template>
+
+<!--
+    Renders a text node and its marks as native inline elements (<strong>, <u>,
+    <em>, <a>, ...) with no wrapper element. Recurses through itself (rendered as a
+    comment node) one mark at a time, so stacked marks nest directly:
+    <u><strong>text</strong></u>.
+-->
+<ng-template #textRun let-marks="marks" let-text="text">
+    @switch (marks?.[0]?.type) {
+        @case ('link') {
+            @if (markAttrs(marks)['href']) {
+                <a
+                    [attr.href]="markAttrs(marks)['href']"
+                    [attr.target]="markAttrs(marks)['target'] || null"
+                    [attr.title]="markAttrs(marks)['title'] || null"
+                    [attr.aria-label]="markAttrs(marks)['aria-label'] || null"
+                    [attr.rel]="
+                        markAttrs(marks)['rel'] ||
+                        (markAttrs(marks)['target'] === '_blank' ? 'noopener noreferrer' : null)
+                    "
+                    [class]="markAttrs(marks)['class'] || null">
+                    <ng-container
+                        *ngTemplateOutlet="
+                            textRun;
+                            context: { marks: restMarks(marks), text: text }
+                        " />
+                </a>
+            } @else {
+                <!--
+                    Malformed link mark with no href: a hrefless <a> isn't a
+                    link to assistive tech (no role, not focusable). Skip the
+                    element and recurse — any remaining marks (bold, etc.)
+                    still render around the text.
+                -->
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            }
+        }
+        @case ('bold') {
+            <strong>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </strong>
+        }
+        @case ('underline') {
+            <u>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </u>
+        }
+        @case ('italic') {
+            <em>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </em>
+        }
+        @case ('strike') {
+            <s>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </s>
+        }
+        @case ('superscript') {
+            <sup>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </sup>
+        }
+        @case ('subscript') {
+            <sub>
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            </sub>
+        }
+        @default {
+            @if (marks?.length) {
+                <!-- Unknown mark type: skip it but keep rendering any marks beneath. -->
+                <ng-container
+                    *ngTemplateOutlet="textRun; context: { marks: restMarks(marks), text: text }" />
+            } @else {
+                {{ text }}
+            }
+        }
+    }
+</ng-template>
