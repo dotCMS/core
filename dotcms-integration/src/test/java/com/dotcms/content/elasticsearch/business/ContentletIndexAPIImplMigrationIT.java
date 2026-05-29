@@ -198,6 +198,97 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         Logger.info(this, "✅ listDotCMSIndices Phase 1 — both index names: " + indices);
     }
 
+    // =========================================================================
+    // getIndicesStats — dual-write aggregation
+    // =========================================================================
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). ES has T0 indices; OS has T1 indices.
+     * When : getIndicesStats() is called via the phase-routing IndexAPIImpl.
+     * Then : The map contains entries for both ES (T0) and OS (T1) indices, each with
+     *        non-negative document count and raw size.
+     *        Before this fix the OS entries were missing — IndexAPIImpl routed stats
+     *        to the read provider (ES) only and OSIndexAPIImpl was a stub.
+     */
+    @Test
+    public void test_getIndicesStats_phase1_mergesBothProviders() {
+        setPhase(1);
+        final IndexAPIImpl indexAPI = (IndexAPIImpl) APILocator.getESIndexAPI();
+
+        final java.util.Map<String, com.dotcms.content.index.domain.IndexStats> stats =
+                indexAPI.getIndicesStats();
+
+        assertNotNull("getIndicesStats must not return null", stats);
+        assertTrue("ES working (T0) must appear in Phase 1 stats", stats.containsKey(ES_WORKING));
+        assertTrue("ES live (T0) must appear in Phase 1 stats",    stats.containsKey(ES_LIVE));
+        assertTrue("OS working (T1) must appear in Phase 1 stats", stats.containsKey(OS_WORKING));
+        assertTrue("OS live (T1) must appear in Phase 1 stats",    stats.containsKey(OS_LIVE));
+
+        final com.dotcms.content.index.domain.IndexStats osStats = stats.get(OS_WORKING);
+        assertTrue("OS working doc count must be non-negative", osStats.documentCount() >= 0);
+        assertTrue("OS working raw size must be non-negative",  osStats.sizeRaw()       >= 0);
+        assertNotNull("OS working size string must not be null", osStats.size());
+
+        Logger.info(this, "✅ getIndicesStats Phase 1 — ES+OS merged: " + stats.keySet());
+    }
+
+    /**
+     * Given Scenario: Phase 0 (ES only). ES has T0; OS has T1 on a separate cluster.
+     * When : getIndicesStats() is called.
+     * Then : Only ES indices appear — OS cluster not queried.
+     * Skip   : when ES and OS endpoints are the same cluster (single-cluster profile).
+     */
+    @Test
+    public void test_getIndicesStats_phase0_esOnly() {
+        assumeFalse("Requires separate ES and OS clusters", esSameAsOs());
+        setPhase(0);
+        final IndexAPIImpl indexAPI = (IndexAPIImpl) APILocator.getESIndexAPI();
+
+        final java.util.Map<String, com.dotcms.content.index.domain.IndexStats> stats =
+                indexAPI.getIndicesStats();
+
+        assertTrue("ES working (T0) must appear in Phase 0 stats", stats.containsKey(ES_WORKING));
+        assertTrue("ES live (T0) must appear in Phase 0 stats",    stats.containsKey(ES_LIVE));
+        assertFalse("OS working must NOT appear in Phase 0 stats",  stats.containsKey(OS_WORKING));
+        assertFalse("OS live must NOT appear in Phase 0 stats",     stats.containsKey(OS_LIVE));
+
+        Logger.info(this, "✅ getIndicesStats Phase 0 — ES only: " + stats.keySet());
+    }
+
+    // =========================================================================
+    // getClusterHealth — dual-write aggregation
+    // =========================================================================
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). ES has T0; OS has T1.
+     * When : getClusterHealth() is called via the phase-routing IndexAPIImpl.
+     * Then : Health entries exist for both ES (T0) and OS (T1) indices, each with
+     *        a non-null status and positive shard count.
+     *        Before this fix the OS entries were missing because OSIndexAPIImpl was a stub.
+     */
+    @Test
+    public void test_getClusterHealth_phase1_mergesBothProviders() {
+        setPhase(1);
+        final IndexAPIImpl indexAPI = (IndexAPIImpl) APILocator.getESIndexAPI();
+
+        final java.util.Map<String, com.dotcms.content.index.domain.ClusterIndexHealth> health =
+                indexAPI.getClusterHealth();
+
+        assertNotNull("getClusterHealth must not return null", health);
+        assertTrue("ES working (T0) must appear in Phase 1 health", health.containsKey(ES_WORKING));
+        assertTrue("ES live (T0) must appear in Phase 1 health",    health.containsKey(ES_LIVE));
+        assertTrue("OS working (T1) must appear in Phase 1 health", health.containsKey(OS_WORKING));
+        assertTrue("OS live (T1) must appear in Phase 1 health",    health.containsKey(OS_LIVE));
+
+        final com.dotcms.content.index.domain.ClusterIndexHealth osHealth = health.get(OS_WORKING);
+        assertNotNull("OS health status must not be null",     osHealth.status());
+        assertFalse("OS health status must not be empty",      osHealth.status().isBlank());
+        assertTrue("OS working shard count must be positive",  osHealth.numberOfShards() > 0);
+        assertTrue("OS replicas must be non-negative",         osHealth.numberOfReplicas() >= 0);
+
+        Logger.info(this, "✅ getClusterHealth Phase 1 — ES+OS merged: " + health.keySet());
+    }
+
     /**
      * Given Scenario: Phase 3 (OS only). OS has T1.
      * When : listDotCMSIndices() is called.

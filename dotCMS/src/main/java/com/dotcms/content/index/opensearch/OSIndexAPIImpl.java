@@ -412,7 +412,7 @@ public class OSIndexAPIImpl implements IndexAPI {
                 result.put(name, ClusterIndexHealth.builder()
                         .numberOfShards(health.numberOfShards())
                         .numberOfReplicas(health.numberOfReplicas())
-                        .status(health.status().name())
+                        .status(health.status() != null ? health.status().name() : "n/a")
                         .build());
             }
             return result;
@@ -431,10 +431,46 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public ClusterStats getClusterStats() {
-        Logger.info(this.getClass(), "getClusterStats not yet fully implemented for OpenSearch");
-        return ClusterStats.builder()
-                .clusterName("opensearch")
-                .build();
+        try {
+            final org.opensearch.client.opensearch.nodes.NodesStatsResponse response =
+                    clientProvider.getClient().nodes().stats();
+
+            final String clusterName = response.clusterName();
+            final List<com.dotcms.content.index.domain.NodeStats> nodeStatsList = new ArrayList<>();
+
+            response.nodes().forEach((nodeId, nodeStats) -> {
+                final org.opensearch.client.opensearch.nodes.stats.NodeIndicesStats indices = nodeStats.indices();
+                final long docCount = indices != null && indices.docs() != null
+                        ? indices.docs().count() : 0L;
+                final long sizeRaw = indices != null && indices.store() != null
+                        ? indices.store().sizeInBytes() : 0L;
+
+                final List<org.opensearch.client.opensearch._types.NodeRole> roles = nodeStats.roles();
+                final boolean isMaster = roles != null &&
+                        roles.contains(org.opensearch.client.opensearch._types.NodeRole.ClusterManager);
+
+                nodeStatsList.add(com.dotcms.content.index.domain.NodeStats.builder()
+                        .name(nodeStats.name())
+                        .transportAddress(nodeStats.transportAddress())
+                        .host(nodeStats.host())
+                        .master(isMaster)
+                        .docCount(docCount)
+                        .sizeRaw(sizeRaw)
+                        .size(toHumanReadableSize(sizeRaw))
+                        .build());
+            });
+
+            return ClusterStats.builder()
+                    .clusterName(clusterName)
+                    .nodeStats(nodeStatsList)
+                    .build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error fetching OS cluster stats: " + e.getMessage(), e);
+            return ClusterStats.builder()
+                    .clusterName("opensearch")
+                    .nodeStats(Collections.emptyList())
+                    .build();
+        }
     }
 
     @Override
