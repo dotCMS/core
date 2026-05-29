@@ -140,7 +140,7 @@ class OpenSearchClient:
                 verify=False,
                 timeout=timeout,
             )
-            if int(response.status_code) != 201:
+            if int(response.status_code) not in (200, 201):
                 response_error = True
         if self.debug or response_error:
             print("### OPENSEARCH DEBUG ###")
