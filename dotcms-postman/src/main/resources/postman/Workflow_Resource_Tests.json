@@ -1663,7 +1663,7 @@
 									"",
 									"pm.test(\"Includes system workflow\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.contentTypeSchemes[0].name).to.equal(\"System Workflow\");",
+									"    pm.expect(jsonData.entity.schemes[0].name).to.equal(\"System Workflow\");",
 									"});",
 									""
 								],

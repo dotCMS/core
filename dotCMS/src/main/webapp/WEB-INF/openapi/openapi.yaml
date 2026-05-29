@@ -24920,8 +24920,11 @@ components:
       properties:
         contentTypeId:
           type: string
-          description: Identifier of the content type
-        contentTypeSchemes:
+          description: UUID of the content type
+        contentTypeVariable:
+          type: string
+          description: Variable name of the content type
+        schemes:
           type: array
           description: Workflow schemes associated with the content type
           items:
@@ -24935,7 +24938,8 @@ components:
               $ref: "#/components/schemas/WorkflowScheme"
       required:
       - contentTypeId
-      - contentTypeSchemes
+      - contentTypeVariable
+      - schemes
     ContentView:
       type: object
       properties:

@@ -148,6 +148,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -615,25 +616,28 @@ public class WorkflowResource {
                     .distinct()
                     .collect(Collectors.toList());
 
+            // Resolve each token to a ContentType; deduplicate by UUID; skip unknowns
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+            final LinkedHashMap<String, ContentType> resolvedTypes = new LinkedHashMap<>();
             final List<String> skippedIds = new ArrayList<>();
 
-            final List<ContentTypeWorkflowSchemesView> result = ids.stream()
-                    .map(contentTypeId -> {
-                        try {
-                            return ContentTypeWorkflowSchemesView.builder()
-                                    .contentTypeId(contentTypeId)
-                                    .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(
-                                            contentTypeId, user))
-                                    .build();
-                        } catch (DotWorkflowException e) {
-                            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
-                                skippedIds.add(contentTypeId);
-                                return null;
-                            }
-                            throw e; // permission errors and unexpected causes propagate
-                        }
-                    })
-                    .filter(Objects::nonNull)
+            for (final String token : ids) {
+                try {
+                    final ContentType ct = contentTypeAPI.find(token);
+                    resolvedTypes.putIfAbsent(ct.id(), ct);
+                } catch (NotFoundInDbException e) {
+                    skippedIds.add(token);
+                } catch (DotDataException | DotSecurityException e) {
+                    throw new DotWorkflowException(e.getMessage(), e);
+                }
+            }
+
+            final List<ContentTypeWorkflowSchemesView> result = resolvedTypes.values().stream()
+                    .map(ct -> ContentTypeWorkflowSchemesView.builder()
+                            .contentTypeId(ct.id())
+                            .contentTypeVariable(ct.variable())
+                            .schemes(this.workflowHelper.findSchemesByContentType(ct.id(), user))
+                            .build())
                     .collect(Collectors.toList());
 
             if (!skippedIds.isEmpty()) {

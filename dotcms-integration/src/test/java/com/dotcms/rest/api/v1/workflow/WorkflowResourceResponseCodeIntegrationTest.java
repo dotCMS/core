@@ -534,7 +534,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
             assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType2.id())));
             result.forEach(v -> assertFalse(
                     "Expected at least one scheme for contentType " + v.contentTypeId(),
-                    v.contentTypeSchemes().isEmpty()));
+                    v.schemes().isEmpty()));
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
