@@ -274,9 +274,8 @@ public interface IndexAPI {
      */
     default String removeClusterIdFromName(final String name) {
         if (name == null) return "";
-        return name.contains(".")
-                ? name.substring(name.lastIndexOf(".") + 1)
-                : name;
+        final int dot = name.indexOf(".");
+        return dot >= 0 ? name.substring(dot + 1) : name;
     }
 
     /**
