@@ -1,27 +1,32 @@
 import { TinyColor } from '@ctrl/tinycolor';
-import { updatePrimaryPalette } from '@primeuix/themes';
-import ShadeGenerator from 'shade-generator';
+import { palette, updatePrimaryPalette } from '@primeuix/themes';
 
 import { Injectable } from '@angular/core';
 
 import { DotUiColors } from '@dotcms/dotcms-js';
 
-// ShadeGenerator generates 20 colors and we only use 10, so we need to map the colors.
-const dictionary = {
-    '100': '10',
-    '200': '30',
-    '300': '50',
-    '400': '70',
-    '500': '100',
-    '600': '300',
-    '700': '500',
-    '800': '800',
-    '900': '1000'
-};
-
-type HslObject = { hue: string; saturation: string; lightness: string };
-
 type ColorType = 'primary' | 'secondary';
+
+/** PrimeNG palette() returns these eleven steps; we map them 1:1 to our 100-900 contract. */
+type PrimeNgPalette = Record<string, string>;
+
+/**
+ * Maps PrimeNG's 50-950 palette steps to dotCMS's legacy 100-900 CSS-variable contract.
+ * Both consumers (PrimeNG components and the JSP/Dojo iframe) read from the SAME palette()
+ * output, so a `--p-primary-500` token and a `--color-palette-primary-500` variable always
+ * resolve to the identical color.
+ */
+const PALETTE_TO_LEGACY_SHADE: Record<string, string> = {
+    '100': '50',
+    '200': '100',
+    '300': '200',
+    '400': '300',
+    '500': '500',
+    '600': '600',
+    '700': '700',
+    '800': '800',
+    '900': '900'
+};
 
 export const DEFAULT_COLORS = {
     primary: '#426BF0',
@@ -29,296 +34,155 @@ export const DEFAULT_COLORS = {
     background: '#FFFFFF'
 };
 
-function parseHSL(hslString: string): HslObject {
-    // Use regex to match HSL values with their units
-    const regex = /hsl\((\d+deg),\s*(\d+%),\s*(\d+)%\)/;
-    const match = hslString.match(regex);
-
-    // Check if HSL values were found
-    if (match) {
-        return {
-            hue: match[1],
-            saturation: match[2],
-            lightness: match[3]
-        };
-    } else {
-        // Handle case where input was not in correct format
-        throw new Error('Input is not a valid HSL color string');
-    }
-}
-
 /**
- * Service for managing UI colors in dotCMS
+ * Service for managing UI colors in dotCMS.
  *
- * Handles color updates for two different approaches:
+ * A single generator — PrimeNG's `palette()` — produces one 50-950 scale per color, which
+ * feeds two consumers so they never diverge:
  *
- * **1. PrimeNG Theme (Modern Angular Components)**
- *    - Uses `updatePrimaryPalette()` to dynamically update PrimeNG design tokens
- *    - Updates CSS variables: `--p-primary-50` through `--p-primary-950`
- *    - **Primary color only for PrimeNG semantic tokens**: PrimeNG components using
- *      `severity="secondary"` use semantic tokens from the preset (not updatable at runtime)
- *    - Used by: PrimeNG components with semantic tokens (primary only)
+ * **1. PrimeNG design tokens (modern Angular components)**
+ *    - `updatePrimaryPalette()` updates `--p-primary-50` through `--p-primary-950` at runtime.
+ *    - Primary only: PrimeNG has no `updateSecondaryPalette()`, so `severity="secondary"`
+ *      components use the value baked into the preset (see theme.config.ts).
  *
- * **2. CSS Variables (Angular Components & JSP Portlets)**
- *    - Sets CSS custom properties on HTML elements (main app or iframes)
- *    - Variables: `--color-palette-primary-*`, `--color-palette-secondary-*`, etc.
- *    - **Both primary and secondary**: Both colors are updated via CSS variables
- *    - Used by:
- *      - Angular components using CSS variables directly (e.g., `bg-(--color-palette-secondary-200)`)
- *      - Custom PrimeNG styles (e.g., `.p-badge.p-badge-secondary` uses `$color-palette-secondary`)
- *      - Legacy JSP portlets loaded in iframes (dotcms.css, dotai.css)
+ * **2. Legacy CSS variables (Angular components & JSP/Dojo portlets)**
+ *    - `--color-palette-{primary|secondary}-{100..900}` plus opacity variants `-op-{10..90}`.
+ *    - Both primary and secondary are updated here.
+ *    - Set on the main app's `documentElement` and on each JSP iframe's `documentElement`,
+ *      because the iframe has its own document and cannot read the parent's `--p-*` tokens.
  *
- * **Important Notes:**
- * - **Primary color**: Updated in both PrimeNG semantic tokens (dynamically) AND CSS variables
- * - **Secondary color**: Updated in CSS variables (dynamically) for Angular components and custom styles
- *   - CSS variables: `--color-palette-secondary-*` are updated dynamically and used by Angular components
- *   - PrimeNG semantic tokens: Components using `severity="secondary"` use preset value (not updatable)
- * - **Background color**: Updated ONLY in CSS variables
+ * Background color is written only as `--color-background`.
  *
- * **APIs:**
- * - `setColors(el, colors?)` - Updates both PrimeNG theme and legacy CSS variables
- * - `getColors()` - Gets current colors synchronously
- *
- * **Color Sources:**
- * - Server config: `/api/v1/appconfiguration` (user-defined colors)
- * - Fallback: `DEFAULT_COLORS` if server fails or user not authenticated
+ * Color source: `/api/v1/appconfiguration` (user-defined), falling back to `DEFAULT_COLORS`.
  */
 @Injectable()
 export class DotUiColorsService {
     private currentColors: DotUiColors = DEFAULT_COLORS;
 
     /**
-     * Sets colors and updates both approaches:
-     * 1. PrimeNG theme (via updatePrimaryPalette) - for PrimeNG semantic tokens
-     *    - Only primary color is updated (secondary uses preset, not updatable)
-     * 2. CSS variables (on HTML element) - for Angular components and JSP portlets
-     *    - Both primary and secondary colors are updated via CSS variables
-     *    - Used by Angular components directly and custom PrimeNG styles
+     * Sets colors and updates both consumers from one generated palette.
      *
-     * @param el - HTML element to set CSS variables on
-     *            - Main app: `document.documentElement`
-     *            - Iframes: `iframe.contentDocument.documentElement` (for JSP portlets)
-     * @param colors - Optional. Uses current colors or defaults if not provided
+     * @param el - Element to set CSS variables on: the main app's `document.documentElement`,
+     *             or an iframe's `contentDocument.documentElement` for JSP portlets.
+     * @param colors - Optional; falls back to the current colors when omitted.
      */
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        // Approach 1: Update PrimeNG theme for Angular components
-        this.updatePrimeNGColors(this.currentColors);
+        this.updatePrimeNGColors(this.currentColors.primary);
 
-        // Approach 2: Set legacy CSS variables for JSP portlets
         this.setColor(el, this.currentColors.primary, 'primary');
         this.setColor(el, this.currentColors.secondary, 'secondary');
         this.setColorBackground(el, this.currentColors.background);
     }
 
     /**
-     * Gets current colors synchronously
+     * Gets current colors synchronously.
      */
     getColors(): DotUiColors {
         return this.currentColors;
     }
 
     /**
-     * Approach 1: Updates PrimeNG theme colors dynamically
-     * Generates palette (50-950) from base colors and updates PrimeNG design tokens
-     *
-     * **Important:** This only updates PrimeNG semantic tokens (used by components with
-     * `severity="primary"`). PrimeNG supports secondary as a severity type, but only
-     * primary can be updated dynamically via `updatePrimaryPalette()`. There is no
-     * equivalent `updateSecondaryPalette()` function.
-     *
-     * **Secondary color behavior:**
-     * - PrimeNG semantic tokens: Components using `severity="secondary"` use the preset
-     *   value (defined in theme.config.ts), not updatable at runtime
-     * - CSS variables: Secondary is updated dynamically via `setColor()` (line 95) and
-     *   used by Angular components and custom PrimeNG styles that reference CSS variables
+     * Generates the default PrimeNG palette for the initial preset (theme.config.ts),
+     * keeping the build-time preset in sync with runtime updates.
+     */
+    static getDefaultPrimeNGPalette(): PrimeNgPalette {
+        return generatePalette(DEFAULT_COLORS.primary);
+    }
+
+    /**
+     * Updates PrimeNG primary design tokens. PrimeNG only supports runtime updates for the
+     * primary palette; secondary components fall back to the preset value (theme.config.ts).
      *
      * @private
      */
-    private updatePrimeNGColors(colors: DotUiColors): void {
+    private updatePrimeNGColors(primary: string): void {
         try {
-            // Update primary color palette for PrimeNG semantic tokens
-            // PrimeNG only supports dynamic runtime updates for primary color semantic tokens
-            const primaryPalette = this.generatePrimeNGPalette(colors.primary);
-            updatePrimaryPalette(primaryPalette);
-
-            // Note: Secondary color semantic tokens are NOT updated here because:
-            // 1. PrimeNG doesn't have updateSecondaryPalette() function for runtime updates
-            // 2. Secondary semantic tokens can only be defined in the initial preset (theme.config.ts)
-            // 3. PrimeNG components using severity="secondary" will use the preset value
-            //
-            // However, secondary CSS variables ARE updated in setColor() method (line 95),
-            // which are used by:
-            // - Angular components using CSS variables directly (e.g., bg-(--color-palette-secondary-200))
-            // - Custom PrimeNG styles (e.g., .p-badge.p-badge-secondary uses $color-palette-secondary)
-            // - Legacy JSP portlets
-            //
-            // If PrimeNG adds updateSecondaryPalette() in the future, it would be added here
+            updatePrimaryPalette(generatePalette(primary));
         } catch (error) {
-            // Silently fail if PrimeNG theming API is not available
-            // This can happen during SSR or if PrimeNG hasn't initialized yet
+            // Silently fail if the PrimeNG theming API is not ready (e.g. during SSR).
             console.warn('Failed to update PrimeNG colors:', error);
         }
     }
 
     /**
-     * Generates PrimeNG color palette (50-950) from base hex color
-     *
-     * @private
-     */
-    private generatePrimeNGPalette(hex: string): Record<string, string> {
-        const color = new TinyColor(hex);
-
-        if (!color.isValid) {
-            // Return default palette if color is invalid
-            return this.getDefaultPrimeNGPalette();
-        }
-
-        // Use ShadeGenerator to create the palette (reliable and consistent)
-        // PrimeNG's palette() function may have different return types, so we use
-        // ShadeGenerator as the primary method for consistency
-        return this.generatePaletteWithShadeGenerator(hex);
-    }
-
-    /**
-     * Generates palette using ShadeGenerator
-     *
-     * @private
-     */
-    private generatePaletteWithShadeGenerator(hex: string): Record<string, string> {
-        const shades = ShadeGenerator.hue(hex).shadesMap('hex');
-
-        // Map ShadeGenerator output to PrimeNG format (50-950)
-        return {
-            '50': shades['10'] || this.lighten(hex, 95),
-            '100': shades['30'] || this.lighten(hex, 85),
-            '200': shades['50'] || this.lighten(hex, 70),
-            '300': shades['70'] || this.lighten(hex, 50),
-            '400': shades['100'] || this.lighten(hex, 30),
-            '500': hex, // Base color
-            '600': shades['300'] || this.darken(hex, 10),
-            '700': shades['500'] || this.darken(hex, 20),
-            '800': shades['800'] || this.darken(hex, 30),
-            '900': shades['1000'] || this.darken(hex, 40),
-            '950': this.darken(hex, 50)
-        };
-    }
-
-    /**
-     * Returns default palette from DEFAULT_COLORS.primary
-     *
-     * @private
-     */
-    private getDefaultPrimeNGPalette(): Record<string, string> {
-        // Generate palette from DEFAULT_COLORS.primary to ensure consistency
-        return this.generatePaletteWithShadeGenerator(DEFAULT_COLORS.primary);
-    }
-
-    /**
-     * Static method to generate default palette for theme.config.ts
-     * Ensures initial preset uses same defaults as service
-     */
-    static getDefaultPrimeNGPalette(): Record<string, string> {
-        // Use the same generation logic as the service instance
-        const shades = ShadeGenerator.hue(DEFAULT_COLORS.primary).shadesMap('hex');
-
-        return {
-            '50': shades['10'] || new TinyColor(DEFAULT_COLORS.primary).lighten(95).toHexString(),
-            '100': shades['30'] || new TinyColor(DEFAULT_COLORS.primary).lighten(85).toHexString(),
-            '200': shades['50'] || new TinyColor(DEFAULT_COLORS.primary).lighten(70).toHexString(),
-            '300': shades['70'] || new TinyColor(DEFAULT_COLORS.primary).lighten(50).toHexString(),
-            '400': shades['100'] || new TinyColor(DEFAULT_COLORS.primary).lighten(30).toHexString(),
-            '500': DEFAULT_COLORS.primary, // Base color
-            '600': shades['300'] || new TinyColor(DEFAULT_COLORS.primary).darken(10).toHexString(),
-            '700': shades['500'] || new TinyColor(DEFAULT_COLORS.primary).darken(20).toHexString(),
-            '800': shades['800'] || new TinyColor(DEFAULT_COLORS.primary).darken(30).toHexString(),
-            '900': shades['1000'] || new TinyColor(DEFAULT_COLORS.primary).darken(40).toHexString(),
-            '950': new TinyColor(DEFAULT_COLORS.primary).darken(50).toHexString()
-        };
-    }
-
-    /**
-     * @private
-     */
-    private lighten(hex: string, amount: number): string {
-        return new TinyColor(hex).lighten(amount).toHexString();
-    }
-
-    /**
-     * @private
-     */
-    private darken(hex: string, amount: number): string {
-        return new TinyColor(hex).darken(amount).toHexString();
-    }
-
-    /**
-     * Sets background color CSS variable for JSP portlets
-     *
-     * @private
-     */
-    private setColorBackground(el: HTMLElement, color: string): void {
-        const colorBackground: TinyColor = new TinyColor(color);
-
-        if (colorBackground.isValid) {
-            el.style.setProperty('--color-background', colorBackground.toHexString().toUpperCase());
-        }
-    }
-
-    /**
-     * Approach 2: Sets CSS variables for a color (primary/secondary)
-     * Generates HSL base, shades (100-900), and opacities (10-90)
-     *
-     * Used by:
-     * - Angular components using CSS variables directly (e.g., `bg-(--color-palette-secondary-200)`)
-     * - Custom PrimeNG styles (e.g., `.p-badge.p-badge-secondary`)
-     * - Legacy JSP portlets (dotcms.css, dotai.css)
+     * Writes the legacy `--color-palette-{type}-*` CSS variables from the same palette()
+     * output PrimeNG uses, plus the `-h`/`-s` and opacity variables the JSP CSS depends on.
      *
      * @private
      */
     private setColor(el: HTMLElement, hex: string, type: ColorType): void {
         const color = new TinyColor(hex);
 
-        if (color.isValid) {
-            const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
-            const baseColorHsl = parseHSL(baseColor);
-
-            // Set HSL base values (used by JSP CSS)
-            el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
-            el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
-
-            // Generate shades and opacities for JSP portlets
-            this.setShades(el, hex, type);
-            this.setOpacities(el, baseColorHsl.saturation, type);
+        if (!color.isValid) {
+            return;
         }
+
+        const generated = generatePalette(hex);
+        const { h, s, l } = color.toHsl();
+
+        // HSL pieces consumed by the JSP/Dojo CSS (e.g. to compose runtime opacities).
+        el.style.setProperty(`--color-${type}-h`, `${Math.round(h)}deg`);
+        el.style.setProperty(`--color-${type}-s`, `${Math.round(s * 100)}%`);
+
+        this.setShades(el, generated, type);
+        this.setOpacities(el, Math.round(l * 100), type);
     }
 
     /**
-     * Generates CSS variables for color shades (100-900) for JSP portlets
+     * Maps the PrimeNG palette to the legacy 100-900 CSS variables.
      *
      * @private
      */
-    private setShades(el: HTMLElement, hex: string, type: ColorType) {
-        const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
-
-        Object.entries(dictionary).forEach(([shade, shadeKey]) => {
-            const color = shades[shadeKey as keyof typeof shades];
-            el.style.setProperty(`--color-palette-${type}-${shade}`, color);
+    private setShades(el: HTMLElement, generated: PrimeNgPalette, type: ColorType): void {
+        Object.entries(PALETTE_TO_LEGACY_SHADE).forEach(([legacyShade, paletteStep]) => {
+            el.style.setProperty(`--color-palette-${type}-${legacyShade}`, generated[paletteStep]);
         });
     }
 
     /**
-     * Generates CSS variables for color opacities (10-90) for JSP portlets
-     * Used in dotcms.css and dotai.css for outlines, backgrounds, and shadows
+     * Generates the `-op-{10..90}` opacity variables. They reference `--color-{type}-h/-s`
+     * by name (so the JSP CSS resolves them at use time) and carry the color's real lightness.
      *
      * @private
      */
-    private setOpacities(el: HTMLElement, saturation: string, type: ColorType) {
+    private setOpacities(el: HTMLElement, lightness: number, type: ColorType): void {
         for (let i = 1; i < 10; i++) {
             el.style.setProperty(
                 `--color-palette-${type}-op-${i}0`,
-                `hsla(var(--color-${type}-h), var(--color-${type}-s), ${saturation}, 0.${i})`
+                `hsla(var(--color-${type}-h), var(--color-${type}-s), ${lightness}%, 0.${i})`
             );
         }
     }
+
+    /**
+     * Sets the background color CSS variable.
+     *
+     * @private
+     */
+    private setColorBackground(el: HTMLElement, color: string): void {
+        const background = new TinyColor(color);
+
+        if (background.isValid) {
+            el.style.setProperty('--color-background', background.toHexString().toUpperCase());
+        }
+    }
+}
+
+/**
+ * Single palette generator for the whole service: PrimeNG's `palette()` produces a
+ * perceptually-tuned 50-950 scale whose `500` step is the input color itself. Falls back to
+ * the default primary palette when given an invalid color.
+ */
+function generatePalette(hex: string): PrimeNgPalette {
+    const color = new TinyColor(hex);
+
+    // palette() returns a ColorScale object for a color input (string only for token
+    // expressions, which we never pass), so the cast is safe.
+    const source = color.isValid ? hex : DEFAULT_COLORS.primary;
+    const scale = palette(source) as PrimeNgPalette;
+
+    // Preserve the exact input hex at 500; palette() lowercases, so normalize to the source.
+    return { ...scale, '500': new TinyColor(source).toHexString() };
 }

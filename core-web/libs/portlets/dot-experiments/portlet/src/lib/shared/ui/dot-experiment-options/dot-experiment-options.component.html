@@ -1,8 +1,8 @@
 @for (item of itemList; track item; let i = $index) {
     <div
         [attr.data-testId]="'dot-options-item_' + item.$value()"
-        [ngClass]="expanded.has(i) ? 'bg-[var(--color-palette-primary-100)]' : ''"
-        class="flex flex-col rounded-sm border border-[var(--gray-200)] transition-colors duration-200 hover:bg-[var(--color-palette-primary-100)]">
+        [ngClass]="expanded.has(i) ? 'bg-primary-100' : ''"
+        class="flex flex-col rounded-sm border border-[var(--gray-200)] transition-colors duration-200 hover:bg-primary-100">
         <ng-container
             [ngTemplateOutletContext]="{ $implicit: item, index: i }"
             [ngTemplateOutlet]="defaultHeader" />
