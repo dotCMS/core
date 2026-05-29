@@ -2,7 +2,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnInit,
-    computed,
     effect,
     inject,
     signal,
@@ -35,11 +34,6 @@ import {
     SamlConfigChange
 } from './components';
 import { DotAuthConfigStore } from './store/dot-auth-config.store';
-
-interface TocSection {
-    id: string;
-    label: string;
-}
 
 @Component({
     selector: 'dot-auth-config',
@@ -75,42 +69,9 @@ export class DotAuthConfigComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly samlConfig = viewChild<DotAuthSamlConfigComponent>('samlConfig');
-    readonly activeSection = signal<string>('sso-protocol');
     readonly isOverriding = signal(false);
     readonly showClearDialog = signal(false);
     readonly clearConfirmText = signal('');
-
-    readonly tocSections = computed<TocSection[]>(() => {
-        const m = (key: string) => this.#dotMessageService.get(key);
-        const sections: TocSection[] = [{ id: 'sso-protocol', label: m('dotauth.toc.protocol') }];
-        const protocol = this.store.draft().protocol;
-        if (protocol === 'oidc') {
-            sections.push(
-                { id: 'login-behavior', label: m('dotauth.toc.login-behavior') },
-                { id: 'connection', label: m('dotauth.toc.connection') },
-                { id: 'claims', label: m('dotauth.toc.claim-mapping') },
-                { id: 'provisioning', label: m('dotauth.toc.provisioning') },
-                { id: 'session', label: m('dotauth.toc.session') }
-            );
-        } else if (protocol === 'saml') {
-            sections.push(
-                { id: 'login-behavior', label: m('dotauth.toc.login-behavior') },
-                { id: 'connection', label: m('dotauth.toc.service-provider') },
-                { id: 'idp', label: m('dotauth.toc.identity-provider') },
-                { id: 'signing', label: m('dotauth.toc.signing') },
-                { id: 'claims', label: m('dotauth.toc.attribute-mapping') },
-                { id: 'provisioning', label: m('dotauth.toc.provisioning') },
-                { id: 'session', label: m('dotauth.toc.session') },
-                { id: 'extra-properties', label: m('dotauth.toc.extra-properties') }
-            );
-        }
-        return sections;
-    });
-
-    readonly overrideCount = computed(() => {
-        if (this.store.isSystem()) return 0;
-        return this.store.ssoDirty() ? 1 : 0;
-    });
 
     readonly #pendingSaveToast = signal(false);
     readonly #pendingClearToast = signal(false);
@@ -155,17 +116,6 @@ export class DotAuthConfigComponent implements OnInit {
         this.store.load(this.#route.snapshot.paramMap.get('hostId') ?? this.SYSTEM_HOST);
     }
 
-    siteLabel(): string {
-        return this.store.isSystem()
-            ? this.#dotMessageService.get('dotauth.config.system')
-            : this.store.siteId();
-    }
-
-    scrollToSection(id: string): void {
-        this.activeSection.set(id);
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
     switchProtocol(protocol: DotAuthUiProtocol): void {
         if (protocol === this.store.draft().protocol) return;
         if (!this.store.dirty()) {
@@ -190,7 +140,7 @@ export class DotAuthConfigComponent implements OnInit {
 
     back(): void {
         if (!this.store.dirty()) {
-            void this.#router.navigate(['../'], { relativeTo: this.#route });
+            this.#goToList();
             return;
         }
         this.#confirm.confirm({
@@ -198,8 +148,15 @@ export class DotAuthConfigComponent implements OnInit {
             message: this.#dotMessageService.get('dotauth.confirm.leave.message'),
             acceptLabel: this.#dotMessageService.get('dotauth.action.leave'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
-            accept: () => void this.#router.navigate(['../'], { relativeTo: this.#route })
+            accept: () => this.#goToList()
         });
+    }
+
+    // Navigate relative to the parent (shell) route. The config route path is
+    // `site/:hostId` (two URL segments); a relative `['../']` from here trips an
+    // infinite loop in Angular's `..` segment resolution, so target the parent.
+    #goToList(): void {
+        void this.#router.navigate(['.'], { relativeTo: this.#route.parent });
     }
 
     clearConfig(): void {

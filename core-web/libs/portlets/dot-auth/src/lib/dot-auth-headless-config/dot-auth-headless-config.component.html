@@ -1,42 +1,7 @@
 <p-toast />
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '520px' }" />
 
-<!-- Page header / breadcrumb -->
-<header class="page-header">
-    <button class="back-btn" (click)="back()" [attr.aria-label]="'dotauth.action.back' | dm">
-        <i class="pi pi-arrow-left text-sm"></i>
-    </button>
-    <div class="crumbs">
-        <button type="button" class="crumb-link" (click)="back()">
-            {{ 'dotauth.header' | dm }}
-        </button>
-        <span>/</span>
-        <span>{{ 'dotauth.config.headless.page-title' | dm }}</span>
-    </div>
-    <div class="flex-1"></div>
-    <div class="flex items-center gap-2">
-        @if (store.configured()) {
-            <p-tag [value]="'dotauth.status.configured' | dm" severity="success" />
-        }
-    </div>
-</header>
-
 <div class="config-shell">
-    <!-- Sticky TOC -->
-    <nav class="config-toc">
-        <div class="toc-group">
-            <i class="pi pi-code" style="font-size: 0.6875rem"></i>
-            {{ 'dotauth.tab.headless.short' | dm }}
-        </div>
-        @for (section of tocSections(); track section.id) {
-            <a
-                [class.active]="activeSection() === section.id"
-                (click)="scrollToSection(section.id)">
-                {{ section.label }}
-            </a>
-        }
-    </nav>
-
     <!-- Main content column -->
     <div class="config-content">
         <dot-auth-headless-section

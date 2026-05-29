@@ -169,6 +169,22 @@ public class OAuthHelper {
                                        final Map<String, Object> userInfo,
                                        final OAuthAppConfig config,
                                        final boolean frontEndLogin) throws DotDataException {
+        return resolveOrProvisionUser(provider, accessToken, userInfo, null, config, frontEndLogin);
+    }
+
+    /**
+     * Variant that also accepts the verified id_token claim set (OIDC). Those claims —
+     * not the unsigned userinfo response — are authoritative for deciding whether the
+     * asserted email may be trusted to match an existing dotCMS account. Browser-flow
+     * callers must enforce that the userinfo subject equals the id_token subject before
+     * calling this; the exchange flow passes the verified claims as {@code userInfo}.
+     */
+    public User resolveOrProvisionUser(final OAuthProvider provider,
+                                       final String accessToken,
+                                       final Map<String, Object> userInfo,
+                                       final Map<String, Object> verifiedClaims,
+                                       final OAuthAppConfig config,
+                                       final boolean frontEndLogin) throws DotDataException {
 
         if (userInfo == null || userInfo.isEmpty()) {
             throw new DotRuntimeException("OAuth userinfo response was empty — cannot authenticate");
@@ -192,7 +208,8 @@ public class OAuthHelper {
                 : (config != null ? config.issuerUrl : null);
         final String externalId = namespacedSubject(provider, subject, effectiveIssuer, hashUserId);
 
-        User user = resolveUser(email, externalId, provider, subject, effectiveIssuer);
+        final boolean emailVerified = isEmailVerified(userInfo, verifiedClaims);
+        User user = resolveUser(email, emailVerified, externalId, provider, subject, effectiveIssuer);
 
         if (user == null) {
             if (config != null && !config.autoProvision) {
@@ -220,11 +237,16 @@ public class OAuthHelper {
     }
 
     private User resolveUser(final String email,
+                             final boolean emailVerified,
                              final String externalId,
                              final OAuthProvider provider,
                              final String subject,
                              final String issuer) {
-        if (UtilMethods.isSet(email)) {
+        // Email may only match an EXISTING account when the IdP asserts it is verified.
+        // Otherwise an IdP (or a user-editable profile) could claim an arbitrary address
+        // and take over an account it doesn't own — the issuer-namespaced subject is the
+        // trustworthy identity key, so an unverified email falls through to it instead.
+        if (emailVerified && UtilMethods.isSet(email)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false))
                     .getOrNull();
             if (u != null) {
@@ -526,6 +548,26 @@ public class OAuthHelper {
     private static String getEmail(final Map<String, Object> userInfo, final OAuthAppConfig config) {
         final String email = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
         return UtilMethods.isValidEmail(email) ? email : null;
+    }
+
+    /**
+     * Whether the IdP asserts {@code email_verified}. The verified id_token claims take
+     * precedence over the unsigned userinfo response when both are present.
+     */
+    private static boolean isEmailVerified(final Map<String, Object> userInfo,
+                                           final Map<String, Object> verifiedClaims) {
+        return claimsAssertEmailVerified(verifiedClaims) || claimsAssertEmailVerified(userInfo);
+    }
+
+    private static boolean claimsAssertEmailVerified(final Map<String, Object> claims) {
+        if (claims == null) {
+            return false;
+        }
+        final Object value = claims.get("email_verified");
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return value != null && "true".equalsIgnoreCase(value.toString());
     }
 
     private static String claimValue(final Map<String, Object> userInfo,

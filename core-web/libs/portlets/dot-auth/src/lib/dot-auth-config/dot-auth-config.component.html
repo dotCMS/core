@@ -1,56 +1,7 @@
 <p-toast />
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '520px' }" />
 
-<!-- Page header / breadcrumb -->
-<header class="page-header">
-    <button class="back-btn" (click)="back()" [attr.aria-label]="'dotauth.action.back' | dm">
-        <i class="pi pi-arrow-left text-sm"></i>
-    </button>
-    <div class="crumbs">
-        <button type="button" class="crumb-link" (click)="back()">
-            {{ 'dotauth.header' | dm }}
-        </button>
-        <span>/</span>
-        <span>{{ siteLabel() }}</span>
-        @if (!store.isSystem() && overrideCount() > 0) {
-            <p-tag
-                [value]="
-                    overrideCount() +
-                    ' ' +
-                    (overrideCount() === 1
-                        ? ('dotauth.status.override' | dm)
-                        : ('dotauth.status.overrides' | dm))
-                "
-                severity="info" />
-        }
-    </div>
-    <div class="flex-1"></div>
-    <div class="flex items-center gap-2">
-        @if (store.inherited()) {
-            <p-tag [value]="'dotauth.status.inherited' | dm" severity="info" />
-        }
-        @if (store.configured()) {
-            <p-tag [value]="'dotauth.status.configured' | dm" severity="success" />
-        }
-    </div>
-</header>
-
 <div class="config-shell">
-    <!-- Sticky TOC -->
-    <nav class="config-toc">
-        <div class="toc-group">
-            <i class="pi pi-shield" style="font-size: 0.6875rem"></i>
-            {{ 'dotauth.tab.sso.title' | dm }}
-        </div>
-        @for (section of tocSections(); track section.id) {
-            <a
-                [class.active]="activeSection() === section.id"
-                (click)="scrollToSection(section.id)">
-                {{ section.label }}
-            </a>
-        }
-    </nav>
-
     <!-- Main content column -->
     <div class="config-content">
         @if (!store.isSystem()) {
@@ -104,7 +55,6 @@
                 <div class="section-card-head">
                     <div>
                         <h3>
-                            <i class="pi pi-sliders-h text-base"></i>
                             {{ 'dotauth.config.protocol.title' | dm }}
                         </h3>
                         <div class="sub">{{ 'dotauth.config.protocol.subtitle' | dm }}</div>
@@ -184,7 +134,6 @@
                         <div class="section-card-head">
                             <div>
                                 <h3>
-                                    <i class="pi pi-sign-in text-base"></i>
                                     {{ 'dotauth.config.loginBehavior.title' | dm }}
                                 </h3>
                                 <div class="sub">
@@ -259,7 +208,6 @@
                         <div class="section-card-head">
                             <div>
                                 <h3>
-                                    <i class="pi pi-users text-base"></i>
                                     {{ 'dotauth.config.provisioning.title' | dm }}
                                 </h3>
                                 <div class="sub">
@@ -281,7 +229,6 @@
                         <div class="section-card-head">
                             <div>
                                 <h3>
-                                    <i class="pi pi-power-off text-base"></i>
                                     {{ 'dotauth.config.session.title' | dm }}
                                 </h3>
                                 <div class="sub">
@@ -337,7 +284,6 @@
                         <div class="section-card-head">
                             <div>
                                 <h3>
-                                    <i class="pi pi-users text-base"></i>
                                     {{ 'dotauth.config.provisioning.title' | dm }}
                                 </h3>
                                 <div class="sub">
@@ -359,7 +305,6 @@
                         <div class="section-card-head">
                             <div>
                                 <h3>
-                                    <i class="pi pi-power-off text-base"></i>
                                     {{ 'dotauth.config.session.title' | dm }}
                                 </h3>
                                 <div class="sub">
