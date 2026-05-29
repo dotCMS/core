@@ -140,6 +140,15 @@
                     [configuration]="emptyOutputConfig"
                     [hideContactUsLink]="true"
                     data-testid="velocity-playground-empty-output" />
+            } @else if (store.isLoading()) {
+                <div
+                    class="flex-1 flex flex-col items-center justify-center gap-3"
+                    data-testid="velocity-playground-loading">
+                    <dot-spinner size="3rem" borderSize="3px" />
+                    <span class="text-color-secondary text-sm">
+                        {{ 'velocityPlayground.output.running' | dm }}
+                    </span>
+                </div>
             } @else {
                 <!-- Stats bar -->
                 <div

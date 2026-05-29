@@ -33,6 +33,7 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotSpinnerComponent,
     PrincipalConfiguration
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
@@ -68,6 +69,7 @@ interface VelocityHelpExample {
         PanelModule,
         PopoverModule,
         DotEmptyContainerComponent,
+        DotSpinnerComponent,
         DotMessagePipe
     ],
     providers: [DotVelocityPlaygroundStore, DotVelocityPlaygroundService, DotClipboardUtil],

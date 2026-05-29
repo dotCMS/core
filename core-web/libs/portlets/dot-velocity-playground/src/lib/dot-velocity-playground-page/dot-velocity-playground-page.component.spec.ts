@@ -263,6 +263,29 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         });
     });
 
+    describe('loading state', () => {
+        it('renders the dot-spinner while a script is running', () => {
+            setup({
+                isLoading: jest.fn().mockReturnValue(true),
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADING),
+                hasError: jest.fn().mockReturnValue(false)
+            });
+            const container = spectator.query(byTestId('velocity-playground-loading'));
+            expect(container).toBeTruthy();
+            expect(container?.querySelector('dot-spinner')).toBeTruthy();
+        });
+
+        it('hides the spinner once the run finishes', () => {
+            setup({
+                isLoading: jest.fn().mockReturnValue(false),
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
+                hasOutput: jest.fn().mockReturnValue(true),
+                output: jest.fn().mockReturnValue('rendered')
+            });
+            expect(spectator.query(byTestId('velocity-playground-loading'))).toBeFalsy();
+        });
+    });
+
     // Kept last because rendering <p-menu [popup]="true"> attaches an overlay container
     // to document.body that can leak into the next test's query if other describes follow.
     describe('export buttons', () => {
