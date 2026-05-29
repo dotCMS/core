@@ -180,8 +180,8 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'velocity-playground',
-        //canActivate: [MenuGuardService],
-        //canActivateChild: [MenuGuardService],
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         providers: [DotEnterpriseLicenseResolver],
         resolve: { isEnterprise: DotEnterpriseLicenseResolver },
         data: { reuseRoute: false },
