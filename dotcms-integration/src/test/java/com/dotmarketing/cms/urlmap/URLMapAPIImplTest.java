@@ -12,10 +12,8 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -686,7 +684,7 @@ public class URLMapAPIImplTest {
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {
         return UrlMapContextBuilder.builder()
                 .setHost(host)
-                .setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setLanguageId(1L)
                 .setMode(pageMode)
                 .setUri(uri)
                 .setUser(systemUser)
@@ -695,136 +693,6 @@ public class URLMapAPIImplTest {
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
         return getUrlMapContext(systemUser, host, uri, PageMode.PREVIEW_MODE);
-    }
-
-    /**
-     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
-     * Given Scenario: The Content Type's detail page is configured on a different (global) host
-     *   using a custom Page content type. The current request host does NOT have any page at the
-     *   same path. This reproduces the runtime 404 from issue #35268: URL mapping failed silently
-     *   when the configured detail page lived on a different host.
-     * ExpectedResult: processURLMap must fall back to the configured detail-page identifier
-     *   (from the other host) rather than returning empty, so the URL map resolves successfully.
-     */
-    @Test
-    public void processURLMap_detailPageOnDifferentHost_shouldFallBackToConfiguredIdentifier()
-            throws DotDataException, DotSecurityException {
-
-        // A separate "global" host that owns the shared detail page
-        final Host globalHost = new SiteDataGen().nextPersisted();
-        final Folder globalFolder = new FolderDataGen()
-                .name("global-detail-pages-" + System.currentTimeMillis())
-                .site(globalHost)
-                .nextPersisted();
-
-        // Custom Page content type on the global host (simulates "Landing Page")
-        final ContentType customPageType = new ContentTypeDataGen()
-                .baseContentType(BaseContentType.HTMLPAGE)
-                .host(globalHost)
-                .name("LandingPage" + System.currentTimeMillis())
-                .nextPersisted();
-
-        final Template globalTemplate = new TemplateDataGen().site(globalHost).nextPersisted();
-
-        // Detail page using the custom Page content type — lives ONLY on globalHost
-        final Contentlet detailPageContentlet = new ContentletDataGen(customPageType)
-                .host(globalHost)
-                .folder(globalFolder)
-                .setProperty(HTMLPageAssetAPI.URL_FIELD, "global-detail-" + System.currentTimeMillis())
-                .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Global Detail Page")
-                .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, globalTemplate.getIdentifier())
-                .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Global Detail Page")
-                .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
-                .nextPersisted();
-
-        final String detailPageIdentifierId = detailPageContentlet.getIdentifier();
-
-        // Content Type on the regular host, pointing to the global host's custom-type detail page
-        final String urlPattern = "/global-test-" + System.currentTimeMillis() + "/{urlTitle}";
-        final ContentType urlMappedType = getNewsLikeContentType(
-                "GlobalNews" + System.currentTimeMillis(),
-                host,
-                detailPageIdentifierId,
-                urlPattern);
-
-        // Content item on the regular host
-        final Contentlet newsContent = TestDataUtils.getNewsContent(
-                true,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                urlMappedType.id(),
-                host,
-                null,
-                null);
-
-        // Request the URL-mapped URL from the regular host
-        // (the regular host has no page at the same path as globalHost's detail page)
-        final UrlMapContext context = getUrlMapContext(systemUser, host,
-                urlPattern.replace("{urlTitle}", newsContent.getStringProperty("urlTitle")));
-
-        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
-
-        assertTrue("processURLMap should fall back to the configured detail page on globalHost",
-                urlMapInfoOptional.isPresent());
-        assertEquals("URLMapInfo identifier should be the configured detail page on globalHost",
-                detailPageIdentifierId,
-                urlMapInfoOptional.get().getIdentifier().getId());
-    }
-
-    /**
-     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
-     * Given Scenario: Content Type with URL pattern is registered on SYSTEM_HOST (global), but
-     *   its configured detail page lives on siteA. A content item matching the URL pattern was
-     *   created on siteB (a different site). The request comes in on siteA.
-     *   This is the cross-site URL-map scenario from issue #35268: a list page on siteA shows
-     *   content from multiple sites, and clicking a siteB item navigates to siteA's detail page.
-     * ExpectedResult: processURLMap must resolve the siteB content and return the siteA detail page.
-     *   The initial ES query (restricted to siteA + SYSTEM_HOST) finds nothing because the content
-     *   is on siteB; the fallback site-agnostic query locates it and the siteA detail page is used.
-     */
-    @Test
-    public void processURLMap_contentOnDifferentSite_shouldResolveViaFallback()
-            throws DotDataException, DotSecurityException {
-
-        // siteB: the site where the content lives (different from the request site / host)
-        final Host siteB = new SiteDataGen().nextPersisted();
-
-        // Content type on SYSTEM_HOST so content can be created on any site.
-        // The detail page is on siteA (host), which is where the request originates.
-        // Path must not begin with a prefix that matches BACKEND_FILTERED_COLLECTION using
-        // startsWith (e.g. "/c" matches "/cross-site/..."), or findMatch() skips URL-map logic entirely.
-        final String urlPattern = "/urlmap-cross-site-" + System.currentTimeMillis() + "/{urlTitle}";
-        final ContentType urlMappedType = getNewsLikeContentType(
-                "CrossSiteNews" + System.currentTimeMillis(),
-                APILocator.systemHost(),
-                detailPage1.getIdentifier(),
-                urlPattern);
-
-        // Content item lives on siteB — NOT on siteA (host) or SYSTEM_HOST,
-        // so the host-restricted query will miss it and the fallback is required.
-        // Publish (uses IndexPolicy.WAIT_FOR) so ES commits the document before we query.
-        final Contentlet contentOnSiteB = ContentletDataGen.publish(
-                TestDataUtils.getNewsContent(
-                        true,
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        urlMappedType.id(),
-                        siteB,
-                        null,
-                        null));
-
-        // Request the URL-mapped URL from siteA (LIVE mode to match published content).
-        final UrlMapContext context = getUrlMapContext(systemUser, host,
-                urlPattern.replace("{urlTitle}", contentOnSiteB.getStringProperty("urlTitle")),
-                PageMode.LIVE);
-
-        final Optional<URLMapInfo> result = urlMapAPI.processURLMap(context);
-
-        assertTrue("processURLMap should find cross-site content via fallback query", result.isPresent());
-        assertEquals("Resolved contentlet should be the one from siteB",
-                contentOnSiteB.getIdentifier(),
-                result.get().getContentlet().getIdentifier());
-        assertEquals("Detail page should be siteA's configured detail page",
-                "/news-events/news/news-detail",
-                result.get().getIdentifier().getURI());
     }
 
     /**
@@ -850,7 +718,7 @@ public class URLMapAPIImplTest {
 
         final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
                 .setProperty(field.variable(), 2)
-                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .languageId(1)
                 .host(host)
                 .nextPersisted();
 
@@ -864,6 +732,67 @@ public class URLMapAPIImplTest {
         assertEquals(newsTestContent.getLongProperty(field.variable()),
                 urlMapInfo.getContentlet().getLongProperty(field.variable()));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Regression guard for the production incident in #35616 and the revert in #35621.
+     *
+     * <p>Models multi-brand setups where several sites share a URL map
+     * pattern such as {@code /products/{slug}}. The content type and detail page are configured on
+     * the requesting brand, but a <em>different</em> brand owns the only published content for that
+     * slug.</p>
+     *
+     * <p>With site isolation restored (revert of #35345 / #35622), {@code processURLMap} must return
+     * empty on the requesting brand. If the unrestricted cross-site ES fallback from
+     * <a href="https://github.com/dotCMS/core/pull/35345">PR #35345</a> is ever reintroduced, this
+     * test must fail.</p>
+     *
+     * @see <a href="https://github.com/dotCMS/core/issues/35616">#35616 — cross-site content bleed</a>
+     * @see <a href="https://github.com/dotCMS/core/issues/35621">#35621 — revert #35345</a>
+     */
+    @Test
+    public void processURLMap_mustNotReturnContentFromForeignHost_whenRequestingHostHasNoMatch()
+            throws DotDataException, DotSecurityException {
+
+        final Host brandA = new SiteDataGen().nextPersisted();
+        final Host brandB = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder productsFolder = new FolderDataGen()
+                .name("brand-products-" + System.currentTimeMillis())
+                .site(brandA)
+                .nextPersisted();
+        final HTMLPageAsset detailPage = new HTMLPageDataGen(productsFolder, template)
+                .pageURL("product-detail")
+                .title("product-detail")
+                .nextPersisted();
+
+        final String urlPattern = "/products-" + System.currentTimeMillis() + "/{urlTitle}";
+
+        // URL map is configured on brandA; detail page also lives on brandA.
+        final ContentType productType = getNewsLikeContentType(
+                "BrandProduct" + System.currentTimeMillis(),
+                brandA,
+                detailPage.getIdentifier(),
+                urlPattern);
+
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final String slugOnlyOnBrandB = "heat-pumps-" + System.currentTimeMillis();
+
+        // brandB publishes the slug; brandA has no content for it.
+        ContentletDataGen.publish(TestDataUtils.getNewsContent(
+                true, langId, productType.id(), brandB, new Date(), slugOnlyOnBrandB));
+
+        final UrlMapContext context = getUrlMapContext(systemUser, brandA,
+                urlPattern.replace("{urlTitle}", slugOnlyOnBrandB),
+                PageMode.LIVE);
+
+        final Optional<URLMapInfo> result = urlMapAPI.processURLMap(context);
+
+        assertFalse(
+                "Cross-site URL map bleed: brandB content resolved on brandA for slug ["
+                        + slugOnlyOnBrandB + "]",
+                result.isPresent());
     }
 
     /**
@@ -888,7 +817,7 @@ public class URLMapAPIImplTest {
                 .nextPersisted();
         final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
                 .setProperty(field.variable(), 2f)
-                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .languageId(1)
                 .host(host)
                 .nextPersisted();
 

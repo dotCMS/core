@@ -119,6 +119,57 @@ describe('DotAiService', () => {
             req.flush(null, { status: 500, statusText: 'Server Error' });
         });
 
+        it('should extract message from structured error body { error: { message } }', () => {
+            const mockPrompt = 'Test prompt';
+
+            spectator.service.generateAndPublishImage(mockPrompt).subscribe(
+                () => fail('Expected an error, but received a response'),
+                (error) => {
+                    expect(error).toBe("Invalid size '1792x1024' for model");
+                }
+            );
+
+            const req = spectator.expectOne('/api/v1/ai/image/generate', HttpMethod.POST);
+            req.flush(
+                { error: { message: "Invalid size '1792x1024' for model" } },
+                { status: 400, statusText: 'Bad Request' }
+            );
+        });
+
+        it('should extract message from error body { error: string }', () => {
+            const mockPrompt = 'Test prompt';
+
+            spectator.service.generateAndPublishImage(mockPrompt).subscribe(
+                () => fail('Expected an error, but received a response'),
+                (error) => {
+                    expect(error).toBe('Something went wrong');
+                }
+            );
+
+            const req = spectator.expectOne('/api/v1/ai/image/generate', HttpMethod.POST);
+            req.flush(
+                { error: 'Something went wrong' },
+                { status: 400, statusText: 'Bad Request' }
+            );
+        });
+
+        it('should extract message from error body { message: string }', () => {
+            const mockPrompt = 'Test prompt';
+
+            spectator.service.generateAndPublishImage(mockPrompt).subscribe(
+                () => fail('Expected an error, but received a response'),
+                (error) => {
+                    expect(error).toBe('Direct error message');
+                }
+            );
+
+            const req = spectator.expectOne('/api/v1/ai/image/generate', HttpMethod.POST);
+            req.flush(
+                { message: 'Direct error message' },
+                { status: 400, statusText: 'Bad Request' }
+            );
+        });
+
         it('should handle errors while creating and publishing contentlet', () => {
             const mockPrompt = 'Test prompt' as unknown as DotAIImageResponse;
 

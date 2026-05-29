@@ -48,9 +48,6 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'content-types-angular',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: {
-            reuseRoute: false
-        },
         loadChildren: () =>
             import('@portlets/dot-content-types/dot-content-types.routes').then(
                 (m) => m.dotContentTypesRoutes
@@ -157,11 +154,29 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.dotUsageRoutes)
     },
     {
+        path: 'es-search',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: { isEnterprise: DotEnterpriseLicenseResolver },
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-es-search/portlet').then((m) => m.dotEsSearchRoutes)
+    },
+    {
         path: 'tags',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
+    },
+    {
+        path: 'query-tool',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
     },
     {
         path: 'plugins',

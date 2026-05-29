@@ -1,5 +1,3 @@
-import { signalMethod } from '@ngrx/signals';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -24,6 +22,7 @@ import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { CategoriesService } from '../../services/categories.service';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
+import { sameInodes } from '../../utils/category-field.utils';
 
 /**
  * @class
@@ -88,19 +87,12 @@ export class DotCategoryFieldComponent
      */
     $hasSelectedCategories = computed(() => this.store.selected().length > 0);
 
-    constructor() {
-        super();
-        this.handleChangeValue(this.$value);
-    }
-
     /**
      * Initialize the component.
      *
      * @memberof DotEditContentCategoryFieldComponent
      */
     ngOnInit(): void {
-        // Initialize the store with field information only
-        // The contentlet data will come through ControlValueAccessor's writeValue
         this.store.load({
             field: this.$field(),
             contentlet: this.$contentlet()
@@ -144,18 +136,24 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
-    readonly handleChangeValue = signalMethod<string[]>((value) => {
-        if (!value) {
-            this.store.setSelectedFromInodes([]);
+    override writeValue(value: string[]): void {
+        super.writeValue(value);
 
+        if (this.store.state() !== ComponentStatus.LOADED) {
             return;
         }
 
-        if (!Array.isArray(value)) {
+        const inodes = this.store.selected().map((category) => category.inode);
+        if (inodes.length === 0) {
             return;
         }
 
-        // Update store with the new value
-        this.store.setSelectedFromInodes(value);
-    });
+        if (Array.isArray(value) && sameInodes(value, inodes)) {
+            return;
+        }
+
+        // Defer to microtask: Angular calls writeValue from setUpControl
+        // BEFORE assigning dir.control, so a sync onChange throws.
+        queueMicrotask(() => this.onChange(inodes));
+    }
 }

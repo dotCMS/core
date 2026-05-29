@@ -561,6 +561,7 @@ export interface DotCMSPage {
     liveInode: string;
     shortyLive: string;
     canSeeRules?: boolean;
+    styleEditorSchemas?: StyleEditorFormSchema[];
 }
 
 /**
@@ -1139,6 +1140,7 @@ export interface DotCMSGraphQLPage {
     host: DotCMSSite;
     vanityUrl: DotCMSVanityUrl;
     _map: Record<string, unknown>;
+    styleEditorSchemas?: StyleEditorFormSchema[] | null;
 }
 
 /**

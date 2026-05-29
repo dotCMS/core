@@ -202,6 +202,72 @@ public class AppConfigTest {
     }
 
     // -------------------------------------------------------------------------
+    // getConfig — settings section overrides defaults
+    // -------------------------------------------------------------------------
+
+    private static final String CONFIG_WITH_SETTINGS =
+            "{\n" +
+            "  \"chat\": {\"provider\": \"openai\", \"apiKey\": \"sk-test\", \"model\": \"gpt-4o-mini\"},\n" +
+            "  \"settings\": {\n" +
+            "    \"rolePrompt\": \"Custom role prompt\",\n" +
+            "    \"textPrompt\": \"Custom text prompt\",\n" +
+            "    \"imagePrompt\": \"Custom image prompt\",\n" +
+            "    \"imageSize\": \"1792x1024\",\n" +
+            "    \"temperature\": \"0.5\"\n" +
+            "  }\n" +
+            "}";
+
+    @Test
+    public void test_getConfig_settingsValue_overridesDefault() {
+        final AppConfig config = buildAppConfig(CONFIG_WITH_SETTINGS);
+
+        assertEquals("Custom role prompt", config.getConfig(AppKeys.ROLE_PROMPT));
+        assertEquals("Custom text prompt", config.getConfig(AppKeys.TEXT_PROMPT));
+        assertEquals("Custom image prompt", config.getConfig(AppKeys.IMAGE_PROMPT));
+        assertEquals("1792x1024", config.getConfig(AppKeys.IMAGE_SIZE));
+        assertEquals("0.5", config.getConfig(AppKeys.COMPLETION_TEMPERATURE));
+    }
+
+    @Test
+    public void test_getConfig_settingsValueAbsent_returnsFallback() {
+        // Config has settings section but NOT these keys → should return AppKeys defaults
+        final AppConfig config = buildAppConfig(CONFIG_WITH_SETTINGS);
+
+        assertEquals(AppKeys.LISTENER_INDEXER.defaultValue, config.getConfig(AppKeys.LISTENER_INDEXER));
+        assertEquals(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS.defaultValue,
+                config.getConfig(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS));
+    }
+
+    @Test
+    public void test_getConfig_noSettingsSection_returnsDefault() {
+        // Clean config with no settings block at all
+        final AppConfig config = buildAppConfig(CLEAN_PROVIDER_CONFIG);
+
+        assertEquals(AppKeys.ROLE_PROMPT.defaultValue, config.getConfig(AppKeys.ROLE_PROMPT));
+        assertEquals(AppKeys.IMAGE_SIZE.defaultValue, config.getConfig(AppKeys.IMAGE_SIZE));
+        assertEquals(AppKeys.COMPLETION_TEMPERATURE.defaultValue, config.getConfig(AppKeys.COMPLETION_TEMPERATURE));
+    }
+
+    @Test
+    public void test_getConfig_keyWithNoSettingsKey_alwaysReturnsDefault() {
+        // PROVIDER_CONFIG and API_URL have settingsKey=null — settings section never consulted
+        final AppConfig config = buildAppConfig(CONFIG_WITH_SETTINGS);
+
+        assertNull(config.getConfig(AppKeys.PROVIDER_CONFIG));
+        assertEquals(AppKeys.API_URL.defaultValue, config.getConfig(AppKeys.API_URL));
+    }
+
+    @Test
+    public void test_appConfig_settingsSection_populatesPromptFields() {
+        final AppConfig config = buildAppConfig(CONFIG_WITH_SETTINGS);
+
+        assertEquals("Custom role prompt", config.getRolePrompt());
+        assertEquals("Custom text prompt", config.getTextPrompt());
+        assertEquals("Custom image prompt", config.getImagePrompt());
+        assertEquals("1792x1024", config.getImageSize());
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

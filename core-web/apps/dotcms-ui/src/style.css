@@ -1,9 +1,17 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@plugin "@tailwindcss/typography";
 @import './daisyui-theme.css';
 
 :root {
     --experiment-nav-size: 80px;
+    /*
+     * Analytics engagement stacked bars + legend (“not engaged” segment).
+     * Fill aligns with bounced slice: AnalyticsChartColors.neutralDark.line in
+     * @dotcms/portlets/dot-analytics/data-access dot-analytics.constants.ts
+     */
+    --bar-engagement-not-engaged: var(--p-gray-200);
+    --bar-engagement-not-engaged-foreground: var(--p-gray-700);
 }
 
 a {
@@ -59,7 +67,7 @@ a:visited {
     @apply flex flex-col gap-1;
 }
 
-.form .field label {
+.form .field > label {
     @apply text-sm font-medium;
 }
 

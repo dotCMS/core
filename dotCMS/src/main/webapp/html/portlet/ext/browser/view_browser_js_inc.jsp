@@ -1531,6 +1531,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function showFileAssetPopUp(folderMap, fileAssetTypeMap, isMultiple){
+        currentFileAssetFolderMap = folderMap;
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addFileAssetDialog");
         if (faDialog) {
@@ -1563,6 +1564,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     var currentPageAssetFolderMap = null;
+    var currentFileAssetFolderMap = null;
 
     function showPageAssetPopUp(folderMap){
         currentPageAssetFolderMap = folderMap;
@@ -1656,7 +1658,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            createContentlet(loc, selected.item.velocityVarName);
+            var folderPath = '';
+            if (currentFileAssetFolderMap && currentFileAssetFolderMap.fullPath) {
+                var hostName = currentFileAssetFolderMap.fullPath.split(':')[0];
+                var cmsFolderPath = currentFileAssetFolderMap.folderPath || '/';
+                folderPath = cmsFolderPath === '/' ? hostName : hostName + cmsFolderPath;
+            }
+            createContentlet(loc, selected.item.velocityVarName, folderPath);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }

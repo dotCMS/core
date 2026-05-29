@@ -57,6 +57,15 @@ public class StoryBlockMapTest extends IntegrationTestBase {
     private static final String JSON_ULIST =
             "{\"type\":\"doc\",\"content\":[{\"type\":\"bulletList\",\"content\":[{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"1\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"2\"}]}]},{\"type\":\"listItem\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":[{\"type\":\"text\",\"text\":\"3\"}]}]}]}]}";
 
+    private static final String JSON_SUB_SUP =
+            "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"textAlign\":\"left\"},\"content\":["
+                    + "{\"type\":\"text\",\"marks\":[{\"type\":\"superscript\"}],\"text\":\"sup\"},"
+                    + "{\"type\":\"text\",\"text\":\" and \"},"
+                    + "{\"type\":\"text\",\"marks\":[{\"type\":\"subscript\"}],\"text\":\"sub\"},"
+                    + "{\"type\":\"text\",\"text\":\" and \"},"
+                    + "{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"},{\"type\":\"superscript\"}],\"text\":\"bold-sup\"}"
+                    + "]}]}";
+
     private static final String MACRO = "#macro(renderMarks $content)\n" +
             "\n" +
             "    #if($content.marks)\n" +
@@ -78,6 +87,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             "            #end\n" +
             "            #if ($mark.type == \"underline\")\n" +
             "            <u>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"subscript\")\n" +
+            "            <sub>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"superscript\")\n" +
+            "            <sup>\n" +
             "            #end\n" +
             "            #if ($mark.type == \"link\")\n" +
             "            <a href=\"$mark.attrs.href\" target=\"$mark.attrs.target\">\n" +
@@ -102,6 +117,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             "            #end\n" +
             "            #if ($mark.type == \"underline\")\n" +
             "            </u>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"subscript\")\n" +
+            "            </sub>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"superscript\")\n" +
+            "            </sup>\n" +
             "            #end\n" +
             "            #if($mark.type == \"link\")\n" +
             "            </a>\n" +
@@ -254,6 +275,29 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         Assert.assertTrue(html.contains("heading 2"));
         Assert.assertTrue(html.contains("</h2>"));
 
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml()}
+     * Given Scenario: A paragraph contains text with subscript, superscript, and a combined bold+superscript mark.
+     * ExpectedResult: The rendered HTML wraps each text run in {@code <sub>} / {@code <sup>} tags, and combined
+     *   marks nest with the correct closing order (e.g. {@code <strong><sup>bold-sup</sup></strong>}).
+     */
+    @Test
+    public void test_subscript_and_superscript_marks_render_to_html() throws JSONException {
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_SUB_SUP);
+        final String html = storyBlockMap.toHtml();
+        // The inline MACRO registered in @Before pads tags with newlines/indent, so
+        // strip whitespace before asserting on contiguous mark wrappings.
+        final String normalized = html.replaceAll("\\s+", "");
+
+        Assert.assertTrue(html + ": missing <sup>sup</sup>",
+                normalized.contains("<sup>sup</sup>"));
+        Assert.assertTrue(html + ": missing <sub>sub</sub>",
+                normalized.contains("<sub>sub</sub>"));
+        Assert.assertTrue(html + ": missing <strong><sup>bold-sup</sup></strong>",
+                normalized.contains("<strong><sup>bold-sup</sup></strong>"));
     }
 
     /**

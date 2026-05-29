@@ -39,6 +39,24 @@ describe('DotPropertiesService', () => {
         req.flush(fakeResponse);
     });
 
+    it('should get boolean-prefixed key using the unprefixed response field', (done) => {
+        const key = 'boolean:REPORT_ISSUE_INCLUDE_USER_PII';
+        const apiResponse = {
+            entity: {
+                REPORT_ISSUE_INCLUDE_USER_PII: false
+            }
+        };
+
+        service.getKey(key).subscribe((response) => {
+            expect(response).toBe(false);
+            done();
+        });
+
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
     it('should get ky as a list', (done) => {
         const key = 'list';
         expect(service).toBeTruthy();
@@ -97,9 +115,7 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]).toBe(true);
-            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(
-                FEATURE_FLAG_NOT_FOUND
-            );
+            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(true);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);

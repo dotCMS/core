@@ -122,18 +122,28 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { status });
             },
             setGlobalSearch(searchValue: string) {
+                const filters = { ...store.filters() };
+                if (searchValue) {
+                    filters.title = searchValue;
+                } else {
+                    delete filters.title;
+                }
+
                 patchState(store, {
-                    filters: searchValue
-                        ? {
-                              title: searchValue
-                          }
-                        : {},
+                    filters,
                     pagination: {
                         ...store.pagination(),
                         offset: 0,
                         page: 1
                     },
                     path: DEFAULT_PATH
+                });
+            },
+            clearFilters() {
+                patchState(store, {
+                    filters: {},
+                    pagination: { ...store.pagination(), offset: 0, page: 1 },
+                    pages: [DEFAULT_PAGE]
                 });
             },
             patchFilters(filters: DotContentDriveFilters) {
@@ -158,17 +168,10 @@ export const DotContentDriveStore = signalStore(
                 }
             },
             setPath(path: string) {
-                // Only reset the title if the path is changed and its not the default path
-                const title = path ? undefined : store.filters().title;
-
                 patchState(store, {
                     path,
                     pagination: { ...store.pagination(), page: 1, offset: 0 },
-                    pages: [DEFAULT_PAGE],
-                    filters: {
-                        ...store.filters(),
-                        title
-                    }
+                    pages: [DEFAULT_PAGE]
                 });
             },
             setPagination(pagination: DotContentDrivePagination) {

@@ -20,7 +20,7 @@ const ACTIVE_CLASSES =
         '[class]': 'stateClasses()',
         role: 'button',
         '[attr.tabindex]': 'tabIndex()',
-        '(click)': 'clicked.emit()',
+        '(click)': 'clicked.emit($event)',
         '(keydown.enter)': 'onHostKeydown($event)',
         '(keydown.space)': 'onHostKeydown($event)'
     }
@@ -32,7 +32,11 @@ export class DotChipFilterComponent {
     selections = input<string[]>([]);
     tabIndex = input<number>(0);
 
-    clicked = output<void>();
+    /**
+     * Emits the originating DOM event so consumers can pass it to overlays
+     * (e.g. p-popover) that need positioning info from `currentTarget`.
+     */
+    clicked = output<Event>();
     removed = output<void>();
 
     protected readonly active = computed(() => this.selections().length > 0);
@@ -63,6 +67,6 @@ export class DotChipFilterComponent {
         // Ignore keydowns that bubbled from a descendant (e.g. the close button)
         if (event.target && event.target !== event.currentTarget) return;
         if ((event as KeyboardEvent).key === ' ') event.preventDefault();
-        this.clicked.emit();
+        this.clicked.emit(event);
     }
 }

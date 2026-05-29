@@ -19,6 +19,8 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 | `DotCustomFieldApi.onChangeField('id', cb)` | `DotCustomFieldApi.getField('id').onChange(cb)` |
 | Manual DOM show/hide of a field | `DotCustomFieldApi.getField('id').show()` / `.hide()` |
 | Manual DOM enable/disable of a field | `DotCustomFieldApi.getField('id').enable()` / `.disable()` |
+| Manual checks against dijit validation state | `DotCustomFieldApi.getField('id').getValidationState()` |
+| No legacy equivalent | `DotCustomFieldApi.getField('id').onValidationChange(cb)` |
 | `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
 | `dojo.byId('el')` | `document.getElementById('el')` |
 | `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
@@ -36,7 +38,7 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 4. **Store field references once** — call `getField()` once per field at the top of `ready()`, then reuse the reference.
 5. **Migrate each pattern** — follow the migration rules in `references/migration-guide.md`.
 6. **Apply DaisyUI for styling** — use DaisyUI component classes (`btn`, `input`, `select`, `modal`, `link`, etc.) and Tailwind utilities instead of inline styles or ad-hoc CSS; see “Styling with DaisyUI” in the guide.
-7. **Preserve VTL variables** — `${fieldId}`, `$maxChar`, `$variableName` are server-side; never change them.
+7. **Preserve VTL variables** — `${fieldId}`, `$maxChar`, `$variableName`, and server-side context variables (`$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`) are server-side; never change them.
 8. **Output three files** — see the File Output Pattern below.
 
 ## File Output Pattern
@@ -85,6 +87,7 @@ This pattern lets both legacy and new edit modes coexist safely — old editor u
 - Dijit CSS classes (any `class="dijit*"`) must be removed
 - **Styling:** Prefer DaisyUI component classes + Tailwind utilities; keep custom CSS only when the guide says so
 - Translate non-English comments to English
+- Server-side VTL variables (`$inode`, `$identifier`, `$lang`, `$contentlet`, `$structure`, `$field`) are resolved at render time — do not confuse them with `DotCustomFieldApi` JavaScript APIs
 
 ## Key Patterns to Know
 
@@ -136,6 +139,40 @@ DotCustomFieldApi.ready(() => {
 });
 ```
 
+**Reacting to validation state (required, errors, touched):**
+```html
+<style>
+  /* Self-contained: legacy iframe pages do NOT load DaisyUI, so we ship the rule with the template. */
+  #slugInput.is-invalid {
+    border-color: #ef4444;
+    outline-color: #ef4444;
+  }
+</style>
+
+<script type="module">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField('urlTitle');
+    const input = document.getElementById('slugInput');
+
+    const applyValidation = (state) => {
+      // Only show the error after the user (or Save) has marked the control as touched —
+      // mirrors how Angular's built-in fields paint the red border.
+      const showError = state.invalid && state.touched;
+      input.classList.toggle('is-invalid', showError);
+    };
+
+    // onValidationChange emits the initial state synchronously, so a separate
+    // getValidationState() call up front is redundant. The bridge auto-cleans
+    // on form destroy, so the unsubscribe return value can be ignored here.
+    field.onValidationChange(applyValidation);
+  });
+</script>
+```
+
+> Use a self-contained `is-invalid` class with inline `<style>` instead of DaisyUI's `input-error`. The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind, so an `input-error` toggle would silently produce no visual feedback there. In iframe mode the callback also never fires (the Dojo bridge's `onValidationChange` is a no-op) — the legacy editor has its own validation surface. See Rule 13 in `references/migration-guide.md` for the full gotchas list.
+
+`state` shape: `{ valid, invalid, touched, dirty, errors }` (mirrors Angular's `AbstractControl`). `errors` is `null` when valid, otherwise a record like `{ required: true }`.
+
 **Multiple onChange for the same field** → combine into one handler:
 ```js
 // Old: two separate onChangeField calls for 'title'
@@ -170,6 +207,59 @@ titleField.onChange((value) => {
 ```
 
 **Styling (DaisyUI):** Buttons → `btn`, `btn-primary`, `btn-ghost`, `btn-sm`. Inputs → `input input-bordered`. Selects → `select select-bordered`. Links → `link link-primary`. Use Tailwind for layout (`flex`, `gap`, `w-full`). Full reference in `references/migration-guide.md` → “Styling with DaisyUI”.
+
+## Available Velocity Context Variables
+
+Custom field templates can use **server-side VTL variables** injected by dotCMS when the field is rendered. These are resolved on the server before HTML reaches the browser — they are **not** available in JavaScript and must not be confused with `DotCustomFieldApi`.
+
+| Variable | Type | Description |
+|---|---|---|
+| `$inode` | `String` | The contentlet's inode (version ID) |
+| `$identifier` | `String` | The contentlet's persistent identifier |
+| `$lang` | `long` | The contentlet's language ID |
+| `$contentlet` | `Contentlet` | The full Contentlet object |
+| `$structure` | `ContentType` | The content type (structure) |
+| `$field` | `Field` | The current field being rendered |
+
+**Availability:**
+- `$structure` and `$field` are always available when the custom field is rendered.
+- `$inode`, `$identifier`, `$lang`, and `$contentlet` are populated only when **editing an existing contentlet** (when an inode is known). On new content, those four variables are empty/unset.
+- Both the new editor (REST API component mode and iframe mode) and the legacy editor expose the same variables.
+
+**Example — display context variables in the template:**
+
+```html
+<p>
+  <strong>inode:</strong> $inode
+</p>
+<p>
+  <strong>identifier:</strong> $identifier
+</p>
+<p>
+  <strong>lang:</strong> $lang
+</p>
+<p>
+  <strong>contentlet:</strong> $contentlet
+</p>
+<p>
+  <strong>structure:</strong> $structure
+</p>
+<p>
+  <strong>field:</strong> $field
+</p>
+```
+
+**Example — guard for new vs existing content:**
+
+```html
+#if($utilMethods.isSet($inode))
+  <input type="hidden" id="contentInode" value="$inode" />
+#else
+  <p class="text-sm text-base-content/70">Save the content first to access inode-specific features.</p>
+#end
+```
+
+For full details, availability rules, and practical examples → read `references/migration-guide.md` → “Server-Side Velocity Context Variables”.
 
 ## Before Outputting
 

@@ -34,6 +34,7 @@ import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTe
 import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifierTest;
+import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenuTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -77,6 +78,7 @@ import org.junit.runners.Suite;
         Task251212AddVersionColumnIndicesTableTest.class,
         Task260206AddUsagePortletToMenuTest.class,
         Task260320AddPluginsPortletToMenuTest.class,
+        Task260505AddPluginsPortletToMenuTest.class,
         Task260407AddBaseTypeColumnToIdentifierTest.class,
         ImportContentletsActionSmokeTest.class,
 })

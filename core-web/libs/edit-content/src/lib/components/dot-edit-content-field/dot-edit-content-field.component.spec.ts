@@ -16,10 +16,12 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import {
+    DotContentTypeService,
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
@@ -28,6 +30,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
@@ -70,6 +73,8 @@ interface DotEditFieldTestBed {
     imports?: Type<unknown>[];
     providers?: Provider[];
     declarations?: Type<unknown>[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    overrideComponents?: any[];
     props?: { [key: string]: unknown }[]; // ContentField Props, that we need to pass to the component inside
     outsideFormControl?: boolean; //If the component have [formControlName] hardcoded inside this ContentField component
 }
@@ -97,7 +102,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         providers: [
             mockProvider(DialogService),
             mockProvider(DotEditContentStore, {
-                contentType: signal(null)
+                contentType: signal(null),
+                isCopyingLocale: signal(false),
+                currentLocale: signal(undefined)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
             })
         ]
     },
@@ -149,6 +159,15 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                     currentLocale: signal({ id: 1, language: 'English', country: 'US' })
                 }
             }
+        ],
+        overrideComponents: [
+            [
+                DotEditContentBlockEditorComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
         ],
         outsideFormControl: true
     },
@@ -262,11 +281,14 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         imports: [DotEditContentFieldComponent, ...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
+        overrideComponents: fieldTestBed?.overrideComponents ?? [],
         providers: [
             FormGroupDirective,
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
+            ConfirmationService,
+            mockProvider(DotContentTypeService),
             mockProvider(GlobalStore, {
                 systemConfig: signal({
                     systemTimezone: {

@@ -5,10 +5,8 @@ import {
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
-    reportIframeHeight,
     scrollHandler,
-    setClientIsReady,
-    shouldReportIframeHeightToParent
+    setClientIsReady
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
@@ -45,8 +43,5 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     addClassToEmptyContentlets();
     setClientIsReady();
     listenBlockEditorInlineEvent();
-    if (shouldReportIframeHeightToParent()) {
-        reportIframeHeight();
-    }
     injectEmptyStateStyles();
 }
