@@ -46,6 +46,7 @@ import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.TimeField;
@@ -97,6 +98,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -1648,6 +1650,152 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    /**
+     * Creates a custom contentType with a required text field and a tag field, associated with the
+     * out-of-the-box System and Document workflows.
+     *
+     * @return the created {@link ContentType}
+     * @throws Exception if the content type cannot be created
+     */
+    private ContentType createSampleContentTypeWithTagField() throws Exception {
+        final String ctPrefix = "TestContentTypeWithTag";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        ContentType contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        // Add a required Text field
+        final Field textField =
+                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME)
+                        .variable(REQUIRED_TEXT_FIELD_NAME)
+                        .required(true)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+
+        // Add a Tag field
+        final Field tagField =
+                FieldBuilder.builder(TagField.class).name(TAG_FIELD_NAME)
+                        .variable(TAG_FIELD_NAME)
+                        .contentTypeId(contentType.id()).build();
+
+        contentType = contentTypeAPI.save(contentType, List.of(textField, tagField));
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
+        );
+
+        return contentType;
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet of a content type that has a Tag field is saved/published with a
+     * tag value (e.g. {@code "new edit content"}). Then the Save/Publish workflow action is fired
+     * again over the same contentlet sending {@code "tags": ""} (an empty value) in the payload.
+     * <p>
+     * Expected Result: The tag must be cleared. After firing the action with an empty tags value
+     * the contentlet must have no tags associated to its tag field, and the returned contentlet must
+     * not echo back the stale tag value.
+     */
+    @Test
+    public void Test_Fire_Save_With_Tag_Then_Fire_Update_With_Empty_Tag_Clears_Tag()
+            throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet brandNewContentlet = null;
+            try {
+                // 1) Save/Publish setting a tag value
+                final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+                final Map<String, Object> contentletFormData = new HashMap<>();
+                contentletFormData.put("stInode", contentType.inode());
+                contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+                contentletFormData.put(TAG_FIELD_NAME, "new edit content");
+                contentletFormData.put("languageId", 1);
+                builder1.contentlet(contentletFormData);
+
+                final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+                final Response response1 = workflowResource
+                        .fireActionSinglePart(getHttpRequest(), new EmptyHttpResponse(),
+                                saveAndPublishActionId, null, null,
+                                IndexPolicy.WAIT_FOR.name(), "-1", fireActionForm1);
+
+                assertEquals(Status.OK.getStatusCode(), response1.getStatus());
+                final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                        .cast(response1.getEntity());
+                brandNewContentlet = new Contentlet(Map.class.cast(fireEntityView1.getEntity()));
+                assertNotNull(brandNewContentlet.getInode());
+
+                // The tag must have been persisted
+                final List<Tag> savedTags = APILocator.getTagAPI()
+                        .getTagsByInodeAndFieldVarName(brandNewContentlet.getInode(),
+                                TAG_FIELD_NAME);
+                assertEquals("The tag should have been saved", 1, savedTags.size());
+                assertEquals("new edit content", savedTags.get(0).getTagName());
+
+                // 2) Fire the Save/Publish action again over the same contentlet, but now sending
+                // an empty tags value, which should clear the tag.
+                final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+                final Map<String, Object> contentletFormData2 = new HashMap<>();
+                contentletFormData2.put("stInode", contentType.inode());
+                contentletFormData2.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+                contentletFormData2.put(TAG_FIELD_NAME, "");
+                contentletFormData2.put("languageId", 1);
+                builder2.contentlet(contentletFormData2);
+
+                final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+                final Response response2 = workflowResource
+                        .fireActionSinglePart(getHttpRequest(), new EmptyHttpResponse(),
+                                saveAndPublishActionId, brandNewContentlet.getInode(), null,
+                                IndexPolicy.WAIT_FOR.name(), "-1", fireActionForm2);
+
+                assertEquals(Status.OK.getStatusCode(), response2.getStatus());
+                final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                        .cast(response2.getEntity());
+                final Contentlet updatedContentlet = new Contentlet(
+                        Map.class.cast(fireEntityView2.getEntity()));
+                assertNotNull(updatedContentlet);
+                assertEquals(brandNewContentlet.getIdentifier(),
+                        updatedContentlet.getIdentifier());
+
+                // 3) The tag must be cleared now (this is the bug: the old value is kept).
+                final List<Tag> updatedTags = APILocator.getTagAPI()
+                        .getTagsByInodeAndFieldVarName(updatedContentlet.getInode(),
+                                TAG_FIELD_NAME);
+                assertTrue(
+                        "Tags should be cleared when the action is fired with an empty tags value, "
+                                + "but the following tags were found: " + updatedTags,
+                        updatedTags.isEmpty());
+
+                // The returned contentlet must not echo back the stale tag value
+                final Object tagsValue = updatedContentlet.getMap().get(TAG_FIELD_NAME);
+                assertTrue(
+                        "The returned contentlet still shows the stale tag value: " + tagsValue,
+                        tagsValue == null
+                                || tagsValue.toString().isEmpty()
+                                || (tagsValue instanceof List && ((List) tagsValue).isEmpty()));
+
+            } finally {
+                if (null != brandNewContentlet) {
+                    contentletAPI.destroy(brandNewContentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
     static ImmutableMap<Class, DataTypes> fieldTypesMetaDataMap = new ImmutableMap.Builder<Class, DataTypes>()
             //   .put(BinaryField.class, DataTypes.SYSTEM)
             //   .put(CategoryField.class, DataTypes.SYSTEM)
@@ -1682,6 +1830,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     private static final String REQUIRED_TEXT_FIELD_NAME = "requiredTextField";
     private static final String REQUIRED_TEXT_FIELD_VALUE = "This Value is Required";
+
+    private static final String TAG_FIELD_NAME = "tagField";
 
     private static final String NON_REQUIRED_TEXT_FIELD_NAME = "nonRequiredTextField";
     private static final String NON_REQUIRED_TEXT_FIELD_VALUE = "This Value isn't required";
