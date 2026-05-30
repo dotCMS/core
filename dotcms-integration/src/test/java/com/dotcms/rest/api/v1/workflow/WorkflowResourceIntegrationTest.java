@@ -1796,6 +1796,120 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    /**
+     * Fires the System Workflow Save/Publish action over the given content type. When
+     * {@code includeTagKey} is true the {@code tagField} entry is added to the payload with
+     * {@code tagValue} (which may be a String, a List or {@code null}); when false the tag field key
+     * is omitted entirely (simulating a partial update that does not mention the field).
+     *
+     * @param contentType   the content type to fire against
+     * @param inode         the inode to update, or {@code null} to create a new contentlet
+     * @param tagValue      the value to set for the tag field (only used when {@code includeTagKey})
+     * @param includeTagKey whether the tag field key is present in the payload
+     * @return the contentlet returned by the fire action
+     */
+    private Contentlet fireSaveWithTagValue(final ContentType contentType, final String inode,
+            final Object tagValue, final boolean includeTagKey) throws Exception {
+        final String saveAndPublishActionId = "b9d89c80-3d88-4311-8365-187323c96436";
+        final FireActionForm.Builder builder = new FireActionForm.Builder();
+        final Map<String, Object> formData = new HashMap<>();
+        formData.put("stInode", contentType.inode());
+        formData.put(REQUIRED_TEXT_FIELD_NAME, "value-1");
+        if (includeTagKey) {
+            formData.put(TAG_FIELD_NAME, tagValue);
+        }
+        formData.put("languageId", 1);
+        builder.contentlet(formData);
+
+        final Response response = workflowResource.fireActionSinglePart(getHttpRequest(),
+                new EmptyHttpResponse(), saveAndPublishActionId, inode, null,
+                IndexPolicy.WAIT_FOR.name(), "-1", new FireActionForm(builder));
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        return new Contentlet(Map.class.cast(
+                ResponseEntityView.class.cast(response.getEntity()).getEntity()));
+    }
+
+    private List<Tag> tagsOf(final String inode) throws DotDataException {
+        return APILocator.getTagAPI().getTagsByInodeAndFieldVarName(inode, TAG_FIELD_NAME);
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet with a tag value is updated firing the Save/Publish action with an
+     * explicit {@code "tags": null} in the payload.
+     * <p>
+     * Expected Result: The tags are LEFT UNCHANGED. A null value is a partial-update / no-op signal
+     * (only an explicit empty value clears tags), so the existing tag must survive. Guards the
+     * {@code ""} (wipe) vs {@code null} (no-op) distinction introduced by the fix for #35861.
+     */
+    @Test
+    public void Test_Fire_Update_With_Null_Tag_Preserves_Tag() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet contentlet = null;
+            try {
+                contentlet = fireSaveWithTagValue(contentType, null, "new edit content", true);
+                assertEquals(1, tagsOf(contentlet.getInode()).size());
+
+                final Contentlet updated = fireSaveWithTagValue(contentType,
+                        contentlet.getInode(), null, true);
+
+                final List<Tag> tags = tagsOf(updated.getInode());
+                assertEquals("A null tag value must leave existing tags unchanged", 1, tags.size());
+                assertEquals("new edit content", tags.get(0).getTagName());
+            } finally {
+                if (null != contentlet) {
+                    contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
+     * HttpServletResponse, String, String, String, String, String, FireActionForm)}
+     * <p>
+     * Given Scenario: A contentlet with a tag value is updated firing the Save/Publish action with a
+     * payload that does NOT include the tag field key at all (a partial update of other fields).
+     * <p>
+     * Expected Result: The tags are LEFT UNCHANGED. Omitting the field must not wipe its tags.
+     */
+    @Test
+    public void Test_Fire_Update_Without_Tag_Key_Preserves_Tag() throws Exception {
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentTypeWithTagField();
+            Contentlet contentlet = null;
+            try {
+                contentlet = fireSaveWithTagValue(contentType, null, "new edit content", true);
+                assertEquals(1, tagsOf(contentlet.getInode()).size());
+
+                final Contentlet updated = fireSaveWithTagValue(contentType,
+                        contentlet.getInode(), null, false);
+
+                final List<Tag> tags = tagsOf(updated.getInode());
+                assertEquals("Omitting the tag field must leave existing tags unchanged",
+                        1, tags.size());
+                assertEquals("new edit content", tags.get(0).getTagName());
+            } finally {
+                if (null != contentlet) {
+                    contentletAPI.destroy(contentlet, APILocator.systemUser(), false);
+                }
+            }
+        } finally {
+            if (null != contentType) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
     static ImmutableMap<Class, DataTypes> fieldTypesMetaDataMap = new ImmutableMap.Builder<Class, DataTypes>()
             //   .put(BinaryField.class, DataTypes.SYSTEM)
             //   .put(CategoryField.class, DataTypes.SYSTEM)

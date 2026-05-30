@@ -613,6 +613,21 @@ public class TagAPITest extends IntegrationTestBase {
 	}
 
 	/**
+	 * Destroys the contentlet with the given inode (best-effort). Destroying the contentlet also
+	 * removes its tag_inode relations, so it is enough to clean up the deletion tests below.
+	 */
+	private void destroyContentletByInode(final String inode) {
+		try {
+			final Contentlet contentlet = conAPI.find(inode, testUser, false);
+			if (contentlet != null) {
+				conAPI.destroy(contentlet, testUser, false);
+			}
+		} catch (Exception e) {
+			Logger.warn(this, "Unable to destroy contentlet " + inode + ": " + e.getMessage());
+		}
+	}
+
+	/**
 	 * Test the deleteTagInodesByInodeAndFieldVarName method of the tagAPI: it must remove only the
 	 * tag relations of the matching inode, leaving other inodes' relations (under the same field var
 	 * name) intact.
@@ -638,8 +653,8 @@ public class TagAPITest extends IntegrationTestBase {
 			assertFalse("inodeB tag relations must remain untouched",
 					tagAPI.getTagsByInodeAndFieldVarName(inodeB, WIKI_TAG_VARNAME).isEmpty());
 		} finally {
-			tagAPI.deleteTagInodesByInode(inodeA);
-			tagAPI.deleteTagInodesByInode(inodeB);
+			destroyContentletByInode(inodeA);
+			destroyContentletByInode(inodeB);
 		}
 	}
 
@@ -651,20 +666,24 @@ public class TagAPITest extends IntegrationTestBase {
 	@Test
 	public void deleteTagInodesByInode_removesAllForInode() throws Exception {
 		final String inode = createWikiContentletInode("DelByInode");
-		final String stamp = UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
-		final String tagName1 = "testapidelinode1" + stamp;
-		final String tagName2 = "testapidelinode2" + stamp;
-		tagAPI.getTagAndCreate(tagName1, testUser.getUserId(), defaultHostId);
-		tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
-		tagAPI.addContentletTagInode(tagName1, inode, defaultHostId, WIKI_TAG_VARNAME);
-		tagAPI.addContentletTagInode(tagName2, inode, defaultHostId, WIKI_TAG_VARNAME);
+		try {
+			final String stamp = UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+			final String tagName1 = "testapidelinode1" + stamp;
+			final String tagName2 = "testapidelinode2" + stamp;
+			tagAPI.getTagAndCreate(tagName1, testUser.getUserId(), defaultHostId);
+			tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName1, inode, defaultHostId, WIKI_TAG_VARNAME);
+			tagAPI.addContentletTagInode(tagName2, inode, defaultHostId, WIKI_TAG_VARNAME);
 
-		assertEquals(2, tagAPI.getTagInodesByInode(inode).size());
+			assertEquals(2, tagAPI.getTagInodesByInode(inode).size());
 
-		tagAPI.deleteTagInodesByInode(inode);
+			tagAPI.deleteTagInodesByInode(inode);
 
-		assertTrue("All tag relations for the inode should be removed",
-				tagAPI.getTagInodesByInode(inode).isEmpty());
+			assertTrue("All tag relations for the inode should be removed",
+					tagAPI.getTagInodesByInode(inode).isEmpty());
+		} finally {
+			destroyContentletByInode(inode);
+		}
 	}
 
 	/**
