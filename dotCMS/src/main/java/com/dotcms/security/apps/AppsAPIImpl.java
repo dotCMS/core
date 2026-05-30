@@ -262,7 +262,10 @@ public class AppsAPIImpl implements AppsAPI {
                 isSet(key) ? getAppDescriptorMap().get(key.toLowerCase()) : null;
         final Map<String, ParamDescriptor> params =
                 null != appDescriptor ? appDescriptor.getParams() : Map.of();
-        final String hostName = host.getHostname();
+        // host may be null (e.g. GoogleTranslationService falls back to a null host when the site
+        // lookup misses). A null host has no hostname, so tier-1 host-specific env is simply skipped
+        // while the System Host / legacy / stored tiers still resolve.
+        final String hostName = null != host ? host.getHostname() : null;
         final boolean envEligible = null != appDescriptor && isSet(hostName);
 
         final Set<String> paramNames = new LinkedHashSet<>(params.keySet());
