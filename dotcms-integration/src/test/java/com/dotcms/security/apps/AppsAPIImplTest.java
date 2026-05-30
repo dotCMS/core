@@ -1706,7 +1706,7 @@ public class AppsAPIImplTest {
         // newSecret is dropped because it came in masked with no existing value to restore;
         // the mask must never be persisted.
         assertEquals(0, result.getSecrets().size());
-        assertNull(result.getSecrets().get("newSecret"));
+        assertFalse(result.getSecrets().containsKey("newSecret"));
     }
 
     /**
