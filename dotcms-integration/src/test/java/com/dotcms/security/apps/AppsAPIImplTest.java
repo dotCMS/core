@@ -1677,12 +1677,14 @@ public class AppsAPIImplTest {
     /**
      * Test maintainHiddenValues method when hidden secret has mask but no existing secret.
      * Given scenario: New hidden secret with mask value but no existing secret with that key.
-     * Expected Result: The masked value should be used (no existing value to fall back to).
+     * Expected Result: The masked param is dropped entirely — the literal mask is never
+     * persisted. With no stored value to restore, the param stays env-resolved/unset rather
+     * than snapshotting the placeholder into the stored blob.
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void Test_MaintainHiddenValues_Masked_Secret_Without_Existing_Uses_Mask()
+    public void Test_MaintainHiddenValues_Masked_Secret_Without_Existing_Is_Dropped()
             throws DotDataException, DotSecurityException {
         final AppsAPI api = APILocator.getAppsAPI();
         final AppsAPIImpl apiImpl = (AppsAPIImpl) api;
@@ -1701,10 +1703,10 @@ public class AppsAPIImplTest {
 
         assertNotNull(result);
         assertEquals("test-app", result.getKey());
-        assertEquals(1, result.getSecrets().size());
-        // newSecret should have mask value because no existing secret with that key exists
-        assertEquals(SecretViewSerializer.HIDDEN_SECRET_MASK, result.getSecrets().get("newSecret").getString());
-        assertTrue(result.getSecrets().get("newSecret").getHidden());
+        // newSecret is dropped because it came in masked with no existing value to restore;
+        // the mask must never be persisted.
+        assertEquals(0, result.getSecrets().size());
+        assertNull(result.getSecrets().get("newSecret"));
     }
 
     /**
