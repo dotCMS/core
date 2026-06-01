@@ -69,6 +69,7 @@ export * from './lib/dot-usage/dot-usage.service';
 export * from './lib/dot-versionable/dot-versionable.service';
 export * from './lib/dot-websocket/dot-event-message.model';
 export * from './lib/dot-websocket/dot-events-socket.service';
+export * from './lib/dot-websocket/dot-system-event-type.model';
 export * from './lib/dot-wizard/dot-wizard.service';
 export * from './lib/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 export * from './lib/dot-workflow-event-handler/dot-workflow-event-handler.service';

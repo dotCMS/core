@@ -19,23 +19,23 @@ export type WebSocketStatus = 'connecting' | 'reconnecting' | 'connected' | 'clo
  */
 @Injectable({ providedIn: 'root' })
 export class DotEventsSocket {
-    private readonly socketURL = (() => {
+    readonly #socketURL = (() => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         return `${protocol}//${window.location.host}/api/ws/v1/system/events`;
     })();
 
-    private socket: WebSocket | null = null;
-    private status: WebSocketStatus = 'connecting';
-    private retryCount = 0;
-    private destroyed = false;
-    private reconnectTimer: Subscription | null = null;
+    #socket: WebSocket | null = null;
+    #status: WebSocketStatus = 'connecting';
+    #retryCount = 0;
+    #destroyed = false;
+    #reconnectTimer: Subscription | null = null;
 
-    private readonly _message = new Subject<DotEventMessage>();
-    private readonly _status = new BehaviorSubject<WebSocketStatus>('connecting');
+    readonly #message = new Subject<DotEventMessage>();
+    readonly #statusSubject = new BehaviorSubject<WebSocketStatus>('connecting');
 
-    private readonly MAX_RETRIES = 100_000;
-    private readonly INITIAL_RETRY_DELAY = 1_000;
-    private readonly MAX_RETRY_DELAY = 30_000;
+    readonly #MAX_RETRIES = 100_000;
+    readonly #INITIAL_RETRY_DELAY = 1_000;
+    readonly #MAX_RETRY_DELAY = 30_000;
 
     /**
      * Opens the WebSocket connection. Call once at app startup.
@@ -44,10 +44,10 @@ export class DotEventsSocket {
      */
     connect(): Observable<void> {
         return new Observable<void>((subscriber) => {
-            this.destroyed = false;
-            this.reconnectTimer?.unsubscribe();
-            this.reconnectTimer = null;
-            this.openSocket();
+            this.#destroyed = false;
+            this.#reconnectTimer?.unsubscribe();
+            this.#reconnectTimer = null;
+            this.#openSocket();
             subscriber.next();
             subscriber.complete();
         });
@@ -55,17 +55,17 @@ export class DotEventsSocket {
 
     /** Closes the connection permanently (e.g. on logout). */
     destroy(): void {
-        this.destroyed = true;
-        this.reconnectTimer?.unsubscribe();
-        this.reconnectTimer = null;
-        this.setStatus('closed');
-        this.socket?.close();
-        this.socket = null;
+        this.#destroyed = true;
+        this.#reconnectTimer?.unsubscribe();
+        this.#reconnectTimer = null;
+        this.#setStatus('closed');
+        this.#socket?.close();
+        this.#socket = null;
     }
 
     /** Emits the typed payload of a specific event type. */
     on<T>(eventType: string): Observable<T> {
-        return this._message.asObservable().pipe(
+        return this.#message.asObservable().pipe(
             filter((msg) => msg.event === eventType),
             map((msg) => msg.payload?.data as T)
         );
@@ -79,97 +79,97 @@ export class DotEventsSocket {
      * can pipe every message into the deprecated `DotcmsEventsService` bus.
      */
     messages(): Observable<DotEventMessage> {
-        return this._message.asObservable();
+        return this.#message.asObservable();
     }
 
     isConnected(): boolean {
-        return this.status === 'connected';
+        return this.#status === 'connected';
     }
 
     /** Emits only when the status actually changes. */
     status$(): Observable<WebSocketStatus> {
-        return this._status.asObservable().pipe(distinctUntilChanged());
+        return this.#statusSubject.asObservable().pipe(distinctUntilChanged());
     }
 
-    private openSocket(): void {
-        if (this.destroyed) {
+    #openSocket(): void {
+        if (this.#destroyed) {
             return;
         }
 
-        const state = this.socket?.readyState;
+        const state = this.#socket?.readyState;
         // Don't spawn a second socket if one is already live or still starting up.
         // CLOSING (2) will fire onclose → scheduleReconnect, so no action needed here.
         if (state === WebSocket.CONNECTING || state === WebSocket.OPEN) {
             return;
         }
 
-        this.setStatus(this.retryCount === 0 ? 'connecting' : 'reconnecting');
+        this.#setStatus(this.#retryCount === 0 ? 'connecting' : 'reconnecting');
 
         try {
-            this.socket = new WebSocket(this.socketURL);
+            this.#socket = new WebSocket(this.#socketURL);
         } catch {
-            this.scheduleReconnect();
+            this.#scheduleReconnect();
             return;
         }
 
-        this.socket.onopen = () => {
-            this.retryCount = 0;
-            this.setStatus('connected');
+        this.#socket.onopen = () => {
+            this.#retryCount = 0;
+            this.#setStatus('connected');
         };
 
-        this.socket.onmessage = (ev: MessageEvent) => {
+        this.#socket.onmessage = (ev: MessageEvent) => {
             try {
-                this._message.next(JSON.parse(ev.data) as DotEventMessage);
+                this.#message.next(JSON.parse(ev.data) as DotEventMessage);
             } catch {
                 // Ignore unparseable messages
             }
         };
 
-        this.socket.onclose = (ev: CloseEvent) => {
-            if (!this.destroyed) {
+        this.#socket.onclose = (ev: CloseEvent) => {
+            if (!this.#destroyed) {
                 // 1001 = "going away" (browser tab/window closing) — don't reconnect.
                 // All other codes (including 1000, normal closure) still reconnect
                 // since dotCMS may restart after a clean shutdown.
                 if (ev.code !== 1001) {
-                    this.scheduleReconnect();
+                    this.#scheduleReconnect();
                 }
             }
         };
 
-        this.socket.onerror = () => {
+        this.#socket.onerror = () => {
             // onerror is always followed by onclose, so let onclose drive reconnection
         };
     }
 
-    private scheduleReconnect(): void {
-        if (this.retryCount >= this.MAX_RETRIES || this.destroyed) {
-            this.setStatus('closed');
+    #scheduleReconnect(): void {
+        if (this.#retryCount >= this.#MAX_RETRIES || this.#destroyed) {
+            this.#setStatus('closed');
             return;
         }
 
-        this.retryCount++;
-        this.setStatus('reconnecting');
+        this.#retryCount++;
+        this.#setStatus('reconnecting');
 
-        this.reconnectTimer?.unsubscribe();
-        this.reconnectTimer = timer(this.calculateDelay()).subscribe(() => {
-            this.reconnectTimer = null;
-            if (!this.destroyed) {
-                this.openSocket();
+        this.#reconnectTimer?.unsubscribe();
+        this.#reconnectTimer = timer(this.#calculateDelay()).subscribe(() => {
+            this.#reconnectTimer = null;
+            if (!this.#destroyed) {
+                this.#openSocket();
             }
         });
     }
 
-    private calculateDelay(): number {
+    #calculateDelay(): number {
         const exponential = Math.min(
-            this.INITIAL_RETRY_DELAY * Math.pow(2, Math.min(this.retryCount, 10)),
-            this.MAX_RETRY_DELAY
+            this.#INITIAL_RETRY_DELAY * Math.pow(2, Math.min(this.#retryCount, 10)),
+            this.#MAX_RETRY_DELAY
         );
 
         return exponential + Math.random() * 1_000;
     }
 
-    private setStatus(status: WebSocketStatus): void {
-        this.status = status;
-        this._status.next(status);
+    #setStatus(status: WebSocketStatus): void {
+        this.#status = status;
+        this.#statusSubject.next(status);
     }
 }

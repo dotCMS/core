@@ -11,15 +11,15 @@ import { DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotRouterService, mockSites } from '@dotcms/utils-testing';
 
-import { DotSiteNavigationEffect } from './dot-site-navigation.effect';
+import { DotAppLifecycleEffect } from './dot-app-lifecycle.effect';
 
-describe('DotSiteNavigationEffect', () => {
-    let spectator: SpectatorService<DotSiteNavigationEffect>;
+describe('DotAppLifecycleEffect', () => {
+    let spectator: SpectatorService<DotAppLifecycleEffect>;
     let dotRouterService: SpyObject<DotRouterService>;
     let switchSiteSubject: Subject<DotSite>;
 
     const createService = createServiceFactory({
-        service: DotSiteNavigationEffect,
+        service: DotAppLifecycleEffect,
         providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
     });
 

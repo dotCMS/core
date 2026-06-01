@@ -6,7 +6,12 @@ import { inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotEventsSocket, WebSocketStatus } from '@dotcms/data-access';
+import {
+    DotEventsSocket,
+    DotSystemEventType,
+    SITE_REFRESH_EVENTS,
+    WebSocketStatus
+} from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotSite } from '@dotcms/dotcms-models';
 
@@ -67,29 +72,22 @@ export function withWebSocket() {
                  * Use this instead of the deprecated DotcmsEventsService.
                  */
                 portletLayoutUpdated$: (): Observable<void> =>
-                    eventsSocket.on<void>('UPDATE_PORTLET_LAYOUTS'),
+                    eventsSocket.on<void>(DotSystemEventType.UPDATE_PORTLET_LAYOUTS),
 
                 /**
                  * Observable that emits whenever a site is created, published,
                  * archived, unarchived, or updated. Use this to refresh site lists.
                  */
                 siteEvents$: (): Observable<void> =>
-                    merge(
-                        eventsSocket.on<void>('SAVE_SITE'),
-                        eventsSocket.on<void>('PUBLISH_SITE'),
-                        eventsSocket.on<void>('UN_PUBLISH_SITE'),
-                        eventsSocket.on<void>('UPDATE_SITE'),
-                        eventsSocket.on<void>('ARCHIVE_SITE'),
-                        eventsSocket.on<void>('UN_ARCHIVE_SITE'),
-                        eventsSocket.on<void>('DELETE_SITE')
-                    ),
+                    merge(...SITE_REFRESH_EVENTS.map((event) => eventsSocket.on<void>(event))),
 
                 /**
                  * Observable that emits the new site when another user/tab switches
                  * the current site (SWITCH_SITE event). The payload contains the full
                  * DotSite object — no extra HTTP call needed.
                  */
-                switchSiteEvent$: (): Observable<DotSite> => eventsSocket.on<DotSite>('SWITCH_SITE')
+                switchSiteEvent$: (): Observable<DotSite> =>
+                    eventsSocket.on<DotSite>(DotSystemEventType.SWITCH_SITE)
             })
         ),
         withHooks({

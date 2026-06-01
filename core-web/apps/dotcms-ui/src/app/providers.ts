@@ -52,10 +52,10 @@ import {
 import { GlobalStore } from '@dotcms/store';
 
 import { DotAccountService } from './api/services/dot-account-service';
+import { DotAppLifecycleEffect } from './api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
 import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { DotParseHtmlService } from './api/services/dot-parse-html/dot-parse-html.service';
-import { DotSiteNavigationEffect } from './api/services/dot-site-navigation/dot-site-navigation.effect';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -140,8 +140,8 @@ const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     },
     GlobalStore,
     DotSystemConfigService,
-    DotSiteNavigationEffect,
-    provideAppInitializer(() => void inject(DotSiteNavigationEffect))
+    DotAppLifecycleEffect,
+    provideAppInitializer(() => void inject(DotAppLifecycleEffect))
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

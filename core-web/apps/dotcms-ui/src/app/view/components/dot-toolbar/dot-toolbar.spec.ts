@@ -26,8 +26,8 @@ import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notif
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
+import { DotAppLifecycleEffect } from '../../../api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
 import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotSiteNavigationEffect } from '../../../api/services/dot-site-navigation/dot-site-navigation.effect';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
@@ -90,7 +90,7 @@ describe('DotToolbarComponent', () => {
                 switchCurrentSite: jest.fn(),
                 switchSiteEvent$: jest.fn().mockReturnValue(new Subject())
             }),
-            mockProvider(DotSiteNavigationEffect),
+            mockProvider(DotAppLifecycleEffect),
             mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             {
@@ -163,7 +163,7 @@ describe('DotToolbarComponent', () => {
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
         });
 
-        it(`should call switchCurrentSite when on edit page (navigation handled by DotSiteNavigationEffect)`, () => {
+        it(`should call switchCurrentSite when on edit page (navigation handled by DotAppLifecycleEffect)`, () => {
             jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
             spectator.detectChanges();
             spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);

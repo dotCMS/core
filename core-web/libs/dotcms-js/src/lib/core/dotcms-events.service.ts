@@ -16,12 +16,12 @@ import { DotEventTypeWrapper } from './models';
 @Injectable({ providedIn: 'root' })
 export class DotcmsEventsService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private subjects: Record<string, Subject<any>> = {};
+    #subjects: Record<string, Subject<any>> = {};
 
     /** Called by withWebSocket() on each incoming message to fan out to subscribers. */
     feedMessage(event: string, data: unknown): void {
-        if (this.subjects[event]) {
-            this.subjects[event].next(data);
+        if (this.#subjects[event]) {
+            this.#subjects[event].next(data);
         }
     }
 
@@ -32,11 +32,11 @@ export class DotcmsEventsService {
     destroy(): void {}
 
     subscribeTo<T>(clientEventType: string): Observable<T> {
-        if (!this.subjects[clientEventType]) {
-            this.subjects[clientEventType] = new Subject<T>();
+        if (!this.#subjects[clientEventType]) {
+            this.#subjects[clientEventType] = new Subject<T>();
         }
 
-        return this.subjects[clientEventType].asObservable();
+        return this.#subjects[clientEventType].asObservable();
     }
 
     subscribeToEvents<T>(clientEventTypes: string[]): Observable<DotEventTypeWrapper<T>> {

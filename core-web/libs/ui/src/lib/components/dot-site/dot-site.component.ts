@@ -27,7 +27,13 @@ import { Select, SelectLazyLoadEvent, SelectModule } from 'primeng/select';
 
 import { debounceTime, map, tap } from 'rxjs/operators';
 
-import { DotEventsSocket, DotSiteService } from '@dotcms/data-access';
+import {
+    DotEventsSocket,
+    DotSiteService,
+    DotSystemEventType,
+    SITE_REFRESH_EVENTS,
+    SITE_UNAVAILABLE_EVENTS
+} from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
@@ -66,9 +72,6 @@ interface DotSiteState {
      */
     filterValue: string;
 }
-
-/** Events that mean the site is no longer accessible — switch to default when selected. */
-const SITE_UNAVAILABLE_EVENTS = new Set(['ARCHIVE_SITE', 'UN_PUBLISH_SITE', 'DELETE_SITE']);
 
 @Component({
     selector: 'dot-site',
@@ -302,22 +305,14 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
 
-        const tagEvent = (event: string) =>
+        const tagEvent = (event: DotSystemEventType) =>
             this.eventsSocket
                 .on<{ identifier: string }>(event)
                 .pipe(map((data) => ({ ...data, event })));
 
         // Each event immediately refreshes the selected site; list reload is debounced
         // to coalesce rapid bursts into a single resetFilter() call.
-        this.siteEventsSub = merge(
-            tagEvent('SAVE_SITE'),
-            tagEvent('PUBLISH_SITE'),
-            tagEvent('UPDATE_SITE'),
-            tagEvent('ARCHIVE_SITE'),
-            tagEvent('UN_ARCHIVE_SITE'),
-            tagEvent('UN_PUBLISH_SITE'),
-            tagEvent('DELETE_SITE')
-        )
+        this.siteEventsSub = merge(...SITE_REFRESH_EVENTS.map(tagEvent))
             .pipe(
                 tap((siteData) => this.refreshSelectedSite(siteData)),
                 debounceTime(300)
@@ -696,14 +691,14 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      * @param siteData The payload from the site WebSocket event
      */
     private refreshSelectedSite(
-        siteData: { identifier: string; event?: string } | undefined
+        siteData: { identifier: string; event?: DotSystemEventType } | undefined
     ): void {
         const pinned = this.$state.pinnedOption();
         if (!pinned || siteData?.identifier !== pinned.identifier) {
             return;
         }
 
-        if (SITE_UNAVAILABLE_EVENTS.has(siteData.event ?? '')) {
+        if (siteData.event && SITE_UNAVAILABLE_EVENTS.has(siteData.event)) {
             this.siteService.switchSite(null).subscribe({
                 next: (defaultSite) => this.onSiteChange(defaultSite),
                 // Fall back to clearing the selection via the CVA path so the
