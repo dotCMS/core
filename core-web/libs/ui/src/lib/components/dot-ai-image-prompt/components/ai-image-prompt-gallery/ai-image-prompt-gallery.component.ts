@@ -14,7 +14,7 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DEFAULT_IMAGE_SIZE, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 
 import {
     DotEmptyContainerComponent,
@@ -55,7 +55,7 @@ export class AiImagePromptGalleryComponent implements OnChanges {
      * The image size string (e.g. "1024x1024"). Used to set the placeholder CSS class.
      */
     @Input()
-    size = '1024x1024';
+    size = DEFAULT_IMAGE_SIZE;
 
     /**
      * An event that is emitted when the active image index changes.

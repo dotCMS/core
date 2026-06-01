@@ -521,6 +521,9 @@ const loadPrompt = (num) =>{
 }
 
 const doImageJson = () => {
+    if (!document.getElementById("imageForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitImage").style.display = "none";
     document.getElementById("loaderImage").style.display = "block";
     setTimeout(function () {

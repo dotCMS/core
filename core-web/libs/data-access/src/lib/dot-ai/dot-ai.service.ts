@@ -10,7 +10,8 @@ import {
     AiPluginResponse,
     DotAIImageContent,
     DotAIImageResponse,
-    DotAiProviderConfig
+    DotAiProviderConfig,
+    DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
 
 export { DotAiProviderConfig };
@@ -79,7 +80,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size = '1024x1024'
+        size = DEFAULT_IMAGE_SIZE
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(

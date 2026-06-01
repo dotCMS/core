@@ -28,7 +28,7 @@ import { Textarea } from 'primeng/textarea';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { AIImagePrompt, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
+import { AIImagePrompt, DEFAULT_IMAGE_SIZE, DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 
 import { DotCopyButtonComponent } from './../../../../components/dot-copy-button/dot-copy-button.component';
 import { DotFieldRequiredDirective } from './../../../../dot-field-required/dot-field-required.directive';
@@ -110,7 +110,7 @@ export class AiImagePromptFormComponent implements OnChanges {
         this.form = new FormGroup({
             text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
             type: new FormControl(PromptType.INPUT, Validators.required),
-            size: new FormControl('1024x1024', [
+            size: new FormControl(DEFAULT_IMAGE_SIZE, [
                 Validators.required,
                 Validators.pattern(/^[1-9]\d{1,3}x[1-9]\d{1,3}$/)
             ])

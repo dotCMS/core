@@ -10,6 +10,7 @@ import { DotAiService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     AIImagePrompt,
+    DEFAULT_IMAGE_SIZE,
     DotAIImageContent,
     DotGeneratedAIImage,
     PromptType
@@ -47,7 +48,7 @@ const initialState: DotAiImagePromptComponentState = {
     formValue: {
         text: '',
         type: DEFAULT_INPUT_PROMPT,
-        size: '1024x1024'
+        size: DEFAULT_IMAGE_SIZE
     }
 };
 

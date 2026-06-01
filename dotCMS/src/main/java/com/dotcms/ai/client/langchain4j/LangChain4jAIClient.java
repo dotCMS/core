@@ -74,15 +74,19 @@ public class LangChain4jAIClient implements AIClient {
     private static final long STREAMING_TIMEOUT_SECONDS = 300;
 
     private final Cache<String, ChatModel> chatModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
     private final Cache<String, StreamingChatModel> streamingChatModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
     private final Cache<String, EmbeddingModel> embeddingModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
     private final Cache<String, ImageModel> imageModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
 
