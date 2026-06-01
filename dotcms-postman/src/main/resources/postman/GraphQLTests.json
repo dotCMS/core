@@ -357,7 +357,7 @@
 										},
 										{
 											"key": "json",
-											"value": "{\n\t \"contentlet\": {\n\t\t\"contentType\":\"DotAsset\",\n\t\t\"title\":\"myDotAsset\",\n\t\t\"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n\t}\n}\n",
+											"value": "{\n\t \"contentlet\": {\n\t\t\"contentType\":\"DotAsset\",\n\t\t\"title\":\"myDotAsset\",\n\t\t\"hostFolder\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n\t\t\"languageId\": 1\n\t}\n}\n",
 											"contentType": "application/json",
 											"type": "text"
 										}
@@ -14854,8 +14854,7 @@
 					"            }",
 					"        });",
 					"    }",
-					"}",
-					""
+					"}"
 				]
 			}
 		},

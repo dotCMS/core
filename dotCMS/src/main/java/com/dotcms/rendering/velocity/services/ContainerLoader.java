@@ -1,10 +1,14 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -12,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -224,7 +229,7 @@ public class ContainerLoader implements DotLoader {
             }
 
 
-            if (mode == PageMode.EDIT_MODE) {
+            if (mode == PageMode.EDIT_MODE ) {
                 final StringWriter editWrapperDiv = new StringWriter();
 
                 editWrapperDiv.append("<div")
@@ -326,8 +331,12 @@ public class ContainerLoader implements DotLoader {
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                if (mode == PageMode.EDIT_MODE) {
+                final boolean trackingWrapperEnabled =
+                        mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled());
+
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("<div")
+                        .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
                         .append(" data-dot-on-number-of-pages=")
@@ -397,7 +406,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-                if (mode == PageMode.EDIT_MODE) {
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("</div>");
                 }
 
@@ -434,8 +443,16 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, containerCode);
     }
 
+    private boolean isAnalyticsTrackingEnabled() {
+        try {
 
-
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost();
+            return UtilMethods.isSet(host) && ContentAnalyticsUtil.isContentTrackingEnabled(host);
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Could not check Content Analytics app for current host: " + e.getMessage());
+            return false;
+        }
+    }
 
 
 

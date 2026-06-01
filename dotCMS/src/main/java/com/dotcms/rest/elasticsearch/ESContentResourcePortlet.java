@@ -259,6 +259,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
 
+			// FIXME(OS-cutover): esSearchRaw returns ES JSON wire format via SearchResponse.toString().
+			// Migrate to searchRaw() + Jackson serialization when Phase 3 OS cutover makes ES unavailable.
 			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
 
 		} catch (Exception e) {

@@ -218,29 +218,15 @@
                     <p-tablist>
                         <p-tab value="results" data-testid="es-search-tab-results">
                             {{ 'esSearch.results.tab' | dm }}
-                            @if (store.returnedCount() > 0) {
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ store.returnedCount() }}
-                                </span>
-                            }
                         </p-tab>
                         @if (store.hasAggregations()) {
                             <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
                                 {{ 'esSearch.results.aggregations' | dm }}
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ $parsedAggregations().length }}
-                                </span>
                             </p-tab>
                         }
                         @if (store.hasSuggestions()) {
                             <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
                                 {{ 'esSearch.results.suggestions' | dm }}
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ $parsedSuggestions().length }}
-                                </span>
                             </p-tab>
                         }
                         <p-tab value="raw" data-testid="es-search-tab-raw">
@@ -319,6 +305,9 @@
                                                             'esSearch.table.copyIdentifier' | dm
                                                         "
                                                         tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'esSearch.table.copyIdentifier' | dm
+                                                        "
                                                         (onClick)="
                                                             copyToClipboard(
                                                                 contentlet['identifier']
@@ -525,7 +514,7 @@
                                 size="small"
                                 icon="pi pi-copy"
                                 [label]="'esSearch.help.copy' | dm"
-                                (onClick)="copyQuery(example.query)"
+                                (onClick)="copyToClipboard(example.query)"
                                 data-testid="es-search-help-copy-btn" />
                             <p-button
                                 text

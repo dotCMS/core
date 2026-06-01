@@ -1,6 +1,11 @@
 import { TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
 
-import { getValidTimeRangeUrl, hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
+import {
+    distributePercentages,
+    getValidTimeRangeUrl,
+    hexToRgba,
+    isValidCustomDateRange
+} from './dot-analytics.utils';
 
 describe('Analytics Utils', () => {
     // ============================================================================
@@ -55,6 +60,45 @@ describe('Analytics Utils', () => {
         it('should return null for unknown or empty values', () => {
             expect(getValidTimeRangeUrl('invalid-range')).toBeNull();
             expect(getValidTimeRangeUrl('')).toBeNull();
+        });
+    });
+
+    // ============================================================================
+    // PERCENTAGE DISTRIBUTION
+    // ============================================================================
+
+    describe('distributePercentages', () => {
+        it('should distribute percentages that sum to exactly 100', () => {
+            const result = distributePercentages([17, 9, 8, 6]);
+
+            expect(result).toEqual([43, 22, 20, 15]);
+            expect(result.reduce((sum, v) => sum + v, 0)).toBe(100);
+        });
+
+        it('should handle equal values', () => {
+            const result = distributePercentages([1, 1, 1]);
+
+            expect(result).toEqual([34, 33, 33]);
+            expect(result.reduce((sum, v) => sum + v, 0)).toBe(100);
+        });
+
+        it('should return zeros when total is zero', () => {
+            expect(distributePercentages([0, 0, 0])).toEqual([0, 0, 0]);
+        });
+
+        it('should return 100 for a single item', () => {
+            expect(distributePercentages([100])).toEqual([100]);
+        });
+
+        it('should handle two equal halves', () => {
+            const result = distributePercentages([50, 50]);
+
+            expect(result).toEqual([50, 50]);
+            expect(result.reduce((sum, v) => sum + v, 0)).toBe(100);
+        });
+
+        it('should return empty array for empty input', () => {
+            expect(distributePercentages([])).toEqual([]);
         });
     });
 

@@ -5,6 +5,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { take } from 'rxjs/operators';
+
 import {
     DotCurrentUserService,
     DotEventsService,
@@ -102,6 +104,23 @@ describe('DotToolbarUserStore', () => {
                 });
                 expect(showLoginAs).toBe(false);
                 expect(showMyAccount).toBe(false);
+            });
+    });
+
+    it('should include report an issue action in the menu', () => {
+        store.init();
+
+        store
+            .select((s) => s)
+            .pipe(take(1))
+            .subscribe((state) => {
+                const reportIssueItem = state.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                );
+
+                expect(reportIssueItem).toBeTruthy();
+                expect(reportIssueItem?.label).toBe('report-an-issue');
+                expect(reportIssueItem?.icon).toBe('pi pi-wrench');
             });
     });
 

@@ -164,7 +164,7 @@ describe('Dot UVE Palette Utils', () => {
             const result = buildPaletteMenuItems(mockCallbacks);
             const sortItems = result[0].items;
 
-            expect(sortItems[0].isActive).toBe(false); // popular (usage ASC) not active
+            expect(sortItems[0].isActive).toBe(false); // popular (usage DESC) not active
             expect(sortItems[1].isActive).toBe(true); // name ASC is active
             expect(sortItems[2].isActive).toBe(false); // name DESC not active
         });
@@ -198,7 +198,23 @@ describe('Dot UVE Palette Utils', () => {
 
             sortItems[0].command({} as unknown as MenuItemCommandEvent);
 
-            expect(onSortSelect).toHaveBeenCalledWith({ orderby: 'usage', direction: 'ASC' });
+            expect(onSortSelect).toHaveBeenCalledWith({ orderby: 'usage', direction: 'DESC' });
+        });
+
+        it('should mark popular option as active when currentSort is usage DESC', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'usage' as const, direction: 'DESC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems[0].isActive).toBe(true); // popular (usage DESC) is active
+            expect(sortItems[1].isActive).toBe(false); // name ASC not active
+            expect(sortItems[2].isActive).toBe(false); // name DESC not active
         });
 
         it('should call onViewSelect when view command is executed', () => {
@@ -576,7 +592,9 @@ describe('Dot UVE Palette Utils', () => {
                 offset: '0',
                 itemsPerPage: 30,
                 lang: '1',
-                filter: 'news'
+                filter: 'news',
+                sortField: 'modDate',
+                sortOrder: 'DESC'
             });
         });
 
@@ -662,6 +680,21 @@ describe('Dot UVE Palette Utils', () => {
             const result = buildESContentParams(searchParams);
 
             expect(result.itemsPerPage).toBe(30);
+        });
+
+        it('should always sort by modDate DESC', () => {
+            const searchParams = {
+                selectedContentType: 'Banner',
+                variantId: '',
+                language: 1,
+                page: 1,
+                filter: ''
+            };
+
+            const result = buildESContentParams(searchParams);
+
+            expect(result.sortField).toBe('modDate');
+            expect(result.sortOrder).toBe('DESC');
         });
 
         it('should handle complex filter strings', () => {

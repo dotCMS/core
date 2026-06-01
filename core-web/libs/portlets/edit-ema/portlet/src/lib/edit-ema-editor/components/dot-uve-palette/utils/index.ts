@@ -112,9 +112,9 @@ export function buildPaletteMenuItems({
             items: [
                 {
                     label: 'uve.palette.menu.sort.option.popular',
-                    command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                    command: () => onSortSelect({ orderby: 'usage', direction: 'DESC' }),
                     isActive: getSortActiveClass(
-                        { orderby: 'usage', direction: 'ASC' },
+                        { orderby: 'usage', direction: 'DESC' },
                         currentSort
                     )
                 },
@@ -374,6 +374,8 @@ export function buildESContentParams(searchParams: {
     itemsPerPage: number;
     lang: string;
     filter: string;
+    sortField: string;
+    sortOrder: string;
 } {
     const offset = (searchParams.page - 1) * DEFAULT_PER_PAGE;
     const query = buildContentletsQuery(searchParams.selectedContentType, searchParams.variantId);
@@ -383,7 +385,9 @@ export function buildESContentParams(searchParams: {
         offset: String(offset),
         itemsPerPage: DEFAULT_PER_PAGE,
         lang: String(searchParams.language),
-        filter: searchParams.filter
+        filter: searchParams.filter,
+        sortField: 'modDate',
+        sortOrder: 'DESC'
     };
 }
 

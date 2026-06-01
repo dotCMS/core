@@ -4,11 +4,17 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cost.RequestPrices.Price;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 import java.lang.reflect.Method;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +49,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private double requestCostDenominator = 1.0d;
 
     private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
+    private final RequestCostPublisher publisher = CDIUtils.getBeanThrows(RequestCostPublisher.class);
 
     public RequestCostApiImpl() {
         enableForTests = Optional.empty();
@@ -56,7 +63,10 @@ public class RequestCostApiImpl implements RequestCostApi {
     @PostConstruct
     public void init() {
         this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
-        this.requestCostDenominator = Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 1.0f);
+        // Clamp to >= 1.0 so a misconfigured 0 doesn't produce Infinity/NaN in the snapshot —
+        // those serialize as JSON-invalid literals and break strict parsers on the collector side.
+        this.requestCostDenominator = Math.max(1.0d,
+                Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 1.0f));
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
@@ -71,42 +81,70 @@ public class RequestCostApiImpl implements RequestCostApi {
     }
 
     private volatile boolean skipZeroRequests = false;
+
+    private static String nullSafe(final String value) {
+        return UtilMethods.isSet(value) ? value : "unknown";
+    }
+
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
                 return;
             }
 
-            long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
-            double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
-            double costPerRequestForDuration = totalRequestsForDuration == 0
+            // The four counter reads below are not atomic relative to each other. Increments
+            // landing between them are counted in the next window's snapshot but already in
+            // the lifetime totals — Σ(window) can briefly trail lifetime by a few requests.
+            // Intentional: observational telemetry, atomic snapshot would need a lock.
+            final long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
+            final double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
+            final double costPerRequestForDuration = totalRequestsForDuration == 0
                     ? 0
                     : totalCostForDuration / totalRequestsForDuration;
 
-            if (totalRequestsForDuration == 0 && skipZeroRequests) {
-                return;
-            }
-            skipZeroRequests = totalRequestsForDuration == 0;
-
-            long totalRequestsTotal = requestCountTotal.longValue();
-            double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
-            double costPerRequestTotal = totalRequestsTotal == 0
+            final long totalRequestsTotal = requestCountTotal.longValue();
+            final double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
+            final double costPerRequestTotal = totalRequestsTotal == 0
                     ? 0
                     : totalCostTotal / totalRequestsTotal;
 
+            // The log line is throttled on consecutive idle windows so dev consoles stay quiet.
+            // The publisher is NOT throttled — telemetry must emit a point every tick so an idle
+            // cluster and a downed cluster are distinguishable on the receiving side.
+            final boolean idleWindow = totalRequestsForDuration == 0;
+            final boolean suppressLog = idleWindow && skipZeroRequests;
+            skipZeroRequests = idleWindow;
 
-            Logger.info("REQUEST COST MONITOR >",
-                    String.format(
-                            "Last %ds: Reqs: %d, Cost: %.2f, Avg Cost: %.2f | Totals: Reqs: %d, Cost: %.2f, Avg Cost: %.2f",
-                            requestCostTimeWindowSeconds,
-                            totalRequestsForDuration,
-                            totalCostForDuration,
-                            costPerRequestForDuration,
-                            totalRequestsTotal,
-                            totalCostTotal,
-                            costPerRequestTotal));
+            if (!suppressLog) {
+                Logger.info("REQUEST TOKEN MONITOR >",
+                        String.format(
+                                "Last %ds: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f | Totals: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f",
+                                requestCostTimeWindowSeconds,
+                                totalRequestsForDuration,
+                                totalCostForDuration,
+                                costPerRequestForDuration,
+                                totalRequestsTotal,
+                                totalCostTotal,
+                                costPerRequestTotal));
+            }
+
+            if (publisher.isEnabled()) {
+                publisher.publish(new RequestCostSnapshot(
+                        // Try.getOrElse only fires on throw — also coalesce null returns since
+                        // these lookups can transiently return null during early startup.
+                        nullSafe(Try.of(ClusterFactory::getClusterId).getOrNull()),
+                        nullSafe(Try.of(ConfigUtils::getServerId).getOrNull()),
+                        Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
+                        requestCostTimeWindowSeconds,
+                        totalRequestsForDuration,
+                        totalCostForDuration,
+                        costPerRequestForDuration,
+                        totalRequestsTotal,
+                        totalCostTotal,
+                        costPerRequestTotal));
+            }
         } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Error logging request cost:" + e.getMessage(), e);
+            Logger.warnAndDebug(this.getClass(), "Error logging request tokens:" + e.getMessage(), e);
         }
     }
 
