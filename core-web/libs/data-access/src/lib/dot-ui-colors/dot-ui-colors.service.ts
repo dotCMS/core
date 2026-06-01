@@ -57,7 +57,7 @@ export const DEFAULT_COLORS = {
  */
 @Injectable()
 export class DotUiColorsService {
-    private currentColors: DotUiColors = DEFAULT_COLORS;
+    #currentColors: DotUiColors = DEFAULT_COLORS;
 
     /**
      * Sets colors and updates both consumers from one generated palette.
@@ -67,20 +67,20 @@ export class DotUiColorsService {
      * @param colors - Optional; falls back to the current colors when omitted.
      */
     setColors(el: HTMLElement, colors?: DotUiColors): void {
-        this.currentColors = colors || this.currentColors;
+        this.#currentColors = colors || this.#currentColors;
 
-        this.updatePrimeNGColors(this.currentColors.primary);
+        this.#updatePrimeNGColors(this.#currentColors.primary);
 
-        this.setColor(el, this.currentColors.primary, 'primary');
-        this.setColor(el, this.currentColors.secondary, 'secondary');
-        this.setColorBackground(el, this.currentColors.background);
+        this.#setColor(el, this.#currentColors.primary, 'primary');
+        this.#setColor(el, this.#currentColors.secondary, 'secondary');
+        this.#setColorBackground(el, this.#currentColors.background);
     }
 
     /**
      * Gets current colors synchronously.
      */
     getColors(): DotUiColors {
-        return this.currentColors;
+        return this.#currentColors;
     }
 
     /**
@@ -97,7 +97,7 @@ export class DotUiColorsService {
      *
      * @private
      */
-    private updatePrimeNGColors(primary: string): void {
+    #updatePrimeNGColors(primary: string): void {
         try {
             updatePrimaryPalette(generatePalette(primary));
         } catch (error) {
@@ -112,7 +112,7 @@ export class DotUiColorsService {
      *
      * @private
      */
-    private setColor(el: HTMLElement, hex: string, type: ColorType): void {
+    #setColor(el: HTMLElement, hex: string, type: ColorType): void {
         const color = new TinyColor(hex);
 
         if (!color.isValid) {
@@ -126,8 +126,8 @@ export class DotUiColorsService {
         el.style.setProperty(`--color-${type}-h`, `${Math.round(h)}deg`);
         el.style.setProperty(`--color-${type}-s`, `${Math.round(s * 100)}%`);
 
-        this.setShades(el, generated, type);
-        this.setOpacities(el, Math.round(l * 100), type);
+        this.#setShades(el, generated, type);
+        this.#setOpacities(el, Math.round(l * 100), type);
     }
 
     /**
@@ -135,7 +135,7 @@ export class DotUiColorsService {
      *
      * @private
      */
-    private setShades(el: HTMLElement, generated: PrimeNgPalette, type: ColorType): void {
+    #setShades(el: HTMLElement, generated: PrimeNgPalette, type: ColorType): void {
         Object.entries(PALETTE_TO_LEGACY_SHADE).forEach(([legacyShade, paletteStep]) => {
             el.style.setProperty(`--color-palette-${type}-${legacyShade}`, generated[paletteStep]);
         });
@@ -147,7 +147,7 @@ export class DotUiColorsService {
      *
      * @private
      */
-    private setOpacities(el: HTMLElement, lightness: number, type: ColorType): void {
+    #setOpacities(el: HTMLElement, lightness: number, type: ColorType): void {
         for (let i = 1; i < 10; i++) {
             el.style.setProperty(
                 `--color-palette-${type}-op-${i}0`,
@@ -161,7 +161,7 @@ export class DotUiColorsService {
      *
      * @private
      */
-    private setColorBackground(el: HTMLElement, color: string): void {
+    #setColorBackground(el: HTMLElement, color: string): void {
         const background = new TinyColor(color);
 
         if (background.isValid) {
