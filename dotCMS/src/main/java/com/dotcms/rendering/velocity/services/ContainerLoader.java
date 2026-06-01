@@ -403,7 +403,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-                if (mode == PageMode.EDIT_MODE) {
+                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled())) {
                     velocityCodeBuilder.append("</div>");
                 }
 
