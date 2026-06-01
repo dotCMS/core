@@ -279,7 +279,15 @@ export class DotEditContentFormComponent implements OnInit {
         });
 
         /**
-         * Effect that enables or disables the form based on the loading state and historical view.
+         * Effect that enables or disables the form based on the loading state.
+         *
+         * Reads `contentlet()` only as an existence guard, so the effect also re-runs on
+         * contentlet changes (e.g. a lock/unlock that replaces the contentlet reference
+         * without changing any field). To avoid that churn we make the enable/disable
+         * idempotent: only toggle when the form's current state actually differs from the
+         * desired one, and suppress events. Otherwise a redundant `form.enable()` would make
+         * async field CVAs (e.g. the date field) re-emit their value and wrongly mark the
+         * form dirty, triggering the unsaved-changes guard on a plain lock toggle (#35754).
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
@@ -290,10 +298,10 @@ export class DotEditContentFormComponent implements OnInit {
             if (this.form && contentlet) {
                 // TODO: put back isViewingHistoricalVersion in the
                 // condition after all fields have disabled state
-                if (isLoading) {
-                    this.form.disable();
-                } else {
-                    this.form.enable();
+                if (isLoading && this.form.enabled) {
+                    this.form.disable({ emitEvent: false });
+                } else if (!isLoading && this.form.disabled) {
+                    this.form.enable({ emitEvent: false });
                 }
             }
         });

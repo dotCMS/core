@@ -941,6 +941,68 @@ describe('DotFormComponent', () => {
 
                 flush();
             }));
+
+            it('should not re-enable the form when toggling lock so field CVAs do not re-emit (#35754, AC2)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(500);
+                spectator.detectChanges();
+
+                expect(component.form.enabled).toBe(true);
+                expect(component.form.pristine).toBe(true);
+
+                const enableSpy = jest.spyOn(component.form, 'enable');
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                spectator.detectChanges();
+
+                expect(dotContentletService.lockContent).toHaveBeenCalled();
+
+                // The lock patch replaces the contentlet reference, so the enable/disable
+                // effect re-runs — but the form is already enabled, so the idempotent guard
+                // must skip enable(). A redundant enable() would make async field CVAs (e.g.
+                // the date field) re-emit and wrongly dirty the form.
+                expect(enableSpy).not.toHaveBeenCalled();
+                expect(component.form.dirty).toBe(false);
+                expect(component.form.pristine).toBe(true);
+
+                flush();
+            }));
+
+            it('should preserve a real unsaved edit when toggling lock (#35754, AC6 regression)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(500);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                // Real user edit before locking.
+                const control = component.form.get('disabledWYSIWYG');
+                control?.setValue(['user-edit']);
+                control?.markAsDirty();
+                expect(component.form.dirty).toBe(true);
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                spectator.detectChanges();
+
+                // Locking must not clobber the user's real unsaved changes.
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
         });
     });
 
