@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
-import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 /**
  * Component that displays error states for analytics when the service is not properly configured.
@@ -18,7 +17,6 @@ export default class DotAnalyticsErrorComponent {
     private readonly route = inject(ActivatedRoute);
     private readonly router = inject(Router);
     private readonly dotMessageService = inject(DotMessageService);
-    private readonly analyticsService = inject(DotAnalyticsService);
 
     /**
      * Computed configuration for the empty state component based on route parameters
@@ -32,10 +30,9 @@ export default class DotAnalyticsErrorComponent {
     });
 
     /**
-     * Clears the health check cache and navigates back to analytics dashboard.
+     * Navigates back to the analytics dashboard; the route guard runs healthCheck again.
      */
     onRetry(): void {
-        this.analyticsService.clearHealthCache();
         this.router.navigate(['/analytics']);
     }
 
@@ -62,6 +59,11 @@ export default class DotAnalyticsErrorComponent {
 
         const enterpriseConfigs: Partial<Record<HealthStatusTypes, PrincipalConfiguration>> = {
             [HealthStatusTypes.NOT_AVAILABLE]: defaultConfig,
+            [HealthStatusTypes.ERROR]: {
+                title: this.dotMessageService.get('analytics.error.network.error'),
+                subtitle: this.dotMessageService.get('analytics.error.network.error.subtitle'),
+                icon: 'pi-times-circle'
+            },
             [HealthStatusTypes.NOT_CONFIGURED]: {
                 title: this.dotMessageService.get('analytics.search.no.configured'),
                 subtitle: this.dotMessageService.get('analytics.search.no.configured.subtitle'),

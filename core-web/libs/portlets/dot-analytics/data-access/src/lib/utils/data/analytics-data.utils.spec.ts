@@ -13,9 +13,12 @@ import {
     fillMissingDates,
     getDateRange,
     getPreviousPeriod,
-    transformDeviceBrowsersData,
+    transformBrowserBreakdownToPieChartEntries,
+    transformDeviceBreakdownToPieChartEntries,
     transformPageViewTimeLineData,
-    transformTopPagesTableData
+    transformTopPagesTableData,
+    transformConversionTrendData,
+    transformTrafficVsConversionsData
 } from './analytics-data.utils';
 
 import { AnalyticsChartColors } from '../../constants';
@@ -25,7 +28,8 @@ import { Granularity } from '../../types';
 import type { ConversionTrendEntity } from './analytics-data.utils';
 // eslint-disable-next-line no-duplicate-imports
 import type {
-    PageViewDeviceBrowsersEntity,
+    BrowserBreakdownData,
+    DeviceBreakdownData,
     TablePageData,
     TopContentData,
     TopPagePerformanceEntity,
@@ -385,81 +389,195 @@ describe('Analytics Data Utils', () => {
             });
         });
 
-        describe('transformDeviceBrowsersData', () => {
-            it('should transform valid device browsers data correctly', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Safari', device: 'Mobile', total: 300 }
+        describe('transformConversionTrendData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformConversionTrendData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformTrafficVsConversionsData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformTrafficVsConversionsData([
+                        {
+                            day: apiDayPrev,
+                            uniqueVisitors: 10,
+                            uniqueConvertingVisitors: 1
+                        },
+                        {
+                            day: apiDay,
+                            uniqueVisitors: 20,
+                            uniqueConvertingVisitors: 3
+                        }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformBrowserBreakdownToPieChartEntries', () => {
+            it('should map pre-aggregated browser totals and sort descending', () => {
+                const mockData: BrowserBreakdownData[] = [
+                    { browser: 'Chrome', total: 700 },
+                    { browser: 'Safari', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
 
-                expect(result.labels).toHaveLength(2);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([500, 300]);
-                expect(result.datasets[0].label).toBe(
-                    'analytics.charts.device-breakdown.dataset-label'
-                );
-                expect(result.datasets[0].backgroundColor).toHaveLength(2);
+                expect(result).toEqual([
+                    { name: 'Chrome', value: 700 },
+                    { name: 'Safari', value: 300 }
+                ]);
             });
 
-            it('should return empty chart data when data is null', () => {
-                const result = transformDeviceBrowsersData(null);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([]);
-                expect(result.datasets[0].backgroundColor).toEqual([]);
+            it('should return empty array when data is null or empty', () => {
+                expect(transformBrowserBreakdownToPieChartEntries(null)).toEqual([]);
+                expect(transformBrowserBreakdownToPieChartEntries([])).toEqual([]);
             });
 
-            it('should return empty chart data when data is empty array', () => {
-                const result = transformDeviceBrowsersData([]);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets[0].data).toEqual([]);
-            });
-
-            it('should format labels as "browser (device)"', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Safari', device: 'Mobile', total: 300 }
+            it('should sort by total descending when input order varies', () => {
+                const mockData: BrowserBreakdownData[] = [
+                    { browser: 'Firefox', total: 100 },
+                    { browser: 'Chrome', total: 300 },
+                    { browser: 'Safari', total: 200 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
 
-                expect(result.labels[0]).toBe('Chrome (Desktop)');
-                expect(result.labels[1]).toBe('Safari (Mobile)');
+                expect(result[0]).toEqual({ name: 'Chrome', value: 300 });
+                expect(result[1]).toEqual({ name: 'Safari', value: 200 });
+                expect(result[2]).toEqual({ name: 'Firefox', value: 100 });
             });
 
-            it('should sort results by total descending', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Safari', device: 'Mobile', total: 100 },
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Firefox', device: 'Desktop', total: 300 }
+            it('should cap results at 10 entries when otherLabel is omitted', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData);
+
+                expect(result).toHaveLength(10);
+                expect(result[0].value).toBe(100);
+                expect(result.every((e) => e.name !== 'Other')).toBe(true);
+            });
+
+            it('should aggregate overflow browsers into Other when otherLabel is set', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result[8]).toMatchObject({ name: 'Browser8', value: 92 });
+                expect(result[9]).toEqual({ name: 'Other', value: 531 });
+            });
+
+            it('should not add Other when distinct browsers count equals maxSlices', () => {
+                const mockData: BrowserBreakdownData[] = Array.from({ length: 10 }, (_, i) => ({
+                    browser: `Browser${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformBrowserBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result.every((e) => e.name !== 'Other')).toBe(true);
+            });
+        });
+
+        describe('transformDeviceBreakdownToPieChartEntries', () => {
+            it('should map pre-aggregated device totals and sort descending', () => {
+                const mockData: DeviceBreakdownData[] = [
+                    { device: 'Desktop', total: 600 },
+                    { device: 'Mobile', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformDeviceBreakdownToPieChartEntries(mockData);
 
-                expect(result.labels[0]).toBe('Chrome (Desktop)');
-                expect(result.labels[1]).toBe('Firefox (Desktop)');
-                expect(result.labels[2]).toBe('Safari (Mobile)');
-                expect(result.datasets[0].data).toEqual([500, 300, 100]);
+                expect(result).toEqual([
+                    { name: 'Desktop', value: 600 },
+                    { name: 'Mobile', value: 300 }
+                ]);
             });
 
-            it('should limit results to top 10', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
-                    { length: 15 },
-                    (_, i) => ({
-                        browser: `Browser${i}`,
-                        device: 'Desktop',
-                        total: 100 - i
-                    })
-                );
+            it('should return empty array when data is null or empty', () => {
+                expect(transformDeviceBreakdownToPieChartEntries(null)).toEqual([]);
+                expect(transformDeviceBreakdownToPieChartEntries([])).toEqual([]);
+            });
 
-                const result = transformDeviceBrowsersData(mockData);
+            it('should sort by total descending', () => {
+                const mockData: DeviceBreakdownData[] = [
+                    { device: 'Mobile', total: 200 },
+                    { device: 'Desktop', total: 700 },
+                    { device: 'Tablet', total: 50 }
+                ];
 
-                expect(result.labels).toHaveLength(10);
-                expect(result.datasets[0].data).toHaveLength(10);
+                const result = transformDeviceBreakdownToPieChartEntries(mockData);
+
+                expect(result[0]).toEqual({ name: 'Desktop', value: 700 });
+                expect(result[1]).toEqual({ name: 'Mobile', value: 200 });
+                expect(result[2]).toEqual({ name: 'Tablet', value: 50 });
+            });
+
+            it('should aggregate overflow devices into Other when otherLabel is set', () => {
+                const mockData: DeviceBreakdownData[] = Array.from({ length: 15 }, (_, i) => ({
+                    device: `Device${i}`,
+                    total: 100 - i
+                }));
+
+                const result = transformDeviceBreakdownToPieChartEntries(mockData, {
+                    otherLabel: 'Other'
+                });
+
+                expect(result).toHaveLength(10);
+                expect(result[9]).toEqual({ name: 'Other', value: 531 });
             });
         });
     });

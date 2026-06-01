@@ -29,9 +29,9 @@ export class EditorToolbarStore {
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
     readonly isSuperscript = signal(false);
     readonly isSubscript = signal(false);
+    /** True when the editor selection is anywhere inside a table — drives the toolbar's
+     *  `table_edit` (Table properties) button's enabled state. */
     readonly isInTable = signal(false);
-    readonly canMergeCells = signal(false);
-    readonly canSplitCell = signal(false);
     readonly selectedContentlet = signal<ContentletEditEvent | null>(null);
 
     connect(editor: Editor): () => void {
@@ -59,8 +59,20 @@ export class EditorToolbarStore {
                 );
                 this.canUndo.set(editor.can().undo());
                 this.canRedo.set(editor.can().redo());
-                this.canIndent.set(editor.can().sinkListItem('listItem'));
-                this.canOutdent.set(editor.can().liftListItem('listItem'));
+                // The toolbar's indent / outdent button routes through either
+                // listItem sink/lift (in lists) or the IndentExtension (text
+                // blocks). Mirror the same OR in the enabled-state check so the
+                // button isn't greyed out when only the text-block path applies.
+                // Inside tables we suppress the text-block branch so the button
+                // disables instead of acting on the cell's inner paragraph —
+                // Tab is reserved for cell navigation there.
+                const inTable = editor.isActive('table');
+                this.canIndent.set(
+                    editor.can().sinkListItem('listItem') || (!inTable && editor.can().indent())
+                );
+                this.canOutdent.set(
+                    editor.can().liftListItem('listItem') || (!inTable && editor.can().outdent())
+                );
                 this.textAlign.set(
                     editor.isActive({ textAlign: 'center' })
                         ? 'center'
@@ -72,10 +84,7 @@ export class EditorToolbarStore {
                 );
                 this.isSuperscript.set(editor.isActive('superscript'));
                 this.isSubscript.set(editor.isActive('subscript'));
-                this.isInTable.set(editor.isActive('table'));
-                this.canMergeCells.set(editor.can().mergeCells());
-                this.canSplitCell.set(editor.can().splitCell());
-
+                this.isInTable.set(inTable);
                 const { selection } = editor.state;
                 const contentletNode =
                     selection instanceof NodeSelection && selection.node.type.name === 'dotContent'

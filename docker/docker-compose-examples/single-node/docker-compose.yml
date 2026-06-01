@@ -62,14 +62,6 @@ services:
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
       #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
-
-      DOT_ANALYTICS_BASE_URL: 'http://host.docker.internal:8080'
-      DOT_ANALYTICS_CUSTOMER_ID: 'cust-001'
-      DOT_ANALYTICS_PASSWORD: 'abc'
-      DOT_ANALYTICS_ENVIRONMENT: 'dev'
-
-      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
-      DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: 'true'
     depends_on:
       - db
       - opensearch      

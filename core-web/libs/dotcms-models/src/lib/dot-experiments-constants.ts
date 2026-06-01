@@ -288,13 +288,16 @@ export const AllowedActionsByExperimentStatus: Record<
 
 export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
 
-export enum HealthStatusTypes {
-    OK = 'OK',
-    NOT_CONFIGURED = 'NOT_CONFIGURED',
-    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
-    AVAILABLE = 'AVAILABLE',
-    NOT_AVAILABLE = 'NOT_AVAILABLE'
-}
+export const HealthStatusTypes = {
+    OK: 'OK',
+    NOT_CONFIGURED: 'NOT_CONFIGURED',
+    CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
+    AVAILABLE: 'AVAILABLE',
+    NOT_AVAILABLE: 'NOT_AVAILABLE',
+    ERROR: 'ERROR'
+} as const;
+
+export type HealthStatusTypes = (typeof HealthStatusTypes)[keyof typeof HealthStatusTypes];
 
 export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';
 

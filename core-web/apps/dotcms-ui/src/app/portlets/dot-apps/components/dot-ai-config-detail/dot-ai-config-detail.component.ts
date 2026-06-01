@@ -36,18 +36,18 @@ const EXAMPLE_CONFIG = {
     image: {
         provider: 'openai',
         apiKey: 'sk-...',
-        model: 'dall-e-3'
+        model: 'gpt-image-1'
     },
     settings: {
         rolePrompt: 'You are dotCMSbot, an AI assistant to help content creators.',
         textPrompt: 'Use Descriptive writing style.',
         imagePrompt: 'Use 16:9 aspect ratio.',
-        imageSize: '1792x1024',
+        imageSize: '1024x1024',
         listenerIndexer: { default: 'blog,news,webPageContent' },
         completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
         completionTextPrompt:
             'Answer this question\n"$!{prompt}?"\n\nby using only the information in the following text:\n"""\n$!{supportingContent} \n"""\n',
-        embeddingsSearchThreshold: 0.5
+        embeddingsSearchThreshold: 0.25
     }
 };
 
