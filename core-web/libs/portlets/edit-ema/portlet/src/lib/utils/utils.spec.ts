@@ -1334,6 +1334,19 @@ describe('utils functions', () => {
             ).toBe('https://siteb.example.com');
         });
 
+        it('should strip path and trailing slash from a bare page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com/foo/'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
         it('should prioritize clientHost over page hostname', () => {
             expect(
                 getRequestHostName(

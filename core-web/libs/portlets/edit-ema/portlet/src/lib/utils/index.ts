@@ -787,11 +787,15 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageA
 };
 
 /**
- * Get the host name for the request
+ * Resolve the host that scanner/SEO requests should target.
+ *
+ * Order: explicit `clientHost` (headless), then the page's own site hostname
+ * (traditional pages), falling back to the admin origin.
  *
  * @export
- * @param {boolean} isTraditionalPage
- * @param {DotPageApiParams} params
+ * @param {DotPageApiParams} params       page API params (may carry `clientHost` for headless)
+ * @param {string} [pageHostname]         site hostname from the page asset
+ *                                        (e.g. "siteb.example.com" or "https://siteb.example.com")
  * @return {*}  {string}
  */
 export const getRequestHostName = (params: DotPageApiParams, pageHostname?: string) => {
@@ -803,8 +807,14 @@ export const getRequestHostName = (params: DotPageApiParams, pageHostname?: stri
         try {
             return new URL(pageHostname).origin;
         } catch {
-            // Hostname can be provided without scheme (e.g. "siteb.example.com")
-            return `${window.location.protocol}//${pageHostname}`;
+            // Hostname can be provided without scheme (e.g. "siteb.example.com").
+            // Drop anything after the host (path/trailing slash) so the result stays
+            // a clean origin — it is later concatenated with the page path.
+            // Protocol is assumed from the admin origin; an HTTP-only content site
+            // reached from an HTTPS admin would still be requested over HTTPS.
+            const host = pageHostname.split('/')[0];
+
+            return `${window.location.protocol}//${host}`;
         }
     }
 
