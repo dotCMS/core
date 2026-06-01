@@ -353,6 +353,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
     readonly $lockOptions = this.uveStore.$lockOptions;
     readonly $showLockOverlay = computed(() => {
+        const mode = this.uveStore.viewMode();
+        if (mode !== UVE_MODE.EDIT) {
+            return false;
+        }
+
         const lockOptions = this.$lockOptions();
 
         const lockFeatureEnabled = this.uveStore.$lockFeatureEnabled();
@@ -1253,17 +1258,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        const contentTypeVariable = contentlet.contentType;
-        if (!contentTypeVariable) {
-            this.dialog?.editContentlet(contentlet);
-            return;
-        }
-
-        this.#openNewContentDialogOrFallback(
-            contentTypeVariable,
-            () => this.#openNewEditContentDialog(contentlet),
-            () => this.dialog?.editContentlet(contentlet)
-        );
+        this.#openContentForEdit(contentlet);
     }
 
     /**
@@ -1307,6 +1302,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     legacyFallback();
                 }
             });
+    }
+
+    /**
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
+     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     */
+    #openContentForEdit(contentlet: DotCMSContentlet): void {
+        const contentTypeVariable = contentlet.contentType;
+        if (!contentTypeVariable) {
+            this.dialog?.editContentlet(contentlet);
+            return;
+        }
+
+        this.#openNewContentDialogOrFallback(
+            contentTypeVariable,
+            () => this.#openNewEditContentDialog(contentlet),
+            () => this.dialog?.editContentlet(contentlet)
+        );
     }
 
     /**
@@ -1371,6 +1384,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             height: '95%',
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
+            contentStyle: { padding: '0' },
             data: dialogData,
             header
         });
@@ -1396,7 +1410,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
+            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1418,7 +1432,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     if (copied) {
                         this.uveStore.pageReload();
                     }
-                    this.dialog?.editContentlet(target);
+
+                    this.#openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);

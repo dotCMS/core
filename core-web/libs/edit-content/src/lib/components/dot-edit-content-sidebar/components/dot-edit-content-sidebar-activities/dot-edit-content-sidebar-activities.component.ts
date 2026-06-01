@@ -14,6 +14,7 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angul
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DataViewModule } from 'primeng/dataview';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TextareaModule } from 'primeng/textarea';
@@ -41,6 +42,7 @@ const COMMENT_MAX_LENGTH = 500;
         ReactiveFormsModule,
         AvatarModule,
         ButtonModule,
+        CardModule,
         DataViewModule,
         TextareaModule,
         DotMessagePipe,
@@ -113,9 +115,11 @@ export class DotEditContentSidebarActivitiesComponent {
     $isActive = input<boolean>(false, { alias: 'isActive' });
 
     /**
-     * View children for the activity items
+     * View children for the activity items. We read `ElementRef` explicitly so
+     * that switching the underlying element to a PrimeNG component (e.g.
+     * `<p-card>`) still gives us a DOM element to scroll to.
      */
-    activityItems = viewChildren<ElementRef>('activityItem');
+    activityItems = viewChildren('activityItem', { read: ElementRef });
 
     /**
      * Effect to scroll to the last activity when the list changes or when the

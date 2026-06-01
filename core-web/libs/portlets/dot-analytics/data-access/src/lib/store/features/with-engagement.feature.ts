@@ -9,6 +9,7 @@ import { inject } from '@angular/core';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -72,7 +73,8 @@ export function withEngagement() {
                 store,
                 globalStore = inject(GlobalStore),
                 analyticsService = inject(DotAnalyticsService),
-                dotMessageService = inject(DotMessageService)
+                dotMessageService = inject(DotMessageService),
+                loginService = inject(LoginService)
             ) => {
                 const getErrorMessage = (key: string, fallback: string) =>
                     dotMessageService.get(key) || fallback;
@@ -337,9 +339,18 @@ export function withEngagement() {
                                             )
                                         )
                                 }).pipe(
-                                    map(({ device, browser, language }) =>
-                                        toEngagementPlatforms(device, browser, language)
-                                    ),
+                                    map(({ device, browser, language }) => {
+                                        const uiLocale =
+                                            loginService.currentUserLanguageId?.replace('_', '-') ??
+                                            'en-US';
+
+                                        return toEngagementPlatforms(
+                                            device,
+                                            browser,
+                                            language,
+                                            uiLocale
+                                        );
+                                    }),
                                     tapResponse({
                                         next: (platforms) =>
                                             patchState(store, {

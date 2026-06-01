@@ -10,6 +10,13 @@
         <div class="flex items-center gap-4 ml-auto">
             <button
                 pButton
+                class="p-button-tertiary p-button-text"
+                (click)="$store.exitCompareView()"
+                data-testId="return-to-current-version-button">
+                {{ 'edit.content.sidebar.history.return.to.current' | dm }}
+            </button>
+            <button
+                pButton
                 (click)="$store.restoreCurrentHistoricalVersion()"
                 data-testId="restore-historical-version-button">
                 {{ 'edit.content.sidebar.history.restore' | dm }}
@@ -58,6 +65,9 @@
     </div>
 
     <div class="flex-1 h-full overflow-y-auto p-6">
-        <dot-content-compare [showActions]="false" [data]="$store.compareData()" />
+        <dot-content-compare
+            [showActions]="false"
+            [reverseColumns]="true"
+            [data]="$store.compareData()" />
     </div>
 </div>

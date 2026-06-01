@@ -7,7 +7,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.ESSeachAPI;
+import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -803,7 +803,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
         final boolean live = !browserQuery.showWorking;
-        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
 
         try {
@@ -815,7 +815,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
-            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+            searchAPI.search(esQuery, live, browserQuery.user, false).forEach(result -> {
                 final Contentlet contentlet = (Contentlet) result;
                 collectedInodes.add(contentlet.getInode());
             });

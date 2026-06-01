@@ -8,6 +8,14 @@
 export const ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL =
     '/api/v1/analytics/conversion/content/attribution' as const;
 
+/**
+ * Full path for conversions **overview** list (dotCMS analytics proxy).
+ * Always use this — never call `/api/v1/conversion` without `analytics` from the UI dev server.
+ *
+ * Proxies to upstream `/v1/conversion`.
+ */
+export const ANALYTICS_CONVERSION_URL = '/api/v1/analytics/conversion' as const;
+
 export const TIME_RANGE_OPTIONS = {
     last7days: 'last7days',
     last30days: 'last30days',
@@ -45,13 +53,22 @@ export type DashboardTab = (typeof DASHBOARD_TABS)[keyof typeof DASHBOARD_TABS];
 export interface DashboardTabConfig {
     id: DashboardTab;
     label: string;
+    route: string;
 }
 
 /** Ordered list of dashboard tabs */
 export const DASHBOARD_TAB_LIST: DashboardTabConfig[] = [
-    { id: DASHBOARD_TABS.engagement, label: 'analytics.dashboard.tabs.engagement' },
-    { id: DASHBOARD_TABS.pageview, label: 'analytics.dashboard.tabs.pageview' },
-    { id: DASHBOARD_TABS.conversions, label: 'analytics.dashboard.tabs.conversions' }
+    {
+        id: DASHBOARD_TABS.engagement,
+        label: 'analytics.dashboard.tabs.engagement',
+        route: 'engagement'
+    },
+    { id: DASHBOARD_TABS.pageview, label: 'analytics.dashboard.tabs.pageview', route: 'pageview' },
+    {
+        id: DASHBOARD_TABS.conversions,
+        label: 'analytics.dashboard.tabs.conversions',
+        route: 'conversions'
+    }
 ];
 
 /**
@@ -112,6 +129,20 @@ export const AnalyticsChartColorVariants = [
     AnalyticsChartColors.tertiary,
     AnalyticsChartColors.quaternary,
     AnalyticsChartColors.fifth
+] as const;
+
+/** Distinct category colors for pie / doughnut breakdowns (e.g. browsers by device). */
+export const ANALYTICS_CATEGORY_CHART_PALETTE = [
+    AnalyticsChartColors.primary.line,
+    '#1E40AF',
+    '#60A5FA',
+    '#8B5CF6',
+    '#6D28D9',
+    '#A78BFA',
+    AnalyticsChartColors.secondary.line,
+    '#047857',
+    '#34D399',
+    '#F59E0B'
 ] as const;
 
 /**

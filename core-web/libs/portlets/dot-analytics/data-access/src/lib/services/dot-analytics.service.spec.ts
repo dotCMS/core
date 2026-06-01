@@ -3,10 +3,15 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
+
 import { DotAnalyticsService } from './dot-analytics.service';
 
-import { ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL } from '../constants';
-import { CubeJSQuery, Granularity } from '../types';
+import {
+    ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
+    ANALYTICS_CONVERSION_URL
+} from '../constants';
+import { CubeJSQuery, Granularity, HealthEntity } from '../types';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
 const ANALYTICS_EVENT_TOTAL_EVENTS = '/api/v1/analytics/event/total-events';
@@ -15,7 +20,7 @@ const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
 const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
     '/api/v1/analytics/event/pageviews-by-device-browser';
 const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
-const ANALYTICS_CONVERSION_OVERVIEW = '/api/v1/analytics/conversion';
+const ANALYTICS_HEALTH_URL = '/api/v1/analytics/health';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
 function expectTotalEventsReq(httpMock: HttpTestingController) {
@@ -76,14 +81,27 @@ function expectConversionsOverviewReq(httpMock: HttpTestingController) {
     return httpMock.expectOne(
         (req) =>
             req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_CONVERSION_OVERVIEW ||
-                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_OVERVIEW}?`))
+            (req.urlWithParams === ANALYTICS_CONVERSION_URL ||
+                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_URL}?`))
     );
 }
 
 function dotCMSWrap<T>(data: T) {
     return {
         entity: { data },
+        errors: [],
+        i18nMessagesMap: {},
+        messages: [],
+        pagination: null,
+        permissions: []
+    };
+}
+
+function createAnalyticsHealthResponse(available: string | boolean): DotCMSResponse<HealthEntity> {
+    return {
+        entity: {
+            available
+        },
         errors: [],
         i18nMessagesMap: {},
         messages: [],
@@ -533,11 +551,12 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
-        it('should GET pageviews-by-device-browser with params', () => {
+        it('should GET pageviews-by-device-browser with groupBy=device and params', () => {
             let result!: unknown;
             spectator.service
                 .getPageviewsByDeviceBrowser({
                     range: 'last_30_days',
+                    groupBy: 'device',
                     eventType: 'pageview',
                     siteId: 'host1'
                 })
@@ -547,29 +566,59 @@ describe('DotAnalyticsService', () => {
 
             const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_30_days');
+            expect(req.request.params.get('groupBy')).toBe('device');
             expect(req.request.params.get('eventType')).toBe('pageview');
             expect(req.request.params.get('siteId')).toBe('host1');
 
+            req.flush(dotCMSWrap([{ device: 'Desktop', total: 22 }]));
+
+            expect(result).toEqual([{ device: 'Desktop', total: 22 }]);
+        });
+
+        it('should GET pageviews-by-device-browser with groupBy=browser and params', () => {
+            let result!: unknown;
+            spectator.service
+                .getPageviewsByDeviceBrowser({
+                    from: '2026-04-20',
+                    to: '2026-05-28',
+                    groupBy: 'browser',
+                    eventType: 'pageview',
+                    siteId: 'host1'
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('from')).toBe('2026-04-20');
+            expect(req.request.params.get('to')).toBe('2026-05-28');
+            expect(req.request.params.get('groupBy')).toBe('browser');
+
             req.flush(
                 dotCMSWrap([
-                    { browser: 'Chrome', device: 'desktop', total: 10 },
-                    { browser: 'Safari', device: 'mobile', total: 4 }
+                    { browser: 'Firefox', total: 8 },
+                    { browser: 'Safari', total: 8 }
                 ])
             );
 
             expect(result).toEqual([
-                { browser: 'Chrome', device: 'desktop', total: 10 },
-                { browser: 'Safari', device: 'mobile', total: 4 }
+                { browser: 'Firefox', total: 8 },
+                { browser: 'Safari', total: 8 }
             ]);
         });
 
         it('should propagate HTTP errors for pageviews-by-device-browser', (done) => {
-            spectator.service.getPageviewsByDeviceBrowser({ range: 'last_30_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+            spectator.service
+                .getPageviewsByDeviceBrowser({
+                    range: 'last_30_days',
+                    groupBy: 'device'
+                })
+                .subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
             const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
@@ -648,7 +697,7 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('getSessionEngagementGroupBy', () => {
-        it('should GET session engagement with groupBy=device and normalize category to name', () => {
+        it('should GET session engagement with groupBy=device and normalize device to name', () => {
             let result!: unknown;
             spectator.service
                 .getSessionEngagementGroupBy({
@@ -669,7 +718,7 @@ describe('DotAnalyticsService', () => {
             req.flush(
                 dotCMSWrap([
                     {
-                        category: 'desktop',
+                        device: 'desktop',
                         avgEngagedSessionTimeSeconds: 90,
                         engagedSessions: 40,
                         engagementRate: 30,
@@ -767,6 +816,76 @@ describe('DotAnalyticsService', () => {
 
             const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        });
+    });
+
+    describe('healthCheck', () => {
+        it('should return AVAILABLE when entity.available is string "true"', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createAnalyticsHealthResponse('true'));
+
+            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+        });
+
+        it('should return AVAILABLE when entity.available is boolean true', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createAnalyticsHealthResponse(true));
+
+            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+        });
+
+        it('should return NOT_AVAILABLE when entity.available is string "false"', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createAnalyticsHealthResponse('false'));
+
+            expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+        });
+
+        it('should return ERROR on HTTP failure', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+
+            expect(result).toBe(HealthStatusTypes.ERROR);
+        });
+
+        it('should issue a new HTTP request for each healthCheck subscription', () => {
+            let first!: HealthStatusTypes;
+            let second!: HealthStatusTypes;
+
+            spectator.service.healthCheck().subscribe((status) => {
+                first = status;
+            });
+            spectator.service.healthCheck().subscribe((status) => {
+                second = status;
+            });
+
+            const reqs = spectator.controller.match((req) => req.url === ANALYTICS_HEALTH_URL);
+            expect(reqs.length).toBe(2);
+            reqs[0].flush(createAnalyticsHealthResponse('true'));
+            reqs[1].flush(createAnalyticsHealthResponse('false'));
+
+            expect(first).toBe(HealthStatusTypes.AVAILABLE);
+            expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });
     });
 
