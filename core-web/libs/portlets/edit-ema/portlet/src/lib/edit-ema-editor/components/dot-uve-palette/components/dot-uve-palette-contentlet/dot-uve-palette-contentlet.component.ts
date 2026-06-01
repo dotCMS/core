@@ -19,6 +19,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
         '[attr.data-type]': '"contentlet"',
         '[attr.draggable]': 'true',
         '[attr.data-item]': '$dataItem()',
+        '[attr.title]': '$contentlet().title',
         '[class]': '$hostClass'
     }
 })
@@ -39,7 +40,7 @@ export class DotUvePaletteContentletComponent {
 
     readonly $hostClass =
         'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
-        'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
+        'min-h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
         'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm';
 
     readonly $dataItem = computed(() => {

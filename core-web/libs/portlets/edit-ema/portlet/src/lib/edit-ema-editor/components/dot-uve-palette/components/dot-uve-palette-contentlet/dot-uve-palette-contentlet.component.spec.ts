@@ -67,6 +67,11 @@ describe('DotUvePaletteContentletComponent', () => {
             expect(element.getAttribute('draggable')).toBe('true');
         });
 
+        it('should expose the full title as a tooltip on the contentlet block', () => {
+            const element = spectator.element as HTMLElement;
+            expect(element.getAttribute('title')).toBe('Test Contentlet Title');
+        });
+
         it('should have data-item attribute with correct JSON structure', () => {
             const element = spectator.element as HTMLElement;
             const dataItem = element.getAttribute('data-item') as string;
@@ -124,6 +129,9 @@ describe('DotUvePaletteContentletComponent', () => {
             const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement).toBeTruthy();
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
+            expect(titleElement).toHaveClass('whitespace-normal');
+            expect(titleElement).toHaveClass('break-words');
+            expect(titleElement).not.toHaveClass('truncate');
         });
 
         it('should update title when contentlet changes', () => {
