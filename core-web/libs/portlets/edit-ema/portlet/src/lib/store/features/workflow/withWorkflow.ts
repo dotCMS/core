@@ -211,10 +211,10 @@ export function withWorkflow() {
                                     .getLanguagesUsedPage(response.pageAsset.page.identifier)
                                     .pipe(
                                         tap((languages) => {
-                                            // pageLanguages must land before setPageAsset so
-                                            // that pageTranslateProps (which reacts to pageAsset
-                                            // but reads pageLanguages via untracked) always sees
-                                            // a consistent languages slice when it recomputes.
+                                            // Update both slices in the same synchronous tap.
+                                            // Angular batches the two signal writes before
+                                            // flushing effects, so $translatePageEffect sees
+                                            // a consistent pageAsset + pageLanguages state.
                                             patchState(store, {
                                                 pageLanguages: languages,
                                                 uveStatus: UVE_STATUS.LOADED,
