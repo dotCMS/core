@@ -451,49 +451,41 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     // ── findAllSchemesByContentTypeList ────────────────────────────────────────
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Null_Ids() {
+    public void Find_Schemes_By_Content_Type_List_Null_Ids_Expect_BadRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), null);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Null contentTypeIds should return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Empty_List() {
+    public void Find_Schemes_By_Content_Type_List_Empty_List_Expect_BadRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of(""));
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Empty token should be filtered and return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Whitespace_Only() {
-        // Commas with only whitespace between them should all be filtered out
+    public void Find_Schemes_By_Content_Type_List_Whitespace_Only_Expect_BadRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("  ,  ,  "));
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Whitespace-only tokens should be filtered and return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Invalid_Id_Is_Skipped() {
-        // Invalid IDs are silently skipped; the rest of the batch still succeeds
+    public void Find_Schemes_By_Content_Type_List_Unknown_Id_Reported_In_Errors() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("invalid-ct-id"));
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Unknown content type ID should be skipped, leaving an empty result", result.isEmpty());
+        final ResponseEntityView<?> body = ResponseEntityView.class.cast(response.getEntity());
+        assertTrue("entity should be empty for an all-unknown input",
+                ((List<?>) body.getEntity()).isEmpty());
+        assertFalse("errors should contain the unresolvable ID", body.getErrors().isEmpty());
+        assertEquals("CONTENT_TYPE_NOT_FOUND", body.getErrors().get(0).getErrorCode());
+        assertEquals("invalid-ct-id", body.getErrors().get(0).getFieldName());
     }
 
     @Test

@@ -564,8 +564,9 @@ public class WorkflowResource {
             description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
                     "grouped by content type for a list of content type identifiers. " +
                     "Each entry in the response maps a resolved content type to its associated schemes. " +
-                    "Unknown or invalid IDs are silently skipped — only successfully resolved content types appear in the result " +
-                    "(note: the single-content-type endpoint returns 404 for an unknown ID; this batch endpoint omits it instead). " +
+                    "Unknown or unresolvable identifiers are reported in the `errors` array of the response body " +
+                    "(field `fieldName` contains the original input token; `errorCode` is `CONTENT_TYPE_NOT_FOUND`). " +
+                    "At least one non-blank identifier is required; an empty or missing `contentTypeIds` parameter returns 400. " +
                     "Maximum " + MAX_CONTENT_TYPE_IDS + " tokens per request (checked before deduplication).",
             tags = {"Workflow"},
             responses = {
@@ -574,7 +575,7 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityContentTypeWorkflowSchemesView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "More than " + MAX_CONTENT_TYPE_IDS + " content type IDs supplied"),
+                    @ApiResponse(responseCode = "400", description = "contentTypeIds is empty or all tokens are blank; or more than " + MAX_CONTENT_TYPE_IDS + " tokens supplied"),
                     @ApiResponse(responseCode = "401", description = "User does not have permission")
             }
     )
@@ -616,7 +617,11 @@ public class WorkflowResource {
                     .distinct()
                     .collect(Collectors.toList());
 
-            // Resolve each token to a ContentType; deduplicate by UUID; skip unknowns
+            if (ids.isEmpty()) {
+                throw new IllegalArgumentException("contentTypeIds must not be empty");
+            }
+
+            // Resolve each token to a ContentType; deduplicate by UUID; report unknowns
             final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
             final LinkedHashMap<String, ContentType> resolvedTypes = new LinkedHashMap<>();
             final List<String> skippedIds = new ArrayList<>();
@@ -645,12 +650,16 @@ public class WorkflowResource {
                 }
             }
 
-            if (!skippedIds.isEmpty()) {
-                Logger.warn(this, "Skipped " + skippedIds.size() +
-                        " content type ID(s) due to lookup errors: " + skippedIds);
+            final List<ErrorEntity> errors = skippedIds.stream()
+                    .map(id -> new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", id))
+                    .collect(Collectors.toList());
+
+            if (!errors.isEmpty()) {
+                Logger.warn(this, "Skipped " + errors.size() +
+                        " unresolvable content type ID(s): " + skippedIds);
             }
 
-            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
+            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
 
         } catch (Exception e) {
 
