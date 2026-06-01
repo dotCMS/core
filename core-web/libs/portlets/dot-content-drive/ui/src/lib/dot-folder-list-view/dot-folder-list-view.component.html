@@ -60,9 +60,7 @@
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
                 [class.text-[var(--text-color-hover)]]="state.dragOverRowId() === item.identifier"
-                [class.bg-[var(--color-palette-primary-100)]]="
-                    state.dragOverRowId() === item.identifier
-                "
+                [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
