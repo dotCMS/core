@@ -1,6 +1,9 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { By } from '@angular/platform-browser';
+
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -67,9 +70,9 @@ describe('DotUvePaletteContentletComponent', () => {
             expect(element.getAttribute('draggable')).toBe('true');
         });
 
-        it('should expose the full title as a tooltip on the contentlet block', () => {
+        it('should not expose the browser default title tooltip on the contentlet block', () => {
             const element = spectator.element as HTMLElement;
-            expect(element.getAttribute('title')).toBe('Test Contentlet Title');
+            expect(element.hasAttribute('title')).toBe(false);
         });
 
         it('should have data-item attribute with correct JSON structure', () => {
@@ -131,6 +134,16 @@ describe('DotUvePaletteContentletComponent', () => {
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
             expect(titleElement).toHaveClass('line-clamp-2');
             expect(titleElement).toHaveClass('break-words');
+        });
+
+        it('should expose the full title through a PrimeNG tooltip on the title element', () => {
+            const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
+            const tooltipDebugEl = spectator.fixture.debugElement.query(By.directive(Tooltip));
+            const tooltip = tooltipDebugEl.injector.get(Tooltip);
+
+            expect(tooltipDebugEl).toBeTruthy();
+            expect(tooltipDebugEl.nativeElement).toBe(titleElement);
+            expect(tooltip.content).toBe('Test Contentlet Title');
         });
 
         it('should update title when contentlet changes', () => {
