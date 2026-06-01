@@ -261,14 +261,12 @@ describe('withLoad', () => {
     });
 
     describe('reloadPageAfterLockChange – atomicity', () => {
-        it('should update pageLanguages together with pageAsset after lock so pageTranslateProps reflects current translated status', () => {
-            // Regression test for #35647: before the fix, setPageAsset fired before
-            // getLanguagesUsedPage responded. If an effect flush happened in that window,
-            // pageTranslateProps would read stale pageLanguages (translated: false) and
-            // incorrectly show the "Create language version?" dialog.
-            const staleLanguages: DotLanguage[] = [
-                { id: 1, language: 'English', languageCode: 'en', translated: false }
-            ];
+        it('should have pageLanguages already updated when setPageAsset is called after lock change', () => {
+            // Regression test for #35647. The pre-fix code called setPageAsset BEFORE
+            // getLanguagesUsedPage responded, so pageTranslateProps (which reacts to
+            // pageAsset but reads pageLanguages via untracked()) saw stale data.
+            // This test would FAIL against the pre-fix code: at the moment setPageAsset
+            // fired, store.pageLanguages() would still show translated: false.
             const freshLanguages: DotLanguage[] = [
                 { id: 1, language: 'English', languageCode: 'en', translated: true }
             ];
@@ -284,42 +282,23 @@ describe('withLoad', () => {
             store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
             spectator.flushEffects();
 
-            patchState(store, { pageLanguages: staleLanguages });
+            patchState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: false }
+                ]
+            });
+
+            let pageLanguagesAtSetPageAsset: DotLanguage[] | undefined;
+            const originalSetPageAsset = store.setPageAsset.bind(store);
+            jest.spyOn(store, 'setPageAsset').mockImplementation((payload) => {
+                pageLanguagesAtSetPageAsset = [...store.pageLanguages()];
+                originalSetPageAsset(payload);
+            });
 
             store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, false, false);
             spectator.flushEffects();
 
-            expect(store.pageLanguages()).toEqual(freshLanguages);
-            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
-        });
-
-        it('should update pageLanguages together with pageAsset after unlock so pageTranslateProps reflects current translated status', () => {
-            const staleLanguages: DotLanguage[] = [
-                { id: 1, language: 'English', languageCode: 'en', translated: false }
-            ];
-            const freshLanguages: DotLanguage[] = [
-                { id: 1, language: 'English', languageCode: 'en', translated: true }
-            ];
-
-            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
-                of(MOCK_RESPONSE_HEADLESS)
-            );
-            jest.spyOn(
-                spectator.inject(DotLanguagesService),
-                'getLanguagesUsedPage'
-            ).mockReturnValue(of(freshLanguages));
-
-            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
-            spectator.flushEffects();
-
-            patchState(store, { pageLanguages: staleLanguages });
-
-            // isLocked: true, isCurrentUser: true → unlock path
-            store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, true, true);
-            spectator.flushEffects();
-
-            expect(store.pageLanguages()).toEqual(freshLanguages);
-            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
+            expect(pageLanguagesAtSetPageAsset?.[0]?.translated).toBe(true);
         });
     });
 

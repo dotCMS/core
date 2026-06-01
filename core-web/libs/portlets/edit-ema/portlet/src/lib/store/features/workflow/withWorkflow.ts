@@ -196,25 +196,19 @@ export function withWorkflow() {
 
                         return pageRequest.pipe(
                             switchMap((response) => {
-                                const pageResponse =
-                                    'pageAsset' in response ? response : { pageAsset: response };
-
+                                // Both request branches emit { pageAsset } or { pageAsset, content }.
+                                // The 'content' key is only present on the GraphQL path — setPageAsset
+                                // uses 'content' in payload to decide whether to clear previous content,
+                                // so preserving the key's presence/absence is the correct behavior.
                                 const content =
-                                    'content' in pageResponse
-                                        ? (
-                                              pageResponse as {
-                                                  content?: Record<string, unknown>;
-                                              }
-                                          ).content
-                                        : undefined;
-
+                                    'content' in response ? response.content : undefined;
                                 const pageAssetPayload = {
-                                    pageAsset: pageResponse.pageAsset,
+                                    pageAsset: response.pageAsset,
                                     ...(content !== undefined && { content })
                                 };
 
                                 return dotLanguagesService
-                                    .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)
+                                    .getLanguagesUsedPage(response.pageAsset.page.identifier)
                                     .pipe(
                                         tap((languages) => {
                                             // pageLanguages must land before setPageAsset so

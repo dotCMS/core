@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -354,11 +354,17 @@ describe('withPageApi', () => {
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
         });
 
-        it('should update pageLanguages with result from getLanguagesUsedPage after reload', () => {
+        it('should have pageLanguages already updated when setPageAsset is called during reload', () => {
+            // Regression test for #35647. The pre-fix code called setPageAsset BEFORE
+            // getLanguagesUsedPage responded, so pageTranslateProps (which reacts to
+            // pageAsset but reads pageLanguages via untracked()) saw stale data.
+            // This test would FAIL against the pre-fix code: at the moment setPageAsset
+            // fired, store.pageLanguages() would still show translated: false.
             const freshLanguages: DotLanguage[] = [
                 { id: 1, language: 'English', languageCode: 'en', translated: true }
             ];
 
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
             patchState(store, {
                 pageLanguages: [
                     { id: 1, language: 'English', languageCode: 'en', translated: false }
@@ -370,40 +376,32 @@ describe('withPageApi', () => {
                 'getLanguagesUsedPage'
             ).mockReturnValue(of(freshLanguages));
 
-            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            let pageLanguagesAtSetPageAsset: DotLanguage[] | undefined;
+            const originalSetPageAsset = store.setPageAsset.bind(store);
+            jest.spyOn(store, 'setPageAsset').mockImplementation((payload) => {
+                pageLanguagesAtSetPageAsset = [...store.pageLanguages()];
+                originalSetPageAsset(payload);
+            });
+
             store.pageReload();
             spectator.flushEffects();
 
-            expect(store.pageLanguages()).toEqual(freshLanguages);
+            expect(pageLanguagesAtSetPageAsset?.[0]?.translated).toBe(true);
         });
 
-        it('should set pageAsset and pageLanguages atomically so pageTranslateProps reflects the translated status from the server', () => {
-            // Regression test for #35647: before the fix, setPageAsset fired before
-            // getLanguagesUsedPage responded, so pageTranslateProps read stale pageLanguages
-            // with translated: false, incorrectly triggering the "Create language version?" dialog.
-            const freshLanguages: DotLanguage[] = [
-                { id: 1, language: 'English', languageCode: 'en', translated: true }
-            ];
-
-            patchState(store, {
-                pageLanguages: [
-                    { id: 1, language: 'English', languageCode: 'en', translated: false }
-                ]
-            });
+        it('should apply the page asset and set status to LOADED when getLanguagesUsedPage fails', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
 
             jest.spyOn(
                 spectator.inject(DotLanguagesService),
                 'getLanguagesUsedPage'
-            ).mockReturnValue(of(freshLanguages));
+            ).mockReturnValue(throwError(() => ({ status: 500 })));
 
-            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
             store.pageReload();
             spectator.flushEffects();
 
-            // pageTranslateProps uses untracked(() => store.pageLanguages()) — it only reacts
-            // to pageAsset changes. If pageAsset and pageLanguages are not updated together,
-            // this computed would still see translated: false from the stale pageLanguages.
-            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+            expect(store.pageAsset()).toEqual(MOCK_RESPONSE_HEADLESS.page);
         });
     });
 });

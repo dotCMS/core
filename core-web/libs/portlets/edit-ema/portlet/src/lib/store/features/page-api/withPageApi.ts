@@ -287,29 +287,26 @@ export function withPageApi(deps: WithPageApiDeps) {
                             }
                         }),
                         switchMap(() => {
-                            const isGraphQL = !!deps.requestMetadata();
-                            let graphQLContent: Record<string, unknown> | undefined;
-
-                            const pageRequest = !isGraphQL
-                                ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
-                                      tap((response) => {
-                                          graphQLContent = response.content;
-                                      }),
-                                      map((response) => response.pageAsset)
-                                  );
+                            // Thread content through the stream value so the payload shape
+                            // naturally encodes whether this is a GraphQL reload:
+                            // - non-GraphQL emits { pageAsset }         → 'content' NOT in payload
+                            // - GraphQL emits     { pageAsset, content } → 'content' IN payload
+                            // setPageAsset in withPage.ts uses 'content' in payload to decide
+                            // whether to clear the existing content, so this preserves original semantics.
+                            const pageRequest = !deps.requestMetadata()
+                                ? dotPageApiService
+                                      .get(store.pageParams())
+                                      .pipe(map((pageAsset) => ({ pageAsset })))
+                                : dotPageApiService
+                                      .getGraphQLPage(deps.$requestWithParams())
+                                      .pipe(
+                                          map(({ pageAsset, content }) => ({ pageAsset, content }))
+                                      );
 
                             return pageRequest.pipe(
-                                switchMap((pageAsset) => {
-                                    // Preserve original semantics: GraphQL always passes `content`
-                                    // (even when undefined) so setPageAsset clears previous content
-                                    // via the `'content' in payload` discriminant in withPage.ts.
-                                    const payload = isGraphQL
-                                        ? { pageAsset, content: graphQLContent }
-                                        : { pageAsset };
-
+                                switchMap((pageResult) => {
                                     return dotLanguagesService
-                                        .getLanguagesUsedPage(pageAsset.page.identifier)
+                                        .getLanguagesUsedPage(pageResult.pageAsset.page.identifier)
                                         .pipe(
                                             tap((languages) => {
                                                 // pageLanguages must land before setPageAsset so
@@ -320,7 +317,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                     pageLanguages: languages,
                                                     uveStatus: UVE_STATUS.LOADED
                                                 });
-                                                deps.setPageAsset(payload);
+                                                deps.setPageAsset(pageResult);
                                             }),
                                             catchError(() => {
                                                 // Languages fetch failed: still apply the fresh
@@ -329,7 +326,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                 patchState(store, {
                                                     uveStatus: UVE_STATUS.LOADED
                                                 });
-                                                deps.setPageAsset(payload);
+                                                deps.setPageAsset(pageResult);
 
                                                 return EMPTY;
                                             })
