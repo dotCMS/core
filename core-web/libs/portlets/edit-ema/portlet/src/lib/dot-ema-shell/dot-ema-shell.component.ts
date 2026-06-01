@@ -164,7 +164,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
         const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
-        const requestHostName = getRequestHostName(this.uveStore.pageParams());
+        const requestHostName = getRequestHostName(
+            this.uveStore.pageParams(),
+            this.uveStore.pageAsset()?.site?.hostname
+        );
 
         return {
             siteId: this.uveStore.pageAsset()?.site?.identifier,

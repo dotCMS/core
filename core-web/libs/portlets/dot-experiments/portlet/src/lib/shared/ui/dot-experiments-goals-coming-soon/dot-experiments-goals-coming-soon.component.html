@@ -5,11 +5,8 @@
     @for (card of cards; track card.titleKey) {
         <p-card class="h-full flex-1 basis-[16rem] min-h-[15rem]">
             <ng-template pTemplate="header">
-                <div
-                    class="min-h-20 flex items-center justify-center bg-[var(--color-palette-primary-100)] rounded-t-md">
-                    <i
-                        class="{{ card.icon }} text-[var(--color-palette-primary-500)] text-2xl!"
-                        aria-hidden="true"></i>
+                <div class="min-h-20 flex items-center justify-center bg-primary-100 rounded-t-md">
+                    <i class="{{ card.icon }} text-primary-500 text-2xl!" aria-hidden="true"></i>
                 </div>
             </ng-template>
 
