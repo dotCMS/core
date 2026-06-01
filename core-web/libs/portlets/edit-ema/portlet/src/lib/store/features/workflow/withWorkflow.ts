@@ -201,7 +201,9 @@ export function withWorkflow() {
                                 // uses 'content' in payload to decide whether to clear previous content,
                                 // so preserving the key's presence/absence is the correct behavior.
                                 const content =
-                                    'content' in response ? response.content : undefined;
+                                    'content' in response
+                                        ? (response.content as Record<string, unknown>)
+                                        : undefined;
                                 const pageAssetPayload = {
                                     pageAsset: response.pageAsset,
                                     ...(content !== undefined && { content })
@@ -211,10 +213,9 @@ export function withWorkflow() {
                                     .getLanguagesUsedPage(response.pageAsset.page.identifier)
                                     .pipe(
                                         tap((languages) => {
-                                            // Update both slices in the same synchronous tap.
-                                            // Angular batches the two signal writes before
-                                            // flushing effects, so $translatePageEffect sees
-                                            // a consistent pageAsset + pageLanguages state.
+                                            // Both writes land in the same synchronous tap.
+                                            // Angular batches them before flushing effects, so
+                                            // $translatePageEffect always sees a consistent state.
                                             patchState(store, {
                                                 pageLanguages: languages,
                                                 uveStatus: UVE_STATUS.LOADED,

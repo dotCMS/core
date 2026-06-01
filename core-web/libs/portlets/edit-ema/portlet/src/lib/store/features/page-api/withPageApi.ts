@@ -247,9 +247,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                     ? { pageAsset, content: graphQLContent }
                                                     : { pageAsset };
 
-                                            deps.setPageAsset(payload);
-                                            deps.addHistory(payload);
-
+                                            // Both writes land in the same synchronous tap.
+                                            // Angular batches them before flushing effects, so
+                                            // $translatePageEffect always sees a consistent state.
                                             // uveCurrentUser is synced reactively from GlobalStore in withUve onInit effect
                                             patchState(store, {
                                                 pageExperiment: experiment,
@@ -263,6 +263,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                 ),
                                                 uveStatus: UVE_STATUS.LOADED
                                             });
+                                            deps.setPageAsset(payload);
+                                            deps.addHistory(payload);
                                         })
                                     );
                                 })
@@ -309,10 +311,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                                         .getLanguagesUsedPage(pageResult.pageAsset.page.identifier)
                                         .pipe(
                                             tap((languages) => {
-                                                // Update both slices in the same synchronous tap.
-                                                // Angular batches the two signal writes before
-                                                // flushing effects, so $translatePageEffect sees
-                                                // a consistent pageAsset + pageLanguages state.
+                                                // Both writes land in the same synchronous tap.
+                                                // Angular batches them before flushing effects, so
+                                                // $translatePageEffect always sees a consistent state.
                                                 patchState(store, {
                                                     pageLanguages: languages,
                                                     uveStatus: UVE_STATUS.LOADED

@@ -401,7 +401,7 @@ describe('withPageApi', () => {
             spectator.flushEffects();
 
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
-            expect(store.pageAsset()).toEqual(MOCK_RESPONSE_HEADLESS.page);
+            expect(store.pageAssetResponse()?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
         });
     });
 });
