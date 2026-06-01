@@ -592,6 +592,101 @@ public class TagAPITest extends IntegrationTestBase {
 	}
 
 	/**
+	 * Creates, checks in and publishes a Wiki-like contentlet, returning its inode. Helper for the
+	 * tag-inode deletion tests below.
+	 */
+	private String createWikiContentletInode(final String nameSuffix) throws Exception {
+		Contentlet contentAsset = new Contentlet();
+		final ContentType contentType = TestDataUtils.getWikiLikeContentType();
+		contentAsset.setContentTypeId(contentType.id());
+		contentAsset.setHost(defaultHostId);
+		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+		final String name = "testtagapi" + nameSuffix + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+		contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+		contentAsset.setProperty(WIKI_URL_VARNAME, name);
+		contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+		contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset = conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+		return contentAsset.getInode();
+	}
+
+	/**
+	 * Destroys the contentlet with the given inode (best-effort). Destroying the contentlet also
+	 * removes its tag_inode relations, so it is enough to clean up the deletion tests below.
+	 */
+	private void destroyContentletByInode(final String inode) {
+		try {
+			final Contentlet contentlet = conAPI.find(inode, testUser, false);
+			if (contentlet != null) {
+				conAPI.destroy(contentlet, testUser, false);
+			}
+		} catch (Exception e) {
+			Logger.warn(this, "Unable to destroy contentlet " + inode + ": " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Test the deleteTagInodesByInodeAndFieldVarName method of the tagAPI: it must remove only the
+	 * tag relations of the matching inode, leaving other inodes' relations (under the same field var
+	 * name) intact.
+	 * @throws Exception
+	 */
+	@Test
+	public void deleteTagInodesByInodeAndFieldVarName_removesOnlyMatchingInode() throws Exception {
+		final String inodeA = createWikiContentletInode("DelByFieldA");
+		final String inodeB = createWikiContentletInode("DelByFieldB");
+		try {
+			final String tagName = "testapidelfield" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+			tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, inodeA, defaultHostId, WIKI_TAG_VARNAME);
+			tagAPI.addContentletTagInode(tagName, inodeB, defaultHostId, WIKI_TAG_VARNAME);
+
+			assertFalse(tagAPI.getTagsByInodeAndFieldVarName(inodeA, WIKI_TAG_VARNAME).isEmpty());
+			assertFalse(tagAPI.getTagsByInodeAndFieldVarName(inodeB, WIKI_TAG_VARNAME).isEmpty());
+
+			tagAPI.deleteTagInodesByInodeAndFieldVarName(inodeA, WIKI_TAG_VARNAME);
+
+			assertTrue("inodeA tag relations should be removed",
+					tagAPI.getTagsByInodeAndFieldVarName(inodeA, WIKI_TAG_VARNAME).isEmpty());
+			assertFalse("inodeB tag relations must remain untouched",
+					tagAPI.getTagsByInodeAndFieldVarName(inodeB, WIKI_TAG_VARNAME).isEmpty());
+		} finally {
+			destroyContentletByInode(inodeA);
+			destroyContentletByInode(inodeB);
+		}
+	}
+
+	/**
+	 * Test the deleteTagInodesByInode method of the tagAPI: it must remove every tag relation for the
+	 * given inode.
+	 * @throws Exception
+	 */
+	@Test
+	public void deleteTagInodesByInode_removesAllForInode() throws Exception {
+		final String inode = createWikiContentletInode("DelByInode");
+		try {
+			final String stamp = UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+			final String tagName1 = "testapidelinode1" + stamp;
+			final String tagName2 = "testapidelinode2" + stamp;
+			tagAPI.getTagAndCreate(tagName1, testUser.getUserId(), defaultHostId);
+			tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName1, inode, defaultHostId, WIKI_TAG_VARNAME);
+			tagAPI.addContentletTagInode(tagName2, inode, defaultHostId, WIKI_TAG_VARNAME);
+
+			assertEquals(2, tagAPI.getTagInodesByInode(inode).size());
+
+			tagAPI.deleteTagInodesByInode(inode);
+
+			assertTrue("All tag relations for the inode should be removed",
+					tagAPI.getTagInodesByInode(inode).isEmpty());
+		} finally {
+			destroyContentletByInode(inode);
+		}
+	}
+
+	/**
 	 * Test the removeTagRelationAndTagWhenPossible method of the tagAPI
 	 * @throws Exception
 	 */
