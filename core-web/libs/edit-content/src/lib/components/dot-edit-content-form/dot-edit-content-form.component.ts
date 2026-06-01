@@ -281,21 +281,24 @@ export class DotEditContentFormComponent implements OnInit {
         /**
          * Effect that enables or disables the form based on the loading state.
          *
-         * Reads `contentlet()` only as an existence guard, so the effect also re-runs on
-         * contentlet changes (e.g. a lock/unlock that replaces the contentlet reference
-         * without changing any field). To avoid that churn we make the enable/disable
-         * idempotent: only toggle when the form's current state actually differs from the
-         * desired one, and suppress events. Otherwise a redundant `form.enable()` would make
-         * async field CVAs (e.g. the date field) re-emit their value and wrongly mark the
-         * form dirty, triggering the unsaved-changes guard on a plain lock toggle (#35754).
+         * `isViewingHistoricalVersion` was intentionally dropped from the condition for now;
+         * it will be restored once all fields support a disabled state (see the TODO below).
+         *
+         * `contentlet()` is read with `untracked` as a mere existence guard, so the effect is
+         * driven only by `isLoading`: a lock/unlock that replaces the contentlet reference
+         * without changing any field must not re-run it. The enable/disable is also kept
+         * idempotent (toggle only when the current state differs) and uses `{ emitEvent: false }`,
+         * because a redundant `form.enable()` makes async field CVAs (e.g. the date field)
+         * re-emit their value and wrongly mark the form dirty, triggering the unsaved-changes
+         * guard on a plain lock toggle (#35754).
          */
         effect(() => {
             const isLoading = this.$store.isLoading();
             // const isViewingHistoricalVersion = this.$store.isViewingHistoricalVersion();
-            const contentlet = this.$store.contentlet();
+            const hasContentlet = untracked(() => !!this.$store.contentlet());
 
             // Only apply state changes if form exists
-            if (this.form && contentlet) {
+            if (this.form && hasContentlet) {
                 // TODO: put back isViewingHistoricalVersion in the
                 // condition after all fields have disabled state
                 if (isLoading && this.form.enabled) {

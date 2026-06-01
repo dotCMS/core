@@ -778,6 +778,11 @@ describe('DotFormComponent', () => {
         });
 
         describe('Form dirty state after lock toggle', () => {
+            // Mirrors the fallback timer in #scheduleMarkPristineAfterInit
+            // (race(appRef.isStable, timer(500))). Named so the coupling is explicit
+            // and breaks loudly here if the production debounce changes.
+            const PRISTINE_RESET_DEBOUNCE_MS = 500;
+
             beforeEach(() => {
                 dotContentletService.canLock.mockReturnValue(
                     of({ canLock: true } as DotContentletCanLock)
@@ -847,7 +852,7 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
 
                 // Drain the 500ms fallback timer in #scheduleMarkPristineAfterInit
-                tick(500);
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
                 spectator.detectChanges();
 
                 expect(component.form.dirty).toBe(false);
@@ -864,7 +869,7 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                tick(500);
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
                 spectator.detectChanges();
 
                 expect(component.form.pristine).toBe(true);
@@ -888,15 +893,18 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                tick(500);
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
                 spectator.detectChanges();
 
                 expect(component.form.pristine).toBe(true);
 
-                const control = component.form.get('disabledWYSIWYG');
-                control?.setValue(['edited-field']);
-                control?.markAsDirty();
+                // Real user edit routed through the rendered field input, so Angular's forms
+                // machinery (not a manual markAsDirty) is what dirties the control.
+                const input = spectator.query(byTestId('text2')) as HTMLInputElement;
+                spectator.typeInElement('edited via DOM', input);
+                spectator.detectChanges();
 
+                expect(component.form.get('text2')?.dirty).toBe(true);
                 expect(component.form.dirty).toBe(true);
 
                 flush();
@@ -919,7 +927,7 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                tick(500); // drain #scheduleMarkPristineAfterInit timer
+                tick(PRISTINE_RESET_DEBOUNCE_MS); // drain #scheduleMarkPristineAfterInit timer
                 spectator.detectChanges();
 
                 expect(component.form.pristine).toBe(true);
@@ -932,11 +940,12 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                const control = component.form.get('disabledWYSIWYG');
-                control?.setValue(['edited-after-unlock']);
-                control?.markAsDirty();
+                // Real user edit routed through the rendered field input after unlocking.
+                const input = spectator.query(byTestId('text2')) as HTMLInputElement;
+                spectator.typeInElement('edited after unlock', input);
                 spectator.detectChanges();
 
+                expect(component.form.get('text2')?.dirty).toBe(true);
                 expect(component.form.dirty).toBe(true);
 
                 flush();
@@ -950,7 +959,7 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                tick(500);
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
                 spectator.detectChanges();
 
                 expect(component.form.enabled).toBe(true);
@@ -983,7 +992,7 @@ describe('DotFormComponent', () => {
 
                 spectator.detectChanges();
 
-                tick(500);
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
                 spectator.detectChanges();
 
                 expect(component.form.pristine).toBe(true);
