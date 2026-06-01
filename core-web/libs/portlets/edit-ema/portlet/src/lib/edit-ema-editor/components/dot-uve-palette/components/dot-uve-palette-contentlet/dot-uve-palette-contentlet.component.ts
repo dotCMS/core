@@ -40,7 +40,7 @@ export class DotUvePaletteContentletComponent {
 
     readonly $hostClass =
         'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
-        'min-h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
+        'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
         'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm';
 
     readonly $dataItem = computed(() => {

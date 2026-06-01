@@ -129,9 +129,8 @@ describe('DotUvePaletteContentletComponent', () => {
             const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement).toBeTruthy();
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
-            expect(titleElement).toHaveClass('whitespace-normal');
+            expect(titleElement).toHaveClass('line-clamp-2');
             expect(titleElement).toHaveClass('break-words');
-            expect(titleElement).not.toHaveClass('truncate');
         });
 
         it('should update title when contentlet changes', () => {
