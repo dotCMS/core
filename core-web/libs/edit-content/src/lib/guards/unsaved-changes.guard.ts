@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { CanDeactivateFn } from '@angular/router';
 
+import { ConfirmEventType } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditContentLayoutComponent } from '../components/dot-edit-content-layout/dot-edit-content.layout.component';
@@ -56,13 +58,26 @@ export const unsavedChangesGuard: CanDeactivateFn<DotEditContentLayoutComponent>
             rejectButtonStyleClass: 'p-button-outlined',
             // Primary "Keep editing": cancel navigation, user stays on the editor.
             accept: () => resolve(false),
-            // Secondary "Discard changes": allow navigation. Reset the form's
-            // dirty state first so a downstream `beforeunload` (e.g. when the
-            // destination triggers a hard navigation) does not re-prompt with
-            // the browser's native dialog.
-            reject: () => {
-                component.markFormPristine();
-                resolve(true);
+            // PrimeNG routes three different user actions through this single
+            // callback. Discriminate by `ConfirmEventType` so dismissals
+            // (close icon, ESC, mask click) behave like "Keep editing"
+            // instead of silently discarding the user's work.
+            //   REJECT → user clicked the secondary "Discard changes" button.
+            //            Reset the form's dirty state first so a downstream
+            //            `beforeunload` (when the destination triggers a hard
+            //            navigation) does not re-prompt with the browser's
+            //            native dialog.
+            //   CANCEL → user dismissed the dialog via the X icon or ESC.
+            //            Treat as "Keep editing": stay on the editor with the
+            //            form still dirty.
+            reject: (type?: ConfirmEventType) => {
+                if (type === ConfirmEventType.REJECT) {
+                    component.markFormPristine();
+                    resolve(true);
+
+                    return;
+                }
+                resolve(false);
             }
         });
     });

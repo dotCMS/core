@@ -36,9 +36,11 @@ import java.util.Set;
 /**
  * @author Jason Tesser
  * @since 1.6.5c
- * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI 
+ * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI
  * methods except now they also take the return type as the first parameter.
  */
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPostHook {
 
 	/**
@@ -1700,29 +1702,25 @@ public interface ContentletAPIPostHook {
     public default void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
     public default void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
 	public default void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
+    public default void search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
+    public default void searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles

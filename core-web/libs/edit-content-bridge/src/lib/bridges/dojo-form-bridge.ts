@@ -1,6 +1,7 @@
 import {
     BrowserSelectorController,
     BrowserSelectorOptions,
+    FieldValidationState,
     FormBridge,
     FormFieldAPI,
     FormFieldValue
@@ -219,6 +220,27 @@ export class DojoFormBridge implements FormBridge {
 
             onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
                 return this.onChangeField(fieldId, callback);
+            },
+
+            getValidationState: (): FieldValidationState => {
+                // Legacy Dojo editor has its own validation system; we surface a neutral state
+                // so consumers using the bridge API don't crash. Dojo-specific styling
+                // continues to be handled by the legacy editor itself.
+                return {
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                };
+            },
+
+            onValidationChange: (
+                _callback: (state: FieldValidationState) => void
+            ): (() => void) => {
+                // Legacy Dojo editor does not expose validation state changes through this bridge.
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                return () => {};
             },
 
             enable: (): void => {

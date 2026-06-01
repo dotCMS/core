@@ -1,7 +1,10 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
+import com.dotmarketing.beans.Host;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -130,8 +133,10 @@ public class OpenAIContentPromptRunner implements Runnable {
 
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
+        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
         final JSONObject openAIResponse = APILocator.getDotAIAPI()
-                .getCompletionsAPI()
+                .getCompletionsAPI(appConfig)
                 .raw(buildRequest(parsedPrompt), user.getUserId());
 
         try {

@@ -6,6 +6,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -1215,5 +1216,47 @@ describe('DotFormComponent', () => {
                 expect(restoreButton).toBeFalsy();
             });
         });
+    });
+
+    describe('Manual translation — $shouldRenderFields', () => {
+        beforeEach(() => {
+            // Prevent form rebuilding from creating a FormGroup and triggering
+            // extra change detection cycles that cause NG0101 inside fakeAsync.
+            type PrivateFormMethods = {
+                initializeForm: () => void;
+                initializeFormListener: () => void;
+            };
+            jest.spyOn(
+                component as unknown as PrivateFormMethods,
+                'initializeForm'
+            ).mockReturnValue(undefined);
+            jest.spyOn(
+                component as unknown as PrivateFormMethods,
+                'initializeFormListener'
+            ).mockReturnValue(undefined);
+            spectator.detectChanges();
+        });
+
+        it('should toggle $shouldRenderFields false then back to true when isManualTranslation is true', fakeAsync(() => {
+            patchState(store, { initialContentletState: 'copy', isManualTranslation: true });
+            spectator.detectChanges();
+
+            expect(component.$shouldRenderFields()).toBe(false);
+
+            tick(); // advance past the setTimeout(0)
+
+            expect(component.$shouldRenderFields()).toBe(true);
+        }));
+
+        it('should toggle $shouldRenderFields false then back to true when isManualTranslation is false (populate)', fakeAsync(() => {
+            patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
+            spectator.detectChanges();
+
+            expect(component.$shouldRenderFields()).toBe(false);
+
+            tick();
+
+            expect(component.$shouldRenderFields()).toBe(true);
+        }));
     });
 });

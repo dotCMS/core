@@ -371,6 +371,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     @CloseDBIfOpened
     @Override
+    public boolean indexExists(final String indexName) {
+        return EmbeddingsFactory.impl.get().indexExists(indexName);
+    }
+
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         return EmbeddingsFactory.impl.get().embeddingExists(inode, indexName, extractedText);
     }
