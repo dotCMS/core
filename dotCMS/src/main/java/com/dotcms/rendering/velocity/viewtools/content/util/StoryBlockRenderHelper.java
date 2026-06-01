@@ -5,7 +5,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.util.StringPool;
 import org.apache.velocity.context.Context;
 
 /**
@@ -28,9 +27,10 @@ public class StoryBlockRenderHelper {
     /** Key under which an instance is exposed in the Velocity context. */
     public static final String CONTEXT_KEY = "dotStoryBlockRenderHelper";
 
+    private static final RenderableFactory renderableFactory = new RenderableFactory();
+
     private final String baseTemplatePath;
     private final Context context;
-    private final RenderableFactory renderableFactory = new RenderableFactory();
 
     public StoryBlockRenderHelper(final String baseTemplatePath, final Context context) {
         this.baseTemplatePath = baseTemplatePath;
@@ -48,23 +48,11 @@ public class StoryBlockRenderHelper {
      */
     public String render(final JSONObject node) {
         try {
-            final Renderable renderable = this.renderableFactory.create(node, this.processType(node), this.context);
+            final Renderable renderable = renderableFactory.create(node, NodeTypes.typeKey(node), this.context);
             return renderable.toHtml(this.baseTemplatePath);
         } catch (final JSONException e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
-    }
-
-    /**
-     * Computes the render type for a node. Mirrors the logic in
-     * {@code StoryBlockMap#processType}: {@code heading} is a composite of the
-     * type plus its level (e.g. {@code heading1}).
-     */
-    private String processType(final JSONObject node) throws JSONException {
-        final String type = node.get("type").toString();
-        return type + ("heading".equalsIgnoreCase(type)
-                ? node.getJSONObject("attrs").get("level").toString()
-                : StringPool.BLANK);
     }
 }

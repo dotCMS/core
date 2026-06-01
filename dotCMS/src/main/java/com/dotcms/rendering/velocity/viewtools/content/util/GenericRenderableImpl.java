@@ -60,7 +60,7 @@ class GenericRenderableImpl implements Renderable {
 
             final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
                     APILocator.systemUser(), false)).getOrNull();
-            final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
+            final String hostname = null != host ? host.getHostname() : "dotcms.com"; // fallback to a fake host
 
             Context context = externalContext;
             if (externalContext == null) {
@@ -160,26 +160,41 @@ class GenericRenderableImpl implements Renderable {
                 context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
             }
 
-            context.put("item", item);
             // Expose a render helper so blocks nested inside container blocks (e.g. gridBlock)
-            // resolve their custom renders the same way top-level blocks do. The recursive
-            // render macro in static/storyblock/render.vtl uses it for dotContent nodes.
-            context.put(StoryBlockRenderHelper.CONTEXT_KEY, new StoryBlockRenderHelper(baseTemplatePath, context));
-
-            if (existFileResult._1()) {
-
-                final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + existFileResult._2());
-
-                Logger.debug(this, ()-> "Using the customTemplate: " + customTemplate);
-                return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
+            // resolve their custom renders the same way top-level blocks do. The recursive render
+            // macro in static/storyblock/render.vtl uses it for dotContent/dotImage/dotVideo nodes.
+            // baseTemplatePath is constant for the whole tree, so a single helper is shared across
+            // the recursion - only create one if the context does not already carry it.
+            if (null == context.get(StoryBlockRenderHelper.CONTEXT_KEY)) {
+                context.put(StoryBlockRenderHelper.CONTEXT_KEY, new StoryBlockRenderHelper(baseTemplatePath, context));
             }
 
-            // No custom template for this block: render the default one, keeping the helper in
-            // context so any nested blocks can still resolve their own custom renders.
-            final String defaultTemplate = this.existsInFileSystem(this.defaultPath + type + ".vtl")
-                    ? this.defaultPath + type + ".vtl"
-                    : this.defaultPath + defaultTemplateName;
-            return VelocityUtil.getInstance().mergeTemplate(defaultTemplate, context);
+            // The Velocity context is shared across nested renders, so snapshot $item and restore it
+            // afterwards. Otherwise $item would leak the last nested node's value back to the caller.
+            final Object previousItem = context.get("item");
+            context.put("item", item);
+            try {
+                if (existFileResult._1()) {
+
+                    final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + existFileResult._2());
+
+                    Logger.debug(this, ()-> "Using the customTemplate: " + customTemplate);
+                    return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
+                }
+
+                // No custom template for this block: render the default one, keeping the helper in
+                // context so any nested blocks can still resolve their own custom renders.
+                final String defaultTemplate = this.existsInFileSystem(this.defaultPath + type + ".vtl")
+                        ? this.defaultPath + type + ".vtl"
+                        : this.defaultPath + defaultTemplateName;
+                return VelocityUtil.getInstance().mergeTemplate(defaultTemplate, context);
+            } finally {
+                if (null == previousItem) {
+                    context.remove("item");
+                } else {
+                    context.put("item", previousItem);
+                }
+            }
         } catch (DotStateException | DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage(), e);
