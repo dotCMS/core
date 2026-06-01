@@ -359,5 +359,69 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml(String)}
+     * Given Scenario: A {@code dotContent} block is nested inside a {@code gridBlock} (grid/columns)
+     *   and a custom render template ({@code dotContent-{contentType}.vtl}) is provided via a base path.
+     * ExpectedResult: The custom render is applied to the grid-nested contentlet, not just the default
+     *   title-only template. This is the regression covered by issue #35884 - custom renders were being
+     *   skipped for contentlets nested inside a grid because the grid recursion happens purely in Velocity
+     *   and bypassed the custom-template lookup.
+     */
+    @Test
+    public void test_overridden_render_inside_grid_block_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String contentTypeVar = "gridCustom" + System.currentTimeMillis();
+        final String fileName = "dotContent-" + contentTypeVar + ".vtl";
+        final String storyBlockPath = "/application/storytest/gridblocks" + System.currentTimeMillis() + "/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath, host, user, false);
+
+        // Custom render template for the nested contentlet's content type.
+        final File tempTestFile = File.createTempFile("dotContent-grid", ".vtl");
+        FileUtils.writeStringToFile(tempTestFile,
+                "<div class=\"custom-grid-render\">$!item.attrs.data.body</div>");
+
+        final String variable = "testGridFileAsset" + System.currentTimeMillis();
+        final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+
+        final Contentlet customTemplateFileAsset = new Contentlet();
+        customTemplateFileAsset.setContentType(fileAssetContentType);
+        customTemplateFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+        customTemplateFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+        customTemplateFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+        customTemplateFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+        customTemplateFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+        customTemplateFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+        final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(customTemplateFileAsset,
+                new ContentletDependencies.Builder().modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+        APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+
+        // A doc containing a gridBlock whose first column holds a dotContent block of the custom content type.
+        final String gridJson = "{\"type\":\"doc\",\"content\":[{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[\"6\",\"6\"]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":{"
+                + "\"title\":\"grid title\",\"body\":\"grid-custom-body\",\"contentType\":\"" + contentTypeVar + "\","
+                + "\"identifier\":\"2815d82dd8c37c4726479f5d37f47cf7\",\"inode\":\"74329a5f-267b-470b-a403-8148dea85238\","
+                + "\"languageId\":1}}}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[]}"
+                + "]}]}";
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(gridJson);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+
+        // The custom render must be applied to the grid-nested contentlet...
+        Assert.assertTrue("Custom render not applied inside grid. HTML: " + html,
+                html.contains("custom-grid-render"));
+        Assert.assertTrue("Custom render body missing. HTML: " + html,
+                html.contains("grid-custom-body"));
+        // ...instead of the default title-only template.
+        Assert.assertFalse("Default title-only template was used inside grid. HTML: " + html,
+                html.contains("<h2") && html.contains("grid title</h2>"));
+    }
+
 
 }

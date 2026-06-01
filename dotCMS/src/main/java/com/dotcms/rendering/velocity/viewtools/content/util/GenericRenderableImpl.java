@@ -151,17 +151,22 @@ class GenericRenderableImpl implements Renderable {
             final Tuple2<Boolean, String> existFileResult = existsFile(relativePath, host, user);
             Logger.debug(this, ()-> "Checking if exists the path: " + relativePath + ", existFileResult: "
                     + existFileResult._1() + ", " + existFileResult._2());
+
+            Context context = externalContext;
+            if (externalContext == null) {
+
+                final HttpServletRequest requestProxy   = new FakeHttpRequest(host.getHostname(), null).request();
+                final HttpServletResponse responseProxy = new BaseResponse().response();
+                context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+            }
+
+            context.put("item", item);
+            // Expose a render helper so blocks nested inside container blocks (e.g. gridBlock)
+            // resolve their custom renders the same way top-level blocks do. The recursive
+            // render macro in static/storyblock/render.vtl uses it for dotContent nodes.
+            context.put(StoryBlockRenderHelper.CONTEXT_KEY, new StoryBlockRenderHelper(baseTemplatePath, context));
+
             if (existFileResult._1()) {
-
-                Context context = externalContext;
-                if (externalContext == null) {
-
-                    final HttpServletRequest requestProxy   = new FakeHttpRequest(host.getHostname(), null).request();
-                    final HttpServletResponse responseProxy = new BaseResponse().response();
-                    context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-                }
-
-                context.put("item", item);
 
                 final String customTemplate = String.format("#dotParse(\"%s\")", baseTemplatePath + existFileResult._2());
 
@@ -169,7 +174,12 @@ class GenericRenderableImpl implements Renderable {
                 return VelocityUtil.getInstance().parseVelocity(customTemplate, context);
             }
 
-            return this.toHtml();
+            // No custom template for this block: render the default one, keeping the helper in
+            // context so any nested blocks can still resolve their own custom renders.
+            final String defaultTemplate = this.existsInFileSystem(this.defaultPath + type + ".vtl")
+                    ? this.defaultPath + type + ".vtl"
+                    : this.defaultPath + defaultTemplateName;
+            return VelocityUtil.getInstance().mergeTemplate(defaultTemplate, context);
         } catch (DotStateException | DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage(), e);

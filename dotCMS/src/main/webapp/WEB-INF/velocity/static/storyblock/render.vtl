@@ -66,8 +66,12 @@
             *##set($item = $element)#*
             *##parse("static/storyblock/dotImage.vtl")#*
         *##elseif( $element.type == "dotContent" )#*
-            *##set($item = $element)#*
-            *##parse("static/storyblock/dotContent.vtl")#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotContent.vtl")#*
+            *##end#*
         *##elseif( $element.type == "dotVideo" )#*
             *##set($item = $element)#*
             *##parse("static/storyblock/dotVideo.vtl")#*
