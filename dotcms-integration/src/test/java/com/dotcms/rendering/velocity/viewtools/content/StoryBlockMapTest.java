@@ -423,5 +423,59 @@ public class StoryBlockMapTest extends IntegrationTestBase {
                 html.contains("<h2") && html.contains("grid title</h2>"));
     }
 
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml(String)}
+     * Given Scenario: A {@code dotImage} block is nested inside a {@code gridBlock} and a type-level
+     *   override template ({@code dotImage.vtl}) is provided via a base path.
+     * ExpectedResult: The override is applied to the grid-nested block. {@code dotImage} and
+     *   {@code dotVideo} are leaf branches in the recursive render macro that previously bypassed the
+     *   base-path override lookup when nested in a grid (issue #35884); they now route through the same
+     *   helper as {@code dotContent}.
+     */
+    @Test
+    public void test_overridden_dotimage_render_inside_grid_block_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String fileName = "dotImage.vtl";
+        final String storyBlockPath = "/application/storytest/gridimage" + System.currentTimeMillis() + "/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath, host, user, false);
+
+        final File tempTestFile = File.createTempFile("dotImage-grid", ".vtl");
+        FileUtils.writeStringToFile(tempTestFile,
+                "<figure class=\"custom-grid-image\">$!item.attrs.data.title</figure>");
+
+        final String variable = "testGridImageFileAsset" + System.currentTimeMillis();
+        final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+
+        final Contentlet overrideFileAsset = new Contentlet();
+        overrideFileAsset.setContentType(fileAssetContentType);
+        overrideFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+        overrideFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+        overrideFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+        overrideFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+        overrideFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+        overrideFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+        final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(overrideFileAsset,
+                new ContentletDependencies.Builder().modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+        APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+
+        final String gridJson = "{\"type\":\"doc\",\"content\":[{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[\"6\",\"6\"]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"dotImage\",\"attrs\":{\"data\":{\"title\":\"grid-image-title\"}}}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[]}"
+                + "]}]}";
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(gridJson);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+
+        Assert.assertTrue("dotImage override not applied inside grid. HTML: " + html,
+                html.contains("custom-grid-image"));
+        Assert.assertTrue("dotImage override content missing. HTML: " + html,
+                html.contains("grid-image-title"));
+    }
+
 
 }
