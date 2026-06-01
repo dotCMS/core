@@ -331,7 +331,10 @@ public class ContainerLoader implements DotLoader {
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled())) {
+                final boolean trackingWrapperEnabled =
+                        mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled());
+
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("<div")
                         .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
@@ -403,7 +406,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled())) {
+                if (trackingWrapperEnabled) {
                     velocityCodeBuilder.append("</div>");
                 }
 
