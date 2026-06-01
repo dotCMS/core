@@ -382,7 +382,9 @@ describe('withPageApi', () => {
             // Pre-fix code would have already swapped to 'Reloaded' here.
             expect(store.pageAssetResponse()?.pageAsset.page.title).toBe('Test Page');
 
-            languagesSubject.next([{ id: 1, language: 'English', languageCode: 'en', translated: true }]);
+            languagesSubject.next([
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ]);
             languagesSubject.complete();
             spectator.flushEffects();
 
