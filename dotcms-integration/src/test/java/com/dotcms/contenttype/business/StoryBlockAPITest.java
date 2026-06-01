@@ -602,6 +602,131 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: A non-object JSON scalar (number, string, boolean, array) is passed in —
+     * these are valid JSON tokens but are not Story Block documents. They can reach this method
+     * via {@code refreshNestedStoryBlockValues} when iterating over scalar field values on
+     * related contentlets.
+     * ExpectedResult: No exception must be thrown and the original value must be returned
+     * unchanged. Regression test for "/api/content/_search failing with
+     * MismatchedInputException: Cannot deserialize value of type LinkedHashMap from Integer".
+     */
+    @Test
+    public void test_refreshStoryBlockValueReferences_with_non_object_json_scalars() {
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+
+        // Bare integer — valid JSON, but not an object. Was the trigger of the original bug.
+        StoryBlockReferenceResult result = storyBlockAPI.refreshStoryBlockValueReferences("42", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+        assertEquals("42", result.getValue());
+
+        // Bare quoted string — also valid JSON.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("\"hello\"", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // Bare boolean.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("true", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // JSON array — valid JSON, but not a Story Block document object.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("[1,2,3]", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // Untransformed HTML body content — not JSON at all, must be returned untouched.
+        final String html = "<p>Hello <strong>world</strong></p>";
+        result = storyBlockAPI.refreshStoryBlockValueReferences(html, "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+        assertEquals(html, result.getValue());
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: A Story Block document that contains two children, where the first
+     * child is malformed (missing the {@code type} key, which would have caused a
+     * NullPointerException inside {@code isRefreshed}). The second child is well-formed.
+     * ExpectedResult: No exception is propagated. The bad child is skipped and the call
+     * still returns a non-null result so the surrounding contentlet (and the rest of the
+     * search response) is not aborted by a single bad nested reference.
+     */
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
+     * Given Scenario: A contentlet has a Story Block field whose value contains a malformed
+     * nested child (missing the {@code type} key).
+     * ExpectedResult: refreshReferences must complete normally (no thrown exception). This is
+     * the resilience boundary that prevents one bad contentlet from aborting an entire
+     * /api/content/_search response when ContentletTransformer iterates over the result set.
+     */
+    @Test
+    public void test_refreshReferences_does_not_throw_on_malformed_nested_block()
+            throws DotDataException, DotSecurityException {
+        ContentType storyBlockType = null;
+        try {
+            // Reuse an existing helper pattern: any content type with a Story Block field.
+            final long timestamp = System.currentTimeMillis();
+            storyBlockType = new ContentTypeDataGen()
+                    .name("storyBlockResilience" + timestamp)
+                    .velocityVarName("storyBlockResilience" + timestamp)
+                    .nextPersisted();
+            final Field storyBlockField = new FieldDataGen()
+                    .type(StoryBlockField.class)
+                    .contentTypeId(storyBlockType.id())
+                    .nextPersisted();
+
+            final String malformedStoryBlock =
+                    "{"
+                    + "\"type\":\"doc\","
+                    + "\"attrs\":{},"
+                    + "\"content\":["
+                    + "  {\"attrs\":{\"data\":{\"identifier\":\"missing-type-key\"}}}"
+                    + "]"
+                    + "}";
+
+            final Contentlet contentlet = new ContentletDataGen(storyBlockType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .setProperty(storyBlockField.variable(), malformedStoryBlock)
+                    .nextPersisted();
+
+            try {
+                APILocator.getStoryBlockAPI().refreshReferences(contentlet);
+            } catch (final Throwable t) {
+                Assert.fail("refreshReferences must not propagate exceptions for a single "
+                        + "malformed Story Block: " + t.getMessage());
+            }
+        } finally {
+            if (storyBlockType != null) {
+                ContentTypeDataGen.remove(storyBlockType);
+            }
+        }
+    }
+
+    @Test
+    public void test_refreshStoryBlockValueReferences_isolates_bad_child_block() {
+        final String storyBlockWithBadChild =
+                "{"
+                + "\"type\":\"doc\","
+                + "\"attrs\":{},"
+                + "\"content\":["
+                + "  {\"attrs\":{\"data\":{\"identifier\":\"missing-type-key\"}}},"
+                + "  {\"type\":\"paragraph\",\"content\":[]}"
+                + "]"
+                + "}";
+
+        StoryBlockReferenceResult result = null;
+        try {
+            result = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockWithBadChild, "parent-resilience");
+        } catch (final Throwable t) {
+            Assert.fail("A malformed nested block must not abort the parent refresh: " + t.getMessage());
+        }
+        assertNotNull(result);
+    }
+
+    /**
      * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
      * Given Scenario: This will create 2 block contents, adds a rich content to each block content and retrieve the json.
      * ExpectedResult: The new json will contain the rich text data map for each block content.

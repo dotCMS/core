@@ -14,10 +14,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import com.liferay.util.Validator;
 import org.apache.commons.io.IOUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -78,6 +80,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			@Context final HttpServletResponse response, final String esQueryStr,
 			@QueryParam("depth") final String depthParam,
 			@QueryParam("live") final boolean liveParam,
+			@QueryParam("userid") final String useridParam,
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
 
@@ -106,11 +109,18 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
+		final User userForSearch;
+		try {
+			userForSearch = resolveUserForSearch(user, useridParam);
+		} catch (DotDataException e) {
+			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+		}
+
 		try {
 
-			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(user);
+			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(userForSearch);
 			final ESSearchResults esresult = esapi
-					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, user,
+					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, userForSearch,
 							mode.respectAnonPerms);
 			
 			final JSONObject json = new JSONObject();
@@ -192,11 +202,13 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			@QueryParam("depth") final String depthParam,
 			@Parameter(description = "If true, search only live content; if false, search working content")
 			@QueryParam("live") final boolean liveParam,
+			@Parameter(description = "Admin-only: run the query under the permission context of this user ID or email address")
+			@QueryParam("userid") final String useridParam,
 			@Parameter(description = "If true, return full category details (key, name, description); " +
 					"if false, return only category names")
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
-		return search(request, response, esQuery, depthParam, liveParam, allCategoriesInfo);
+		return search(request, response, esQuery, depthParam, liveParam, useridParam, allCategoriesInfo);
 	}
 	
 	@GET
@@ -247,12 +259,37 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
 
+			// FIXME(OS-cutover): esSearchRaw returns ES JSON wire format via SearchResponse.toString().
+			// Migrate to searchRaw() + Jackson serialization when Phase 3 OS cutover makes ES unavailable.
 			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);
 			return responseResource.responseError(e.getMessage());
 
+		}
+	}
+
+	/**
+	 * Resolves the user whose permission context should be used for the search.
+	 * Only CMS Admins can impersonate another user; all others always search as themselves.
+	 * Throws {@link DotDataException} if the provided ID/email cannot be resolved.
+	 */
+	private User resolveUserForSearch(final User requestingUser, final String useridParam)
+			throws DotDataException, DotSecurityException {
+		if (!UtilMethods.isSet(useridParam)) {
+			return requestingUser;
+		}
+		if (!APILocator.getRoleAPI().doesUserHaveRole(requestingUser, APILocator.getRoleAPI().loadCMSAdminRole())) {
+			return requestingUser;
+		}
+		try {
+			return Validator.isEmailAddress(useridParam)
+					? APILocator.getUserAPI().loadByUserByEmail(useridParam, APILocator.getUserAPI().getSystemUser(), true)
+					: APILocator.getUserAPI().loadUserById(useridParam, APILocator.getUserAPI().getSystemUser(), true);
+		} catch (Exception e) {
+			Logger.warn(this, "Could not resolve userid '" + useridParam + "': " + e.getMessage());
+			throw new DotDataException("Unknown user: " + useridParam);
 		}
 	}
 

@@ -110,6 +110,19 @@ describe('DotAnalyticsErrorComponent', () => {
                 expect(config.icon).toBe('pi-times-circle');
             });
         });
+
+        describe('ERROR status (network / health request failure)', () => {
+            beforeEach(() => {
+                spectator = createComponentWithParams(HealthStatusTypes.ERROR, true);
+            });
+
+            it('should show network error message distinct from NOT_AVAILABLE', () => {
+                const config = spectator.component['$errorConfig']();
+                expect(config.title).toBe('Translated analytics.error.network.error');
+                expect(config.subtitle).toBe('Translated analytics.error.network.error.subtitle');
+                expect(config.icon).toBe('pi-times-circle');
+            });
+        });
     });
 
     describe('Non-Enterprise License Configuration', () => {
@@ -145,10 +158,10 @@ describe('DotAnalyticsErrorComponent', () => {
             spectator = createComponentWithParams('UNKNOWN_STATUS' as HealthStatusTypes, true);
         });
 
-        it('should fallback to CONFIGURATION_ERROR for unknown status', () => {
+        it('should fallback to NOT_AVAILABLE default for unknown status', () => {
             const config = spectator.component['$errorConfig']();
-            expect(config.title).toBe('Translated analytics.search.config.error');
-            expect(config.subtitle).toBe('Translated analytics.search.config.error.subtitle');
+            expect(config.title).toBe('Translated analytics.error.not.available');
+            expect(config.subtitle).toBe('Translated analytics.error.not.available.subtitle');
             expect(config.icon).toBe('pi-exclamation-triangle');
         });
     });

@@ -46,8 +46,6 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
-    /** Called after iframe document height is applied (e.g. keep editor scroll in bounds). */
-    clampScrollWithinBounds?: () => void;
     /** Called when the iframe reports the offsetTop of a section so the editor can scroll to it. */
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
@@ -67,7 +65,6 @@ export class DotUveActionsHandlerService {
             contentWindow,
             host,
             onCopyContent,
-            clampScrollWithinBounds,
             onSectionOffset
         } = deps;
 
@@ -93,9 +90,23 @@ export class DotUveActionsHandlerService {
                 }
             },
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
-                uveStore.setEditorBounds(payload);
+                // The store's `withSelectionAnchor` slice owns the
+                // re-anchor logic: patches editorBounds, looks up the
+                // selected contentlet by inode+container key, updates
+                // editorSelected with fresh coords, and
+                // releases the iframe-layout lock if it was held.
+                uveStore.applyBoundsForSelection(payload);
             },
-            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
+            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea | null) => {
+                // SDK signals "no hover" with a null payload when the pointer
+                // leaves the last hovered contentlet onto dead space (or out
+                // of the document entirely). Clear the hover overlay so it
+                // doesn't linger.
+                if (!coords) {
+                    uveStore.resetContentletArea();
+                    return;
+                }
+
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
 
                 uveStore.setContentletArea({
@@ -106,11 +117,32 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
+            [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: (coords: ClientContentletArea) => {
+                // The user clicked a contentlet inside the iframe. Bounds
+                // and payload travel together in the unified `editorSelected`
+                // record — one write drives both the floating overlay and
+                // the side panel's data binding.
+                const actionPayload = uveStore.getPageSavePayload(coords.payload);
+                uveStore.setSelected({
+                    bounds: {
+                        x: coords.x,
+                        y: coords.y,
+                        width: coords.width,
+                        height: coords.height
+                    },
+                    payload: actionPayload
+                });
+            },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 uveStore.updateEditorScrollState();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
-                uveStore.updateEditorOnScrollEnd();
+                // No-op on purpose. We used to flip IDLE here, but that
+                // races SET_BOUNDS — the overlay would un-hide before the
+                // re-anchored coords arrived, causing a visible jump from
+                // stale-position to correct-position. Now SET_BOUNDS itself
+                // flips IDLE once the new bounds are patched, guaranteeing
+                // the overlay reappears at the right spot.
             },
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
@@ -300,9 +332,8 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.GET_PAGE_DATA]: () => {
                 /* Get page data - handled by bridge service */
             },
-            [DotCMSUVEAction.IFRAME_HEIGHT]: (payload: { height: number }) => {
-                uveStore.viewSetIframeDocHeight(payload.height);
-                clampScrollWithinBounds?.();
+            [DotCMSUVEAction.IFRAME_HEIGHT]: () => {
+                /* No-op. Iframe height is editor-controlled, not page-controlled. */
             },
             [DotCMSUVEAction.SECTION_OFFSET]: (payload: {
                 sectionIndex: number;

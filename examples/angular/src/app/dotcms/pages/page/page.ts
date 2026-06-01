@@ -18,7 +18,11 @@ import {
   DotCMSLayoutBodyComponent,
   DynamicComponentEntity,
 } from '@dotcms/angular';
-import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSComposedPageResponse, DotCMSPageAsset, DotErrorPage } from '@dotcms/types';
+import {
+  ERROR_COPY,
+  ErrorComponent,
+} from '../../../components/error/error.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
 
 
@@ -52,9 +56,15 @@ const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
 
 type PageResponse = { pageAsset: DotCMSPageAsset };
 
+interface ErrorState {
+  status: number;
+  heading: string;
+  body: string;
+}
+
 @Component({
   selector: 'app-page',
-  imports: [CommonModule, DotCMSLayoutBodyComponent, LoadingComponent],
+  imports: [CommonModule, DotCMSLayoutBodyComponent, LoadingComponent, ErrorComponent],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',
@@ -68,6 +78,8 @@ export class PageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   pageAsset = signal<DotCMSPageAsset | null>(null);
+
+  error = signal<ErrorState | null>(null);
 
   components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
 
@@ -93,8 +105,14 @@ export class PageComponent implements OnInit {
         next: (response: DotCMSComposedPageResponse<PageResponse>) => {
           this.pageAsset.set(response?.pageAsset);
         },
-        error: (error) => {
-          console.error('Error in page data stream:', error);
+        error: (err) => {
+          if (err instanceof DotErrorPage) {
+            const status = err.status ?? 500;
+            const copy = ERROR_COPY[status as keyof typeof ERROR_COPY] ?? ERROR_COPY['default'];
+            this.error.set({ status, ...copy });
+          } else {
+            this.error.set({ status: 500, ...ERROR_COPY['default'] });
+          }
         },
       });
   }

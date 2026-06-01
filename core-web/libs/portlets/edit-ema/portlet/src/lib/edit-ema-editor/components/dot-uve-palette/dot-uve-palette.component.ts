@@ -102,6 +102,18 @@ export class DotUvePaletteComponent {
     readonly $variantId = computed(() => this.uveStore.pageVariantId());
 
     /**
+     * Standard templates use the dotCMS Template Builder and expose a row/column
+     * layout the editor can read. Advanced templates are hand-coded HTML/CSS,
+     * so there's no structured layout to render in the LAYERS tab — show an
+     * empty-state explaining that instead. Defaults to `true` while the page
+     * is loading so we don't flash the empty-state at users with standard
+     * templates on slow connections.
+     */
+    readonly $isStandardTemplate = computed(
+        () => this.uveStore.pageAsset()?.template?.drawed ?? true
+    );
+
+    /**
      * Active tab - read from local state, not global store.
      * Made public for testing purposes.
      */

@@ -15,6 +15,7 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
@@ -80,12 +81,46 @@
             </dependency>
 
 
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
+            <!-- reactor-core: pin to 3.4.41 to resolve conflict between existing deps (3.3.16)
+                 and langchain4j-azure-open-ai (3.4+). Required for ContextView. -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.4.41</version>
+            </dependency>
 
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
+                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
 
 
             <!--
@@ -834,6 +869,14 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
                 <version>${aws-java-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

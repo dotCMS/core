@@ -9,19 +9,27 @@ import {
     DotErrorPage,
     DotHttpClient,
     DotHttpError,
-    DotRequestOptions
+    DotRequestOptions,
+    UVE_MODE
 } from '@dotcms/types';
 
-import {
-    buildPageQuery,
-    buildQuery,
-    fetchGraphQL,
-    fetchStyleEditorSchemas,
-    mapContentResponse
-} from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
+
+function logVerboseError(
+    url: string,
+    message: string,
+    details: { status?: number; code?: string; variables: Record<string, unknown> }
+) {
+    const statusLine =
+        details.status !== undefined ? `\n  status: ${details.status} | code: ${details.code}` : '';
+    const variables = JSON.stringify(details.variables, null, 2).replace(/\n/g, '\n  ');
+    consola.error(
+        `[DotCMS GraphQL Error] ${url}: ${message}${statusLine}\n\n  variables:\n  ${variables}\n\n  (full query available at error.graphql.query)`
+    );
+}
 
 /**
  * Client for interacting with the DotCMS Page API.
@@ -126,17 +134,21 @@ export class PageClient extends BaseApiClient {
         } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
+        const verbose = this.config.logLevel === 'verbose';
         const contentQuery = buildQuery(content);
         const completeQuery = buildPageQuery({
             page,
             fragments,
-            additionalQueries: contentQuery
+            additionalQueries: contentQuery,
+            verbose
         });
 
+        const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
         const requestVariables: Record<string, unknown> = {
             // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
-            url: url.startsWith('/') ? url : `/${url}`,
-            mode,
+            url: normalizedUrl,
+            // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
+            mode: UVE_MODE[mode],
             languageId,
             personaId,
             fireRules,
@@ -156,46 +168,105 @@ export class PageClient extends BaseApiClient {
                 headers: requestHeaders,
                 httpClient: this.httpClient
             });
-            // The GQL endpoint can return errors and data, we need to handle both
-            if (response.errors) {
-                response.errors.forEach((error: { message: string }) => {
-                    consola.error('[DotCMS GraphQL Error]: ', error.message);
-                });
 
-                const pageError = response.errors.find((error: { message: string }) =>
-                    error.message.includes('DotPage')
-                );
+            // 1. Log unstructured GraphQL errors (structured ones are logged with enriched messages below)
+            if (response.errors?.length) {
+                response.errors
+                    .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
+                    .forEach((error: { message: string }) => {
+                        if (verbose) {
+                            logVerboseError(normalizedUrl, error.message, {
+                                variables: requestVariables
+                            });
+                        } else {
+                            consola.error(
+                                `[DotCMS GraphQL Error] ${normalizedUrl}: `,
+                                error.message
+                            );
+                        }
+                    });
+            }
 
-                if (pageError) {
-                    // Throw HTTP error - will be caught and wrapped in DotErrorPage below
-                    throw new DotHttpError({
+            // 2. BAD QUERY — data is null/undefined means the entire query failed
+            //    (syntax error, unknown type, validation error)
+            //    Must check BEFORE accessing response.data.page
+            if (!response.data) {
+                const firstError = response.errors?.[0];
+
+                throw new DotErrorPage(
+                    firstError?.message ?? 'GraphQL query failed',
+                    400,
+                    'BAD_REQUEST',
+                    new DotHttpError({
                         status: 400,
                         statusText: 'Bad Request',
-                        message: `GraphQL query failed for URL '${url}': ${pageError.message}`,
+                        message: firstError?.message ?? 'GraphQL query failed',
                         data: response.errors
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
+            }
+
+            // 3. STRUCTURED ERRORS — check extensions.code for NOT_FOUND, PERMISSION_DENIED, etc.
+            //    Only fatal when the page itself failed (data.page is null/undefined).
+            //    If data.page exists, partial errors (e.g. secondary content) surface via errors[].
+            if (response.errors?.length && !response.data.page) {
+                const structuredError = response.errors.find(
+                    (error: { extensions?: { code?: string } }) => error.extensions?.code
+                );
+
+                if (structuredError) {
+                    const code = structuredError.extensions?.code;
+                    const status =
+                        structuredError.extensions?.status ??
+                        (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
+                    const message =
+                        code === 'NOT_FOUND'
+                            ? `Page '${normalizedUrl}' was not found`
+                            : code === 'PERMISSION_DENIED'
+                              ? `Permission denied: you do not have access to page '${normalizedUrl}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
+                              : `Page '${normalizedUrl}' could not be loaded (${code})`;
+
+                    if (verbose) {
+                        logVerboseError(normalizedUrl, message, {
+                            status,
+                            code,
+                            variables: requestVariables
+                        });
+                    } else {
+                        consola.error(`[DotCMS GraphQL Error] ${normalizedUrl}: `, message);
+                    }
+
+                    throw new DotErrorPage(message, status, code, undefined, {
+                        query: completeQuery,
+                        variables: requestVariables
                     });
                 }
             }
 
-            const pageResponse = graphqlToPageEntity(response.data.page);
+            // 4. Transform and check page — null page with no structured error = 404
+            const pageResponse = response.data.page
+                ? graphqlToPageEntity(response.data.page)
+                : null;
+
+            const styleEditorSchemas = pageResponse ? pageResponse.page.styleEditorSchemas : [];
 
             if (!pageResponse) {
-                // Throw HTTP error - will be caught and wrapped in DotErrorPage below
-                throw new DotHttpError({
-                    status: 404,
-                    statusText: 'Not Found',
-                    message: `Page ${url} not found. Check the page URL and permissions.`,
-                    data: response.errors
-                });
+                throw new DotErrorPage(
+                    `Page '${normalizedUrl}' was not found`,
+                    404,
+                    'NOT_FOUND',
+                    new DotHttpError({
+                        status: 404,
+                        statusText: 'Not Found',
+                        message: `Page '${normalizedUrl}' was not found`,
+                        data: response.errors
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
             }
 
-            const styleEditorSchemas = await fetchStyleEditorSchemas(
-                pageResponse.page.identifier,
-                this.config,
-                this.requestOptions,
-                this.httpClient
-            );
-
+            // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
@@ -205,29 +276,30 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
+                errors: response.errors?.length ? response.errors : undefined,
+                ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
-            // Handle DotHttpError instances
+            if (error instanceof DotErrorPage) {
+                throw error;
+            }
+
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
-                    `Page request failed for URL '${url}': ${error.message}`,
+                    `Page request failed for URL '${normalizedUrl}': ${error.message}`,
+                    error.status,
+                    'UNKNOWN',
                     error,
-                    {
-                        query: completeQuery,
-                        variables: requestVariables
-                    }
+                    { query: completeQuery, variables: requestVariables }
                 );
             }
 
-            // Handle other errors (GraphQL errors, validation errors, etc.)
             throw new DotErrorPage(
-                `Page request failed for URL '${url}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                `Page request failed for URL '${normalizedUrl}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                500,
+                'UNKNOWN',
                 undefined,
-                {
-                    query: completeQuery,
-                    variables: requestVariables
-                }
+                { query: completeQuery, variables: requestVariables }
             );
         }
     }

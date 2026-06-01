@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { map, shareReplay, take } from 'rxjs/operators';
 
 import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
@@ -12,6 +12,9 @@ import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/d
 })
 export class DotPropertiesService {
     private readonly http = inject(HttpClient);
+    // Process-lifetime cache so multiple components asking for the same flag during a single
+    // page load don't trigger duplicate requests. Admin flag flips take effect after reload.
+    private readonly featureFlagCache = new Map<string, Observable<boolean>>();
 
     /**
      * Get the value of specific key
@@ -22,13 +25,15 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getKey(key: string): Observable<string | boolean> {
+        const responseKey = this.removePrefix(key);
+
         return this.http
             .get<
                 DotCMSResponse<Record<string, string | boolean>>
             >('/api/v1/configuration/config', { params: { keys: key } })
             .pipe(
                 take(1),
-                map((response) => response.entity[key] ?? FEATURE_FLAG_NOT_FOUND)
+                map((response) => response.entity[responseKey] ?? FEATURE_FLAG_NOT_FOUND)
             );
     }
 
@@ -70,6 +75,10 @@ export class DotPropertiesService {
             );
     }
 
+    private removePrefix(key: string): string {
+        return key.replace(/^(list:|boolean:|number:)/, '');
+    }
+
     /**
      * Get the value of specific feature flag
      * @param {FeaturedFlags} key
@@ -77,21 +86,61 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
-        return this.getKey(key).pipe(
+        const cached = this.featureFlagCache.get(key);
+        if (cached) {
+            return cached;
+        }
+
+        const flag$ = this.getKey(key).pipe(
             map((value) => {
-                // /api/v1/configuration/config returns JSON booleans for FEATURE_FLAG_* keys
-                // (see ConfigurationResource) but other keys may still come through as "true"/"false" strings.
                 if (typeof value === 'boolean') {
                     return value;
                 }
 
-                return value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true';
+                return value === FEATURE_FLAG_NOT_FOUND ? true : value.toLowerCase() === 'true';
+            }),
+            shareReplay(1)
+        );
+
+        this.featureFlagCache.set(key, flag$);
+
+        return flag$;
+    }
+
+    /**
+     * Like {@link getFeatureFlag} but with an explicit default for `FEATURE_FLAG_NOT_FOUND`.
+     * Use this when the feature should be **off** by default if the key is missing on the
+     * server — typical for new opt-in features whose backend key may not yet exist on older
+     * dotCMS images. Bypasses the shared cache so callers with different defaults don't
+     * collide on the same key.
+     *
+     * @param {FeaturedFlags} key
+     * @param {boolean} defaultValue - returned when the server replies with `FEATURE_FLAG_NOT_FOUND`.
+     * @returns {Observable<boolean>}
+     */
+    getFeatureFlagWithDefault(key: FeaturedFlags, defaultValue: boolean): Observable<boolean> {
+        return this.getKey(key).pipe(
+            map((value) => {
+                if (typeof value === 'boolean') return value;
+                if (value === FEATURE_FLAG_NOT_FOUND) return defaultValue;
+
+                // Lowercase the comparison so env-var-driven configs ("True", "TRUE") aren't
+                // silently treated as falsy.
+                return value.toLowerCase() === 'true';
             })
         );
     }
 
     /**
      * Retrieves feature flags for given keys.
+     *
+     * Value resolution (mirrors {@link getFeatureFlag}):
+     * - Native booleans pass through as-is (FEATURE_FLAG_* keys return JSON booleans
+     *   from /api/v1/configuration/config — see ConfigurationResource).
+     * - String `"true"` / `"false"` is coerced to the matching boolean.
+     * - `FEATURE_FLAG_NOT_FOUND` ("NOT_FOUND") is treated as an implicit `true`:
+     *   when a feature flag is not defined on the server, the feature is considered enabled by default.
+     * - Any other string value passes through unchanged.
      *
      * @param {string[]} keys - An array of keys to retrieve feature flags for.
      * @returns {Observable<Record<string, boolean | string>>} - An Observable that emits a record containing key-value pairs of feature flags.
@@ -103,8 +152,13 @@ export class DotPropertiesService {
                     (acc, [key, value]) => {
                         if (typeof value === 'boolean') {
                             acc[key] = value;
+                        } else if (value === FEATURE_FLAG_NOT_FOUND) {
+                            acc[key] = true;
                         } else {
-                            acc[key] = value === 'true' ? true : value === 'false' ? false : value;
+                            // Lowercase the comparison so env-var-driven configs ("True", "TRUE")
+                            // aren't silently treated as the literal string passthrough.
+                            const lower = value.toLowerCase();
+                            acc[key] = lower === 'true' ? true : lower === 'false' ? false : value;
                         }
 
                         return acc;

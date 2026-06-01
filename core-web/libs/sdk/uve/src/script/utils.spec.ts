@@ -5,61 +5,12 @@ import {
     addClassToEmptyContentlets,
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
-    reportIframeHeight,
     scrollHandler,
     setClientIsReady
 } from './utils';
 
 import { DOT_SECTION_ID_PREFIX } from '../internal/constants';
 import { onScrollToSection } from '../internal/events';
-import * as documentHeightObserver from '../lib/dom/document-height-observer';
-
-describe('reportIframeHeight', () => {
-    let postMessageSpy: jest.SpyInstance;
-    let destroySpy: jest.Mock;
-    let observeDocumentHeightSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
-        destroySpy = jest.fn();
-        observeDocumentHeightSpy = jest
-            .spyOn(documentHeightObserver, 'observeDocumentHeight')
-            .mockReturnValue({ destroy: destroySpy });
-    });
-
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it('delegates observation to the shared height observer', () => {
-        reportIframeHeight();
-
-        expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                onHeightChange: expect.any(Function)
-            })
-        );
-    });
-
-    it('sends IFRAME_HEIGHT when the shared observer reports a height', () => {
-        reportIframeHeight();
-
-        const onHeightChange = observeDocumentHeightSpy.mock.calls[0][0].onHeightChange;
-        onHeightChange(1000);
-
-        expect(postMessageSpy).toHaveBeenCalledWith(
-            { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
-            '*'
-        );
-    });
-
-    it('destroys the shared observer when destroyHeightReporter is called', () => {
-        const { destroyHeightReporter } = reportIframeHeight();
-        destroyHeightReporter();
-
-        expect(destroySpy).toHaveBeenCalled();
-    });
-});
 
 describe('scrollHandler', () => {
     let postMessageSpy: jest.SpyInstance;

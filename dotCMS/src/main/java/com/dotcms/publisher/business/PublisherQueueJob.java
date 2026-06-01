@@ -15,6 +15,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -653,6 +654,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 		final String responseBody = webTarget
 				.request(MediaType.APPLICATION_JSON)
+				.header("Authorization", AuthCredentialPushPublishUtil.INSTANCE.getRequestToken(targetEndpoint).orElse(""))
 				.post(Entity.entity(bundleIds, MediaType.APPLICATION_JSON))
 				.readEntity(String.class);
 

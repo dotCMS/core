@@ -66,7 +66,7 @@ export interface DotAIImageContent extends DotAIImageResponse {
  */
 export interface DotGeneratedAIImage {
     request: AIImagePrompt;
-    response: DotAIImageContent;
+    response: DotAIImageContent | null;
     error?: string;
 }
 

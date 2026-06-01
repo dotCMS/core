@@ -17,6 +17,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -53,6 +55,7 @@ public class AppConfig implements Serializable {
     private final String providerConfig;
     private final String providerConfigHash;
     private final transient JsonNode providerConfigRoot;
+    private final Map<String, String> settingsValues;
     private final Map<String, Secret> configValues;
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
@@ -80,11 +83,13 @@ public class AppConfig implements Serializable {
             embeddingsModel = AIModel.NOOP_MODEL;
         }
 
-        rolePrompt = getFromSection(providerConfigRoot, "chat", "rolePrompt", AppKeys.ROLE_PROMPT.defaultValue);
-        textPrompt = getFromSection(providerConfigRoot, "chat", "textPrompt", AppKeys.TEXT_PROMPT.defaultValue);
-        imagePrompt = getFromSection(providerConfigRoot, "image", "imagePrompt", AppKeys.IMAGE_PROMPT.defaultValue);
-        imageSize = getFromSection(providerConfigRoot, "image", "size", AppKeys.IMAGE_SIZE.defaultValue);
-        listenerIndexer = getFromSection(providerConfigRoot, "embeddings", "listenerIndexer", AppKeys.LISTENER_INDEXER.defaultValue);
+        settingsValues = parseSettings(providerConfigRoot);
+
+        rolePrompt = getFromSettings(settingsValues, "rolePrompt", AppKeys.ROLE_PROMPT.defaultValue);
+        textPrompt = getFromSettings(settingsValues, "textPrompt", AppKeys.TEXT_PROMPT.defaultValue);
+        imagePrompt = getFromSettings(settingsValues, "imagePrompt", AppKeys.IMAGE_PROMPT.defaultValue);
+        imageSize = getFromSettings(settingsValues, "imageSize", AppKeys.IMAGE_SIZE.defaultValue);
+        listenerIndexer = getFromSettings(settingsValues, "listenerIndexer", AppKeys.LISTENER_INDEXER.defaultValue);
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -235,8 +240,7 @@ public class AppConfig implements Serializable {
      * @return the integer configuration value
      */
     public int getConfigInteger(final AppKeys appKey) {
-        String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(() -> Integer.parseInt(value)).getOrElse(0);
+        return Try.of(() -> Integer.parseInt(getConfig(appKey))).getOrElse(0);
     }
 
     /**
@@ -246,8 +250,7 @@ public class AppConfig implements Serializable {
      * @return the float configuration value
      */
     public float getConfigFloat(final AppKeys appKey) {
-        String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(() -> Float.parseFloat(value)).getOrElse(0f);
+        return Try.of(() -> Float.parseFloat(getConfig(appKey))).getOrElse(0f);
     }
 
     /**
@@ -257,8 +260,7 @@ public class AppConfig implements Serializable {
      * @return the boolean configuration value
      */
     public boolean getConfigBoolean(final AppKeys appKey) {
-        final String value = Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
-        return Try.of(() -> Boolean.parseBoolean(value)).getOrElse(false);
+        return Try.of(() -> Boolean.parseBoolean(getConfig(appKey))).getOrElse(false);
     }
 
     /**
@@ -279,8 +281,11 @@ public class AppConfig implements Serializable {
      * @return the configuration value
      */
     public String getConfig(final AppKeys appKey) {
-        if (configValues.containsKey(appKey.key)) {
-            return Try.of(() -> configValues.get(appKey.key).getString()).getOrElse(appKey.defaultValue);
+        if (appKey.settingsKey != null) {
+            final String fromSettings = settingsValues.get(appKey.settingsKey);
+            if (StringUtils.isNotBlank(fromSettings)) {
+                return fromSettings;
+            }
         }
         return appKey.defaultValue;
     }
@@ -355,23 +360,27 @@ public class AppConfig implements Serializable {
         return true;
     }
 
-    private static String getFromSection(final JsonNode root, final String section,
-                                         final String field, final String defaultValue) {
-        try {
-            final JsonNode sectionNode = root.get(section);
-            if (sectionNode == null || sectionNode.isNull()) {
-                return defaultValue;
-            }
-            final JsonNode fieldNode = sectionNode.get(field);
-            if (fieldNode == null || fieldNode.isNull()) {
-                return defaultValue;
-            }
-            // Container nodes (object/array) are serialized back to a JSON string (e.g. listenerIndexer)
-            final String value = fieldNode.isContainerNode() ? fieldNode.toString() : fieldNode.asText();
-            return StringUtils.isNotBlank(value) ? value : defaultValue;
-        } catch (final Exception e) {
-            return defaultValue;
+    private static Map<String, String> parseSettings(final JsonNode root) {
+        final Map<String, String> result = new java.util.HashMap<>();
+        final JsonNode settings = root.get("settings");
+        if (settings == null || !settings.isObject()) {
+            return result;
         }
+        final java.util.Iterator<java.util.Map.Entry<String, JsonNode>> fields = settings.fields();
+        while (fields.hasNext()) {
+            final java.util.Map.Entry<String, JsonNode> entry = fields.next();
+            final JsonNode value = entry.getValue();
+            if (!value.isNull()) {
+                result.put(entry.getKey(), value.isContainerNode() ? value.toString() : value.asText());
+            }
+        }
+        return result;
+    }
+
+    private static String getFromSettings(final Map<String, String> settings,
+                                          final String key, final String defaultValue) {
+        final String value = settings.get(key);
+        return StringUtils.isNotBlank(value) ? value : defaultValue;
     }
 
     @com.google.common.annotations.VisibleForTesting
@@ -392,12 +401,21 @@ public class AppConfig implements Serializable {
                 return AIModel.NOOP_MODEL;
             }
             final JsonNode modelNode = sectionNode.get("model");
-            if (modelNode == null || modelNode.asText().isBlank()) {
+            final JsonNode deploymentNode = sectionNode.get("deploymentName");
+            final String modelText = (modelNode != null && !modelNode.asText().isBlank())
+                    ? modelNode.asText()
+                    : (deploymentNode != null && !deploymentNode.asText().isBlank()
+                            ? deploymentNode.asText()
+                            : null);
+            if (modelText == null) {
                 return AIModel.NOOP_MODEL;
             }
+            final List<String> modelNames = Arrays.stream(modelText.split("\\s*,\\s*"))
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toList());
             final AIModel.Builder builder = AIModel.builder()
                     .withType(type)
-                    .withModelNames(modelNode.asText());
+                    .withModelNames(modelNames);
             final JsonNode maxTokensNode = sectionNode.get("maxTokens");
             if (maxTokensNode != null && maxTokensNode.isInt()) {
                 builder.withMaxTokens(maxTokensNode.asInt());

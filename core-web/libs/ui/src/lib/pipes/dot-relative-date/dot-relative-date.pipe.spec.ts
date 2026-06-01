@@ -101,8 +101,12 @@ describe('DotRelativeDatePipe', () => {
 
             tick(EIGHT_DAYS);
 
+            // The pipe converts millisecond inputs to UTC before formatting,
+            // so the expected value must use the same UTC-shifted date.
+            // Comparing against `date.toLocaleDateString` directly would be
+            // flaky around midnight in any non-UTC timezone.
             expect(pipe.transform(date.getTime())).toEqual(
-                date.toLocaleDateString('en-US', {
+                formatDateService.getUTC(date).toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'
@@ -132,8 +136,10 @@ describe('DotRelativeDatePipe', () => {
             const timeStampAfter = N_DAYS - 1;
 
             date.setDate(date.getDate() - N_DAYS); //Set the date to N days before
+            // Match the pipe's UTC-shift semantics in the expected value
+            // so the assertion isn't timezone-flaky around midnight.
             expect(pipe.transform(date.getTime(), 'MM/dd/yyyy', timeStampAfter)).toEqual(
-                date.toLocaleDateString('en-US', {
+                formatDateService.getUTC(date).toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
                     year: 'numeric'

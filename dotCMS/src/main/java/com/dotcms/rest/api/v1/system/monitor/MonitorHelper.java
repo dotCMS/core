@@ -1,12 +1,10 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.http.CircuitBreakerUrl;
-import com.dotcms.jitsu.EventLogRunnable;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
@@ -31,20 +29,28 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT;
+import static com.liferay.util.StringPool.BLANK;
+
 /**
- * This class provides several utility methods aimed to check the status of the different subsystems
- * of dotCMS, namely:
+ * Provides utility methods for checking the status of the different subsystems of dotCMS, namely:
  * <ul>
  *     <li>Database server connectivity.</li>
  *     <li>Elasticsearch server connectivity.</li>
  *     <li>Caching framework or server connectivity.</li>
- *     <li>File System access.</li>
- *     <li>Assets folder write/delete operations.</li>
+ *     <li>Local and asset file system write access.</li>
+ *     <li>Telemetry service connectivity.</li>
+ *     <li>Content Analytics app configuration and CA Event Manager reachability.</li>
  * </ul>
+ *
+ * <p>Results are cached for a period defined by {@code SYSTEM_STATUS_CACHE_RESPONSE_SECONDS}
+ * (default: 10 s). Only a fully healthy response is cached; a degraded response is always
+ * recomputed on the next request.
  *
  * @author Brent Griffin
  * @since Jul 18th, 2018
@@ -186,34 +192,61 @@ class MonitorHelper {
         return monitorStats;
     }
 
-
-
     /**
-     * Determines if the content analytics is healthy by sending a test event to the analytics
-     * @param request
-     * @return
+     * Determines whether the Content Analytics subsystem is healthy by running three sequential
+     * checks:
+     * <ol>
+     *   <li><b>App configuration</b> — the {@code dotContentAnalytics-config} App must be
+     *       installed and have secrets configured for the current Site (including an HMAC
+     *       token provisioned via the save-flow exchange).</li>
+     *   <li><b>Required environment variables</b> — {@code DOT_ANALYTICS_BASE_URL},
+     *       {@code DOT_ANALYTICS_TENANT}, and {@code DOT_ANALYTICS_PROJECT} must all be
+     *       present and non-empty.</li>
+     *   <li><b>Service connectivity</b> — the CA Event Manager's {@code /v1/health} endpoint
+     *       must respond with a 2xx status, confirming ClickHouse is reachable.</li>
+     * </ol>
+     *
+     * @param request the current HTTP request, used to resolve the active Site
+     *
+     * @return a {@link Health} name: {@code OK}, {@code NOT_CONFIGURED}, or
+     * {@code CONFIGURATION_ERROR}
      */
     private String isContentAnalytics(final HttpServletRequest request) {
-
         try {
+            // Required global infrastructure config — these gate the whole subsystem
+            // independent of which site the probe lands on.
+            final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
+            final String tenant  = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
+            final String project = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
+            final boolean globallyConfigured = UtilMethods.isSet(baseUrl)
+                    && UtilMethods.isSet(tenant)
+                    && UtilMethods.isSet(project);
 
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            final AnalyticsApp analyticsApp = Try.of(()-> AnalyticsHelper.get().appFromHost(host))
-                    .getOrNull();
+            // Per-site config (App secrets) — automated probes typically hit the System
+            // Host or arrive via IP, in which case getCurrentHostNoThrow may return null.
+            // Avoid passing null into getAppSecrets — its catch-block logger dereferences
+            // the site identifier and would NPE for every probe, polluting logs.
+            final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final boolean siteConfigured = site != null
+                    && !ContentAnalyticsUtil.getAppSecrets(site).isEmpty();
 
-            if(analyticsApp==null) {
-                return ExperimentsAPI.Health.NOT_CONFIGURED.name();
+            if (!globallyConfigured && !siteConfigured) {
+                return Health.NOT_CONFIGURED.name();
+            }
+            if (!globallyConfigured) {
+                Logger.warn(this, "Content Analytics health check: missing required env vars " +
+                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_TENANT, DOT_ANALYTICS_PROJECT)");
+                return Health.CONFIGURATION_ERROR.name();
             }
 
-            final Optional<CircuitBreakerUrl.Response<String>> responseOptional =
-                    new EventLogRunnable(host).sendTestEvent();
-
-            return responseOptional.isPresent()
-                    && UtilMethods.isSet(responseOptional.get().getResponse())
-                    ? ExperimentsAPI.Health.OK.name(): ExperimentsAPI.Health.CONFIGURATION_ERROR.name();
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            return ExperimentsAPI.Health.CONFIGURATION_ERROR.name();
+            // Reachability probe — the only check that should fail loudly for monitoring.
+            return EventAnalyticsProxyHelper.healthCheck()
+                    ? Health.OK.name()
+                    : Health.CONFIGURATION_ERROR.name();
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Content Analytics health check failed: %s",
+                    ExceptionUtil.getErrorMessage(e)), e);
+            return Health.CONFIGURATION_ERROR.name();
         }
     }
 

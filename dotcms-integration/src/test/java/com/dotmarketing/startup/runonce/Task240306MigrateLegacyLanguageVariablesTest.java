@@ -3,11 +3,14 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.languagevariable.business.ImmutableMigrationSummary;
 import com.dotcms.languagevariable.business.LegacyLangVarMigrationHelper;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -24,6 +27,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -321,6 +325,127 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
             // Always restore the messages directory to its original state
             restoreMessagesDirectory(backupFiles);
         }
+    }
+
+    /**
+     * Reproduces the "transaction cascade" bug triggered in production by
+     * {@link com.dotmarketing.startup.StartupTasksExecutor#executeDataUpgrades()}.
+     *
+     * <p>{@code executeDataUpgrades()} wraps every upgrade task in a single shared PostgreSQL
+     * transaction via {@link HibernateUtil#startTransaction()}.  When one language variable fails
+     * with a duplicate-key violation in the {@code unique_fields} table, PostgreSQL marks the
+     * entire connection as <em>aborted</em>.  Every subsequent variable then fails with:
+     * <pre>
+     * ERROR: current transaction is aborted, commands ignored until end of transaction block
+     * </pre>
+     * even though only the first variable had a conflicting entry.</p>
+     *
+     * <p><b>Given scenario:</b>
+     * <ol>
+     *   <li>An outer transaction is started manually (reproducing {@code executeDataUpgrades()}).
+     *   </li>
+     *   <li>An orphaned row is pre-inserted in {@code unique_fields} for the key
+     *       {@code "key_conflict"} — simulating a previous failed migration that persisted the
+     *       unique-field entry without committing the actual contentlet.</li>
+     *   <li>A two-entry properties file is processed: {@code key_conflict} first, then
+     *       {@code key_valid}.</li>
+     * </ol>
+     * <b>Expected result (after the fix):</b> only {@code key_conflict} fails;
+     * {@code key_valid} is migrated successfully.<br>
+     * <b>Current result (before the fix):</b> both variables fail — {@code key_conflict} due
+     * to the duplicate key, and {@code key_valid} because the aborted transaction poisons the
+     * shared PostgreSQL connection.</p>
+     */
+    @Test
+    public void testMigrationVariableFailureDoesNotCascadeToSubsequentVariables()
+            throws Exception {
+
+        // ── setup ──────────────────────────────────────────────────────────────────────────────
+        final ContentTypeAPI ctAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType langVarCT = ctAPI.find(LanguageVariableAPI.LANGUAGEVARIABLE_VAR_NAME);
+        assertNotNull("Language Variable content type must exist", langVarCT);
+
+        // Use Arabic-SA as the test language (file name: cms_language_ar_SA.properties).
+        createLangVariantInNotExists("ar", "SA", "Arabic", "Saudi Arabia");
+        final Language testLanguage = APILocator.getLanguageAPI().getLanguage("ar", "SA");
+        assertNotNull("Arabic-SA test language must exist", testLanguage);
+
+        // Create a temp messages dir with exactly two entries:
+        //   key_conflict → will collide with the pre-inserted orphan unique_fields row
+        //   key_valid    → must succeed; currently also fails due to transaction cascade (bug)
+        final Path tempDir = Files.createTempDirectory("lang-var-cascade-test");
+        final Path propsFile = tempDir.resolve("cms_language_ar_SA.properties");
+        Files.write(propsFile,
+                "key_conflict=Conflict Value\nkey_valid=Valid Value\n"
+                        .getBytes(StandardCharsets.UTF_8));
+
+        // ── reproduce the production outer-transaction context ─────────────────────────────────
+        // StartupTasksExecutor calls HibernateUtil.startTransaction() before executeUpgrade(),
+        // causing all @WrapInTransaction CDI calls inside the migration to JOIN this transaction
+        // rather than managing their own. A single DB failure therefore aborts the shared
+        // PostgreSQL connection for all subsequent variables.
+        HibernateUtil.startTransaction();
+        ImmutableMigrationSummary summary = null;
+        try {
+            // Pre-insert an orphaned unique_fields row for "key_conflict" within the same
+            // transaction. The criteria string must match what UniqueFieldCriteria.criteria()
+            // would produce: contentTypeId + fieldVarName + languageId + fieldValue.
+            // (uniquePerSite = false for Language Variable, so no siteId is appended.)
+            final String criteria = langVarCT.id()
+                    + KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR
+                    + testLanguage.getId()
+                    + "key_conflict";
+
+            new DotConnect()
+                    .setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) "
+                            + "VALUES (encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), ?::jsonb)")
+                    .addParam(criteria)
+                    .addParam(String.format(
+                            "{\"contentTypeId\":\"%s\",\"fieldVariableName\":\"%s\","
+                                    + "\"languageId\":%d,\"fieldValue\":\"key_conflict\","
+                                    + "\"contentletIds\":[\"orphan-fake-id\"],\"live\":false,"
+                                    + "\"variant\":\"DEFAULT\",\"uniquePerSite\":false}",
+                            langVarCT.id(),
+                            KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR,
+                            testLanguage.getId()))
+                    .loadResult();
+
+            final LegacyLangVarMigrationHelper helper =
+                    new LegacyLangVarMigrationHelper(langVarCT.id());
+            summary = helper.migrateLegacyLanguageVariables(tempDir);
+
+        } finally {
+            // Roll back everything (orphan row + any contentlets created during migration).
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (final Exception rollbackEx) {
+                Logger.warn(Task240306MigrateLegacyLanguageVariablesTest.class,
+                        "Could not rollback test transaction: " + rollbackEx.getMessage());
+            }
+            Files.deleteIfExists(propsFile);
+            Files.deleteIfExists(tempDir);
+        }
+
+        // ── assertions ─────────────────────────────────────────────────────────────────────────
+        assertNotNull("Migration summary must be present", summary);
+
+        final List<String> fails  = summary.fails().getOrDefault(testLanguage, List.of());
+        final List<String> successes = summary.success().getOrDefault(testLanguage, List.of());
+
+        // key_conflict must fail — its unique_fields entry already exists (expected).
+        assertTrue("'key_conflict' must fail due to the pre-existing unique_fields entry",
+                fails.contains("key_conflict"));
+
+        // key_valid must NOT be collateral damage from key_conflict's failure.
+        // Before the fix this assertion fails: key_valid is also in fails because the shared
+        // PostgreSQL connection is poisoned by the aborted transaction.
+        assertFalse(
+                "REGRESSION: 'key_valid' must NOT fail. The failure of 'key_conflict' must not "
+                        + "cascade and abort the PostgreSQL connection for subsequent variables.",
+                fails.contains("key_valid"));
+
+        assertFalse("'key_valid' must have been successfully migrated",
+                successes.isEmpty());
     }
 
     /**

@@ -6,13 +6,11 @@
 
 <div class="flex flex-col gap-2 w-full">
     <div class="w-full flex justify-between items-center">
-        @if (contentlet | contentletStatusTag; as status) {
-            <p-tag [severity]="status.severity" [value]="status.label" />
-        }
+        <dot-contentlet-status-chip [state]="contentlet" />
         @if (contentlet?.inode) {
             <a
                 data-testid="json-link"
-                class="text-sm text-[var(--gray-700)]"
+                class="text-sm text-gray-700"
                 [href]="$jsonUrl()"
                 target="_blank"
                 rel="noopener">
@@ -26,13 +24,13 @@
                 data-testid="content-type-link"
                 [pTooltip]="'edit.content.sidebar.information.go.to.content.type' | dm"
                 tooltipPosition="bottom"
-                class="no-underline! py-2 flex flex-col gap-0 bg-white rounded-lg w-full min-h-[60px] transition-colors hover:bg-[var(--color-palette-primary-100)]"
+                class="no-underline! text-sm py-2 px-2 flex flex-col gap-0 bg-white rounded-lg w-full min-h-[60px] transition-colors"
                 [routerLink]="'/content-types-angular/edit/' + contentType.variable"
                 target="_blank">
-                <span class="font-bold text-[var(--gray-900)] leading-relaxed">
+                <span class="font-bold text-gray-900 leading-relaxed">
                     {{ 'Content-Type' | dm }}
                 </span>
-                <span class="text-sm text-[var(--gray-800)] leading-relaxed">
+                <span class="text-sm text-gray-800 leading-relaxed">
                     {{ contentType.name }}
                 </span>
             </a>
@@ -40,12 +38,12 @@
 
         <div class="p-0 flex flex-row flex-nowrap w-full bg-white rounded-lg">
             <div
-                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
-                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-gray-200 last:border-r-0">
+                <span class="text-sm font-bold text-gray-900 leading-relaxed mb-0">
                     {{ 'Created' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
+                    class="text-sm text-gray-800 leading-relaxed cursor-default"
                     [pTooltip]="contentlet?.ownerUserName"
                     tooltipPosition="bottom">
                     {{
@@ -57,7 +55,7 @@
                 </span>
                 @if (contentlet?.creationDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
+                        class="text-xs text-gray-700 leading-relaxed cursor-default"
                         data-testid="created-date"
                         [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -67,19 +65,19 @@
             </div>
 
             <div
-                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
-                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-gray-200 last:border-r-0">
+                <span class="text-sm font-bold text-gray-900 leading-relaxed mb-0">
                     {{ 'Modified' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
+                    class="text-sm text-gray-800 leading-relaxed cursor-default"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.modUserName">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
                 @if (contentlet?.modDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
+                        class="text-xs text-gray-700 leading-relaxed cursor-default"
                         data-testid="modified-date"
                         [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -89,12 +87,12 @@
             </div>
 
             <div
-                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
-                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-gray-200 last:border-r-0">
+                <span class="text-sm font-bold text-gray-900 leading-relaxed mb-0">
                     {{ 'Published' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
+                    class="text-sm text-gray-800 leading-relaxed cursor-default"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.publishUserName">
                     {{
@@ -105,7 +103,7 @@
                 </span>
                 @if (contentlet?.publishDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
+                        class="text-xs text-gray-700 leading-relaxed cursor-default"
                         data-testid="published-date"
                         [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -117,22 +115,40 @@
     </div>
 </div>
 
-<div class="flex w-full min-h-[60px] py-2 flex flex-col gap-0 bg-white rounded-lg">
-    <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed">
-        {{ 'References' | dm }}
-    </span>
-    @if (loading) {
-        <p-skeleton height="14px" class="min-h-[14px]" />
-    } @else {
-        <span class="text-sm text-[var(--gray-800)] leading-relaxed" data-testid="references-count">
-            @if (referencesPageCount && referencesPageCount !== '0') {
+@if ($hasReferences()) {
+    <div
+        data-testid="references-card"
+        role="button"
+        tabindex="0"
+        class="flex w-full min-h-[60px] py-2 px-2 flex-col gap-0 bg-white rounded-lg group cursor-pointer"
+        (click)="openReferencesDialog()"
+        (keydown.enter)="openReferencesDialog()"
+        (keydown.space)="$event.preventDefault(); openReferencesDialog()">
+        <span class="text-sm font-bold text-gray-900 leading-relaxed">
+            {{ 'References' | dm }}
+        </span>
+        @if (loading) {
+            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
+        } @else {
+            <span class="text-sm text-gray-800 leading-relaxed" data-testid="references-count">
                 {{
                     'edit.content.sidebar.information.references-with.pages.tooltip'
                         | dm: [referencesPageCount]
                 }}
-            } @else {
-                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
-            }
+            </span>
+        }
+    </div>
+} @else {
+    <div class="flex w-full min-h-[60px] py-2 px-2 flex-col gap-0 bg-white rounded-lg">
+        <span class="text-sm font-bold text-gray-900 leading-relaxed">
+            {{ 'References' | dm }}
         </span>
-    }
-</div>
+        @if (loading) {
+            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
+        } @else {
+            <span class="text-sm text-gray-800 leading-relaxed" data-testid="references-count">
+                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
+            </span>
+        }
+    </div>
+}

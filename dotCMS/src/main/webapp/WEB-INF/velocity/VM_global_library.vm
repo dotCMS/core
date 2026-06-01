@@ -26,6 +26,12 @@
             *##if ($mark.type == "underline")#*
                 *#<u>#*
             *##end#*
+            *##if ($mark.type == "subscript")#*
+                *#<sub>#*
+            *##end#*
+            *##if ($mark.type == "superscript")#*
+                *#<sup>#*
+            *##end#*
             *##if ($mark.type == "link")#*
                 *#<a href="${esc.html($mark.attrs.href)}" target="${esc.html($mark.attrs.target)}"#*
                 *##if($mark.attrs.title) title="${esc.html($mark.attrs.title)}"#end#*
@@ -53,6 +59,12 @@
             *##end#*
             *##if ($mark.type == "underline")#*
                 *#</u>#*
+            *##end#*
+            *##if ($mark.type == "subscript")#*
+                *#</sub>#*
+            *##end#*
+            *##if ($mark.type == "superscript")#*
+                *#</sup>#*
             *##end#*
             *##if($mark.type == "link")#*
                 *#</a>#*

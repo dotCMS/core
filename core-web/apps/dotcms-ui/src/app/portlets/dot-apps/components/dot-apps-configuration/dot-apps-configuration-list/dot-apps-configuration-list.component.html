@@ -1,4 +1,4 @@
-<div class="dot-apps-configuration-list__results">
+<div class="space-y-3">
     @for (site of siteConfigurations(); track site; let i = $index) {
         <dot-apps-configuration-item
             (edit)="edit.emit($event)"

@@ -1,4 +1,3 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -18,7 +17,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DatePickerModule } from 'primeng/datepicker';
-import { PopoverModule } from 'primeng/popover';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -46,8 +44,7 @@ import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
     convertUTCToLocalTime,
-    createFavoritePagesURL,
-    createFullURL
+    createFavoritePagesURL
 } from '../../../utils';
 
 @Component({
@@ -58,8 +55,6 @@ import {
         ButtonModule,
         DatePickerModule,
         ChipModule,
-        ClipboardModule,
-        PopoverModule,
         ToolbarModule,
         TooltipModule,
         SplitButtonModule,
@@ -125,18 +120,6 @@ export class DotUveToolbarComponent {
         currentLanguage: this.$currentLanguage()
     }));
 
-    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
-        const params = this.#store.pageParams();
-        const site = this.#store.pageAsset()?.site;
-
-        return [
-            {
-                label: 'uve.toolbar.page.url',
-                value: createFullURL(params, site?.identifier)
-            }
-        ];
-    });
-
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $mode = this.#store.viewMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
@@ -149,15 +132,6 @@ export class DotUveToolbarComponent {
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen;
     readonly $canEditPage = this.#store.editorCanEditContent;
-
-    /**
-     * Popover passthrough styles for the "Copy URLs" popover.
-     * Keeps the popover compact and prevents long URLs from stretching the overlay.
-     */
-    readonly copyUrlPopoverPt = {
-        root: { class: 'w-full max-w-[25rem]' },
-        content: { class: '!p-3' }
-    };
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -334,19 +308,6 @@ export class DotUveToolbarComponent {
         }
 
         this.#store.pageLoad({ language_id });
-    }
-
-    /**
-     * Trigger the copy toasts
-     *
-     * @memberof DotUveToolbarComponent
-     */
-    triggerCopyToast(): void {
-        this.#messageService.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('Copied!'),
-            life: 3000
-        });
     }
 
     /**

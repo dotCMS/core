@@ -8,7 +8,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -24,6 +24,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotExperimentsService,
     DotLanguagesService,
@@ -61,7 +62,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
@@ -118,7 +119,7 @@ const NAV_ITEMS = [
         id: 'experiments'
     },
     {
-        materialIcon: 'handyman',
+        materialIcon: 'health_and_safety',
         label: 'editema.editor.navbar.page-tools',
         id: 'page-tools'
     },
@@ -247,6 +248,7 @@ describe('DotEmaShellComponent', () => {
             MessageService,
             UVEStore,
             ConfirmationService,
+            mockProvider(DotContentTypeService),
             DotActionUrlService,
             DotMessageService,
             DialogService,
@@ -1073,7 +1075,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: expect.any(String),
                         id: '123',
-                        url: 'index'
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1114,7 +1116,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'Other Page',
                         id: '456',
-                        url: '/other-page'
+                        url: expect.stringContaining('url=%2Fother-page')
                     })
                 );
             });
@@ -1127,7 +1129,62 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: INITIAL_PAGE_PARAMS.url
+                        url: expect.stringMatching(/^\/dotAdmin\/#.*url=index/)
+                    })
+                );
+            });
+
+            it('should not throw when resetPageParams() nulls pageParams and a tracked dep re-fires the effect', async () => {
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                // ngOnDestroy calls resetPageParams() (pageParams = null) but Angular tears
+                // down effects asynchronously, so the effect can re-run in that window.
+                // Cycling uveStatus on a tracked dep simulates that re-fire with null pageParams.
+                store.resetPageParams();
+                patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                patchState(store, { uveStatus: UVE_STATUS.LOADED });
+
+                expect(() => spectator.detectChanges()).not.toThrow();
+            });
+
+            it('should replace breadcrumb on navigation, not accumulate stale entries', async () => {
+                // Page A fully loaded
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                // Hold the response to inspect the LOADING window
+                const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
+
+                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
+                spectator.detectChanges();
+
+                // While LOADING, stale Page A data is present — breadcrumb must not fire
+                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+
+                // Resolve with Page B data
+                const pageBResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Page B', identifier: '456' }
+                };
+                pendingRequest$.next(pageBResponse);
+                pendingRequest$.complete();
+
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                // Called exactly once — with Page B data, never with stale Page A data
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledTimes(1);
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Page B',
+                        id: '456',
+                        url: expect.stringContaining('url=%2Fpage-b')
                     })
                 );
             });

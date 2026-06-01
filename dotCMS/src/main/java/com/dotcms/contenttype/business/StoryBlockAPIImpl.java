@@ -199,7 +199,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed;
-        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+        if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -227,15 +227,23 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed = false;
         for (final Map<String, Object> contentMap : contentsMap) {
             if (UtilMethods.isSet(contentMap)) {
-                final String type = contentMap.get(TYPE_KEY).toString();
-                if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
+                // Isolate per-block failures so that one bad nested reference
+                // does not prevent the rest of the Story Block from refreshing.
+                try {
+                    final String type = contentMap.get(TYPE_KEY).toString();
+                    if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
 
-                    refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
-                } else {
-                    final Object nestedContent = contentMap.get(CONTENT_KEY);
-                    if (nestedContent instanceof List) {
-                        refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                    } else {
+                        final Object nestedContent = contentMap.get(CONTENT_KEY);
+                        if (nestedContent instanceof List) {
+                            refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                        }
                     }
+                } catch (final Exception e) {
+                    Logger.warnAndDebug(StoryBlockAPIImpl.class, String.format(
+                            "Skipping Story Block child while refreshing parent '%s': %s",
+                            parentContentletIdentifier, ExceptionUtil.getErrorMessage(e)), e);
                 }
             }
         }
@@ -338,7 +346,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
         try {
 
-            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+            if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
                 final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 Object contentsMap = blockEditorMap.getOrDefault(CONTENT_KEY, List.of());
                 if(!(contentsMap instanceof List)) {
@@ -570,6 +578,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
+    /**
+     * Returns {@code true} when the supplied String is valid JSON whose root
+     * token is an object. Story Block documents are always JSON objects, so
+     * scalar JSON tokens (numbers, strings, booleans) and arrays must be
+     * rejected here — otherwise {@link #toMap(Object)} fails to deserialize
+     * them into a {@link LinkedHashMap} and the entire transformer pipeline
+     * aborts (see issue surfaced via /api/content/_search).
+     */
+    private static boolean isJsonObject(final String value) {
+        if (value == null) {
+            return false;
+        }
+        final String trimmed = value.trim();
+        return trimmed.startsWith("{") && JsonUtil.isValidJSON(trimmed);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
@@ -746,25 +770,36 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         for (final Field field : fields) {
             final Object value = contentlet.get(field.variable());
             if (null != value) {
-                if (field instanceof StoryBlockField) {
-                    // At this depth, if the Contentlet inside the Block Editor also has a Block
-                    // Editor field, we'll return the raw JSON data of any potential Contentlets it
-                    // is referencing. This will prevent infinite recursion problems.
-                    // Prefer the _raw companion field when it contains valid JSON; otherwise fall
-                    // back to the story block value itself. If neither is valid JSON (e.g. a test
-                    // or misconfigured field whose default value is plain text), skip the field
-                    // entirely so the rest of the data map is still populated correctly.
-                    final Object rawValue = contentlet.get(field.variable() + "_raw");
-                    final String rawStr = rawValue != null ? rawValue.toString() : null;
-                    if (rawStr != null && JsonUtil.isValidJSON(rawStr)) {
-                        dataMap.put(field.variable(), this.toMap(rawValue));
-                    } else if (JsonUtil.isValidJSON(value.toString())) {
-                        dataMap.put(field.variable(), this.toMap(value));
+                // Isolate per-field failures so that one malformed field on a
+                // nested contentlet does not abort hydration of the rest.
+                try {
+                    if (field instanceof StoryBlockField) {
+                        // At this depth, if the Contentlet inside the Block Editor also has a Block
+                        // Editor field, we'll return the raw JSON data of any potential Contentlets it
+                        // is referencing. This will prevent infinite recursion problems.
+                        // Prefer the _raw companion field when it contains valid JSON; otherwise fall
+                        // back to the story block value itself. If neither is valid JSON (e.g. a test
+                        // or misconfigured field whose default value is plain text), skip the field
+                        // entirely so the rest of the data map is still populated correctly.
+                        final Object rawValue = contentlet.get(field.variable() + "_raw");
+                        final String rawStr = rawValue != null ? rawValue.toString() : null;
+                        if (rawStr != null && isJsonObject(rawStr)) {
+                            dataMap.put(field.variable(), this.toMap(rawValue));
+                        } else if (isJsonObject(value.toString())) {
+                            dataMap.put(field.variable(), this.toMap(value));
+                        }
+                    } else {
+                        dataMap.putIfAbsent(field.variable(),
+                                this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
+                                        MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
                     }
-                } else {
-                    dataMap.putIfAbsent(field.variable(),
-                            this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
-                                    MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
+                } catch (final Exception e) {
+                    Logger.warnAndDebug(StoryBlockAPIImpl.class, String.format(
+                            "Skipping field '%s' while hydrating contentlet '%s': %s",
+                            field.variable(), contentlet.getIdentifier(),
+                            ExceptionUtil.getErrorMessage(e)), e);
+                    // Fall back to the raw value so the field still appears in the response.
+                    dataMap.putIfAbsent(field.variable(), value);
                 }
             }
         }

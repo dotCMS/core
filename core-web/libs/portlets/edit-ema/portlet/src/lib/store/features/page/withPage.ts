@@ -89,6 +89,16 @@ export interface WithPageMethods extends PageComputed {
         content?: Record<string, unknown>;
     }) => void;
     resetClientConfiguration: () => void;
+    /**
+     * Mark the page as loading without unmounting the current asset.
+     * Resets `isClientReady` and history so the about-to-arrive page
+     * can install its own readiness state, but leaves
+     * `pageAssetResponse` intact so chrome (toolbars, sidebars,
+     * navigation, overlays) keeps rendering the previous page's data
+     * during the in-flight fetch — preventing a full unmount/remount
+     * flash on navigation.
+     */
+    markPageLoading: () => void;
     addCurrentPageToHistory: () => void;
     resetHistoryToCurrent: () => void;
 
@@ -148,7 +158,10 @@ export function withPage() {
                         pageAsset: payload.pageAsset,
                         ...(content !== undefined && { content })
                     };
-                    patchState(store, { pageAssetResponse: nextResponse });
+                    patchState(store, {
+                        pageAssetResponse: nextResponse,
+                        editorStyleSchemas: payload.pageAsset.page.styleEditorSchemas ?? []
+                    });
                 },
                 setPageAssetResponseOptimistic: (
                     pageAssetResponse: PageLoadingConfigState['pageAssetResponse']
@@ -171,6 +184,18 @@ export function withPage() {
                 resetClientConfiguration: () => {
                     patchState(store, {
                         pageAssetResponse: null,
+                        isClientReady: false,
+                        history: [],
+                        historyPointer: -1
+                    });
+                },
+                markPageLoading: () => {
+                    // Reset readiness + history so the next page installs
+                    // fresh state, but keep `pageAssetResponse` so chrome
+                    // and overlays don't unmount mid-navigation. The new
+                    // asset will replace the old via setPageAsset when the
+                    // fetch resolves.
+                    patchState(store, {
                         isClientReady: false,
                         history: [],
                         historyPointer: -1

@@ -1,9 +1,12 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.PortletURLUtil" %>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotmarketing.util.UUIDUtil"%>
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.liferay.util.Xss"%>
 <%@page import="javax.ws.rs.WebApplicationException"%>
 <%@page import="javax.ws.rs.core.Response"%>
@@ -12,9 +15,19 @@
 <%
     final String id = request.getParameter("id");
     if (!UtilMethods.isSet(id)) {
+        Logger.debug(this, "rules/include called with missing or empty 'id' parameter");
         throw new WebApplicationException(
             Response.status(Response.Status.BAD_REQUEST)
                 .entity("Missing or empty required parameter: id")
+                .build()
+        );
+    }
+
+    if (!UUIDUtil.isUUID(id)) {
+        Logger.debug(this, "rules/include called with invalid id format");
+        throw new WebApplicationException(
+            Response.status(Response.Status.BAD_REQUEST)
+                .entity("Invalid id format: " + Xss.encodeForHTML(id))
                 .build()
         );
     }
@@ -23,6 +36,7 @@
     try {
         contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
     } catch (final Exception e) {
+        Logger.debug(this, "rules/include - findContentletByIdentifierAnyLanguage failed for id=" + id, e);
         throw new WebApplicationException(
             Response.status(Response.Status.BAD_REQUEST)
                 .entity("Invalid id parameter: " + Xss.encodeForHTML(id))
@@ -31,9 +45,20 @@
     }
 
     if (contentlet == null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+        Logger.debug(this, "rules/include - no contentlet found for id=" + id);
         throw new WebApplicationException(
             Response.status(Response.Status.NOT_FOUND)
                 .entity("No content found for id: " + Xss.encodeForHTML(id))
+                .build()
+        );
+    }
+
+    if (user == null || !APILocator.getPermissionAPI().doesUserHavePermission(
+            contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+        Logger.debug(this, "rules/include - user lacks READ on id=" + id);
+        throw new WebApplicationException(
+            Response.status(Response.Status.FORBIDDEN)
+                .entity("Access denied")
                 .build()
         );
     }

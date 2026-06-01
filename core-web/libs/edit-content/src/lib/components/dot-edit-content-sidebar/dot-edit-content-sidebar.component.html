@@ -15,71 +15,88 @@
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <p-tablist
-            class="border-b border-[var(--p-inputtext-border-color)] min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:!p-0 [&_.p-tab_i]:-translate-y-px">
-            <p-tab [value]="0">
+            class="border-b border-(--p-inputtext-border-color) min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px">
+            <p-tab
+                [value]="0"
+                [pTooltip]="'edit.content.sidebar.tab.information' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-info-circle"></i>
             </p-tab>
-            <p-tab [value]="1">
+            <p-tab
+                [value]="1"
+                [pTooltip]="'edit.content.sidebar.tab.history' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-history"></i>
             </p-tab>
-            <p-tab [value]="2">
+            <p-tab
+                [value]="2"
+                [pTooltip]="'edit.content.sidebar.tab.comments' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-comment"></i>
             </p-tab>
             @if (!isNew) {
-                <p-tab [value]="3">
+                <p-tab
+                    [value]="3"
+                    [pTooltip]="'edit.content.sidebar.tab.settings' | dm"
+                    tooltipPosition="bottom">
                     <i class="pi pi-cog"></i>
                 </p-tab>
             }
         </p-tablist>
-        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col">
+        <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
+        <p-tabpanels
+            class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
             <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
-                <!-- Information section -->
-                <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.general.title' | dm">
-                    <ng-template #sectionAction>
-                        @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                            <dot-copy-button
-                                [copy]="contentlet.identifier"
-                                [label]="contentlet.shortyId"
-                                [tooltipText]="'Identifier' | dm"
-                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
-                        }
-                    </ng-template>
+                <!-- Information tab content — padding lives on this first inner wrapper -->
+                <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                    <!-- Information section -->
+                    <dot-edit-content-sidebar-section
+                        [title]="'edit.content.sidebar.general.title' | dm">
+                        <ng-template #sectionAction>
+                            @if (!$store.isNew() && !$store.isCopyingLocale()) {
+                                <dot-copy-button
+                                    [copy]="contentlet.identifier"
+                                    [label]="contentlet.shortyId"
+                                    [tooltipText]="'Identifier' | dm"
+                                    customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
+                            }
+                        </ng-template>
 
-                    <dot-edit-content-sidebar-information
-                        [data]="{
-                            contentlet: contentlet,
-                            contentType: contentType,
-                            loading: isLoadingInformation,
-                            referencesPageCount: referencePagesCount
-                        }"
-                        data-testId="information" />
-                </dot-edit-content-sidebar-section>
+                        <dot-edit-content-sidebar-information
+                            [data]="{
+                                contentlet: contentlet,
+                                contentType: contentType,
+                                loading: isLoadingInformation,
+                                referencesPageCount: referencePagesCount
+                            }"
+                            data-testId="information" />
+                    </dot-edit-content-sidebar-section>
 
-                <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
-                    <dot-edit-content-sidebar-locales
-                        [locales]="$store.locales()"
-                        [defaultLocale]="$store.systemDefaultLocale()"
-                        [currentLocale]="$store.currentLocale()"
-                        [isLoading]="$store.isLoadingLocales()"
-                        (switchLocale)="$store.switchLocale($event)"
-                        data-testId="locales" />
-                </dot-edit-content-sidebar-section>
+                    <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                        <dot-edit-content-sidebar-locales
+                            [locales]="$store.locales()"
+                            [defaultLocale]="$store.systemDefaultLocale()"
+                            [currentLocale]="$store.currentLocale()"
+                            [isLoading]="$store.isLoadingLocales()"
+                            (switchLocale)="$store.switchLocale($event)"
+                            data-testId="locales" />
+                    </dot-edit-content-sidebar-section>
 
-                <!-- Workflow section -->
-                <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.workflow.title' | dm"
-                    class="[&_.dot-section]:border-b-0">
-                    <dot-edit-content-sidebar-workflow
-                        [workflowSelection]="$workflowSelection()"
-                        [(showDialog)]="$showDialog"
-                        (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
-                        [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                        (onResetWorkflow)="fireWorkflowAction($event)"
-                        [workflow]="$workflow()"
-                        [isLoading]="$store.isLoadingWorkflow()"
-                        data-testId="workflow" />
-                </dot-edit-content-sidebar-section>
+                    <!-- Workflow section -->
+                    <dot-edit-content-sidebar-section
+                        [title]="'edit.content.sidebar.workflow.title' | dm"
+                        class="[&_.dot-section]:border-b-0">
+                        <dot-edit-content-sidebar-workflow
+                            [workflowSelection]="$workflowSelection()"
+                            [(showDialog)]="$showDialog"
+                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                            (onResetWorkflow)="fireWorkflowAction($event)"
+                            [workflow]="$workflow()"
+                            [isLoading]="$store.isLoadingWorkflow()"
+                            data-testId="workflow" />
+                    </dot-edit-content-sidebar-section>
+                </div>
             </p-tabpanel>
             <p-tabpanel [value]="1" class="h-full min-h-0 flex flex-col">
                 <!-- History section -->
@@ -109,17 +126,20 @@
             </p-tabpanel>
             @if (!isNew) {
                 <p-tabpanel [value]="3" class="h-full min-h-0 flex flex-col">
-                    <!-- Permissions section -->
-                    <dot-edit-content-sidebar-permissions
-                        [identifier]="$identifier() ?? ''"
-                        [languageId]="$contentlet()?.languageId ?? 0"
-                        data-testId="permissions" />
-                    <!-- Rules section (Page content type only) -->
-                    @if ($isPage()) {
-                        <dot-edit-content-sidebar-rules
+                    <!-- Settings tab content — padding lives on this first inner wrapper -->
+                    <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                        <!-- Permissions section -->
+                        <dot-edit-content-sidebar-permissions
                             [identifier]="$identifier() ?? ''"
-                            data-testId="rules" />
-                    }
+                            [languageId]="$contentlet()?.languageId ?? 0"
+                            data-testId="permissions" />
+                        <!-- Rules section (Page content type only) -->
+                        @if ($isPage()) {
+                            <dot-edit-content-sidebar-rules
+                                [identifier]="$identifier() ?? ''"
+                                data-testId="rules" />
+                        }
+                    </div>
                 </p-tabpanel>
             }
         </p-tabpanels>

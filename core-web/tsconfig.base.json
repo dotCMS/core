@@ -22,6 +22,8 @@
             "@dotcms/angular": ["libs/sdk/angular/src/public_api.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
+            "@dotcms/new-block-editor": ["libs/new-block-editor/src/index.ts"],
+            "@dotcms/new-block-editor/*": ["libs/new-block-editor/src/lib/*"],
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],
             "@dotcms/client/internal": ["libs/sdk/client/src/internal.ts"],
             "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
@@ -70,6 +72,10 @@
                 "libs/portlets/dot-locales/data-access/src/index.ts"
             ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
+            "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
+            "@dotcms/portlets/dot-query-tool/portlet": [
+                "libs/portlets/dot-query-tool/src/index.ts"
+            ],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
             "@dotcms/query-builder": [

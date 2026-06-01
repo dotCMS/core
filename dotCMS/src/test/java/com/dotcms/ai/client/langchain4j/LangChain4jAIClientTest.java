@@ -12,7 +12,10 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import org.junit.Test;
@@ -97,6 +100,122 @@ public class LangChain4jAIClientTest {
         assertTrue(messages.get(0) instanceof SystemMessage);
         assertTrue(messages.get(1) instanceof UserMessage);
         assertTrue(messages.get(2) instanceof AiMessage);
+    }
+
+    @Test
+    public void test_toMessages_multimodalContentArray_producesUserMessageWithImageAndText() {
+        final JSONObject imagePart = new JSONObject();
+        imagePart.put("type", "image_url");
+        final JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", "data:image/webp;base64,ABC123");
+        imagePart.put("image_url", imageUrl);
+
+        final JSONObject textPart = new JSONObject();
+        textPart.put("type", "text");
+        textPart.put("text", "Describe this image");
+
+        final JSONArray contentArray = new JSONArray();
+        contentArray.put(textPart);
+        contentArray.put(imagePart);
+
+        final JSONObject msg = new JSONObject();
+        msg.put(AiKeys.ROLE, "user");
+        msg.put(AiKeys.CONTENT, contentArray);
+
+        final JSONArray messages = new JSONArray();
+        messages.put(msg);
+
+        final List<ChatMessage> result = LangChain4jAIClient.toMessages(messages);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof UserMessage);
+        final UserMessage userMessage = (UserMessage) result.get(0);
+        assertEquals(2, userMessage.contents().size());
+        assertTrue(userMessage.contents().get(0) instanceof TextContent);
+        assertTrue(userMessage.contents().get(1) instanceof ImageContent);
+    }
+
+    @Test
+    public void test_toMessages_contentArrayNotTreatedAsString() {
+        // Regression: before the fix, JSONArray.optString() would serialize the array
+        // to its toString() representation and pass it as a plain text message,
+        // so the model would never see the actual image data.
+        final JSONObject imagePart = new JSONObject();
+        imagePart.put("type", "image_url");
+        final JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", "data:image/png;base64,iVBORw0KGgo=");
+        imagePart.put("image_url", imageUrl);
+
+        final JSONArray contentArray = new JSONArray();
+        contentArray.put(imagePart);
+
+        final JSONObject msg = new JSONObject();
+        msg.put(AiKeys.ROLE, "user");
+        msg.put(AiKeys.CONTENT, contentArray);
+
+        final JSONArray messages = new JSONArray();
+        messages.put(msg);
+
+        final List<ChatMessage> result = LangChain4jAIClient.toMessages(messages);
+
+        final UserMessage userMessage = (UserMessage) result.get(0);
+        // Must have structured content, not a plain text message
+        final List<Content> contents = userMessage.contents();
+        assertEquals(1, contents.size());
+        assertTrue(contents.get(0) instanceof ImageContent);
+    }
+
+    @Test
+    public void test_toMultimodalUserMessage_dataUri_extractsMimeTypeAndBase64() {
+        final JSONObject imagePart = new JSONObject();
+        imagePart.put("type", "image_url");
+        final JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", "data:image/webp;base64,ABC123==");
+        imagePart.put("image_url", imageUrl);
+
+        final JSONArray contentArray = new JSONArray();
+        contentArray.put(imagePart);
+
+        final UserMessage msg = LangChain4jAIClient.toMultimodalUserMessage(contentArray);
+
+        assertEquals(1, msg.contents().size());
+        final ImageContent imageContent = (ImageContent) msg.contents().get(0);
+        assertEquals("ABC123==", imageContent.image().base64Data());
+        assertEquals("image/webp", imageContent.image().mimeType());
+    }
+
+    @Test
+    public void test_toMultimodalUserMessage_plainUrl_producesImageContentWithUrl() {
+        final JSONObject imagePart = new JSONObject();
+        imagePart.put("type", "image_url");
+        final JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", "https://example.com/photo.jpg");
+        imagePart.put("image_url", imageUrl);
+
+        final JSONArray contentArray = new JSONArray();
+        contentArray.put(imagePart);
+
+        final UserMessage msg = LangChain4jAIClient.toMultimodalUserMessage(contentArray);
+
+        assertEquals(1, msg.contents().size());
+        final ImageContent imageContent = (ImageContent) msg.contents().get(0);
+        assertEquals("https://example.com/photo.jpg", imageContent.image().url().toString());
+    }
+
+    @Test
+    public void test_toMultimodalUserMessage_textType_producesTextContent() {
+        final JSONObject textPart = new JSONObject();
+        textPart.put("type", "text");
+        textPart.put("text", "What is in this image?");
+
+        final JSONArray contentArray = new JSONArray();
+        contentArray.put(textPart);
+
+        final UserMessage msg = LangChain4jAIClient.toMultimodalUserMessage(contentArray);
+
+        assertEquals(1, msg.contents().size());
+        assertTrue(msg.contents().get(0) instanceof TextContent);
+        assertEquals("What is in this image?", ((TextContent) msg.contents().get(0)).text());
     }
 
     @Test
@@ -251,6 +370,107 @@ public class LangChain4jAIClientTest {
                 model -> "ok");
 
         assertEquals("ok", result);
+    }
+
+    // -------------------------------------------------------------------------
+    // effectiveModels — deploymentName fallback for Azure configs
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_executeWithFallback_deploymentNameOnly_usedAsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .deploymentName("my-azure-deployment")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> cfg.model(),
+                model -> "response-from-" + model);
+
+        assertEquals("response-from-my-azure-deployment", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_modelTakesPrecedenceOverDeploymentName() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .model("gpt-4o")
+                .deploymentName("my-azure-deployment")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> cfg.model(),
+                model -> "response-from-" + model);
+
+        assertEquals("response-from-gpt-4o", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_noModelNoDeploymentName_throwsImmediately() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> LangChain4jAIClient.get().executeWithFallback(
+                        "test", "chat", config, cache,
+                        cfg -> "ignored",
+                        model -> "ignored"));
+    }
+
+    // -------------------------------------------------------------------------
+    // applyRequestSize — image size override from request payload
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_applyRequestSize_sizeInPayload_overridesBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "1792x1024");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1792x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_noSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.PROMPT, "a turtle");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_blankSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "   ");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
     }
 
     @Test

@@ -316,15 +316,18 @@ describe('DotAnalyticsMetricComponent', () => {
     });
 
     describe('Title Input', () => {
-        it('should display title above the card when provided', () => {
+        it('should display title in the card caption when provided', () => {
             spectator.setInput('value', 100);
             spectator.setInput('title', 'analytics.metric.title');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const title = spectator.query(byTestId('metric-title'));
-            expect(title).toBeTruthy();
-            expect(title.tagName).toBe('H3');
+            const card = spectator.query(byTestId('metric-card'));
+            const titleRegion =
+                card.querySelector('[data-testid="metric-title"]') ??
+                card.querySelector('.p-card-title');
+            expect(titleRegion).toBeTruthy();
+            expect(titleRegion?.textContent?.trim()).toBe('Translated Message');
         });
 
         it('should not display title when not provided', () => {
@@ -332,22 +335,23 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const title = spectator.query(byTestId('metric-title'));
-            expect(title).toBeFalsy();
+            const card = spectator.query(byTestId('metric-card'));
+            expect(card.querySelector('[data-testid="metric-title"]')).toBeFalsy();
         });
 
-        it('should render title outside the p-card element', () => {
+        it('should render title inside the p-card element', () => {
             spectator.setInput('value', 100);
             spectator.setInput('title', 'analytics.metric.title');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const title = spectator.query(byTestId('metric-title'));
             const card = spectator.query(byTestId('metric-card'));
+            const titleRegion =
+                card.querySelector('[data-testid="metric-title"]') ??
+                card.querySelector('.p-card-title');
 
-            expect(title).toBeTruthy();
-            expect(card).toBeTruthy();
-            expect(card.contains(title)).toBe(false);
+            expect(titleRegion).toBeTruthy();
+            expect(card.contains(titleRegion)).toBe(true);
         });
     });
 
@@ -481,7 +485,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.detectChanges();
 
         const container = spectator.query(byTestId('metric-projected-content'));
-        expect(container).toHaveClass('invisible');
+        expect(container).toHaveClass('hidden');
         expect(container).toHaveClass('pointer-events-none');
     });
 });
