@@ -99,7 +99,10 @@ export const decodeByFilterKey: Record<
     // Should always return an array
     contentType: multiSelector,
     title: singleSelector,
-    languageId: multiSelector
+    languageId: multiSelector,
+    // Single-select today, stored as an array so a future multi-select is trivial
+    workflowScheme: multiSelector,
+    workflowStep: multiSelector
 };
 
 /**

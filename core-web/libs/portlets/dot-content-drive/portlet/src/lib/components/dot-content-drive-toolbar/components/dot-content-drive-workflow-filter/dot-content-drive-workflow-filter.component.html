@@ -1,0 +1,111 @@
+<dot-chip-filter
+    [title]="'content-drive.workflow-filter.title' | dm"
+    [selections]="$chipSelections()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onClearAll()"
+    data-testid="workflow-filter-chip" />
+
+<p-popover #popover [pt]="popoverPt">
+    <div
+        class="grid grid-cols-[repeat(2,1fr)] grid-rows-[minmax(0,1fr)] w-160 overflow-hidden"
+        [style.height]="LISTBOX_SCROLL_HEIGHT"
+        data-testid="workflow-filter-panel">
+        <!-- LEFT COLUMN: Workflow schemes -->
+        <div class="border-r border-slate-200 flex flex-col flex-1 bg-white min-h-0">
+            <div class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">
+                {{ 'content-drive.workflow-filter.column.scheme' | dm }}
+            </div>
+            <p-listbox
+                class="flex-1 min-h-0"
+                [options]="$state.schemes()"
+                [ngModel]="$schemeModel()"
+                (ngModelChange)="onSchemeChange($event)"
+                [ngModelOptions]="{ standalone: true }"
+                optionLabel="name"
+                optionValue="id"
+                [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                [pt]="listboxPt"
+                data-testid="workflow-scheme-listbox">
+                <ng-template let-item pTemplate="item">
+                    <div class="flex items-center gap-2 w-full min-w-0">
+                        <p-radiobutton
+                            [ngModel]="$schemeModel()"
+                            [value]="item.id"
+                            [ngModelOptions]="{ standalone: true }"
+                            styleClass="pointer-events-none"
+                            [attr.data-testid]="'workflow-scheme-radio-' + item.id" />
+                        <dot-filter-list-item [label]="item.name" />
+                        <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <div
+                        class="flex flex-col items-center justify-center gap-2 h-full py-4 text-slate-500"
+                        data-testid="workflow-scheme-empty">
+                        @if ($state.loadingSchemes()) {
+                            <i
+                                class="pi pi-spin pi-spinner text-2xl"
+                                data-testid="workflow-scheme-loading"></i>
+                        } @else {
+                            <i class="pi pi-search-minus text-2xl text-slate-400"></i>
+                            <span class="text-sm">
+                                {{ 'content-drive.workflow-filter.empty-state' | dm }}
+                            </span>
+                        }
+                    </div>
+                </ng-template>
+            </p-listbox>
+        </div>
+
+        <!-- RIGHT COLUMN: Steps of the focused scheme -->
+        <div class="flex flex-col flex-1 bg-white min-h-0">
+            <div class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">
+                {{ 'content-drive.workflow-filter.column.step' | dm }}
+            </div>
+            <p-listbox
+                class="flex-1 min-h-0"
+                [options]="$state.steps()"
+                [ngModel]="$stepModel()"
+                (ngModelChange)="onStepChange($event)"
+                [ngModelOptions]="{ standalone: true }"
+                optionLabel="name"
+                optionValue="id"
+                [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+                [pt]="listboxPt"
+                data-testid="workflow-step-listbox">
+                <ng-template let-item pTemplate="item">
+                    <div class="flex items-center gap-2 w-full min-w-0">
+                        <p-radiobutton
+                            [ngModel]="$stepModel()"
+                            [value]="item.id"
+                            [ngModelOptions]="{ standalone: true }"
+                            styleClass="pointer-events-none"
+                            [attr.data-testid]="'workflow-step-radio-' + item.id" />
+                        <dot-filter-list-item [label]="item.name" />
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <div
+                        class="flex flex-col items-center justify-center gap-2 h-full py-4 text-slate-500"
+                        data-testid="workflow-step-empty">
+                        @if ($state.loadingSteps()) {
+                            <i
+                                class="pi pi-spin pi-spinner text-2xl"
+                                data-testid="workflow-step-loading"></i>
+                        } @else if (!$schemeModel()) {
+                            <i class="pi pi-sitemap text-2xl text-slate-400"></i>
+                            <span class="text-sm text-center px-4">
+                                {{ 'content-drive.workflow-filter.select-scheme' | dm }}
+                            </span>
+                        } @else {
+                            <i class="pi pi-search-minus text-2xl text-slate-400"></i>
+                            <span class="text-sm">
+                                {{ 'content-drive.workflow-filter.empty-state' | dm }}
+                            </span>
+                        }
+                    </div>
+                </ng-template>
+            </p-listbox>
+        </div>
+    </div>
+</p-popover>

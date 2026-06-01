@@ -120,6 +120,8 @@ export type DotKnownContentDriveFilters = {
     contentType: string[];
     title: string;
     languageId: string[];
+    workflowScheme: string[];
+    workflowStep: string[];
 };
 
 /**

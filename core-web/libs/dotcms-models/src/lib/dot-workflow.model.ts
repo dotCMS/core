@@ -12,6 +12,15 @@ export interface DotCMSWorkflow {
     variableName?: string;
 }
 
+/**
+ * Schemes associated to a single content type, as returned by
+ * `GET /api/v1/workflow/contenttypes/schemes`.
+ */
+export interface ContentTypeWorkflowSchemesView {
+    contentTypeId: string;
+    contentTypeSchemes: DotCMSWorkflow[];
+}
+
 export interface DotWorkflowPayload {
     assign: string;
     comments: string;
