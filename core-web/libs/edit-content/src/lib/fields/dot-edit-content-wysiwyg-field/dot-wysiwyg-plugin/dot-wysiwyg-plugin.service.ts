@@ -80,6 +80,9 @@ export class DotWysiwygPluginService {
                 width: '800px',
                 height: '500px',
                 contentStyle: { padding: 0 },
+                closable: true,
+                closeOnEscape: true,
+                dismissableMask: true,
                 data: {
                     assetType: 'image'
                 }

@@ -128,6 +128,9 @@ describe('DotWysiwygPluginService', () => {
                 width: '800px',
                 height: '500px',
                 contentStyle: { padding: 0 },
+                closable: true,
+                closeOnEscape: true,
+                dismissableMask: true,
                 data: {
                     assetType: 'image'
                 }
@@ -140,6 +143,24 @@ describe('DotWysiwygPluginService', () => {
             expect(spyEditorInserContent).toHaveBeenCalledWith(
                 formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
+        });
+
+        it('should NOT insert content when the dialog is closed without selecting an image', () => {
+            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined)
+            } as DynamicDialogRef);
+
+            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+
+            spectator.service.initializePlugins(editor);
+
+            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
+
+            // Simulate the button click that opens the dialog
+            button.onAction();
+
+            expect(spyDialog).toHaveBeenCalled();
+            expect(spyEditorInserContent).not.toHaveBeenCalled();
         });
 
         it('should upload the image when dropped', () => {
