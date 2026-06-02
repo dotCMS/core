@@ -1,5 +1,10 @@
 const path = require('path');
 
+// Load the compiled Angular server bundle once, at module init, rather than on
+// every request (the dynamic import is cached, but this avoids the per-request
+// path build and promise hop on the serverless hot path).
+const appPromise = import(path.join(process.cwd(), 'dist/angular-ssr/server/server.mjs'));
+
 /**
  * Vercel serverless entry for the Angular SSR app.
  *
@@ -28,14 +33,14 @@ module.exports = async (req, res) => {
   }
 
   // Remove proxy headers so Angular validates `host` directly and the
-  // (order-sensitive) trustProxyHeaders path is never exercised.
+  // (order-sensitive) trustProxyHeaders path is never exercised. Node lowercases
+  // incoming header names, so a plain prefix check is enough.
   for (const name of Object.keys(req.headers)) {
-    if (name.toLowerCase().startsWith('x-forwarded-')) {
+    if (name.startsWith('x-forwarded-')) {
       delete req.headers[name];
     }
   }
 
-  const serverDistPath = path.join(process.cwd(), 'dist/angular-ssr/server/server.mjs');
-  const { default: app } = await import(serverDistPath);
+  const { default: app } = await appPromise;
   return app(req, res);
 };

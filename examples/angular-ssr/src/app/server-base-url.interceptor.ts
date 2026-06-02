@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpResponse } from '@angular/com
 import { inject, REQUEST_CONTEXT } from '@angular/core';
 import { Observable } from 'rxjs';
 import { EventEmitter } from 'node:events';
-import { createRequest, createResponse } from 'node-mocks-http';
+import { createRequest, createResponse, RequestMethod } from 'node-mocks-http';
 import type { Express } from 'express';
 
 interface ServerRequestContext {
@@ -38,7 +38,7 @@ export const serverBaseUrlInterceptor: HttpInterceptorFn = (req, next) => {
 
   return new Observable((observer) => {
     const mockReq = createRequest({
-      method: req.method as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+      method: req.method as RequestMethod,
       url: path,
       headers: { 'content-type': 'application/json' },
       body: req.body ?? undefined,

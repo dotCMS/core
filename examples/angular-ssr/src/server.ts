@@ -29,12 +29,9 @@ config();
  * (angular/angular-cli#32616), so this is the sanctioned pattern, not a hack.
  * @see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
  */
-const allowedHosts = new Set(
-  (process.env['NG_ALLOWED_HOSTS'] ?? '').split(',').map((host) => host.trim())
-);
-allowedHosts.add('localhost');
-allowedHosts.add('*.vercel.app');
-process.env['NG_ALLOWED_HOSTS'] = [...allowedHosts].filter(Boolean).join(',');
+process.env['NG_ALLOWED_HOSTS'] = ['localhost', '*.vercel.app', process.env['NG_ALLOWED_HOSTS']]
+  .filter(Boolean)
+  .join(',');
 
 const getClient = () => {
   const authToken = process.env['DOTCMS_AUTH_TOKEN'];
