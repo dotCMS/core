@@ -222,7 +222,7 @@
         [class.open]="$editPanelOpen">
         <p-tabs
             [value]="$editorPanelActiveTab()"
-            [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }"
+            [dt]="{ tabpanel: { padding: '0' }, tablist: { class: 'bg-gray-100' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
             <p-tablist>
                 <p-tab [value]="0">

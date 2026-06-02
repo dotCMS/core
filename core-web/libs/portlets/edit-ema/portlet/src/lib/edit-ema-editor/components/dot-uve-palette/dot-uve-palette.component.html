@@ -2,7 +2,7 @@
     (valueChange)="handleTabChange($event)"
     [value]="$activeTab()"
     [pt]="tabsPt"
-    [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }">
+    [dt]="{ tabpanel: { padding: '0' }, tablist: { class: 'bg-gray-100' } }">
     <p-tablist>
         @for (tab of $tabHeaders(); track tab.value) {
             <p-tab [value]="tab.value">

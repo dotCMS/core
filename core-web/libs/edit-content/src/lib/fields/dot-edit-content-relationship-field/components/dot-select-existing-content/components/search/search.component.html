@@ -1,14 +1,14 @@
 <form [formGroup]="form" #formElement>
     <p-inputgroup>
         <div
-            class="p-inputtext flex items-center gap-1 flex-1 !py-0.5 px-2 min-w-0 !rounded-none !rounded-l-md">
+            class="p-inputtext flex items-center gap-1 flex-1 py-0.5! px-2 min-w-0 rounded-none! rounded-l-md!">
             <i class="pi pi-search text-muted-color shrink-0 mr-1"></i>
             @for (filter of $activeFilters(); track filter.value) {
                 <p-chip
                     [label]="filter.label"
                     [removable]="true"
                     (onRemove)="removeFilter(filter.type)"
-                    class="p-chip-sm text-xs !py-1 !px-2 !gap-1 shrink-0" />
+                    class="p-chip-sm text-xs py-1! px-2! gap-1! shrink-0" />
             }
 
             <input

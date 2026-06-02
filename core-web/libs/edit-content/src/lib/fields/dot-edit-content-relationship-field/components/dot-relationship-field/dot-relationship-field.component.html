@@ -13,7 +13,7 @@
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:!border-b-0"
+    class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:border-b-0!"
     [rowHover]="true"
     [paginator]="false"
     [first]="pagination.offset"
@@ -24,7 +24,7 @@
     <ng-template pTemplate="header" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
-        <tr class="font-bold bg-(--gray-100)">
+        <tr class="font-bold bg-gray-100">
             <th scope="col" class="w-12 min-w-12"></th>
 
             @for (column of columns; track $index) {
@@ -40,7 +40,7 @@
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 min-w-32 max-w-32 !text-right">
+                        <th scope="col" class="w-32 min-w-32 max-w-32 text-right!">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
@@ -76,7 +76,7 @@
                     class="flex p-2 gap-2 justify-center items-center"
                     data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-(--gray-600)">
+                    <p class="text-gray-600">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
                     </p>
                 </div>
@@ -93,14 +93,14 @@
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
                     <span
-                        class="flex items-center cursor-grab text-(--gray-600)"
+                        class="flex items-center cursor-grab text-gray-600"
                         pReorderableRowHandle
                         data-testid="relationship-drag-handle">
                         <i class="pi pi-ellipsis-v text-[14px]"></i>
                         <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
                     </span>
                 } @else {
-                    <span class="flex items-center text-(--gray-600) cursor-not-allowed">
+                    <span class="flex items-center text-gray-600 cursor-not-allowed">
                         <i class="pi pi-ellipsis-v text-[14px]"></i>
                         <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
                     </span>
@@ -133,7 +133,7 @@
                     }
                     @case ('status') {
                         <td
-                            class="w-32 min-w-32 max-w-32 !text-right"
+                            class="w-32 min-w-32 max-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
@@ -186,14 +186,14 @@
                 [class.justify-between]="hintText || hasError"
                 [class.justify-center]="!hintText && !hasError">
                 @if (hasError) {
-                    <div class="text-(--color-palette-red)">
+                    <div class="text-red-500">
                         @if (isRequired) {
                             <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                         }
                     </div>
                 }
                 @if (!hasError && hintText) {
-                    <div class="text-(--gray-600)">
+                    <div class="text-gray-600">
                         <small [attr.data-testId]="'hint-' + field.variable">
                             {{ hintText }}
                         </small>

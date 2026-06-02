@@ -2,7 +2,7 @@
     <div
         [attr.data-testId]="'dot-options-item_' + item.$value()"
         [class.bg-primary-100]="expanded.has(i)"
-        class="flex flex-col rounded-sm border border-(--gray-200) transition-colors duration-200 hover:bg-primary-100">
+        class="flex flex-col rounded-sm border border-gray-200 transition-colors duration-200 hover:bg-primary-100">
         <ng-container
             [ngTemplateOutletContext]="{ $implicit: item, index: i }"
             [ngTemplateOutlet]="defaultHeader" />
@@ -40,12 +40,10 @@
         <div>
             <h2
                 class="m-0 text-lg font-bold"
-                [ngClass]="expanded.has(index) ? 'text-(--gray-900)' : 'text-(--gray-800)'">
+                [ngClass]="expanded.has(index) ? 'text-gray-900' : 'text-gray-800'">
                 {{ item.$title() }}
             </h2>
-            <p
-                class="m-0"
-                [ngClass]="expanded.has(index) ? 'text-(--gray-900)' : 'text-(--gray-700)'">
+            <p class="m-0" [ngClass]="expanded.has(index) ? 'text-gray-900' : 'text-gray-700'">
                 {{ item.$detail() }}
             </p>
         </div>

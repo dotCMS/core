@@ -59,7 +59,7 @@
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
-                [class.text-(--text-color-hover)]="state.dragOverRowId() === item.identifier"
+                [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
                 data-testId="item-row"
