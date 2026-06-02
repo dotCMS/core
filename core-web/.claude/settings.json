@@ -1,16 +1,16 @@
 {
-    "extraKnownMarketplaces": {
-        "nx-claude-plugins": {
-            "source": {
-                "source": "github",
-                "repo": "nrwl/nx-ai-agents-config"
-            }
-        }
-    },
-    "env": {
-        "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-    },
-    "enabledPlugins": {
-        "nx@nx-claude-plugins": true
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "enabledPlugins": {
+    "nx@nx-claude-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "nx-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "nrwl/nx-ai-agents-config"
+      }
     }
+  }
 }

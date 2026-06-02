@@ -21,14 +21,56 @@
                 <label for="link-url" class="text-xs font-medium text-gray-700">
                     {{ 'dot.block.editor.dialog.link.field.url.label' | dm }}
                 </label>
-                <input
-                    pInputText
-                    #hrefInput
-                    id="link-url"
-                    type="url"
-                    [formControl]="form.controls.href"
+                <p-autoComplete
+                    inputId="link-url"
+                    appendTo="body"
+                    optionLabel="url"
+                    [ngModel]="linkModel()"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="onLinkModelChange($event)"
+                    [suggestions]="suggestions()"
+                    [minLength]="1"
+                    [delay]="250"
+                    [showEmptyMessage]="!isExternalUrl()"
+                    [emptyMessage]="'dot.block.editor.dialog.link.search.empty' | dm"
                     [placeholder]="'dot.block.editor.dialog.link.field.url.placeholder' | dm"
-                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    [panelStyle]="{ width: '18rem', minWidth: '18rem', maxWidth: '18rem' }"
+                    (completeMethod)="onComplete($event)"
+                    (onSelect)="onSelectPage($event)"
+                    styleClass="w-full"
+                    inputStyleClass="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+                    data-testid="link-url-autocomplete">
+                    <ng-template let-item pTemplate="item">
+                        <div
+                            class="flex items-center gap-2 py-1 min-w-0"
+                            data-testid="link-url-suggestion">
+                            @if (item.hasTitleImage && item.inode) {
+                                <img
+                                    [src]="'/dA/' + item.inode"
+                                    alt=""
+                                    class="h-8 w-8 shrink-0 rounded object-cover" />
+                            } @else {
+                                <span
+                                    aria-hidden="true"
+                                    class="material-symbols-outlined shrink-0 text-gray-400">
+                                    description
+                                </span>
+                            }
+                            <div class="flex flex-col min-w-0">
+                                <span
+                                    class="truncate text-sm font-medium text-gray-800"
+                                    data-testid="link-url-suggestion-name">
+                                    {{ item.name }}
+                                </span>
+                                <span
+                                    class="truncate text-xs text-gray-500"
+                                    data-testid="link-url-suggestion-url">
+                                    {{ item.url }}
+                                </span>
+                            </div>
+                        </div>
+                    </ng-template>
+                </p-autoComplete>
             </div>
 
             <div class="flex flex-col gap-1">
