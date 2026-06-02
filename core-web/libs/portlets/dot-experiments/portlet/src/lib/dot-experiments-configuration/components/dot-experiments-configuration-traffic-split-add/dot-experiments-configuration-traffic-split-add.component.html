@@ -11,14 +11,14 @@
                 [actionButtonTpl]="actionHeaderBtnTpl"
                 dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}" />
         </ng-template>
-        <div class="flex flex-col py-5 overflow-x-hidden">
+        <div class="flex flex-col overflow-x-hidden py-5">
             <form
                 [formGroup]="form"
                 class="p-fluid flex flex-col"
                 data-testId="add-traffic-split-form"
                 novalidate>
-                <div class="flex flex-col gap-3 mb-5">
-                    <label class="font-bold text-base">
+                <div class="mb-5 flex flex-col gap-3">
+                    <label class="text-base font-bold">
                         {{ 'experiments.configure.traffic.split.name' | dm }}
                     </label>
                     <div class="flex items-center gap-2">
@@ -43,22 +43,20 @@
                 </div>
                 <div class="flex flex-col overflow-x-hidden">
                     <header
-                        class="flex justify-between items-center mb-2 min-h-[2.7rem] text-base font-bold text-gray-700 uppercase gap-2">
-                        <span class="min-w-0 flex-shrink">{{ 'variant' | dm }}</span>
-                        <span class="w-auto flex-shrink-0 text-center px-2">%</span>
+                        class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2 text-base font-bold text-gray-700 uppercase">
+                        <span class="min-w-0 shrink">{{ 'variant' | dm }}</span>
+                        <span class="w-auto shrink-0 px-2 text-center">%</span>
                     </header>
                     <ng-container formArrayName="variants">
                         @for (variant of variants.controls; track variant; let i = $index) {
                             <div
                                 [formGroupName]="i"
-                                class="flex justify-between items-center mb-2 min-h-[2.7rem] gap-2">
-                                <span
-                                    class="min-w-0 flex-shrink whitespace-nowrap overflow-hidden text-ellipsis"
-                                    data-testId="variant-name">
+                                class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2">
+                                <span class="min-w-0 shrink truncate" data-testId="variant-name">
                                     {{ variant.value.name }}
                                 </span>
                                 @if (form.value.type === customPercentages) {
-                                    <div class="w-auto flex-shrink-0">
+                                    <div class="w-auto shrink-0">
                                         <p-inputnumber
                                             (onInput)="checkControl(i, $event.value)"
                                             [maxFractionDigits]="2"
@@ -71,7 +69,7 @@
                                     </div>
                                 } @else {
                                     <span
-                                        class="w-auto flex-shrink-0 text-center px-2"
+                                        class="w-auto shrink-0 px-2 text-center"
                                         data-testId="variant-weight">
                                         {{ variant.value.weight }}
                                     </span>
@@ -81,7 +79,7 @@
                     </ng-container>
                 </div>
                 @if (variants.invalid) {
-                    <small class="text-red-500 self-end mt-2" data-testId="dotErrorMsg">
+                    <small class="mt-2 self-end text-red-500" data-testId="dotErrorMsg">
                         {{ 'experiments.configure.traffic.split.variants.error' | dm }}
                     </small>
                 }
