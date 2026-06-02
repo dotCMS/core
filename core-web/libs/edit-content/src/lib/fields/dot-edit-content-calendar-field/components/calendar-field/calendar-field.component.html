@@ -12,6 +12,8 @@
     [timeOnly]="fieldTypeConfig.timeOnly"
     [showTime]="fieldTypeConfig.showTime"
     (onSelect)="onCalendarChange($event)"
+    (onClearClick)="onCalendarChange(null)"
+    (onClear)="onCalendarChange(null)"
     [id]="'calendar-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testid]="'calendar-input-' + field.variable"

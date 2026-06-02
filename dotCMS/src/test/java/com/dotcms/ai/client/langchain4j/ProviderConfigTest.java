@@ -11,6 +11,11 @@ public class ProviderConfigTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /**
+     * Given a JSON string with all known ProviderConfig fields,
+     * When deserialized via Jackson,
+     * Then all fields are mapped to the correct values.
+     */
     @Test
     public void test_deserialize_fullConfig() throws Exception {
         final String json =
@@ -41,6 +46,11 @@ public class ProviderConfigTest {
         assertEquals("us-central1", config.location());
     }
 
+    /**
+     * Given a JSON string with only the required fields,
+     * When deserialized via Jackson,
+     * Then the required fields are set and optional fields are null.
+     */
     @Test
     public void test_deserialize_minimalConfig() throws Exception {
         final String json = "{\"provider\":\"openai\",\"model\":\"gpt-4o-mini\",\"apiKey\":\"sk-test\"}";
@@ -55,6 +65,11 @@ public class ProviderConfigTest {
         assertNull(config.endpoint());
     }
 
+    /**
+     * Given a JSON string that contains unknown fields not present in ProviderConfig,
+     * When deserialized via Jackson,
+     * Then the unknown fields are silently ignored and known fields are mapped correctly.
+     */
     @Test
     public void test_deserialize_unknownFieldsIgnored() throws Exception {
         final String json = "{\"provider\":\"openai\",\"model\":\"gpt-4o\",\"apiKey\":\"sk-test\"," +

@@ -10,6 +10,11 @@ import static org.mockito.Mockito.when;
 
 public class OpenAIAutoTagRunnerTest {
 
+    /**
+     * Given a contentlet whose identifier is null,
+     * When the OpenAIAutoTagRunner constructor is called,
+     * Then an IllegalArgumentException is thrown.
+     */
     @Test
     public void test_constructor_missingIdentifier_throws() {
         final Contentlet contentlet = mock(Contentlet.class);
@@ -20,6 +25,11 @@ public class OpenAIAutoTagRunnerTest {
                 () -> new OpenAIAutoTagRunner(contentlet, mock(User.class), true, false));
     }
 
+    /**
+     * Given a contentlet whose identifier is blank,
+     * When the OpenAIAutoTagRunner constructor is called,
+     * Then an IllegalArgumentException is thrown.
+     */
     @Test
     public void test_constructor_emptyIdentifier_throws() {
         final Contentlet contentlet = mock(Contentlet.class);
@@ -30,6 +40,11 @@ public class OpenAIAutoTagRunnerTest {
                 () -> new OpenAIAutoTagRunner(contentlet, mock(User.class), true, false));
     }
 
+    /**
+     * Given a contentlet with a valid non-blank identifier,
+     * When the OpenAIAutoTagRunner constructor is called,
+     * Then the runner is created successfully without throwing.
+     */
     @Test
     public void test_constructor_validIdentifier_succeeds() {
         final Contentlet contentlet = mock(Contentlet.class);

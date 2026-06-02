@@ -8,6 +8,7 @@ import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -196,14 +197,13 @@ class ESContentletScrollImpl implements IndexContentletScroll {
         for (SearchHit sh : searchHits.hits()) {
             try{
                 Map<String, Object> sourceMap = sh.sourceAsMap();
-                ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setId(sh.id());
-                conwrapper.setIndex(sh.index());
-                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                conwrapper.setInode(sourceMap.get("inode").toString());
-                conwrapper.setScore(sh.score());
-
-                list.add(conwrapper);
+                list.add(ImmutableContentletSearch.builder()
+                        .id(sh.id())
+                        .index(sh.index())
+                        .identifier(sourceMap.get("identifier").toString())
+                        .inode(sourceMap.get("inode").toString())
+                        .score(sh.score())
+                        .build());
             }
             catch(Exception e){
                 Logger.error(this,e.getMessage(),e);
