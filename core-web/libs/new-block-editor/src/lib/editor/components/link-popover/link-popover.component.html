@@ -25,7 +25,7 @@
                     inputId="link-url"
                     appendTo="body"
                     optionLabel="url"
-                    size="'small'"
+                    [size]="'small'"
                     [ngModel]="linkModel()"
                     [ngModelOptions]="{ standalone: true }"
                     (ngModelChange)="onLinkModelChange($event)"

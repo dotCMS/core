@@ -185,12 +185,17 @@ export class LinkPopoverComponent {
             .subscribe((entity) => {
                 const contentlets = entity?.jsonObjectView?.contentlets ?? [];
                 this.suggestions.set(
-                    contentlets.map((c) => ({
-                        name: c.title,
-                        url: c.path || c.urlMap,
-                        hasTitleImage: c.hasTitleImage,
-                        inode: c.inode
-                    }))
+                    contentlets
+                        .map((c) => ({
+                            // `path`/`urlMap` come from an untyped index — either may be absent.
+                            // Drop entries with no resolvable URL below so the field never gets
+                            // the string "undefined" written into `href`.
+                            name: c.title,
+                            url: c.path || c.urlMap || '',
+                            hasTitleImage: c.hasTitleImage,
+                            inode: c.inode
+                        }))
+                        .filter((result) => !!result.url)
                 );
             });
 
@@ -285,8 +290,11 @@ export class LinkPopoverComponent {
         if (isValidHttpUrl(query)) {
             this.isExternalUrl.set(true);
             this.suggestions.set([]);
-            // The overlay was opened by AutoComplete before completeMethod ran — force it
-            // closed so an external URL never shows a (loading/empty) dropdown.
+            // AutoComplete opens its overlay (with a loading state) as soon as the user types,
+            // before completeMethod runs — so clearing suggestions / showEmptyMessage isn't
+            // enough to keep an external URL from flashing a dropdown. Force it closed.
+            // NOTE: loading / overlayVisible / cd are NOT public PrimeNG API (verified against
+            // primeng 21.x); revisit this branch on PrimeNG upgrades.
             const ac = this.autoComplete();
             if (ac) {
                 ac.loading = false;
@@ -313,12 +321,22 @@ export class LinkPopoverComponent {
     }
 
     /**
+     * Escapes Lucene/ES query_string reserved characters in a user-typed term. Without this,
+     * typing a `:` or `/` — extremely likely when searching for URLs/paths — produces an
+     * invalid query that `catchError` swallows, surfacing as a silently empty dropdown.
+     */
+    #escapeLuceneTerm(term: string): string {
+        return term.replace(/([+\-!(){}[\]^"~*?:\\/]|&&|\|\|)/g, '\\$1');
+    }
+
+    /**
      * Lucene query for internal-page search — pages (`basetype:5`) plus URL-mapped content,
      * matched by title / path / urlmap prefix. Built inline at the call site (matching the
      * slash-menu's `buildContentletByTypeQuery`); mirrors the legacy link popover.
      */
     #buildPageSearchQuery(term: string, languageId: number): string {
-        return `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +(title:${term}* OR path:*${term}* OR urlmap:*${term}*)`;
+        const safe = this.#escapeLuceneTerm(term);
+        return `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +(title:${safe}* OR path:*${safe}* OR urlmap:*${safe}*)`;
     }
 
     onInsert(): void {
