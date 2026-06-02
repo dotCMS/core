@@ -179,15 +179,15 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         });
     });
 
-    describe('content-type chip', () => {
-        it('uppercases the content type when output is present', () => {
+    describe('content-type label', () => {
+        it('renders the content type as-is when output is present', () => {
             setup({
                 hasOutput: jest.fn().mockReturnValue(true),
                 outputContentType: jest.fn().mockReturnValue('json'),
                 status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
             });
-            const chip = spectator.query(byTestId('velocity-playground-content-type-chip'));
-            expect(chip?.textContent).toContain('JSON');
+            const label = spectator.query(byTestId('velocity-playground-content-type-chip'));
+            expect(label?.textContent?.trim()).toBe('json');
         });
     });
 

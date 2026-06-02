@@ -154,6 +154,14 @@
                     class="flex items-center gap-2 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
                     data-testid="velocity-playground-stats-bar">
                     <div class="flex items-center gap-1.5">
+                        @if (store.hasOutput()) {
+                            <span
+                                class="font-semibold text-color"
+                                data-testid="velocity-playground-content-type-chip">
+                                {{ store.outputContentType() }}
+                            </span>
+                            <span class="text-color-secondary mx-1">&middot;</span>
+                        }
                         <i class="pi pi-circle-fill text-green-600 text-[0.5rem]"></i>
                         {{ 'velocityPlayground.output.ready' | dm }}
                         @if (store.elapsedMs() !== null) {
@@ -182,10 +190,6 @@
                                 icon="pi pi-download"
                                 (onClick)="downloadOutput()"
                                 data-testid="velocity-playground-export-btn" />
-                            <p-tag
-                                severity="secondary"
-                                [value]="store.outputContentType().toUpperCase()"
-                                data-testid="velocity-playground-content-type-chip" />
                         </div>
                     }
                 </div>
