@@ -699,3 +699,10 @@
     background: transparent;
     color: inherit;
 }
+
+/* ─── Exact selection highlight while the link popover is open (insert mode) ─── */
+/* Matches the `.link-editing` indigo tint so creating and editing a link look alike. */
+:host ::ng-deep .ProseMirror .editor-link-selection {
+    background-color: rgba(99, 102, 241, 0.18);
+    border-radius: 2px;
+}
