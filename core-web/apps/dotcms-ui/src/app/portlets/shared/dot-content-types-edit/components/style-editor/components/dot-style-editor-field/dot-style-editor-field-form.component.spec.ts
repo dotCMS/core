@@ -2,8 +2,8 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 
 import { DotMessageService } from '@dotcms/data-access';
 
+import { BuilderField } from '../../models';
 import { DotStyleEditorFieldFormComponent } from './dot-style-editor-field-form.component';
-import { BuilderField } from './models';
 
 const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.new': 'New Field',
@@ -15,6 +15,8 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.option.label.placeholder': 'Label',
     'style.editor.form.builder.field.option.value.placeholder': 'value',
     'style.editor.form.builder.field.option.remove.title': 'Remove option',
+    'style.editor.form.builder.field.option.move.up.title': 'Move option up',
+    'style.editor.form.builder.field.option.move.down.title': 'Move option down',
     'style.editor.form.builder.field.option.add': 'Add Option',
     'style.editor.form.builder.field.description.placeholder': 'e.g. Enter your text here...',
     'style.editor.form.builder.field.error.label.required': 'Label is required',
@@ -199,6 +201,54 @@ describe('DotStyleEditorFieldFormComponent', () => {
             typeInInput('input[placeholder="Label"]', 'New Label');
 
             expect(spectator.component.$options()[0].value).toBe('manual-value');
+        });
+
+        it('should move an option down when its move-down button is clicked', () => {
+            setup(DROPDOWN_FIELD);
+
+            const downBtns = spectator.queryAll(byTestId('move-option-down-btn'));
+            downBtns[0]?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            expect(spectator.component.$options().map((o) => o.value)).toEqual(['normal', 'bold']);
+        });
+
+        it('should move an option up when its move-up button is clicked', () => {
+            setup(DROPDOWN_FIELD);
+
+            const upBtns = spectator.queryAll(byTestId('move-option-up-btn'));
+            upBtns[1]?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            expect(spectator.component.$options().map((o) => o.value)).toEqual(['normal', 'bold']);
+        });
+
+        it('should disable move-up on the first option and move-down on the last option', () => {
+            setup(DROPDOWN_FIELD);
+
+            const upBtns = spectator.queryAll(byTestId('move-option-up-btn'));
+            const downBtns = spectator.queryAll(byTestId('move-option-down-btn'));
+
+            expect(upBtns[0]?.querySelector('button')?.disabled).toBe(true);
+            expect(downBtns[downBtns.length - 1]?.querySelector('button')?.disabled).toBe(true);
+        });
+
+        it('should emit fieldChange with the reordered options', () => {
+            setup(DROPDOWN_FIELD);
+            jest.spyOn(spectator.component.fieldChange, 'emit');
+
+            const downBtns = spectator.queryAll(byTestId('move-option-down-btn'));
+            downBtns[0]?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            expect(spectator.component.fieldChange.emit).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    options: [
+                        { label: 'Normal', value: 'normal' },
+                        { label: 'Bold', value: 'bold' }
+                    ]
+                })
+            );
         });
     });
 

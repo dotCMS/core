@@ -19,8 +19,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotStyleEditorFieldFormComponent } from './dot-style-editor-field-form.component';
-import { BuilderField, BuilderSection, fieldHasErrors } from './models';
+import { DotStyleEditorFieldFormComponent } from '../dot-style-editor-field/dot-style-editor-field-form.component';
+import { BuilderField, BuilderSection, fieldHasErrors } from '../../models';
 
 @Component({
     selector: 'dot-style-editor-section',
