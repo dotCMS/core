@@ -17,6 +17,7 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { LINK_SELECTION_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { linkHrefValidator } from '../../utils/url.utils';
 import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
@@ -134,6 +135,20 @@ export class LinkPopoverComponent {
             if (!linkEl) return;
             linkEl.classList.add('link-editing');
             onCleanup(() => linkEl.classList.remove('link-editing'));
+        });
+
+        // Insert mode (no `linkEl`): once the URL input takes focus the browser stops
+        // painting the editor's native selection, leaving the author with no hint of
+        // which text will become the link. Paint the exact range with a ProseMirror
+        // decoration that survives the blur; clear it when the popover closes.
+        effect((onCleanup) => {
+            if (!this.manager.isOpen('link')) return;
+            if (this.manager.linkPayload()?.linkEl) return;
+            const view = this.editor().view;
+            view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: true }));
+            onCleanup(() =>
+                view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: false }))
+            );
         });
     }
 
