@@ -12,7 +12,13 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { InputTextModule } from 'primeng/inputtext';
@@ -139,8 +145,7 @@ export class LinkPopoverComponent {
         openInNewTab: new FormControl<boolean>(false, { nonNullable: true }),
         title: new FormControl<string>('', { nonNullable: true }),
         ariaLabel: new FormControl<string>('', { nonNullable: true }),
-        // Nullable: PrimeNG <p-select> with [showClear] resets the value to null on clear.
-        rel: new FormControl<string | null>('')
+        rel: new FormControl<string | null>(null)
     });
 
     protected toggleAdvanced(): void {
@@ -196,7 +201,7 @@ export class LinkPopoverComponent {
                 if (values) {
                     const title = values.title ?? '';
                     const ariaLabel = values.ariaLabel ?? '';
-                    const rel = values.rel ?? '';
+                    const rel = values.rel ?? null;
                     const href = values.href ?? '';
                     // emitEvent:false so prefilling an existing link doesn't fire a search.
                     this.form.setValue(
@@ -228,7 +233,7 @@ export class LinkPopoverComponent {
                         openInNewTab: false,
                         title: '',
                         ariaLabel: '',
-                        rel: ''
+                        rel: null
                     });
                     this.linkModel.set('');
                     this.suggestions.set([]);
