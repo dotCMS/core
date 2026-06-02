@@ -359,5 +359,176 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml(String)}
+     * Given Scenario: A {@code dotContent} block is nested inside a {@code gridBlock} (grid/columns)
+     *   and a custom render template ({@code dotContent-{contentType}.vtl}) is provided via a base path.
+     * ExpectedResult: The custom render is applied to the grid-nested contentlet, not just the default
+     *   title-only template. This is the regression covered by issue #35884 - custom renders were being
+     *   skipped for contentlets nested inside a grid because the grid recursion happens purely in Velocity
+     *   and bypassed the custom-template lookup.
+     */
+    @Test
+    public void test_overridden_render_inside_grid_block_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String contentTypeVar = "gridCustom" + System.currentTimeMillis();
+        final String fileName = "dotContent-" + contentTypeVar + ".vtl";
+        final String storyBlockPath = "/application/storytest/gridblocks" + System.currentTimeMillis() + "/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath, host, user, false);
+
+        // Custom render template for the nested contentlet's content type.
+        final File tempTestFile = File.createTempFile("dotContent-grid", ".vtl");
+        FileUtils.writeStringToFile(tempTestFile,
+                "<div class=\"custom-grid-render\">$!item.attrs.data.body</div>");
+
+        final String variable = "testGridFileAsset" + System.currentTimeMillis();
+        final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+
+        final Contentlet customTemplateFileAsset = new Contentlet();
+        customTemplateFileAsset.setContentType(fileAssetContentType);
+        customTemplateFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+        customTemplateFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+        customTemplateFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+        customTemplateFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+        customTemplateFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+        customTemplateFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+        final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(customTemplateFileAsset,
+                new ContentletDependencies.Builder().modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+        APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+
+        // A doc containing a gridBlock whose first column holds a dotContent block of the custom content type.
+        final String gridJson = "{\"type\":\"doc\",\"content\":[{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[\"6\",\"6\"]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":{"
+                + "\"title\":\"grid title\",\"body\":\"grid-custom-body\",\"contentType\":\"" + contentTypeVar + "\","
+                + "\"identifier\":\"2815d82dd8c37c4726479f5d37f47cf7\",\"inode\":\"74329a5f-267b-470b-a403-8148dea85238\","
+                + "\"languageId\":1}}}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[]}"
+                + "]}]}";
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(gridJson);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+
+        // The custom render must be applied to the grid-nested contentlet...
+        Assert.assertTrue("Custom render not applied inside grid. HTML: " + html,
+                html.contains("custom-grid-render"));
+        Assert.assertTrue("Custom render body missing. HTML: " + html,
+                html.contains("grid-custom-body"));
+        // ...instead of the default title-only template.
+        Assert.assertFalse("Default title-only template was used inside grid. HTML: " + html,
+                html.contains("<h2") && html.contains("grid title</h2>"));
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml(String)}
+     * Given Scenario: A {@code dotImage} block is nested inside a {@code gridBlock} and a type-level
+     *   override template ({@code dotImage.vtl}) is provided via a base path.
+     * ExpectedResult: The override is applied to the grid-nested block. {@code dotImage} and
+     *   {@code dotVideo} are leaf branches in the recursive render macro that previously bypassed the
+     *   base-path override lookup when nested in a grid (issue #35884); they now route through the same
+     *   helper as {@code dotContent}.
+     */
+    @Test
+    public void test_overridden_dotimage_render_inside_grid_block_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String fileName = "dotImage.vtl";
+        final String storyBlockPath = "/application/storytest/gridimage" + System.currentTimeMillis() + "/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath, host, user, false);
+
+        final File tempTestFile = File.createTempFile("dotImage-grid", ".vtl");
+        FileUtils.writeStringToFile(tempTestFile,
+                "<figure class=\"custom-grid-image\">$!item.attrs.data.title</figure>");
+
+        final String variable = "testGridImageFileAsset" + System.currentTimeMillis();
+        final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+
+        final Contentlet overrideFileAsset = new Contentlet();
+        overrideFileAsset.setContentType(fileAssetContentType);
+        overrideFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+        overrideFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+        overrideFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+        overrideFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+        overrideFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+        overrideFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+        final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(overrideFileAsset,
+                new ContentletDependencies.Builder().modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+        APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+
+        final String gridJson = "{\"type\":\"doc\",\"content\":[{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[\"6\",\"6\"]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"dotImage\",\"attrs\":{\"data\":{\"title\":\"grid-image-title\"}}}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[]}"
+                + "]}]}";
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(gridJson);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+
+        Assert.assertTrue("dotImage override not applied inside grid. HTML: " + html,
+                html.contains("custom-grid-image"));
+        Assert.assertTrue("dotImage override content missing. HTML: " + html,
+                html.contains("grid-image-title"));
+    }
+
+    /**
+     * Method to test: {@link StoryBlockMap#toHtml(String)}
+     * Given Scenario: A {@code dotVideo} block is nested inside a {@code gridBlock} and a type-level
+     *   override template ({@code dotVideo.vtl}) is provided via a base path.
+     * ExpectedResult: The override is applied to the grid-nested block. {@code dotVideo} is a separate
+     *   elseif branch in the recursive render macro (issue #35884); even though it mirrors the
+     *   {@code dotImage} branch, it is exercised independently here so the two cannot rot apart.
+     */
+    @Test
+    public void test_overridden_dotvideo_render_inside_grid_block_to_html() throws JSONException, DotDataException, DotSecurityException, IOException {
+
+        final String fileName = "dotVideo.vtl";
+        final String storyBlockPath = "/application/storytest/gridvideo" + System.currentTimeMillis() + "/";
+        final User user = APILocator.systemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder folder = APILocator.getFolderAPI().createFolders(storyBlockPath, host, user, false);
+
+        final File tempTestFile = File.createTempFile("dotVideo-grid", ".vtl");
+        FileUtils.writeStringToFile(tempTestFile,
+                "<div class=\"custom-grid-video\">$!item.attrs.data.title</div>");
+
+        final String variable = "testGridVideoFileAsset" + System.currentTimeMillis();
+        final ContentType fileAssetContentType = APILocator.getContentTypeAPI(user).save(ContentTypeBuilder
+                .builder(FileAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+
+        final Contentlet overrideFileAsset = new Contentlet();
+        overrideFileAsset.setContentType(fileAssetContentType);
+        overrideFileAsset.setBinary(FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR, tempTestFile);
+        overrideFileAsset.setProperty(FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR, fileName);
+        overrideFileAsset.setProperty(Contentlet.TITTLE_KEY, fileName);
+        overrideFileAsset.setProperty(Contentlet.HOST_KEY, host.getIdentifier());
+        overrideFileAsset.setProperty(Contentlet.FOLDER_KEY, folder.getIdentifier());
+        overrideFileAsset.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+
+        final Contentlet checkinContentlet = APILocator.getContentletAPI().checkin(overrideFileAsset,
+                new ContentletDependencies.Builder().modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+        APILocator.getContentletAPI().publish(checkinContentlet, user, false);
+
+        final String gridJson = "{\"type\":\"doc\",\"content\":[{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[\"6\",\"6\"]},\"content\":["
+                + "{\"type\":\"gridColumn\",\"content\":[{\"type\":\"dotVideo\",\"attrs\":{\"data\":{\"title\":\"grid-video-title\"}}}]},"
+                + "{\"type\":\"gridColumn\",\"content\":[]}"
+                + "]}]}";
+
+        final StoryBlockMap storyBlockMap = new StoryBlockMap(gridJson);
+        final String html = storyBlockMap.toHtml(storyBlockPath);
+
+        Assert.assertTrue("dotVideo override not applied inside grid. HTML: " + html,
+                html.contains("custom-grid-video"));
+        Assert.assertTrue("dotVideo override content missing. HTML: " + html,
+                html.contains("grid-video-title"));
+    }
+
 
 }
