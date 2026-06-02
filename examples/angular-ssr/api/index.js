@@ -15,7 +15,11 @@ const path = require('path');
  * with no proxy-trust logic involved. The allowlist itself (`NG_ALLOWED_HOSTS`)
  * is configured in `server.ts`.
  *
+ * Angular declined to auto-resolve proxied hosts (angular/angular-cli#32616),
+ * leaving this to the deployment layer — which is exactly what we do here.
+ *
  * @see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+ * @see https://github.com/angular/angular-cli/issues/32616
  */
 module.exports = async (req, res) => {
   const forwardedHost = req.headers['x-forwarded-host'];

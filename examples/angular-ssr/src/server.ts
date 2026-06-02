@@ -21,6 +21,12 @@ config();
  * domains. On Vercel the proxy host is normalized into `host` by `api/index.js`
  * before this engine sees the request. Add a custom production domain via the
  * `NG_ALLOWED_HOSTS` env var. The engine reads this var when constructed below.
+ *
+ * `NG_ALLOWED_HOSTS` is an official Angular alternative to the `angular.json`
+ * `security.allowedHosts` option; we use it here so deployers can add domains
+ * without rebuilding. Allowlisting the deployment host is the app's
+ * responsibility by design — Angular declined to auto-handle proxied hosts
+ * (angular/angular-cli#32616), so this is the sanctioned pattern, not a hack.
  * @see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
  */
 const allowedHosts = new Set(
