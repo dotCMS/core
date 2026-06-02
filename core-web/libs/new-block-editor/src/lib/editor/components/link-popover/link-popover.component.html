@@ -25,6 +25,7 @@
                     inputId="link-url"
                     appendTo="body"
                     optionLabel="url"
+                    size="'small'"
                     [ngModel]="linkModel()"
                     [ngModelOptions]="{ standalone: true }"
                     (ngModelChange)="onLinkModelChange($event)"
@@ -86,6 +87,7 @@
                     type="text"
                     [formControl]="form.controls.displayText"
                     [placeholder]="'dot.block.editor.dialog.link.field.text.placeholder' | dm"
+                    pSize="small"
                     class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
@@ -127,6 +129,7 @@
                             [placeholder]="
                                 'dot.block.editor.dialog.link.field.title.placeholder' | dm
                             "
+                            pSize="small"
                             class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
@@ -142,6 +145,7 @@
                             [placeholder]="
                                 'dot.block.editor.dialog.link.field.aria-label.placeholder' | dm
                             "
+                            pSize="small"
                             class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
@@ -160,6 +164,7 @@
                             [placeholder]="
                                 'dot.block.editor.dialog.link.field.rel.placeholder' | dm
                             "
+                            pSize="small"
                             [formControl]="form.controls.rel"
                             [pt]="selectPt" />
                     </div>
