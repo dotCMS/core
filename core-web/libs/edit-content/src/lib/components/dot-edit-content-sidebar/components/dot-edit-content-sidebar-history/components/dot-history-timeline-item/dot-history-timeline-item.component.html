@@ -1,7 +1,7 @@
 <div data-testid="history-item" class="block pb-3">
     <div
         data-testid="content-wrapper"
-        class="group flex items-stretch justify-between gap-2 rounded-md border pt-2.5 pr-2.5 pb-2.5 pl-3 cursor-pointer transition-colors"
+        class="group flex cursor-pointer items-stretch justify-between gap-2 rounded-md border py-2.5 pr-2.5 pl-3 transition-colors"
         [class.bg-white]="!$isActive()"
         [class.border-transparent]="!$isActive()"
         [class.hover:bg-gray-100]="!$isActive()"
@@ -17,11 +17,11 @@
             appendTo: 'body'
         }">
         <ng-template #tooltipContent>
-            <div class="min-w-0 max-w-[280px] py-1">
-                <h4 data-testid="overlay-title" class="font-semibold text-sm leading-snug mb-2">
+            <div class="max-w-[280px] min-w-0 py-1">
+                <h4 data-testid="overlay-title" class="mb-2 text-sm leading-snug font-semibold">
                     {{ $item().title }}
                 </h4>
-                <ul class="text-xs space-y-1 list-none pl-0 m-0">
+                <ul class="m-0 list-none space-y-1 pl-0 text-xs">
                     <li>{{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}</li>
                     <li>{{ $item().languageFlag }}</li>
                     @if ($item().experimentVariant) {
@@ -34,11 +34,11 @@
             </div>
         </ng-template>
 
-        <div class="flex flex-col gap-2 flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex min-w-0 flex-1 flex-col gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <span
                     data-testid="time-display"
-                    class="font-bold text-gray-900 text-sm leading-tight">
+                    class="text-sm leading-tight font-bold text-gray-900">
                     @if ($item().working) {
                         {{ 'edit.content.sidebar.history.menu.current' | dm }}
                     } @else {
@@ -69,7 +69,7 @@
 
             <div class="flex items-center gap-2">
                 <div
-                    class="w-6 h-6 shrink-0 overflow-hidden rounded-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+                    class="size-6 shrink-0 overflow-hidden rounded-full [&_img]:size-full [&_img]:object-cover">
                     <p-avatar
                         dotGravatar
                         [email]="$item().modUserName"
@@ -77,14 +77,14 @@
                         styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
                         data-testid="user-avatar" />
                 </div>
-                <span data-testid="history-user" class="text-xs text-gray-700 truncate min-w-0">
+                <span data-testid="history-user" class="min-w-0 truncate text-xs text-gray-700">
                     {{ $item().modUserName }}
                 </span>
             </div>
         </div>
 
         <!-- Right column: kebab pinned top, inode copy pinned bottom -->
-        <div class="flex flex-col items-end shrink-0 gap-1">
+        <div class="flex shrink-0 flex-col items-end gap-1">
             @if ($menuItems().length > 0) {
                 <div
                     [class]="

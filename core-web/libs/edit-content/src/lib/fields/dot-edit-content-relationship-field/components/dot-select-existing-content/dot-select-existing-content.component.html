@@ -3,8 +3,7 @@
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
 
-<div
-    class="flex h-full w-full flex-col overflow-hidden rounded-lg border border-solid border-gray-200">
+<div class="flex size-full flex-col overflow-hidden rounded-lg border border-solid border-gray-200">
     @if (store.errorMessage()) {
         <div
             class="flex justify-center rounded-border border border-solid border-gray-400 p-12 text-base"

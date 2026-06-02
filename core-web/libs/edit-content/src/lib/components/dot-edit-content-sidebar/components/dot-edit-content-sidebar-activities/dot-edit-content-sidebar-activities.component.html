@@ -28,7 +28,7 @@
                                         dotGravatar
                                         [email]="activity?.email"
                                         [pt]="avatarPt"
-                                        class="flex-shrink-0" />
+                                        class="shrink-0" />
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span
@@ -43,7 +43,7 @@
                                             </span>
                                         </div>
                                         <p
-                                            class="mt-1.5 text-sm leading-[1.4] break-words whitespace-pre-line text-gray-700"
+                                            class="mt-1.5 text-sm leading-[1.4] wrap-break-word whitespace-pre-line text-gray-700"
                                             data-testid="activity-description">
                                             {{ activity.commentDescription }}
                                         </p>
@@ -62,7 +62,7 @@
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-[1] w-full border-t border-gray-200 px-4 py-3"
+                class="sticky bottom-0 z-1 w-full border-t border-gray-200 px-4 py-3"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"
@@ -80,7 +80,7 @@
 
                         <dot-field-validation-message
                             [field]="form.get('comment')"
-                            class="absolute bottom-[-0.75rem] left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                            class="absolute -bottom-3 left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
 
                         <!-- Character Counter -->
                         <div

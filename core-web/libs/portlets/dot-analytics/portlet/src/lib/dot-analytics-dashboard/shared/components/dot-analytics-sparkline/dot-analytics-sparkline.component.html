@@ -1,5 +1,5 @@
 @if ($isLoading()) {
-    <div class="sparkline-skeleton w-full h-(--sparkline-height,6rem)">
+    <div class="sparkline-skeleton h-(--sparkline-height,6rem) w-full">
         <p-skeleton width="100%" height="100%" styleClass="rounded-lg" />
     </div>
 } @else if ($isEmpty()) {
@@ -17,7 +17,7 @@
             [plugins]="chartPlugins" />
         @if ($hoverInfo(); as info) {
             <div
-                class="sparkline-tooltip pointer-events-none absolute z-10 -translate-y-1/2 whitespace-nowrap rounded-md bg-[rgba(30,30,30,0.92)] px-2 py-[5px] text-[0.625rem] leading-[1.4] text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                class="sparkline-tooltip pointer-events-none absolute z-10 -translate-y-1/2 rounded-md bg-[rgba(30,30,30,0.92)] px-2 py-[5px] text-[0.625rem] leading-[1.4] whitespace-nowrap text-white shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 [class.-translate-x-full]="info.alignLeft"
                 [style.left.px]="info.left"
                 [style.top.px]="info.top">
@@ -25,7 +25,7 @@
                 @for (item of info.items; track item.label) {
                     <div class="sparkline-tooltip__row flex items-center gap-1">
                         <span
-                            class="sparkline-tooltip__dot inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                            class="sparkline-tooltip__dot inline-block size-1.5 shrink-0 rounded-full"
                             [style.background]="item.color"></span>
                         <span>{{ item.label | dm }}: {{ item.value }}</span>
                     </div>
@@ -35,7 +35,7 @@
     </div>
     @if ($legendItems().length) {
         <div
-            class="sparkline-legend mt-2 -mx-4 -mb-6 flex items-center gap-6 border-t border-(--p-gray-200,#e5e7eb) bg-(--p-gray-50,#f9fafb) px-4 py-3 rounded-b-(--p-card-border-radius,0.375rem)"
+            class="sparkline-legend -mx-4 mt-2 -mb-6 flex items-center gap-6 rounded-b-(--p-card-border-radius,0.375rem) border-t border-(--p-gray-200,#e5e7eb) bg-(--p-gray-50,#f9fafb) px-4 py-3"
             data-testid="sparkline-legend">
             @for (item of $legendItems(); track item.label) {
                 <div class="sparkline-legend__item flex items-center gap-1.5">
