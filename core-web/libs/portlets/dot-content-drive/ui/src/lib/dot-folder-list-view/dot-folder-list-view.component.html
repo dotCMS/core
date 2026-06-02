@@ -74,10 +74,10 @@
                     <p-tableCheckbox [value]="item" />
                 </td>
                 <td
-                    class="grid grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 w-full pl-3"
+                    class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                     data-testId="item-title">
                     <div
-                        class="cursor-pointer p-1 h-14 max-h-14 bg-(--color-palette-primary-100)"
+                        class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         @if (!isFolder) {
                             <dot-contentlet-thumbnail
@@ -88,14 +88,14 @@
                                 [attr.data-table-id]="item.identifier" />
                         } @else {
                             <i
-                                class="pi pi-folder text-4xl! flex! items-center! justify-center! w-full! h-full! text-gray-700"
+                                class="pi pi-folder flex! h-full! w-full! items-center! justify-center! text-4xl! text-gray-700"
                                 data-testId="folder-icon"
                                 [attr.data-table-id]="item.identifier"></i>
                         }
                     </div>
                     <span
                         data-testId="item-title-text"
-                        class="truncate cursor-pointer block"
+                        class="block cursor-pointer truncate"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
@@ -117,7 +117,7 @@
                 <td data-testId="item-language">
                     @if (!isFolder) {
                         <p-chip
-                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                            class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
                             [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
                 </td>
@@ -131,7 +131,7 @@
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
                     <p-button
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                         icon="pi pi-ellipsis-v"
                         [text]="true"
                         [rounded]="true"
@@ -145,17 +145,17 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         @if (!$loading()) {
-            <tr class="hover:bg-transparent! h-max">
-                <td colspan="7" class="p-6 text-center h-full border-none">
-                    <div class="flex flex-col items-center gap-4 max-w-100 mx-auto">
-                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
-                            <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
+            <tr class="h-max hover:bg-transparent!">
+                <td colspan="7" class="h-full border-none p-6 text-center">
+                    <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
+                        <div class="flex h-20 w-20 items-center justify-center rounded-full">
+                            <i class="pi pi-folder-open text-6xl! text-(--surface-500)"></i>
                         </div>
                         <div class="flex flex-col text-center">
                             <h3 class="m-0 text-lg font-medium text-gray-800">
                                 {{ 'content.drive.empty.state.title' | dm }}
                             </h3>
-                            <p class="m-0 text-text-color text-base leading-6">
+                            <p class="text-text-color m-0 text-base leading-6">
                                 {{ 'content.drive.empty.state.description' | dm }}
                             </p>
                         </div>
@@ -171,15 +171,15 @@
 </p-table>
 
 <ng-template #loadingRow>
-    <tr data-testId="loading-row" class="cursor-default h-17 hover:bg-transparent!">
+    <tr data-testId="loading-row" class="h-17 cursor-default hover:bg-transparent!">
         <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
-            <span class="flex items-center justify-center h-full w-fit">
+            <span class="flex h-full w-fit items-center justify-center">
                 <p-skeleton height="1.5rem" width="1.5rem" />
             </span>
         </td>
         @for (column of HEADER_COLUMNS; track column.field) {
             <td [style.width]="column.width">
-                <span class="flex items-center justify-center h-full first:text-left">
+                <span class="flex h-full items-center justify-center first:text-left">
                     <p-skeleton height="1.5rem" width="100%" />
                 </span>
             </td>

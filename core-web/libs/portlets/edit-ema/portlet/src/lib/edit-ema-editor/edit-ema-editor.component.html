@@ -110,7 +110,7 @@
                 [state]="$deviceSelectorState()"
                 (stateChange)="handleDeviceSelectorChange($event)"
                 data-testId="uve-device-controls" />
-            <div class="flex items-center bg-gray-100 rounded-full pr-3 gap-2">
+            <div class="flex items-center gap-2 rounded-full bg-gray-100 pr-3">
                 <p-button
                     icon="pi pi-undo"
                     size="small"
@@ -120,9 +120,9 @@
                     (onClick)="uveStore.viewZoomReset()"
                     aria-label="Reset zoom and canvas size"
                     data-testId="zoom-reset" />
-                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
                 <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
-                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
                 <dot-uve-zoom-controls />
             </div>
         </ng-template>
@@ -234,7 +234,7 @@
                 @if ($showStyleEditorTab()) {
                     <p-tab [value]="1">
                         <div
-                            class="flex flex-1 h-full items-center justify-center"
+                            class="flex h-full flex-1 items-center justify-center"
                             [pTooltip]="'uve.toolbar.style.editor' | dm"
                             tooltipPosition="bottom">
                             <i class="pi pi-palette"></i>
@@ -255,7 +255,7 @@
                     <p-tabpanel [value]="1">
                         @if ($editorPanelActiveTab() === 1) {
                             <div
-                                class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
+                                class="flex-column justify-content-center align-items-center flex h-full w-full gap-2">
                                 @if ($styleSchema()) {
                                     <dot-uve-style-editor-form [schema]="$styleSchema()!" />
                                 } @else {
@@ -296,7 +296,7 @@
 
 <div
     #customDragImage
-    class="absolute p-3 bg-white border border-round-lg z-1"
+    class="border-round-lg absolute z-1 border bg-white p-3"
     style="top: -1000px; left: -1000px; width: fit-content"
     data-testId="drag-image">
     {{ uveStore.$areaContentType() }}

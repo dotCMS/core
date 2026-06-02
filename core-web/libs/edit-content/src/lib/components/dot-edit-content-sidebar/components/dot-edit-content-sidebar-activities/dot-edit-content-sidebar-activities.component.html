@@ -1,9 +1,9 @@
 <!-- Activities List -->
-<section class="flex flex-col h-full min-h-0 relative" role="log" aria-label="Content Activities">
+<section class="relative flex h-full min-h-0 flex-col" role="log" aria-label="Content Activities">
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
             <p-dataview
                 #dv
                 [value]="$activities()"
@@ -29,21 +29,21 @@
                                         [email]="activity?.email"
                                         [pt]="avatarPt"
                                         class="flex-shrink-0" />
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
                                             <span
                                                 class="text-sm font-semibold text-gray-900"
                                                 data-testid="activity-user">
                                                 {{ activity.postedBy }}
                                             </span>
                                             <span
-                                                class="text-xs text-gray-600 ml-auto shrink-0"
+                                                class="ml-auto shrink-0 text-xs text-gray-600"
                                                 data-testid="activity-date">
                                                 {{ activity.createdDate | dotRelativeDate }}
                                             </span>
                                         </div>
                                         <p
-                                            class="mt-1.5 text-sm text-gray-700 leading-[1.4] break-words whitespace-pre-line"
+                                            class="mt-1.5 text-sm leading-[1.4] break-words whitespace-pre-line text-gray-700"
                                             data-testid="activity-description">
                                             {{ activity.commentDescription }}
                                         </p>
@@ -62,7 +62,7 @@
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-[1] w-full px-4 py-3 border-t border-gray-200"
+                class="sticky bottom-0 z-[1] w-full border-t border-gray-200 px-4 py-3"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"
@@ -84,7 +84,7 @@
 
                         <!-- Character Counter -->
                         <div
-                            class="mt-1 text-xs text-gray-600 text-left transition-colors"
+                            class="mt-1 text-left text-xs text-gray-600 transition-colors"
                             [class.text-red-500!]="isAtMaxLength()"
                             data-testid="activities-char-counter">
                             @if (!isAtMaxLength()) {

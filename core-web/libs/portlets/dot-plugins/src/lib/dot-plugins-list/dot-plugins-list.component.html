@@ -1,24 +1,24 @@
 <div
-    class="flex flex-col h-full min-h-0 relative"
+    class="relative flex h-full min-h-0 flex-col"
     (dragenter)="onDragEnter($event)"
     (dragleave)="onDragLeave($event)"
     (dragover)="onDragOver($event)"
     (drop)="onDrop($event)">
     @if (isDragging()) {
         <div
-            class="absolute inset-0 z-10 pointer-events-none rounded-lg"
+            class="pointer-events-none absolute inset-0 z-10 rounded-lg"
             data-testid="plugins-drop-overlay">
             <div
-                class="absolute inset-0 bg-primary-50 opacity-90 rounded-lg border-2 border-dashed border-primary"></div>
-            <div class="relative h-full flex flex-col items-center justify-center gap-4">
-                <i class="pi pi-upload text-primary text-6xl!" aria-hidden="true"></i>
-                <p class="text-primary text-xl font-semibold m-0">
+                class="absolute inset-0 rounded-lg border-2 border-dashed border-primary bg-primary-50 opacity-90"></div>
+            <div class="relative flex h-full flex-col items-center justify-center gap-4">
+                <i class="pi pi-upload text-6xl! text-primary" aria-hidden="true"></i>
+                <p class="m-0 text-xl font-semibold text-primary">
                     {{ 'plugins.drag-and-drop.drop-here' | dm }}
                 </p>
             </div>
         </div>
     }
-    <p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0! flex-shrink-0">
+    <p-toolbar class="flex-shrink-0 justify-start gap-1 border-x-0! border-t-0! px-3">
         <div class="flex w-full items-center gap-4 py-3">
             <p-iconfield iconPosition="left">
                 <p-inputicon class="pi pi-search" />
@@ -42,7 +42,7 @@
                     {{ 'plugins.show-undeployed' | dm }}
                 </label>
             </div>
-            <div class="flex gap-3 ml-auto items-center">
+            <div class="ml-auto flex items-center gap-3">
                 <p-button
                     [label]="'plugins.refresh-table' | dm"
                     icon="pi pi-refresh"
@@ -70,24 +70,24 @@
         </div>
     </p-toolbar>
 
-    <div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="plugins-table-wrapper">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="plugins-table-wrapper">
         @if (store.status() === 'restarting') {
             <div
-                class="flex-1 flex flex-col items-center justify-center gap-4"
+                class="flex flex-1 flex-col items-center justify-center gap-4"
                 data-testid="plugins-restarting-state">
-                <i class="pi pi-sync pi-spin text-primary text-6xl!" aria-hidden="true"></i>
+                <i class="pi pi-sync pi-spin text-6xl! text-primary" aria-hidden="true"></i>
                 <div class="flex flex-col text-center">
                     <h3 class="m-0 text-lg font-medium text-gray-800">
                         {{ 'plugins.restarting.title' | dm }}
                     </h3>
-                    <p class="m-0 text-color text-base leading-6">
+                    <p class="m-0 text-base leading-6 text-color">
                         {{ 'plugins.restarting.description' | dm }}
                     </p>
                 </div>
             </div>
         } @else if (store.status() === 'uploading') {
             <div
-                class="flex-1 flex flex-col items-center justify-center gap-4"
+                class="flex flex-1 flex-col items-center justify-center gap-4"
                 data-testid="plugins-uploading-state">
                 <p-progressSpinner
                     styleClass="w-16! h-16! [&_svg_circle]:stroke-[var(--p-primary-color)]!"
@@ -97,7 +97,7 @@
                     <h3 class="m-0 text-lg font-medium text-gray-800">
                         {{ 'plugins.uploading.title' | dm }}
                     </h3>
-                    <p class="m-0 text-color text-base leading-6">
+                    <p class="m-0 text-base leading-6 text-color">
                         {{ 'plugins.uploading.description' | dm }}
                     </p>
                 </div>
@@ -107,14 +107,14 @@
             (store.status() === 'loaded' || store.status() === 'refreshing')
         ) {
             <div
-                class="flex-1 flex flex-col items-center justify-center gap-4"
+                class="flex flex-1 flex-col items-center justify-center gap-4"
                 data-testid="plugins-empty-state">
-                <i class="pi pi-box text-surface-500 text-6xl!" aria-hidden="true"></i>
+                <i class="pi pi-box text-6xl! text-surface-500" aria-hidden="true"></i>
                 <div class="flex flex-col text-center">
                     <h3 class="m-0 text-lg font-medium text-gray-800">
                         {{ 'plugins.empty.state.title' | dm }}
                     </h3>
-                    <p class="m-0 text-color text-base leading-6">
+                    <p class="m-0 text-base leading-6 text-color">
                         {{ 'plugins.empty.state.description' | dm }}
                     </p>
                 </div>
@@ -134,7 +134,7 @@
                 [scrollable]="true"
                 scrollHeight="flex"
                 [globalFilterFields]="['symbolicName', 'jarFile']"
-                class="flex-1 min-h-0"
+                class="min-h-0 flex-1"
                 data-testid="plugins-table">
                 <ng-template pTemplate="header">
                     <tr>
@@ -153,7 +153,7 @@
                 <ng-template pTemplate="body" let-bundle>
                     @if (store.status() === 'init' || store.status() === 'loading') {
                         <tr
-                            class="cursor-default h-13 hover:bg-transparent!"
+                            class="h-13 cursor-default hover:bg-transparent!"
                             data-testid="plugin-skeleton-row">
                             <td><p-skeleton height="1.5rem" /></td>
                             <td style="width: 8rem"><p-skeleton height="1.5rem" width="5rem" /></td>
@@ -170,37 +170,37 @@
                                 @switch (bundle.state) {
                                     @case (BUNDLE_STATE.ACTIVE) {
                                         <p-chip
-                                            class="bg-green-100! text-green-700! border-green-100! text-xs"
+                                            class="border-green-100! bg-green-100! text-xs text-green-700!"
                                             [label]="'plugins.state.active' | dm" />
                                     }
                                     @case (BUNDLE_STATE.STARTING) {
                                         <p-chip
-                                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                            class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
                                             [label]="'plugins.state.starting' | dm" />
                                     }
                                     @case (BUNDLE_STATE.STOPPING) {
                                         <p-chip
-                                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                            class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
                                             [label]="'plugins.state.stopping' | dm" />
                                     }
                                     @case (BUNDLE_STATE.RESOLVED) {
                                         <p-chip
-                                            class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                            class="border-yellow-100! bg-yellow-100! text-xs text-yellow-700!"
                                             [label]="'plugins.state.resolved' | dm" />
                                     }
                                     @case (BUNDLE_STATE.INSTALLED) {
                                         <p-chip
-                                            class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                            class="border-yellow-100! bg-yellow-100! text-xs text-yellow-700!"
                                             [label]="'plugins.state.installed' | dm" />
                                     }
                                     @case (BUNDLE_STATE.UNINSTALLED) {
                                         <p-chip
-                                            class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                            class="border-gray-100! bg-gray-100! text-xs text-gray-600!"
                                             [label]="'plugins.state.uninstalled' | dm" />
                                     }
                                     @default {
                                         <p-chip
-                                            class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                            class="border-gray-100! bg-gray-100! text-xs text-gray-600!"
                                             [label]="'plugins.state.undeployed' | dm" />
                                     }
                                 }
@@ -208,7 +208,7 @@
                             <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
                             <td data-testid="plugin-actions" style="width: 7rem">
                                 <p-button
-                                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                    class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                                     icon="pi pi-ellipsis-v"
                                     [text]="true"
                                     [rounded]="true"
@@ -227,13 +227,13 @@
                                 class="flex flex-col items-center justify-center gap-4 py-24"
                                 data-testid="plugins-filter-empty-state">
                                 <i
-                                    class="pi pi-search text-surface-500 text-6xl!"
+                                    class="pi pi-search text-6xl! text-surface-500"
                                     aria-hidden="true"></i>
                                 <div class="flex flex-col text-center">
                                     <h3 class="m-0 text-lg font-medium text-gray-800">
                                         {{ 'plugins.empty.filter.title' | dm }}
                                     </h3>
-                                    <p class="m-0 text-color text-base leading-6">
+                                    <p class="m-0 text-base leading-6 text-color">
                                         {{ 'plugins.empty.filter.description' | dm }}
                                     </p>
                                 </div>

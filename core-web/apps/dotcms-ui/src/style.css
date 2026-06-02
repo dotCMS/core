@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
-@plugin "@tailwindcss/typography";
+@plugin '@tailwindcss/typography';
 @import './daisyui-theme.css';
 
 :root {
@@ -73,7 +73,7 @@ a:visited {
 
 .form .form-checkbox,
 .form .form-radio {
-    @apply flex flex-row gap-2 items-center;
+    @apply flex flex-row items-center gap-2;
 }
 
 .form .form-checkbox label,

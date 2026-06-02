@@ -2,7 +2,7 @@
     <p-card>
         <ng-template #title>
             <div class="flex justify-between">
-                <h2 class="flex items-center gap-1 uppercase m-0 font-bold">
+                <h2 class="m-0 flex items-center gap-1 font-bold uppercase">
                     <i
                         [style.font-size.px]="16"
                         class="material-symbols-outlined"
@@ -15,7 +15,7 @@
                         check_circle
                     </i>
                     <span
-                        class="after:content-['*'] after:text-red-500 after:ml-1"
+                        class="after:ml-1 after:text-red-500 after:content-['*']"
                         data-testId="variants-card-header">
                         {{ 'experiments.configure.variants.name' | dm }}
                     </span>
@@ -25,7 +25,7 @@
                     [maxLength]="maxVariantsAllowed" />
             </div>
         </ng-template>
-        <div class="flex flex-col gap-4 w-full">
+        <div class="flex w-full flex-col gap-4">
             @for (
                 variant of vm.trafficProportion.variants;
                 track variant;

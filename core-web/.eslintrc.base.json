@@ -219,7 +219,15 @@
                 "better-tailwindcss/enforce-consistent-important-position": [
                     "error",
                     { "position": "recommended" }
-                ]
+                ],
+                "better-tailwindcss/no-duplicate-classes": "error",
+                "better-tailwindcss/no-unnecessary-whitespace": "error",
+                "better-tailwindcss/no-deprecated-classes": "error",
+                "better-tailwindcss/enforce-canonical-classes": "error",
+                "better-tailwindcss/no-unknown-classes": "warn",
+                "better-tailwindcss/no-conflicting-classes": "warn",
+                "better-tailwindcss/enforce-consistent-class-order": "off",
+                "better-tailwindcss/enforce-consistent-line-wrapping": "off"
             }
         }
     ]

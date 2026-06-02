@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
     @if ($errorMessage()) {
         <p-message
             severity="error"
@@ -11,7 +11,7 @@
     }
 
     <!-- File Upload -->
-    <div class="flex-1 min-h-0">
+    <div class="min-h-0 flex-1">
         <p-fileupload
             #fileUpload
             mode="advanced"
@@ -34,10 +34,10 @@
             <ng-template #header />
             <ng-template #content>
                 <div
-                    class="group w-full rounded-xl bg-surface-100 border border-surface-200 p-8 flex flex-col items-center justify-center text-center gap-4 h-full cursor-pointer overflow-hidden"
+                    class="group flex h-full w-full cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-xl border border-surface-200 bg-surface-100 p-8 text-center"
                     (click)="fileUpload.choose()">
                     <div
-                        class="w-24 h-24 shrink-0 rounded-full bg-primary-100 text-primary flex items-center justify-center transition-colors group-hover:bg-primary-200">
+                        class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
                         <i class="pi pi-upload text-4xl!" aria-hidden="true"></i>
                     </div>
 
@@ -49,11 +49,11 @@
                         {{ 'categories.import.dropzone.suffix' | dm }}
                     </p>
 
-                    <div class="flex items-center gap-2 text-base text-color-secondary">
+                    <div class="text-color-secondary flex items-center gap-2 text-base">
                         <span>{{ 'categories.import.csv-only' | dm }}</span>
                     </div>
 
-                    <div class="flex items-center gap-2 text-base text-color-secondary">
+                    <div class="text-color-secondary flex items-center gap-2 text-base">
                         <span>{{ 'categories.import.flat-only' | dm }}</span>
                         <i
                             class="pi pi-info-circle"
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Import Type -->
-    <div class="flex flex-col gap-2 mt-4">
+    <div class="mt-4 flex flex-col gap-2">
         <span class="font-semibold">{{ 'categories.import.type' | dm }}</span>
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
@@ -97,7 +97,7 @@
     </div>
 
     <!-- Actions -->
-    <div class="flex justify-end gap-2 mt-4">
+    <div class="mt-4 flex justify-end gap-2">
         <p-button
             [label]="'categories.cancel' | dm"
             severity="secondary"
