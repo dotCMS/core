@@ -10,6 +10,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -77,6 +78,16 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
      */
     private static final String OS_WORKING = "working_gos_" + RUN_ID;
     private static final String OS_LIVE    = "live_gos_"    + RUN_ID;
+
+    /**
+     * The canonical names {@code getCurrentIndex()} returns for the OS pointers. The {@code .os}
+     * tag is part of the name identity end-to-end and is never stripped on return — so the values
+     * persisted by {@code activateIndex}/{@code saveIndices} (tagged) are what the getters hand
+     * back, minus the cluster prefix. Built via {@link IndexTag} (never {@code + ".os"}).
+     * See "The tag is part of the name identity" in {@code docs/backend/OPENSEARCH_MIGRATION.md}.
+     */
+    private static final String OS_WORKING_TAGGED = IndexTag.OS.tag(OS_WORKING);
+    private static final String OS_LIVE_TAGGED     = IndexTag.OS.tag(OS_LIVE);
 
     // ── Direct OS handle (bypasses the phase router) ───────────────────────────
     @Inject
@@ -148,8 +159,8 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
                 current.contains(ES_WORKING));
         assertTrue("live slot must appear (Phase 0 → ES store)",
                 current.contains(ES_LIVE));
-        assertFalse("OS index must NOT appear in Phase 0", current.contains(OS_WORKING));
-        assertFalse("OS live must NOT appear in Phase 0",  current.contains(OS_LIVE));
+        assertFalse("OS index must NOT appear in Phase 0", current.contains(OS_WORKING_TAGGED));
+        assertFalse("OS live must NOT appear in Phase 0",  current.contains(OS_LIVE_TAGGED));
 
         Logger.info(this, "✅ getCurrentIndex Phase 0 — ES pointers: " + current);
     }
@@ -183,8 +194,8 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
                 current.contains(ES_WORKING));
         assertTrue("live slot must be the ES index (Phase 1 reads from ES)",
                 current.contains(ES_LIVE));
-        assertFalse("OS working must NOT be returned in Phase 1", current.contains(OS_WORKING));
-        assertFalse("OS live must NOT be returned in Phase 1",    current.contains(OS_LIVE));
+        assertFalse("OS working must NOT be returned in Phase 1", current.contains(OS_WORKING_TAGGED));
+        assertFalse("OS live must NOT be returned in Phase 1",    current.contains(OS_LIVE_TAGGED));
 
         Logger.info(this, "✅ getCurrentIndex Phase 1 — ES pointers despite OS being present: "
                 + current);
@@ -216,9 +227,9 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
         final List<String> current = contentletIndexAPI().getCurrentIndex();
 
         assertTrue("working slot must be the OS index (Phase 2 reads from OS)",
-                current.contains(OS_WORKING));
+                current.contains(OS_WORKING_TAGGED));
         assertTrue("live slot must be the OS index (Phase 2 reads from OS)",
-                current.contains(OS_LIVE));
+                current.contains(OS_LIVE_TAGGED));
         assertFalse("ES working must NOT be returned in Phase 2", current.contains(ES_WORKING));
         assertFalse("ES live must NOT be returned in Phase 2",    current.contains(ES_LIVE));
 
@@ -245,9 +256,9 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
         final List<String> current = contentletIndexAPI().getCurrentIndex();
 
         assertTrue("working slot must be the OS index (Phase 3 — OS only)",
-                current.contains(OS_WORKING));
+                current.contains(OS_WORKING_TAGGED));
         assertTrue("live slot must be the OS index (Phase 3 — OS only)",
-                current.contains(OS_LIVE));
+                current.contains(OS_LIVE_TAGGED));
 
         Logger.info(this, "✅ getCurrentIndex Phase 3 — OS pointers returned: " + current);
     }
@@ -297,7 +308,7 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
         assertTrue("Phase 1: live slot must still be ES index (ES reads)",
                 current.contains(ES_LIVE));
         assertFalse("Phase 1: OS working must NOT appear (reads still served by ES)",
-                current.contains(OS_WORKING));
+                current.contains(OS_WORKING_TAGGED));
         Logger.info(this, "Phase 1 ✅ getCurrentIndex: " + current);
 
         // ── Phase 2: reads switch to OS ───────────────────────────────────────
@@ -305,9 +316,9 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
 
         current = contentletIndexAPI().getCurrentIndex();
         assertTrue("Phase 2: working slot must be OS index (reads switched to OS)",
-                current.contains(OS_WORKING));
+                current.contains(OS_WORKING_TAGGED));
         assertTrue("Phase 2: live slot must be OS index (reads switched to OS)",
-                current.contains(OS_LIVE));
+                current.contains(OS_LIVE_TAGGED));
         assertFalse("Phase 2: ES working must NOT appear (reads are now served by OS)",
                 current.contains(ES_WORKING));
         Logger.info(this, "Phase 2 ✅ getCurrentIndex: " + current);
@@ -316,8 +327,8 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
         setPhase(3);
 
         current = contentletIndexAPI().getCurrentIndex();
-        assertTrue("Phase 3: working slot must still be OS index", current.contains(OS_WORKING));
-        assertTrue("Phase 3: live slot must still be OS index",    current.contains(OS_LIVE));
+        assertTrue("Phase 3: working slot must still be OS index", current.contains(OS_WORKING_TAGGED));
+        assertTrue("Phase 3: live slot must still be OS index",    current.contains(OS_LIVE_TAGGED));
         assertFalse("Phase 3: ES working must NOT appear (ES decommissioned)",
                 current.contains(ES_WORKING));
         Logger.info(this, "Phase 3 ✅ getCurrentIndex: " + current);

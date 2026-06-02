@@ -206,6 +206,32 @@ without any leading marker. Stripping is `name.substring(0, len - tag.length())`
 end in `_YYYYMMDDHHMMSS` (numeric) — they can never naturally end in `.os`. A future tag value
 must preserve this property (no overlap with the logical-name grammar).
 
+#### The tag is part of the name identity — never strip it on return
+
+A tagged name like `working_20240101.os` **is** the canonical identity of that index — not a
+decorated form of `working_20240101`. They are two different indices on two different providers,
+and the base name (everything before the tag) matches the ES counterpart by construction, so the
+tag is the *only* thing that distinguishes them. Any method that **returns or accepts an index
+name** MUST preserve the tag end-to-end:
+
+- **Read getters** — `ContentletIndexAPIImpl.getCurrentIndex()`, `getNewIndex()`, and
+  `getActiveIndexName()` return the tagged name verbatim in Phases 2/3 (they strip only the
+  `cluster_X.` prefix). A caller that receives `working_20240101.os` knows unambiguously it is
+  the OS index; one that receives `working_20240101` is talking to ES. Stripping the tag here
+  would erase the only discriminator and reintroduce the ES/OS collision in any `Set<String>` or
+  `Map<String, ?>` keyed by index name.
+- The same applies to provider methods (`getIndicesStats`, `listIndices`, `getClusterHealth`):
+  returned keys keep the tag (as documented above).
+
+**The one legitimate strip — deriving the embedded timestamp.** Some methods extract the
+`_YYYYMMDDHHMMSS` value out of a name (`elapsedSinceIndexCreated`,
+`VersionedIndicesAPIImpl.extractTimestamp`, the `indexSuffixOS` computation in `initOSCatchup`).
+The timestamp parser cannot consume a trailing `.os`, so these MUST strip the tag **locally,
+before parsing**: `IndexTag.strip(name).substring(name.lastIndexOf('_') + 1)`. This is *not* a
+contradiction of the rule above — the strip is applied to a throwaway local used to parse a
+number; the name that is returned or stored keeps its tag. Rule of thumb: **strip to parse a
+value out of a name, never to hand a name back.**
+
 #### Tag manipulation is the sole responsibility of `IndexTag`
 
 All read/write of the vendor marker on an index name MUST go through the `IndexTag` enum.

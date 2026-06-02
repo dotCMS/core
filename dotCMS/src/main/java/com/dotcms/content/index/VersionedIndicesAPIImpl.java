@@ -164,12 +164,15 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
         try {
             // Extract the timestamp from the pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
-            final int lastUnderscoreIndex = indexName.lastIndexOf("_");
-            if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == indexName.length() - 1) {
+            // The .os tag is part of the name identity but not parseable as a timestamp — strip it
+            // locally first (see "deriving the embedded timestamp" in OPENSEARCH_MIGRATION.md).
+            final String base = IndexTag.strip(indexName);
+            final int lastUnderscoreIndex = base.lastIndexOf("_");
+            if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == base.length() - 1) {
                 throw new DotDataException("Index name does not follow expected pattern: " + indexName);
             }
 
-            final String timestampStr = indexName.substring(lastUnderscoreIndex + 1);
+            final String timestampStr = base.substring(lastUnderscoreIndex + 1);
             final LocalDateTime ldt = LocalDateTime.parse(timestampStr, TIMESTAMP_FORMATTER);
             return ldt.atZone(ZoneId.systemDefault()).toInstant();
         } catch (Exception e) {

@@ -754,7 +754,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private IndexStartResult initOSCatchup() throws DotDataException {
         // Case 1: OS DB record exists → recreate the cluster index with the registered name.
-        // loadDefaultVersionedIndices() strips .os before returning — names are logical here.
+        // loadDefaultVersionedIndices() returns the canonical .os-tagged form; stripClusterPrefix
+        // removes only the cluster_X. prefix and preserves the tag (the name identity).
         final Optional<VersionedIndices> osDbRecord =
                 Try.of(versionedIndicesAPI::loadDefaultVersionedIndices)
                    .getOrElse(Optional.empty());
@@ -767,8 +768,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.info(this, "OS recovery: recreating missing OS cluster index — working="
                     + workingLogical + ", live=" + liveLogical);
             bootstrapAndPointOS(workingLogical, liveLogical);
-            final int lastUnder = workingLogical.lastIndexOf('_');
-            final String suffix = lastUnder >= 0 ? workingLogical.substring(lastUnder + 1) : "";
+            // indexSuffixOS is a pure timestamp — strip the .os tag locally before parsing it out.
+            final String workingBase = IndexTag.strip(workingLogical);
+            final int lastUnder = workingBase.lastIndexOf('_');
+            final String suffix = lastUnder >= 0 ? workingBase.substring(lastUnder + 1) : "";
             return ImmutableIndexStartResult.builder()
                     .indexSuffixES("").indexSuffixOS(suffix).build();
         }
@@ -1396,7 +1399,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private long elapsedSinceIndexCreated(final String indexName) {
         try {
-            final String ts = indexName.substring(indexName.lastIndexOf('_') + 1);
+            // The timestamp parser cannot consume a trailing .os tag — strip it locally
+            // before parsing (the name identity is unaffected; see OPENSEARCH_MIGRATION.md).
+            final String base = IndexTag.strip(indexName);
+            final String ts = base.substring(base.lastIndexOf('_') + 1);
             final Date startTime = IndiciesInfo.timestampFormatter.parse(ts);
             return System.currentTimeMillis() - startTime.getTime();
         } catch (Exception e) {
