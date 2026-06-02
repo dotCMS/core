@@ -35,14 +35,15 @@
                     }
                 </div>
                 <div class="field flex flex-col gap-1">
-                    <label dotFieldRequired for="orientation">
-                        {{ 'block-editor.extension.ai-image.orientation' | dm }}
+                    <label dotFieldRequired for="size">
+                        {{ 'block-editor.extension.ai-image.size' | dm }}
                     </label>
-                    <p-select
-                        [options]="orientationOptions"
+                    <input
+                        pInputText
+                        id="size"
                         formControlName="size"
-                        inputId="orientation"
-                        styleClass="w-full" />
+                        placeholder="e.g. 1024x1024"
+                        class="w-full" />
                 </div>
             </p-accordion-content>
         </p-accordion-panel>

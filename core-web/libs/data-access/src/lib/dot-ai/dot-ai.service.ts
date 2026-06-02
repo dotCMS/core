@@ -9,9 +9,9 @@ import {
     DotCMSContentlet,
     AiPluginResponse,
     DotAIImageContent,
-    DotAIImageOrientation,
     DotAIImageResponse,
-    DotAiProviderConfig
+    DotAiProviderConfig,
+    DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
 
 export { DotAiProviderConfig };
@@ -80,7 +80,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = DotAIImageOrientation.HORIZONTAL
+        size = DEFAULT_IMAGE_SIZE
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
