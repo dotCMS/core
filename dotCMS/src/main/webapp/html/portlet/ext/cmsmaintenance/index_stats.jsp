@@ -14,9 +14,9 @@
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@ page import="com.dotcms.content.index.domain.IndexStats" %>
-<%@ page import="com.dotcms.content.index.IndexTag" %>
-<%@ page import="com.dotcms.content.index.opensearch.OSIndexAPIImpl" %>
-<%@ page import="com.dotcms.cdi.CDIUtils" %>
+<%@page import="com.dotcms.content.index.IndexTag"%>
+<%@page import="com.dotcms.content.index.IndexConfigHelper.MigrationPhase"%>
+<%@page import="java.util.ArrayList"%>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -49,16 +49,21 @@ List<String> newIdx =idxApi.getNewIndex();
 
 List<String> indices=idxApi.listDotCMSIndices();
 List<String> closedIndices=idxApi.listDotCMSClosedIndices();
-Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
-// Fetch OS stats and health — ES maps only cover ES-backed indices.
-Map<String, IndexStats> osIndexInfo = java.util.Collections.emptyMap();
-Map<String, ClusterIndexHealth> osMap = java.util.Collections.emptyMap();
-try {
-    IndexAPI osapi = CDIUtils.getBeanThrows(OSIndexAPIImpl.class);
-    osIndexInfo = osapi.getIndicesStats();
-    osMap       = osapi.getClusterHealth();
-} catch (Exception ignored) { /* OS not running or not configured */ }
+// Hide OS-tagged (.os) indices unless we are in Phase 3 (OS-only). Outside Phase 3 the .os
+// tag is a migration/uniqueness artifact and the operator should only see the active ES set;
+// in Phase 3, OS is the live store so its indices must be visible. Detection goes through
+// IndexTag (never name.endsWith(".os")) per docs/backend/OPENSEARCH_MIGRATION.md.
+if (!MigrationPhase.current().isMigrationComplete()) {
+	List<String> visibleIndices = new ArrayList<>();
+	for (String idxName : indices) { if (!IndexTag.OS.isTagged(idxName)) { visibleIndices.add(idxName); } }
+	indices = visibleIndices;
+	List<String> visibleClosed = new ArrayList<>();
+	for (String idxName : closedIndices) { if (!IndexTag.OS.isTagged(idxName)) { visibleClosed.add(idxName); } }
+	closedIndices = visibleClosed;
+}
+
+Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -112,19 +117,15 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				</tr>
 			</thead>
 			<%for(String x : indices){%>
-				<%-- ES maps are keyed by plain names; OS maps are keyed by names with .os suffix.
-				     Try ES first, fall back to OS map for .os-suffixed indices. --%>
-				<%ClusterIndexHealth health = map.get(x) != null ? map.get(x) : osMap.get(x); %>
-				<%IndexStats status = indexInfo.get(x) != null ? indexInfo.get(x) : osIndexInfo.get(x); %>
+				<%ClusterIndexHealth health = map.get(x); %>
+				<%IndexStats status = indexInfo.get(x); %>
 
-				<%-- currentIdx/newIdx use stripped names (no .os); normalise before comparing. --%>
-				<%String xStripped = IndexTag.strip(x);%>
-				<%boolean active =currentIdx.contains(x) || currentIdx.contains(xStripped);%>
-				<%boolean building =newIdx.contains(x) || newIdx.contains(xStripped);%>
+				<%boolean active =currentIdx.contains(x);%>
+				<%boolean building =newIdx.contains(x);%>
 				<%	Date d = null;
 					String myDate = null;
 					try{
-						 myDate = xStripped.split("_")[1];
+						 myDate = x.split("_")[1];
 						d = dater.parse(myDate);
 
 						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
@@ -194,11 +195,10 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%String xStripped2 = IndexTag.strip(x);%>
-			<%boolean active =currentIdx.contains(x) || currentIdx.contains(xStripped2);%>
-			<%boolean building =newIdx.contains(x) || newIdx.contains(xStripped2);%>
+			<%boolean active =currentIdx.contains(x);%>
+			<%boolean building =newIdx.contains(x);%>
 
-			<%ClusterIndexHealth health = map.get(x) != null ? map.get(x) : osMap.get(x); %>
+			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;"
 			     targetNodeIds="<%=x%>Row" onOpen="dohighlight('<%=x%>Row')" onClose="undohighlight('<%=x%>Row')">
 
