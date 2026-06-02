@@ -102,6 +102,15 @@ const dedupeAndCap = (history: string[], entry: string): string[] => {
     return [entry, ...filtered].slice(0, HISTORY_MAX_ENTRIES);
 };
 
+const formatBody = (body: string, contentType: DotVelocityResponseContentType): string => {
+    if (contentType !== 'json' || !body.trim()) return body;
+    try {
+        return JSON.stringify(JSON.parse(body), null, 2);
+    } catch {
+        return body;
+    }
+};
+
 export const DotVelocityPlaygroundStore = signalStore(
     withState<VelocityPlaygroundState>(initialState),
     withComputed((store) => ({
@@ -167,7 +176,7 @@ export const DotVelocityPlaygroundStore = signalStore(
                                     writeJson(HISTORY_STORAGE_KEY, nextHistory);
                                     patchState(store, {
                                         status: ComponentStatus.LOADED,
-                                        output: response.body,
+                                        output: formatBody(response.body, response.contentType),
                                         outputContentType: response.contentType,
                                         elapsedMs: response.elapsedMs,
                                         history: nextHistory

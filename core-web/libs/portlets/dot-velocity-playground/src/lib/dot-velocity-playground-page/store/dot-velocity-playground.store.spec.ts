@@ -158,9 +158,54 @@ describe('DotVelocityPlaygroundStore', () => {
             spectator.service.runScript();
 
             expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
-            expect(spectator.service.output()).toBe('{"ok":true}');
+            expect(spectator.service.output()).toBe('{\n  "ok": true\n}');
             expect(spectator.service.outputContentType()).toBe('json');
             expect(spectator.service.elapsedMs()).toBe(17);
+        });
+
+        it('pretty-prints JSON responses with 2-space indentation', () => {
+            runScriptSpy.mockReturnValue(
+                of({
+                    body: '{"a":1,"b":{"c":2}}',
+                    contentType: 'json',
+                    elapsedMs: 5
+                } satisfies DotVelocityPlaygroundResponse)
+            );
+
+            spectator.service.setCode('$x');
+            spectator.service.runScript();
+
+            expect(spectator.service.output()).toBe('{\n  "a": 1,\n  "b": {\n    "c": 2\n  }\n}');
+        });
+
+        it('keeps the raw body when the JSON payload is malformed', () => {
+            runScriptSpy.mockReturnValue(
+                of({
+                    body: '{not json',
+                    contentType: 'json',
+                    elapsedMs: 5
+                } satisfies DotVelocityPlaygroundResponse)
+            );
+
+            spectator.service.setCode('$x');
+            spectator.service.runScript();
+
+            expect(spectator.service.output()).toBe('{not json');
+        });
+
+        it('does not reformat non-JSON content types', () => {
+            runScriptSpy.mockReturnValue(
+                of({
+                    body: '<root><a/></root>',
+                    contentType: 'xml',
+                    elapsedMs: 5
+                } satisfies DotVelocityPlaygroundResponse)
+            );
+
+            spectator.service.setCode('$x');
+            spectator.service.runScript();
+
+            expect(spectator.service.output()).toBe('<root><a/></root>');
         });
 
         it('pushes the un-wrapped code into history on success', () => {
