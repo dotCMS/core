@@ -101,6 +101,78 @@ Custom SCSS is only allowed for:
 | `flex-column` | `flex-col` |
 | `flex-wrap` | `flex-wrap` |
 
+## Tailwind Tooling Stack
+
+Three complementary layers enforce Tailwind quality — each serves a different purpose and they do not overlap.
+
+| Layer | Tool | Where | What it enforces |
+|-------|------|--------|-----------------|
+| Class order | [`prettier-plugin-tailwindcss`](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) (Tailwind Labs official) | CI (`nx format:check`) + pre-commit | Canonical Tailwind sort order in HTML/TS |
+| Correctness & style | [`eslint-plugin-better-tailwindcss`](https://github.com/schoero/eslint-plugin-better-tailwindcss) | CI (`nx affected -t lint`) + ESLint IDE extension | Invalid classes, conflicts, deprecated usage, shorthand equivalents |
+| IDE feedback | [`tailwindcss-intellisense`](https://github.com/tailwindlabs/tailwindcss-intellisense) (`bradlc.vscode-tailwindcss`) | VS Code only | Autocomplete, hover previews, real-time validation |
+
+**Tailwind Labs does not publish a standalone CI linter.** Their official recommendation is `prettier-plugin-tailwindcss` for class ordering (CI + editor) and `tailwindcss-intellisense` for the IDE. The ESLint plugin fills the gap for correctness rules that Prettier cannot enforce.
+
+### Why not `eslint-plugin-tailwindcss`?
+
+[`eslint-plugin-tailwindcss`](https://github.com/francoismassart/eslint-plugin-tailwindcss) was built around `tailwind.config.js` (v3 and earlier). With Tailwind v4's CSS-first configuration (`@import "tailwindcss"` in `style.css`), it lacks native v4 support and is not actively maintained for v4. `eslint-plugin-better-tailwindcss` supports v4 entry-point configuration.
+
+### Active ESLint rules (`.eslintrc.base.json`, `*.html` override)
+
+```jsonc
+// Error — have autofix; will be corrected by `lint --fix` or pre-commit
+"better-tailwindcss/no-duplicate-classes": "error",
+"better-tailwindcss/no-unnecessary-whitespace": "error",
+"better-tailwindcss/no-deprecated-classes": "error",       // e.g. "rounded" → "rounded-sm"
+"better-tailwindcss/enforce-canonical-classes": "error",    // e.g. "w-12 h-12" → "size-12"
+"better-tailwindcss/enforce-consistent-variable-syntax": "error",
+"better-tailwindcss/enforce-consistent-important-position": "error",
+
+// Warning — no autofix; kept as warn due to false positives from BEM/PrimeNG classes
+"better-tailwindcss/no-unknown-classes": "warn",
+"better-tailwindcss/no-conflicting-classes": "warn",
+
+// Disabled — Prettier handles class order authoritatively
+"better-tailwindcss/enforce-consistent-class-order": "off",
+"better-tailwindcss/enforce-consistent-line-wrapping": "off",
+```
+
+### Known false positives for `no-unknown-classes`
+
+The `no-unknown-classes` rule emits warnings for CSS classes that are not registered with Tailwind — this is expected in this codebase because templates use a mix of:
+
+- BEM component classes (`dot-apps-configuration__container`, `dot-nav__list-item--active`, etc.)
+- PrimeNG icon classes (`pi`, `pi-exclamation-triangle`, etc.)
+- PrimeNG utility classes (`p-button-outlined`, `p-fluid`, `p-field-hint`)
+- Component-scoped helper classes (`form`, `field`, `collapsed`)
+
+These warnings are informational and **do not block CI**. ESLint exits 0 on warnings. Do not suppress them with `eslint-disable` — let them serve as a reminder to prefer Tailwind utilities over custom classes. The rule remains useful for catching genuine typos in Tailwind class names.
+
+When the codebase has migrated away from legacy BEM classes, `no-unknown-classes` and `no-conflicting-classes` can be promoted to `"error"`.
+
+### Prettier configuration (`core-web/.prettierrc`)
+
+```json
+{
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "tailwindStylesheet": "./apps/dotcms-ui/src/style.css"
+}
+```
+
+Prettier sorts Tailwind classes in the same order the compiler emits CSS, resolving all ordering debates automatically.
+
+### VS Code setup (`.vscode/extensions.json` + `.vscode/settings.json`)
+
+Recommended extension `bradlc.vscode-tailwindcss` is listed in [`core-web/.vscode/extensions.json`](../../core-web/.vscode/extensions.json). The Tailwind language server is pointed at the CSS entry file:
+
+```json
+{
+  "tailwindCSS.experimental.configFile": "apps/dotcms-ui/src/style.css",
+  "files.associations": { "*.css": "tailwindcss" },
+  "editor.quickSuggestions": { "strings": "on" }
+}
+```
+
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs
