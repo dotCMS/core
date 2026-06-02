@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -78,6 +78,10 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     getSchemesByContentTypes(contentTypeIds: string[]): Observable<DotCMSWorkflow[]> {
+        if (!contentTypeIds.length) {
+            return of([]);
+        }
+
         const params = contentTypeIds.reduce(
             (acc, id) => acc.append('contentTypeIds', id),
             new HttpParams()

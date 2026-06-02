@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
 
@@ -39,6 +39,7 @@ const messageServiceMock = new MockDotMessageService({
     'content-drive.workflow-filter.select-scheme': 'Select a workflow to see its steps',
     'content-drive.workflow-filter.no-workflows': 'This content type has no workflows',
     'content-drive.workflow-filter.no-workflows.plural': 'These content types have no workflows',
+    'content-drive.workflow-filter.no-schemes': 'No workflow schemes found',
     'content-drive.chip-filter.overflow-label': '{0} and {1} more'
 });
 
@@ -96,7 +97,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    const pinStep = (stepId: string) => {
+    const pinStep = (stepId: string | null) => {
         spectator.triggerEventHandler(testId('workflow-step-listbox'), 'ngModelChange', stepId);
         spectator.detectChanges();
     };
@@ -110,6 +111,13 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
         workflowService = spectator.inject(DotWorkflowService, true);
+        // Re-establish defaults each test — jest.clearAllMocks() clears call history
+        // but not return values, so a per-test of([]) override would otherwise leak.
+        (workflowService.get as jest.Mock).mockReturnValue(of(MOCK_SCHEMES));
+        (workflowService.getSchemesByContentTypes as jest.Mock).mockReturnValue(of(MOCK_SCHEMES));
+        (workflowService.getSteps as jest.Mock).mockImplementation((schemeId: string) =>
+            of(STEPS_BY_SCHEME[schemeId] ?? [])
+        );
         stubFilters();
     });
 
@@ -230,6 +238,38 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             expect(spectator.component.$selection()).toContainEqual({ scheme: 'a', step: 'a2' });
         });
+
+        it('should unpin the step but keep the scheme when the step is deselected', () => {
+            stubFilters({ workflow: ['a:a2'] });
+            spectator.detectChanges();
+            openPanel();
+            focusScheme('a');
+            resetStoreWriteSpies();
+
+            // PrimeNG single-select listbox emits null when the selected item is re-clicked.
+            pinStep(null);
+
+            expect(store.patchFilters).toHaveBeenCalledWith({ workflow: ['a'] });
+        });
+
+        it('should not overwrite the step column with a late response after focus changed', () => {
+            const stepsA$ = new Subject<WorkflowStep[]>();
+            const stepsB$ = new Subject<WorkflowStep[]>();
+            (workflowService.getSteps as jest.Mock).mockImplementation((id: string) =>
+                id === 'a' ? stepsA$ : stepsB$
+            );
+            spectator.detectChanges();
+            openPanel();
+
+            focusScheme('a');
+            focusScheme('b');
+
+            stepsB$.next(STEPS_B);
+            // Late response for the scheme the user already moved away from.
+            stepsA$.next(STEPS_A);
+
+            expect(spectator.component.$state().steps).toEqual(STEPS_B);
+        });
     });
 
     describe('empty schemes', () => {
@@ -254,6 +294,14 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             openPanel();
 
             expect(schemeEmptyText()).toBe('These content types have no workflows');
+        });
+
+        it('should show a generic no-schemes message when no content type is selected', () => {
+            (workflowService.get as jest.Mock).mockReturnValue(of([]));
+            spectator.detectChanges();
+            openPanel();
+
+            expect(schemeEmptyText()).toBe('No workflow schemes found');
         });
     });
 

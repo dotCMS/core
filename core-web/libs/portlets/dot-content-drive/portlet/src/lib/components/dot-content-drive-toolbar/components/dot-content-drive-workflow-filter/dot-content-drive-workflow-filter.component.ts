@@ -126,6 +126,12 @@ export class DotContentDriveWorkflowFilterComponent {
     /** Monotonic schemeId→steps cache; steps are loaded on demand per scheme. */
     readonly #stepCache = signal<Record<string, WorkflowStep[]>>({});
 
+    /**
+     * Bumped on every `#loadSchemes` call so a late response from a superseded
+     * load (e.g. rapid content-type toggles) can't overwrite a newer one.
+     */
+    #schemesRequestId = 0;
+
     /** Flat stepId→name lookup over every cached step, for chip labels. */
     readonly #stepNameById = computed(() => {
         const map = new Map<string, string>();
@@ -161,14 +167,17 @@ export class DotContentDriveWorkflowFilterComponent {
     );
 
     /**
-     * Empty-schemes message key — schemes come up empty when the selected content
-     * type(s) have no workflows assigned. Singular vs plural by selection count.
+     * Empty-schemes message key. With content type(s) selected, the schemes came
+     * up empty because those types have no workflows (singular vs plural by
+     * count). With none selected, it's the unfiltered "no schemes at all" case.
      */
-    protected readonly $noSchemesMessageKey = computed(() =>
-        (this.#contentTypeFilter()?.length ?? 0) === 1
+    protected readonly $noSchemesMessageKey = computed(() => {
+        const count = this.#contentTypeFilter()?.length ?? 0;
+        if (count === 0) return 'content-drive.workflow-filter.no-schemes';
+        return count === 1
             ? 'content-drive.workflow-filter.no-workflows'
-            : 'content-drive.workflow-filter.no-workflows.plural'
-    );
+            : 'content-drive.workflow-filter.no-workflows.plural';
+    });
 
     /**
      * One chip entry per selected scheme: `<scheme>`, or `<scheme> — <step>` for
@@ -239,6 +248,7 @@ export class DotContentDriveWorkflowFilterComponent {
 
     #loadSchemes(): void {
         const contentTypes = (this.#store.getFilterValue('contentType') as string[]) ?? [];
+        const requestId = ++this.#schemesRequestId;
         patchState(this.$state, { loadingSchemes: true });
 
         const source$ = contentTypes.length
@@ -252,6 +262,8 @@ export class DotContentDriveWorkflowFilterComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((schemes) => {
+                // A newer load (e.g. a later content-type change) supersedes this one.
+                if (requestId !== this.#schemesRequestId) return;
                 patchState(this.$state, { schemes, loadingSchemes: false });
                 this.#cacheSchemes(schemes);
                 this.#reconcileSelection(schemes);
@@ -281,8 +293,14 @@ export class DotContentDriveWorkflowFilterComponent {
             patchState(this.$state, { steps: [] });
         }
 
-        // Resolve step names for pinned schemes that aren't the focused one.
-        this.#ensureStepsLoaded(kept.filter((entry) => entry.step).map((entry) => entry.scheme));
+        // Resolve step names for pinned schemes the user hasn't focused — the
+        // focused scheme is already loaded by #focusScheme above, so exclude it
+        // to avoid a duplicate getSteps request.
+        this.#ensureStepsLoaded(
+            kept
+                .filter((entry) => entry.step && entry.scheme !== nextFocus)
+                .map((entry) => entry.scheme)
+        );
     }
 
     #focusScheme(schemeId: string): void {
