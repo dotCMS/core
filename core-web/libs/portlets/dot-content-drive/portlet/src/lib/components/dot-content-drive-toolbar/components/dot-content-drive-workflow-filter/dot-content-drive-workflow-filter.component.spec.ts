@@ -62,9 +62,9 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             mockProvider(DotWorkflowService, {
                 get: jest.fn().mockReturnValue(of(MOCK_SCHEMES)),
                 getSchemesByContentTypes: jest.fn().mockReturnValue(of(MOCK_SCHEMES)),
-                getSteps: jest.fn().mockImplementation((schemeId: string) =>
-                    of(STEPS_BY_SCHEME[schemeId] ?? [])
-                )
+                getSteps: jest
+                    .fn()
+                    .mockImplementation((schemeId: string) => of(STEPS_BY_SCHEME[schemeId] ?? []))
             })
         ],
         detectChanges: false
@@ -88,7 +88,11 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
     };
 
     const toggleScheme = (schemeId: string) => {
-        spectator.triggerEventHandler(testId(`workflow-scheme-checkbox-${schemeId}`), 'onChange', {});
+        spectator.triggerEventHandler(
+            testId(`workflow-scheme-checkbox-${schemeId}`),
+            'onChange',
+            {}
+        );
         spectator.detectChanges();
     };
 
