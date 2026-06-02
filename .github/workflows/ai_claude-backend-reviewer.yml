@@ -87,6 +87,9 @@ jobs:
       issues: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
+      model_id: global.anthropic.claude-sonnet-4-6
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      aws_region: us-east-1
       trigger_mode: automatic
       timeout_minutes: 30
       runner: ubuntu-latest
