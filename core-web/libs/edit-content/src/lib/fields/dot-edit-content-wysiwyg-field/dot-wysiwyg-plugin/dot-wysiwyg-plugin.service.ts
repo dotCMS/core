@@ -88,11 +88,15 @@ export class DotWysiwygPluginService {
                 }
             });
 
-            ref.onClose
-                .pipe(filter((asset) => !!asset))
-                .subscribe((asset: DotCMSContentlet) =>
-                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset))
-                );
+            ref.onClose.subscribe((asset: DotCMSContentlet) => {
+                if (asset) {
+                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));
+                }
+
+                // Return focus to the editor on every close (insert or dismiss via
+                // X, Esc or overlay mask) so the user is never left without focus.
+                editor.focus();
+            });
         });
     }
 

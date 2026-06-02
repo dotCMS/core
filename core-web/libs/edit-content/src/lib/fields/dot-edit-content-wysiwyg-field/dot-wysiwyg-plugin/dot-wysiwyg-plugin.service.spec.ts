@@ -50,6 +50,8 @@ class MockEditor {
     };
 
     insertContent = jest.fn();
+
+    focus = jest.fn();
 }
 
 const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
@@ -143,6 +145,8 @@ describe('DotWysiwygPluginService', () => {
             expect(spyEditorInserContent).toHaveBeenCalledWith(
                 formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
+            // Focus returns to the editor after inserting an image
+            expect(editor.focus).toHaveBeenCalled();
         });
 
         it('should NOT insert content when the dialog is closed without selecting an image', () => {
@@ -161,6 +165,9 @@ describe('DotWysiwygPluginService', () => {
 
             expect(spyDialog).toHaveBeenCalled();
             expect(spyEditorInserContent).not.toHaveBeenCalled();
+            // AC5: focus still returns to the editor when the dialog is dismissed
+            // without selecting an image (X, Esc or overlay mask)
+            expect(editor.focus).toHaveBeenCalled();
         });
 
         it('should upload the image when dropped', () => {
