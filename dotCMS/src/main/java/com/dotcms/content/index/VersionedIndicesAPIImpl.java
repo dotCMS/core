@@ -107,11 +107,13 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
         // Apply the .os tag idempotently before INSERT (DB row uses the canonical tagged form).
-        indicesFactory.saveIndices(tagOS(indicesInfo));
+        final VersionedIndices tagged = tagOS(indicesInfo);
+        indicesFactory.saveIndices(tagged);
 
-        // Cache the caller's payload as-is. In normal production flow this is already tagged,
-        // matching what loadIndices will return on the next cache hit.
-        cache.put(indicesInfo);
+        // Cache the same canonical tagged form persisted to the DB so a cache hit and a
+        // post-eviction DB reload return identical names. tagOS is idempotent, so callers that
+        // already pass tagged names (the normal toPhysicalName flow) are unaffected.
+        cache.put(tagged);
 
         // Invalidate the all-versions cache since it's now stale.
         cache.invalidateAllVersionsCache();
