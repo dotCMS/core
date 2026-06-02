@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.viewtools.content.Renderable;
@@ -21,6 +23,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.function.Supplier;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,18 +61,7 @@ class GenericRenderableImpl implements Renderable {
 
         try {
 
-            final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
-                    APILocator.systemUser(), false)).getOrNull();
-            final String hostname = null != host ? host.getHostname() : "dotcms.com"; // fallback to a fake host
-
-            Context context = externalContext;
-            if (externalContext == null) {
-
-                final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
-                final HttpServletResponse responseProxy = new BaseResponse().response();
-                context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-            }
-
+            final Context context = resolveRenderContext(this::defaultHostName);
             context.put("item", item);
 
             final String template = this.existsInFileSystem(this.defaultPath + type + ".vtl")?
@@ -84,6 +76,44 @@ class GenericRenderableImpl implements Renderable {
 
     private boolean existsInFileSystem(final String filePath) {
         return Files.exists(Paths.get(VelocityUtil.getVelocityRootPath(),filePath));
+    }
+
+    /**
+     * Resolves the Velocity context used to render this block.
+     * <p>
+     * When the caller supplied an external context it is used as-is. Otherwise we prefer the real
+     * request/response bound to the current thread - so host resolution and request-scoped velocity
+     * tools behave correctly in multi-host environments - and only fall back to a mock request
+     * (bound to {@code fallbackHostName}) when no request is bound to the thread, e.g. programmatic
+     * or background rendering. {@code fallbackHostName} is a supplier so the (potentially remote)
+     * default-host lookup is skipped whenever a real request is available.
+     *
+     * @param fallbackHostNameSupplier provides the host name for the mock request fallback
+     * @return the Velocity context to render with
+     */
+    private Context resolveRenderContext(final Supplier<String> fallbackHostNameSupplier) {
+
+        if (null != externalContext) {
+            return externalContext;
+        }
+
+        final HttpServletRequest request = null != HttpServletRequestThreadLocal.INSTANCE.getRequest()
+                ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
+                : new FakeHttpRequest(fallbackHostNameSupplier.get(), null).request();
+        final HttpServletResponse response = null != HttpServletResponseThreadLocal.INSTANCE.getResponse()
+                ? HttpServletResponseThreadLocal.INSTANCE.getResponse()
+                : new BaseResponse().response();
+        return VelocityUtil.getInstance().getContext(request, response);
+    }
+
+    /**
+     * Best-effort default host name, used only to build the mock request when no real request is
+     * bound to the thread.
+     */
+    private String defaultHostName() {
+        final Host host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(
+                APILocator.systemUser(), false)).getOrNull();
+        return null != host ? host.getHostname() : "dotcms.com";
     }
 
     private Tuple2<Boolean, String> existsFile (final String path, final Host host, final User user)  {
@@ -152,13 +182,7 @@ class GenericRenderableImpl implements Renderable {
             Logger.debug(this, ()-> "Checking if exists the path: " + relativePath + ", existFileResult: "
                     + existFileResult._1() + ", " + existFileResult._2());
 
-            Context context = externalContext;
-            if (externalContext == null) {
-
-                final HttpServletRequest requestProxy   = new FakeHttpRequest(host.getHostname(), null).request();
-                final HttpServletResponse responseProxy = new BaseResponse().response();
-                context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-            }
+            final Context context = resolveRenderContext(host::getHostname);
 
             // Expose a render helper so blocks nested inside container blocks (e.g. gridBlock)
             // resolve their custom renders the same way top-level blocks do. The recursive render
