@@ -495,6 +495,12 @@ public class ContentletIndexAPIImplPhaseTest {
             return name.startsWith(CLUSTER_PREFIX) ? name : CLUSTER_PREFIX + name;
         }
 
+        @Override
+        public String removeClusterIdFromName(final String name) {
+            if (name == null) return "";
+            return name.startsWith(CLUSTER_PREFIX) ? name.substring(CLUSTER_PREFIX.length()) : name;
+        }
+
         // ── unneeded methods ─────────────────────────────────────────────────
 
         @Override public Map<String, IndexStats> getIndicesStats() { throw new UnsupportedOperationException(); }

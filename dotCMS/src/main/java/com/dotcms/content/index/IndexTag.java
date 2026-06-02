@@ -14,18 +14,38 @@ import java.util.Optional;
  *
  * <h2>Markers</h2>
  * <ul>
- *   <li>{@link #OS} — suffix {@code ".os"}, e.g. {@code cluster_08abc3.live_20240315.os}
- *       (DB storage only — callers always receive the stripped logical name)</li>
+ *   <li>{@link #OS} — suffix {@code ".os"}, e.g. {@code cluster_08abc3.live_20240315.os}.
+ *       The tag is part of the canonical OS name at every layer: service/API logical names
+ *       (e.g. {@code working_20260406.os}), the {@code indicies} DB row, and the physical
+ *       index in the cluster itself. It is NOT a DB-only artifact.</li>
  *   <li>{@link #ES} — no marker (empty prefix and suffix); used only as a routing constant
  *       so that untagged legacy Elasticsearch names resolve to the ES provider</li>
  * </ul>
  *
- * <h2>DB uniqueness artifact</h2>
- * <p>The {@code .os} suffix is appended exclusively by
- * {@link VersionedIndicesAPI#saveIndices} to prevent primary-key collisions between
- * ES and OS rows in the shared {@code indicies} table. All load methods strip the
- * suffix before returning — callers always receive clean logical names such as
- * {@code cluster_08abc3.working_20260406}.</p>
+ * <h2>Why an explicit marker</h2>
+ * <p>The tag solves three concurrent problems while ES and OS coexist:</p>
+ * <ol>
+ *   <li><b>DB PK uniqueness</b> in the shared {@code indicies} table — without an explicit
+ *       marker, the legacy ES row and the new OS row for the same logical name collide.</li>
+ *   <li><b>Cluster name distinction</b> in single-cluster test profiles where
+ *       {@code DOT_ES_ENDPOINTS == OS_ENDPOINTS} (e.g. the {@code opensearch-upgrade} Maven
+ *       profile) — without the tag, a Phase 1 fan-out hits {@code resource_already_exists}
+ *       on the second write.</li>
+ *   <li><b>Tag-dispatch routing</b> — a tagged name in a caller's hand carries semantic intent
+ *       ("this belongs to the new index set"), letting the router skip phase logic and go
+ *       straight to the OS provider.</li>
+ * </ol>
+ * <p>The literal {@code .os} is not vendor-specific — it is simply the chosen distinction
+ * marker. Changing it is a one-line edit in this enum; no caller hardcodes the suffix.</p>
+ *
+ * <h2>Sole responsibility</h2>
+ * <p>This enum is the ONLY place in the codebase that may manipulate the marker. Helpers
+ * elsewhere — including in providers, routers, mapping helpers, factories, tests, and debug
+ * utilities — MUST delegate to {@link #tag}, {@link #untag}, {@link #strip},
+ * {@link #isTagged}, {@link #resolve}, or {@link #vendorOf}. Any direct string operation on
+ * the marker outside this class (e.g. {@code name + ".os"}, {@code name.endsWith(".os")},
+ * {@code name.substring(...)} to remove it) is a bug, even if it appears to work today: a
+ * future change to the literal or to the prefix/suffix position will silently bypass it.</p>
  *
  * <h2>Default vendor</h2>
  * <p>{@link #resolve(String)} returns the vendor whose marker the name
@@ -34,10 +54,13 @@ import java.util.Optional;
  *
  * <h2>Tag-dispatch routing pattern</h2>
  * <pre>{@code
- * // Route a tagged index name to the correct provider
+ * // Route a tagged index name to the correct provider.
+ * // Do NOT strip the tag before calling the provider — the provider's toPhysicalName is
+ * // idempotent and accepts both tagged and untagged forms. The tag is part of the canonical
+ * // name end-to-end.
  * IndexTag vendor = IndexTag.resolve(name);  // never null
- * T target = (vendor == IndexTag.OS) ? osImpl : esImpl;
- * target.someOperation(IndexTag.strip(name)); // strip before passing to provider
+ * ContentletIndexOperations target = (vendor == IndexTag.OS) ? osImpl : esImpl;
+ * target.someOperation(target.toPhysicalName(name));
  * }</pre>
  *
  * <p>Use {@link #vendorOf(String)} instead of {@link #resolve(String)} when

@@ -13,8 +13,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Vendor-neutral interface for search-engine index management operations.
@@ -270,18 +268,14 @@ public interface IndexAPI {
      * Given an alias or index name that might contain a cluster id prefix
      * (format: <b>{@link IndicesFactory#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
      * this method will return the name without the prefix. In case of name it is null, an empty string
-     * will be returned
+     * will be returned. Implementations strip the exact prefix they would add via
+     * {@link #getNameWithClusterIDPrefix(String)}, which makes this the inverse of
+     * that method even for cluster IDs that contain dots.
+     *
      * @param name Index name or alias with the cluster id prefix
      * @return Index name or alias without the cluster id prefix
      */
-    /** Matches the {@code cluster_{id}.} prefix and captures everything after it. */
-    Pattern CLUSTER_PREFIX_RE = Pattern.compile("^cluster_[^.]+\\.(.+)$");
-
-    default String removeClusterIdFromName(final String name) {
-        if (name == null) return "";
-        final Matcher m = CLUSTER_PREFIX_RE.matcher(name);
-        return m.matches() ? m.group(1) : name;
-    }
+    String removeClusterIdFromName(String name);
 
     /**
      * Gets a list of closed indices.

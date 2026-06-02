@@ -593,6 +593,17 @@ public class OSIndexAPIImpl implements IndexAPI {
     }
 
     /**
+     * Inverse of {@link #getNameWithClusterIDPrefix(String)}: strips the instance's exact
+     * cluster prefix when present. Safe for cluster IDs that contain dots.
+     */
+    @Override
+    public String removeClusterIdFromName(final String name) {
+        if (name == null) return "";
+        final String prefix = clusterPrefix.get();
+        return name.startsWith(prefix) ? name.substring(prefix.length()) : name;
+    }
+
+    /**
      * Checks if the given index name has the cluster prefix.
      */
     boolean hasClusterPrefix(final String indexName) {

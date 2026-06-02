@@ -870,6 +870,17 @@ public class ESIndexAPI implements IndexAPI {
     }
 
     /**
+     * Inverse of {@link #getNameWithClusterIDPrefix(String)}: strips the instance's exact
+     * cluster prefix when present. Safe for cluster IDs that contain dots.
+     */
+    @Override
+    public String removeClusterIdFromName(final String name) {
+        if (name == null) return "";
+        final String prefix = clusterPrefix.get();
+        return name.startsWith(prefix) ? name.substring(prefix.length()) : name;
+    }
+
+    /**
 	 * Restores snapshot validating that such snapshot name exists on the
 	 * repository
 	 *

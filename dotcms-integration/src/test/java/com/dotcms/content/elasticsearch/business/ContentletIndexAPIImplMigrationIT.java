@@ -11,7 +11,9 @@ import static org.junit.Assume.assumeFalse;
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexAPIImpl;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -106,6 +108,20 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
     @Inject
     private OSIndexAPIImpl osIndexAPI;
 
+    // ── Used to resolve the OS physical name for indices created through the phase router ──
+    @Inject
+    private ContentletIndexOperationsOS opsOS;
+
+    /**
+     * Physical (cluster-prefixed, tag-suffixed) form of {@link #DUAL_WORKING}; resolved once
+     * per test in {@link #setUp()}. Only {@code DUAL_WORKING} needs a physical-name field —
+     * it is created through {@code contentletIndexAPI().createContentIndex(...)}, which goes
+     * through {@code ContentletIndexOperationsOS.toPhysicalName} on the OS side. The other OS
+     * indices ({@code OS_WORKING}, {@code OS_LIVE}, {@code GHOST_WORKING}) enter via
+     * {@link OSIndexAPIImpl#createIndex(String,int)} directly and stay symmetric on the bare name.
+     */
+    private String physicalDualWorking;
+
     // ── Saved DB state — restored in @After to avoid polluting the running app ──
     @SuppressWarnings("deprecation")
     private IndiciesInfo savedEsInfo;
@@ -122,6 +138,8 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
 
     @Before
     public void setUp() throws Exception {
+        physicalDualWorking = opsOS.toPhysicalName(DUAL_WORKING);
+
         savedEsInfo    = APILocator.getIndiciesAPI().loadIndicies();
         savedOsIndices = APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
 
@@ -326,14 +344,14 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         setPhase(0);
 
         assertFalse("Pre: not in ES yet", esImpl().indexExists(DUAL_WORKING));
-        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(DUAL_WORKING));
+        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(physicalDualWorking));
 
         contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
 
         assertTrue("Must exist in ES after Phase 0 createContentIndex",
                 esImpl().indexExists(DUAL_WORKING));
         assertFalse("Must NOT exist in OS in Phase 0",
-                osIndexAPI.indexExists(DUAL_WORKING));
+                osIndexAPI.indexExists(physicalDualWorking));
 
         Logger.info(this, "✅ createContentIndex Phase 0 — ES only: " + DUAL_WORKING);
     }
@@ -349,14 +367,14 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         setPhase(1);
 
         assertFalse("Pre: not in ES yet", esImpl().indexExists(DUAL_WORKING));
-        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(DUAL_WORKING));
+        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(physicalDualWorking));
 
         contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
 
         assertTrue("Must exist in ES after Phase 1 (fan-out)",
                 esImpl().indexExists(DUAL_WORKING));
         assertTrue("Must exist in OS after Phase 1 (fan-out)",
-                osIndexAPI.indexExists(DUAL_WORKING));
+                osIndexAPI.indexExists(physicalDualWorking));
 
         Logger.info(this, "✅ createContentIndex Phase 1 — both: " + DUAL_WORKING);
     }
@@ -373,14 +391,14 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         setPhase(3);
 
         assertFalse("Pre: not in ES yet", esImpl().indexExists(DUAL_WORKING));
-        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(DUAL_WORKING));
+        assertFalse("Pre: not in OS yet", osIndexAPI.indexExists(physicalDualWorking));
 
         contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
 
         assertFalse("Must NOT exist in ES in Phase 3 (ES decommissioned)",
                 esImpl().indexExists(DUAL_WORKING));
         assertTrue("Must exist in OS after Phase 3",
-                osIndexAPI.indexExists(DUAL_WORKING));
+                osIndexAPI.indexExists(physicalDualWorking));
 
         Logger.info(this, "✅ createContentIndex Phase 3 — OS only: " + DUAL_WORKING);
     }
@@ -441,7 +459,10 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
                 APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
         assertTrue("OS DB must be populated with the mirrored name",
                 osInfo.isPresent()
-                && osInfo.get().working().map(w -> w.endsWith(ES_WORKING)).orElse(false));
+                && osInfo.get().working()
+                        .map(IndexTag.OS::untag)
+                        .map(w -> w.endsWith(ES_WORKING))
+                        .orElse(false));
 
         Logger.info(this, "✅ activateIndex Phase 2 (ES name) — ES DB: " + esInfo.getWorking()
                 + ", OS DB: " + osInfo.map(v -> v.working().orElse("(empty)")).orElse("(absent)"));
@@ -466,7 +487,10 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
                 APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
         assertTrue("OS DB must also point to T1",
                 osInfo.isPresent()
-                && osInfo.get().working().map(w -> w.endsWith(OS_WORKING)).orElse(false));
+                && osInfo.get().working()
+                        .map(IndexTag.OS::untag)
+                        .map(w -> w.endsWith(OS_WORKING))
+                        .orElse(false));
 
         Logger.info(this, "✅ activateIndex Phase 2 (OS name) — both DBs point to T1");
     }
@@ -489,7 +513,10 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
                 APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
         assertTrue("OS DB must hold T1",
                 osInfo.isPresent()
-                && osInfo.get().working().map(w -> w.endsWith(OS_WORKING)).orElse(false));
+                && osInfo.get().working()
+                        .map(IndexTag.OS::untag)
+                        .map(w -> w.endsWith(OS_WORKING))
+                        .orElse(false));
 
         Logger.info(this, "✅ activateIndex Phase 3 — only OS DB updated");
     }
@@ -760,7 +787,11 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
                .onFailure(e -> Logger.warn(this,
                        "Cleanup: error removing ES index '" + name + "': " + e.getMessage()));
         }
-        for (final String name : List.of(OS_WORKING, OS_LIVE, DUAL_WORKING)) {
+        // OS_WORKING / OS_LIVE enter via osIndexAPI.createIndex directly (no tagging), so cleanup
+        // with the bare name is symmetric. DUAL_WORKING enters via contentletIndexAPI().createContentIndex,
+        // which routes through ContentletIndexOperationsOS.toPhysicalName — use the cached physical
+        // name so cleanup deletes the same physical index that was created.
+        for (final String name : List.of(OS_WORKING, OS_LIVE, physicalDualWorking)) {
             Try.run(() -> { if (osIndexAPI.indexExists(name)) osIndexAPI.delete(name); })
                .onFailure(e -> Logger.warn(this,
                        "Cleanup: error removing OS index '" + name + "': " + e.getMessage()));
