@@ -245,6 +245,12 @@ export class DotEmaDialogComponent {
                     });
                 } else {
                     this.callEmbeddedFunction(callback, args);
+                    // Reload the page so pageLanguages reflects the post-action state
+                    // (e.g. a publish changes translated: false → true for a language version).
+                    // The iframe callback may also fire SAVE_PAGE which triggers pageReload;
+                    // reloadFromDialog fires first and switchMap in pageReload cancels it
+                    // cleanly if a second call arrives.
+                    this.reloadFromDialog.emit();
                     this.messageService.add({
                         severity: 'success',
                         summary: this.dotMessageService.get('Workflow-Action'),
