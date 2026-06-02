@@ -353,6 +353,7 @@ export class DotEmaDialogComponent {
                             // The edit content emits this for savings when translating a page and does not emit anything when changing the content
                             if (this.dialogState().form.isTranslation) {
                                 this.store.setSaved();
+                                this.reloadFromDialog.emit();
 
                                 if (event.detail.payload.isMoveAction) {
                                     this.reloadIframe();

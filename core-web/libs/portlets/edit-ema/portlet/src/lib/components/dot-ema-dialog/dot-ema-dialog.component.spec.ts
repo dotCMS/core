@@ -275,6 +275,26 @@ describe('DotEmaDialogComponent', () => {
             expect(setSavedSpy).toHaveBeenCalled();
         });
 
+        it("should emit reloadFromDialog when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
+            const reloadFromDialogSpy = jest.spyOn(component.reloadFromDialog, 'emit');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            }); // This is to make the dialog open
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(reloadFromDialogSpy).toHaveBeenCalled();
+        });
+
         it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated', is a translation and payload is move action", () => {
             const reloadIframeSpy = jest.spyOn(component, 'reloadIframe');
 

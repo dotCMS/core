@@ -289,6 +289,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+
+        if (!htmlPageReferer) {
+            this.uveStore.pageReload();
+
+            return;
+        }
+
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
 

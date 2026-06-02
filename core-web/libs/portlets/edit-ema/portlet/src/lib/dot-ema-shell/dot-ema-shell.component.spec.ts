@@ -1010,6 +1010,24 @@ describe('DotEmaShellComponent', () => {
                 expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
+            it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
+                spectator.detectChanges();
+                const spyReload = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {}
+                    })
+                );
+
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'pageReload');
