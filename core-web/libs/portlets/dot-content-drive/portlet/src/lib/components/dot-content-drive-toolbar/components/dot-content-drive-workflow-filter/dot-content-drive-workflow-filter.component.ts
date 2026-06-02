@@ -15,6 +15,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { CheckboxModule } from 'primeng/checkbox';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -34,6 +35,15 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
+/**
+ * One selected scheme, optionally pinned to a single step. `step` omitted means
+ * "all steps of this scheme".
+ */
+interface WorkflowSelection {
+    scheme: string;
+    step?: string;
+}
+
 interface State {
     schemes: DotCMSWorkflow[];
     steps: WorkflowStep[];
@@ -41,14 +51,39 @@ interface State {
     loadingSteps: boolean;
 }
 
+/** Token separator for the `scheme[:step]` store/URL encoding. */
+const TOKEN_SEPARATOR = ':';
+
+/** `'A:X'` → `{ scheme: 'A', step: 'X' }`; `'B'` → `{ scheme: 'B' }`. */
+function parseSelection(token: string): WorkflowSelection {
+    const index = token.indexOf(TOKEN_SEPARATOR);
+    return index === -1
+        ? { scheme: token }
+        : { scheme: token.slice(0, index), step: token.slice(index + 1) };
+}
+
+/** `{ scheme: 'A', step: 'X' }` → `'A:X'`; `{ scheme: 'B' }` → `'B'`. */
+function toToken({ scheme, step }: WorkflowSelection): string {
+    return step ? `${scheme}${TOKEN_SEPARATOR}${step}` : scheme;
+}
+
 /**
  * Two-column popover filter for the Content Drive toolbar: workflow schemes on
  * the left, steps of the focused scheme on the right. Mirrors the content-type
- * filter visually, but single-select on both columns.
+ * filter visually and in its focus-vs-selection split.
  *
- * Single-select is intentionally stored as an array of (at most) one element so
- * a future multi-select migration is trivial — the store keys, decoders, and
- * `#syncStore` already speak `string[]`.
+ * Selection model:
+ * - Schemes are MULTI-select (checkbox per row).
+ * - Steps are SINGLE-select PER SCHEME: each selected scheme can pin one step;
+ *   no pinned step means "all steps of that scheme".
+ * - The selection is stored as ONE filter key, `workflow: string[]`, where each
+ *   entry is `schemeId` or `schemeId:stepId`. Co-locating the step with its
+ *   scheme keeps the pairing explicit (no need to infer a step's scheme), so
+ *   reconcile and URL restore need no step lookups.
+ * - Focus (which scheme's steps show on the right) is separate from selection,
+ *   exactly like base-type focus vs its checkbox in the content-type filter.
+ * - Cascade: pinning a step selects its (focused) scheme; deselecting a scheme
+ *   removes its pinned step.
  *
  * NOTE: backend search support is tracked in dotCMS/core#35470. Until it ships,
  * this filter renders, persists its selection, drives the chip + Clear-all, and
@@ -58,6 +93,7 @@ interface State {
     selector: 'dot-content-drive-workflow-filter',
     imports: [
         FormsModule,
+        CheckboxModule,
         ListboxModule,
         PopoverModule,
         RadioButtonModule,
@@ -90,20 +126,29 @@ export class DotContentDriveWorkflowFilterComponent {
     /** Monotonic schemeId→steps cache; steps are loaded on demand per scheme. */
     readonly #stepCache = signal<Record<string, WorkflowStep[]>>({});
 
-    /** Selected scheme id(s). Single-select today → length 0 or 1. */
-    readonly $selectedScheme = linkedSignal<string[]>(
-        () => (this.#store.getFilterValue('workflowScheme') as string[]) ?? []
+    /** Flat stepId→name lookup over every cached step, for chip labels. */
+    readonly #stepNameById = computed(() => {
+        const map = new Map<string, string>();
+        Object.values(this.#stepCache()).forEach((steps) =>
+            steps.forEach((step) => map.set(step.id, step.name))
+        );
+        return map;
+    });
+
+    /** Current selection, parsed from the single `workflow` filter key. */
+    readonly $selection = linkedSignal<WorkflowSelection[]>(() =>
+        ((this.#store.getFilterValue('workflow') as string[]) ?? []).map(parseSelection)
     );
 
-    /** Selected step id(s). Single-select today → length 0 or 1. */
-    readonly $selectedStep = linkedSignal<string[]>(
-        () => (this.#store.getFilterValue('workflowStep') as string[]) ?? []
-    );
+    /** Scheme whose steps are shown on the right. Separate from selection. */
+    readonly $focusedScheme = signal<string | null>(null);
 
-    /** ngModel value for the left (scheme) listbox. */
-    protected readonly $schemeModel = computed(() => this.$selectedScheme()[0] ?? null);
-    /** ngModel value for the right (step) listbox. */
-    protected readonly $stepModel = computed(() => this.$selectedStep()[0] ?? null);
+    /** Right-column radio value: the step pinned for the focused scheme, if any. */
+    protected readonly $stepModel = computed(() => {
+        const focused = this.$focusedScheme();
+        if (!focused) return null;
+        return this.$selection().find((entry) => entry.scheme === focused)?.step ?? null;
+    });
 
     /**
      * Content-type filter value, read reactively. Returns the raw value (possibly
@@ -116,24 +161,28 @@ export class DotContentDriveWorkflowFilterComponent {
     );
 
     /**
-     * Chip label: `<scheme>` when no step is chosen, `<scheme> — <step>` otherwise.
-     * The chip itself prepends the "Workflow" title.
+     * Empty-schemes message key — schemes come up empty when the selected content
+     * type(s) have no workflows assigned. Singular vs plural by selection count.
+     */
+    protected readonly $noSchemesMessageKey = computed(() =>
+        (this.#contentTypeFilter()?.length ?? 0) === 1
+            ? 'content-drive.workflow-filter.no-workflows'
+            : 'content-drive.workflow-filter.no-workflows.plural'
+    );
+
+    /**
+     * One chip entry per selected scheme: `<scheme>`, or `<scheme> — <step>` for
+     * a scheme with a pinned step. The chip prepends the "Workflow" title.
      */
     readonly $chipSelections = computed<string[]>(() => {
-        const schemeId = this.$selectedScheme()[0];
-        if (!schemeId) return [];
+        const schemeCache = this.#schemeCache();
+        const stepNames = this.#stepNameById();
 
-        const scheme = this.#schemeCache()[schemeId];
-        const schemeName = scheme?.name ?? schemeId;
-
-        const stepId = this.$selectedStep()[0];
-        if (!stepId) return [schemeName];
-
-        const stepName = (this.#stepCache()[schemeId] ?? this.$state.steps()).find(
-            (step) => step.id === stepId
-        )?.name;
-
-        return [stepName ? `${schemeName} — ${stepName}` : schemeName];
+        return this.$selection().map(({ scheme, step }) => {
+            const name = schemeCache[scheme]?.name ?? scheme;
+            const stepName = step ? stepNames.get(step) : null;
+            return stepName ? `${name} — ${stepName}` : name;
+        });
     });
 
     constructor() {
@@ -146,30 +195,45 @@ export class DotContentDriveWorkflowFilterComponent {
         });
     }
 
-    protected onSchemeChange(schemeId: string | null): void {
-        if (!schemeId) {
-            this.onClearAll();
-            return;
-        }
+    protected isSchemeSelected(schemeId: string): boolean {
+        return this.$selection().some((entry) => entry.scheme === schemeId);
+    }
 
-        if (this.$selectedScheme()[0] === schemeId) return;
-
-        this.$selectedScheme.set([schemeId]);
-        // Switching scheme invalidates any step from the previous scheme.
-        this.$selectedStep.set([]);
-        this.#syncStore();
+    /** Left-row click: focus the scheme so its steps load on the right. */
+    protected onFocusChange(schemeId: string | null): void {
+        if (!schemeId || schemeId === this.$focusedScheme()) return;
         this.#focusScheme(schemeId);
     }
 
+    /** Left checkbox: toggle scheme membership; dropping a scheme drops its step. */
+    protected onSchemeToggle(schemeId: string): void {
+        const selection = this.$selection();
+        const next = selection.some((entry) => entry.scheme === schemeId)
+            ? selection.filter((entry) => entry.scheme !== schemeId)
+            : [...selection, { scheme: schemeId }];
+
+        this.$selection.set(next);
+        this.#syncStore();
+    }
+
+    /** Right radio: pin/replace the step for the focused scheme (single per scheme). */
     protected onStepChange(stepId: string | null): void {
-        this.$selectedStep.set(stepId ? [stepId] : []);
+        const focused = this.$focusedScheme();
+        if (!focused) return;
+
+        const selection = this.$selection();
+        const others = selection.filter((entry) => entry.scheme !== focused);
+        // Pinning a step also selects its scheme; clearing it keeps the scheme.
+        const focusedEntry: WorkflowSelection = stepId
+            ? { scheme: focused, step: stepId }
+            : { scheme: focused };
+
+        this.$selection.set([...others, focusedEntry]);
         this.#syncStore();
     }
 
     protected onClearAll(): void {
-        this.$selectedScheme.set([]);
-        this.$selectedStep.set([]);
-        patchState(this.$state, { steps: [] });
+        this.$selection.set([]);
         this.#syncStore();
     }
 
@@ -195,25 +259,35 @@ export class DotContentDriveWorkflowFilterComponent {
     }
 
     /**
-     * Keep the current scheme selection only if it still exists in the new
-     * scheme set; otherwise clear it (and its step). When kept, (re)load its
-     * steps so the right column and chip stay resolved.
+     * After a (re)fetch, drop selections whose scheme no longer exists, focus the
+     * first remaining scheme, and load steps for any pinned scheme so the chip can
+     * label the step even for schemes the user hasn't focused yet.
      */
     #reconcileSelection(schemes: DotCMSWorkflow[]): void {
-        const selectedId = this.$selectedScheme()[0];
-        if (!selectedId) return;
+        const available = new Set(schemes.map((scheme) => scheme.id));
 
-        if (schemes.some((scheme) => scheme.id === selectedId)) {
-            this.#focusScheme(selectedId);
-        } else {
-            this.$selectedScheme.set([]);
-            this.$selectedStep.set([]);
-            patchState(this.$state, { steps: [] });
+        const kept = this.$selection().filter((entry) => available.has(entry.scheme));
+        if (kept.length !== this.$selection().length) {
+            this.$selection.set(kept);
             this.#syncStore();
         }
+
+        const focused = this.$focusedScheme();
+        const nextFocus = focused && available.has(focused) ? focused : (kept[0]?.scheme ?? null);
+        if (nextFocus) {
+            this.#focusScheme(nextFocus);
+        } else {
+            this.$focusedScheme.set(null);
+            patchState(this.$state, { steps: [] });
+        }
+
+        // Resolve step names for pinned schemes that aren't the focused one.
+        this.#ensureStepsLoaded(kept.filter((entry) => entry.step).map((entry) => entry.scheme));
     }
 
     #focusScheme(schemeId: string): void {
+        this.$focusedScheme.set(schemeId);
+
         const cached = this.#stepCache()[schemeId];
         if (cached) {
             patchState(this.$state, { steps: cached, loadingSteps: false });
@@ -229,28 +303,42 @@ export class DotContentDriveWorkflowFilterComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((steps) => {
+                this.#cacheSteps(schemeId, steps);
                 // A late response for a scheme the user moved away from must not
                 // overwrite the current right column.
-                if (this.$selectedScheme()[0] !== schemeId) return;
-                patchState(this.$state, { steps, loadingSteps: false });
-                this.#cacheSteps(schemeId, steps);
+                if (this.$focusedScheme() === schemeId) {
+                    patchState(this.$state, { steps, loadingSteps: false });
+                }
+            });
+    }
+
+    /** Loads (and caches) steps for the given schemes so chip labels can resolve. */
+    #ensureStepsLoaded(schemeIds: string[]): void {
+        schemeIds
+            .filter((id) => !this.#stepCache()[id])
+            .forEach((id) => {
+                this.#workflowService
+                    .getSteps(id)
+                    .pipe(
+                        take(1),
+                        catchError(() => of([] as WorkflowStep[])),
+                        takeUntilDestroyed(this.#destroyRef)
+                    )
+                    .subscribe((steps) => {
+                        this.#cacheSteps(id, steps);
+                        if (this.$focusedScheme() === id) {
+                            patchState(this.$state, { steps, loadingSteps: false });
+                        }
+                    });
             });
     }
 
     #syncStore(): void {
-        const scheme = this.$selectedScheme();
-        const step = this.$selectedStep();
-
-        if (scheme.length) {
-            this.#store.patchFilters({ workflowScheme: scheme });
+        const selection = this.$selection();
+        if (selection.length) {
+            this.#store.patchFilters({ workflow: selection.map(toToken) });
         } else {
-            this.#store.removeFilter('workflowScheme');
-        }
-
-        if (step.length) {
-            this.#store.patchFilters({ workflowStep: step });
-        } else {
-            this.#store.removeFilter('workflowStep');
+            this.#store.removeFilter('workflow');
         }
     }
 

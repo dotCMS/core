@@ -100,9 +100,8 @@ export const decodeByFilterKey: Record<
     contentType: multiSelector,
     title: singleSelector,
     languageId: multiSelector,
-    // Single-select today, stored as an array so a future multi-select is trivial
-    workflowScheme: multiSelector,
-    workflowStep: multiSelector
+    // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
+    workflow: multiSelector
 };
 
 /**
@@ -151,7 +150,7 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         }
 
         return acc;
-    }, {});
+    }, {} as DotContentDriveFilters);
 }
 
 /**
@@ -196,7 +195,7 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             }
 
             return acc;
-        }, [])
+        }, [] as string[])
         .join(';');
 }
 

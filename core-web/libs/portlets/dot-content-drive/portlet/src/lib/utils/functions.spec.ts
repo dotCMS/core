@@ -281,6 +281,12 @@ describe('Utility Functions', () => {
 
             expect(titleResult).toEqual('');
         });
+
+        it('should decode workflow tokens, preserving the scheme:step colon', () => {
+            // Each token is `schemeId` or `schemeId:stepId`; only commas separate tokens.
+            const result = decodeByFilterKey.workflow('schemeA:stepX,schemeB,schemeC:stepY');
+            expect(result).toEqual(['schemeA:stepX', 'schemeB', 'schemeC:stepY']);
+        });
     });
 
     describe('encode and decode together', () => {
@@ -294,6 +300,18 @@ describe('Utility Functions', () => {
             const encoded = encodeFilters(original);
             const decoded = decodeFilters(encoded);
 
+            expect(decoded).toEqual(original);
+        });
+
+        it('should round-trip a workflow filter with pinned-step (scheme:step) tokens', () => {
+            const original: DotContentDriveFilters = {
+                workflow: ['schemeA:stepX', 'schemeB']
+            };
+
+            const encoded = encodeFilters(original);
+            const decoded = decodeFilters(encoded);
+
+            expect(encoded).toBe('workflow:schemeA:stepX,schemeB');
             expect(decoded).toEqual(original);
         });
     });
