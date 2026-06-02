@@ -45,6 +45,7 @@ import org.opensearch.client.opensearch.indices.ExistsRequest;
 import org.opensearch.client.opensearch.indices.GetIndexRequest;
 import org.opensearch.client.opensearch.indices.GetIndexResponse;
 import org.opensearch.client.opensearch.indices.IndexSettings;
+import org.opensearch.client.transport.OpenSearchTransport;
 
 /**
  * OpenSearch implementation of {@link IndexAPI}.
@@ -146,7 +147,8 @@ public class OSIndexAPIImpl implements IndexAPI {
         final IndexSettings indexSettings;
         if (settings != null && !settings.isEmpty()) {
             try {
-                final JsonpMapper mapper = clientProvider.getClient()._transport().jsonpMapper();
+                try(final OpenSearchTransport openSearchTransport = clientProvider.getClient()._transport()){
+                final JsonpMapper mapper = openSearchTransport.jsonpMapper();
                 try (JsonParser parser = mapper.jsonProvider().createParser(
                         new java.io.StringReader(settings))) {
                     indexSettings = IndexSettings._DESERIALIZER.deserialize(parser, mapper)
@@ -154,7 +156,7 @@ public class OSIndexAPIImpl implements IndexAPI {
                             .numberOfShards(finalShards)
                             .autoExpandReplicas(autoExpandReplicas)
                             .build();
-                }
+                }}
             } catch (Exception e) {
                 Logger.error(this.getClass(),
                     "Failed to parse settings JSON for index: " + indexName
