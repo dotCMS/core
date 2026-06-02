@@ -1,6 +1,6 @@
-> **Source of truth is [AGENTS.md](AGENTS.md).** This file is kept for Claude Code compatibility. When updating the E2E guide, edit `AGENTS.md` first — then mirror any changes here.
-
 # E2E Testing Guide — dotCMS Playwright
+
+> **Source of truth.** All agents and tools should read this file. `CLAUDE.md` in this directory is kept only for Claude Code compatibility and points here.
 
 ## Project Structure
 
@@ -19,17 +19,48 @@ apps/dotcms-ui-e2e/
 │   │               └── *.spec.ts      # Test specs
 │   └── components/            # Shared component helpers (sidebar, breadcrumb)
 ├── playwright.config.ts
-└── CLAUDE.md                  # This file
+└── AGENTS.md                  # This file — source of truth
 ```
 
 ## Commands
 
 ```bash
-yarn nx e2e dotcms-ui-e2e --ui                          # Interactive UI mode
+yarn nx e2e dotcms-ui-e2e --ui                           # Interactive UI mode
 yarn nx e2e dotcms-ui-e2e --grep "test name"             # Run specific test
-HEADLESS=true yarn nx e2e dotcms-ui-e2e --grep "pattern"  # Headless mode
+HEADLESS=true yarn nx e2e dotcms-ui-e2e --grep "pattern" # Headless mode
 npx playwright codegen http://localhost:4200/dotAdmin     # Record selectors
 ```
+
+### Yarn workspace aliases (from `dotcms-ui-e2e/package.json`)
+
+```bash
+yarn e2e:dev            # Dev server + headed mode, opens HTML report
+yarn e2e:dev:headless   # Dev server + headless mode, opens HTML report
+yarn e2e:ci             # Headless, direct dotCMS on :8080, no auto-report
+yarn e2e:ui             # Playwright interactive UI
+```
+
+### Environment variables
+
+| Variable | Values | Default |
+|---|---|---|
+| `CURRENT_ENV` | `dev` \| `ci` | `dev` |
+| `HEADLESS` | `true` \| `false` | env default |
+| `E2E_BASE_URL` | custom URL | env default |
+| `E2E_REUSE_EXISTING_SERVER` | `true` \| `false` | `true` |
+
+### Environment configuration
+
+| Mode | Base URL | Backend |
+|---|---|---|
+| `dev` | `http://localhost:4200` | Proxied → `:8080` |
+| `ci` | `http://localhost:8080` | Direct dotCMS |
+
+### Reports and artifacts
+
+- **HTML report**: `dist/.playwright/apps/dotcms-ui-e2e/`
+- **Screenshots / videos / traces**: `dist/.playwright/apps/dotcms-ui-e2e/test-output/` (on failure)
+- Manual open: `npx playwright show-report`
 
 ## Naming Conventions
 
@@ -78,7 +109,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
 ### Class names
 
 ```typescript
-export class RelationshipField { ... }          // In helpers/ — locator wrapper
+export class RelationshipField { ... }           // In helpers/ — locator wrapper
 export class SelectExistingContentDialog { ... } // In helpers/ — locator wrapper
 export class NewEditContentFormPage { ... }      // In pages/ — shared page object
 export class LoginPage { ... }                   // In pages/ — shared page object
@@ -252,12 +283,11 @@ tests/relationship-field/
 A helper wraps locators and actions for a UI component:
 
 ```typescript
-export class RelationshipFieldComponent {
+export class RelationshipField {
     readonly table: Locator;
     readonly addButton: Locator;
 
     constructor(private page: Page, fieldVariable?: string) {
-        // Scope by field variable when multiple instances exist
         if (fieldVariable) {
             this.root = page.getByTestId(`field-${fieldVariable}`);
             this.table = this.root.getByTestId('relationship-field-table');
@@ -283,6 +313,50 @@ export function getLegacyFrame(page: Page): FrameLocator { ... }
 
 // utils/portlets.ts — centralized URL constants
 export const Portlet = { Content: '...', ContentTypes: '...' } as const;
+```
+
+## Test Data & Isolation
+
+### CRITICAL: Always use an empty starter
+
+All E2E tests **must** assume they run against a **clean, empty dotCMS instance** (`empty_20250714.zip` or newer). Never rely on pre-existing data.
+
+```typescript
+// BAD — assumes data exists
+test('edit existing blog post', async ({ page }) => {
+    await page.goto('/content/blogs/my-existing-blog'); // fails on empty starter
+});
+
+// GOOD — create the data you need
+test('edit blog post', async ({ page, request }) => {
+    const contentType = await createContentType(request, blogContentType);
+    const blog = await createContent(request, { contentType: contentType.id, title: 'Test' });
+    await page.goto(`/content/edit/${blog.identifier}`);
+    await deleteContent(request, blog.identifier);
+});
+```
+
+### Setup/teardown with beforeEach/afterEach
+
+```typescript
+test.describe('Content Management', () => {
+    let testContent: Content;
+
+    test.beforeEach(async ({ request }) => {
+        testContent = await createTestContent(request);
+    });
+
+    test.afterEach(async ({ request }) => {
+        await deleteContent(request, testContent.identifier);
+    });
+});
+```
+
+### Unique identifiers
+
+```typescript
+const uniqueTitle = `Test Content ${Date.now()}`;
+const uniqueEmail = `user-${crypto.randomUUID()}@test.com`;
 ```
 
 ## Fixtures & API Setup
@@ -341,7 +415,7 @@ const CARDINALITY = {
 
 **Warning**: These are NOT intuitive. `0` is ONE_TO_MANY, not ONE_TO_ONE.
 
-### Test isolation
+### Test isolation rules
 
 - Each test creates its own content types and seed data via API in `beforeEach`
 - Cleanup via `deleteContentType` in `afterEach` (cascades contentlets)
@@ -369,7 +443,7 @@ page.getByRole('menuitem', { name: 'Existing Content' })  // Relate existing
 page.getByRole('menuitem', { name: 'New Content' })        // Create new inline
 ```
 
-**Note**: Labels come from `dotMessageService` translations. Use codegen to verify actual labels — they may differ from what the UI spec says.
+**Note**: Labels come from `dotMessageService` translations. Use codegen to verify actual labels.
 
 ### Checking disabled state
 
@@ -385,9 +459,9 @@ The "+" button itself stays **enabled** — only the menu items become disabled.
 ### Selection dialog
 
 ```typescript
-page.getByTestId('apply-button')       // Apply selection
-page.getByTestId('cancel-button')      // Cancel
-page.getByTestId('search-button')      // Search
+page.getByTestId('apply-button')         // Apply selection
+page.getByTestId('cancel-button')        // Cancel
+page.getByTestId('search-button')        // Search
 page.getByTestId('show-selected-switch') // Toggle selected items
 ```
 
@@ -425,6 +499,6 @@ await page.waitForResponse(...);  // May miss the response
 11. **Direct URL navigation** — Don't go directly to `/content/new/{type}`. Use `goToNew()` which goes through the content listing (Dojo) first
 12. **Dojo widget IDs are fragile** — Never use `#dijit_form_DropDownButton_0`. Use role or class selectors instead
 13. **Multiple instances** — When a page has multiple relationship fields, pass `fieldVariable` to scope the helper to a specific field via `data-testid="field-{variable}"`
-14. **HTML page navigation** — HTML pages don't have `data-testid="title"`, so `goToContent()` (which waits for that field) hangs. Navigate directly with `page.goto('/dotAdmin/#/content/{inode}')` and wait for `dot-edit-content-sidebar` instead.
-15. **`hostFolder` for HTML pages** — The API rejects the string `'default'`. Resolve the default site via `GET /api/v1/site` and use `defaultSite.identifier` as `hostFolder`.
-16. **New editor for custom content types** — Navigating to `/dotAdmin/#/content/{inode}` shows the legacy editor unless the content type has `metadata: { CONTENT_EDITOR2_ENABLED: true }`. HTML pages have this enabled by default; custom types created in tests must set it explicitly.
+14. **HTML page navigation** — HTML pages don't have `data-testid="title"`, so `goToContent()` hangs. Navigate directly with `page.goto('/dotAdmin/#/content/{inode}')` and wait for `dot-edit-content-sidebar` instead
+15. **`hostFolder` for HTML pages** — The API rejects the string `'default'`. Resolve the default site via `GET /api/v1/site` and use `defaultSite.identifier` as `hostFolder`
+16. **New editor for custom content types** — Navigating to `/dotAdmin/#/content/{inode}` shows the legacy editor unless the content type has `metadata: { CONTENT_EDITOR2_ENABLED: true }`. HTML pages have this enabled by default; custom types created in tests must set it explicitly

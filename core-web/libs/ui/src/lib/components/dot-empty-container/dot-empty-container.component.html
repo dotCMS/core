@@ -4,7 +4,7 @@
         data-testid="message-principal">
         @if (configuration.icon) {
             <i
-                [class]="'pi !text-6xl p-3 text-[var(--gray-700)] ' + configuration.icon"
+                [class]="'pi text-6xl! p-3 text-(--gray-700) ' + configuration.icon"
                 data-testid="message-icon"></i>
         }
         <h1
@@ -14,7 +14,7 @@
         </h1>
         @if (configuration.subtitle) {
             <h2
-                class="message__subtitle m-0 text-center leading-[1.4] text-base font-medium text-[var(--gray-700)]"
+                class="message__subtitle m-0 text-center leading-[1.4] text-base font-medium text-(--gray-700)"
                 data-testid="message-subtitle">
                 {{ configuration.subtitle }}
             </h2>

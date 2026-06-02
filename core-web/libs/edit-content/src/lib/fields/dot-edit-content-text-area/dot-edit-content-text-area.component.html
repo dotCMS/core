@@ -46,14 +46,14 @@
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (fieldHasError) {
-            <div class="text-[var(--color-palette-red)]">
+            <div class="text-(--color-palette-red)">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                 }
             </div>
         }
         @if (!fieldHasError && field.hint) {
-            <div class="text-[var(--gray-600)]">
+            <div class="text-(--gray-600)">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}
                 </small>

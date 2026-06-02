@@ -32,18 +32,18 @@
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span
-                                                class="text-sm font-semibold text-[var(--gray-900)]"
+                                                class="text-sm font-semibold text-(--gray-900)"
                                                 data-testid="activity-user">
                                                 {{ activity.postedBy }}
                                             </span>
                                             <span
-                                                class="text-xs text-[var(--gray-600)] ml-auto shrink-0"
+                                                class="text-xs text-(--gray-600) ml-auto shrink-0"
                                                 data-testid="activity-date">
                                                 {{ activity.createdDate | dotRelativeDate }}
                                             </span>
                                         </div>
                                         <p
-                                            class="mt-1.5 text-sm text-[var(--gray-700)] leading-[1.4] break-words whitespace-pre-line"
+                                            class="mt-1.5 text-sm text-(--gray-700) leading-[1.4] break-words whitespace-pre-line"
                                             data-testid="activity-description">
                                             {{ activity.commentDescription }}
                                         </p>
@@ -62,7 +62,7 @@
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-[1] w-full px-4 py-3 border-t border-[var(--gray-200)]"
+                class="sticky bottom-0 z-[1] w-full px-4 py-3 border-t border-(--gray-200)"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"
@@ -84,8 +84,8 @@
 
                         <!-- Character Counter -->
                         <div
-                            class="mt-1 text-xs text-[var(--gray-600)] text-left transition-colors"
-                            [class.text-[var(--color-palette-red)]!]="isAtMaxLength()"
+                            class="mt-1 text-xs text-(--gray-600) text-left transition-colors"
+                            [class.text-(--color-palette-red)!]="isAtMaxLength()"
                             data-testid="activities-char-counter">
                             @if (!isAtMaxLength()) {
                                 {{ commentLength() }}/{{ commentMaxLength }}

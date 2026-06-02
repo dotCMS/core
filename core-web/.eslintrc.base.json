@@ -1,7 +1,12 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic", "better-tailwindcss"],
+    "settings": {
+        "better-tailwindcss": {
+            "entryPoint": "apps/dotcms-ui/src/style.css"
+        }
+    },
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -202,6 +207,20 @@
                 "jest": true
             },
             "rules": {}
+        },
+        {
+            "files": ["*.html"],
+            "parser": "@angular-eslint/template-parser",
+            "rules": {
+                "better-tailwindcss/enforce-consistent-variable-syntax": [
+                    "error",
+                    { "syntax": "shorthand" }
+                ],
+                "better-tailwindcss/enforce-consistent-important-position": [
+                    "error",
+                    { "position": "recommended" }
+                ]
+            }
         }
     ]
 }
