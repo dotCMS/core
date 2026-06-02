@@ -85,7 +85,7 @@ jobs:
       id-token: write
       pull-requests: write
       issues: write
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
       trigger_mode: automatic
       timeout_minutes: 30
