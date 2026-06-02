@@ -88,6 +88,9 @@ jobs:
       issues: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
+      model_id: global.anthropic.claude-sonnet-4-6
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      aws_region: us-east-1
       trigger_mode: automatic
       prompt: |
         You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
