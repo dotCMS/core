@@ -1086,7 +1086,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: expect.any(String),
                         id: '123',
-                        url: 'index'
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1127,7 +1127,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'Other Page',
                         id: '456',
-                        url: '/other-page'
+                        url: expect.stringContaining('url=%2Fother-page')
                     })
                 );
             });
@@ -1140,7 +1140,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: INITIAL_PAGE_PARAMS.url
+                        url: expect.stringMatching(/^\/dotAdmin\/#.*url=index/)
                     })
                 );
             });
@@ -1161,45 +1161,41 @@ describe('DotEmaShellComponent', () => {
                 expect(() => spectator.detectChanges()).not.toThrow();
             });
 
-            it('should not update breadcrumb with stale data while page is loading, then update once loaded', async () => {
-                // Initialize with the first page fully loaded
+            it('should replace breadcrumb on navigation, not accumulate stale entries', async () => {
+                // Page A fully loaded
                 spectator.detectChanges();
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
-                // Hold the HTTP response so we can inspect state during LOADING
+                // Hold the response to inspect the LOADING window
                 const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
                 jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
 
-                // Navigate to a new page
-                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/new-page' });
+                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
                 spectator.detectChanges();
 
-                // While status is LOADING, stale pageAsset is present but breadcrumb must not be updated
+                // While LOADING, stale Page A data is present — breadcrumb must not fire
                 expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
 
-                // Resolve the HTTP response with the new page's data
-                const newPageResponse = {
+                // Resolve with Page B data
+                const pageBResponse = {
                     ...MOCK_RESPONSE_HEADLESS,
-                    page: {
-                        ...MOCK_RESPONSE_HEADLESS.page,
-                        title: 'New Page Title',
-                        identifier: '999'
-                    }
+                    page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Page B', identifier: '456' }
                 };
-                pendingRequest$.next(newPageResponse);
+                pendingRequest$.next(pageBResponse);
                 pendingRequest$.complete();
 
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
 
-                // After loading completes, breadcrumb must reflect the new page
+                // Called exactly once — with Page B data, never with stale Page A data
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledTimes(1);
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        label: 'New Page Title',
-                        id: '999',
-                        url: '/new-page'
+                        label: 'Page B',
+                        id: '456',
+                        url: expect.stringContaining('url=%2Fpage-b')
                     })
                 );
             });
@@ -1309,6 +1305,14 @@ describe('DotEmaShellComponent', () => {
                 const currentUrl = seoParams.currentUrl;
 
                 expect(currentUrl).toMatch(/^\//);
+            });
+
+            it('should use page hostname when clientHost is not present', () => {
+                const seoParams = spectator.component['$seoParams']();
+
+                expect(seoParams.requestHostName).toBe(
+                    `${window.location.protocol}//${MOCK_RESPONSE_HEADLESS.site.hostname}`
+                );
             });
         });
 
