@@ -6,6 +6,7 @@
 // @import "typography";
 @use "dotcms-theme/utils/theme-variables"; /* temporary */
 // @import "dotcms-theme/theme"; /* prime-ng */
+@use "dotcms-theme/components/chip"; // compact .p-chip.p-chip-sm variant (legacy theme above is disabled)
 
 // INCLUDE FONT FACES
 @include assistant-font-face(400, "Regular");
