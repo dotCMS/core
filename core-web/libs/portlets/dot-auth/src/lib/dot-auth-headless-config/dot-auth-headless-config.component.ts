@@ -48,10 +48,14 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
             }
             if (this.store.status() === 'loaded' && this.#pendingSaveToast()) {
                 this.#pendingSaveToast.set(false);
-                this.#messages.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('dotauth.toast.saved')
-                });
+                // Save PUT succeeded; suppress the success toast when the follow-up reload
+                // failed (it already surfaced an error dialog) to avoid contradictory feedback.
+                if (!this.store.reloadFailed()) {
+                    this.#messages.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('dotauth.toast.saved')
+                    });
+                }
             }
         });
     }

@@ -91,7 +91,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  * persistence layer.
  */
 @Path("/v1/dotauth")
-@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML configuration per site, with SYSTEM_HOST as the global default")
+@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST is the global default) and headless OIDC token exchange")
 public class DotAuthResource {
 
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
@@ -703,10 +703,14 @@ public class DotAuthResource {
             final String acsUrl = "https://" + hostname + "/dotsaml/login";
 
             final String certPem = String.valueOf(vals.getOrDefault("publicCert", ""));
+            // Strip PEM armor/whitespace, then constrain to the base64 alphabet so a
+            // stored value containing XML metacharacters cannot break (or inject markup
+            // into) the generated SP-metadata document. A real certificate is unaffected.
             final String certBase64 = certPem
                     .replace("-----BEGIN CERTIFICATE-----", "")
                     .replace("-----END CERTIFICATE-----", "")
-                    .replaceAll("\\s+", "");
+                    .replaceAll("\\s+", "")
+                    .replaceAll("[^A-Za-z0-9+/=]", "");
 
             final String sigType = String.valueOf(vals.getOrDefault("signatureValidationType", ""));
             final boolean wantAssertionsSigned =
@@ -747,7 +751,7 @@ public class DotAuthResource {
             sb.append("    <md:KeyDescriptor use=\"signing\">\n");
             sb.append("      <ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n");
             sb.append("        <ds:X509Data>\n");
-            sb.append("          <ds:X509Certificate>").append(certBase64).append("</ds:X509Certificate>\n");
+            sb.append("          <ds:X509Certificate>").append(xmlEscape(certBase64)).append("</ds:X509Certificate>\n");
             sb.append("        </ds:X509Data>\n");
             sb.append("      </ds:KeyInfo>\n");
             sb.append("    </md:KeyDescriptor>\n");

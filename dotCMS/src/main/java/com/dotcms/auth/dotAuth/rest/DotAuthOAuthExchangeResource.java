@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -112,9 +113,13 @@ import javax.ws.rs.core.Response;
  *       somewhere on this IdP" — it's the mitigation for the confused-deputy
  *       class the old {@code /v1/oauth/token} endpoint shipped with.</li>
  *   <li>{@code exp} must be in the future.</li>
- *   <li>{@code nonce} must equal the {@code nonce} supplied in the request body,
- *       which must in turn equal the nonce the SPA passed in its original
- *       {@code /authorize} request (bound to its session).</li>
+ *   <li>{@code nonce} must equal the {@code nonce} supplied in the request body
+ *       (a consistency check on the caller-presented values). This is <em>not</em>
+ *       replay protection in the headless flow — the caller presents both the
+ *       {@code id_token} and its {@code nonce}. Replay is guarded separately: each
+ *       exchanged {@code id_token} is recorded as one-time-use (a fingerprint cached
+ *       until the token's {@code exp}) and a second exchange of the same token is
+ *       rejected with 401.</li>
  * </ol>
  *
  * <h3>Safety notes</h3>
@@ -132,7 +137,7 @@ import javax.ws.rs.core.Response;
  * </ul>
  */
 @Path("/v1/dotauth/oauth")
-@Tag(name = "dotAuth", description = "OAuth/OIDC token exchange for headless SPA consumers")
+@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST is the global default) and headless OIDC token exchange")
 public class DotAuthOAuthExchangeResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -226,7 +231,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 if (allowedOrigins.isEmpty()) {
                     SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                             "OAuth exchange rejected: no allowedOrigins configured; origin '"
-                                    + origin + "' from " + request.getRemoteAddr());
+                                    + sanitizeForLog(origin) + "' from " + request.getRemoteAddr());
                     return Response.status(Response.Status.FORBIDDEN)
                             .entity(new ResponseEntityView<>(
                                     "allowedOrigins must be configured for browser-based token exchange"))
@@ -234,7 +239,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 }
                 if (!allowedOrigins.contains(origin)) {
                     SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
-                            "OAuth exchange rejected: origin '" + origin
+                            "OAuth exchange rejected: origin '" + sanitizeForLog(origin)
                                     + "' not in allowed origins from " + request.getRemoteAddr());
                     return Response.status(Response.Status.FORBIDDEN)
                             .entity(new ResponseEntityView<>("Origin not allowed"))
@@ -283,7 +288,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .findFirst();
                 if (matched.isEmpty()) {
                     SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
-                            "OAuth exchange rejected: issuer '" + tokenIssuer
+                            "OAuth exchange rejected: issuer '" + sanitizeForLog(tokenIssuer)
                                     + "' not in trusted IdP list from " + request.getRemoteAddr());
                     return Response.status(Response.Status.UNAUTHORIZED)
                             .entity(new ResponseEntityView<>("Untrusted token issuer"))
@@ -322,9 +327,30 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             } catch (final DotRuntimeException e) {
                 SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                         "OAuth id_token validation failed from " + request.getRemoteAddr()
-                                + ": " + e.getMessage());
+                                + ": " + sanitizeForLog(e.getMessage()));
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity(new ResponseEntityView<>("id_token validation failed"))
+                        .build();
+            }
+
+            // Replay protection: an id_token is single-use for the exchange. A leaked but
+            // still-unexpired token (browser history, server logs, a malicious RP that shares
+            // the IdP) must not be exchangeable a second time. The nonce check above is NOT
+            // replay protection here — the caller presents both the token and the nonce — so
+            // we fingerprint each consumed token and keep it until its own exp, rejecting any
+            // re-presentation in that window.
+            final Long idpExpMillis = extractExpiryMillis(claims.get("exp"));
+            final long replayGuardExpiry = idpExpMillis != null
+                    ? idpExpMillis
+                    : System.currentTimeMillis()
+                            + MAX_DAYS_FALLBACK * ChronoUnit.DAYS.getDuration().toMillis();
+            final String tokenFingerprint = idTokenFingerprint(form.getIdToken());
+            if (!sessionCache.registerExchangeTokenUse(tokenFingerprint, replayGuardExpiry)) {
+                SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                        "OAuth exchange rejected: id_token already consumed (replay) from "
+                                + request.getRemoteAddr());
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(new ResponseEntityView<>("id_token has already been exchanged"))
                         .build();
             }
 
@@ -373,15 +399,14 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 lifetimeMillis = ChronoUnit.DAYS.getDuration().toMillis() * expirationDays;
             }
 
-            // Clamp to IdP token exp so the session-ref never outlives the JWT it was minted from
-            if (config.clampToIdpExp) {
-                final Object expClaim = claims.get("exp");
-                if (expClaim instanceof Number) {
-                    final long idpExpiresAtMillis = ((Number) expClaim).longValue() * 1000L;
-                    final long idpRemainingMillis = idpExpiresAtMillis - System.currentTimeMillis();
-                    if (idpRemainingMillis > 0 && idpRemainingMillis < lifetimeMillis) {
-                        lifetimeMillis = idpRemainingMillis;
-                    }
+            // Clamp to IdP token exp so the session-ref never outlives the JWT it was minted from.
+            // Nimbus surfaces exp as a java.util.Date (not a Number) via JWTClaimsSet.getClaims(),
+            // so extractExpiryMillis handles both forms — an `instanceof Number` test alone would
+            // never fire and this defaults-on control would be dead code.
+            if (config.clampToIdpExp && idpExpMillis != null) {
+                final long idpRemainingMillis = idpExpMillis - System.currentTimeMillis();
+                if (idpRemainingMillis > 0 && idpRemainingMillis < lifetimeMillis) {
+                    lifetimeMillis = idpRemainingMillis;
                 }
             }
 
@@ -503,6 +528,59 @@ public class DotAuthOAuthExchangeResource implements Serializable {
 
     private static boolean validateIssuerUrl(final String url) {
         return OAuthSsrfGuard.validateUrl(url) == null;
+    }
+
+    /**
+     * Extract the id_token {@code exp} as epoch-millis. Nimbus surfaces registered date
+     * claims ({@code exp}/{@code nbf}/{@code iat}) as {@link java.util.Date} via
+     * {@code JWTClaimsSet.getClaims()}; a raw NumericDate ({@link Number} epoch-seconds) is
+     * also handled defensively. Returns {@code null} when no usable exp is present.
+     */
+    private static Long extractExpiryMillis(final Object expClaim) {
+        if (expClaim instanceof java.util.Date) {
+            return ((java.util.Date) expClaim).getTime();
+        }
+        if (expClaim instanceof Number) {
+            return ((Number) expClaim).longValue() * 1000L;
+        }
+        return null;
+    }
+
+    /**
+     * Lowercase-hex SHA-256 of the id_token, used as the one-time-use replay key. Hashing
+     * keeps the raw bearer token out of cache keys and yields a case-insensitive key that
+     * survives the cache administrator's key normalization without collision risk.
+     * Returns {@code null} only if SHA-256 is somehow unavailable, in which case the replay
+     * guard is permissive for that one request rather than failing the exchange.
+     */
+    private static String idTokenFingerprint(final String idToken) {
+        try {
+            final java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            final byte[] hash = md.digest(idToken.getBytes(StandardCharsets.UTF_8));
+            final StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (final byte b : hash) {
+                sb.append(Character.forDigit((b >> 4) & 0xF, 16))
+                  .append(Character.forDigit(b & 0xF, 16));
+            }
+            return sb.toString();
+        } catch (final Exception e) {
+            Logger.warn(DotAuthOAuthExchangeResource.class,
+                    "Could not fingerprint id_token for replay guard: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Strip CR/LF/tab and cap length on values that originate from request headers or
+     * unverified token claims before writing them to the security log — prevents
+     * log-forging / audit-trail injection (CWE-117).
+     */
+    private static String sanitizeForLog(final String value) {
+        if (value == null) {
+            return "";
+        }
+        final String stripped = value.replaceAll("[\\r\\n\\t]", "_");
+        return stripped.length() > 256 ? stripped.substring(0, 256) + "..." : stripped;
     }
 
     /**
