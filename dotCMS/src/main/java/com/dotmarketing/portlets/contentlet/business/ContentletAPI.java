@@ -52,6 +52,8 @@ import java.util.Set;
  * @since Mar 22, 2012
  *
  */
+// ES-DECOMMISSION: Public interface exposes ESSearchResults and SearchCriteria in deprecated method
+// signatures. Remove esSearch, esSearchRaw after R7 dotEvergreen cutover (~Aug 18).
 public interface ContentletAPI {
 
 	/**

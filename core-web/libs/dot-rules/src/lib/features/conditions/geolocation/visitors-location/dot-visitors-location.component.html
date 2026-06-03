@@ -1,12 +1,12 @@
-<div class="w-full gap-3 items-center flex flex-row flex-1">
+<div class="flex w-full flex-1 flex-row items-center gap-3">
     <p-select
         (onChange)="onComparisonChange($event.value)"
         [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
-        class="min-w-24 max-w-24 flex-none"
+        class="max-w-24 min-w-24 flex-none"
         appendTo="body" />
-    <div class="flex items-center gap-2 flex-1">
+    <div class="flex flex-1 items-center gap-2">
         <input
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
@@ -14,7 +14,7 @@
             class="flex-1 text-right text-black" />
         <label class="whitespace-nowrap">{{ $preferredUnit() }}</label>
     </div>
-    <div class="flex items-center gap-2 flex-grow-2">
+    <div class="flex grow-2 items-center gap-2">
         <label class="whitespace-nowrap">{{ $fromLabel() }}</label>
         <input
             [value]="getFormattedLatLong()"
