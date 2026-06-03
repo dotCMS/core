@@ -50,10 +50,7 @@ export const CustomLaraPreset = definePreset(Lara, {
             // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
             css: `
                 .p-chip {
-                    display: inline-flex;
-                    align-items: center;
                     height: 1.75rem;
-                    min-height: 1.75rem;
                     padding: 0 0.5rem;
                     font-size: 0.75rem;
                 }
