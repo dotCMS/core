@@ -19,7 +19,7 @@
                             {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
                         </label>
                     </div>
-                    <span class="flex mb-1 ml-5 text-sm text-gray-600 break-words">
+                    <span class="mb-1 ml-5 flex text-sm wrap-break-word text-gray-600">
                         {{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}
                     </span>
                     @if (hasEditorContent) {
@@ -29,7 +29,7 @@
                                 {{ 'block-editor.extension.ai-image.existing.content' | dm }}
                             </label>
                         </div>
-                        <span class="flex mb-1 ml-5 text-sm text-gray-600 break-words">
+                        <span class="mb-1 ml-5 flex text-sm wrap-break-word text-gray-600">
                             {{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}
                         </span>
                     }
@@ -78,7 +78,7 @@
                             <label class="flex items-center gap-1" for="prompt-rewritten">
                                 {{ 'block-editor.extension.ai-image.rewritten' | dm }}
                             </label>
-                            <div class="flex flex-col relative">
+                            <div class="relative flex flex-col">
                                 <textarea
                                     [value]="aiProcessedPrompt"
                                     style="height: 14rem; padding-right: 2.5rem"

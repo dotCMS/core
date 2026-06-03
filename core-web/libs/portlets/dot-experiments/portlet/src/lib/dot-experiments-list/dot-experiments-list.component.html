@@ -3,7 +3,7 @@
         (goBack)="goToBrowserBack()"
         [isLoading]="vm.isLoading"
         [title]="vm.pageTitle" />
-    <div class="dot-experiment flex flex-col w-full h-full overflow-y-auto gap-4 p-8 pt-4">
+    <div class="dot-experiment flex size-full flex-col gap-4 overflow-y-auto p-8 pt-4">
         @if (vm.experiments.length) {
             <div class="dot-experiment__actions flex justify-between">
                 <dot-experiments-status-filter

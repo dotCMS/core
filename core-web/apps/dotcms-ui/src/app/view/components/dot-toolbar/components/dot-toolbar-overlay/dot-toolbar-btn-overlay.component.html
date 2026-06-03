@@ -10,12 +10,12 @@
         [text]="true"
         [class.p-highlight]="$showMask()"
         pButton
-        class="overlay-btn p-button-text transition-colors hover:bg-primary-50 focus:outline-none focus:ring-0 flex h-10 w-10 items-center justify-center p-0"
+        class="overlay-btn p-button-text flex size-10 items-center justify-center p-0 transition-colors hover:bg-primary-50 focus:ring-0 focus:outline-none"
         data-testid="btn-overlay"></button>
 
     @if ($showBadge()) {
         <span
-            class="absolute left-7 top-0.5 h-2.5 w-2.5 rounded-full bg-fuchsia-600"
+            class="absolute top-0.5 left-7 size-2.5 rounded-full bg-fuchsia-600"
             data-testid="overlay-badge"></span>
     }
 </div>

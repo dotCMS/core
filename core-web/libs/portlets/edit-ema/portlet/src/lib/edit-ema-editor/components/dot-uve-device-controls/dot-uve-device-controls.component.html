@@ -25,7 +25,7 @@
     (click)="onOrientationChange()"
     data-testid="orientation">
     <svg
-        class="w-5 h-5 origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+        class="size-5 origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
         [class]="{
             'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
             'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
