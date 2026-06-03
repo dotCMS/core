@@ -262,6 +262,7 @@ public class PageRenderUtil implements Serializable {
         final Set<String> personalizationsForPage = multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
+        int fd36897UnresolvedForLanguage = 0; // [FD-36897] contentlets in multi_tree not resolvable for this render's language/variant
 
         for (final String containerId : pageContents.rowKeySet()) {
 
@@ -293,6 +294,7 @@ public class PageRenderUtil implements Serializable {
                     final Contentlet nonHydratedContentlet = getContentletByVariantFallback(currentVariantId, personalizedContentlet, timeMachineDate);
 
                     if (nonHydratedContentlet == null) {
+                        fd36897UnresolvedForLanguage++; // [FD-36897]
                         continue;
                     }
 
@@ -340,6 +342,12 @@ public class PageRenderUtil implements Serializable {
             }
 
             rawContainers.add(new ContainerRaw(container, containerStructures, contentMaps));
+        }
+
+        if (fd36897UnresolvedForLanguage > 0) {
+            Logger.warn(this, String.format(
+                    "[FD-36897] render SHORTFALL: pageId=%s lang=%s variant=%s live=%s unresolvedContentlets=%d (present in multi_tree but not resolvable for this language/variant -> missing from the editor model the next save will persist)",
+                    htmlPage.getIdentifier(), this.languageId, currentVariantId, live, fd36897UnresolvedForLanguage));
         }
 
         return rawContainers;

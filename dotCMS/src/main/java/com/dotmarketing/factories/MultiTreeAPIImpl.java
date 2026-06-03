@@ -701,6 +701,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
+        Logger.warn(this, String.format(
+                "[FD-36897] overridesMT: pageId=%s personalization=%s variant=%s lang=%s multiTrees=%d",
+                pageId, personalization, variantId,
+                languageIdOpt.map(String::valueOf).orElse("none"),
+                multiTrees.size()));
+
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
         Set<String> originalContentletIds;
         final DotConnect db = new DotConnect();
@@ -753,6 +759,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(personalization)
                     .addParam(variantId)
                     .loadResult();
+        }
+
+        // [FD-36897] Net-loss detector: originalContentletIds mirrors the DELETE's WHERE clause, so any
+        // id in it that is absent from the posted multiTrees is content this save is permanently dropping.
+        final Set<String> fd36897PostedChildIds = multiTrees.stream()
+                .map(MultiTree::getContentlet)
+                .collect(java.util.stream.Collectors.toSet());
+        final List<String> fd36897DroppedChildIds = originalContentletIds.stream()
+                .filter(id -> !fd36897PostedChildIds.contains(id))
+                .collect(java.util.stream.Collectors.toList());
+        if (!fd36897DroppedChildIds.isEmpty()) {
+            Logger.warn(this, String.format(
+                    "[FD-36897] overridesMT NET-LOSS: pageId=%s personalization=%s variant=%s lang=%s before=%d posted=%d dropped=%d ids=%s",
+                    pageId, personalization, variantId,
+                    languageIdOpt.map(String::valueOf).orElse("none"),
+                    originalContentletIds.size(), multiTrees.size(),
+                    fd36897DroppedChildIds.size(), fd36897DroppedChildIds));
         }
 
         if (!multiTrees.isEmpty()) {
