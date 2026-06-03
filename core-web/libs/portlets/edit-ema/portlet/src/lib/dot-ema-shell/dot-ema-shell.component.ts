@@ -211,6 +211,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
         const page = this.uveStore.pageAsset()?.page;
+
         const status = this.uveStore.uveStatus();
 
         return page && status === UVE_STATUS.LOADED ? page : null;
@@ -223,11 +224,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
         const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
 
         this.#globalStore.addNewBreadcrumb({
-            label: page.title,
+            label,
             url: `/dotAdmin/#${urlTree.toString()}`,
-            id: `${page.identifier}`
+            id: `${identifier}`
         });
     });
 
