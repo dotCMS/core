@@ -200,8 +200,8 @@ public class PageResourceHelper implements Serializable {
             }
         }
         Logger.warn(this, String.format(
-                "[FD-36897] saveContent: pageId=%s lang=%d variant=%s containers=%d totalContentlets=%d entries=[%s]",
-                pageId, language.getId(), variantName,
+                "[FD-36897] saveContent: pageId=%s user=%s lang=%d variant=%s containers=%d totalContentlets=%d entries=[%s]",
+                pageId, (user != null ? user.getUserId() : "null"), language.getId(), variantName,
                 containerEntries.size(),
                 containerEntries.stream().mapToInt(e -> e.getContentIds().size()).sum(),
                 containerEntries.stream()
