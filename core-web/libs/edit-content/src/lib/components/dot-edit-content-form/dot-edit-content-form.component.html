@@ -109,6 +109,7 @@
                     data-testid="content-lock-controls">
                     <p-toggleSwitch
                         [ngModel]="isContentLocked"
+                        [ngModelOptions]="{ standalone: true }"
                         [disabled]="!canLock"
                         (onChange)="onContentLockChange($event)"
                         inputId="lockSwitch"
