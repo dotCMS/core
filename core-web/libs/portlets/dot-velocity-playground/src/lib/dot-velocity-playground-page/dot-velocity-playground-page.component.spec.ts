@@ -302,14 +302,10 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         it('renders Share and Export buttons when there is output', () => {
             loadedSetup();
             expect(
-                spectator
-                    .query(byTestId('velocity-playground-share-btn'))
-                    ?.querySelector('button')
+                spectator.query(byTestId('velocity-playground-share-btn'))?.querySelector('button')
             ).toBeTruthy();
             expect(
-                spectator
-                    .query(byTestId('velocity-playground-export-btn'))
-                    ?.querySelector('button')
+                spectator.query(byTestId('velocity-playground-export-btn'))?.querySelector('button')
             ).toBeTruthy();
         });
 

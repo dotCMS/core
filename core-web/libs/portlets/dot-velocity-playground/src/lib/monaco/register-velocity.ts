@@ -76,10 +76,7 @@ const VELOCITY_PLAYGROUND_GRAMMAR = {
 
             // Velocity directives — match before generic identifiers so `#set` etc. win
             [/#dotParse\b/, 'keyword.dotparse.velocity'],
-            [
-                /#(foreach|if|else|elseif|end|set|parse|include|macro|stop)\b/,
-                'keyword.velocity'
-            ],
+            [/#(foreach|if|else|elseif|end|set|parse|include|macro|stop)\b/, 'keyword.velocity'],
 
             // Velocity variables — `$name`, `${name}`, optional silent `!`
             [/\$!?\{[^}]+\}/, 'variable.velocity'],
