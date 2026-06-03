@@ -46,17 +46,17 @@ const EMPTY_VALUES = {
                     [formGroup]="form"
                     class="flex flex-col gap-3 p-3"
                     (keydown.enter)="$event.preventDefault(); onApply()">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide m-0">
+                    <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                         {{ 'dot.block.editor.dialog.table-properties.title' | dm }}
                     </p>
 
-                    <label class="flex items-center gap-2 cursor-pointer" for="tbl-has-caption">
+                    <label class="flex cursor-pointer items-center gap-2" for="tbl-has-caption">
                         <input
                             id="tbl-has-caption"
                             type="checkbox"
                             formControlName="hasCaption"
                             data-testid="tbl-has-caption"
-                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                            class="size-4 rounded-sm border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                         <span class="text-sm text-gray-700">
                             {{ 'dot.block.editor.dialog.table-properties.add-caption' | dm }}
                         </span>
@@ -72,7 +72,7 @@ const EMPTY_VALUES = {
                             formControlName="caption"
                             data-testid="tbl-caption"
                             [attr.disabled]="form.controls.hasCaption.value ? null : true"
-                            class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400" />
+                            class="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400" />
                     </div>
 
                     <div class="flex flex-col gap-1">
@@ -84,7 +84,7 @@ const EMPTY_VALUES = {
                             type="text"
                             formControlName="ariaLabel"
                             data-testid="tbl-aria-label"
-                            class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
+                            class="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
                     <div class="flex flex-col gap-1">
@@ -96,7 +96,7 @@ const EMPTY_VALUES = {
                             type="text"
                             formControlName="ariaLabelledby"
                             data-testid="tbl-aria-labelledby"
-                            class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
+                            class="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
                     <div class="flex justify-end gap-2 pt-1">
@@ -104,14 +104,14 @@ const EMPTY_VALUES = {
                             type="button"
                             data-testid="tbl-cancel"
                             (mousedown)="$event.preventDefault(); manager.close()"
-                            class="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            class="rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
                             {{ 'dot.common.cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             data-testid="tbl-apply"
                             (mousedown)="$event.preventDefault(); onApply()"
-                            class="rounded bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            class="rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
                             {{ 'dot.common.apply' | dm }}
                         </button>
                     </div>

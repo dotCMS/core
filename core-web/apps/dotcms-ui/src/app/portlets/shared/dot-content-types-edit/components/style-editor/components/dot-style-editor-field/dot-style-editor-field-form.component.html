@@ -4,20 +4,20 @@
     (collapsedChange)="$isCollapsed.set($event)"
     [pt]="$panelPT()">
     <ng-template pTemplate="header">
-        <div class="flex items-center gap-2 flex-1 min-w-0">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
             <p-button
                 [icon]="$isCollapsed() ? 'pi pi-chevron-right' : 'pi pi-chevron-down'"
                 [text]="true"
                 size="small"
                 (onClick)="$isCollapsed.set(!$isCollapsed())" />
-            <span class="text-sm font-medium text-gray-700 truncate">
+            <span class="truncate text-sm font-medium text-gray-700">
                 {{ $label() || ('style.editor.form.builder.field.new' | dm) }}
             </span>
         </div>
     </ng-template>
 
     <ng-template pTemplate="icons">
-        <div class="flex items-center gap-0.5 invisible group-hover/field:visible">
+        <div class="invisible flex items-center gap-0.5 group-hover/field:visible">
             <p-button
                 data-testid="delete-field-btn"
                 icon="pi pi-trash"
@@ -26,7 +26,7 @@
                 size="small"
                 [title]="'style.editor.form.builder.field.delete.title' | dm"
                 (onClick)="delete.emit()" />
-            <span class="inline-block w-px h-4 bg-gray-300 mx-0.5 self-center"></span>
+            <span class="mx-0.5 inline-block h-4 w-px self-center bg-gray-300"></span>
             <p-button
                 data-testid="move-up-btn"
                 icon="pi pi-chevron-up"
@@ -51,7 +51,7 @@
         <div class="grid grid-cols-3 gap-3">
             <!-- Type -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 tracking-wide">
+                <label class="text-xs font-semibold tracking-wide text-gray-500">
                     {{ 'style.editor.form.builder.field.type.label' | dm }}
                 </label>
                 <p-select
@@ -81,7 +81,7 @@
                     [class.ng-invalid]="!!$labelError()"
                     [class.ng-dirty]="!!$labelError()" />
                 @if ($labelError()) {
-                    <small class="text-red-500 text-xs">{{ $labelError() }}</small>
+                    <small class="text-xs text-red-500">{{ $labelError() }}</small>
                 }
             </div>
 
@@ -101,7 +101,7 @@
                         [placeholder]="
                             'style.editor.form.builder.field.identifier.placeholder' | dm
                         "
-                        class="flex-1 min-w-0 font-mono text-sm"
+                        class="min-w-0 flex-1 font-mono text-sm"
                         [class.text-gray-400]="!$identifierTouched()"
                         [class.bg-gray-50]="!$identifierTouched()"
                         [class.ng-invalid]="!!$identifierError()"
@@ -117,7 +117,7 @@
                     }
                 </div>
                 @if ($identifierError()) {
-                    <small class="text-red-500 text-xs">{{ $identifierError() }}</small>
+                    <small class="text-xs text-red-500">{{ $identifierError() }}</small>
                 }
             </div>
         </div>
@@ -125,9 +125,9 @@
         <!-- Input-specific: placeholder -->
         @if ($type() === 'input') {
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 tracking-wide">
+                <label class="text-xs font-semibold tracking-wide text-gray-500">
                     {{ 'style.editor.form.builder.field.description.label' | dm }}
-                    <span class="normal-case font-normal text-gray-400 ml-1">
+                    <span class="ml-1 font-normal text-gray-400 normal-case">
                         {{ 'style.editor.form.builder.field.description.optional' | dm }}
                     </span>
                 </label>
@@ -153,7 +153,7 @@
                             {{ 'style.editor.form.builder.field.options.label' | dm }}
                         </label>
                         @if ($optionsCountError()) {
-                            <small class="text-red-500 text-xs">{{ $optionsCountError() }}</small>
+                            <small class="text-xs text-red-500">{{ $optionsCountError() }}</small>
                         }
                     </div>
                     @if ($type() === 'radio') {
@@ -173,10 +173,10 @@
                 </div>
 
                 <!-- Options card -->
-                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col gap-2">
+                <div class="flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <!-- Column headers -->
                     <div
-                        class="grid grid-cols-2 gap-2 text-xs font-medium text-gray-400 pl-6 pr-16">
+                        class="grid grid-cols-2 gap-2 pr-16 pl-6 text-xs font-medium text-gray-400">
                         <span>
                             {{ 'style.editor.form.builder.field.option.label.column' | dm }}
                         </span>
@@ -193,7 +193,7 @@
                     <div class="flex flex-col gap-3">
                         @for (opt of $options(); track $index; let i = $index) {
                             <div
-                                class="grid gap-x-2 gap-y-3 items-center group/option [grid-template-columns:1rem_1fr_auto]">
+                                class="group/option grid grid-cols-[1rem_1fr_auto] items-center gap-x-2 gap-y-3">
                                 <!-- Col 1: decorative icon -->
                                 <div class="flex justify-center">
                                     @if ($type() === 'radio') {
@@ -218,7 +218,7 @@
                                             [class.ng-invalid]="!!$optionErrors()[i]?.label"
                                             [class.ng-dirty]="!!$optionErrors()[i]?.label" />
                                         @if ($optionErrors()[i]?.label) {
-                                            <small class="text-red-500 text-xs">
+                                            <small class="text-xs text-red-500">
                                                 {{ $optionErrors()[i]?.label }}
                                             </small>
                                         }
@@ -237,7 +237,7 @@
                                                 [class.ng-invalid]="!!$optionErrors()[i]?.key"
                                                 [class.ng-dirty]="!!$optionErrors()[i]?.key" />
                                             @if ($optionErrors()[i]?.key) {
-                                                <small class="text-red-500 text-xs">
+                                                <small class="text-xs text-red-500">
                                                     {{ $optionErrors()[i]?.key }}
                                                 </small>
                                             }
@@ -256,7 +256,7 @@
                                                 [class.ng-invalid]="!!$optionErrors()[i]?.value"
                                                 [class.ng-dirty]="!!$optionErrors()[i]?.value" />
                                             @if ($optionErrors()[i]?.value) {
-                                                <small class="text-red-500 text-xs">
+                                                <small class="text-xs text-red-500">
                                                     {{ $optionErrors()[i]?.value }}
                                                 </small>
                                             }
@@ -339,7 +339,7 @@
                                             [class.ng-invalid]="!!$optionErrors()[i]?.imageURL"
                                             [class.ng-dirty]="!!$optionErrors()[i]?.imageURL" />
                                         @if ($optionErrors()[i]?.imageURL) {
-                                            <small class="text-red-500 text-xs">
+                                            <small class="text-xs text-red-500">
                                                 {{ $optionErrors()[i]?.imageURL }}
                                             </small>
                                         }

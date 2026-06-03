@@ -28,7 +28,7 @@
 }
 
 <p-popover #popover>
-    <div class="flex flex-col min-w-2xl max-w-2xl h-[420px] overflow-hidden" [id]="id()">
+    <div class="flex h-[420px] max-w-2xl min-w-2xl flex-col overflow-hidden" [id]="id()">
         <!-- DataView with grid layout -->
         <p-dataview
             [dt]="{
@@ -76,15 +76,15 @@
             layout="grid">
             <ng-template #header>
                 <!-- Header with site selector and search -->
-                <div class="flex flex-col gap-4 mb-4">
+                <div class="mb-4 flex flex-col gap-4">
                     @if ($state.error()) {
                         <div
-                            class="p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+                            class="rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                             <i class="pi pi-exclamation-triangle mr-2"></i>
                             {{ $state.error() }}
                         </div>
                     }
-                    <div class="flex flex-row gap-4 items-center">
+                    <div class="flex flex-row items-center gap-4">
                         <dot-site
                             [value]="$state.hostId()"
                             (onChange)="onSiteChange($event)"
@@ -109,7 +109,7 @@
                 <div class="grid grid-cols-12 gap-4">
                     @for (theme of items; track theme.identifier) {
                         <div class="col-span-4">
-                            <label [for]="'theme-' + theme.identifier" class="cursor-pointer block">
+                            <label [for]="'theme-' + theme.identifier" class="block cursor-pointer">
                                 <div class="hidden">
                                     <p-radioButton
                                         [inputId]="'theme-' + theme.identifier"
@@ -120,7 +120,7 @@
                                         [disabled]="$disabled()" />
                                 </div>
                                 <p-card
-                                    class="hover:scale-105 transition-all duration-200"
+                                    class="transition-all duration-200 hover:scale-105"
                                     [class.opacity-50]="$disabled()"
                                     [dt]="{
                                         root: {
@@ -131,14 +131,14 @@
                                         }
                                     }">
                                     <ng-template #header>
-                                        <div class="flex items-center justify-center min-h-[90px]">
+                                        <div class="flex min-h-[90px] items-center justify-center">
                                             <div
-                                                class="w-full aspect-16/8 flex items-center justify-center bg-gray-900/5">
+                                                class="flex aspect-16/8 w-full items-center justify-center bg-gray-900/5">
                                                 @if (theme.themeThumbnail) {
                                                     <img
                                                         [src]="getThemeThumbnailUrl(theme)"
                                                         [alt]="theme.title"
-                                                        class="w-full h-full object-cover"
+                                                        class="size-full object-cover"
                                                         style="display: block" />
                                                 } @else {
                                                     <i
@@ -150,10 +150,10 @@
                                         </div>
                                     </ng-template>
                                     <div>
-                                        <p class="font-medium m-0">
+                                        <p class="m-0 font-medium">
                                             {{ theme.title }}
                                         </p>
-                                        <span class="text-sm truncate-text block">
+                                        <span class="truncate-text block text-sm">
                                             {{ theme.path }}
                                         </span>
                                     </div>

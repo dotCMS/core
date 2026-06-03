@@ -33,7 +33,7 @@
                 [dotTabViewAppend]="appendContent"
                 [dotTabViewAppendContext]="$appendContext" />
 
-            <p-tablist class="border-b border-[var(--p-inputtext-border-color)] px-8">
+            <p-tablist class="border-b border-surface-200 px-8">
                 <!--
                 WARNING: TABS MUST NOT BE LAZY!
                 Custom fields need to execute code that doesn't depend on whether the tab is active or not.
@@ -60,7 +60,7 @@
             <div class="p-4">
                 @for (row of tab.layout; track row) {
                     <div
-                        class="grid grid-flow-col auto-cols-fr gap-4 mb-4 last:mb-0"
+                        class="mb-4 grid auto-cols-fr grid-flow-col gap-4 last:mb-0"
                         [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
                         data-testId="row">
                         @for (column of row.columns; track column) {
@@ -97,7 +97,7 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="flex items-center w-full min-h-[50px] gap-4 ml-auto"
+        class="ml-auto flex min-h-[50px] w-full items-center gap-4"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
@@ -109,6 +109,7 @@
                     data-testid="content-lock-controls">
                     <p-toggleSwitch
                         [ngModel]="isContentLocked"
+                        [ngModelOptions]="{ standalone: true }"
                         [disabled]="!canLock"
                         (onChange)="onContentLockChange($event)"
                         inputId="lockSwitch"
@@ -155,7 +156,7 @@
 
         <!-- Sidebar toggle: always visible, icon reflects open/closed state (matches UVE pattern) -->
         <div
-            class="flex items-center min-h-[52px] shrink-0 justify-center -mr-4"
+            class="-mr-4 flex min-h-[52px] shrink-0 items-center justify-center"
             data-testId="sidebar-toggle">
             <p-button
                 [rounded]="true"
