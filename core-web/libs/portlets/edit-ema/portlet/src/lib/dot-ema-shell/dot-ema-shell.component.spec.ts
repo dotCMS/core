@@ -1232,6 +1232,34 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
             });
+
+            it('should fall back to page title and identifier when urlContentMap is absent', async () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            title: 'Page Title',
+                            identifier: 'page-id'
+                        },
+                        urlContentMap: null
+                    })
+                );
+
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                store.pageLoad(INITIAL_PAGE_PARAMS);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Page Title',
+                        id: 'page-id',
+                        url: expect.stringContaining('url=index')
+                    })
+                );
+            });
         });
     });
 
