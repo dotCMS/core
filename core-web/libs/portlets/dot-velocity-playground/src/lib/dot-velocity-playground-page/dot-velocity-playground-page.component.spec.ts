@@ -212,8 +212,8 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         it('useExample loads the snippet into the editor and hides the popover', () => {
             const store = setup();
             const hideSpy = jest.fn();
-            // Stub the viewChild signal so we don't depend on PrimeNG popover internals
-            Object.defineProperty(spectator.component, 'helpPopover', {
+            // Stub the $helpPopover viewChild so we don't depend on PrimeNG popover internals
+            Object.defineProperty(spectator.component, '$helpPopover', {
                 value: () => ({ hide: hideSpy })
             });
             spectator.component.useExample('#set($x = 1)');
@@ -346,13 +346,17 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(payload).toContain('"velocity": "#set($x = 1)"');
         });
 
-        it('downloadOutput appends an anchor whose filename matches the content type', () => {
+        it('clicking Export downloads a file with an extension matching the content type', () => {
             loadedSetup({ outputContentType: jest.fn().mockReturnValue('xml') });
             const createObjectUrlOriginal = URL.createObjectURL;
             URL.createObjectURL = jest.fn().mockReturnValue('blob:mock');
             const appendSpy = jest.spyOn(document.body, 'appendChild');
 
-            spectator.component.downloadOutput();
+            const exportBtn = spectator
+                .query(byTestId('velocity-playground-export-btn'))
+                ?.querySelector('button');
+            expect(exportBtn).toBeTruthy();
+            if (exportBtn) spectator.click(exportBtn);
 
             const anchorCall = appendSpy.mock.calls.find(
                 ([node]) => (node as HTMLElement).tagName === 'A'
@@ -366,13 +370,17 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
         it('toggleExportMenu delegates to the menu when the viewChild resolves', () => {
             loadedSetup();
-            const menu = spectator.component.exportMenu();
+            const menu = spectator.component.$exportMenu();
             if (!menu) {
                 // viewChild may not resolve in JSDOM with popup overlays — skip gracefully
                 return;
             }
             const toggleSpy = jest.spyOn(menu, 'toggle');
-            spectator.component.toggleExportMenu(new MouseEvent('click'));
+            const shareBtn = spectator
+                .query(byTestId('velocity-playground-share-btn'))
+                ?.querySelector('button');
+            expect(shareBtn).toBeTruthy();
+            if (shareBtn) spectator.click(shareBtn);
             expect(toggleSpy).toHaveBeenCalled();
         });
     });

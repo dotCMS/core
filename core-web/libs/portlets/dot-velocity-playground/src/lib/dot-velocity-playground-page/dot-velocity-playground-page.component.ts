@@ -75,6 +75,7 @@ interface VelocityHelpExample {
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
 })
 export class DotVelocityPlaygroundPageComponent {
+    // 1. Dependency Injection
     readonly store = inject(DotVelocityPlaygroundStore);
     readonly #messageService = inject(DotMessageService);
     readonly #globalMessage = inject(DotGlobalMessageService);
@@ -82,40 +83,12 @@ export class DotVelocityPlaygroundPageComponent {
     readonly #document = inject(DOCUMENT);
     readonly #monacoLoader = inject(MonacoEditorLoaderService);
 
-    constructor() {
-        // Register the Velocity language + custom theme as soon as Monaco's AMD
-        // loader is ready, before any <ngx-monaco-editor> instance is created.
-        // Without this, the editor mounts referencing `dot-velocity-dark` which
-        // doesn't exist yet and Monaco silently falls back to the default light
-        // theme.
-        this.#monacoLoader.isMonacoLoaded$
-            .pipe(
-                filter((isLoaded) => isLoaded),
-                take(1)
-            )
-            .subscribe(() => ensureVelocityLanguageRegistered());
-    }
-
-    readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
-    readonly exportMenu = viewChild<Menu>('exportMenu');
-
-    readonly exportItems: MenuItem[] = [
-        {
-            label: this.#messageService.get('velocityPlayground.copy.curl'),
-            command: () => this.#copyAs('curl')
-        },
-        {
-            label: this.#messageService.get('velocityPlayground.copy.fetch'),
-            command: () => this.#copyAs('fetch')
-        }
-    ];
-
-    readonly ComponentStatus = ComponentStatus;
-
-    readonly splitterPt = { root: { class: 'border-0! rounded-none! flex-1 min-h-0' } };
-
+    // 2. State signals (viewChild signals + local state) — $ prefix
+    readonly $helpPopover = viewChild.required<Popover>('helpPopoverEl');
+    readonly $exportMenu = viewChild<Menu>('exportMenu');
     readonly $historyOpen = signal(false);
 
+    // 3. Computed signals — $ prefix
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
         theme: VELOCITY_THEME_ID,
@@ -138,10 +111,25 @@ export class DotVelocityPlaygroundPageComponent {
         }))
     );
 
+    // 4. Template-bound static configuration
+    readonly ComponentStatus = ComponentStatus;
+    readonly splitterPt = { root: { class: 'border-0! rounded-none! flex-1 min-h-0' } };
+
+    readonly exportItems: MenuItem[] = [
+        {
+            label: this.#messageService.get('velocityPlayground.copy.curl'),
+            command: () => this.#copyAs('curl')
+        },
+        {
+            label: this.#messageService.get('velocityPlayground.copy.fetch'),
+            command: () => this.#copyAs('fetch')
+        }
+    ];
+
     readonly emptyOutputConfig: PrincipalConfiguration = {
-        title: this.#messageService.get('velocityPlayground.output.empty.title'),
-        subtitle: this.#messageService.get('velocityPlayground.output.empty'),
-        icon: 'pi-play'
+        title: this.#messageService.get('velocityPlayground.output.empty'),
+        subtitle: this.#messageService.get('velocityPlayground.output.empty.hint'),
+        icon: 'pi-search'
     };
 
     readonly helpExamples: VelocityHelpExample[] = [
@@ -167,6 +155,22 @@ export class DotVelocityPlaygroundPageComponent {
         }
     ];
 
+    // 5. Lifecycle
+    constructor() {
+        // Register the Velocity language + custom theme as soon as Monaco's AMD
+        // loader is ready, before any <ngx-monaco-editor> instance is created.
+        // Without this, the editor mounts referencing `dot-velocity-dark` which
+        // doesn't exist yet and Monaco silently falls back to the default light
+        // theme.
+        this.#monacoLoader.isMonacoLoaded$
+            .pipe(
+                filter((isLoaded) => isLoaded),
+                take(1)
+            )
+            .subscribe(() => ensureVelocityLanguageRegistered());
+    }
+
+    // 6. Public methods
     onEditorInit(): void {
         ensureVelocityLanguageRegistered();
     }
@@ -190,7 +194,7 @@ export class DotVelocityPlaygroundPageComponent {
 
     useExample(code: string): void {
         this.store.setCode(code);
-        this.helpPopover().hide();
+        this.$helpPopover().hide();
     }
 
     copyToClipboard(value: unknown): void {
@@ -198,7 +202,7 @@ export class DotVelocityPlaygroundPageComponent {
     }
 
     toggleExportMenu(event: MouseEvent): void {
-        this.exportMenu()?.toggle(event);
+        this.$exportMenu()?.toggle(event);
     }
 
     downloadOutput(): void {
@@ -218,6 +222,7 @@ export class DotVelocityPlaygroundPageComponent {
         this.#document.body.removeChild(link);
     }
 
+    // 7. Private helpers
     #copyAs(format: 'curl' | 'fetch'): void {
         const path = '/api/vtl/dynamic/';
         const origin = this.#document.defaultView?.location.origin ?? '';

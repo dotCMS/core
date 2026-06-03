@@ -11,13 +11,7 @@ import { DotVelocityPlaygroundPageComponent } from '../dot-velocity-playground-p
 @Component({
     selector: 'dot-velocity-playground-shell',
     imports: [DotVelocityPlaygroundPageComponent, DotEmptyContainerComponent],
-    template: `
-        @if ($isLicensed()) {
-            <dot-velocity-playground-page />
-        } @else {
-            <dot-empty-container [configuration]="unlicensedConfig" [hideContactUsLink]="true" />
-        }
-    `,
+    templateUrl: './dot-velocity-playground-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })

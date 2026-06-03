@@ -10,7 +10,7 @@
             <!-- Editor header panel — title + help + wrap toggle -->
             <p-panel
                 [pt]="{
-                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' },
+                    root: { class: 'shrink-0 border-0! rounded-none! shadow-none!' },
                     header: { class: 'min-h-14 px-4! py-2!' },
                     content: { class: 'hidden!' }
                 }"
@@ -28,7 +28,7 @@
                             [pTooltip]="'velocityPlayground.action.help' | dm"
                             tooltipPosition="top"
                             [attr.aria-label]="'velocityPlayground.action.help' | dm"
-                            (onClick)="helpPopover().toggle($event)"
+                            (onClick)="$helpPopover().toggle($event)"
                             data-testid="velocity-playground-help-btn" />
                     </div>
                 </ng-template>
@@ -65,7 +65,7 @@
                 (collapsedChange)="$historyOpen.set(!$event)"
                 [pt]="{
                     root: {
-                        class: 'border-x-0! border-b-0! rounded-none! shadow-none! flex-shrink-0 border-t border-surface-200'
+                        class: 'border-x-0! border-b-0! rounded-none! shadow-none! shrink-0 border-t border-surface-200'
                     },
                     content: { class: 'p-0!' }
                 }"
@@ -73,7 +73,7 @@
                 <ng-template pTemplate="headericons">
                     <i [class]="$historyOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
-                <div class="form px-3 py-3" data-testid="velocity-playground-history-content">
+                <div class="form p-3" data-testid="velocity-playground-history-content">
                     <div class="field">
                         <label for="velocity-playground-history">
                             {{ 'velocityPlayground.history.recent' | dm }}
@@ -107,7 +107,7 @@
 
             <!-- Run footer -->
             <div
-                class="flex items-center justify-end px-3 py-3 border-t border-surface-200 bg-surface-0 flex-shrink-0"
+                class="flex items-center justify-end p-3 border-t border-surface-200 bg-surface-0 shrink-0"
                 data-testid="velocity-playground-run-footer">
                 <p-button
                     [label]="'velocityPlayground.action.run' | dm"
@@ -127,7 +127,7 @@
                     severity="error"
                     icon="pi pi-exclamation-triangle"
                     [pt]="{
-                        root: { class: '!rounded-none border-x-0! border-t-0! flex-shrink-0' }
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
                     }"
                     data-testid="velocity-playground-error-banner">
                     {{ store.errorMessage() | dm }}
@@ -151,7 +151,7 @@
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="flex items-center gap-2 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
+                    class="flex items-center gap-2 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary shrink-0"
                     data-testid="velocity-playground-stats-bar">
                     <div class="flex items-center gap-1.5">
                         @if (store.hasOutput()) {

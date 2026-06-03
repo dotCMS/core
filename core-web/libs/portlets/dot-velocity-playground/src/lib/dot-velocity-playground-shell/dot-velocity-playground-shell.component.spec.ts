@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
@@ -36,13 +36,13 @@ describe('DotVelocityPlaygroundShellComponent', () => {
 
     it('renders the playground page when the instance is enterprise-licensed', () => {
         const spectator = setup(true);
-        expect(spectator.query('dot-velocity-playground-page')).toBeTruthy();
-        expect(spectator.query('dot-empty-container')).toBeFalsy();
+        expect(spectator.query(byTestId('velocity-playground-licensed-content'))).toBeTruthy();
+        expect(spectator.query(byTestId('velocity-playground-unlicensed'))).toBeFalsy();
     });
 
     it('renders the unlicensed empty container when the instance is not licensed', () => {
         const spectator = setup(false);
-        expect(spectator.query('dot-velocity-playground-page')).toBeFalsy();
-        expect(spectator.query('dot-empty-container')).toBeTruthy();
+        expect(spectator.query(byTestId('velocity-playground-licensed-content'))).toBeFalsy();
+        expect(spectator.query(byTestId('velocity-playground-unlicensed'))).toBeTruthy();
     });
 });
