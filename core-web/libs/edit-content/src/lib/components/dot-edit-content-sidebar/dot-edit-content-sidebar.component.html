@@ -7,15 +7,15 @@
 @let isLoadingInformation = $store.isLoadingInformation();
 @let referencePagesCount = $store.information.relatedContent();
 
-<aside class="overflow-auto w-full h-full">
+<aside class="size-full overflow-auto">
     <p-tabs
         [value]="activeIndex"
         (valueChange)="onActiveIndexChange($event)"
-        class="h-full flex flex-col"
+        class="flex h-full flex-col"
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <p-tablist
-            class="border-b border-(--p-inputtext-border-color) min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px">
+            class="min-h-[53px] border-b border-(--p-inputtext-border-color) [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
             <p-tab
                 [value]="0"
                 [pTooltip]="'edit.content.sidebar.tab.information' | dm"
@@ -45,10 +45,10 @@
         </p-tablist>
         <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
         <p-tabpanels
-            class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
-            <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
+            class="flex h-full min-h-0 flex-1 flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
+            <p-tabpanel [value]="0" class="flex h-full min-h-0 flex-col">
                 <!-- Information tab content — padding lives on this first inner wrapper -->
-                <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                <div class="flex h-full min-h-0 flex-col px-4 pt-3">
                     <!-- Information section -->
                     <dot-edit-content-sidebar-section
                         [title]="'edit.content.sidebar.general.title' | dm">
@@ -98,7 +98,7 @@
                     </dot-edit-content-sidebar-section>
                 </div>
             </p-tabpanel>
-            <p-tabpanel [value]="1" class="h-full min-h-0 flex flex-col">
+            <p-tabpanel [value]="1" class="flex h-full min-h-0 flex-col">
                 <!-- History section -->
                 <dot-edit-content-sidebar-history
                     [historyItems]="$versionsItems()"
@@ -114,7 +114,7 @@
                     (deletePushPublishHistory)="onDeletePushPublishHistory()"
                     data-testId="history" />
             </p-tabpanel>
-            <p-tabpanel [value]="2" class="h-full min-h-0 flex flex-col">
+            <p-tabpanel [value]="2" class="flex h-full min-h-0 flex-col">
                 <!-- Activities section -->
                 <dot-edit-content-sidebar-activities
                     [initialContentletState]="$initialContentletState()"
@@ -125,9 +125,9 @@
                     data-testId="activities" />
             </p-tabpanel>
             @if (!isNew) {
-                <p-tabpanel [value]="3" class="h-full min-h-0 flex flex-col">
+                <p-tabpanel [value]="3" class="flex h-full min-h-0 flex-col">
                     <!-- Settings tab content — padding lives on this first inner wrapper -->
-                    <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                    <div class="flex h-full min-h-0 flex-col px-4 pt-3">
                         <!-- Permissions section -->
                         <dot-edit-content-sidebar-permissions
                             [identifier]="$identifier() ?? ''"

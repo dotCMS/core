@@ -8,7 +8,7 @@ export interface WorkflowActionCreated {
     schemeId: string;
     assignable: boolean;
     commentable: boolean;
-    actionInputs: Array<{ id: string; body: Record<string, unknown> }>;
+    actionInputs: { id: string; body: Record<string, unknown> }[];
 }
 
 function authHeaders() {

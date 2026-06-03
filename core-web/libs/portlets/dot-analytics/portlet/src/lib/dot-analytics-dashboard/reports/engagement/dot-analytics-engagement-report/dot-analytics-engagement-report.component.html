@@ -13,7 +13,7 @@
 
     <div class="flex h-full min-h-0 min-w-0 flex-col md:col-span-9">
         <dot-analytics-metric
-            class="min-h-0 h-full flex-1"
+            class="h-full min-h-0 flex-1"
             [title]="'analytics.engagement.metrics.engagement-rate'"
             [value]="kpis?.engagementRate?.value ?? null"
             [format]="kpis?.engagementRate?.format ?? 'percentage'"
@@ -24,7 +24,7 @@
             <i
                 titleAction
                 data-testid="engagement-info-icon"
-                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
+                class="pi pi-info-circle text-color-secondary ml-2 cursor-pointer"
                 (click)="$showCalculationDialog.set(true)"></i>
             <dot-analytics-sparkline
                 [datasets]="$sparklineDatasets()"
@@ -35,7 +35,7 @@
     </div>
 
     @defer (on viewport) {
-        <div class="flex min-h-0 min-w-0 w-full flex-col md:col-span-3">
+        <div class="flex min-h-0 w-full min-w-0 flex-col md:col-span-3">
             <dot-analytics-pie-chart
                 class="min-h-0 w-full flex-1"
                 [title]="'analytics.engagement.charts.breakdown.title'"
@@ -89,7 +89,7 @@
     @defer (on viewport) {
         <div class="contents">
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                class="flex size-full min-h-0 min-w-0 flex-col *:min-h-0 *:w-full *:min-w-0 *:flex-1 md:col-span-4">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.language.title'"
                     [data]="$platforms()?.language ?? []"
@@ -99,7 +99,7 @@
                     data-testid="analytics-engagement-language-chart" />
             </div>
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                class="flex size-full min-h-0 min-w-0 flex-col *:min-h-0 *:w-full *:min-w-0 *:flex-1 md:col-span-4">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.browser.title'"
                     [data]="$platforms()?.browser ?? []"
@@ -109,7 +109,7 @@
                     data-testid="analytics-engagement-browser-chart" />
             </div>
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                class="flex size-full min-h-0 min-w-0 flex-col *:min-h-0 *:w-full *:min-w-0 *:flex-1 md:col-span-4">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.device.title'"
                     [data]="$platforms()?.device ?? []"
@@ -138,10 +138,10 @@
     <p class="text-color-secondary mt-0">
         {{ 'analytics.engagement.dialog.how-calculated.intro' | dm }}
     </p>
-    <p class="font-semibold mb-2">
+    <p class="mb-2 font-semibold">
         {{ 'analytics.engagement.dialog.how-calculated.criteria-title' | dm }}
     </p>
-    <ul class="pl-4 m-0">
+    <ul class="m-0 pl-4">
         <li class="mb-2">{{ 'analytics.engagement.dialog.how-calculated.criteria-time' | dm }}</li>
         <li class="mb-2">
             {{ 'analytics.engagement.dialog.how-calculated.criteria-pageviews' | dm }}
