@@ -587,6 +587,28 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     }
 
     @Test
+    public void Find_Schemes_By_Content_Type_List_Deduplicates_UUID_And_Variable_Name() throws Exception {
+        // F-2: passing both the UUID and variable name of the same content type must
+        // produce a single entry in the response, not two separate entries
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType.id(), contentType.variable()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals("UUID and variable name for the same CT should deduplicate to one entry", 1, result.size());
+            assertEquals(contentType.id(), result.get(0).contentTypeId());
+            assertEquals(contentType.variable(), result.get(0).contentTypeVariable());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
     public void Find_Schemes_By_Content_Type_List_Exceeds_Max_Size_Expect_BadRequest() {
         final List<String> tooManyIds = new java.util.ArrayList<>();
         for (int i = 0; i <= 100; i++) {
