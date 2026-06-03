@@ -5,14 +5,14 @@
     [class.border-color-error]="$hasError()"
     [class]="
         $vertical()
-            ? 'dot-file-field__container flex min-h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 p-2'
-            : 'dot-file-field__container flex min-h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 p-2 min-[306px]:flex-row'
+            ? 'dot-file-field__container flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2'
+            : 'dot-file-field__container flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2 min-[306px]:flex-row'
     ">
     @switch (store.fileStatus()) {
         @case ('init') {
             <div
                 [ngClass]="store.dropZoneActive() ? 'border-blue-500 bg-white shadow-lg' : ''"
-                class="mb-2 h-full w-full flex-1 overflow-auto rounded-md border border-dashed border-gray-400 min-[306px]:mb-0 min-[306px]:mr-2"
+                class="mb-2 size-full flex-1 overflow-auto rounded-md border border-dashed border-gray-400 min-[306px]:mr-2 min-[306px]:mb-0"
                 [class.pointer-events-none]="$isDisabled()">
                 <input
                     #inputFile
@@ -36,7 +36,7 @@
                         <button
                             (click)="inputFile.click()"
                             [disabled]="$isDisabled()"
-                            class="cursor-pointer border-0 bg-transparent pl-1 p-0 text-base font-normal text-blue-600 underline disabled:cursor-not-allowed disabled:text-gray-400"
+                            class="cursor-pointer border-0 bg-transparent p-0 pl-1 text-base font-normal text-blue-600 underline disabled:cursor-not-allowed disabled:text-gray-400"
                             data-testId="choose-file-btn"
                             type="button">
                             {{ 'dot.file.field.action.choose.file' | dm }}

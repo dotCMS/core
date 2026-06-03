@@ -2,7 +2,7 @@
 
 <!-- Thumbnail fills full height -->
 <div
-    class="h-full w-20 shrink-0 overflow-hidden flex items-center justify-center"
+    class="flex h-full w-20 shrink-0 items-center justify-center overflow-hidden"
     [ngClass]="
         $isIconThumbnail()
             ? 'bg-gray-100 group-hover:bg-(--color-palette-primary-200) group-hover:[--gray-700:var(--color-palette-primary-600)]'
@@ -12,7 +12,7 @@
          dot-contentlet-thumbnail > dot-contentlet-icon (shadow DOM) for icon color -->
     <dot-contentlet-thumbnail
         data-testid="contentlet-thumbnail"
-        class="pointer-events-none h-full w-full *:h-full *:w-full [&_img]:h-full [&_img]:w-full [&_img]:object-cover"
+        class="pointer-events-none size-full *:size-full [&_img]:size-full [&_img]:object-cover"
         [contentlet]="contentlet"
         [iconSize]="'32px'" />
 </div>
@@ -20,6 +20,6 @@
 <!-- Title -->
 <div
     data-testid="contentlet-title"
-    class="min-w-0 flex-1 truncate text-sm leading-tight text-gray-800 pl-3 pr-2 group-hover:text-(--color-palette-primary-700)">
+    class="min-w-0 flex-1 truncate pr-2 pl-3 text-sm leading-tight text-gray-800 group-hover:text-(--color-palette-primary-700)">
     {{ contentlet.title }}
 </div>

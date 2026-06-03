@@ -50,8 +50,16 @@
 }
 
 /* ─── Editor padding ────────────────────────────────────── */
+/*
+ * The left padding has to clear the left-margin furniture without it being clipped by
+ * `.editor-scroll-container` (whose `overflow-y: auto` forces `overflow-x: auto`, so it
+ * clips horizontally at x=0). Two things live in that left strip:
+ *   - the block gutter (~50px wide, pushed a further GUTTER_OFFSET=15px left), and
+ *   - the table row handle (protrudes 12px left of the table).
+ * 5rem (80px) keeps the gutter's left edge ~14px inside the clip boundary.
+ */
 :host ::ng-deep .tiptap {
-    padding: 2rem 4rem;
+    padding: 2rem 5rem;
 }
 
 /* ─── Scroll lock while overlays are open ───────────────── */
@@ -215,7 +223,7 @@
 :host ::ng-deep .tiptap td,
 :host ::ng-deep .tiptap th {
     border: 1px solid #e5e7eb;
-    padding: 4px 8px;
+    padding: 6px 10px;
     vertical-align: top;
     position: relative;
     min-width: 80px;
@@ -690,4 +698,11 @@
 :host ::ng-deep .ProseMirror .editor-block-target::selection {
     background: transparent;
     color: inherit;
+}
+
+/* ─── Exact selection highlight while the link popover is open (insert mode) ─── */
+/* Matches the `.link-editing` indigo tint so creating and editing a link look alike. */
+:host ::ng-deep .ProseMirror .editor-link-selection {
+    background-color: rgba(99, 102, 241, 0.18);
+    border-radius: 2px;
 }

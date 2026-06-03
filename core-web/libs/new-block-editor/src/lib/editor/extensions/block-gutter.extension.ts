@@ -1,4 +1,4 @@
-import { autoUpdate, computePosition, shift } from '@floating-ui/dom';
+import { autoUpdate, computePosition, offset, shift } from '@floating-ui/dom';
 
 import type { Editor } from '@tiptap/core';
 import { DragHandle, defaultComputePositionConfig } from '@tiptap/extension-drag-handle';
@@ -227,10 +227,21 @@ function ensureParentDragStartListener(
     registered.current = true;
 }
 
+/**
+ * Gap (px) the gutter keeps from the block's left edge.
+ *
+ * Tables render a row handle that protrudes 12px to the left of the table (it sits at
+ * `left: -12px` on the first-column cell — see `.dot-cell-handle--row` in
+ * editor.component.css). Without an offset the `left-start` gutter sits flush against the
+ * block edge and overlaps that handle. 15px clears the 12px protrusion with a 3px gap, and
+ * incidentally gives every block a little breathing room from its content.
+ */
+const GUTTER_OFFSET = 15;
+
 /** Must match `DragHandle.configure({ computePositionConfig })` so our updates align with TipTap. */
 const GUTTER_COMPUTE_POSITION_CONFIG = {
     ...defaultComputePositionConfig,
-    middleware: [shift({ padding: 8 })]
+    middleware: [offset(GUTTER_OFFSET), shift({ padding: 8 })]
 };
 
 /** Reads the hovered block's DOM and applies floating-ui's position to the wrapper. */
