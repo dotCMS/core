@@ -11,7 +11,9 @@
                     </p-accordion-header>
                     <p-accordion-content
                         [pt]="{
-                            root: { class: 'group/uve-section' },
+                            root: {
+                                class: 'group/uve-section data-[p-active=false]:overflow-hidden'
+                            },
                             content: { class: 'border-none!' }
                         }">
                         <div class="flex flex-col gap-4">
