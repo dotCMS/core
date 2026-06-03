@@ -3,8 +3,6 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DOT_AUTH_HIDDEN_SECRET_MASK, DotAuthOidcConfig } from '@dotcms/dotcms-models';
@@ -18,15 +16,7 @@ export interface OidcConnectionChange {
 @Component({
     selector: 'dot-auth-oidc-connection',
     standalone: true,
-    imports: [
-        FormsModule,
-        ButtonModule,
-        InputTextModule,
-        SelectModule,
-        ToggleSwitchModule,
-        TooltipModule,
-        DotMessagePipe
-    ],
+    imports: [FormsModule, ButtonModule, InputTextModule, TooltipModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-auth-oidc-connection.component.html',
     styleUrl: '../_dot-auth-shared.scss',
@@ -41,12 +31,6 @@ export class DotAuthOidcConnectionComponent {
     readonly discover = output<void>();
 
     readonly showAdvanced = signal(false);
-
-    readonly responseTypeOptions = [
-        { value: 'code', label: 'code (Authorization Code Flow)' },
-        { value: 'id_token', label: 'id_token (Implicit)' },
-        { value: 'code id_token', label: 'code id_token (Hybrid)' }
-    ];
 
     isSecretStored(): boolean {
         const secret = this.oidc().clientSecret;

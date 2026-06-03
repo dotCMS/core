@@ -37,4 +37,23 @@ public interface DotAuthSessionCache {
 
     /** Remove every active dotAuth session-ref. Used by dotAuth emergency controls. */
     void invalidateAll();
+
+    /**
+     * One-time-use guard for exchanged {@code id_token}s. Records that the token
+     * identified by {@code tokenFingerprint} (a hash of the id_token) has been consumed
+     * by the exchange flow.
+     *
+     * <p>Returns {@code true} when this is the first time the fingerprint has been seen
+     * (the caller may proceed) and {@code false} when it has already been consumed and the
+     * record has not yet expired (the caller must reject the request as a replay). The
+     * record self-expires at {@code expiresAtMillis} — set to the token's own {@code exp},
+     * after which the token is invalid anyway, so retaining the guard entry past that point
+     * is unnecessary.
+     *
+     * <p>This is a best-effort check-then-set (the underlying cache offers no atomic
+     * compare-and-set), so two requests racing within the same instant could both observe
+     * "first use". That window is irrelevant to the threat this defends against — replay of
+     * a <em>leaked</em> token minutes/hours later — which it closes.
+     */
+    boolean registerExchangeTokenUse(String tokenFingerprint, long expiresAtMillis);
 }

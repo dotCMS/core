@@ -25,6 +25,9 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
     /** Named cache group for dotAuth sessions. */
     public static final String CACHE_GROUP = "DotAuthSessionCache";
 
+    /** Named cache group for the exchanged-id_token one-time-use (replay) guard. */
+    public static final String REPLAY_CACHE_GROUP = "DotAuthTokenReplayCache";
+
     /** 32 bytes = 256 bits of entropy. */
     private static final int ENTROPY_BYTES = 32;
 
@@ -82,18 +85,35 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
     }
 
     @Override
+    public boolean registerExchangeTokenUse(final String tokenFingerprint, final long expiresAtMillis) {
+        if (!UtilMethods.isSet(tokenFingerprint)) {
+            // No fingerprint to track — let the caller proceed. Callers always derive one,
+            // so this only guards against a programming error rather than gating real traffic.
+            return true;
+        }
+        final Object raw = cache().getNoThrow(tokenFingerprint, REPLAY_CACHE_GROUP);
+        if (raw instanceof Long && System.currentTimeMillis() < (Long) raw) {
+            // Already consumed and the token has not yet expired -> replay.
+            return false;
+        }
+        cache().put(tokenFingerprint, Long.valueOf(expiresAtMillis), REPLAY_CACHE_GROUP);
+        return true;
+    }
+
+    @Override
     public String getPrimaryGroup() {
         return CACHE_GROUP;
     }
 
     @Override
     public String[] getGroups() {
-        return new String[]{CACHE_GROUP};
+        return new String[]{CACHE_GROUP, REPLAY_CACHE_GROUP};
     }
 
     @Override
     public void clearCache() {
-        invalidateAll();
+        cache().flushGroup(CACHE_GROUP);
+        cache().flushGroup(REPLAY_CACHE_GROUP);
     }
 
     private static DotCacheAdministrator cache() {

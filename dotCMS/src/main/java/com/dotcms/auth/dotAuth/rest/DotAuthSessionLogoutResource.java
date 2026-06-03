@@ -36,7 +36,7 @@ import org.glassfish.jersey.server.ContainerRequest;
  * oversight.
  */
 @Path("/v1/dotauth/oauth")
-@Tag(name = "dotAuth", description = "OAuth/OIDC token exchange for headless SPA consumers")
+@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST is the global default) and headless OIDC token exchange")
 public class DotAuthSessionLogoutResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
