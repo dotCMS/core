@@ -3,6 +3,7 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
+
 import { BuilderField, BuilderSection } from '../../models';
 
 const MOCK_MESSAGES: Record<string, string> = {

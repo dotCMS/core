@@ -2,8 +2,9 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { BuilderField } from '../../models';
 import { DotStyleEditorFieldFormComponent } from './dot-style-editor-field-form.component';
+
+import { BuilderField } from '../../models';
 
 const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.new': 'New Field',
