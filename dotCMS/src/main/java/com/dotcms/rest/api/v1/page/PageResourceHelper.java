@@ -199,6 +199,15 @@ public class PageResourceHelper implements Serializable {
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
+        Logger.warn(this, String.format(
+                "[FD-36897] saveContent: pageId=%s lang=%d variant=%s containers=%d totalContentlets=%d entries=[%s]",
+                pageId, language.getId(), variantName,
+                containerEntries.size(),
+                containerEntries.stream().mapToInt(e -> e.getContentIds().size()).sum(),
+                containerEntries.stream()
+                        .map(e -> e.getContainerId() + "(" + e.getContentIds().size() + ")")
+                        .collect(java.util.stream.Collectors.joining(", "))));
+
         for (final String personalization : multiTreesMap.keySet()) {
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
