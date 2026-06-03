@@ -1,14 +1,16 @@
 #
 # Release Java Variant Workflow
 #
-# This workflow builds alternate Java versions for a release, running in parallel
-# with the primary release workflow. It triggers automatically when the primary
-# release workflow creates a release branch.
+# This workflow builds alternate Java versions for a release. It is MANUAL-ONLY
+# (workflow_dispatch); the automatic trigger on release-* branches was removed
+# once Java 25 became the default build (see #33865), making the parallel
+# java-25 variant redundant with the primary release image.
 #
 # Architecture:
-# When the primary release workflow (cicd_6-release.yml) creates a release branch,
-# this workflow automatically triggers and runs in parallel. Both workflows build
-# from the SAME release branch and commit, ensuring identical source code.
+# Dispatch this workflow against a release branch/tag to build an alternate Java
+# variant from the SAME release source. Both the primary release and this variant
+# build from identical source code, differing only in Java version and artifact
+# suffix.
 #
 # This variant workflow:
 # - Uses alternate Java version for compilation (e.g., Java 25 vs Java 21)
@@ -31,9 +33,11 @@ name: '-7 Release Java Variant'
 run-name: "Release Java Variant - ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
 
 on:
-  push:
-    branches:
-      - 'release-*'
+  # NOTE: Automatic trigger on release-* branches has been removed.
+  # Java 25 is now the default build (see #33865), so the previously
+  # auto-built java-25 variant is redundant with the primary release image.
+  # This workflow is now manual-only and can be repurposed for other variants
+  # (e.g. a future java-11 build) via workflow_dispatch or repository variables.
   workflow_dispatch:
     inputs:
       release_branch:
