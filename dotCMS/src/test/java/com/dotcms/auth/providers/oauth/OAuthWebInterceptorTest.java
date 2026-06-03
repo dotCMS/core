@@ -54,6 +54,41 @@ class OAuthWebInterceptorTest {
                 OAuthWebInterceptor.sanitizeRedirect("/http:/evil.test", "/dotAdmin/"));
     }
 
+    @Test
+    void sanitizeRedirect_rejectsProtocolRelative() {
+        // //evil.test is treated by browsers as an absolute scheme-relative URL -> open redirect.
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("//evil.test", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_rejectsBackslashEscapedRoot() {
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("/\\evil.test", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_rejectsEmbeddedBackslash() {
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("/path\\x", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_nullReturnsFallback() {
+        assertEquals("/dotAdmin/", OAuthWebInterceptor.sanitizeRedirect(null, "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_emptyReturnsFallback() {
+        assertEquals("/dotAdmin/", OAuthWebInterceptor.sanitizeRedirect("", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_allowsNormalRelativePath() {
+        assertEquals("/dotAdmin/path?x=y",
+                OAuthWebInterceptor.sanitizeRedirect("/dotAdmin/path?x=y", "/dotAdmin/"));
+    }
+
     private static final class TestUser extends User {
         private final boolean backendUser;
         private final boolean frontendUser;

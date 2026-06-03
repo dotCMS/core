@@ -62,6 +62,15 @@ public class OIDCProvider implements OAuthProvider {
     private static final ConcurrentHashMap<String, JWKSource<SecurityContext>> JWKS_CACHE = new ConcurrentHashMap<>();
 
     /**
+     * Cap on outbound IdP response bodies (discovery, token, userinfo, groups, revocation).
+     * Bounds heap use against a malicious/compromised IdP that streams an oversized body
+     * during authentication. Mirrors the {@code setMaxResponseBytes} guard the admin
+     * discovery/metadata proxies in {@code DotAuthResource} already apply.
+     */
+    private static final int MAX_IDP_RESPONSE_BYTES =
+            Config.getIntProperty("OAUTH_IDP_MAX_RESPONSE_BYTES", 1024 * 1024);
+
+    /**
      * Safe {@code id_token} signing algorithms. Asymmetric only (RSA or EC) — symmetric
      * {@code HS*} algs rely on a shared secret, and {@code none} is an explicit attacker
      * vector. The effective allow-list for a given IdP is this set intersected with the
@@ -239,6 +248,7 @@ public class OIDCProvider implements OAuthProvider {
                     .setUrl(discoveryUrl)
                     .setMethod(CircuitBreakerUrl.Method.GET)
                     .setTimeout(5000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -302,6 +312,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Accept", "application/json",
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(10000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -328,7 +339,13 @@ public class OIDCProvider implements OAuthProvider {
      *   <li>{@code iss} matches the configured issuer</li>
      *   <li>{@code aud} contains the configured {@code client_id}</li>
      *   <li>{@code exp} is in the future</li>
-     *   <li>{@code nonce} matches the expected server-stored nonce</li>
+     *   <li>{@code nonce} matches the {@code expectedNonce} the caller supplies. In the
+     *       browser/interceptor flow that value is the server-generated, session-stored,
+     *       one-time-use nonce (genuine replay protection). In the headless exchange flow
+     *       the caller presents both the {@code id_token} and the {@code nonce}, so this
+     *       check only confirms the two are internally consistent — it is <em>not</em>
+     *       replay protection there; the exchange endpoint guards replay separately via a
+     *       one-time-use consumed-token cache.</li>
      * </ul>
      * Only returns once every check has passed. Throws {@link DotRuntimeException}
      * on any validation failure.
@@ -420,6 +437,22 @@ public class OIDCProvider implements OAuthProvider {
             throw new DotRuntimeException(
                     "OIDC id_token aud does not contain this client_id; got " + audiences);
         }
+        // azp — OIDC Core §3.1.3.7: when the token carries more than one audience, the
+        // authorized-party (azp) claim MUST be present and MUST equal our client_id.
+        // Without this, a token minted for a different relying party that merely lists us
+        // among several audiences would pass the aud check above (confused-deputy).
+        if (audiences.size() > 1 && expectedClientId != null) {
+            final Object azp = claims.getClaim("azp");
+            final String azpValue = azp == null ? null : azp.toString();
+            if (!UtilMethods.isSet(azpValue)
+                    || !MessageDigest.isEqual(
+                            expectedClientId.getBytes(StandardCharsets.UTF_8),
+                            azpValue.getBytes(StandardCharsets.UTF_8))) {
+                throw new DotRuntimeException(
+                        "OIDC id_token has multiple audiences but azp is missing or does not "
+                                + "match this client_id");
+            }
+        }
         // exp — nimbus validates claim set structure but expiry is not enforced by default processor.
         if (claims.getExpirationTime() == null || claims.getExpirationTime().getTime() <= System.currentTimeMillis()) {
             throw new DotRuntimeException("OIDC id_token is expired or has no exp claim");
@@ -458,6 +491,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Authorization", "Bearer " + accessToken,
                             "Accept", "application/json"))
                     .setTimeout(5000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -496,6 +530,7 @@ public class OIDCProvider implements OAuthProvider {
                         "Authorization", "Bearer " + accessToken,
                         "Accept", "application/json"))
                 .setTimeout(5000)
+                .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                 .build()
                 .doResponse();
         if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -528,6 +563,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(5000)
+                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
         } catch (final Exception e) {
@@ -560,21 +596,34 @@ public class OIDCProvider implements OAuthProvider {
      * Validate the {@code at_hash} claim in a verified id_token against the access token
      * per OIDC Core §3.2.2.9. Call this after {@link #validateIdTokenAndExtractClaims}
      * when both an access token and id_token are available from the same token response.
-     * Skips validation silently when {@code at_hash} is absent (optional in code flow).
+     * Skips validation silently only when {@code at_hash} is genuinely absent (it is
+     * optional in the authorization-code flow). When {@code at_hash} <em>is</em> present
+     * but cannot be parsed/computed/compared, this fails closed (throws) rather than
+     * silently degrading the access-token-substitution defense to a no-op.
      */
     public static void validateAtHash(final String idToken, final String accessToken) {
         if (!UtilMethods.isSet(idToken) || !UtilMethods.isSet(accessToken)) {
             return;
         }
+        final Object atHashClaim;
+        final JWSAlgorithm alg;
         try {
             final SignedJWT jwt = SignedJWT.parse(idToken);
             final JWTClaimsSet claims = jwt.getJWTClaimsSet();
-            final Object atHashClaim = claims.getClaim("at_hash");
-            if (atHashClaim == null) {
-                return;
-            }
-            final String atHash = atHashClaim.toString();
-            final JWSAlgorithm alg = jwt.getHeader().getAlgorithm();
+            atHashClaim = claims.getClaim("at_hash");
+            alg = jwt.getHeader().getAlgorithm();
+        } catch (final Exception e) {
+            // The same id_token was already parsed and signature-verified upstream, so a
+            // failure to re-parse here is anomalous — fail closed rather than skip the check.
+            throw new DotRuntimeException(
+                    "OIDC at_hash validation could not parse the id_token: " + e.getMessage(), e);
+        }
+        if (atHashClaim == null) {
+            // Genuinely absent — at_hash is optional in the code flow, so this is a valid skip.
+            return;
+        }
+        final String atHash = atHashClaim.toString();
+        try {
             final String hashAlg = resolveHashAlgorithm(alg);
             final java.security.MessageDigest md = java.security.MessageDigest.getInstance(hashAlg);
             final byte[] fullHash = md.digest(accessToken.getBytes(StandardCharsets.US_ASCII));
@@ -589,7 +638,9 @@ public class OIDCProvider implements OAuthProvider {
         } catch (final DotRuntimeException e) {
             throw e;
         } catch (final Exception e) {
-            Logger.warn(OIDCProvider.class, "at_hash validation failed: " + e.getMessage());
+            // at_hash IS present but we could not verify it — fail closed.
+            throw new DotRuntimeException(
+                    "OIDC id_token at_hash present but could not be verified: " + e.getMessage(), e);
         }
     }
 

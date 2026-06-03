@@ -240,22 +240,6 @@
                             <div class="field-grid">
                                 <div class="field">
                                     <label>
-                                        {{ 'dotauth.field.sessionTtl' | dm }}
-                                        <i
-                                            class="label-tip pi pi-question-circle"
-                                            [pTooltip]="'dotauth.tooltip.sessionTtl' | dm"
-                                            tooltipPosition="top"></i>
-                                    </label>
-                                    <input
-                                        pInputText
-                                        type="number"
-                                        [ngModel]="store.draft().oidc.sessionTtlMinutes"
-                                        (ngModelChange)="
-                                            store.update('oidc.sessionTtlMinutes', $event)
-                                        " />
-                                </div>
-                                <div class="field">
-                                    <label>
                                         {{ 'dotauth.field.logoutUrl' | dm }}
                                         <i
                                             class="label-tip pi pi-question-circle"
@@ -300,39 +284,6 @@
                         </div>
                     </div>
 
-                    <!-- SAML: session -->
-                    <div class="section-card" id="session">
-                        <div class="section-card-head">
-                            <div>
-                                <h3>
-                                    {{ 'dotauth.config.session.title' | dm }}
-                                </h3>
-                                <div class="sub">
-                                    {{ 'dotauth.config.session.subtitle' | dm }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="section-card-body">
-                            <div class="field-grid">
-                                <div class="field">
-                                    <label>
-                                        {{ 'dotauth.field.sessionTtl' | dm }}
-                                        <i
-                                            class="label-tip pi pi-question-circle"
-                                            [pTooltip]="'dotauth.tooltip.sessionTtl' | dm"
-                                            tooltipPosition="top"></i>
-                                    </label>
-                                    <input
-                                        pInputText
-                                        type="number"
-                                        [ngModel]="store.draft().saml.sessionTtlMinutes"
-                                        (ngModelChange)="
-                                            store.update('saml.sessionTtlMinutes', $event)
-                                        " />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 }
             </div>
         </div>

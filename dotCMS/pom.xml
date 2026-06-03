@@ -2163,6 +2163,7 @@
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
                         <package>com.dotcms.health</package>
+                        <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>
                 </configuration>
                 <executions>
