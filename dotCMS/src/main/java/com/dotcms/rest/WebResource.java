@@ -517,6 +517,9 @@ public  class WebResource {
 
         User user = null;
 
+        final boolean fallbackToAnonymousOnAuthFailure = Arrays.stream(authCheckOptions)
+                .anyMatch(AuthCheckOptions.FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
+
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
 
         if(userPass.isEmpty()) {
@@ -524,11 +527,33 @@ public  class WebResource {
         }
 
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromBasicAuth(request);
+            try {
+                userPass = getAuthCredentialsFromBasicAuth(request);
+            } catch (SecurityException e) {
+                // Malformed BASIC header. Abort for REST endpoints; for asset servlets fall through
+                // to anonymous so a replayed/garbled upstream-gateway header doesn't break a public asset.
+                if (!fallbackToAnonymousOnAuthFailure) {
+                    throw e;
+                }
+                Logger.debug(WebResource.class, () -> "Ignoring malformed BASIC Authorization header; "
+                        + "falling through to anonymous: " + e.getMessage());
+                userPass = Optional.empty();
+            }
         }
 
         if(userPass.isPresent()) {
-            user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            try {
+                user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            } catch (SecurityException e) {
+                // Credentials are not a valid dotCMS user. Abort for REST endpoints; for asset
+                // servlets fall through to anonymous and let the resource permission check decide.
+                if (!fallbackToAnonymousOnAuthFailure) {
+                    throw e;
+                }
+                Logger.debug(WebResource.class, () -> "BASIC Authorization credentials are not a valid "
+                        + "dotCMS user; falling through to anonymous: " + e.getMessage());
+                user = null;
+            }
         }
 
         if(null == user) {
@@ -784,6 +809,16 @@ public  class WebResource {
    public enum AuthCheckOptions {
         SKIP_CHECK_FORCE_SSL,
         SKIP_CHECK_ANONYMOUS_PERMISSIONS,
+        /**
+         * When set, a BASIC {@code Authorization} header that cannot be parsed or whose credentials
+         * do not authenticate as a dotCMS user does NOT abort the request with a {@code 401}.
+         * Instead authentication falls through to the anonymous user, letting the downstream
+         * resource permission check decide whether access is allowed. Used by the static/binary
+         * asset servlets so that an upstream Basic-Auth gating layer (whose credentials the browser
+         * replays on sub-resource requests, per RFC 7617) does not break anonymously-readable assets.
+         * REST endpoints intentionally omit this option and keep strict BASIC rejection.
+         */
+        FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE,
    }
 
    public static class InitBuilder {
