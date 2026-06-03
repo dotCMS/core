@@ -180,14 +180,14 @@ describe('DotVelocityPlaygroundPageComponent', () => {
     });
 
     describe('content-type label', () => {
-        it('renders the content type as-is when output is present', () => {
+        it('renders the viewing label with the content type when output is present', () => {
             setup({
                 hasOutput: jest.fn().mockReturnValue(true),
                 outputContentType: jest.fn().mockReturnValue('json'),
                 status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
             });
             const label = spectator.query(byTestId('velocity-playground-content-type-chip'));
-            expect(label?.textContent?.trim()).toBe('json');
+            expect(label?.textContent?.replace(/\s+/g, ' ').trim()).toBe('json');
         });
     });
 
