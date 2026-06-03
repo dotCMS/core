@@ -76,6 +76,10 @@ public class BrowserQuery {
     final Role[] roles;
     final List<String> extensions;
     final List<String> mimeTypes;
+    /** Workflow scheme ids to match by content-type assignment (scheme-only filter entries). */
+    final Set<String> workflowSchemeIds;
+    /** Workflow step ids to match by the contentlet's current task (step-pinned filter entries). */
+    final Set<String> workflowStepIds;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -151,6 +155,8 @@ public class BrowserQuery {
         this.languageIds = Set.copyOf(builder.languageIds);
         this.contentTypeIds = Set.copyOf(builder.contentTypes);
         this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
+        this.workflowSchemeIds = Set.copyOf(builder.workflowSchemeIds);
+        this.workflowStepIds = Set.copyOf(builder.workflowStepIds);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
@@ -271,6 +277,8 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
+        private Set<String> workflowSchemeIds = new LinkedHashSet<>();
+        private Set<String> workflowStepIds = new LinkedHashSet<>();
         private Builder() {
         }
 
@@ -546,6 +554,26 @@ public class BrowserQuery {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
             }
+            return this;
+        }
+
+        /**
+         * Workflow scheme ids matched by content-type assignment (scheme-only filter
+         * entries) — includes content with no workflow task yet (import/push-publish).
+         */
+        public Builder withWorkflowSchemeIds(@Nonnull Set<String> workflowSchemeIds) {
+            this.workflowSchemeIds.clear();
+            this.workflowSchemeIds.addAll(workflowSchemeIds);
+            return this;
+        }
+
+        /**
+         * Workflow step ids matched by the contentlet's current task (step-pinned
+         * filter entries).
+         */
+        public Builder withWorkflowStepIds(@Nonnull Set<String> workflowStepIds) {
+            this.workflowStepIds.clear();
+            this.workflowStepIds.addAll(workflowStepIds);
             return this;
         }
 

@@ -39,7 +39,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
+import { buildContentDriveQuery, decodeFilters, parseWorkflowFilter } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -74,6 +74,9 @@ export const DotContentDriveStore = signalStore(
                     baseTypes: filters()?.baseType?.map(
                         (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
                     ),
+                    workflow: filters()?.workflow?.length
+                        ? parseWorkflowFilter(filters()?.workflow)
+                        : undefined,
                     contentCursor: page.contentCursor ?? 0,
                     folderCursor: page.folderCursor ?? 0,
                     maxResults: paginationSignal?.limit,
@@ -83,7 +86,8 @@ export const DotContentDriveStore = signalStore(
                         page.hasMoreFolders &&
                         !filters()?.baseType?.length &&
                         !filters()?.contentType?.length &&
-                        !filters()?.languageId?.length
+                        !filters()?.languageId?.length &&
+                        !filters()?.workflow?.length
                 };
             }),
             // We will need this for the global select all in the future, so I'll leave it here for now

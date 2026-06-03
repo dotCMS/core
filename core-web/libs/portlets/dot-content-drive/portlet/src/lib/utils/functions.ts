@@ -79,6 +79,23 @@ const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
 
 /**
+ * Parses the `workflow` filter tokens (`schemeId` or `schemeId:stepId`) into the
+ * `{ scheme, step? }` entries the drive-search request expects. Splits on the FIRST
+ * colon only, so the inner step id is preserved.
+ *
+ * @param {string[]} tokens
+ * @return {*}  {{ scheme: string; step?: string }[]}
+ */
+export function parseWorkflowFilter(tokens: string[] = []): { scheme: string; step?: string }[] {
+    return tokens.map((token) => {
+        const index = token.indexOf(':');
+        return index === -1
+            ? { scheme: token }
+            : { scheme: token.slice(0, index), step: token.slice(index + 1) };
+    });
+}
+
+/**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
  *
  * @example

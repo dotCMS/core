@@ -1573,6 +1573,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
         }
+        appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
+                browserQuery.workflowStepIds, parameters);
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -1767,6 +1769,51 @@ public class BrowserAPIImpl implements BrowserAPI {
         parameters.add("%" + filterText + "%");
 
 
+    }
+
+    /**
+     * Appends a workflow filter to the query. Two independent, OR'd buckets:
+     * <ul>
+     *   <li><b>Scheme-only entries</b> ({@code workflowSchemeIds}) match by content-type
+     *   assignment via {@code workflow_scheme_x_structure}, so content that has never run a
+     *   workflow action — e.g. imported or push-published content with no {@code workflow_task}
+     *   row — still appears under the schemes its type is governed by.</li>
+     *   <li><b>Step-pinned entries</b> ({@code workflowStepIds}) match the contentlet's current
+     *   task via {@code workflow_task.status}.</li>
+     * </ul>
+     * No-ops when both sets are empty. All ids are bound as {@code ?} parameters.
+     */
+    private void appendWorkflowQuery(final StringBuilder sqlQuery,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final List<Object> parameters) {
+
+        final boolean hasSchemes = UtilMethods.isSet(workflowSchemeIds);
+        final boolean hasSteps = UtilMethods.isSet(workflowStepIds);
+        if (!hasSchemes && !hasSteps) {
+            return;
+        }
+
+        final List<String> orClauses = new ArrayList<>();
+
+        if (hasSchemes) {
+            final String placeholders = workflowSchemeIds.stream()
+                    .map(id -> "?").collect(Collectors.joining(","));
+            orClauses.add(" exists (select 1 from workflow_scheme_x_structure wss "
+                    + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
+                    + ")) ");
+            parameters.addAll(workflowSchemeIds);
+        }
+
+        if (hasSteps) {
+            final String placeholders = workflowStepIds.stream()
+                    .map(id -> "?").collect(Collectors.joining(","));
+            orClauses.add(" exists (select 1 from workflow_task wt "
+                    + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
+                    + " and wt.status in (" + placeholders + ")) ");
+            parameters.addAll(workflowStepIds);
+        }
+
+        sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
     }
 
     /**
