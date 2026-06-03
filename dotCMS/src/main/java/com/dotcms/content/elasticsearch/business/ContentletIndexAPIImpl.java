@@ -923,6 +923,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Loads the current OS index store, overrides only the non-null slot arguments,
      * preserves everything else, and persists.
      *
+     * <p><strong>Tagging on save:</strong> persistence goes through
+     * {@link com.dotcms.content.index.VersionedIndicesAPI#saveIndices}, which applies the
+     * {@code .os} tag ({@link com.dotcms.content.index.IndexTag#OS}) to each index name before
+     * the DB write. The save is idempotent on already-tagged names — in the normal flow the
+     * names arrive pre-tagged via {@code toPhysicalName}, so this is a belt-and-suspenders
+     * guard. The {@code .os} suffix is the DB uniqueness artifact that keeps OS rows from
+     * colliding with ES rows on the same primary key in the shared {@code indicies} table;
+     * stripping it before saving is rejected by {@code requireOSTagged}.</p>
+     *
      * @param working        new working index name, or {@code null} to preserve existing
      * @param live           new live index name, or {@code null} to preserve existing
      * @param reindexWorking new reindex-working index name, or {@code null} to preserve existing

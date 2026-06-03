@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
@@ -64,14 +65,17 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
             UUID.randomUUID().toString().replace("-", "").substring(0, 8);
 
     /**
-     * Version tag written to the {@code indicies} table for all rows created by this suite.
+     * Version tag written to the {@code indices} table for all rows created by this suite.
      * The {@code os-it-} prefix is used by {@link #cleanupVersionedRows()} for safe cleanup.
      */
     private static final String TEST_DB_VERSION = "os-it-" + RUN_ID;
 
     // ── index names reused across several tests ───────────────────────────────
-    private static final String IDX_LIVE    = "live_"    + RUN_ID;
-    private static final String IDX_WORKING = "working_" + RUN_ID;
+    private static final String IDX_LIVE    = IndexTag.OS.tag("live_"    + RUN_ID);
+    private static final String IDX_WORKING = IndexTag.OS.tag("working_" + RUN_ID);
+
+    private static final String OS_WORKING_TAGGED = IndexTag.OS.tag(IDX_WORKING);
+    private static final String OS_LIVE_TAGGED     = IndexTag.OS.tag(IDX_LIVE);
 
     // ── CDI-injected beans ────────────────────────────────────────────────────
     // OSTestClientProvider (@Alternative @Priority(1)) is on the test classpath and will be used to configure our API for testing
@@ -112,12 +116,12 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createIndex_shouldExistAfterCreation() throws Exception {
-        assertFalse("Pre-condition: index must not exist yet", osIndexAPI.indexExists(IDX_LIVE));
+        assertFalse("Pre-condition: index must not exist yet", osIndexAPI.indexExists(OS_LIVE_TAGGED));
 
-        final CreateIndexStatus status = osIndexAPI.createIndex(IDX_LIVE, 1);
+        final CreateIndexStatus status = osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
 
         assertTrue("CreateIndexStatus must be acknowledged", status.acknowledged());
-        assertTrue("Index must exist in OpenSearch after creation", osIndexAPI.indexExists(IDX_LIVE));
+        assertTrue("Index must exist in OpenSearch after creation", osIndexAPI.indexExists(OS_LIVE_TAGGED));
         Logger.info(this, "✅ test_createIndex_shouldExistAfterCreation passed");
     }
 
@@ -127,13 +131,13 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_deleteIndex_shouldNotExistAfterDeletion() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        assertTrue("Pre-condition: index must exist before deletion", osIndexAPI.indexExists(IDX_LIVE));
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        assertTrue("Pre-condition: index must exist before deletion", osIndexAPI.indexExists(OS_LIVE_TAGGED));
 
-        final boolean ack = osIndexAPI.delete(IDX_LIVE);
+        final boolean ack = osIndexAPI.delete(OS_LIVE_TAGGED);
 
         assertTrue("Delete must be acknowledged by OpenSearch", ack);
-        assertFalse("Index must not exist in OpenSearch after deletion", osIndexAPI.indexExists(IDX_LIVE));
+        assertFalse("Index must not exist in OpenSearch after deletion", osIndexAPI.indexExists(OS_LIVE_TAGGED));
         Logger.info(this, "✅ test_deleteIndex_shouldNotExistAfterDeletion passed");
     }
 
@@ -143,14 +147,14 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_listIndices_shouldIncludeBothCreatedIndices() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
         final Set<String> indices = osIndexAPI.listIndices();
 
         assertNotNull("listIndices must never return null", indices);
-        assertTrue("listIndices must contain the live index",    indices.contains(IDX_LIVE));
-        assertTrue("listIndices must contain the working index", indices.contains(IDX_WORKING));
+        assertTrue("listIndices must contain the live index",    indices.contains(OS_LIVE_TAGGED));
+        assertTrue("listIndices must contain the working index", indices.contains(OS_WORKING_TAGGED));
         Logger.info(this, "✅ test_listIndices_shouldIncludeBothCreatedIndices passed – " + indices);
     }
 
@@ -160,14 +164,14 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_deleteMultiple_shouldDeleteAllRequestedIndices() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
-        final boolean allAck = osIndexAPI.deleteMultiple(IDX_LIVE, IDX_WORKING);
+        final boolean allAck = osIndexAPI.deleteMultiple(OS_LIVE_TAGGED, OS_WORKING_TAGGED);
 
         assertTrue("deleteMultiple must be fully acknowledged", allAck);
-        assertFalse("Live index must be gone after deleteMultiple",    osIndexAPI.indexExists(IDX_LIVE));
-        assertFalse("Working index must be gone after deleteMultiple", osIndexAPI.indexExists(IDX_WORKING));
+        assertFalse("Live index must be gone after deleteMultiple",    osIndexAPI.indexExists(OS_LIVE_TAGGED));
+        assertFalse("Working index must be gone after deleteMultiple", osIndexAPI.indexExists(OS_WORKING_TAGGED));
         Logger.info(this, "✅ test_deleteMultiple_shouldDeleteAllRequestedIndices passed");
     }
 
@@ -178,17 +182,17 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_closeAndOpenIndex_shouldTransitionCorrectly() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
         assertTrue("Pre-condition: newly created index must be open",
-                osIndexAPI.listIndices().contains(IDX_LIVE));
+                osIndexAPI.listIndices().contains(OS_LIVE_TAGGED));
 
-        osIndexAPI.closeIndex(IDX_LIVE);
+        osIndexAPI.closeIndex(OS_LIVE_TAGGED);
         assertFalse("Closed index must not appear in the open-index listing",
-                osIndexAPI.listIndices().contains(IDX_LIVE));
+                osIndexAPI.listIndices().contains(OS_LIVE_TAGGED));
 
-        osIndexAPI.openIndex(IDX_LIVE);
+        osIndexAPI.openIndex(OS_LIVE_TAGGED);
         assertTrue("Reopened index must appear in the open-index listing",
-                osIndexAPI.listIndices().contains(IDX_LIVE));
+                osIndexAPI.listIndices().contains(OS_LIVE_TAGGED));
         Logger.info(this, "✅ test_closeAndOpenIndex_shouldTransitionCorrectly passed");
     }
 
@@ -205,10 +209,10 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_clusterPrefixRoundTrip_shouldBeIdempotentAndReversible() {
-        final String withPrefix = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        final String withPrefix = osIndexAPI.getNameWithClusterIDPrefix(OS_LIVE_TAGGED);
 
         assertTrue("Prefixed name must end with the original bare name",
-                withPrefix.endsWith(IDX_LIVE));
+                withPrefix.endsWith(OS_LIVE_TAGGED));
         assertTrue("Prefixed name must contain a dot separator (cluster_<id>.<name>)",
                 withPrefix.contains("."));
 
@@ -216,7 +220,7 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
                 withPrefix, osIndexAPI.getNameWithClusterIDPrefix(withPrefix));
 
         assertEquals("Stripping the prefix must restore the original bare name",
-                IDX_LIVE, osIndexAPI.removeClusterIdFromName(withPrefix));
+                OS_LIVE_TAGGED, osIndexAPI.removeClusterIdFromName(withPrefix));
         Logger.info(this, "✅ test_clusterPrefixRoundTrip_shouldBeIdempotentAndReversible passed"
                 + " – prefixed form: " + withPrefix);
     }
@@ -237,19 +241,18 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     @Test
     public void test_createIndicesInOS_andPersistInVersionedAPI_shouldRoundTrip()
             throws Exception {
-
         // 1. Create real indices in OpenSearch
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
-        assertTrue("Pre-condition: live index must exist in OS",    osIndexAPI.indexExists(IDX_LIVE));
-        assertTrue("Pre-condition: working index must exist in OS", osIndexAPI.indexExists(IDX_WORKING));
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+        assertTrue("Pre-condition: live index must exist in OS",    osIndexAPI.indexExists(OS_LIVE_TAGGED));
+        assertTrue("Pre-condition: working index must exist in OS", osIndexAPI.indexExists(OS_WORKING_TAGGED));
 
         // 2. Persist the names in the versioned registry
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
                         .version(TEST_DB_VERSION)
-                        .live(IDX_LIVE)
-                        .working(IDX_WORKING)
+                        .live(OS_LIVE_TAGGED)
+                        .working(OS_WORKING_TAGGED)
                         .build());
 
         assertTrue("Version must be registered in DB after save",
@@ -262,9 +265,9 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
 
         // 4. Names in DB must match what was written
         assertEquals("Live index name must survive the DB round-trip",
-                IDX_LIVE, reloaded.live().orElse(null));
+                OS_LIVE_TAGGED, reloaded.live().orElse(null));
         assertEquals("Working index name must survive the DB round-trip",
-                IDX_WORKING, reloaded.working().orElse(null));
+                OS_WORKING_TAGGED, reloaded.working().orElse(null));
         assertFalse("reindexLive must be absent (was not set)",
                 reloaded.reindexLive().isPresent());
 
@@ -286,20 +289,20 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_osAndVersionedRegistry_divergence_shouldBeDetectable() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
                         .version(TEST_DB_VERSION)
-                        .live(IDX_LIVE)
-                        .working(IDX_WORKING)
+                        .live(OS_LIVE_TAGGED)
+                        .working(OS_WORKING_TAGGED)
                         .build());
 
         // Delete only the live index from OpenSearch – registry is NOT updated
-        osIndexAPI.delete(IDX_LIVE);
+        osIndexAPI.delete(OS_LIVE_TAGGED);
         assertFalse("Live index must be gone from OS after deletion",
-                osIndexAPI.indexExists(IDX_LIVE));
+                osIndexAPI.indexExists(OS_LIVE_TAGGED));
 
         // Registry still has the live entry
         final Optional<VersionedIndices> loaded = versionedIndicesAPI.loadIndices(TEST_DB_VERSION);
@@ -310,7 +313,7 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
                 osIndexAPI.indexExists(registeredLive));
 
         // Working index is consistent: present in both
-        assertTrue("Working index must still exist in OS", osIndexAPI.indexExists(IDX_WORKING));
+        assertTrue("Working index must still exist in OS", osIndexAPI.indexExists(OS_WORKING_TAGGED));
         assertTrue("Working entry must still be present in registry",
                 loaded.get().working().isPresent());
 
@@ -328,10 +331,10 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_createIndex_shouldHaveAutoExpandReplicasSetting() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
 
         final OpenSearchClient client = CDIUtils.getBeanThrows(OSClientProvider.class).getClient();
-        final String fullName = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        final String fullName = osIndexAPI.getNameWithClusterIDPrefix(OS_LIVE_TAGGED);
         final GetIndexResponse response = client.indices().get(b -> b.index(fullName));
 
         assertNotNull("Index state must be present in GET response", response.result().get(fullName));
@@ -348,19 +351,19 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_indexExists_shouldResolveWithBothBareAndPrefixedName() throws Exception {
-        final String clustered = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        final String clustered = osIndexAPI.getNameWithClusterIDPrefix(OS_LIVE_TAGGED);
 
-        assertFalse("Pre: bare name must not exist",      osIndexAPI.indexExists(IDX_LIVE));
+        assertFalse("Pre: bare name must not exist",      osIndexAPI.indexExists(OS_LIVE_TAGGED));
         assertFalse("Pre: clustered name must not exist", osIndexAPI.indexExists(clustered));
 
-        osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
 
-        assertTrue("After creation: bare name must resolve",      osIndexAPI.indexExists(IDX_LIVE));
+        assertTrue("After creation: bare name must resolve",      osIndexAPI.indexExists(OS_LIVE_TAGGED));
         assertTrue("After creation: clustered name must resolve", osIndexAPI.indexExists(clustered));
 
-        osIndexAPI.delete(IDX_LIVE);
+        osIndexAPI.delete(OS_LIVE_TAGGED);
 
-        assertFalse("After deletion: bare name must be gone",      osIndexAPI.indexExists(IDX_LIVE));
+        assertFalse("After deletion: bare name must be gone",      osIndexAPI.indexExists(OS_LIVE_TAGGED));
         assertFalse("After deletion: clustered name must be gone", osIndexAPI.indexExists(clustered));
         Logger.info(this, "✅ test_indexExists_shouldResolveWithBothBareAndPrefixedName passed");
     }
@@ -413,14 +416,14 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     @Test
     public void test_getLiveWorkingIndicesSortedByCreationDateDesc_shouldContainBothIndices()
             throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
         final List<String> sorted = osIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
 
         assertNotNull("Sorted list must never be null", sorted);
-        assertTrue("Sorted list must contain the live index",    sorted.contains(IDX_LIVE));
-        assertTrue("Sorted list must contain the working index", sorted.contains(IDX_WORKING));
+        assertTrue("Sorted list must contain the live index",    sorted.contains(OS_LIVE_TAGGED));
+        assertTrue("Sorted list must contain the working index", sorted.contains(OS_WORKING_TAGGED));
         Logger.info(this, "✅ test_getLiveWorkingIndicesSortedByCreationDateDesc_shouldContainBothIndices passed");
     }
 
@@ -430,12 +433,12 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_clearIndex_shouldLeaveIndexExisting() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        assertTrue("Pre-condition: index must exist before clearIndex", osIndexAPI.indexExists(IDX_LIVE));
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        assertTrue("Pre-condition: index must exist before clearIndex", osIndexAPI.indexExists(OS_LIVE_TAGGED));
 
-        osIndexAPI.clearIndex(IDX_LIVE);
+        osIndexAPI.clearIndex(OS_LIVE_TAGGED);
 
-        assertTrue("Index must still exist after clearIndex (it is recreated)", osIndexAPI.indexExists(IDX_LIVE));
+        assertTrue("Index must still exist after clearIndex (it is recreated)", osIndexAPI.indexExists(OS_LIVE_TAGGED));
         Logger.info(this, "✅ test_clearIndex_shouldLeaveIndexExisting passed");
     }
 
@@ -446,16 +449,16 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_getIndices_shouldRespectOpenFlag() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
         final List<String> open = osIndexAPI.getIndices(true, false);
-        assertTrue("open-only list must contain live index",    open.contains(IDX_LIVE));
-        assertTrue("open-only list must contain working index", open.contains(IDX_WORKING));
+        assertTrue("open-only list must contain live index",    open.contains(OS_LIVE_TAGGED));
+        assertTrue("open-only list must contain working index", open.contains(OS_WORKING_TAGGED));
 
         final List<String> none = osIndexAPI.getIndices(false, false);
-        assertFalse("empty-flag list must not contain live index",    none.contains(IDX_LIVE));
-        assertFalse("empty-flag list must not contain working index", none.contains(IDX_WORKING));
+        assertFalse("empty-flag list must not contain live index",    none.contains(OS_LIVE_TAGGED));
+        assertFalse("empty-flag list must not contain working index", none.contains(OS_WORKING_TAGGED));
         Logger.info(this, "✅ test_getIndices_shouldRespectOpenFlag passed");
     }
 
@@ -474,38 +477,38 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_getClosedIndexes_shouldReflectActualClosedState() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
 
         // Pre-condition: no closed indices
         assertFalse("Pre: getClosedIndexes must not contain a freshly created index",
-                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+                osIndexAPI.getClosedIndexes().contains(OS_LIVE_TAGGED));
         assertFalse("Pre: isIndexClosed must return false for an open index",
-                osIndexAPI.isIndexClosed(IDX_LIVE));
+                osIndexAPI.isIndexClosed(OS_LIVE_TAGGED));
 
         // Close the index
-        osIndexAPI.closeIndex(IDX_LIVE);
+        osIndexAPI.closeIndex(OS_LIVE_TAGGED);
 
         // Post-close assertions
         assertTrue("getClosedIndexes must contain the index after closeIndex",
-                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+                osIndexAPI.getClosedIndexes().contains(OS_LIVE_TAGGED));
         assertTrue("isIndexClosed must return true after closeIndex",
-                osIndexAPI.isIndexClosed(IDX_LIVE));
+                osIndexAPI.isIndexClosed(OS_LIVE_TAGGED));
         assertFalse("listIndices (open only) must NOT contain a closed index",
-                osIndexAPI.listIndices().contains(IDX_LIVE));
+                osIndexAPI.listIndices().contains(OS_LIVE_TAGGED));
 
         final List<String> closedOnly = osIndexAPI.getIndices(false, true);
         assertTrue("getIndices(false, true) must include the closed index",
-                closedOnly.contains(IDX_LIVE));
+                closedOnly.contains(OS_LIVE_TAGGED));
 
         // Re-open and verify the state reverts
-        osIndexAPI.openIndex(IDX_LIVE);
+        osIndexAPI.openIndex(OS_LIVE_TAGGED);
 
         assertFalse("getClosedIndexes must be empty again after openIndex",
-                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+                osIndexAPI.getClosedIndexes().contains(OS_LIVE_TAGGED));
         assertFalse("isIndexClosed must return false after openIndex",
-                osIndexAPI.isIndexClosed(IDX_LIVE));
+                osIndexAPI.isIndexClosed(OS_LIVE_TAGGED));
         assertTrue("listIndices must contain the index once it is reopened",
-                osIndexAPI.listIndices().contains(IDX_LIVE));
+                osIndexAPI.listIndices().contains(OS_LIVE_TAGGED));
         Logger.info(this, "✅ test_getClosedIndexes_shouldReflectActualClosedState passed");
     }
 
@@ -537,15 +540,15 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_getClusterHealth_shouldReturnHealthForCreatedIndex() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
 
         final java.util.Map<String, com.dotcms.content.index.domain.ClusterIndexHealth> health =
                 osIndexAPI.getClusterHealth();
 
         assertNotNull("getClusterHealth must never return null", health);
-        assertTrue("Health map must contain the live index", health.containsKey(IDX_LIVE));
+        assertTrue("Health map must contain the live index", health.containsKey(OS_LIVE_TAGGED));
 
-        final com.dotcms.content.index.domain.ClusterIndexHealth liveHealth = health.get(IDX_LIVE);
+        final com.dotcms.content.index.domain.ClusterIndexHealth liveHealth = health.get(OS_LIVE_TAGGED);
         assertNotNull("Health status must not be null",      liveHealth.status());
         assertFalse("Health status must not be empty",       liveHealth.status().isBlank());
         assertTrue("numberOfShards must be positive",        liveHealth.numberOfShards()   > 0);
@@ -563,17 +566,17 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_getIndicesStats_shouldReturnStatsForCreatedIndices() throws Exception {
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
 
         final java.util.Map<String, com.dotcms.content.index.domain.IndexStats> stats =
                 osIndexAPI.getIndicesStats();
 
         assertNotNull("getIndicesStats must never return null", stats);
-        assertTrue("Stats map must contain the live index",    stats.containsKey(IDX_LIVE));
-        assertTrue("Stats map must contain the working index", stats.containsKey(IDX_WORKING));
+        assertTrue("Stats map must contain the live index",    stats.containsKey(OS_LIVE_TAGGED));
+        assertTrue("Stats map must contain the working index", stats.containsKey(OS_WORKING_TAGGED));
 
-        final com.dotcms.content.index.domain.IndexStats liveStats = stats.get(IDX_LIVE);
+        final com.dotcms.content.index.domain.IndexStats liveStats = stats.get(OS_LIVE_TAGGED);
         assertTrue("Document count must be non-negative", liveStats.documentCount() >= 0);
         assertTrue("Raw size must be non-negative",       liveStats.sizeRaw()       >= 0);
         assertNotNull("Human-readable size must not be null",  liveStats.size());
@@ -600,10 +603,10 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
 
     /**
      * Deletes every test-scoped index that actually exists in OpenSearch.
-     * Skipping the delete when the index is absent avoids noisy error logs between tests.
+     * Skipping delete when the index is absent avoids noisy error logs between tests.
      */
     private synchronized void cleanupTestOsIndices() {
-        for (final String idx : List.of(IDX_LIVE, IDX_WORKING)) {
+        for (final String idx : List.of(OS_LIVE_TAGGED, OS_WORKING_TAGGED)) {
             try {
                 if (osIndexAPI.indexExists(idx)) {
                     osIndexAPI.delete(idx);
