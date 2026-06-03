@@ -303,8 +303,10 @@ public class DotSamlResource implements Serializable {
 						}
 					}
 					final User authorizedUser = reloadUser(user);
-					final boolean frontEndLogin = isFrontEndLogin(loginPath);
-					if (!AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, frontEndLogin)) {
+					// Only the back-end is gated here: a front-end SAML login must never be denied,
+					// since its post-login redirect is a content URL rather than a back-end path.
+					if (isBackEndLogin(loginPath)
+							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)) {
 						AuthAccessDeniedUtil.sendNoAccessPage(httpServletResponse, authorizedUser);
 						return;
 					}
@@ -338,12 +340,15 @@ public class DotSamlResource implements Serializable {
 				.getOrElse(user);
 	}
 
-	private static boolean isFrontEndLogin(final String loginPath) {
+	/**
+	 * Determines whether the post-login redirect target points at the dotCMS back-end. Only
+	 * back-end logins are subject to the no-access role gate; front-end logins are never denied
+	 * here. Reuses {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays
+	 * in one place.
+	 */
+	private boolean isBackEndLogin(final String loginPath) {
 		final String path = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
-		return UtilMethods.isSet(path)
-				&& (path.startsWith("/dotCMS/login")
-				|| path.startsWith("/application/login")
-				|| path.startsWith("/login"));
+		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPage(path);
 	}
 
 
