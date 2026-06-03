@@ -75,17 +75,18 @@ test.describe('Reorder (Drag & Drop)', () => {
         const sourceBounds = await sourceHandle.boundingBox();
         const targetBounds = await targetHandle.boundingBox();
 
-        expect(sourceBounds).toBeTruthy();
-        expect(targetBounds).toBeTruthy();
+        if (!sourceBounds || !targetBounds) {
+            throw new Error('Could not get bounding boxes for drag handles');
+        }
 
         await adminPage.mouse.move(
-            sourceBounds!.x + sourceBounds!.width / 2,
-            sourceBounds!.y + sourceBounds!.height / 2
+            sourceBounds.x + sourceBounds.width / 2,
+            sourceBounds.y + sourceBounds.height / 2
         );
         await adminPage.mouse.down();
         await adminPage.mouse.move(
-            targetBounds!.x + targetBounds!.width / 2,
-            targetBounds!.y + targetBounds!.height / 2,
+            targetBounds.x + targetBounds.width / 2,
+            targetBounds.y + targetBounds.height / 2,
             { steps: 10 }
         );
         await adminPage.mouse.up();

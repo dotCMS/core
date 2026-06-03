@@ -1,19 +1,19 @@
 <form [formGroup]="form" #formElement>
     <p-inputgroup>
         <div
-            class="p-inputtext flex items-center gap-1 flex-1 !py-0.5 px-2 min-w-0 !rounded-none !rounded-l-md">
-            <i class="pi pi-search text-muted-color shrink-0 mr-1"></i>
+            class="p-inputtext flex min-w-0 flex-1 items-center gap-1 rounded-none! rounded-l-md! px-2 py-0.5!">
+            <i class="pi pi-search mr-1 shrink-0 text-muted-color"></i>
             @for (filter of $activeFilters(); track filter.value) {
                 <p-chip
                     [label]="filter.label"
                     [removable]="true"
                     (onRemove)="removeFilter(filter.type)"
-                    class="p-chip-sm text-xs !py-1 !px-2 !gap-1 shrink-0" />
+                    class="p-chip-sm shrink-0 gap-1! px-2! py-1! text-xs" />
             }
 
             <input
                 type="text"
-                class="flex-1 min-w-24 border-0 bg-transparent outline-none text-sm py-0.5 px-1"
+                class="min-w-24 flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none"
                 [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
                 formControlName="query"
                 data-testid="relationship-dialog-search-query" />
