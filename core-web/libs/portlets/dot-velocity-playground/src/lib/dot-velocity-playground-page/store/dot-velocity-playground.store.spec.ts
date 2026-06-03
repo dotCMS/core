@@ -11,6 +11,7 @@ import {
     DotVelocityPlaygroundStore,
     HISTORY_MAX_ENTRIES,
     HISTORY_STORAGE_KEY,
+    JSON_PRETTY_PRINT_MAX_BYTES,
     SPLITTER_STORAGE_KEY,
     WRAP_STORAGE_KEY
 } from './dot-velocity-playground.store';
@@ -123,6 +124,15 @@ describe('DotVelocityPlaygroundStore', () => {
             expect(spectator.service.history()).toEqual(['$dup']);
         });
 
+        it('dedupes entries that differ only by surrounding whitespace', () => {
+            spectator.service.setCode('   $padded   ');
+            spectator.service.runScript();
+            spectator.service.setCode('$padded');
+            spectator.service.runScript();
+
+            expect(spectator.service.history()).toEqual(['$padded']);
+        });
+
         it('caps history at HISTORY_MAX_ENTRIES', () => {
             for (let i = 0; i < HISTORY_MAX_ENTRIES + 2; i++) {
                 spectator.service.setCode(`$snippet_${i}`);
@@ -206,6 +216,25 @@ describe('DotVelocityPlaygroundStore', () => {
             spectator.service.runScript();
 
             expect(spectator.service.output()).toBe('<root><a/></root>');
+        });
+
+        it('skips JSON pretty-print when the body exceeds the size guard', () => {
+            // Build a valid-but-large JSON payload past JSON_PRETTY_PRINT_MAX_BYTES
+            const padding = 'x'.repeat(JSON_PRETTY_PRINT_MAX_BYTES);
+            const rawBody = `{"v":"${padding}"}`;
+
+            runScriptSpy.mockReturnValue(
+                of({
+                    body: rawBody,
+                    contentType: 'json',
+                    elapsedMs: 5
+                } satisfies DotVelocityPlaygroundResponse)
+            );
+
+            spectator.service.setCode('$x');
+            spectator.service.runScript();
+
+            expect(spectator.service.output()).toBe(rawBody);
         });
 
         it('pushes the un-wrapped code into history on success', () => {

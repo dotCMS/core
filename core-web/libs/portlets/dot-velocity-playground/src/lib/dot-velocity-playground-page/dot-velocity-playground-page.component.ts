@@ -44,7 +44,6 @@ import {
     VELOCITY_LANGUAGE_ID,
     VELOCITY_THEME_ID
 } from '../monaco/register-velocity';
-import { DotVelocityPlaygroundService } from '../services/dot-velocity-playground.service';
 
 interface VelocityHelpExample {
     title: string;
@@ -70,7 +69,7 @@ interface VelocityHelpExample {
         DotSpinnerComponent,
         DotMessagePipe
     ],
-    providers: [DotVelocityPlaygroundStore, DotVelocityPlaygroundService, DotClipboardUtil],
+    providers: [DotVelocityPlaygroundStore, DotClipboardUtil],
     templateUrl: './dot-velocity-playground-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }

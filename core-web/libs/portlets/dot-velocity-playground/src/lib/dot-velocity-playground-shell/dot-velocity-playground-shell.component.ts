@@ -19,7 +19,7 @@ import { DotVelocityPlaygroundPageComponent } from '../dot-velocity-playground-p
         }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col h-full min-h-0 block' }
+    host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotVelocityPlaygroundShellComponent {
     readonly #route = inject(ActivatedRoute);

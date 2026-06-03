@@ -184,9 +184,8 @@ export const ensureVelocityLanguageRegistered = (): void => {
     const monaco = win.monaco;
     if (!monaco) return;
 
-    const already = monaco.languages
-        .getLanguages?.()
-        .some((lang) => lang.id === VELOCITY_LANGUAGE_ID);
+    const knownLanguages = monaco.languages.getLanguages?.() ?? [];
+    const already = knownLanguages.some((lang) => lang.id === VELOCITY_LANGUAGE_ID);
     if (!already) {
         monaco.languages.register({
             id: VELOCITY_LANGUAGE_ID,

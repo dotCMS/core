@@ -30,6 +30,7 @@ export const WRAP_STORAGE_KEY = 'velocityPlayground.wrap';
 
 export const HISTORY_MAX_ENTRIES = 10;
 export const DEFAULT_SPLITTER_RATIO: readonly [number, number] = [50, 50];
+export const JSON_PRETTY_PRINT_MAX_BYTES = 512_000;
 
 const TIMER_PREFIX = '#set($dotTimer = $date.date.time)\n';
 const TIMER_SUFFIX = '\n--\n$math.sub($date.date.time, $dotTimer)ms';
@@ -98,12 +99,15 @@ const isValidRatio = (value: unknown): value is [number, number] =>
 const dedupeAndCap = (history: string[], entry: string): string[] => {
     const trimmed = entry.trim();
     if (!trimmed) return history;
-    const filtered = history.filter((item) => item !== entry);
-    return [entry, ...filtered].slice(0, HISTORY_MAX_ENTRIES);
+    const filtered = history.filter((item) => item !== trimmed);
+    return [trimmed, ...filtered].slice(0, HISTORY_MAX_ENTRIES);
 };
 
 const formatBody = (body: string, contentType: DotVelocityResponseContentType): string => {
     if (contentType !== 'json' || !body.trim()) return body;
+    // Skip the parse/stringify round-trip on very large payloads — Monaco
+    // already struggles past ~500KB and the temporary copy doubles memory.
+    if (body.length > JSON_PRETTY_PRINT_MAX_BYTES) return body;
     try {
         return JSON.stringify(JSON.parse(body), null, 2);
     } catch {
