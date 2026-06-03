@@ -40,16 +40,15 @@ import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/ut
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
 
 import {
+    formatHistoryLabel,
+    getDownloadParams,
+    VELOCITY_HELP_EXAMPLES
+} from '../dot-velocity-playground.utils';
+import {
     ensureVelocityLanguageRegistered,
     VELOCITY_LANGUAGE_ID,
     VELOCITY_THEME_ID
 } from '../monaco/register-velocity';
-
-interface VelocityHelpExample {
-    title: string;
-    code: string;
-    description?: string;
-}
 
 @Component({
     selector: 'dot-velocity-playground-page',
@@ -83,6 +82,9 @@ export class DotVelocityPlaygroundPageComponent {
     readonly #document = inject(DOCUMENT);
     readonly #monacoLoader = inject(MonacoEditorLoaderService);
 
+    // Memoized i18n fallback used by every history-label render.
+    readonly #emptyHistoryLabel = this.#messageService.get('velocityPlayground.history.empty');
+
     // 2. State signals (viewChild signals + local state) — $ prefix
     readonly $helpPopover = viewChild.required<Popover>('helpPopoverEl');
     readonly $exportMenu = viewChild<Menu>('exportMenu');
@@ -106,7 +108,7 @@ export class DotVelocityPlaygroundPageComponent {
 
     readonly $historyOptions = computed(() =>
         this.store.history().map((entry) => ({
-            label: this.#formatHistoryLabel(entry),
+            label: formatHistoryLabel(entry, this.#emptyHistoryLabel),
             value: entry
         }))
     );
@@ -114,6 +116,7 @@ export class DotVelocityPlaygroundPageComponent {
     // 4. Template-bound static configuration
     readonly ComponentStatus = ComponentStatus;
     readonly splitterPt = { root: { class: 'border-0! rounded-none! flex-1 min-h-0' } };
+    readonly helpExamples = VELOCITY_HELP_EXAMPLES;
 
     readonly exportItems: MenuItem[] = [
         {
@@ -131,29 +134,6 @@ export class DotVelocityPlaygroundPageComponent {
         subtitle: this.#messageService.get('velocityPlayground.output.empty.hint'),
         icon: 'pi-search'
     };
-
-    readonly helpExamples: VelocityHelpExample[] = [
-        {
-            title: 'velocityPlayground.help.example.contentSnapshot',
-            description: 'velocityPlayground.help.example.contentSnapshot.desc',
-            code: '#set($types = ["htmlpageasset","webPageContent","FileAsset","persona","Vanityurl"])\nContent live on $host.hostname:\n#foreach($t in $types)\n  #set($n = $dotcontent.pull("+contentType:$t +live:true +conhost:$host.identifier", 1000, "modDate").size())\n  - $t: $n\n#end'
-        },
-        {
-            title: 'velocityPlayground.help.example.pullPages',
-            description: 'velocityPlayground.help.example.pullPages.desc',
-            code: '#set($pages = $dotcontent.pull("+contentType:htmlpageasset +live:true +conhost:$host.identifier", 10, "modDate desc"))\nFound $pages.size() page(s):\n#foreach($page in $pages)\n  - $page.title  ($page.pageUrl)\n#end'
-        },
-        {
-            title: 'velocityPlayground.help.example.transformToJsonApi',
-            description: 'velocityPlayground.help.example.transformToJsonApi.desc',
-            code: '#set($pages = $dotcontent.pull("+contentType:htmlpageasset +live:true +conhost:$host.identifier", 10, "modDate desc"))\n#set($items = [])\n#foreach($p in $pages)\n  #set($entry = {\n    "id":      $p.identifier,\n    "title":   $p.title,\n    "url":     $p.pageUrl,\n    "modDate": $date.format("yyyy-MM-dd\'T\'HH:mm:ssZ", $p.modDate)\n  })\n  $items.add($entry)\n#end\n$dotJSON.put("site", $host.hostname)\n$dotJSON.put("count", $items.size())\n$dotJSON.put("items", $items)'
-        },
-        {
-            title: 'velocityPlayground.help.example.pullFiles',
-            description: 'velocityPlayground.help.example.pullFiles.desc',
-            code: '#set($files = $dotcontent.pull("+contentType:FileAsset +live:true +conhost:$host.identifier", 5, "modDate desc"))\n#foreach($f in $files)\n  - $f.fileName  ($f.fileSize bytes, $f.mimeType)\n#end'
-        }
-    ];
 
     // 5. Lifecycle
     constructor() {
@@ -206,15 +186,7 @@ export class DotVelocityPlaygroundPageComponent {
     }
 
     downloadOutput(): void {
-        const contentType = this.store.outputContentType();
-        const ext = contentType === 'plaintext' ? 'txt' : contentType;
-        const mime =
-            contentType === 'plaintext'
-                ? 'text/plain'
-                : contentType === 'json'
-                  ? 'application/json'
-                  : 'application/xml';
-
+        const { ext, mime } = getDownloadParams(this.store.outputContentType());
         const blob = new Blob([this.store.output()], { type: mime });
         const link = getDownloadLink(blob, `velocity-output.${ext}`);
         this.#document.body.appendChild(link);
@@ -237,12 +209,5 @@ export class DotVelocityPlaygroundPageComponent {
     async #copy(text: string): Promise<void> {
         const ok = await this.#clipboard.copy(text);
         if (!ok) this.#globalMessage.error();
-    }
-
-    #formatHistoryLabel(entry: string): string {
-        const compact = entry.replace(/\s+/g, ' ').trim();
-        return compact.length > 60
-            ? `${compact.slice(0, 60)}…`
-            : compact || this.#messageService.get('velocityPlayground.history.empty');
     }
 }

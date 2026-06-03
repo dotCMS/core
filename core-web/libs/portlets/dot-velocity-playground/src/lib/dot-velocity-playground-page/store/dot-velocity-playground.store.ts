@@ -19,18 +19,23 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
+    DEFAULT_SPLITTER_RATIO,
+    dedupeAndCap,
+    formatBody,
+    HISTORY_STORAGE_KEY,
+    isValidHistory,
+    isValidRatio,
+    readJson,
+    removeKey,
+    SPLITTER_STORAGE_KEY,
+    WRAP_STORAGE_KEY,
+    writeJson
+} from '../../dot-velocity-playground.utils';
+import {
     DotVelocityPlaygroundResponse,
     DotVelocityResponseContentType
 } from '../../models/dot-velocity-playground.models';
 import { DotVelocityPlaygroundService } from '../../services/dot-velocity-playground.service';
-
-export const HISTORY_STORAGE_KEY = 'velocityPlayground';
-export const SPLITTER_STORAGE_KEY = 'velocityPlayground.splitterRatio';
-export const WRAP_STORAGE_KEY = 'velocityPlayground.wrap';
-
-export const HISTORY_MAX_ENTRIES = 10;
-export const DEFAULT_SPLITTER_RATIO: readonly [number, number] = [50, 50];
-export const JSON_PRETTY_PRINT_MAX_BYTES = 512_000;
 
 const TIMER_PREFIX = '#set($dotTimer = $date.date.time)\n';
 const TIMER_SUFFIX = '\n--\n$math.sub($date.date.time, $dotTimer)ms';
@@ -57,62 +62,6 @@ const initialState: VelocityPlaygroundState = {
     outputContentType: 'plaintext',
     elapsedMs: null,
     errorMessage: null
-};
-
-const readJson = <T>(key: string, fallback: T): T => {
-    if (typeof window === 'undefined') return fallback;
-    try {
-        const raw = window.localStorage.getItem(key);
-        if (raw == null) return fallback;
-        return JSON.parse(raw) as T;
-    } catch {
-        return fallback;
-    }
-};
-
-const writeJson = (key: string, value: unknown): void => {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-        // Storage may be unavailable (quota, private mode) — ignore
-    }
-};
-
-const removeKey = (key: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-        window.localStorage.removeItem(key);
-    } catch {
-        // ignore
-    }
-};
-
-const isValidHistory = (value: unknown): value is string[] =>
-    Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-
-const isValidRatio = (value: unknown): value is [number, number] =>
-    Array.isArray(value) &&
-    value.length === 2 &&
-    value.every((n) => typeof n === 'number' && Number.isFinite(n));
-
-const dedupeAndCap = (history: string[], entry: string): string[] => {
-    const trimmed = entry.trim();
-    if (!trimmed) return history;
-    const filtered = history.filter((item) => item !== trimmed);
-    return [trimmed, ...filtered].slice(0, HISTORY_MAX_ENTRIES);
-};
-
-const formatBody = (body: string, contentType: DotVelocityResponseContentType): string => {
-    if (contentType !== 'json' || !body.trim()) return body;
-    // Skip the parse/stringify round-trip on very large payloads — Monaco
-    // already struggles past ~500KB and the temporary copy doubles memory.
-    if (body.length > JSON_PRETTY_PRINT_MAX_BYTES) return body;
-    try {
-        return JSON.stringify(JSON.parse(body), null, 2);
-    } catch {
-        return body;
-    }
 };
 
 export const DotVelocityPlaygroundStore = signalStore(

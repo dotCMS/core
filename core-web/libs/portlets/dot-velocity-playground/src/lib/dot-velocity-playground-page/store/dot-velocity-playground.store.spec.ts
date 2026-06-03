@@ -6,16 +6,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
+import { DotVelocityPlaygroundStore } from './dot-velocity-playground.store';
+
 import {
     DEFAULT_SPLITTER_RATIO,
-    DotVelocityPlaygroundStore,
     HISTORY_MAX_ENTRIES,
     HISTORY_STORAGE_KEY,
-    JSON_PRETTY_PRINT_MAX_BYTES,
     SPLITTER_STORAGE_KEY,
     WRAP_STORAGE_KEY
-} from './dot-velocity-playground.store';
-
+} from '../../dot-velocity-playground.utils';
 import { DotVelocityPlaygroundResponse } from '../../models/dot-velocity-playground.models';
 import { DotVelocityPlaygroundService } from '../../services/dot-velocity-playground.service';
 
@@ -116,24 +115,7 @@ describe('DotVelocityPlaygroundStore', () => {
             expect(window.localStorage.getItem(HISTORY_STORAGE_KEY)).toBeNull();
         });
 
-        it('dedupes consecutive identical runs', () => {
-            spectator.service.setCode('$dup');
-            spectator.service.runScript();
-            spectator.service.runScript();
-
-            expect(spectator.service.history()).toEqual(['$dup']);
-        });
-
-        it('dedupes entries that differ only by surrounding whitespace', () => {
-            spectator.service.setCode('   $padded   ');
-            spectator.service.runScript();
-            spectator.service.setCode('$padded');
-            spectator.service.runScript();
-
-            expect(spectator.service.history()).toEqual(['$padded']);
-        });
-
-        it('caps history at HISTORY_MAX_ENTRIES', () => {
+        it('records successful runs into history (dedupe + cap are covered in utils.spec)', () => {
             for (let i = 0; i < HISTORY_MAX_ENTRIES + 2; i++) {
                 spectator.service.setCode(`$snippet_${i}`);
                 spectator.service.runScript();
@@ -155,7 +137,7 @@ describe('DotVelocityPlaygroundStore', () => {
             expect(submitted).toContain('$hello');
         });
 
-        it('on success patches output, contentType, elapsedMs, and LOADED status', () => {
+        it('on success patches output, contentType, elapsedMs, and LOADED status, formatting JSON', () => {
             runScriptSpy.mockReturnValue(
                 of({
                     body: '{"ok":true}',
@@ -168,73 +150,10 @@ describe('DotVelocityPlaygroundStore', () => {
             spectator.service.runScript();
 
             expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
+            // formatBody pretty-prints JSON; full coverage of the helper lives in utils.spec
             expect(spectator.service.output()).toBe('{\n  "ok": true\n}');
             expect(spectator.service.outputContentType()).toBe('json');
             expect(spectator.service.elapsedMs()).toBe(17);
-        });
-
-        it('pretty-prints JSON responses with 2-space indentation', () => {
-            runScriptSpy.mockReturnValue(
-                of({
-                    body: '{"a":1,"b":{"c":2}}',
-                    contentType: 'json',
-                    elapsedMs: 5
-                } satisfies DotVelocityPlaygroundResponse)
-            );
-
-            spectator.service.setCode('$x');
-            spectator.service.runScript();
-
-            expect(spectator.service.output()).toBe('{\n  "a": 1,\n  "b": {\n    "c": 2\n  }\n}');
-        });
-
-        it('keeps the raw body when the JSON payload is malformed', () => {
-            runScriptSpy.mockReturnValue(
-                of({
-                    body: '{not json',
-                    contentType: 'json',
-                    elapsedMs: 5
-                } satisfies DotVelocityPlaygroundResponse)
-            );
-
-            spectator.service.setCode('$x');
-            spectator.service.runScript();
-
-            expect(spectator.service.output()).toBe('{not json');
-        });
-
-        it('does not reformat non-JSON content types', () => {
-            runScriptSpy.mockReturnValue(
-                of({
-                    body: '<root><a/></root>',
-                    contentType: 'xml',
-                    elapsedMs: 5
-                } satisfies DotVelocityPlaygroundResponse)
-            );
-
-            spectator.service.setCode('$x');
-            spectator.service.runScript();
-
-            expect(spectator.service.output()).toBe('<root><a/></root>');
-        });
-
-        it('skips JSON pretty-print when the body exceeds the size guard', () => {
-            // Build a valid-but-large JSON payload past JSON_PRETTY_PRINT_MAX_BYTES
-            const padding = 'x'.repeat(JSON_PRETTY_PRINT_MAX_BYTES);
-            const rawBody = `{"v":"${padding}"}`;
-
-            runScriptSpy.mockReturnValue(
-                of({
-                    body: rawBody,
-                    contentType: 'json',
-                    elapsedMs: 5
-                } satisfies DotVelocityPlaygroundResponse)
-            );
-
-            spectator.service.setCode('$x');
-            spectator.service.runScript();
-
-            expect(spectator.service.output()).toBe(rawBody);
         });
 
         it('pushes the un-wrapped code into history on success', () => {
