@@ -141,7 +141,7 @@ public class SamlWebUtils {
      * @return If the URI can be associated to the dotCMS back-end login or logout, returns {@code true}. Otherwise,
      * returns {@code false}.
      */
-    protected boolean isBackEndLoginPage(final String uri) {
+    public boolean isBackEndLoginPage(final String uri) {
 
         return uri.startsWith("/dotAdmin") || uri.startsWith("/html/portal/login") || uri.startsWith("/c/public/login")
                 || uri.startsWith("/c/portal_public/login") || uri.startsWith("/c/portal/logout");
