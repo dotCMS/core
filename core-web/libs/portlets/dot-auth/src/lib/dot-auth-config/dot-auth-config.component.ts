@@ -90,10 +90,15 @@ export class DotAuthConfigComponent implements OnInit {
             }
             if (this.store.status() === 'loaded' && this.#pendingSaveToast()) {
                 this.#pendingSaveToast.set(false);
-                this.#messages.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('dotauth.toast.saved')
-                });
+                // The save PUT succeeded, but if the follow-up reload failed (which still
+                // lands on 'loaded') the user already saw an error dialog — don't pair it
+                // with a contradictory success toast.
+                if (!this.store.reloadFailed()) {
+                    this.#messages.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('dotauth.toast.saved')
+                    });
+                }
             }
         });
 
@@ -104,10 +109,12 @@ export class DotAuthConfigComponent implements OnInit {
             }
             if (this.store.status() === 'loaded' && this.#pendingClearToast()) {
                 this.#pendingClearToast.set(false);
-                this.#messages.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('dotauth.toast.config-cleared')
-                });
+                if (!this.store.reloadFailed()) {
+                    this.#messages.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('dotauth.toast.config-cleared')
+                    });
+                }
             }
         });
     }

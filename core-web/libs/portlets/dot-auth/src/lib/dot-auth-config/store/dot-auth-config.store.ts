@@ -33,6 +33,11 @@ interface DotAuthConfigState {
     inherited: boolean;
     status: DotAuthConfigStatus;
     errors: Record<string, string>;
+    // True when the most recent load()/reload failed. Lets a component distinguish a
+    // genuinely-successful save+reload from a save that succeeded but whose follow-up
+    // reload errored (which, per convention, still lands on status 'loaded'), so a failed
+    // reload does not masquerade as a successful save with a green toast.
+    reloadFailed: boolean;
 }
 
 const initialState: DotAuthConfigState = {
@@ -42,7 +47,8 @@ const initialState: DotAuthConfigState = {
     configured: false,
     inherited: false,
     status: 'init',
-    errors: {}
+    errors: {},
+    reloadFailed: false
 };
 
 export const DotAuthConfigStore = signalStore(
@@ -65,14 +71,14 @@ export const DotAuthConfigStore = signalStore(
         const httpErrorManager = inject(DotHttpErrorManagerService);
 
         function load(siteId: string): void {
-            patchState(store, { siteId, status: 'loading', errors: {} });
+            patchState(store, { siteId, status: 'loading', errors: {}, reloadFailed: false });
             service
                 .getConfig(siteId)
                 .pipe(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { status: 'loaded' });
+                        patchState(store, { status: 'loaded', reloadFailed: true });
                         return EMPTY;
                     })
                 )
@@ -83,7 +89,8 @@ export const DotAuthConfigStore = signalStore(
                         draft: clone(config),
                         configured: view.configured,
                         inherited: view.inherited,
-                        status: 'loaded'
+                        status: 'loaded',
+                        reloadFailed: false
                     });
                 });
         }
