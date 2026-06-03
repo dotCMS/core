@@ -48,7 +48,7 @@ async function fireContentlet(
 
 interface BulkPublishResponseBody {
     entity?: {
-        results?: Array<Record<string, unknown>>;
+        results?: Record<string, unknown>[];
         summary?: { failCount?: number; successCount?: number };
     };
 }

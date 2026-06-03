@@ -4,15 +4,15 @@
 
 <article
     (click)="actionFired.emit(app.key)"
-    class="flex flex-col gap-4 h-full p-6 rounded bg-white shadow-sm hover:shadow-lg transition cursor-pointer"
+    class="flex h-full cursor-pointer flex-col gap-4 rounded-sm bg-white p-6 shadow-sm transition hover:shadow-lg"
     [class.grayscale]="disabled"
     [class.opacity-60]="disabled"
     [class.dot-apps-card__disabled]="disabled">
     <header class="flex items-center gap-4">
-        <div class="flex items-center justify-center shrink-0 w-12 h-12">
+        <div class="flex size-12 shrink-0 items-center justify-center">
             @if (app.iconUrl) {
                 <p-avatar
-                    class="shadow-lg rounded-full"
+                    class="rounded-full shadow-lg"
                     [image]="app.iconUrl"
                     [label]="app.name"
                     size="large"
@@ -23,18 +23,17 @@
                 </dot-color-icon>
             } @else {
                 <p-avatar
-                    class="shadow-lg rounded-full"
+                    class="rounded-full shadow-lg"
                     [label]="app.name"
                     size="large"
                     dotAvatar />
             }
         </div>
-        <div class="flex flex-col flex-1 gap-1 min-w-0">
-            <h3
-                class="m-0 font-bold text-base text-black overflow-hidden text-ellipsis whitespace-nowrap">
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <h3 class="m-0 truncate text-base font-bold text-black">
                 {{ app.name }}
             </h3>
-            <span class="text-gray-700 leading-4 dot-apps-card__configurations">
+            <span class="dot-apps-card__configurations leading-4 text-gray-700">
                 {{
                     app.configurationsCount
                         ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
@@ -50,7 +49,7 @@
             }
         </div>
     </header>
-    <div class="text-gray-700 line-clamp-3 dot-apps-card__description">
+    <div class="dot-apps-card__description line-clamp-3 text-gray-700">
         <markdown>{{ app.description }}</markdown>
     </div>
 </article>
