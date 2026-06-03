@@ -3,27 +3,21 @@
     @switch (status) {
         @case ('Published') {
             <p-chip
-                class="p-chip-sm border-green-100! bg-green-100! text-xs text-green-700!"
+                class="bg-green-100! text-green-700! border-green-100! text-xs"
                 [label]="status" />
         }
         @case ('Archived') {
-            <p-chip
-                class="p-chip-sm border-red-100! bg-red-100! text-xs text-red-700!"
-                [label]="status" />
+            <p-chip class="bg-red-100! text-red-700! border-red-100! text-xs" [label]="status" />
         }
         @case ('Revision') {
-            <p-chip
-                class="p-chip-sm border-blue-100! bg-blue-100! text-xs text-blue-700!"
-                [label]="status" />
+            <p-chip class="bg-blue-100! text-blue-700! border-blue-100! text-xs" [label]="status" />
         }
         @default {
             <p-chip
-                class="p-chip-sm border-yellow-100! bg-yellow-100! text-xs text-yellow-700!"
+                class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
                 [label]="status" />
         }
     }
 } @else {
-    <p-chip
-        class="p-chip-sm border-blue-100! bg-blue-100! text-xs text-blue-700!"
-        [label]="'New' | dm" />
+    <p-chip class="bg-blue-100! text-blue-700! border-blue-100! text-xs" [label]="'New' | dm" />
 }
