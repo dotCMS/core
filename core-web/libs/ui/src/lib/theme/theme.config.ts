@@ -42,6 +42,22 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `
         },
+        chip: {
+            // Compact chip variant (1.75rem / 28px tall) for the Content Status and
+            // locale chips in dense table/list contexts. PrimeNG has no size token for
+            // chip, so the `.p-chip-sm` modifier is defined here. The double-class
+            // selector outranks the base `.p-chip` root rule within the theme layer.
+            css: `
+                .p-chip.p-chip-sm {
+                    display: inline-flex;
+                    align-items: center;
+                    height: 1.75rem;
+                    min-height: 1.75rem;
+                    padding: 0 0.5rem;
+                    font-size: 0.75rem;
+                }
+            `
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
