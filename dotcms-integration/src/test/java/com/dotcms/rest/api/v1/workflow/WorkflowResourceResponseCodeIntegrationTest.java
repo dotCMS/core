@@ -452,6 +452,9 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Schemes_By_Content_Type_List_Null_Ids_Expect_BadRequest() {
+        // F-1: omitting the parameter entirely must be rejected — the endpoint requires
+        // at least one explicit content type identifier (null arrives when the query
+        // param is absent from the request)
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), null);
@@ -460,6 +463,8 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Schemes_By_Content_Type_List_Empty_List_Expect_BadRequest() {
+        // F-1: a blank token (empty string) must be filtered out and, once all tokens
+        // are removed, the endpoint must return 400 rather than an empty 200
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of(""));
@@ -468,6 +473,8 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Schemes_By_Content_Type_List_Whitespace_Only_Expect_BadRequest() {
+        // F-1: tokens that consist solely of whitespace or commas must be filtered out;
+        // the resulting empty list must produce a 400
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("  ,  ,  "));
@@ -476,6 +483,9 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Schemes_By_Content_Type_List_Unknown_Id_Reported_In_Errors() {
+        // F-3: an identifier that does not match any content type must NOT fail the
+        // whole request; instead it must appear in the response errors array with
+        // errorCode CONTENT_TYPE_NOT_FOUND and fieldName equal to the original input
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("invalid-ct-id"));

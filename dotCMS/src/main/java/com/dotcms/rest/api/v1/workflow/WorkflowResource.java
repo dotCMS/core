@@ -646,6 +646,8 @@ public class WorkflowResource {
                             .schemes(this.workflowAPI.findSchemesForContentType(ct))
                             .build());
                 } catch (DotDataException e) {
+                    Logger.warn(this, "Failed to retrieve schemes for content type '" +
+                            ct.id() + "': " + e.getMessage(), e);
                     skippedIds.add(ct.id());
                 }
             }
