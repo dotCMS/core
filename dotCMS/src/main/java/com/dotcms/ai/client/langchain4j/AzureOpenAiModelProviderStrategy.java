@@ -1,13 +1,14 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.openai.azure.AzureOpenAIServiceVersion;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
-import dev.langchain4j.model.azure.AzureOpenAiImageModel;
 import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
+import dev.langchain4j.model.openaiofficial.OpenAiOfficialImageModel;
 
 import java.time.Duration;
 
@@ -62,17 +63,29 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         return builder.build();
     }
 
+    /**
+     * Builds an image model using the official OpenAI Java SDK with Microsoft Foundry (Azure)
+     * support, which provides access to gpt-image-1 and other modern image models.
+     *
+     * <p>The legacy {@code AzureOpenAiImageModel} only supported dall-e-3, which was deprecated
+     * by Azure in June 2025. This implementation uses {@code OpenAiOfficialImageModel} with
+     * {@code isMicrosoftFoundry(true)}, which routes through the official OpenAI SDK and
+     * supports gpt-image-1 on Azure.
+     */
     @Override
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
-        final AzureOpenAiImageModel.Builder builder = AzureOpenAiImageModel.builder()
+        final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
+                .isMicrosoftFoundry(true)
+                .baseUrl(config.endpoint())
                 .apiKey(config.apiKey())
-                .endpoint(config.endpoint())
-                .deploymentName(deploymentName(config));
-        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+                .microsoftFoundryDeploymentName(deploymentName(config));
+        if (config.apiVersion() != null) {
+            builder.azureOpenAIServiceVersion(AzureOpenAIServiceVersion.Companion.fromString(config.apiVersion()));
+        }
         if (config.size() != null) builder.size(config.size());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         return builder.build();
     }
 

@@ -28,7 +28,7 @@
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
+        <langchain4j.version>1.15.1</langchain4j.version>
     </properties>
     <dependencyManagement>
 
