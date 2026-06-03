@@ -242,7 +242,21 @@ export const DotContentDriveStore = signalStore(
 
                             if (samePage) {
                                 return {
-                                    pages: store.pages,
+                                    // Refresh the matched page's hasMore flags from this
+                                    // response (new array ref so dependent computeds
+                                    // recompute). Otherwise an emptied result that lands on
+                                    // DEFAULT_PAGE's cursors keeps its optimistic
+                                    // hasMoreContent: true and the paginator wrongly offers a
+                                    // next page when there are zero items.
+                                    pages: store.pages.map((page) =>
+                                        page === samePage
+                                            ? {
+                                                  ...page,
+                                                  hasMoreContent: response.hasMoreContent,
+                                                  hasMoreFolders: response.hasMoreFolders
+                                              }
+                                            : page
+                                    ),
                                     items: response.list,
                                     status: DotContentDriveStatus.LOADED
                                 };

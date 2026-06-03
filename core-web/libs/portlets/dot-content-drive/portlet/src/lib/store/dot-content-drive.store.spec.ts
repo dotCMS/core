@@ -6,7 +6,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotSite } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
@@ -875,5 +879,31 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 maxResults: 10
             })
         );
+    });
+
+    it('should refresh hasMore flags from an empty result that matches an existing page', () => {
+        // An empty result returns cursors 0,0 — which match DEFAULT_PAGE (the initial page,
+        // optimistically hasMoreContent: true). The matched page's flags must be refreshed
+        // from the response so the paginator does not offer a next page on zero items.
+        contentDriveService.search.mockReturnValue(
+            of({
+                list: [],
+                contentTotalCount: 0,
+                folderCount: 0,
+                contentCount: 0,
+                hasMoreContent: false,
+                hasMoreFolders: false,
+                nextContentCursor: 0,
+                nextFolderCursor: 0
+            } as unknown as DotContentDriveSearchResponse)
+        );
+
+        spectator.service.loadItems();
+
+        expect(store.items()).toEqual([]);
+        expect(store.pages()).toHaveLength(1);
+        const lastPage = store.pages().at(-1);
+        expect(lastPage?.hasMoreContent).toBe(false);
+        expect(lastPage?.hasMoreFolders).toBe(false);
     });
 });
