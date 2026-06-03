@@ -697,15 +697,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 "Overriding MultiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
                 pageId, personalization, multiTrees));
 
+        if (multiTrees == null) {
+            throw new DotDataException("empty list passed in");
+        }
+
         Logger.warn(this, String.format(
                 "[FD-36897] overridesMT: pageId=%s personalization=%s variant=%s lang=%s multiTrees=%d",
                 pageId, personalization, variantId,
                 languageIdOpt.map(String::valueOf).orElse("none"),
                 multiTrees.size()));
-
-        if (multiTrees == null) {
-            throw new DotDataException("empty list passed in");
-        }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
         Set<String> originalContentletIds;
