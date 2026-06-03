@@ -6,15 +6,11 @@
                 [src]="src"
                 [title]="name"
                 [alt]="name"
-                class="h-full w-full object-cover"
+                class="size-full object-cover"
                 data-testId="thumbnail-image" />
         }
         @case (CONTENT_THUMBNAIL_TYPE.video) {
-            <video
-                (error)="handleError()"
-                class="h-full w-full"
-                controls
-                data-testId="thumbnail-video">
+            <video (error)="handleError()" class="size-full" controls data-testId="thumbnail-video">
                 <source [src]="src" />
             </video>
         }
@@ -24,7 +20,7 @@
                 [src]="src"
                 [title]="name"
                 [alt]="name"
-                class="h-full w-full object-cover"
+                class="size-full object-cover"
                 data-testId="thumbnail-pdf" />
         }
         @default {

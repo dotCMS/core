@@ -32,12 +32,12 @@ const MAX_VALUE = 20;
                     [formGroup]="form"
                     class="flex flex-col gap-3 p-3"
                     (keydown.enter)="$event.preventDefault(); onApply()">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide m-0">
+                    <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                         {{ 'dot.block.editor.dialog.table.title' | dm }}
                     </p>
 
                     <div class="flex gap-3">
-                        <div class="flex flex-col gap-1 flex-1">
+                        <div class="flex flex-1 flex-col gap-1">
                             <label for="tbl-rows" class="text-xs font-medium text-gray-700">
                                 {{ 'dot.block.editor.dialog.table.field.rows' | dm }}
                             </label>
@@ -47,9 +47,9 @@ const MAX_VALUE = 20;
                                 formControlName="rows"
                                 min="1"
                                 [max]="maxValue"
-                                class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
+                                class="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
                         </div>
-                        <div class="flex flex-col gap-1 flex-1">
+                        <div class="flex flex-1 flex-col gap-1">
                             <label for="tbl-cols" class="text-xs font-medium text-gray-700">
                                 {{ 'dot.block.editor.dialog.table.field.columns' | dm }}
                             </label>
@@ -59,16 +59,16 @@ const MAX_VALUE = 20;
                                 formControlName="cols"
                                 min="1"
                                 [max]="maxValue"
-                                class="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
+                                class="w-full rounded-sm border border-gray-300 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none" />
                         </div>
                     </div>
 
-                    <label class="flex items-center gap-2 cursor-pointer" for="tbl-header">
+                    <label class="flex cursor-pointer items-center gap-2" for="tbl-header">
                         <input
                             id="tbl-header"
                             type="checkbox"
                             formControlName="withHeaderRow"
-                            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                            class="size-4 rounded-sm border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                         <span class="text-sm text-gray-700">
                             {{ 'dot.block.editor.dialog.table.field.header-row' | dm }}
                         </span>
@@ -78,14 +78,14 @@ const MAX_VALUE = 20;
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); manager.close()"
-                            class="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            class="rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
                             {{ 'Cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); onApply()"
                             [disabled]="form.invalid"
-                            class="rounded bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                             {{ 'Insert' | dm }}
                         </button>
                     </div>

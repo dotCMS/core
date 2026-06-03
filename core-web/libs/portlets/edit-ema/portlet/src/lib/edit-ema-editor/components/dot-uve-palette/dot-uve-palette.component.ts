@@ -76,7 +76,8 @@ export class DotUvePaletteComponent {
      * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
      */
     readonly tabsPt = {
-        root: { class: 'h-full min-h-0' }
+        root: { class: 'h-full min-h-0' },
+        tablist: { class: 'bg-gray-100' }
     };
 
     /** Emits whenever the active tab in the palette changes. */

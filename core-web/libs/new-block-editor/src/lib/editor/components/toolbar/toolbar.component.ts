@@ -567,50 +567,47 @@ export class ToolbarComponent implements OnDestroy {
         });
     }
 
-    // ── Table actions ────────────────────────────────────────────────────────
+    // Row / column actions are rendered inline INSIDE each cell by the DotTableCell /
+    // DotTableHeader NodeViews — see `extensions/table-extensions.ts` and
+    // `extensions/table-active-cells.plugin.ts`. The toolbar keeps the "Insert table"
+    // entry + the `table_edit` button below for a11y properties (caption / aria).
 
-    protected tableInsertRowAbove(): void {
-        this.editor().chain().focus().addRowBefore().run();
+    // ── Table properties (caption + aria-*) ──────────────────────────────────
+
+    protected openTablePropertiesDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.popovers.isOpen('table-properties')) {
+            this.popovers.close();
+            return;
+        }
+
+        const editor = this.editor();
+        const tableAttrs = editor.getAttributes('table');
+        const { captionText, hasCaption } = this.readActiveTableCaption(editor);
+        const btn = event.currentTarget as HTMLElement;
+
+        this.popovers.openTableProperties(() => btn.getBoundingClientRect(), {
+            initialValues: {
+                caption: captionText,
+                hasCaption,
+                ariaLabel: tableAttrs['ariaLabel'] ?? '',
+                ariaLabelledby: tableAttrs['ariaLabelledby'] ?? ''
+            }
+        });
     }
 
-    protected tableInsertRowBelow(): void {
-        this.editor().chain().focus().addRowAfter().run();
-    }
-
-    protected tableInsertColLeft(): void {
-        this.editor().chain().focus().addColumnBefore().run();
-    }
-
-    protected tableInsertColRight(): void {
-        this.editor().chain().focus().addColumnAfter().run();
-    }
-
-    protected tableMerge(): void {
-        this.editor().chain().focus().mergeCells().run();
-    }
-
-    protected tableSplit(): void {
-        this.editor().chain().focus().splitCell().run();
-    }
-
-    protected tableToggleRowHeader(): void {
-        this.editor().chain().focus().toggleHeaderRow().run();
-    }
-
-    protected tableToggleColHeader(): void {
-        this.editor().chain().focus().toggleHeaderColumn().run();
-    }
-
-    protected tableDeleteRow(): void {
-        this.editor().chain().focus().deleteRow().run();
-    }
-
-    protected tableDeleteCol(): void {
-        this.editor().chain().focus().deleteColumn().run();
-    }
-
-    protected tableDeleteTable(): void {
-        this.editor().chain().focus().deleteTable().run();
+    /** Reads the active table's `caption` attribute from the current selection. */
+    private readActiveTableCaption(editor: Editor): { captionText: string; hasCaption: boolean } {
+        const { $from } = editor.state.selection;
+        for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth);
+            if (node.type.name !== 'table') continue;
+            const caption = (node.attrs['caption'] as string | null) ?? '';
+            return { captionText: caption, hasCaption: caption.length > 0 };
+        }
+        return { captionText: '', hasCaption: false };
     }
 
     // ── Keyboard navigation (roving tabindex) ────────────────────────────────
