@@ -85,8 +85,10 @@ jobs:
       id-token: write
       pull-requests: write
       issues: write
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       timeout_minutes: 30
       runner: ubuntu-latest
