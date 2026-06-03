@@ -6,11 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import {
-    DotContentDriveItem,
-    DotContentDriveSearchResponse,
-    DotSite
-} from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 

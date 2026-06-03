@@ -1,12 +1,12 @@
-<p-toolbar class="gap-1 h-full px-3 justify-start border-none!">
+<p-toolbar class="h-full justify-start gap-1 border-none! px-3">
     <div
-        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center transition-all duration-300 ease-in-out gap-y-4 py-3"
+        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-y-4 py-3 transition-all duration-300 ease-in-out"
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()">
         <dot-content-drive-tree-toggler data-testid="tree-toggler" [style]="$togglerStyles()" />
 
         <div
-            class="grid items-center w-full gap-1 row-start-1 col-start-2"
+            class="col-start-2 row-start-1 grid w-full items-center gap-1"
             [class]="'grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr]'">
             <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
@@ -32,7 +32,7 @@
             }
         </div>
 
-        <div class="flex flex-wrap items-center w-full gap-2 row-start-2 col-start-2">
+        <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
