@@ -451,49 +451,51 @@ public class WorkflowResourceResponseCodeIntegrationTest {
     // ── findAllSchemesByContentTypeList ────────────────────────────────────────
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Null_Ids() {
+    public void Find_Schemes_By_Content_Type_List_Null_Ids_Expect_BadRequest() {
+        // F-1: omitting the parameter entirely must be rejected — the endpoint requires
+        // at least one explicit content type identifier (null arrives when the query
+        // param is absent from the request)
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), null);
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Null contentTypeIds should return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Empty_List() {
+    public void Find_Schemes_By_Content_Type_List_Empty_List_Expect_BadRequest() {
+        // F-1: a blank token (empty string) must be filtered out and, once all tokens
+        // are removed, the endpoint must return 400 rather than an empty 200
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of(""));
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Empty token should be filtered and return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Whitespace_Only() {
-        // Commas with only whitespace between them should all be filtered out
+    public void Find_Schemes_By_Content_Type_List_Whitespace_Only_Expect_BadRequest() {
+        // F-1: tokens that consist solely of whitespace or commas must be filtered out;
+        // the resulting empty list must produce a 400
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("  ,  ,  "));
-        assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Whitespace-only tokens should be filtered and return an empty list", result.isEmpty());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
     @Test
-    public void Find_Schemes_By_Content_Type_List_Invalid_Id_Is_Skipped() {
-        // Invalid IDs are silently skipped; the rest of the batch still succeeds
+    public void Find_Schemes_By_Content_Type_List_Unknown_Id_Reported_In_Errors() {
+        // F-3: an identifier that does not match any content type must NOT fail the
+        // whole request; instead it must appear in the response errors array with
+        // errorCode CONTENT_TYPE_NOT_FOUND and fieldName equal to the original input
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response response = workflowResource.findAllSchemesByContentTypeList(
                 request, new EmptyHttpResponse(), List.of("invalid-ct-id"));
         assertEquals(Status.OK.getStatusCode(), response.getStatus());
-        @SuppressWarnings("unchecked")
-        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
-        assertTrue("Unknown content type ID should be skipped, leaving an empty result", result.isEmpty());
+        final ResponseEntityView<?> body = ResponseEntityView.class.cast(response.getEntity());
+        assertTrue("entity should be empty for an all-unknown input",
+                ((List<?>) body.getEntity()).isEmpty());
+        assertFalse("errors should contain the unresolvable ID", body.getErrors().isEmpty());
+        assertEquals("CONTENT_TYPE_NOT_FOUND", body.getErrors().get(0).getErrorCode());
+        assertEquals("invalid-ct-id", body.getErrors().get(0).getFieldName());
     }
 
     @Test
@@ -534,7 +536,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
             assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType2.id())));
             result.forEach(v -> assertFalse(
                     "Expected at least one scheme for contentType " + v.contentTypeId(),
-                    v.contentTypeSchemes().isEmpty()));
+                    v.schemes().isEmpty()));
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
@@ -579,6 +581,28 @@ public class WorkflowResourceResponseCodeIntegrationTest {
             final List<ContentTypeWorkflowSchemesView> result =
                     (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
             assertEquals("Duplicate IDs should be deduplicated to a single entry", 1, result.size());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Deduplicates_UUID_And_Variable_Name() throws Exception {
+        // F-2: passing both the UUID and variable name of the same content type must
+        // produce a single entry in the response, not two separate entries
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType.id(), contentType.variable()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals("UUID and variable name for the same CT should deduplicate to one entry", 1, result.size());
+            assertEquals(contentType.id(), result.get(0).contentTypeId());
+            assertEquals(contentType.variable(), result.get(0).contentTypeVariable());
         } finally {
             APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
         }
