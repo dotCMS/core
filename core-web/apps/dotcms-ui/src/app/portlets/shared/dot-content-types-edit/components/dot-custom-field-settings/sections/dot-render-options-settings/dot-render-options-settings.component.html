@@ -1,8 +1,8 @@
 <div class="form mt-4">
     <div class="field">
-        <div class="flex flex-col gap-3 border border-gray-300 rounded p-4 bg-primary-50">
+        <div class="flex flex-col gap-3 rounded-sm border border-gray-300 bg-primary-50 p-4">
             <div class="flex items-start justify-between gap-4">
-                <div class="flex flex-col gap-1 flex-1 min-w-0">
+                <div class="flex min-w-0 flex-1 flex-col gap-1">
                     <span class="font-bold">
                         {{ 'contenttypes.field.properties.renderOptions.showAsModal.label' | dm }}
                     </span>
@@ -17,8 +17,8 @@
                     data-testid="render-options-show-as-modal" />
             </div>
             @if ($showAsModal()) {
-                <div class="flex gap-4 flex-wrap pt-2 border-t border-gray-200">
-                    <div class="field flex-1 min-w-0">
+                <div class="flex flex-wrap gap-4 border-t border-gray-200 pt-2">
+                    <div class="field min-w-0 flex-1">
                         <label for="customFieldWidth">
                             {{ 'contenttypes.field.properties.renderOptions.width' | dm }}
                         </label>
@@ -31,7 +31,7 @@
                                 pInputText
                                 class="flex-1"
                                 data-testid="render-options-width" />
-                            <span class="text-sm shrink-0">px</span>
+                            <span class="shrink-0 text-sm">px</span>
                         </div>
                         @if (
                             formTree.customFieldWidth().invalid() &&
@@ -42,7 +42,7 @@
                             </small>
                         }
                     </div>
-                    <div class="field flex-1 min-w-0">
+                    <div class="field min-w-0 flex-1">
                         <label for="customFieldHeight">
                             {{ 'contenttypes.field.properties.renderOptions.height' | dm }}
                         </label>
@@ -55,7 +55,7 @@
                                 pInputText
                                 class="flex-1"
                                 data-testid="render-options-height" />
-                            <span class="text-sm shrink-0">px</span>
+                            <span class="shrink-0 text-sm">px</span>
                         </div>
                         @if (
                             formTree.customFieldHeight().invalid() &&

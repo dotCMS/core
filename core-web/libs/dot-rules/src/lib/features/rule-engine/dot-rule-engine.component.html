@@ -5,10 +5,10 @@
 @let isContentletHost = $isContentletHost();
 
 @if (loading) {
-    <div class="bg-(--color-palette-black-op-30) w-full h-full"></div>
+    <div class="size-full bg-(--color-palette-black-op-30)"></div>
 }
 @if (!loading && globalError()?.message) {
-    <div class="ui negative message first:my-2 first:mx-8 first:mb-4 font-bold text-red-600">
+    <div class="ui negative message font-bold text-red-600 first:mx-8 first:my-2 first:mb-4">
         <div class="header">{{ globalError().message }}</div>
         <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
     </div>
@@ -16,7 +16,7 @@
 @if (!loading && showRules) {
     <div>
         <div class="pb-8">
-            <div class="flex flex-row flex-1 items-center">
+            <div class="flex flex-1 flex-row items-center">
                 <input
                     (keyup)="filterText.set($event.target.value)"
                     [value]="filterText()"
@@ -40,7 +40,7 @@
                     (click)="setFieldFilter('enabled', null)"
                     [class.active]="!isFilteringField('enabled')"
                     [class.font-bold]="!isFilteringField('enabled')"
-                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    class="p-1 text-gray-500 hover:text-gray-600 active:text-gray-600"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.all.label') | async }}
                 </a>
@@ -49,7 +49,7 @@
                     (click)="setFieldFilter('enabled', true)"
                     [class.active]="isFilteringField('enabled', true)"
                     [class.font-bold]="isFilteringField('enabled', true)"
-                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    class="p-1 text-gray-500 hover:text-gray-600 active:text-gray-600"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.active.label') | async }}
                 </a>
@@ -58,7 +58,7 @@
                     (click)="setFieldFilter('enabled', false)"
                     [class.active]="isFilteringField('enabled', false)"
                     [class.font-bold]="isFilteringField('enabled', false)"
-                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    class="p-1 text-gray-500 hover:text-gray-600 active:text-gray-600"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.inactive.label') | async }}
                 </a>
@@ -67,9 +67,9 @@
         @if (!rules.length) {
             <div class="mt-28 flex flex-col items-center justify-center text-center">
                 <i
-                    class="pi pi-sliders-h text-9xl text-gray-500 mb-6 block"
+                    class="pi pi-sliders-h mb-6 block text-9xl text-gray-500"
                     style="font-size: 8rem; width: auto; height: auto"></i>
-                <h2 class="text-2xl m-0 text-gray-700">
+                <h2 class="m-0 text-2xl text-gray-700">
                     {{ getI18nLabel('inputs.no.rules') | async }}
                     {{
                         getI18nLabel(
