@@ -2,12 +2,12 @@
     (valueChange)="handleTabChange($event)"
     [value]="$activeTab()"
     [pt]="tabsPt"
-    [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }">
+    [dt]="{ tabpanel: { padding: '0' } }">
     <p-tablist>
         @for (tab of $tabHeaders(); track tab.value) {
             <p-tab [value]="tab.value">
                 <div
-                    class="flex flex-1 h-full items-center justify-center"
+                    class="flex h-full flex-1 items-center justify-center"
                     [pTooltip]="tab.tooltipKey | dm"
                     tooltipPosition="bottom">
                     <i class="pi" [ngClass]="tab.icon"></i>
@@ -15,7 +15,7 @@
             </p-tab>
         }
     </p-tablist>
-    <p-tabpanels class="flex-1 min-h-0 overflow-hidden">
+    <p-tabpanels class="min-h-0 flex-1 overflow-hidden">
         <p-tabpanel [value]="TABS_MAP.CONTENT_TYPES" class="h-full min-h-0 overflow-hidden">
             <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
             creating triple renders and triple requests to the server. -->
@@ -48,13 +48,13 @@
         <p-tabpanel [value]="TABS_MAP.LAYERS">
             @if ($activeTab() === TABS_MAP.LAYERS) {
                 @if ($isStandardTemplate()) {
-                    <div class="w-full h-full overflow-y-auto">
+                    <div class="size-full overflow-y-auto">
                         <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
                     </div>
                 } @else {
                     <div
                         data-testid="layers-advanced-template-empty"
-                        class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+                        class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
                         <span class="material-symbols-outlined text-[5rem]! text-gray-300">
                             space_dashboard
                         </span>
@@ -62,7 +62,7 @@
                             {{ 'uve.palette.layers.advanced-template.title' | dm }}
                         </div>
                         <p
-                            class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-[var(--color-palette-primary-500)] [&_a]:underline hover:[&_a]:text-[var(--color-palette-primary-600)]"
+                            class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-primary-500 [&_a]:underline hover:[&_a]:text-primary-600"
                             [innerHTML]="
                                 'uve.palette.layers.advanced-template.description' | dm
                             "></p>

@@ -1,7 +1,12 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic"],
+    "plugins": ["@nx", "eslint-plugin-import", "ban", "@stylistic", "better-tailwindcss"],
+    "settings": {
+        "better-tailwindcss": {
+            "entryPoint": "apps/dotcms-ui/src/style.css"
+        }
+    },
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -201,7 +206,31 @@
             "env": {
                 "jest": true
             },
-            "rules": {}
+            "rules": {
+                "@typescript-eslint/no-non-null-assertion": "off"
+            }
+        },
+        {
+            "files": ["*.html"],
+            "parser": "@angular-eslint/template-parser",
+            "rules": {
+                "better-tailwindcss/enforce-consistent-variable-syntax": [
+                    "error",
+                    { "syntax": "shorthand" }
+                ],
+                "better-tailwindcss/enforce-consistent-important-position": [
+                    "error",
+                    { "position": "recommended" }
+                ],
+                "better-tailwindcss/no-duplicate-classes": "error",
+                "better-tailwindcss/no-unnecessary-whitespace": "error",
+                "better-tailwindcss/no-deprecated-classes": "error",
+                "better-tailwindcss/enforce-canonical-classes": "error",
+                "better-tailwindcss/no-unknown-classes": "off",
+                "better-tailwindcss/no-conflicting-classes": "warn",
+                "better-tailwindcss/enforce-consistent-class-order": "off",
+                "better-tailwindcss/enforce-consistent-line-wrapping": "off"
+            }
         }
     ]
 }

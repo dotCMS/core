@@ -1295,6 +1295,14 @@ describe('DotEmaShellComponent', () => {
 
                 expect(currentUrl).toMatch(/^\//);
             });
+
+            it('should use page hostname when clientHost is not present', () => {
+                const seoParams = spectator.component['$seoParams']();
+
+                expect(seoParams.requestHostName).toBe(
+                    `${window.location.protocol}//${MOCK_RESPONSE_HEADLESS.site.hostname}`
+                );
+            });
         });
 
         describe('$errorDisplay computed property', () => {
