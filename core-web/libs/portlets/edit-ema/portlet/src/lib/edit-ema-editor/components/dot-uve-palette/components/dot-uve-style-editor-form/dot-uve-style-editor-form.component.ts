@@ -1,4 +1,4 @@
-import { EMPTY, Observable, of, timer } from 'rxjs';
+import { EMPTY, merge, Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -21,11 +21,12 @@ import { ButtonModule } from 'primeng/button';
 
 import {
     catchError,
-    debounce,
+    debounceTime,
     distinctUntilChanged,
     filter,
     map,
     mergeMap,
+    share,
     switchMap,
     tap
 } from 'rxjs/operators';
@@ -42,9 +43,9 @@ import { StyleEditorFormBuilderService } from './services/style-editor-form-buil
 
 import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import {
-    STYLE_EDITOR_DEBOUNCE_TIME,
     STYLE_EDITOR_FIELD_TYPES,
-    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+    STYLE_EDITOR_INPUT_IDLE_SAVE_TIME,
+    STYLE_EDITOR_SAVE_DEBOUNCE_TIME
 } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
@@ -92,6 +93,31 @@ export class DotUveStyleEditorFormComponent {
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     /**
+     * Commit trigger for continuous (streaming) fields — text/number inputs.
+     * Emitted on blur/Enter so a save fires once the user finishes editing,
+     * instead of once per keystroke.
+     */
+    readonly #inputCommit$ = new Subject<void>();
+
+    /**
+     * Set of control ids that stream intermediate values while editing (inputs).
+     * These are excluded from the per-change save path; they commit on blur/Enter.
+     * Anything not in this set is treated as a discrete control and commits on change.
+     */
+    readonly #continuousFieldIds = computed(() => {
+        const ids = new Set<string>();
+        this.$schema().sections.forEach((section) =>
+            section.fields.forEach((field) => {
+                if (field.type === STYLE_EDITOR_FIELD_TYPES.INPUT) {
+                    ids.add(field.id);
+                }
+            })
+        );
+
+        return ids;
+    });
+
+    /**
      * Tracks only the contentlet identifier so that bounds updates (which call setSelected
      * with the same contentlet but new coordinates) do not cause spurious form rebuilds
      * that would reset the user's in-progress input.
@@ -132,6 +158,14 @@ export class DotUveStyleEditorFormComponent {
 
     onAccordionChange(indices: number[]): void {
         this.#activeTabIndices.set(indices);
+    }
+
+    /**
+     * Called when a continuous field (text/number input) finishes editing
+     * (blur or Enter). Triggers a single save of the current form value.
+     */
+    onInputCommit(): void {
+        this.#inputCommit$.next();
     }
 
     /**
@@ -191,65 +225,105 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Listens to form changes and handles:
-     * 1. Immediate updates to iframe (no debounce)
-     * 2. Debounced API calls to save style properties
+     * Listens to form changes and separates two concerns that used to be fused
+     * into a single inactivity-timer debounce:
      *
-     * Uses mergeMap to subscribe to each form's valueChanges when the form signal changes
-     * (e.g., during rollback restoration). mergeMap keeps all subscriptions active, so both
-     * old and new forms' valueChanges will be processed. This ensures that pending debounced
-     * saves from the old form will still complete, while also processing changes from the new form.
-     * This is a clean reactive approach that eliminates the need for flags, timeouts, or
-     * manual subscription management.
+     * 1. **Live preview** (headless only) — pushes every value change to the
+     *    iframe instantly, including each keystroke of a text input.
+     * 2. **Persist** — saves on a *commit*, where the commit signal differs by
+     *    field type:
+     *      - discrete fields (dropdown/radio/checkbox) commit on value change;
+     *      - continuous fields (text/number inputs) commit on blur/Enter, or
+     *        automatically after an idle pause far longer than any
+     *        inter-keystroke gap — so a slow typist never triggers one save
+     *        per letter, and no interaction is required to persist.
+     *
+     * Uses mergeMap to subscribe to each form's valueChanges when the form signal
+     * changes (e.g., during rollback restoration). mergeMap keeps all subscriptions
+     * active, so pending saves from the old form still complete while the new form
+     * is also processed — no flags, timeouts, or manual subscription management.
      */
     #listenToFormChanges(): void {
-        // Convert the form signal to an observable
-        // When the form signal changes (rebuilt during rollback), mergeMap subscribes to the new form's valueChanges
-        // while keeping the old form's subscription active
+        // When the form signal changes (rebuilt during rollback), mergeMap subscribes
+        // to the new form while keeping the old form's subscription active.
         toObservable(this.$form)
             .pipe(
-                // Filter out null forms
                 filter((form): form is FormGroup => form !== null),
-                // Merge with the new form's valueChanges
-                // mergeMap keeps all inner subscriptions active, so both old and new forms'
-                // valueChanges will be processed, including any pending debounced saves
-                mergeMap((form) =>
-                    form.valueChanges.pipe(
-                        distinctUntilChanged(
-                            (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
+                mergeMap((form) => {
+                    const continuousFieldIds = this.#continuousFieldIds();
+                    let previousValue = form.getRawValue();
+
+                    // Every value change drives the live preview and is classified
+                    // so the save path can decide when to commit.
+                    const changes$ = form.valueChanges.pipe(
+                        map(() => {
+                            const currentValue = form.getRawValue();
+                            const changedKeys = this.#changedFieldKeys(previousValue, currentValue);
+                            previousValue = currentValue;
+
+                            return changedKeys;
+                        }),
+                        filter((changedKeys) => changedKeys.length > 0),
+                        // Live preview: headless pushes every change (incl. keystrokes)
+                        // to the iframe immediately. Traditional pages cannot do this.
+                        tap(() => {
+                            if (this.#uveStore.pageType() !== PageType.TRADITIONAL) {
+                                this.#optimisticSave.updateIframeOptimistically(
+                                    this.#uveStore.editorSelected()?.payload,
+                                    { dotStyleProperties: form.getRawValue() }
+                                );
+                            }
+                        }),
+                        // Both commit branches below consume this stream; share() keeps
+                        // a single subscription so the diff/preview run once per change.
+                        share()
+                    );
+
+                    // Discrete fields (dropdown/radio/checkbox): the change IS the commit.
+                    const discreteCommits$ = changes$.pipe(
+                        filter((changedKeys) =>
+                            changedKeys.some((key) => !continuousFieldIds.has(key))
+                        )
+                    );
+
+                    // Continuous fields (inputs): a keystroke is NOT a commit. The user
+                    // finishes either explicitly (blur/Enter → #inputCommit$) or
+                    // implicitly by pausing — an idle window far longer than any
+                    // inter-keystroke gap, so it never fires mid-word.
+                    const idleInputCommits$ = changes$.pipe(
+                        filter((changedKeys) =>
+                            changedKeys.some((key) => continuousFieldIds.has(key))
                         ),
-                        // Capture activeContentlet at the time of form change (before debounce)
-                        // and identify the editor mode for this update.
-                        map((formValues) => ({
-                            formValues,
+                        debounceTime(STYLE_EDITOR_INPUT_IDLE_SAVE_TIME)
+                    );
+
+                    // A commit is: a discrete field change, an input idle pause,
+                    // or an input signalling it finished editing (blur/Enter).
+                    return merge(discreteCommits$, idleInputCommits$, this.#inputCommit$).pipe(
+                        // Capture the full value and the active contentlet at commit
+                        // time (before the coalescing window), not at save time.
+                        map(() => ({
+                            formValues: form.getRawValue(),
                             activeContentlet: this.#uveStore.editorSelected()?.payload,
                             isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
-                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
-                            // Traditional pages do not support instant iframe updates.
-                            if (!isTraditionalPage) {
-                                this.#optimisticSave.updateIframeOptimistically(activeContentlet, {
-                                    dotStyleProperties: formValues
-                                });
-                            }
-                        }),
-                        // Traditional: 500ms — short window so the iframe reload
-                        // following the save still feels responsive.
-                        // Headless: 2s — coalesces rapid slider/picker drags.
-                        debounce((changeEvent) =>
-                            changeEvent.isTraditionalPage
-                                ? timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
-                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        // A blur with no net change (e.g. tabbing through a field)
+                        // must not hit the API.
+                        distinctUntilChanged(
+                            (prev, curr) =>
+                                JSON.stringify(prev.formValues) === JSON.stringify(curr.formValues)
                         ),
+                        // Small window: batches a rapid burst of commits into one save.
+                        // NOT a "wait for typing to finish" timer — blur/Enter does that.
+                        debounceTime(STYLE_EDITOR_SAVE_DEBOUNCE_TIME),
                         // switchMap cancels the previous in-flight save when a new
-                        // debounced emission arrives, so a fast burst of edits
-                        // resolves to a single save (and a single toast) for the
-                        // latest value rather than one per change.
+                        // commit arrives, so a fast burst resolves to a single save
+                        // (and a single toast) for the latest value.
                         switchMap(({ formValues, activeContentlet, isTraditionalPage }) =>
                             this.#performSave(formValues, activeContentlet, isTraditionalPage)
                         )
-                    )
-                ),
+                    );
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((result) => {
@@ -290,6 +364,22 @@ export class DotUveStyleEditorFormComponent {
                     life: 2000
                 });
             });
+    }
+
+    /**
+     * Returns the top-level field ids whose value changed between two form
+     * snapshots. Nested groups (e.g. checkbox groups) are compared structurally,
+     * so a change inside the group surfaces as a change to its field id.
+     */
+    #changedFieldKeys(
+        previous: Record<string, unknown>,
+        current: Record<string, unknown>
+    ): string[] {
+        const keys = new Set([...Object.keys(previous), ...Object.keys(current)]);
+
+        return [...keys].filter(
+            (key) => JSON.stringify(previous[key]) !== JSON.stringify(current[key])
+        );
     }
 
     /**

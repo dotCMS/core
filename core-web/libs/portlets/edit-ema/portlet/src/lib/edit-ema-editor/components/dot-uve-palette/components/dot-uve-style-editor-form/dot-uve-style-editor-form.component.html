@@ -30,7 +30,9 @@
                                         <dot-uve-style-editor-field-radio [field]="field" />
                                     }
                                     @case (STYLE_EDITOR_FIELD_TYPES.INPUT) {
-                                        <dot-uve-style-editor-field-input [field]="field" />
+                                        <dot-uve-style-editor-field-input
+                                            [field]="field"
+                                            (commit)="onInputCommit()" />
                                     }
                                 }
                             }
