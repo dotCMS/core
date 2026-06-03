@@ -8,7 +8,6 @@ import com.dotcms.model.views.CommonViews;
 import com.dotcms.model.views.CommonViews.LanguageFileView;
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
-import java.util.Map;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -121,14 +120,4 @@ public interface LanguageAPI {
             summary = " Deletes an existing language from the system"
     )
     ResponseEntityView<String> delete(@PathParam("languageId") String languageId);
-
-    @PUT
-    @Path("/{languageId}/_makedefault")
-    @Operation(
-            summary = " Makes the language with the given id the default language. The body field "
-                    + "'fireTransferAssetsJob' controls whether a background job is scheduled to "
-                    + "transfer assets from the previous default language."
-    )
-    ResponseEntityView<Language> makeDefault(@PathParam("languageId") String languageId,
-            Map<String, Boolean> form);
 }

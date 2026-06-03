@@ -64,6 +64,8 @@ import java.util.Set;
  * @since 1.6.5c
  *
  */
+// ES-DECOMMISSION: Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria.
+// Remove esSearch, esSearchRaw — migrate to ContentSearchResults<T>.
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();

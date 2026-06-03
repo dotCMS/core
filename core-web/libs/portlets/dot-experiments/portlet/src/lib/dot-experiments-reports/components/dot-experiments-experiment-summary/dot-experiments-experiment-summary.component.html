@@ -1,12 +1,12 @@
 <div
-    class="flex items-center justify-between gap-4 max-w-[1100px] mx-auto w-full md:w-[calc(100%-2rem)]">
-    <div class="flex items-center gap-4 flex-wrap">
+    class="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-4 md:w-[calc(100%-2rem)]">
+    <div class="flex flex-wrap items-center gap-4">
         @if ($suggestedWinner()) {
             <div class="flex items-center gap-2">
                 @if ($suggestedWinner()!.icon === 'dot-trophy') {
                     <img
                         alt="winner icon"
-                        class="w-6 h-6"
+                        class="size-6"
                         data-TestId="suggested-winner-icon"
                         src="assets/icon/trophy.svg" />
                 } @else {

@@ -437,6 +437,16 @@ describe('ContentFeature', () => {
             expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
         }));
 
+        it('should pass inode to getContentTypeWithRender for Velocity variable resolution', fakeAsync(() => {
+            store.initializeExistingContent({ inode: testInode });
+            tick();
+
+            expect(contentTypeService.getContentTypeWithRender).toHaveBeenCalledWith(
+                mockContentlet.contentType,
+                testInode
+            );
+        }));
+
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {
             const mockContentlet = {
                 inode: '123',

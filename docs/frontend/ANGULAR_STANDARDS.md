@@ -4,7 +4,7 @@ This document is the single source of truth for Angular development in the dotCM
 
 ## Tech Stack Configuration
 - **Angular**: 20.3.9 standalone components
-- **UI**: PrimeNG 17.18.11, Tailwind CSS 4.x (PrimeFlex deprecated/removed)
+- **UI**: PrimeNG 17.18.11, Tailwind CSS 4.x
 - **State**: NgRx Signals, Component Store  
 - **Build**: Nx 20.5.1
 - **Testing**: Jest + Spectator (REQUIRED)

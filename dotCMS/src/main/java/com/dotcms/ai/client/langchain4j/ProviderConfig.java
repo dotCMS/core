@@ -44,10 +44,13 @@ import java.util.List;
  *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
  * </ul>
  *
- * <p>Google Vertex AI:
+ * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
  * <ul>
- *   <li>{@code projectId}</li>
- *   <li>{@code location}</li>
+ *   <li>{@code projectId} – GCP project ID</li>
+ *   <li>{@code location} – GCP region, e.g. {@code us-central1}</li>
+ *   <li>{@code credentialsJson} – full content of a GCP service account JSON key file.
+ *       When set, it is used directly for authentication instead of Application Default Credentials (ADC).
+ *       If omitted, ADC is used (useful for GKE / Cloud Run workload identity).</li>
  * </ul>
  */
 @Value.Immutable
@@ -110,5 +113,10 @@ public interface ProviderConfig {
     // Google Vertex AI
     @Nullable String projectId();
     @Nullable String location();
+    /**
+     * Full content of a GCP service account JSON key file (the entire JSON object as a string).
+     * When set, used for authentication instead of Application Default Credentials.
+     */
+    @Value.Redacted @Nullable String credentialsJson();
 
 }

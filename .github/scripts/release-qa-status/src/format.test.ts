@@ -92,10 +92,10 @@ describe('renderSlack', () => {
       failed: [pr(1, 't', 'failed')],
     });
     const out = renderSlack(r, { detailUrl: 'https://example.com/run/123' });
-    expect(out).toContain('<https://example.com/run/123#qa-failed|failed QA: 1>');
-    expect(out).toContain('<https://example.com/run/123#qa-missing|missing QA: 0>');
-    expect(out).toContain('<https://example.com/run/123#qa-orphan|Orphan PRs: 0>');
-    expect(out).toContain('<https://example.com/run/123#outside-dotcms-core|Not in the core repo: 0>');
+    expect(out).toContain('<https://example.com/run/123#user-content-qa-failed|failed QA: 1>');
+    expect(out).toContain('<https://example.com/run/123#user-content-qa-missing|missing QA: 0>');
+    expect(out).toContain('<https://example.com/run/123#user-content-qa-orphan|Orphan PRs: 0>');
+    expect(out).toContain('<https://example.com/run/123#user-content-outside-dotcms-core|Not in the core repo: 0>');
   });
 
   it('omits detailUrl wrapping when none is provided', () => {

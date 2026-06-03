@@ -1172,7 +1172,7 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false, null);
 	}
 
 	@GET
@@ -1253,9 +1253,14 @@ public class ContentTypeResource implements Serializable {
 					schema = @Schema(type = "integer")) final Long languageId,
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
-					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+					schema = @Schema(type = "boolean")) final Boolean paramLive,
+			@QueryParam("inode") @Parameter(
+					description = "Optional contentlet inode. When provided, contentlet-specific " +
+								  "Velocity variables ($inode, $identifier, $lang, etc.) will be " +
+								  "available when rendering Custom Fields.",
+					schema = @Schema(type = "string")) final String contentletInode) throws DotDataException {
 		req.setAttribute("contentTypeId", idOrVar);
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true, contentletInode);
 	}
 
 	/**
@@ -1270,6 +1275,8 @@ public class ContentTypeResource implements Serializable {
 	 *                           the returned object.
 	 * @param renderCustomFields If the Velocity code in all Custom Fields must be parsed, set this
 	 *                           to {@code true}.
+	 * @param contentletInode    Optional contentlet inode for providing contentlet-specific
+	 *                           Velocity variables when rendering Custom Fields.
 	 *
 	 * @return The specified {@link ContentType} in its JSON format.
 	 *
@@ -1278,7 +1285,8 @@ public class ContentTypeResource implements Serializable {
 	private Response retrieveContentType(final HttpServletRequest httpRequest,
 										 final HttpServletResponse httpResponse, final String idOrVar,
 										 final Long languageId, final Boolean paramLive,
-										 final boolean renderCustomFields) throws DotDataException {
+										 final boolean renderCustomFields,
+										 final String contentletInode) throws DotDataException {
 		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
@@ -1305,7 +1313,8 @@ public class ContentTypeResource implements Serializable {
 					new ContentTypeInternationalization(languageId, live, user) : null;
 			final ImmutableMap<String, Object> resultMap = ImmutableMap.<String, Object>builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, renderCustomFields, user))
+							contentTypeInternationalization, renderCustomFields, user,
+							contentletInode))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
 					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
