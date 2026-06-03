@@ -1,3 +1,4 @@
 # sets the SDKMAN_JAVA_VERSION for dotCMS
 # this is the version of java that will be used as the base image for the docker build
-java=21.0.8-ms
+# Use "sdk list java" to see available 25.x identifiers (e.g. 25.0.2-tem, 25.0.2-ms)
+java=25.0.2-ms
