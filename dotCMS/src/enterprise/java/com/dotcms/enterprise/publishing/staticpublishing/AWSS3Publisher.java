@@ -19,6 +19,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.*;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.commons.io.FileUtils;
@@ -26,7 +27,12 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -65,6 +71,9 @@ public class AWSS3Publisher extends Publisher {
     private final EnvironmentAPI environmentAPI;
     private final PublishingEndPointAPI publisherEndPointAPI;
     private final PushedAssetsAPI pushedAssetsAPI;
+    private final S3VanityAliasService vanityAliasService;
+    private final ContentletAPI contentletAPI;
+    private final LanguageAPI languageAPI;
 
     /**
      * Class constructor.
@@ -75,6 +84,9 @@ public class AWSS3Publisher extends Publisher {
         this.environmentAPI = APILocator.getEnvironmentAPI();
         this.publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
         this.pushedAssetsAPI = APILocator.getPushedAssetsAPI();
+        this.vanityAliasService = new S3VanityAliasService();
+        this.contentletAPI = APILocator.getContentletAPI();
+        this.languageAPI = APILocator.getLanguageAPI();
     }
 
     /**
@@ -91,11 +103,34 @@ public class AWSS3Publisher extends Publisher {
             final EnvironmentAPI environmentAPI,
             final PublishingEndPointAPI publisherEndPointAPI,
             final PushedAssetsAPI pushedAssetsAPI) {
+        this(hostAPI, publishAuditAPI, environmentAPI, publisherEndPointAPI, pushedAssetsAPI,
+                new S3VanityAliasService());
+    }
+
+    /**
+     * Test driven constructor
+     * @param hostAPI
+     * @param publishAuditAPI
+     * @param environmentAPI
+     * @param publisherEndPointAPI
+     * @param pushedAssetsAPI
+     * @param vanityAliasService
+     */
+    @VisibleForTesting
+    public AWSS3Publisher(final HostAPI hostAPI,
+            final PublishAuditAPI publishAuditAPI,
+            final EnvironmentAPI environmentAPI,
+            final PublishingEndPointAPI publisherEndPointAPI,
+            final PushedAssetsAPI pushedAssetsAPI,
+            final S3VanityAliasService vanityAliasService) {
         this.hostAPI = hostAPI;
         this.publishAuditAPI = publishAuditAPI;
         this.environmentAPI = environmentAPI;
         this.publisherEndPointAPI = publisherEndPointAPI;
         this.pushedAssetsAPI = pushedAssetsAPI;
+        this.vanityAliasService = vanityAliasService;
+        this.contentletAPI = APILocator.getContentletAPI();
+        this.languageAPI = APILocator.getLanguageAPI();
     }
 
     /**
@@ -335,13 +370,7 @@ public class AWSS3Publisher extends Publisher {
                                         : FileUtils.listFiles(languageFolder.getLanguageFolder(), TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
                                     for (File file : listFiles) {
-                                        String filePath = file.getAbsolutePath().replace(bundleRoot.getAbsolutePath()+ LIVE_FOLDER, "");
-
-                                        //Always remove the /hostName/ i.e. /demo.dotcms.com/
-                                        filePath = filePath.substring(filePath.indexOf(File.separator, filePath.indexOf(File.separator)+1));
-
-                                        //Always remove the /languageId/ i.e. /1/
-                                        filePath = filePath.substring(filePath.indexOf(File.separator, filePath.indexOf(File.separator)+1));
+                                        final String filePath = getStaticFilePath(bundleRoot, file);
 
                                         try {
                                             if (amIPublishing) {
@@ -355,9 +384,16 @@ public class AWSS3Publisher extends Publisher {
                                             Logger.error(this.getClass(), error, e);
                                         }
                                     }
+                                    publishVanityAliasesForCanonicalFilesIfEnabled(endPointPublisher, endpoint,
+                                            host, language, bucketName, bucketRegion, bucketPrefix, bundleRoot,
+                                            languageFolder.getLanguageFolder());
                                 }
                             }
                         }
+                        publishVanityAliasesForBundleAssetsIfEnabled(endPointPublisher, bucketRegion,
+                                bucketPrefixProp, endpoint);
+                        unpublishVanityAliasesForBundleAssetsIfEnabled(new S3VanityAliasCleanupContext(
+                                endpoint.getId(), endPointPublisher));
 
 
                     } catch(Exception e) {
@@ -505,6 +541,304 @@ public class AWSS3Publisher extends Publisher {
         String normalizedBucketName = bucketName.replaceAll(regexValidation, "-");
         return normalizedBucketName.toLowerCase();
     } //normalizeBucketName
+
+    /**
+     * Publishes vanity clones for Vanity URL contentlets included in the bundle.
+     *
+     * @param endPointPublisher S3 publisher
+     * @param bucketRegion bucket region
+     * @param bucketPrefixProp bucket prefix property before interpolation
+     * @param endpoint current endpoint
+     * @throws DotPublishingException when vanity clone publishing fails
+     */
+    private void publishVanityAliasesForBundleAssetsIfEnabled(final AWSS3EndPointPublisher endPointPublisher,
+                                                              final String bucketRegion,
+                                                              final String bucketPrefixProp,
+                                                              final PublishingEndPoint endpoint)
+            throws DotPublishingException {
+        if (!isS3VanityAliasEnabled() || !PublisherConfig.Operation.PUBLISH.equals(config.getOperation())) {
+            return;
+        }
+
+        final List<PublishQueueElement> assets = config.getAssets();
+        if (!UtilMethods.isSet(assets)) {
+            return;
+        }
+
+        for (final PublishQueueElement asset : assets) {
+            publishVanityAliasForQueueElement(endPointPublisher, bucketRegion, bucketPrefixProp, endpoint, asset);
+        }
+    }
+
+    /**
+     * Refreshes existing vanity aliases when their canonical static files are published.
+     *
+     * @param endPointPublisher S3 publisher
+     * @param endpoint current endpoint
+     * @param host current host
+     * @param language current language
+     * @param bucketName bucket name
+     * @param bucketRegion bucket region
+     * @param bucketPrefix bucket prefix
+     * @param bundleRoot bundle root
+     * @param languageFolder folder containing the static files for the current language
+     * @throws DotPublishingException when alias refresh fails
+     */
+    private void publishVanityAliasesForCanonicalFilesIfEnabled(final AWSS3EndPointPublisher endPointPublisher,
+                                                                final PublishingEndPoint endpoint,
+                                                                final Host host,
+                                                                final Language language,
+                                                                final String bucketName,
+                                                                final String bucketRegion,
+                                                                final String bucketPrefix,
+                                                                final File bundleRoot,
+                                                                final File languageFolder)
+            throws DotPublishingException {
+        if (!isS3VanityAliasEnabled() || !PublisherConfig.Operation.PUBLISH.equals(config.getOperation())) {
+            return;
+        }
+
+        for (final File file : FileUtils.listFiles(languageFolder, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)) {
+            if (!endPointPublisher.acceptsFile(file)) {
+                continue;
+            }
+
+            final String canonicalPath = getStaticFilePath(bundleRoot, file);
+            try {
+                vanityAliasService.publishAliases(new S3VanityAliasContext(
+                        new S3VanityAliasLookup(endpoint.getId(), host.getIdentifier(), language.getId(),
+                                canonicalPath),
+                        bucketName, bucketRegion, bucketPrefix, host, language, file, endPointPublisher));
+            } catch (final DotDataException e) {
+                throw new DotPublishingException(e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * Handles one bundle element as a possible published Vanity URL.
+     *
+     * @param endPointPublisher S3 publisher
+     * @param bucketRegion bucket region
+     * @param bucketPrefixProp bucket prefix property before interpolation
+     * @param endpoint current endpoint
+     * @param asset element from the publishing queue
+     * @throws DotPublishingException when vanity clone publishing fails
+     */
+    private void publishVanityAliasForQueueElement(final AWSS3EndPointPublisher endPointPublisher,
+                                                   final String bucketRegion,
+                                                   final String bucketPrefixProp,
+                                                   final PublishingEndPoint endpoint,
+                                                   final PublishQueueElement asset)
+            throws DotPublishingException {
+        if (!isPublishedContentletAsset(asset)) {
+            return;
+        }
+
+        try {
+            publishLiveVanityContentlet(endPointPublisher, bucketRegion, bucketPrefixProp, endpoint, asset);
+        } catch (final DotDataException | DotSecurityException e) {
+            throw new DotPublishingException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Publishes one live Vanity URL contentlet as a static S3 clone.
+     *
+     * @param endPointPublisher S3 publisher
+     * @param bucketRegion bucket region
+     * @param bucketPrefixProp bucket prefix property before interpolation
+     * @param endpoint current endpoint
+     * @param asset element from the publishing queue
+     * @throws DotDataException when content or mapping reads fail
+     * @throws DotSecurityException when system user cannot read the contentlet
+     * @throws DotPublishingException when S3 publishing fails
+     */
+    private void publishLiveVanityContentlet(final AWSS3EndPointPublisher endPointPublisher,
+                                             final String bucketRegion,
+                                             final String bucketPrefixProp,
+                                             final PublishingEndPoint endpoint,
+                                             final PublishQueueElement asset)
+            throws DotDataException, DotSecurityException, DotPublishingException {
+        final Optional<Contentlet> vanityContentlet = findLiveVanityContentlet(asset);
+        if (vanityContentlet.isEmpty()) {
+            return;
+        }
+
+        final Host host = hostAPI.find(vanityContentlet.get().getHost(), APILocator.getUserAPI().getSystemUser(), false);
+        final Language language = languageAPI.getLanguage(vanityContentlet.get().getLanguageId());
+        if (host == null || language == null) {
+            Logger.warn(this, "Skipping Vanity URL because its site or language cannot be resolved: "
+                    + vanityContentlet.get().getIdentifier());
+            return;
+        }
+
+        config.put(CURRENT_HOST, host);
+        config.put(CURRENT_LANGUAGE, Long.toString(language.getId()));
+        final String bucketName = getBucketName(config);
+        final String bucketPrefix = getBucketPrefix(bucketPrefixProp, config);
+        ensureBucketExists(endPointPublisher, bucketName, bucketRegion);
+        vanityAliasService.publishAliasForVanityUrl(new S3VanityAliasPublishContext(endpoint.getId(),
+                bucketName, bucketRegion, bucketPrefix, host, language, endPointPublisher), vanityContentlet.get());
+    }
+
+    /**
+     * Finds the live Vanity URL contentlet represented by a publishing queue element.
+     *
+     * @param asset element from the publishing queue
+     * @return live Vanity URL contentlet when the asset represents one
+     * @throws DotDataException when the contentlet cannot be read
+     * @throws DotSecurityException when the system user cannot read the contentlet
+     */
+    private Optional<Contentlet> findLiveVanityContentlet(final PublishQueueElement asset)
+            throws DotDataException, DotSecurityException {
+        final Optional<Contentlet> languageSpecificContentlet = findLiveVanityContentletForLanguage(asset);
+        if (languageSpecificContentlet.isPresent()) {
+            return languageSpecificContentlet;
+        }
+
+        final List<Contentlet> contentlets = contentletAPI.search("+identifier:" + asset.getAsset() + " +live:true",
+                0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
+        return contentlets.stream().filter(Contentlet::isVanityUrl).findFirst();
+    }
+
+    /**
+     * Finds the live Vanity URL contentlet for the queue language when present.
+     *
+     * @param asset element from the publishing queue
+     * @return language-specific live Vanity URL when the queue carries a language
+     * @throws DotDataException when the contentlet cannot be read
+     * @throws DotSecurityException when the system user cannot read the contentlet
+     */
+    private Optional<Contentlet> findLiveVanityContentletForLanguage(final PublishQueueElement asset)
+            throws DotDataException, DotSecurityException {
+        if (asset.getLanguageId() == null || asset.getLanguageId() <= 0) {
+            return Optional.empty();
+        }
+
+        try {
+            final Contentlet contentlet = contentletAPI.findContentletByIdentifier(asset.getAsset(), true,
+                    asset.getLanguageId(), APILocator.getUserAPI().getSystemUser(), false);
+            return contentlet != null && contentlet.isVanityUrl() ? Optional.of(contentlet) : Optional.empty();
+        } catch (final DotContentletStateException e) {
+            Logger.warn(this, "Unable to find live Vanity URL for language: " + asset.getLanguageId());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Creates the bucket once per endpoint execution when needed.
+     *
+     * @param endPointPublisher S3 publisher
+     * @param bucketName bucket name
+     * @param bucketRegion bucket region
+     * @throws DotPublishingException when bucket creation fails
+     */
+    private void ensureBucketExists(final AWSS3EndPointPublisher endPointPublisher,
+                                    final String bucketName,
+                                    final String bucketRegion) throws DotPublishingException {
+        if (!((Set<String>) config.get(CREATED_BUCKETS)).contains(bucketName)) {
+            endPointPublisher.createBucket(bucketName, bucketRegion);
+            ((Set<String>) config.get(CREATED_BUCKETS)).add(bucketName);
+        }
+    }
+
+    /**
+     * Removes vanity clones when the bundle directly contains a deleted or
+     * unpublished Vanity URL.
+     *
+     * @param context minimal cleanup context for the S3 endpoint
+     * @throws DotPublishingException when vanity clone removal fails
+     */
+    private void unpublishVanityAliasesForBundleAssetsIfEnabled(final S3VanityAliasCleanupContext context)
+            throws DotPublishingException {
+        if (!isS3VanityAliasEnabled() || PublisherConfig.Operation.PUBLISH.equals(config.getOperation())) {
+            return;
+        }
+
+        final List<PublishQueueElement> assets = config.getAssets();
+        if (!UtilMethods.isSet(assets)) {
+            return;
+        }
+
+        for (final PublishQueueElement asset : assets) {
+            unpublishVanityAliasForQueueElement(context, asset);
+        }
+    }
+
+    /**
+     * Handles one bundle element as a possible removed Vanity URL.
+     *
+     * @param context minimal cleanup context for the S3 endpoint
+     * @param asset element from the publishing queue
+     * @throws DotPublishingException when vanity clone removal fails
+     */
+    private void unpublishVanityAliasForQueueElement(final S3VanityAliasCleanupContext context,
+                                                    final PublishQueueElement asset)
+            throws DotPublishingException {
+        if (!isDeletedContentletAsset(asset)) {
+            return;
+        }
+
+        try {
+            final long languageId = asset.getLanguageId() == null ? -1L : asset.getLanguageId().longValue();
+            vanityAliasService.unpublishAliasesByVanityUrl(context, languageId, asset.getAsset());
+        } catch (final DotDataException e) {
+            throw new DotPublishingException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Checks whether the asset represents a deleted contentlet.
+     *
+     * @param asset publishing queue element
+     * @return true when the asset can be a removed Vanity URL
+     */
+    private boolean isDeletedContentletAsset(final PublishQueueElement asset) {
+        return asset != null
+                && asset.getOperation() != null
+                && asset.getOperation().longValue() == com.dotcms.publisher.business.PublisherAPI.DELETE_ELEMENT
+                && PusheableAsset.CONTENTLET.getType().equals(asset.getType());
+    }
+
+    /**
+     * Checks whether the asset represents a published contentlet.
+     *
+     * @param asset publishing queue element
+     * @return true when the asset can be a published Vanity URL
+     */
+    private boolean isPublishedContentletAsset(final PublishQueueElement asset) {
+        return asset != null
+                && asset.getOperation() != null
+                && asset.getOperation().longValue() == com.dotcms.publisher.business.PublisherAPI.ADD_OR_UPDATE_ELEMENT
+                && PusheableAsset.CONTENTLET.getType().equals(asset.getType());
+    }
+
+    /**
+     * Converts a bundle file into the static path used as canonical key.
+     *
+     * @param bundleRoot bundle root
+     * @param file file or directory to convert
+     * @return static path relative to host and language
+     */
+    private String getStaticFilePath(final File bundleRoot, final File file) {
+        String filePath = file.getAbsolutePath().replace(bundleRoot.getAbsolutePath() + LIVE_FOLDER, "");
+
+        //Always remove the /hostName/ i.e. /demo.dotcms.com/
+        filePath = filePath.substring(filePath.indexOf(File.separator, filePath.indexOf(File.separator) + 1));
+
+        //Always remove the /languageId/ i.e. /1/
+        return filePath.substring(filePath.indexOf(File.separator, filePath.indexOf(File.separator) + 1));
+    }
+
+    /**
+     * Checks whether S3 vanity alias support is enabled.
+     *
+     * @return true when vanity alias support is active
+     */
+    private boolean isS3VanityAliasEnabled() {
+        return Config.getBooleanProperty("STATIC_PUSH_S3_VANITY_ALIAS_ENABLED", false);
+    }
 
 
 
