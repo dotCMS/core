@@ -142,7 +142,8 @@ export class EditorPopoverComponent {
                 // PrimeNG overlay panels (e.g. <p-select> / <p-autoComplete> with appendTo="body")
                 // render outside this shell's DOM but logically belong to a control inside an open
                 // popover. Treat clicks inside them as inside the popover so it stays open.
-                if (target.closest('.p-overlay, .p-select-overlay, .p-autocomplete-overlay')) return;
+                if (target.closest('.p-overlay, .p-select-overlay, .p-autocomplete-overlay'))
+                    return;
                 this.#zone.run(() => this.#manager.close());
             };
             this.#doc.addEventListener('keydown', onKey);
