@@ -84,7 +84,7 @@ const meta: Meta<Args> = {
             control: { type: 'radio' }
         },
         size: {
-            options: [DEFAULT, 'p-chip-sm', 'p-chip-lg'],
+            options: [DEFAULT, 'p-chip-lg'],
             control: { type: 'radio' },
             description: 'Class name used in `styleClass` for the size of the chip'
         },
