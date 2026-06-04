@@ -387,7 +387,27 @@
     <portlet>
         <portlet-name>velocity_playground</portlet-name>
         <display-name>Velocity Playground</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/velocity-playground</portlet-url>
+        <init-param>
+            <name>view-path</name>
+            <value>/velocity-playground</value>
+        </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>velocity_playground-legacy</portlet-name>
+        <display-name>Velocity Playground (Legacy)</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/jsp/velocity_playground/render.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>true</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
     <portlet>
