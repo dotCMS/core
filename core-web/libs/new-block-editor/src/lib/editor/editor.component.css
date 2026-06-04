@@ -50,8 +50,16 @@
 }
 
 /* ─── Editor padding ────────────────────────────────────── */
+/*
+ * The left padding has to clear the left-margin furniture without it being clipped by
+ * `.editor-scroll-container` (whose `overflow-y: auto` forces `overflow-x: auto`, so it
+ * clips horizontally at x=0). Two things live in that left strip:
+ *   - the block gutter (~50px wide, pushed a further GUTTER_OFFSET=15px left), and
+ *   - the table row handle (protrudes 12px left of the table).
+ * 5rem (80px) keeps the gutter's left edge ~14px inside the clip boundary.
+ */
 :host ::ng-deep .tiptap {
-    padding: 2rem 4rem;
+    padding: 2rem 5rem;
 }
 
 /* ─── Scroll lock while overlays are open ───────────────── */
@@ -207,17 +215,28 @@
     border-collapse: collapse;
     width: 100%;
     table-layout: fixed;
-    overflow: hidden;
+    /* No `overflow: hidden` — the cell-anchored handles (.dot-cell-handle) sit on the
+       table's outer border via negative top/left offsets and would otherwise be clipped. */
     margin: 0;
 }
 
 :host ::ng-deep .tiptap td,
 :host ::ng-deep .tiptap th {
     border: 1px solid #e5e7eb;
-    padding: 8px 12px;
+    padding: 6px 10px;
     vertical-align: top;
     position: relative;
     min-width: 80px;
+}
+
+/*
+ * Tailwind Typography's `prose` adds vertical margins to <p> globally; inside a table
+ * cell those margins compound with the cell's padding and make every cell feel bloated.
+ * Reset paragraph margins inside the NodeView's content wrapper so the cell padding
+ * (4px 8px above) is the only spacing.
+ */
+:host ::ng-deep .tiptap .dot-cell-content > * {
+    margin: 0;
 }
 
 :host ::ng-deep .tiptap th {
@@ -242,7 +261,95 @@
 }
 
 :host ::ng-deep .tiptap .tableWrapper {
-    overflow-x: auto;
+    /* `overflow: visible` (instead of `overflow-x: auto`) so the column / row handles can
+       protrude past the table's outer edges without being clipped. Wide-table horizontal
+       scrolling is handled by the editor's outer scroll container; combined with
+       `table-layout: fixed; width: 100%` above, tables stay within the editor width by
+       resizing columns instead of overflowing. */
+    overflow: visible;
+}
+
+/* ─── Table contextual handles (cell-anchored NodeView) ─── */
+/*
+ * Handles live INSIDE the cell DOM (rendered by the DotTableCell / DotTableHeader
+ * NodeViews). Pure CSS positioning — no floating-ui, no autoUpdate. The cell's
+ * `position: relative` is already set on the .tiptap td/th rule above; the handles
+ * absolute-position themselves against the cell.
+ */
+:host ::ng-deep .tiptap .dot-cell-handle {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #4f46e5;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle .material-symbols-outlined {
+    font-size: 14px;
+    line-height: 1;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle:hover {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--col {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--row {
+    top: 50%;
+    left: -12px;
+    transform: translateY(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--selection {
+    top: 50%;
+    right: -12px;
+    transform: translateY(-50%);
+}
+
+/*
+ * Visibility rules — the TableActiveCellsPlugin marks every cell in the cursor's
+ * column with `is-active-column` and every cell in the cursor's row with `is-active-row`.
+ * For multi-cell `CellSelection`, only the bottom-right cell of the selection gets
+ * `is-selection-anchor` (column / row decorations are skipped in that branch).
+ *
+ * Column handle only shows on the first-row cell of the active column; row handle only
+ * shows on the first cell of the active row; selection handle only shows on the chosen
+ * anchor cell.
+ */
+:host ::ng-deep .tiptap tbody > tr:first-child > .is-active-column > .dot-cell-handle--col {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap tbody > tr > .is-active-row:first-child > .dot-cell-handle--row {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap .is-selection-anchor > .dot-cell-handle--selection {
+    display: inline-flex;
+}
+
+/*
+ * Even-row-count selections: the plugin anchors to the cell at floor(N/2) from the top.
+ * Override the default `top: 50%` so the handle sits at the cell's top border — which is
+ * the boundary between the two middle rows = the selection's vertical center.
+ */
+:host ::ng-deep .tiptap .is-selection-anchor--edge > .dot-cell-handle--selection {
+    top: 0;
 }
 
 /* ─── Placeholders ──────────────────────────────────────── */
@@ -591,4 +698,11 @@
 :host ::ng-deep .ProseMirror .editor-block-target::selection {
     background: transparent;
     color: inherit;
+}
+
+/* ─── Exact selection highlight while the link popover is open (insert mode) ─── */
+/* Matches the `.link-editing` indigo tint so creating and editing a link look alike. */
+:host ::ng-deep .ProseMirror .editor-link-selection {
+    background-color: rgba(99, 102, 241, 0.18);
+    border-radius: 2px;
 }

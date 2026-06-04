@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, signalMethod } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
 import {
@@ -11,7 +11,6 @@ import {
     OnDestroy,
     OnInit,
     signal,
-    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -34,7 +33,7 @@ import {
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -165,7 +164,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
         const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
-        const requestHostName = getRequestHostName(this.uveStore.pageParams());
+        const requestHostName = getRequestHostName(
+            this.uveStore.pageParams(),
+            this.uveStore.pageAsset()?.site?.hostname
+        );
 
         return {
             siteId: this.uveStore.pageAsset()?.site?.identifier,
@@ -207,23 +209,35 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#updateLocation(cleanedParams);
     });
 
-    readonly $updateBreadcrumbEffect = effect(() => {
+    readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
         const page = this.uveStore.pageAsset()?.page;
+
         const status = this.uveStore.uveStatus();
 
-        if (page && status === UVE_STATUS.LOADED) {
-            // untracked: (a) prevents URL-only changes from re-triggering the breadcrumb,
-            // (b) avoids a TypeError crash when ngOnDestroy calls resetPageParams() (pageParams = null)
-            // before Angular tears down the effect asynchronously.
-            const url = untracked(() => this.uveStore.pageParams()?.url);
-
-            this.#globalStore.addNewBreadcrumb({
-                label: page.title,
-                url,
-                id: `${page.identifier}`
-            });
-        }
+        return page && status === UVE_STATUS.LOADED ? page : null;
     });
+
+    readonly $updateBreadcrumb = signalMethod<DotCMSPage | null>((page) => {
+        if (!page || !this.uveStore.pageParams()) return;
+
+        const params = this.uveStore.pageFriendlyParams();
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
+
+        this.#globalStore.addNewBreadcrumb({
+            label,
+            url: `/dotAdmin/#${urlTree.toString()}`,
+            id: `${identifier}`
+        });
+    });
+
+    constructor() {
+        this.$updateBreadcrumb(this.$breadcrumbPage);
+    }
 
     ngOnInit(): void {
         const params = this.#getPageParams();

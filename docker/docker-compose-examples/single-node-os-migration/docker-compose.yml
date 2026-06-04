@@ -1,15 +1,15 @@
 # dotCMS — Single Node OS Migration Stack
 #
-# Runs BOTH search backends side-by-side for the ES → OpenSearch migration:
-#   - Elasticsearch 7.9.1  + Kibana 7.9.1       → http://localhost:5601
-#   - OpenSearch 3.4.0     + OS Dashboards 3.0.0 → http://localhost:5602
+# Runs BOTH search backends side-by-side for the OS 1.x → OS 3.x migration:
+#   - OpenSearch 1.3.x  + OS Dashboards 1.3.x → http://localhost:5601
+#   - OpenSearch 3.4.0  + OS Dashboards 3.0.0  → http://localhost:5602
 #
-# dotCMS is configured to write to Elasticsearch (primary) while OpenSearch
-# shadows the traffic. Flip DOT_ES_ENDPOINTS to the opensearch service URL
-# to promote OS as primary once the migration is validated.
+# dotCMS is configured to write to OpenSearch 1.x (primary) while OpenSearch 3.x
+# shadows the traffic. Flip DOT_ES_ENDPOINTS to the opensearch3 service URL
+# to promote OS 3.x as primary once the migration is validated.
 #
 # Usage:
-#   docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d
+#   docker compose up -d
 
 services:
 
@@ -35,16 +35,16 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Elasticsearch 7.9.1  (primary — dotCMS writes here during migration)
+  # OpenSearch 1.3.x  (primary — dotCMS writes here during migration)
   # REST API  → http://localhost:9200
   # ---------------------------------------------------------------------------
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+  opensearch1:
+    image: opensearchproject/opensearch:1.3.20
     environment:
-      cluster.name: "elastic-cluster"
+      cluster.name: "opensearch1-cluster"
       discovery.type: "single-node"
       bootstrap.memory_lock: "true"
-      ES_JAVA_OPTS: "-Xmx1G"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
     ulimits:
       memlock:
         soft: -1
@@ -55,9 +55,14 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - es-data:/usr/share/elasticsearch/data
+      - opensearch1-data:/usr/share/opensearch/data
     networks:
       - search_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     deploy:
       resources:
         limits:
@@ -66,34 +71,36 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # Kibana 7.9.1  (visualiza índices de ES)
+  # OpenSearch Dashboards 1.3.x  (visualize OpenSearch 1.x indices)
   # UI → http://localhost:5601
   # ---------------------------------------------------------------------------
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.9.1
+  opensearch1-dashboards:
+    image: opensearchproject/opensearch-dashboards:1
     environment:
-      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      OPENSEARCH_HOSTS: '["https://opensearch1:9200"]'
+      opensearch.ssl.verificationMode: "none"
+      opensearch.username: "admin"
+      opensearch.password: "admin"
     ports:
       - "5601:5601"
     networks:
       - search_net
     depends_on:
-      - elasticsearch
+      - opensearch1
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # OpenSearch 3.4.0  (shadow/target — recibe escrituras duales durante migración)
+  # OpenSearch 3.4.0  (shadow/target)
   # REST API → http://localhost:9201
   # ---------------------------------------------------------------------------
-  opensearch:
+  opensearch3:
     image: opensearchproject/opensearch:3.4.0
     environment:
-      cluster.name: "opensearch-cluster"
+      cluster.name: "opensearch3-cluster"
       discovery.type: "single-node"
       bootstrap.memory_lock: "true"
       OPENSEARCH_JAVA_OPTS: "-Xmx1G"
-      DISABLE_INSTALL_DEMO_CONFIG: "true"
-      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "Dev!Search3-Kx9mP-2026"
     ulimits:
       memlock:
         soft: -1
@@ -105,9 +112,14 @@ services:
       - "9201:9200"
       - "9601:9600"
     volumes:
-      - opensearch-data:/usr/share/opensearch/data
+      - opensearch3-data:/usr/share/opensearch/data
     networks:
       - search_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:Dev!Search3-Kx9mP-2026 | grep -q cluster_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     deploy:
       resources:
         limits:
@@ -116,21 +128,67 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
-  # OpenSearch Dashboards 3.0.0  (visualiza índices de OS)
+  # OpenSearch Dashboards 3.0.0
   # UI → http://localhost:5602
   # ---------------------------------------------------------------------------
-  opensearch-dashboards:
+  opensearch3-dashboards:
     image: opensearchproject/opensearch-dashboards:3.0.0
     environment:
-      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
-      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+      OPENSEARCH_HOSTS: '["https://opensearch3:9200"]'
+      opensearch.ssl.verificationMode: "none"
+      opensearch.username: "admin"
+      opensearch.password: "Dev!Search3-Kx9mP-2026"
     ports:
       - "5602:5601"
     networks:
       - search_net
     depends_on:
-      - opensearch
+      - opensearch3
     restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 1.x user provisioning
+  # ---------------------------------------------------------------------------
+  opensearch1-provision:
+    build:
+      context: .
+      dockerfile: Dockerfile-opensearch-py
+    environment:
+      OS_SCHEME: "https"
+      OS_HOST: "opensearch1"
+      OS_PORT: "9200"
+      OS_ADMIN_USER: "admin"
+      OS_ADMIN_PASS: "admin"
+      OS_PASSWORD: "Dev!dotcms-EsUser-2026"
+      OS_CUSTOMER: "dotcms"
+      OS_DEBUG: "true"
+    networks:
+      - search_net
+    depends_on:
+      opensearch1:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 3.x user provisioning
+  # ---------------------------------------------------------------------------
+  opensearch3-provision:
+    build:
+      context: .
+      dockerfile: Dockerfile-opensearch-py
+    environment:
+      OS_SCHEME: "https"
+      OS_HOST: "opensearch3"
+      OS_PORT: "9200"
+      OS_ADMIN_USER: "admin"
+      OS_ADMIN_PASS: "Dev!Search3-Kx9mP-2026"
+      OS_PASSWORD: "Dev!dotcms-EsUser-2026"
+      OS_CUSTOMER: "dotcms"
+      OS_DEBUG: "true"
+    networks:
+      - search_net
+    depends_on:
+      opensearch3:
+        condition: service_healthy
 
   # ---------------------------------------------------------------------------
   # dotCMS
@@ -138,8 +196,8 @@ services:
   # HTTPS → https://localhost:8443
   #
   # During migration:
-  #   DOT_ES_ENDPOINTS points to Elasticsearch (primary).
-  #   When ready to promote OS, switch to: http://opensearch:9200
+  #   DOT_ES_ENDPOINTS points to opensearch1 (primary).
+  #   When ready to promote OS 3.x, switch to: https://opensearch3:9200
   # ---------------------------------------------------------------------------
   dotcms:
     image: dotcms/dotcms:latest
@@ -150,9 +208,19 @@ services:
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
       DB_USERNAME: 'dotcmsdbuser'
       DB_PASSWORD: 'password'
-      # Primary search backend (ES). Flip to http://opensearch:9200 to promote OS.
-      DOT_ES_ENDPOINTS: 'http://elasticsearch:9200'
-      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      # --- ES / OS 1.x (primary reads+writes in Phase 0–2) ---
+      DOT_ES_ENDPOINTS: 'https://opensearch1:9200'
+      DOT_ES_AUTH_TYPE: 'BASIC'
+      DOT_ES_AUTH_BASIC_USER: 'dotcms-es-user'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'Dev!dotcms-EsUser-2026'
+      # --- OS 3.x (shadow writes in Phase 1–2, primary in Phase 3) ---
+      DOT_OS_ENDPOINTS: 'https://opensearch3:9200'
+      DOT_OS_AUTH_TYPE: 'BASIC'
+      DOT_OS_AUTH_BASIC_USER: 'dotcms-es-user'
+      DOT_OS_AUTH_BASIC_PASSWORD: 'Dev!dotcms-EsUser-2026'
+      DOT_OS_TLS_TRUST_SELF_SIGNED: 'true'
+      # --- Migration phase: 0=ES only, 1=dual-write/ES-reads, 2=dual-write/OS-reads, 3=OS only ---
+      DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE: '1'
       DOT_INITIAL_ADMIN_PASSWORD: 'admin'
       DOT_DOTCMS_CLUSTER_ID: 'dotcms-os-migration'
       GLOWROOT_ENABLED: 'true'
@@ -161,10 +229,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      elasticsearch:
-        condition: service_started
-      opensearch:
-        condition: service_started
+      opensearch1-provision:
+        condition: service_completed_successfully
+      opensearch3-provision:
+        condition: service_completed_successfully
     volumes:
       - cms-shared:/data/shared
       # - {license_local_path}/license.zip:/data/shared/assets/license.zip
@@ -184,5 +252,5 @@ networks:
 volumes:
   cms-shared:
   dbdata:
-  es-data:
-  opensearch-data:
+  opensearch1-data:
+  opensearch3-data:

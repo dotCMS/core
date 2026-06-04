@@ -3,9 +3,7 @@
         <dot-uve-copy-decision [data]="data()" (decisionMade)="handleDecisionMade()" />
     }
     @case ('loading') {
-        <div
-            data-testid="loading-content-type"
-            class="flex h-full w-full items-center justify-center">
+        <div data-testid="loading-content-type" class="flex size-full items-center justify-center">
             <dot-spinner />
         </div>
     }
@@ -20,7 +18,7 @@
     @case ('empty') {
         <div
             data-testid="empty-container"
-            class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+            class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span class="material-symbols-outlined text-[5rem]! text-gray-300">inbox</span>
             <div class="font-bold text-gray-900">
                 {{ 'uve.quick-edit.empty.empty-container.title' | dm }}
@@ -33,7 +31,7 @@
     @case ('no-fields') {
         <div
             data-testid="empty-no-fields"
-            class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+            class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span class="material-symbols-outlined text-[5rem]! text-gray-300">block</span>
             <div class="font-bold text-gray-900">
                 {{ 'uve.quick-edit.empty.no-fields.title' | dm }}
@@ -52,7 +50,7 @@
     @default {
         <div
             data-testid="empty-no-selection"
-            class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+            class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span class="material-symbols-outlined text-[5rem]! text-gray-300">edit_document</span>
             <div class="font-bold text-gray-900">
                 {{ 'uve.quick-edit.empty.no-selection.title' | dm }}

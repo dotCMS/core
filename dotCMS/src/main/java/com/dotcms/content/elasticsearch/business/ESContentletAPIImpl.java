@@ -97,6 +97,7 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.comparators.ContentMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -1687,14 +1688,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
                 try {
                     final Map<String, Object> sourceMap = searchHit.sourceAsMap();
-                    final ContentletSearch conWrapper = new ContentletSearch();
-                    conWrapper.setId(searchHit.id());
-                    conWrapper.setIndex(searchHit.index());
-                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conWrapper.setInode(sourceMap.get("inode").toString());
-                    conWrapper.setScore(searchHit.score());
-
-                    list.add(conWrapper);
+                    list.add(ImmutableContentletSearch.builder()
+                            .id(searchHit.id())
+                            .index(searchHit.index())
+                            .identifier(sourceMap.get("identifier").toString())
+                            .inode(sourceMap.get("inode").toString())
+                            .score(searchHit.score())
+                            .build());
                 } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
                 }
@@ -7582,13 +7582,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "The contentlet's Content Type Inode must be set");
         }
 
-        if (value == null || !UtilMethods.isSet(value.toString())) {
-            contentlet.setProperty(field.getVelocityVarName(), null);
-            return;
-        }
-
         final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
                 field);
+
+        if (value == null || !UtilMethods.isSet(value.toString())) {
+            clearOrNullifyProperty(contentlet, newField, value);
+            return;
+        }
 
         FieldHandlerStrategyFactory.getInstance().get(newField).apply(contentlet, newField, value);
     }
@@ -7609,11 +7609,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (value == null || !UtilMethods.isSet(value.toString())) {
-            contentlet.setProperty(field.variable(), null);
+            clearOrNullifyProperty(contentlet, field, value);
             return;
         }
 
         FieldHandlerStrategyFactory.getInstance().get(field).apply(contentlet, field, value);
+    }
+
+    /**
+     * Clears a field whose incoming value is null or empty. For most field types this nullifies the
+     * property (which removes the key from the contentlet map). For {@link TagField}s, however, an
+     * explicit empty string means "remove all tags": it is preserved as an empty string instead of
+     * being collapsed to null. Storing it as null would remove the key from the map, letting
+     * {@link Contentlet#setTags()} re-hydrate the previous version's tags during checkin and thus
+     * silently keep the old value (see issue #35861). Keeping the empty string makes the checkin tag
+     * logic ({@code prepareTags}/{@code relateTags}) wipe the {@code tag_inode} rows and prevents the
+     * re-hydration, while a genuinely null/absent value still leaves existing tags untouched
+     * (partial update).
+     *
+     * @param contentlet the contentlet being populated
+     * @param field      the (modern) field whose value is being cleared
+     * @param value      the incoming value (null or not-set)
+     */
+    private void clearOrNullifyProperty(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field field, final Object value) {
+        if (field instanceof TagField && value != null) {
+            contentlet.setStringProperty(field.variable(), StringPool.BLANK);
+        } else {
+            contentlet.setProperty(field.variable(), null);
+        }
     }
 
     /**

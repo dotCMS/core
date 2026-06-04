@@ -36,9 +36,11 @@ import java.util.Set;
 /**
  * @author Jason Tesser
  * @since 1.6.5c
- * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI 
+ * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI
  * methods except now they also take the return type as the first parameter.
  */
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPostHook {
 
 	/**
