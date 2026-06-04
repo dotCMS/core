@@ -145,6 +145,7 @@ export const UVEStore = signalStore(
             // Client configuration
             resetClientConfiguration: () => store.resetClientConfiguration(),
             markPageLoading: () => store.markPageLoading(),
+            resetRequestMetadata: () => store.resetRequestMetadata(),
 
             // Request metadata
             requestMetadata: () => store.requestMetadata(),
