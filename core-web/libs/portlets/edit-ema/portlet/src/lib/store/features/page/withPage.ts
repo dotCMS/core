@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, Signal, untracked } from '@angular/core';
+import { computed, Signal } from '@angular/core';
 
 import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
@@ -272,8 +272,12 @@ export function withPage() {
                 const pageDataValue = pageAsset()?.page as DotCMSPage;
                 const viewAsData = pageAsset()?.viewAs;
                 const languageId = viewAsData?.language?.id;
-                const translatedLanguages = untracked(() => store.pageLanguages());
-                const currentLanguage = translatedLanguages.find((lang) => lang.id === languageId);
+                // Reactive on both pageAsset and pageLanguages. Angular batches synchronous
+                // signal writes before flushing effects, so updating both in the same tap
+                // callback results in a single effect execution with consistent state.
+                const currentLanguage = store
+                    .pageLanguages()
+                    .find((lang) => lang.id === languageId);
 
                 return {
                     page: pageDataValue,
