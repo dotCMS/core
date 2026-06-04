@@ -23,12 +23,12 @@ public class SecurityLogger {
         
     }
 
-    public static void logWarn(Class clazz, final Supplier<String> message) {
+    public static void logWarn(final Class<?> clazz, final Supplier<String> message) {
         logWarn(clazz, message.get());
     }
 
-    public static void logWarn(Class cl, String msg) {
-        Logger.warn(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
+    public static void logWarn(final Class<?> clazz, final String msg) {
+        Logger.warn(SecurityLogger.class, clazz.toString() + " : " + annointMessage(msg));
     }
 
     public static void logDebug(Class clazz, final Supplier<String> message) {

@@ -457,10 +457,30 @@ public  class WebResource {
                                final AnonymousAccess access,
                                final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
+        return getCurrentUser(request, response, paramsMap, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}
+     * that can fall through to the anonymous user when a header-based credential fails to
+     * authenticate. {@code fallbackToAnonymousOnAuthFailure} must only be {@code true} for the
+     * static/binary asset servlets (it is set exclusively by
+     * {@link com.dotmarketing.servlets.ServletUtils}); JAX-RS callers must use the overload without
+     * the flag so credential failures keep returning {@code 401}.
+     */
+    public User getCurrentUser(final HttpServletRequest  request,
+                               final HttpServletResponse response,
+                               final Map<String, String> paramsMap,
+                               final AnonymousAccess access,
+                               final boolean fallbackToAnonymousOnAuthFailure,
+                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
         User user = PortalUtil.getUser(request);
 
         if(user==null) {
-            user = authenticate(request, response, paramsMap, access, authCheckOptions);
+            user = authenticate(request, response, paramsMap, access,
+                    fallbackToAnonymousOnAuthFailure, authCheckOptions);
         }
         return user;
     }
@@ -517,14 +537,32 @@ public  class WebResource {
                              final Map<String, String> params, final AnonymousAccess access,
                              final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
+        return authenticate(request, response, params, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}.
+     * When {@code fallbackToAnonymousOnAuthFailure} is {@code true}, a header-based credential
+     * (BASIC/DOTAUTH) that is malformed or fails authentication does NOT abort with a {@code 401};
+     * instead authentication falls through to the anonymous user, letting the downstream resource
+     * permission check decide. This is used only by the static/binary asset servlets (via
+     * {@link com.dotmarketing.servlets.ServletUtils}) so that an upstream Basic-Auth gating layer
+     * (whose credentials the browser replays on sub-resource requests, per RFC 7617) does not break
+     * anonymously-readable assets. JAX-RS endpoints must pass {@code false} (or use the overload
+     * without the flag) to keep strict credential rejection. An explicit request-parameter login is
+     * never downgraded, regardless of this flag.
+     */
+    public User authenticate(final HttpServletRequest request, final HttpServletResponse response,
+                             final Map<String, String> params, final AnonymousAccess access,
+                             final boolean fallbackToAnonymousOnAuthFailure,
+                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
         if (Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_FORCE_SSL::equals)) {
             ServletPreconditions.checkSslIsEnabledIfRequired(request);
         }
 
         User user = null;
-
-        final boolean fallbackToAnonymousOnAuthFailure = Arrays.stream(authCheckOptions)
-                .anyMatch(AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
         // Track which source supplied the credential so the audit log names it and so the anonymous
@@ -603,15 +641,17 @@ public  class WebResource {
     }
 
     /**
-     * Runs a credential-parsing step under the
-     * {@link AuthCheckOptions#SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE} policy. When the
-     * option is active and the parser throws a {@link SecurityException} (e.g. a malformed credential
-     * header), the exception is absorbed and an empty result is returned so authentication can
-     * continue as anonymous; otherwise the exception is rethrown (strict behavior for REST callers).
+     * Runs a credential-parsing step under the servlet anonymous-fallback policy. When
+     * {@code fallbackToAnonymous} is active and the parser throws a {@link SecurityException}
+     * (e.g. a malformed credential header — both parsers convert bad Base64 to SecurityException),
+     * the exception is absorbed and an empty result is returned so authentication can continue as
+     * anonymous; otherwise the exception is rethrown (strict behavior for REST callers). Only
+     * {@link SecurityException} is caught: an unexpected exception (e.g. an NPE from a code defect)
+     * still surfaces so the bug can be found.
      *
      * @param parser the credential-parsing step (may throw {@link SecurityException})
      * @param headerLabel human-readable header name, used only for logging
-     * @param fallbackToAnonymous whether the fallback option is active for this request
+     * @param fallbackToAnonymous whether the fallback policy is active for this request
      * @return the parsed credentials, or empty when absent or when a malformed header was tolerated
      */
     private Optional<UsernamePassword> parseCredentialsTolerantly(
@@ -620,12 +660,7 @@ public  class WebResource {
             final boolean fallbackToAnonymous) {
         try {
             return parser.get();
-        } catch (IllegalArgumentException | SecurityException e) {
-            // Catch the malformed-input exceptions a parser can raise (IllegalArgumentException from
-            // bad Base64, SecurityException from bad syntax) so a servlet request degrades gracefully
-            // instead of returning a 500. Other RuntimeExceptions (e.g. an NPE from a code defect) are
-            // intentionally NOT caught — they should surface so the bug can be fixed. When the fallback
-            // option is not set (REST callers) the exception is rethrown unchanged.
+        } catch (SecurityException e) {
             if (!fallbackToAnonymous) {
                 throw e;
             }
@@ -674,7 +709,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -682,6 +717,20 @@ public  class WebResource {
             result = Optional.of(new UsernamePassword(values[0], values[1]));
         }
         return result;
+    }
+
+    /**
+     * Base64-decodes a credential header value, converting the {@link IllegalArgumentException}
+     * thrown for malformed Base64 into a {@link SecurityException} so callers only have to handle a
+     * single (security) exception type for a bad header.
+     */
+    private static byte[] decodeBase64Credentials(final String encoded) throws SecurityException {
+        try {
+            return Base64.getDecoder().decode(encoded);
+        } catch (IllegalArgumentException e) {
+            throw new SecurityException("Invalid Base64 encoding for username and password",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     @VisibleForTesting
@@ -693,7 +742,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -854,22 +903,6 @@ public  class WebResource {
    public enum AuthCheckOptions {
         SKIP_CHECK_FORCE_SSL,
         SKIP_CHECK_ANONYMOUS_PERMISSIONS,
-        /**
-         * When set, a credential header ({@code Authorization: Basic} or {@code DOTAUTH}) that cannot
-         * be parsed, or whose credentials do not authenticate as a dotCMS user, does NOT abort the
-         * request with a {@code 401}. Instead authentication falls through to the anonymous user,
-         * letting the downstream resource permission check decide whether access is allowed. Used by
-         * the static/binary asset servlets so that an upstream Basic-Auth gating layer (whose
-         * credentials the browser replays on sub-resource requests, per RFC 7617) does not break
-         * anonymously-readable assets.
-         * <p>
-         * <strong>Servlet-only.</strong> The {@code SERVLET_ONLY_} prefix is a convention-based guard:
-         * this option must never be passed by a JAX-RS / REST resource. Doing so would silently
-         * downgrade an authenticated request to anonymous whenever a client sends bad credentials
-         * (returning anonymous-access data instead of {@code 401}) — a broken-authentication risk.
-         * REST endpoints intentionally omit this option and keep strict credential rejection.
-         */
-        SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE,
    }
 
    public static class InitBuilder {
@@ -1000,31 +1033,7 @@ public  class WebResource {
         }
 
         public InitBuilder authCheckOptions(final AuthCheckOptions... options){
-            // Explicit runtime guard: the SERVLET_ONLY option must never be reachable through the
-            // generic options API, where a REST resource could include it (e.g. by copy-paste).
-            // It can only be enabled via servletAnonymousFallbackOnAuthFailure().
-            if (Arrays.stream(options).anyMatch(
-                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals)) {
-                throw new IllegalArgumentException(
-                        "SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE cannot be set via "
-                        + "authCheckOptions(); it is reserved for the static/binary asset servlets. "
-                        + "Use servletAnonymousFallbackOnAuthFailure() instead. REST endpoints must "
-                        + "not use it — doing so would downgrade auth failures to anonymous access.");
-            }
             this.authCheckOptions.addAll(Arrays.asList(options));
-            return this;
-        }
-
-        /**
-         * Enables {@link AuthCheckOptions#SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE} for the
-         * static/binary asset servlets (SpeedyAssetServlet, BinaryExporterServlet, ShortyServlet).
-         * This is the <strong>only</strong> way to enable that option:
-         * {@link #authCheckOptions(AuthCheckOptions...)} rejects it, so it can never be set from a
-         * JAX-RS resource by copy-pasting an options list. Must not be called from REST endpoints.
-         */
-        public InitBuilder servletAnonymousFallbackOnAuthFailure() {
-            this.authCheckOptions.add(
-                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE);
             return this;
         }
 
