@@ -37,7 +37,9 @@ public class VipsThumbnailImageFilter extends VipsImageFilter {
             width = DEFAULT_WIDTH;
         }
         final String[] bgParam = parameters.get(getPrefix() + "bg");
-        final String rgb = bgParam != null ? bgParam[0] : "255255255";
+        // bg must be exactly 9 digits (rrrgggbbb); fall back to white on bad input.
+        final String rgb = (bgParam != null && bgParam[0] != null && bgParam[0].matches("\\d{9}"))
+                ? bgParam[0] : "255255255";
         final double r = Integer.parseInt(rgb.substring(0, 3));
         final double g = Integer.parseInt(rgb.substring(3, 6));
         final double b = Integer.parseInt(rgb.substring(6));

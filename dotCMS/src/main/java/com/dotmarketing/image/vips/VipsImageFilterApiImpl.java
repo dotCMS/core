@@ -143,13 +143,23 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
         final int w = Math.min(MAX_SIZE, width);
         final int h = Math.min(MAX_SIZE, height);
         final AtomicReference<BufferedImage> ref = new AtomicReference<>();
-        VipsManager.run(arena -> {
-            final VImage resized = VImage.thumbnail(arena, imageFile.getAbsolutePath(), w,
-                    VipsOption.Int("height", h),
-                    VipsOption.Enum("size", VipsSize.SIZE_FORCE));
-            ref.set(toBufferedImage(resized));
-        });
-        return ref.get();
+        try {
+            VipsManager.run(arena -> {
+                final VImage resized = VImage.thumbnail(arena, imageFile.getAbsolutePath(), w,
+                        VipsOption.Int("height", h),
+                        VipsOption.Enum("size", VipsSize.SIZE_FORCE));
+                ref.set(toBufferedImage(resized));
+            });
+            return ref.get();
+        } catch (Exception e) {
+            // Consistent with getWidthHeight(): degrade to the legacy engine on libvips failure.
+            if (Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true)) {
+                Logger.warnAndDebug(this.getClass(), "libvips resizeImage failed for " + imageFile.getName()
+                        + "; falling back to legacy engine: " + e.getMessage(), e);
+                return ImageFilterAPI.apiInstance.apply().resizeImage(imageFile, width, height, resampleOption);
+            }
+            throw e;
+        }
     }
 
     @Override

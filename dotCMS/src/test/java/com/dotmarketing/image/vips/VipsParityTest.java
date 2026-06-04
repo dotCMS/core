@@ -250,8 +250,22 @@ public class VipsParityTest {
 
     // ---- New capability: content-aware smart crop (no legacy equivalent) -----------------------
 
+    /** AVIF encode requires libheif built with an AV1 encoder (e.g. libheif-plugin-aomenc). */
+    private boolean avifEncodeSupported() {
+        try {
+            final File probeIn = image("test.png");
+            final File probeOut = tempOut("avif");
+            new VipsAvifImageFilter().transform(probeIn, probeOut, params("avif_q", "50"));
+            return probeOut.exists() && probeOut.length() > 50;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Test
     public void avif_encoder_produces_valid_avif() throws Exception {
+        Assume.assumeTrue("host libvips lacks an AVIF/AV1 encoder (libheif-plugin-aomenc)",
+                avifEncodeSupported());
         final File in = image("test.png");
         final File out = tempOut("avif");
         new VipsAvifImageFilter().transform(in, out, params("avif_q", "50"));

@@ -23,6 +23,11 @@ public class VipsSubSampleImageFilter extends VipsImageFilter {
         final int width = intParam(parameters, "w", 0);
         final int height = intParam(parameters, "h", 0);
         VipsManager.run(arena -> {
+            // No target given → re-encode the source rather than asking libvips for a 0-px thumbnail.
+            if (width <= 0 && height <= 0) {
+                VipsManager.load(arena, in).writeToFile(out.getAbsolutePath());
+                return;
+            }
             final VImage thumb = width > 0 && height > 0
                     ? VImage.thumbnail(arena, in.getAbsolutePath(), width, VipsOption.Int("height", height))
                     : VImage.thumbnail(arena, in.getAbsolutePath(), Math.max(width, height));

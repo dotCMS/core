@@ -28,9 +28,10 @@ public class VipsHsbImageFilter extends VipsImageFilter {
 
     @Override
     protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
-        final double h = doubleParam(parameters, "h", 0d);
-        final double s = doubleParam(parameters, "s", 0d);
-        final double b = doubleParam(parameters, "b", 0d);
+        // Documented range is -1.0..1.0; clamp so out-of-range input can't produce negated bands.
+        final double h = clamp(doubleParam(parameters, "h", 0d));
+        final double s = clamp(doubleParam(parameters, "s", 0d));
+        final double b = clamp(doubleParam(parameters, "b", 0d));
         VipsManager.run(arena -> {
             final VImage src = VipsManager.load(arena, in).colourspace(VipsInterpretation.INTERPRETATION_sRGB);
             final VImage hsv = src.sRGB2HSV();
@@ -41,5 +42,9 @@ public class VipsHsbImageFilter extends VipsImageFilter {
             final VImage result = adjusted.HSV2sRGB();
             result.writeToFile(out.getAbsolutePath());
         });
+    }
+
+    private static double clamp(final double v) {
+        return Math.max(-1.0, Math.min(1.0, v));
     }
 }

@@ -36,6 +36,12 @@ Format coverage (PDF, SVG, AVIF/HEIC, animated GIF) depends on the **delegates
 compiled into the host libvips** — poppler/pdfium, librsvg, libheif, cgif. Verify
 the target container's build; `IMAGE_API_LIBVIPS_FALLBACK` covers any gap at runtime.
 
+> **AVIF encode** needs libheif built with an AV1 encoder. On Ubuntu that's the
+> `libheif-plugin-aomenc` package — a *Recommends* that `--no-install-recommends`
+> drops, so it must be listed explicitly (it is, in the runtime Dockerfile). Without
+> it, `heifsave` reports "Unsupported compression". AVIF/HEIC *decode* works with
+> stock `libheif1`.
+
 Requires **JDK 23+** (FFM); dotCMS runs on Java 25.
 
 ## Parameter contract

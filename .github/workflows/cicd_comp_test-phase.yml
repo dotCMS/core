@@ -195,7 +195,7 @@ jobs:
       # self-skipping. Ubuntu 24.04 libvips42 bundles the pdf/heif/svg/webp/jxl delegates.
       - name: Install native libvips (image engine parity tests)
         if: matrix.test_type == 'jvm'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42 libheif-plugin-aomenc
 
       - name: Run ${{ matrix.name }}
         uses: ./.github/actions/core-cicd/maven-job
