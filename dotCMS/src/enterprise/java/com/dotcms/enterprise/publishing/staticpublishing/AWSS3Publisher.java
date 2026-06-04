@@ -702,9 +702,18 @@ public class AWSS3Publisher extends Publisher {
             Logger.warn(this, "Skipping non-UUID asset identifier: " + assetId);
             return Optional.empty();
         }
-        final List<Contentlet> contentlets = contentletAPI.search("+identifier:" + assetId + " +live:true",
-                0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
-        return contentlets.stream().filter(Contentlet::isVanityUrl).findFirst();
+        for (final Language language : languageAPI.getLanguages()) {
+            try {
+                final Contentlet contentlet = contentletAPI.findContentletByIdentifier(assetId, true,
+                        language.getId(), APILocator.getUserAPI().getSystemUser(), false);
+                if (contentlet != null && contentlet.isVanityUrl()) {
+                    return Optional.of(contentlet);
+                }
+            } catch (final DotContentletStateException e) {
+                // no live version in this language, try next
+            }
+        }
+        return Optional.empty();
     }
 
     /**

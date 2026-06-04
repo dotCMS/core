@@ -5,10 +5,11 @@ import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -232,6 +233,12 @@ public class S3VanityAliasService {
                                     final S3VanityResolvedTarget target,
                                     final User systemUser)
             throws DotStateException, DotDataException, DotSecurityException {
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(
+                target.htmlPage, PermissionAPI.PERMISSION_READ, null, true)) {
+            Logger.warn(this, "Skipping Vanity URL because canonical target is not publicly readable: "
+                    + target.canonicalPath);
+            return null;
+        }
         final String contentletInode = target.contentletInode().orElse(null);
         return htmlPageAssetAPI.getHTML(target.htmlPage, true, contentletInode, systemUser,
                 context.language.getId(), Constants.USER_AGENT_DOTCMS_PUSH_PUBLISH);
@@ -349,13 +356,21 @@ public class S3VanityAliasService {
         final List<S3VanityAlias> aliasesToRefresh = filterExisting(currentAliases,
                 indexByStorageLocation(persistedAliases));
         final List<S3VanityAlias> aliasesToDelete = filterMissing(persistedAliases, currentByLocation);
+        final List<S3VanityAlias> publishedNow = new ArrayList<>();
         final List<S3VanityAlias> deletedNow = new ArrayList<>();
 
         try {
-            publishAliases(context, aliasesToRefresh, alias -> { });
+            publishAliases(context, aliasesToRefresh, publishedNow::add);
             deleteAliases(context, aliasesToDelete, deletedNow::add);
             repository.replaceMappings(context.lookup, aliasesToRefresh);
         } catch (final Exception e) {
+            for (final S3VanityAlias alias : publishedNow) {
+                try {
+                    deleteAlias(context, alias);
+                } catch (final Exception ce) {
+                    Logger.error(this, "Unable to compensate published alias " + alias.vanityPath, ce);
+                }
+            }
             restoreAliases(context, deletedNow);
             throw wrapAsDotDataException(e);
         }
@@ -381,13 +396,13 @@ public class S3VanityAliasService {
                 ? repository.findByVanityUrlId(context.endpointId, languageId, vanityUrlId)
                 : repository.findByVanityUrlId(context.endpointId, vanityUrlId);
         try {
-            for (final S3VanityAlias alias : persistedAliases) {
-                removeMaterializedAlias(context, alias);
-            }
             if (languageId > 0) {
                 repository.deleteByVanityUrlId(context.endpointId, languageId, vanityUrlId);
             } else {
                 repository.deleteByVanityUrlId(context.endpointId, vanityUrlId);
+            }
+            for (final S3VanityAlias alias : persistedAliases) {
+                removeMaterializedAlias(context, alias);
             }
         } catch (final Exception e) {
             throw wrapAsDotDataException(e);

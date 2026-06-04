@@ -3,6 +3,7 @@ package com.dotcms.enterprise.publishing.staticpublishing;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.urlmap.URLMapAPI;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
@@ -17,6 +18,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
@@ -113,6 +115,13 @@ public class S3VanityTargetResolver {
         final Optional<Contentlet> contentlet = contentletAPI.findContentletByIdentifierOrFallback(identifier.getId(),
                 true, context.language.getId(), user, false);
         if (contentlet.isEmpty() || !fileAssetAPI.isFileAsset(contentlet.get())) {
+            return Optional.empty();
+        }
+
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(
+                contentlet.get(), PermissionAPI.PERMISSION_READ, null, true)) {
+            Logger.warn(this, "Skipping Vanity URL because file asset target is not publicly readable: "
+                    + canonicalPath);
             return Optional.empty();
         }
 
