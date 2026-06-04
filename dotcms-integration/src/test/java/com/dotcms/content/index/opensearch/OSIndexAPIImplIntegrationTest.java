@@ -371,6 +371,38 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Given scenario: An OS index is created with its {@code .os}-tagged name, then lifecycle
+     *                 operations are invoked with the UNtagged logical name — exactly what the
+     *                 {@link com.dotcms.content.index.IndexAPIImpl} router does when it fans out a
+     *                 vendor-neutral name (the ES name, e.g. {@code live_20260604211839}) to both
+     *                 providers.
+     * Expected: {@code indexExists} and {@code delete} resolve the untagged name to the same
+     *           physical {@code .os} index. Regression for the asymmetry where the OS provider
+     *           applied only the cluster prefix and not the {@code .os} tag, so a router-driven
+     *           delete missed the real index (logging {@code index_not_found_exception}) and left
+     *           it orphaned.
+     */
+    @Test
+    public void test_lifecycleWithUntaggedRouterName_shouldResolveToTaggedIndex() throws Exception {
+        // The bare logical name the router broadcasts — no .os tag, no cluster prefix.
+        final String untagged = IndexTag.strip(OS_LIVE_TAGGED);
+        assertFalse("Pre-condition: name under test must actually be untagged",
+                IndexTag.OS.isTagged(untagged));
+
+        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
+
+        assertTrue("indexExists must resolve the untagged router name to the .os index",
+                osIndexAPI.indexExists(untagged));
+
+        final boolean ack = osIndexAPI.delete(untagged);
+
+        assertTrue("delete via the untagged router name must be acknowledged", ack);
+        assertFalse("The real .os index must be gone after deleting via the untagged name",
+                osIndexAPI.indexExists(OS_LIVE_TAGGED));
+        Logger.info(this, "✅ test_lifecycleWithUntaggedRouterName_shouldResolveToTaggedIndex passed");
+    }
+
+    /**
      * Given scenario: Several realistic cluster-name formats are used to build a cluster prefix.
      * Expected: {@code getNameWithClusterIDPrefix} is idempotent, {@code hasClusterPrefix} and
      *           {@code removeClusterIdFromName} are consistent inverses for every format —

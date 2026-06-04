@@ -44,7 +44,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
+import org.opensearch.client.opensearch._types.ErrorCause;
 import org.opensearch.client.opensearch._types.ExpandWildcard;
+import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch.indices.ClearCacheRequest;
 import org.opensearch.client.opensearch.indices.ClearCacheResponse;
@@ -119,7 +121,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final ExistsRequest request = ExistsRequest.of(builder ->
-                builder.index(getNameWithClusterIDPrefix(indexName))
+                builder.index(toPhysicalName(indexName))
             );
             return clientProvider.getClient().indices().exists(request).value();
         } catch (Exception e) {
@@ -194,7 +196,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
 
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
-                builder.index(getNameWithClusterIDPrefix(indexName))
+                builder.index(toPhysicalName(indexName))
                         .settings(indexSettings)
                         .timeout(Time.of(timeBuilder ->
                                 timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
@@ -242,17 +244,42 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final DeleteIndexRequest request = DeleteIndexRequest.of(builder ->
-                builder.index(getNameWithClusterIDPrefix(indexName))
+                builder.index(toPhysicalName(indexName))
                        .timeout(Time.of(timeBuilder ->
                            timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                        ))
             );
             final var response = clientProvider.getClient().indices().delete(request);
             return response.acknowledged();
+        } catch (OpenSearchException e) {
+            // Safety net: deleting an index that is already gone is a successful no-op (idempotent
+            // delete). The name is canonicalized to its physical .os form above, so the normal
+            // case now targets the real index; this only triggers for a genuinely-absent index
+            // (e.g. a double-delete). It must NOT propagate as a failure once OS is primary in
+            // Phase 3.
+            if (isIndexNotFound(e)) {
+                Logger.debug(this.getClass(),
+                    () -> "OpenSearch index already absent, treating delete as no-op: " + indexName);
+                return true;
+            }
+            Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
+            throw new RuntimeException("Failed to delete index: " + indexName, e);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
             throw new RuntimeException("Failed to delete index: " + indexName, e);
         }
+    }
+
+    /**
+     * Detects an OpenSearch {@code index_not_found_exception} (HTTP 404), so callers can treat a
+     * delete of an already-absent index as an idempotent no-op rather than a hard failure.
+     */
+    private static boolean isIndexNotFound(final OpenSearchException e) {
+        if (e.status() == 404) {
+            return true;
+        }
+        final ErrorCause cause = e.error();
+        return cause != null && "index_not_found_exception".equals(cause.type());
     }
 
     @Override
@@ -278,7 +305,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void closeIndex(String indexName) {
         try {
             clientProvider.getClient().indices().close(b ->
-                b.index(getNameWithClusterIDPrefix(indexName))
+                b.index(toPhysicalName(indexName))
                  .timeout(Time.of(t -> t.time(INDEX_OPERATIONS_TIMEOUT)))
             );
             AdminLogger.log(this.getClass(), "closeIndex", "Index closed: " + indexName);
@@ -292,7 +319,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void openIndex(String indexName) {
         try {
             clientProvider.getClient().indices().open(b ->
-                b.index(getNameWithClusterIDPrefix(indexName))
+                b.index(toPhysicalName(indexName))
                  .timeout(Time.of(t -> t.time(INDEX_OPERATIONS_TIMEOUT)))
             );
             AdminLogger.log(this.getClass(), "openIndex", "Index opened: " + indexName);
@@ -623,7 +650,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final List<String> physicalNames = indexNames.stream()
-                    .map(this::getNameWithClusterIDPrefix)
+                    .map(this::toPhysicalName)
                     .collect(Collectors.toList());
             final ClearCacheResponse response = clientProvider.getClient().indices()
                     .clearCache(ClearCacheRequest.of(b -> b.index(physicalNames)));
@@ -642,7 +669,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public boolean optimize(final List<String> indexNames) {
         try {
             final List<String> physicalNames = indexNames.stream()
-                    .map(this::getNameWithClusterIDPrefix)
+                    .map(this::toPhysicalName)
                     .collect(Collectors.toList());
             final ForcemergeResponse response = clientProvider.getClient().indices()
                     .forcemerge(ForcemergeRequest.of(b -> b.index(physicalNames)));
@@ -679,7 +706,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         try {
             clientProvider.getClient().indices().putSettings(
                     PutIndicesSettingsRequest.of(b -> b
-                            .index(getNameWithClusterIDPrefix(indexName))
+                            .index(toPhysicalName(indexName))
                             .settings(s -> s.numberOfReplicas(replicas))));
         } catch (Exception e) {
             Logger.error(this.getClass(),
@@ -793,6 +820,26 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name : clusterPrefix.get() + name;
+    }
+
+    /**
+     * Resolves a vendor-neutral logical (or ES-style) index name to its canonical OS physical
+     * form: cluster-ID prefix + {@code .os} tag.
+     *
+     * <p>The {@link com.dotcms.content.index.IndexAPIImpl} router fans out the <em>same</em>
+     * logical name to both the ES and OS providers (e.g. {@code live_20260604211839}); each
+     * provider is responsible for mapping it to its own physical naming. The ES provider only
+     * adds the cluster prefix; the OS provider must ALSO add the {@code .os} tag, because the tag
+     * is part of the canonical OS name at every layer — including the physical index in the
+     * cluster (see {@link IndexTag}). Resolving here, rather than expecting callers to pre-tag,
+     * keeps the router vendor-neutral and prevents silently targeting an untagged name that does
+     * not exist (which would, for delete, orphan the real {@code .os} index).</p>
+     *
+     * <p>Idempotent: names already carrying the cluster prefix and/or the {@code .os} tag are not
+     * double-applied.</p>
+     */
+    private String toPhysicalName(final String name) {
+        return IndexTag.OS.tag(getNameWithClusterIDPrefix(name));
     }
 
     /**
