@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -12,7 +12,7 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -352,6 +352,60 @@ describe('withPageApi', () => {
             expect(getGraphQLPageSpy).toHaveBeenCalled();
             expect(getSpy).not.toHaveBeenCalled();
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should have pageLanguages already updated when setPageAsset is called during reload', () => {
+            // Regression test for #35647. The pre-fix code called setPageAsset BEFORE
+            // getLanguagesUsedPage responded, so pageTranslateProps (which reacts to
+            // pageAsset but reads pageLanguages via untracked()) saw stale data.
+            // We verify atomicity by holding getLanguagesUsedPage open with a Subject:
+            // the page asset must NOT be updated until the Subject emits, proving both
+            // writes happen in the same tap (after languages resolve).
+            const freshPage = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Reloaded' }
+            };
+            const languagesSubject = new Subject<DotLanguage[]>();
+
+            getSpy.mockReturnValueOnce(of(freshPage));
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(languagesSubject);
+
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            // Languages haven't resolved yet — page asset must still show the original title.
+            // Pre-fix code would have already swapped to 'Reloaded' here.
+            expect(store.pageAssetResponse()?.pageAsset.page.title).toBe('Test Page');
+
+            languagesSubject.next([
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ]);
+            languagesSubject.complete();
+            spectator.flushEffects();
+
+            // After languages resolve, both pageAsset and pageLanguages are updated atomically.
+            expect(store.pageAssetResponse()?.pageAsset.page.title).toBe('Reloaded');
+            expect(store.pageLanguages()[0].translated).toBe(true);
+        });
+
+        it('should apply the page asset and set status to LOADED when getLanguagesUsedPage fails', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            jest.spyOn(
+                spectator.inject(DotLanguagesService),
+                'getLanguagesUsedPage'
+            ).mockReturnValue(throwError(() => ({ status: 500 })));
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+            expect(store.pageAssetResponse()?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
         });
     });
 });
