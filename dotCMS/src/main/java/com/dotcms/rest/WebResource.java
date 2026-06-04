@@ -535,8 +535,11 @@ public  class WebResource {
                 if (!fallbackToAnonymousOnAuthFailure) {
                     throw e;
                 }
-                Logger.debug(WebResource.class, () -> "Ignoring malformed BASIC Authorization header; "
-                        + "falling through to anonymous: " + e.getMessage());
+                Logger.debug(this, () -> "Ignoring malformed BASIC Authorization header; "
+                        + "falling through to anonymous.");
+                SecurityLogger.logInfo(WebResource.class,
+                        () -> "Malformed BASIC Authorization header on asset request absorbed; "
+                                + "proceeding as anonymous. IP: " + (request != null ? request.getRemoteAddr() : BLANK));
                 userPass = Optional.empty();
             }
         }
@@ -550,8 +553,11 @@ public  class WebResource {
                 if (!fallbackToAnonymousOnAuthFailure) {
                     throw e;
                 }
-                Logger.debug(WebResource.class, () -> "BASIC Authorization credentials are not a valid "
-                        + "dotCMS user; falling through to anonymous: " + e.getMessage());
+                Logger.debug(this, () -> "BASIC Authorization credentials are not a valid "
+                        + "dotCMS user; falling through to anonymous.");
+                SecurityLogger.logInfo(WebResource.class,
+                        () -> "BASIC Authorization credential failure on asset request absorbed; "
+                                + "proceeding as anonymous. IP: " + (request != null ? request.getRemoteAddr() : BLANK));
                 user = null;
             }
         }
