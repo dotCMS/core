@@ -219,6 +219,35 @@ public class VipsParityTest {
         assertTrue("gif decodes", ImageIO.read(out) != null);
     }
 
+    // ---- Production path: runFilter (output-extension determination + rename) -------------------
+
+    /** Stage an input named with the GENERATED_FILE prefix so getResultsFile writes alongside it. */
+    private File staged(final String src, final String stagedExt) throws Exception {
+        final File dir = java.nio.file.Files.createTempDirectory("vips-runfilter").toFile();
+        final File in = new File(dir, "dotGenerated_src." + stagedExt);
+        java.nio.file.Files.copy(image(src).toPath(), in.toPath());
+        return in;
+    }
+
+    @Test
+    public void runFilter_resize_writes_png_with_exact_dims() throws Exception {
+        final File in = staged("test.jpg", "jpg");
+        final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+        assertTrue("result is png", out.getName().endsWith(".png"));
+        assertEquals(new Dimension(200, 150), dims(out));
+    }
+
+    @Test
+    public void runFilter_resize_of_gif_stays_gif_and_keeps_animation() throws Exception {
+        final File in = staged("test.gif", "gif");
+        final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "50", "resize_h", "50"));
+        assertTrue("result keeps .gif extension (not png)", out.getName().endsWith(".gif"));
+        // page height (single frame) is the resized height, not the stacked strip
+        final Dimension d = new VipsImageFilterApiImpl().getWidthHeight(out);
+        assertEquals(50, d.height);
+        assertTrue("gif decodes", ImageIO.read(out) != null);
+    }
+
     // ---- New capability: content-aware smart crop (no legacy equivalent) -----------------------
 
     @Test

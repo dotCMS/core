@@ -30,6 +30,19 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         };
     }
 
+    /**
+     * Mirror the legacy engine's format rule: a GIF source resizes to a GIF (preserving animation),
+     * everything else to PNG. Without this, {@code runFilter} would inherit the PNG extension and
+     * write an animated GIF's stacked page-strip as a single oversized PNG.
+     */
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        if ("gif".equalsIgnoreCase(UtilMethods.getFileExtension(file.getName()))) {
+            return getResultsFile(file, parameters, "gif");
+        }
+        return super.getResultsFile(file, parameters);
+    }
+
     @Override
     protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
         final int w = intParam(parameters, "w", 0);

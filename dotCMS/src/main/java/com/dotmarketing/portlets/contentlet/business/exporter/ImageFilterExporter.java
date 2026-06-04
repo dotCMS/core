@@ -45,7 +45,8 @@ public class ImageFilterExporter implements BinaryContentExporter {
      * pure-JVM engine is used. The choice only affects which {@link ImageFilter} subclasses
      * {@code resolveFilters} returns — the URL parameter contract is identical for both.
      */
-    private ImageFilterAPI imageFilterAPI() {
+    // package-visible for tests that pin the feature-flag selection behaviour
+    ImageFilterAPI imageFilterAPI() {
         return VipsManager.isEnabled() ? vipsApi.apply() : ImageFilterAPI.apiInstance.apply();
     }
 
