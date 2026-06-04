@@ -11,7 +11,11 @@ import { By } from '@angular/platform-browser';
 
 import { Listbox } from 'primeng/listbox';
 
-import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotWorkflowService
+} from '@dotcms/data-access';
 import { DotCMSWorkflow, WorkflowStep } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -56,7 +60,8 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn()
             }),
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotHttpErrorManagerService)
         ],
         // DotWorkflowService is provided at the component level, override it there
         componentProviders: [

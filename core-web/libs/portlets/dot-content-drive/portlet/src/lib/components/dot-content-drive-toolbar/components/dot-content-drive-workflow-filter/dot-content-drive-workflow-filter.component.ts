@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -22,7 +22,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotWorkflowService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSWorkflow, WorkflowStep } from '@dotcms/dotcms-models';
 import {
     CHIP_FILTER_LISTBOX_PT,
@@ -34,37 +34,24 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+import {
+    parseWorkflowToken,
+    workflowEntryToToken,
+    WorkflowFilterEntry
+} from '../../../../utils/functions';
 
 /**
  * One selected scheme, optionally pinned to a single step. `step` omitted means
- * "all steps of this scheme".
+ * "all steps of this scheme". The `schemeId[:stepId]` token encoding/decoding is
+ * shared with the store via {@link parseWorkflowToken} / {@link workflowEntryToToken}.
  */
-interface WorkflowSelection {
-    scheme: string;
-    step?: string;
-}
+type WorkflowSelection = WorkflowFilterEntry;
 
 interface State {
     schemes: DotCMSWorkflow[];
     steps: WorkflowStep[];
     loadingSchemes: boolean;
     loadingSteps: boolean;
-}
-
-/** Token separator for the `scheme[:step]` store/URL encoding. */
-const TOKEN_SEPARATOR = ':';
-
-/** `'A:X'` → `{ scheme: 'A', step: 'X' }`; `'B'` → `{ scheme: 'B' }`. */
-function parseSelection(token: string): WorkflowSelection {
-    const index = token.indexOf(TOKEN_SEPARATOR);
-    return index === -1
-        ? { scheme: token }
-        : { scheme: token.slice(0, index), step: token.slice(index + 1) };
-}
-
-/** `{ scheme: 'A', step: 'X' }` → `'A:X'`; `{ scheme: 'B' }` → `'B'`. */
-function toToken({ scheme, step }: WorkflowSelection): string {
-    return step ? `${scheme}${TOKEN_SEPARATOR}${step}` : scheme;
 }
 
 /**
@@ -85,9 +72,10 @@ function toToken({ scheme, step }: WorkflowSelection): string {
  * - Cascade: pinning a step selects its (focused) scheme; deselecting a scheme
  *   removes its pinned step.
  *
- * NOTE: backend search support is tracked in dotCMS/core#35470. Until it ships,
- * this filter renders, persists its selection, drives the chip + Clear-all, and
- * round-trips in the URL, but does NOT change the listing results yet.
+ * The selection is serialized to the single `workflow` filter key as
+ * `schemeId[:stepId]` tokens and round-trips through the URL. The drive-search
+ * request applies them server-side as OR-combined SQL (scheme-only entries match
+ * by content-type assignment; step-pinned entries match the current task).
  */
 @Component({
     selector: 'dot-content-drive-workflow-filter',
@@ -109,6 +97,7 @@ export class DotContentDriveWorkflowFilterComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #workflowService = inject(DotWorkflowService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
@@ -143,7 +132,7 @@ export class DotContentDriveWorkflowFilterComponent {
 
     /** Current selection, parsed from the single `workflow` filter key. */
     readonly $selection = linkedSignal<WorkflowSelection[]>(() =>
-        ((this.#store.getFilterValue('workflow') as string[]) ?? []).map(parseSelection)
+        ((this.#store.getFilterValue('workflow') as string[]) ?? []).map(parseWorkflowToken)
     );
 
     /** Scheme whose steps are shown on the right. Separate from selection. */
@@ -258,7 +247,19 @@ export class DotContentDriveWorkflowFilterComponent {
         source$
             .pipe(
                 take(1),
-                catchError(() => of([] as DotCMSWorkflow[])),
+                catchError((error) => {
+                    this.#httpErrorManager.handle(error);
+                    // Only the current request should clear the spinner — a
+                    // superseded load's failure must not touch a newer one.
+                    if (requestId === this.#schemesRequestId) {
+                        patchState(this.$state, { loadingSchemes: false });
+                    }
+                    // Keep the existing selection: returning EMPTY skips the
+                    // subscribe below, so we don't reconcile against an empty list
+                    // and silently drop a URL-restored workflow filter on a
+                    // transient backend failure.
+                    return EMPTY;
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((schemes) => {
@@ -354,7 +355,7 @@ export class DotContentDriveWorkflowFilterComponent {
     #syncStore(): void {
         const selection = this.$selection();
         if (selection.length) {
-            this.#store.patchFilters({ workflow: selection.map(toToken) });
+            this.#store.patchFilters({ workflow: selection.map(workflowEntryToToken) });
         } else {
             this.#store.removeFilter('workflow');
         }

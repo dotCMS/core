@@ -78,21 +78,50 @@ const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
 
+/** A single workflow filter entry: one scheme, optionally pinned to a step. */
+export interface WorkflowFilterEntry {
+    scheme: string;
+    step?: string;
+}
+
+/** Separator for the `schemeId[:stepId]` workflow token encoding. */
+export const WORKFLOW_TOKEN_SEPARATOR = ':';
+
+/**
+ * Canonical parse for one `workflow` token. Splits on the FIRST separator only,
+ * so any separator inside the step id is preserved.
+ * `'A:X'` → `{ scheme: 'A', step: 'X' }`; `'B'` → `{ scheme: 'B' }`.
+ *
+ * @param {string} token
+ * @return {*}  {WorkflowFilterEntry}
+ */
+export function parseWorkflowToken(token: string): WorkflowFilterEntry {
+    const index = token.indexOf(WORKFLOW_TOKEN_SEPARATOR);
+    return index === -1
+        ? { scheme: token }
+        : { scheme: token.slice(0, index), step: token.slice(index + 1) };
+}
+
+/**
+ * Canonical serialize, inverse of {@link parseWorkflowToken}.
+ * `{ scheme: 'A', step: 'X' }` → `'A:X'`; `{ scheme: 'B' }` → `'B'`.
+ *
+ * @param {WorkflowFilterEntry} entry
+ * @return {*}  {string}
+ */
+export function workflowEntryToToken({ scheme, step }: WorkflowFilterEntry): string {
+    return step ? `${scheme}${WORKFLOW_TOKEN_SEPARATOR}${step}` : scheme;
+}
+
 /**
  * Parses the `workflow` filter tokens (`schemeId` or `schemeId:stepId`) into the
- * `{ scheme, step? }` entries the drive-search request expects. Splits on the FIRST
- * colon only, so the inner step id is preserved.
+ * `{ scheme, step? }` entries the drive-search request expects.
  *
  * @param {string[]} tokens
- * @return {*}  {{ scheme: string; step?: string }[]}
+ * @return {*}  {WorkflowFilterEntry[]}
  */
-export function parseWorkflowFilter(tokens: string[] = []): { scheme: string; step?: string }[] {
-    return tokens.map((token) => {
-        const index = token.indexOf(':');
-        return index === -1
-            ? { scheme: token }
-            : { scheme: token.slice(0, index), step: token.slice(index + 1) };
-    });
+export function parseWorkflowFilter(tokens: string[] = []): WorkflowFilterEntry[] {
+    return tokens.map(parseWorkflowToken);
 }
 
 /**
