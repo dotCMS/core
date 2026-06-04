@@ -245,6 +245,7 @@ describe('DotEmaDialogComponent', () => {
             spectator.detectChanges();
 
             // dialog appends to body so @ViewChild('iframe') is not populated; stub it out
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             component.iframe = { nativeElement: { contentWindow: null } } as any;
             component.handleWorkflowEvent({} as DotCMSWorkflowActionEvent);
 
