@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.liferay.util.StringPool.BLANK;
 
@@ -518,30 +519,20 @@ public  class WebResource {
         User user = null;
 
         final boolean fallbackToAnonymousOnAuthFailure = Arrays.stream(authCheckOptions)
-                .anyMatch(AuthCheckOptions.FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
+                .anyMatch(AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
 
+        // Both header parsers (DOTAUTH and BASIC) can throw on a malformed header; route them through
+        // the same tolerant policy so the fallback option's guarantee holds for every credential header.
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromHeaderAuth(request);
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromHeaderAuth(request),
+                    "DOTAUTH", fallbackToAnonymousOnAuthFailure);
         }
 
         if(userPass.isEmpty()) {
-            try {
-                userPass = getAuthCredentialsFromBasicAuth(request);
-            } catch (SecurityException e) {
-                // Malformed BASIC header. Abort for REST endpoints; for asset servlets fall through
-                // to anonymous so a replayed/garbled upstream-gateway header doesn't break a public asset.
-                if (!fallbackToAnonymousOnAuthFailure) {
-                    throw e;
-                }
-                Logger.debug(this, () -> "Ignoring malformed BASIC Authorization header; "
-                        + "falling through to anonymous.");
-                SecurityLogger.logInfo(WebResource.class,
-                        () -> "Malformed BASIC Authorization header on asset request absorbed; "
-                                + "proceeding as anonymous. IP: " + (request != null ? request.getRemoteAddr() : BLANK));
-                userPass = Optional.empty();
-            }
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromBasicAuth(request),
+                    "BASIC Authorization", fallbackToAnonymousOnAuthFailure);
         }
 
         if(userPass.isPresent()) {
@@ -557,7 +548,7 @@ public  class WebResource {
                         + "dotCMS user; falling through to anonymous.");
                 SecurityLogger.logInfo(WebResource.class,
                         () -> "BASIC Authorization credential failure on asset request absorbed; "
-                                + "proceeding as anonymous. IP: " + (request != null ? request.getRemoteAddr() : BLANK));
+                                + "proceeding as anonymous.");
                 user = null;
             }
         }
@@ -596,6 +587,36 @@ public  class WebResource {
         PrincipalThreadLocal.setName(user.getUserId());
 
         return user;
+    }
+
+    /**
+     * Runs a credential-parsing step under the
+     * {@link AuthCheckOptions#SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE} policy. When the
+     * option is active and the parser throws a {@link SecurityException} (e.g. a malformed credential
+     * header), the exception is absorbed and an empty result is returned so authentication can
+     * continue as anonymous; otherwise the exception is rethrown (strict behavior for REST callers).
+     *
+     * @param parser the credential-parsing step (may throw {@link SecurityException})
+     * @param headerLabel human-readable header name, used only for logging
+     * @param fallbackToAnonymous whether the fallback option is active for this request
+     * @return the parsed credentials, or empty when absent or when a malformed header was tolerated
+     */
+    private Optional<UsernamePassword> parseCredentialsTolerantly(
+            final Supplier<Optional<UsernamePassword>> parser,
+            final String headerLabel,
+            final boolean fallbackToAnonymous) {
+        try {
+            return parser.get();
+        } catch (SecurityException e) {
+            if (!fallbackToAnonymous) {
+                throw e;
+            }
+            Logger.debug(this, () -> "Ignoring malformed " + headerLabel
+                    + " header; falling through to anonymous.");
+            SecurityLogger.logInfo(WebResource.class, () -> "Malformed " + headerLabel
+                    + " header on asset request absorbed; proceeding as anonymous.");
+            return Optional.empty();
+        }
     }
 
     /**
@@ -816,15 +837,21 @@ public  class WebResource {
         SKIP_CHECK_FORCE_SSL,
         SKIP_CHECK_ANONYMOUS_PERMISSIONS,
         /**
-         * When set, a BASIC {@code Authorization} header that cannot be parsed or whose credentials
-         * do not authenticate as a dotCMS user does NOT abort the request with a {@code 401}.
-         * Instead authentication falls through to the anonymous user, letting the downstream
-         * resource permission check decide whether access is allowed. Used by the static/binary
-         * asset servlets so that an upstream Basic-Auth gating layer (whose credentials the browser
-         * replays on sub-resource requests, per RFC 7617) does not break anonymously-readable assets.
-         * REST endpoints intentionally omit this option and keep strict BASIC rejection.
+         * When set, a credential header ({@code Authorization: Basic} or {@code DOTAUTH}) that cannot
+         * be parsed, or whose credentials do not authenticate as a dotCMS user, does NOT abort the
+         * request with a {@code 401}. Instead authentication falls through to the anonymous user,
+         * letting the downstream resource permission check decide whether access is allowed. Used by
+         * the static/binary asset servlets so that an upstream Basic-Auth gating layer (whose
+         * credentials the browser replays on sub-resource requests, per RFC 7617) does not break
+         * anonymously-readable assets.
+         * <p>
+         * <strong>Servlet-only.</strong> The {@code SERVLET_ONLY_} prefix is a convention-based guard:
+         * this option must never be passed by a JAX-RS / REST resource. Doing so would silently
+         * downgrade an authenticated request to anonymous whenever a client sends bad credentials
+         * (returning anonymous-access data instead of {@code 401}) — a broken-authentication risk.
+         * REST endpoints intentionally omit this option and keep strict credential rejection.
          */
-        FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE,
+        SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE,
    }
 
    public static class InitBuilder {

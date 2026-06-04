@@ -36,7 +36,7 @@ public class ServletUtils {
                 req.getPathInfo().substring(1) : StringPool.BLANK)
             .authCheckOptions(WebResource.AuthCheckOptions.SKIP_CHECK_FORCE_SSL,
                 WebResource.AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS,
-                WebResource.AuthCheckOptions.FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE)
+                WebResource.AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE)
             .init().getUser();
 
     }
