@@ -65,6 +65,6 @@ public final class S3VanityResolvedTarget {
      * @return physical file when this target is a File Asset
      */
     public Optional<File> physicalFile() {
-        return fileAsset == null ? Optional.empty() : Optional.of(fileAsset.getFileAsset());
+        return fileAsset == null ? Optional.empty() : Optional.ofNullable(fileAsset.getFileAsset());
     }
 }

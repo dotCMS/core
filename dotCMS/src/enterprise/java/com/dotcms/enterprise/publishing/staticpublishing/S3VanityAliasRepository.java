@@ -44,6 +44,8 @@ public class S3VanityAliasRepository {
                     + "AND vanity_path_hash = ? AND vanity_path = ?";
     private static final String DELETE_BY_VANITY_URL_ID =
             "DELETE FROM static_s3_vanity_mapping WHERE endpoint_id = ? AND language_id = ? AND vanity_url_id = ?";
+    private static final String DELETE_BY_VANITY_URL_ID_ANY_LANGUAGE =
+            "DELETE FROM static_s3_vanity_mapping WHERE endpoint_id = ? AND vanity_url_id = ?";
     private static final String INSERT_ALIAS =
             "INSERT INTO static_s3_vanity_mapping "
                     + "(endpoint_id, host_id, language_id, canonical_path, canonical_path_hash, "
@@ -177,6 +179,33 @@ public class S3VanityAliasRepository {
     @WrapInTransaction
     public void deleteByLookup(final S3VanityAliasLookup lookup) throws DotDataException {
         deleteByLookupInternal(lookup);
+    }
+
+    /**
+     * Removes all mappings for a Vanity URL in a specific language.
+     *
+     * @param endpointId static endpoint identifier
+     * @param languageId Vanity URL language identifier
+     * @param vanityUrlId Vanity URL identifier
+     * @throws DotDataException when deleting mappings fails
+     */
+    @WrapInTransaction
+    public void deleteByVanityUrlId(final String endpointId, final long languageId,
+                                    final String vanityUrlId) throws DotDataException {
+        deleteByVanityUrlIdInternal(endpointId, languageId, vanityUrlId);
+    }
+
+    /**
+     * Removes all mappings for a Vanity URL across all languages.
+     *
+     * @param endpointId static endpoint identifier
+     * @param vanityUrlId Vanity URL identifier
+     * @throws DotDataException when deleting mappings fails
+     */
+    @WrapInTransaction
+    public void deleteByVanityUrlId(final String endpointId,
+                                    final String vanityUrlId) throws DotDataException {
+        new DotConnect().executeUpdate(DELETE_BY_VANITY_URL_ID_ANY_LANGUAGE, false, endpointId, vanityUrlId);
     }
 
     /**

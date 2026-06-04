@@ -93,7 +93,8 @@ public class S3VanityAliasService {
     public void publishAliasForVanityUrl(final S3VanityAliasPublishContext context,
                                          final Contentlet vanityContentlet) throws DotDataException {
         if (!aliasSupport.isSupportedVanityUrl(vanityContentlet)) {
-            Logger.warn(this, "Skipping unsupported Vanity URL: " + vanityContentlet);
+            Logger.warn(this, "Skipping unsupported Vanity URL: "
+                    + (vanityContentlet != null ? vanityContentlet.getIdentifier() : "null"));
             if (vanityContentlet != null) {
                 unpublishAliasesByVanityUrl(new S3VanityAliasCleanupContext(context.endpointId,
                         context.endpointPublisher), vanityContentlet.getLanguageId(),
@@ -260,14 +261,21 @@ public class S3VanityAliasService {
     private void publishMaterializedAlias(final S3VanityAliasPublishContext context,
                                           final S3VanityAlias alias,
                                           final File file) throws DotDataException {
+        final List<S3VanityAlias> previousAliases =
+                repository.findByVanityUrlId(context.endpointId, context.language.getId(), alias.vanityUrlId);
         try {
-            final List<S3VanityAlias> persistedAliases =
-                    repository.findByVanityUrlId(context.endpointId, context.language.getId(), alias.vanityUrlId);
-            publishAlias(context, alias, file);
-            deleteObsoleteAliases(context, persistedAliases, alias);
             repository.replaceMappingsByVanityUrlId(context.endpointId, context.language.getId(), alias.vanityUrlId,
                     Collections.singletonList(alias));
+            publishAlias(context, alias, file);
+            deleteObsoleteAliases(context, previousAliases, alias);
         } catch (final Exception e) {
+            try {
+                repository.replaceMappingsByVanityUrlId(context.endpointId, context.language.getId(),
+                        alias.vanityUrlId, previousAliases);
+            } catch (final Exception compensateEx) {
+                Logger.warn(this, "Failed to restore previous alias mappings for " + alias.vanityUrlId
+                        + ": " + compensateEx.getMessage());
+            }
             throw wrapAsDotDataException(e);
         }
     }
@@ -375,7 +383,11 @@ public class S3VanityAliasService {
         try {
             for (final S3VanityAlias alias : persistedAliases) {
                 removeMaterializedAlias(context, alias);
-                repository.deleteAlias(alias);
+            }
+            if (languageId > 0) {
+                repository.deleteByVanityUrlId(context.endpointId, languageId, vanityUrlId);
+            } else {
+                repository.deleteByVanityUrlId(context.endpointId, vanityUrlId);
             }
         } catch (final Exception e) {
             throw wrapAsDotDataException(e);
