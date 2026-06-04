@@ -251,6 +251,21 @@ public class VipsParityTest {
     // ---- New capability: content-aware smart crop (no legacy equivalent) -----------------------
 
     @Test
+    public void avif_encoder_produces_valid_avif() throws Exception {
+        final File in = image("test.png");
+        final File out = tempOut("avif");
+        new VipsAvifImageFilter().transform(in, out, params("avif_q", "50"));
+        assertTrue("avif written", out.exists() && out.length() > 50);
+        // AVIF magic: ISO-BMFF 'ftyp' box with an 'avif'/'avis' brand at offset 8.
+        final byte[] head = new byte[12];
+        try (java.io.InputStream is = new java.io.FileInputStream(out)) {
+            assertEquals(12, is.read(head));
+        }
+        final String brand = new String(head, 8, 4, java.nio.charset.StandardCharsets.US_ASCII);
+        assertTrue("expected avif brand, got '" + brand + "'", brand.startsWith("avi"));
+    }
+
+    @Test
     public void smartcrop_produces_exact_box_from_salient_region() throws Exception {
         final File in = image("test.jpg");
         final File out = tempOut("png");
