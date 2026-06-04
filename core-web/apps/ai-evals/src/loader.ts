@@ -13,7 +13,8 @@ export function loadTask(filePath: string): TaskDefinition {
     if (!raw.id) throw new Error(`Task file ${filePath} is missing required field: id`);
     if (!raw.prompt) throw new Error(`Task file ${filePath} is missing required field: prompt`);
     if (!raw.runs || raw.runs < 1) throw new Error(`Task file ${filePath}: runs must be >= 1`);
-    if (!Array.isArray(raw.assertions)) throw new Error(`Task file ${filePath}: assertions must be an array`);
+    if (!Array.isArray(raw.assertions))
+        throw new Error(`Task file ${filePath}: assertions must be an array`);
 
     return raw;
 }

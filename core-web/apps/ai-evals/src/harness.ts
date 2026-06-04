@@ -140,20 +140,21 @@ async function runCleanup(
                 ...(step.body ? { body: JSON.stringify(step.body) } : {})
             });
             if (!response.ok) {
-                console.warn(`  [cleanup] ${step.method} ${step.path} → ${response.status} (ignored)`);
+                console.warn(
+                    `  [cleanup] ${step.method} ${step.path} → ${response.status} (ignored)`
+                );
             }
         } catch (err) {
-            console.warn(`  [cleanup] ${step.method} ${step.path} → error: ${err instanceof Error ? err.message : String(err)} (ignored)`);
+            console.warn(
+                `  [cleanup] ${step.method} ${step.path} → error: ${err instanceof Error ? err.message : String(err)} (ignored)`
+            );
         }
     }
 }
 
 // ── Single run ────────────────────────────────────────────────────────────────
 
-async function executeRun(
-    index: number,
-    options: RunTaskOptions
-): Promise<RunResult> {
+async function executeRun(index: number, options: RunTaskOptions): Promise<RunResult> {
     const { task, model, dotcmsUrl, authToken } = options;
     const start = Date.now();
 
@@ -203,7 +204,14 @@ async function executeRun(
         if (assertion.type === 'http_get') {
             assertions.push(await runHttpGetAssertion(assertion, dotcmsUrl, authToken));
         } else if (assertion.type === 'custom') {
-            assertions.push(await runCustomAssertion(assertion, { ...partialRun, assertions: [], passed: false }, dotcmsUrl, authToken));
+            assertions.push(
+                await runCustomAssertion(
+                    assertion,
+                    { ...partialRun, assertions: [], passed: false },
+                    dotcmsUrl,
+                    authToken
+                )
+            );
         }
     }
 
@@ -226,7 +234,8 @@ export async function runTask(options: RunTaskOptions, verbose = false): Promise
         runs.push(run);
 
         for (const [j, step] of run.steps.entries()) {
-            const calls = step.toolCalls?.map((c: { toolName: string }) => c.toolName).join(', ') ?? '—';
+            const calls =
+                step.toolCalls?.map((c: { toolName: string }) => c.toolName).join(', ') ?? '—';
             console.log(`    step ${j + 1}: [${calls}]`);
 
             if (verbose) {

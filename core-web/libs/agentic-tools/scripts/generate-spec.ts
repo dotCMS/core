@@ -170,8 +170,7 @@ async function generateSpec() {
                         requestContent['multipart/form-data'] = {
                             schema: {
                                 type: 'object',
-                                description:
-                                    'Multipart form. See endpoint description for fields.',
+                                description: 'Multipart form. See endpoint description for fields.',
                                 properties: {
                                     file: { type: 'string', format: 'binary' }
                                 }

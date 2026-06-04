@@ -52,7 +52,11 @@ function getRequestFn(adapter: Adapter): RequestFn {
 }
 
 function unwrapEntity(payload: unknown): unknown {
-    if (payload && typeof payload === 'object' && 'entity' in (payload as Record<string, unknown>)) {
+    if (
+        payload &&
+        typeof payload === 'object' &&
+        'entity' in (payload as Record<string, unknown>)
+    ) {
         return (payload as Record<string, unknown>).entity;
     }
     return payload;
@@ -136,7 +140,9 @@ async function loadCurrentUser(request: RequestFn): Promise<CurrentUserSummary |
     if (!entity || typeof entity !== 'object') return null;
     const u = entity as Record<string, unknown>;
     const roles = Array.isArray(u.roles)
-        ? u.roles.map((r) => (typeof r === 'string' ? r : asString((r as Record<string, unknown>)?.id)))
+        ? u.roles.map((r) =>
+              typeof r === 'string' ? r : asString((r as Record<string, unknown>)?.id)
+          )
         : undefined;
     return {
         userId: asString(u.userId ?? u.id),
