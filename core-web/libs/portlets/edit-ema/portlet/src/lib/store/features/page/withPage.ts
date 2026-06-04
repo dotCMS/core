@@ -83,6 +83,14 @@ export interface WithPageMethods extends PageComputed {
         query: string;
         variables: Record<string, string>;
     }) => void;
+    /**
+     * Drops the stored client GraphQL request (CLIENT_READY config).
+     * Called on cross-page navigation: the stored query/variables belong
+     * to the page being left, so the next page must be fetched through
+     * the standard Page API until its own CLIENT_READY installs fresh
+     * request metadata.
+     */
+    resetRequestMetadata: () => void;
     /** Updates page asset (and optionally content). Omit content to merge; include content to replace. */
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
@@ -150,6 +158,9 @@ export function withPage() {
                             variables
                         }
                     });
+                },
+                resetRequestMetadata: () => {
+                    patchState(store, { requestMetadata: null });
                 },
                 setPageAsset: (payload) => {
                     const current = store.pageAssetResponse();

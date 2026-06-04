@@ -26,7 +26,7 @@ import {
     PageContainer,
     SaveStylePropertiesPayload
 } from '../../../shared/models';
-import { getIframeAccessMode, isForwardOrPage } from '../../../utils';
+import { compareUrlPaths, getIframeAccessMode, isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageSnapshot } from '../page/withPage';
 
@@ -60,6 +60,8 @@ export interface WithPageApiDeps {
     resetClientConfiguration: () => void;
     /** Reset readiness + history but keep current pageAssetResponse. */
     markPageLoading: () => void;
+    /** Drop the stored client GraphQL request (belongs to the page being left). */
+    resetRequestMetadata: () => void;
 
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
@@ -153,6 +155,31 @@ export function withPageApi(deps: WithPageApiDeps) {
                             };
                         }),
                         tap((pageParams) => {
+                            // The stored client GraphQL request (sent by the headless
+                            // app's CLIENT_READY) is page-scoped: its variables carry
+                            // the URL it was captured for. Keep it only when it belongs
+                            // to the page being loaded — same-page param changes
+                            // (language/persona/mode) or a client-side navigation whose
+                            // CLIENT_READY already refreshed it. Otherwise drop it so
+                            // this page loads through the standard Page API (same as a
+                            // first load) until its own CLIENT_READY installs fresh
+                            // metadata. Reusing another page's request (stale variables
+                            // like publishDate or custom vars) can resolve to NOT_FOUND
+                            // and strand the editor on the previous page.
+                            // Requests without a url variable are assumed to belong to
+                            // the page currently loaded in the editor.
+                            const metadataUrl =
+                                deps.requestMetadata()?.variables?.['url'] ??
+                                store.pageParams()?.url;
+                            const belongsToTargetPage =
+                                !!metadataUrl &&
+                                !!pageParams.url &&
+                                compareUrlPaths(metadataUrl, pageParams.url);
+
+                            if (!belongsToTargetPage) {
+                                deps.resetRequestMetadata();
+                            }
+
                             // Don't fully reset — that would null
                             // `pageAssetResponse` and unmount the editor
                             // chrome (toolbars, sidebars, navigation,

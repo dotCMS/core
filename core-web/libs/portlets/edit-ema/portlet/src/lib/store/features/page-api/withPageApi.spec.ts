@@ -35,7 +35,10 @@ const pageParamsBase = {
     mode: UVE_MODE.EDIT
 };
 
-const graphqlRequest = {
+// Deliberately omits a `url` variable: exercises the legacy-client branch where
+// pageLoad assumes the stored request belongs to the page currently loaded
+// (falls back to comparing against the previous pageParams.url).
+const graphqlRequestWithoutUrl = {
     query: '{ page { url } }',
     variables: { depth: '1', language_id: '1' }
 };
@@ -50,6 +53,7 @@ function buildTestStore() {
             withPageApi({
                 resetClientConfiguration: () => store.resetClientConfiguration(),
                 markPageLoading: () => store.markPageLoading(),
+                resetRequestMetadata: () => store.resetRequestMetadata(),
                 requestMetadata: () => store.requestMetadata(),
                 $requestWithParams: store.$requestWithParams,
                 setPageAsset: (payload) => store.setPageAsset(payload),
@@ -150,8 +154,8 @@ describe('withPageApi', () => {
         });
 
         it('should use getGraphQLPage when requestMetadata is set', () => {
-            store.setCustomClient(graphqlRequest);
-            expect(store.requestMetadata()).toEqual(graphqlRequest);
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
 
             store.pageLoad({ language_id: '2' });
             spectator.flushEffects();
@@ -182,7 +186,7 @@ describe('withPageApi', () => {
         });
 
         it('should set page asset with content when GraphQL response includes content', () => {
-            store.setCustomClient(graphqlRequest);
+            store.setCustomClient(graphqlRequestWithoutUrl);
 
             store.pageLoad({});
             spectator.flushEffects();
@@ -190,6 +194,88 @@ describe('withPageApi', () => {
             const response = store.pageAssetResponse();
             expect(response?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
             expect(response?.content).toEqual({ source: 'graphql' });
+        });
+
+        it('should drop the stored client request and use get() when navigating to a different page', () => {
+            // Page One's CLIENT_READY installed its GraphQL request
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
+
+            // The stored request belongs to the current page ('test-url'):
+            // navigating to another page must NOT reuse its query/variables
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalledWith(expect.objectContaining({ url: 'another-page' }));
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should drop a stored request explicitly captured for another page (NAVIGATION_UPDATE before CLIENT_READY)', () => {
+            // The stored request declares the page it belongs to via its own
+            // url variable (current page, '/test-url'). If NAVIGATION_UPDATE
+            // arrives before the new page's CLIENT_READY, pageLoad must not
+            // reuse it — it falls back to the standard Page API (first-load flow)
+            store.setCustomClient({
+                query: 'query',
+                variables: { url: '/test-url', depth: '1' }
+            });
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalledWith(expect.objectContaining({ url: 'another-page' }));
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should keep the stored client request when it was captured for the target page', () => {
+            // Client-side navigation: the new page's CLIENT_READY already
+            // installed its own request (variables.url points to the target)
+            store.setCustomClient({
+                query: 'query',
+                variables: { url: '/another-page', depth: '1' }
+            });
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).not.toBeNull();
+            expect(getGraphQLPageSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    variables: expect.objectContaining({ url: 'another-page' })
+                })
+            );
+            expect(getSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should keep the stored client request when navigating to the same page (other params)', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            // Same pathname, leading-slash variant — still the same page
+            store.pageLoad({ url: '/test-url', language_id: '2' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
+            expect(getGraphQLPageSpy).toHaveBeenCalled();
+            expect(getSpy).not.toHaveBeenCalled();
+        });
+
+        it('should drop the stored client request when there are no previous pageParams', () => {
+            patchState(store, { pageParams: null });
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            // Fresh load (e.g. shell re-created after leaving the portlet):
+            // stale metadata from a previous visit must not leak into the new page
+            store.pageLoad({ ...pageParamsBase, url: 'fresh-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalled();
         });
 
         it('should reset editorSelected when loading a new page', () => {
@@ -342,7 +428,7 @@ describe('withPageApi', () => {
         });
 
         it('should call getGraphQLPage when reloading with GraphQL metadata', () => {
-            store.setCustomClient(graphqlRequest);
+            store.setCustomClient(graphqlRequestWithoutUrl);
             store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
             jest.clearAllMocks();
 
