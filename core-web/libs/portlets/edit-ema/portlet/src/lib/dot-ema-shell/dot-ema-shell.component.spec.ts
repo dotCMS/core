@@ -1058,6 +1058,22 @@ describe('DotEmaShellComponent', () => {
                 expect(reloadSpy).toHaveBeenCalled();
             });
 
+            it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                        payload: { htmlPageReferer: '/index?com.dotmarketing.htmlpage.language=2' }
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', async () => {
                 const reloadSpy = jest.spyOn(store, 'pageReload');
                 jest.spyOn(dotPageApiService, 'get').mockReturnValue(

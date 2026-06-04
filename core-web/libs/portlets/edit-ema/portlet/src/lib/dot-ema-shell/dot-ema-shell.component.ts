@@ -278,6 +278,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 this.handleSavePageEvent(event);
                 break;
             }
+
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
+                // Fired by the edit content portlet when a page is saved in a new language
+                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
+                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
+                // dropdown reflects the newly created version.
+                this.uveStore.pageReload();
+                break;
+            }
         }
     }
 

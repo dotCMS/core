@@ -245,11 +245,13 @@ export class DotEmaDialogComponent {
                     });
                 } else {
                     this.callEmbeddedFunction(callback, args);
-                    // Reload the page so pageLanguages reflects the post-action state
-                    // (e.g. a publish changes translated: false → true for a language version).
-                    // The iframe callback may also fire SAVE_PAGE which triggers pageReload;
-                    // reloadFromDialog fires first and switchMap in pageReload cancels it
-                    // cleanly if a second call arrives.
+                    // Reload so pageLanguages reflects the post-action state. The workflow
+                    // action triggers an async save inside the iframe; by the time
+                    // saveContentCallback fires LANGUAGE_IS_CHANGED, the dialog may already
+                    // be closed and its iframe listener gone. Firing here — while the dialog
+                    // is still open — guarantees the reload runs. The Spanish draft already
+                    // exists at this point (created when the user selected the language),
+                    // so getLanguagesUsedPage correctly returns translated: true.
                     this.reloadFromDialog.emit();
                     this.messageService.add({
                         severity: 'success',
@@ -353,7 +355,6 @@ export class DotEmaDialogComponent {
                             // The edit content emits this for savings when translating a page and does not emit anything when changing the content
                             if (this.dialogState().form.isTranslation) {
                                 this.store.setSaved();
-                                this.reloadFromDialog.emit();
 
                                 if (event.detail.payload.isMoveAction) {
                                     this.reloadIframe();
