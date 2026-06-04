@@ -190,6 +190,36 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
+            it('should map the workflow filter tokens into request.workflow entries', () => {
+                const filters = {
+                    workflow: ['a:a2', 'b']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toEqual([{ scheme: 'a', step: 'a2' }, { scheme: 'b' }]);
+            });
+
+            it('should leave request.workflow undefined when no workflow filter is provided', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toBeUndefined();
+            });
+
             it('should include pagination in request', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
@@ -255,6 +285,23 @@ describe('DotContentDriveStore', () => {
             it('should set showFolders to false when languageId filter is provided', () => {
                 const filters = {
                     languageId: ['en']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when workflow filter is provided', () => {
+                const filters = {
+                    workflow: ['a']
                 };
 
                 store.initContentDrive({

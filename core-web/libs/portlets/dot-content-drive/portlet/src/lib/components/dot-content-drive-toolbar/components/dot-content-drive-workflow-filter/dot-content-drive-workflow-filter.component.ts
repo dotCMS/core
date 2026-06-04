@@ -131,9 +131,11 @@ export class DotContentDriveWorkflowFilterComponent {
     });
 
     /** Current selection, parsed from the single `workflow` filter key. */
-    readonly $selection = linkedSignal<WorkflowSelection[]>(() =>
-        ((this.#store.getFilterValue('workflow') as string[]) ?? []).map(parseWorkflowToken)
-    );
+    readonly $selection = linkedSignal<WorkflowSelection[]>(() => {
+        // getFilterValue can return string | string[]; only an array is valid here.
+        const raw = this.#store.getFilterValue('workflow');
+        return (Array.isArray(raw) ? raw : []).map(parseWorkflowToken);
+    });
 
     /** Scheme whose steps are shown on the right. Separate from selection. */
     readonly $focusedScheme = signal<string | null>(null);
@@ -151,9 +153,12 @@ export class DotContentDriveWorkflowFilterComponent {
      * stays stable — normalizing would mint a new array on every unrelated filter
      * change and re-trigger the scheme reload effect in a loop.
      */
-    readonly #contentTypeFilter = computed(
-        () => this.#store.getFilterValue('contentType') as string[] | undefined
-    );
+    readonly #contentTypeFilter = computed(() => {
+        // Keep the raw array reference (stable identity) or undefined — never mint a
+        // fresh `[]`, which would re-trigger the reload effect on every filter change.
+        const raw = this.#store.getFilterValue('contentType');
+        return Array.isArray(raw) ? raw : undefined;
+    });
 
     /**
      * Empty-schemes message key. With content type(s) selected, the schemes came
@@ -236,7 +241,8 @@ export class DotContentDriveWorkflowFilterComponent {
     }
 
     #loadSchemes(): void {
-        const contentTypes = (this.#store.getFilterValue('contentType') as string[]) ?? [];
+        const rawContentTypes = this.#store.getFilterValue('contentType');
+        const contentTypes = Array.isArray(rawContentTypes) ? rawContentTypes : [];
         const requestId = ++this.#schemesRequestId;
         patchState(this.$state, { loadingSchemes: true });
 
