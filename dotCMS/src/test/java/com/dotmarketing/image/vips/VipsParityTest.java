@@ -219,6 +219,19 @@ public class VipsParityTest {
         assertTrue("gif decodes", ImageIO.read(out) != null);
     }
 
+    // ---- New capability: content-aware smart crop (no legacy equivalent) -----------------------
+
+    @Test
+    public void smartcrop_produces_exact_box_from_salient_region() throws Exception {
+        final File in = image("test.jpg");
+        final File out = tempOut("png");
+        new VipsSmartCropImageFilter().transform(in, out,
+                params("smartcrop_w", "120", "smartcrop_h", "120", "smartcrop_mode", "attention"));
+        final Dimension d = dims(out);
+        assertEquals(120, d.width);
+        assertEquals(120, d.height);
+    }
+
     // ---- Resilience: fall back to the legacy engine when a libvips op fails --------------------
 
     /** A libvips PNG filter whose pixel work always fails, to exercise the fallback path. */
