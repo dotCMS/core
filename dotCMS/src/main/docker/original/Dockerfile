@@ -58,8 +58,14 @@ RUN apt update && \
         libapr1 \
         libarchive-tools \
         libpq-dev \
+        libvips42 \
         apt-transport-https && \
     rm -rf /var/lib/apt/lists/*
+
+# libvips42 (Ubuntu 24.04 = libvips 8.15.1) backs the optional libvips image engine
+# (IMAGE_API_USE_LIBVIPS=true). The stock package bundles the PDF (poppler), AVIF/HEIC
+# (libheif), SVG (rsvg), WebP and JPEG-XL delegates, so no custom build is needed.
+# The engine is off by default; when off this library is simply unused.
 
 # Install PostgreSQL client, pg_dump and MS jaz (java launcher).
 # postgresql-common is installed and purged in the same layer so it does not
