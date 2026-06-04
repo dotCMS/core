@@ -10,6 +10,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
+import com.dotmarketing.image.vips.VipsImageFilterApiImpl;
+import com.dotmarketing.image.vips.VipsManager;
+import io.vavr.Function0;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.util.Config;
@@ -30,8 +33,21 @@ import io.vavr.control.Try;
 public class ImageFilterExporter implements BinaryContentExporter {
     
     private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
-    
+
     private final Semaphore semaphore  = new Semaphore(allowedRequests);
+
+    private static final Function0<VipsImageFilterApiImpl> vipsApi =
+            Function0.of(VipsImageFilterApiImpl::new).memoized();
+
+    /**
+     * Selects the image engine per the {@code IMAGE_API_USE_LIBVIPS} feature flag. When the flag is
+     * on and native libvips is available, the libvips engine handles the filter chain; otherwise the
+     * pure-JVM engine is used. The choice only affects which {@link ImageFilter} subclasses
+     * {@code resolveFilters} returns — the URL parameter contract is identical for both.
+     */
+    private ImageFilterAPI imageFilterAPI() {
+        return VipsManager.isEnabled() ? vipsApi.apply() : ImageFilterAPI.apiInstance.apply();
+    }
 
     /*
      * (non-Javadoc)
@@ -52,7 +68,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
         Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<? extends ImageFilter>> filters = ImageFilterAPI.apiInstance.apply().resolveFilters(parameters);
+            final Map<String,Class<? extends ImageFilter>> filters = imageFilterAPI().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[0]));
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             
