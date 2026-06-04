@@ -522,20 +522,25 @@ public  class WebResource {
                 .anyMatch(AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
+        // Track which header supplied the credential so the audit log names the real source.
+        String credentialSource = userPass.isPresent() ? "request-parameter" : null;
 
         // Both header parsers (DOTAUTH and BASIC) can throw on a malformed header; route them through
         // the same tolerant policy so the fallback option's guarantee holds for every credential header.
         if(userPass.isEmpty()) {
             userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromHeaderAuth(request),
                     "DOTAUTH", fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? "DOTAUTH" : null;
         }
 
         if(userPass.isEmpty()) {
             userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromBasicAuth(request),
                     "BASIC Authorization", fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? "BASIC Authorization" : null;
         }
 
         if(userPass.isPresent()) {
+            final String source = credentialSource;
             try {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
@@ -544,11 +549,10 @@ public  class WebResource {
                 if (!fallbackToAnonymousOnAuthFailure) {
                     throw e;
                 }
-                Logger.debug(this, () -> "BASIC Authorization credentials are not a valid "
-                        + "dotCMS user; falling through to anonymous.");
-                SecurityLogger.logInfo(WebResource.class,
-                        () -> "BASIC Authorization credential failure on asset request absorbed; "
-                                + "proceeding as anonymous.");
+                Logger.debug(this, () -> source + " credentials are not a valid dotCMS user; "
+                        + "falling through to anonymous.");
+                SecurityLogger.logInfo(WebResource.class, () -> source
+                        + " credential failure on asset request absorbed; proceeding as anonymous.");
                 user = null;
             }
         }
@@ -607,7 +611,11 @@ public  class WebResource {
             final boolean fallbackToAnonymous) {
         try {
             return parser.get();
-        } catch (SecurityException e) {
+        } catch (RuntimeException e) {
+            // Catch RuntimeException (not just SecurityException) so malformed Base64 producing
+            // IllegalArgumentException / NPE also degrades gracefully on servlet requests instead of
+            // surfacing a 500. When the fallback option is not set (REST callers) the exception is
+            // rethrown unchanged, preserving strict behavior.
             if (!fallbackToAnonymous) {
                 throw e;
             }
@@ -982,7 +990,31 @@ public  class WebResource {
         }
 
         public InitBuilder authCheckOptions(final AuthCheckOptions... options){
+            // Explicit runtime guard: the SERVLET_ONLY option must never be reachable through the
+            // generic options API, where a REST resource could include it (e.g. by copy-paste).
+            // It can only be enabled via servletAnonymousFallbackOnAuthFailure().
+            if (Arrays.asList(options).contains(
+                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE)) {
+                throw new IllegalArgumentException(
+                        "SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE cannot be set via "
+                        + "authCheckOptions(); it is reserved for the static/binary asset servlets. "
+                        + "Use servletAnonymousFallbackOnAuthFailure() instead. REST endpoints must "
+                        + "not use it — doing so would downgrade auth failures to anonymous access.");
+            }
             this.authCheckOptions.addAll(Arrays.asList(options));
+            return this;
+        }
+
+        /**
+         * Enables {@link AuthCheckOptions#SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE} for the
+         * static/binary asset servlets (SpeedyAssetServlet, BinaryExporterServlet, ShortyServlet).
+         * This is the <strong>only</strong> way to enable that option:
+         * {@link #authCheckOptions(AuthCheckOptions...)} rejects it, so it can never be set from a
+         * JAX-RS resource by copy-pasting an options list. Must not be called from REST endpoints.
+         */
+        public InitBuilder servletAnonymousFallbackOnAuthFailure() {
+            this.authCheckOptions.add(
+                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE);
             return this;
         }
 
