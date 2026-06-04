@@ -364,20 +364,18 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             URL.createObjectURL = createObjectUrlOriginal;
         });
 
-        it('toggleExportMenu delegates to the menu when the viewChild resolves', () => {
+        it('toggleExportMenu delegates the click event to the menu', () => {
             loadedSetup();
-            const menu = spectator.component.$exportMenu();
-            if (!menu) {
-                // viewChild may not resolve in JSDOM with popup overlays — skip gracefully
-                return;
-            }
-            const toggleSpy = jest.spyOn(menu, 'toggle');
-            const shareBtn = spectator
-                .query(byTestId('velocity-playground-share-btn'))
-                ?.querySelector('button');
-            expect(shareBtn).toBeTruthy();
-            if (shareBtn) spectator.click(shareBtn);
-            expect(toggleSpy).toHaveBeenCalled();
+            const toggleSpy = jest.fn();
+            // Stub the $exportMenu viewChild — under JSDOM the <p-menu popup> overlay
+            // doesn't always resolve, and we want this test to assert the delegation
+            // explicitly rather than silently no-op.
+            Object.defineProperty(spectator.component, '$exportMenu', {
+                value: () => ({ toggle: toggleSpy })
+            });
+            const event = new MouseEvent('click');
+            spectator.component.toggleExportMenu(event);
+            expect(toggleSpy).toHaveBeenCalledWith(event);
         });
     });
 });

@@ -104,6 +104,17 @@ describe('DotVelocityPlaygroundStore', () => {
             expect(spectator.service.code()).toBe('$first');
         });
 
+        it('selectHistoryEntry leaves code unchanged when the entry is not in history', () => {
+            runScriptSpy.mockReturnValue(of(MOCK_RESPONSE));
+            spectator.service.setCode('$first');
+            spectator.service.runScript();
+
+            spectator.service.setCode('current draft');
+            spectator.service.selectHistoryEntry('$not-in-history');
+
+            expect(spectator.service.code()).toBe('current draft');
+        });
+
         it('clearHistory empties state and removes the localStorage key', () => {
             spectator.service.setCode('$first');
             spectator.service.runScript();
@@ -179,6 +190,22 @@ describe('DotVelocityPlaygroundStore', () => {
 
             expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
             expect(spectator.service.errorMessage()).toBe('broken');
+            expect(errorHandler.handle).toHaveBeenCalledWith(httpError);
+        });
+
+        it('uses the raw text response body as errorMessage when responseType is text', () => {
+            // responseType: 'text' → error.error is the raw VTL body, not error.message.
+            const httpError = new HttpErrorResponse({
+                error: 'Velocity parse error at line 4',
+                status: 500,
+                statusText: 'boom'
+            });
+            runScriptSpy.mockReturnValue(throwError(() => httpError));
+
+            spectator.service.setCode('$broken');
+            spectator.service.runScript();
+
+            expect(spectator.service.errorMessage()).toBe('Velocity parse error at line 4');
             expect(errorHandler.handle).toHaveBeenCalledWith(httpError);
         });
 

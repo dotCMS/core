@@ -136,9 +136,15 @@ export const DotVelocityPlaygroundStore = signalStore(
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
+                                    // responseType: 'text' → error.error holds the raw VTL error body.
+                                    const serverBody =
+                                        typeof error?.error === 'string' && error.error.trim()
+                                            ? error.error
+                                            : null;
                                     patchState(store, {
                                         status: ComponentStatus.LOADED,
                                         errorMessage:
+                                            serverBody ??
                                             error?.error?.message ??
                                             error?.message ??
                                             'velocityPlayground.error.unknown'

@@ -71,7 +71,7 @@ import {
     providers: [DotVelocityPlaygroundStore, DotClipboardUtil],
     templateUrl: './dot-velocity-playground-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col h-full min-h-0 bg-white' }
+    host: { class: 'flex flex-col h-full min-h-0 bg-surface-0' }
 })
 export class DotVelocityPlaygroundPageComponent {
     // 1. Dependency Injection
