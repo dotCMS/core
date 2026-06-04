@@ -70,6 +70,7 @@ jobs:
       version: ${{ steps.parse.outputs.version }}
       tag: ${{ steps.parse.outputs.tag }}
       branch: ${{ steps.parse.outputs.branch }}
+      artifact_suffix: ${{ steps.java-guard.outputs.artifact_suffix }}
     steps:
       - name: Parse Version from Branch
         id: parse
@@ -100,15 +101,29 @@ jobs:
       # primary release already builds. A variant build must target something different —
       # fail fast on an empty or same-as-default request rather than producing a
       # redundant duplicate of the primary release image.
+      #
+      # Also derives the effective artifact suffix HERE, once, and passes it to all
+      # phases. The build (maven-job: java${major}) and deployment (java-${major})
+      # phases derive different defaults from java-version alone, which breaks
+      # cross-phase artifact names (e.g. docker-build-context-java21 uploaded,
+      # docker-build-context-java-21 downloaded). A single explicit value avoids that.
       - name: Require Non-Default Java Version
+        id: java-guard
         env:
           GH_TOKEN: ${{ github.token }}
           JAVA_VERSION: ${{ inputs.java_version }}
+          ARTIFACT_SUFFIX_INPUT: ${{ inputs.artifact_suffix }}
         run: |
           branch="${{ steps.parse.outputs.branch }}"
 
           if [[ -z "${JAVA_VERSION}" ]]; then
             echo "Error: java_version is required. The primary release already builds the .sdkmanrc default; variant builds must explicitly target a different Java version."
+            exit 1
+          fi
+
+          java_major=$(echo "${JAVA_VERSION}" | grep -oE '^[0-9]+' || true)
+          if [[ -z "${java_major}" ]]; then
+            echo "Error: java_version '${JAVA_VERSION}' is not in SDKMAN format (expected to start with a major version, e.g., 21.0.8-ms)."
             exit 1
           fi
 
@@ -120,6 +135,20 @@ jobs:
             echo "Error: requested java_version (${JAVA_VERSION}) equals the ${branch} default — the primary release image already covers it. Nothing to build."
             exit 1
           fi
+
+          # Effective suffix: explicit input wins, else java-{major} (the release
+          # variant convention, e.g. java-25 / tags like 25.02.16-01_java-25).
+          if [[ -n "${ARTIFACT_SUFFIX_INPUT}" ]]; then
+            artifact_suffix="${ARTIFACT_SUFFIX_INPUT}"
+          else
+            artifact_suffix="java-${java_major}"
+          fi
+          # Normalize: strip leading separators (phases add their own dash/underscore)
+          while [[ "${artifact_suffix}" =~ ^[-_] ]]; do
+            artifact_suffix="${artifact_suffix:1}"
+          done
+          echo "Effective artifact suffix: ${artifact_suffix}"
+          echo "artifact_suffix=${artifact_suffix}" >> "$GITHUB_OUTPUT"
 
   # Initialize - standard initialization phase
   initialize:
@@ -142,7 +171,7 @@ jobs:
       version: ${{ needs.extract-version.outputs.version }}
       generate-docker: true
       java-version: ${{ inputs.java_version }}
-      artifact-suffix: ${{ inputs.artifact_suffix }}
+      artifact-suffix: ${{ needs.extract-version.outputs.artifact_suffix }}
     permissions:
       contents: read
       packages: write
@@ -160,7 +189,7 @@ jobs:
       artifact-run-id: ${{ github.run_id }}
       deploy-dev-image: true
       java-version: ${{ inputs.java_version }}
-      artifact-suffix: ${{ inputs.artifact_suffix }}
+      artifact-suffix: ${{ needs.extract-version.outputs.artifact_suffix }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -184,7 +213,7 @@ jobs:
       update_plugins: false        # Skip - already done by primary release
       update_github_labels: false  # Skip - already done by primary release
       java-version: ${{ inputs.java_version }}
-      artifact-suffix: ${{ inputs.artifact_suffix }}
+      artifact-suffix: ${{ needs.extract-version.outputs.artifact_suffix }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
