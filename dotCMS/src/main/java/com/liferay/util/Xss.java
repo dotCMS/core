@@ -24,8 +24,6 @@ package com.liferay.util;
 
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
-import java.util.HashSet;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.owasp.encoder.Encode;
 
@@ -44,8 +42,6 @@ import org.owasp.encoder.Encode;
 public class Xss {
 
     public static final String XSS_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern" ) );
-
-    private static Set<String> excludeList = null;
 
     /**
      * Removes from the given text possible XSS hacks.
@@ -188,13 +184,6 @@ public class Xss {
         }
         // OWASP encoder does not provide a decoder; Apache Commons Text is the appropriate tool.
         return org.apache.commons.lang.StringEscapeUtils.unescapeHtml( value );
-    }
-
-    private static void buildExcludeList () {
-        if ( excludeList != null ) return;
-        excludeList = new HashSet<>();
-        excludeList.add( "&or" );
-        excludeList.add( "&Or" );
     }
 
 }
