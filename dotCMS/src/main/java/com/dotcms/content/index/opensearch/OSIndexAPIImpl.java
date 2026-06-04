@@ -2,11 +2,16 @@ package com.dotcms.content.index.opensearch;
 
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
 
+import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.VersionedIndices;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
+import org.apache.commons.lang.StringUtils;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -18,6 +23,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -32,16 +38,26 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
 import org.opensearch.client.opensearch._types.ExpandWildcard;
 import org.opensearch.client.opensearch._types.Time;
+import org.opensearch.client.opensearch.indices.ClearCacheRequest;
+import org.opensearch.client.opensearch.indices.ClearCacheResponse;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
 import org.opensearch.client.opensearch.indices.CreateIndexResponse;
 import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
+import org.opensearch.client.opensearch.indices.ForcemergeRequest;
+import org.opensearch.client.opensearch.indices.ForcemergeResponse;
+import org.opensearch.client.opensearch.indices.GetAliasRequest;
+import org.opensearch.client.opensearch.indices.GetAliasResponse;
+import org.opensearch.client.opensearch.indices.PutIndicesSettingsRequest;
+import org.opensearch.client.opensearch.indices.UpdateAliasesRequest;
 import org.opensearch.client.opensearch.indices.GetIndexRequest;
 import org.opensearch.client.opensearch.indices.GetIndexResponse;
 import org.opensearch.client.opensearch.indices.IndexSettings;
@@ -49,11 +65,16 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
 /**
  * OpenSearch implementation of {@link IndexAPI}.
  *
- * <p>This class implements all index management operations using the OpenSearch Java client.
- * Methods that are not yet fully implemented log an info message and return safe defaults —
- * the {@link com.dotcms.content.index.IndexAPIImpl} router delegates to
- * {@link com.dotcms.content.elasticsearch.business.ESIndexAPI} by default,
- * so these stubs will not be called in production until OS routing is enabled.</p>
+ * <p>This class implements all {@link IndexAPI} operations using the OpenSearch Java client:
+ * index lifecycle (create/delete/open/close/clear), statistics and health, the performance
+ * operations ({@code flushCaches}, {@code optimize}, {@code updateReplicas}), alias management
+ * ({@code createAlias}, {@code getIndexAlias}, {@code getAliasToIndexMap}) and inactive-set
+ * cleanup ({@code deleteInactiveLiveWorkingIndices}). The {@link com.dotcms.content.index.IndexAPIImpl}
+ * router decides when these are reached on OpenSearch as the migration phase advances.</p>
+ *
+ * <p>Error-handling contract: write operations propagate provider failures (so the router can
+ * apply shadow fire-and-forget vs. primary-propagate semantics per phase), while read operations
+ * log and return safe defaults — consistent with the rest of this class.</p>
  *
  * @author Fabrizio Araya
  */
@@ -312,10 +333,27 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
+        // Only OS-tagged live/working indices: this provider owns the tagged index set, never the
+        // legacy (untagged) one. The tag filter is a no-op in production (every OS index is tagged)
+        // but is essential in single-cluster test profiles where ES and OS share one cluster — it
+        // keeps OS lifecycle ops (e.g. deleteInactiveLiveWorkingIndices) from ever touching the
+        // legacy ES indices that live alongside under the same cluster prefix.
         return listIndices().stream()
-                .filter(name -> name.contains("working") || name.contains("live"))
-                .sorted(Comparator.reverseOrder())
+                .filter(IndexTag.OS::isTagged)
+                .filter(name -> IndexType.WORKING.is(name) || IndexType.LIVE.is(name))
+                .sorted(Comparator.comparing(OSIndexAPIImpl::getIndexTimestamp,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Extracts the {@code _YYYYMMDDHHMMSS} timestamp embedded in an index name, so live/working
+     * sets can be ordered chronologically. The {@code .os} tag is stripped first (locally, only to
+     * parse the value out) because the timestamp parser cannot consume a trailing tag.
+     */
+    private static String getIndexTimestamp(final String indexName) {
+        final String base = IndexTag.strip(indexName);
+        return Try.of(() -> base.substring(base.lastIndexOf('_') + 1)).getOrNull();
     }
 
     @Override
@@ -504,14 +542,55 @@ public class OSIndexAPIImpl implements IndexAPI {
     // =========================================================================
 
     @Override
-    public void createAlias(String indexName, String alias) {
-        Logger.info(this.getClass(), "createAlias not yet implemented for OpenSearch");
+    public void createAlias(final String indexName, final String alias) {
+        try {
+            // Only create the alias when it is not already pointing at an index — mirrors ES.
+            if (getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias) == null) {
+                clientProvider.getClient().indices().updateAliases(UpdateAliasesRequest.of(r -> r
+                        .actions(a -> a.add(add -> add
+                                .index(getNameWithClusterIDPrefix(indexName))
+                                .alias(getNameWithClusterIDPrefix(alias))))
+                        .timeout(t -> t.time(INDEX_OPERATIONS_TIMEOUT))));
+                AdminLogger.log(this.getClass(), "createAlias",
+                        "Alias '" + alias + "' created for index: " + indexName);
+            }
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Error creating alias '" + alias + "' for OpenSearch index: " + indexName, e);
+            throw new RuntimeException(
+                    "Failed to create alias '" + alias + "' for index: " + indexName, e);
+        }
     }
 
     @Override
-    public Map<String, String> getIndexAlias(List<String> indexNames) {
-        Logger.info(this.getClass(), "getIndexAlias not yet implemented for OpenSearch");
-        return new HashMap<>();
+    public Map<String, String> getIndexAlias(final List<String> indexNames) {
+        final Map<String, String> aliases = new HashMap<>();
+        if (indexNames == null || indexNames.isEmpty()) {
+            return aliases;
+        }
+        try {
+            final List<String> physicalNames = indexNames.stream()
+                    .map(this::getNameWithClusterIDPrefix)
+                    .collect(Collectors.toList());
+            final GetAliasResponse response = clientProvider.getClient().indices()
+                    .getAlias(GetAliasRequest.of(b -> b.index(physicalNames)));
+            // result(): index name -> IndexAliases; IndexAliases.aliases() is keyed by alias name.
+            response.result().forEach((indexName, indexAliases) -> {
+                final Map<String, ?> aliasMap = indexAliases.aliases();
+                if (UtilMethods.isSet(aliasMap)) {
+                    final String aliasName = aliasMap.keySet().iterator().next();
+                    aliases.put(removeClusterIdFromName(indexName),
+                            removeClusterIdFromName(aliasName));
+                }
+            });
+        } catch (Exception e) {
+            // Consistent with the other OS read methods (listIndices, getClusterHealth, …):
+            // log and return what was resolved rather than propagating provider errors.
+            Logger.warnAndDebug(this.getClass(),
+                    "Could not retrieve OpenSearch index aliases for " + indexNames
+                        + ": " + e.getMessage(), e);
+        }
+        return aliases;
     }
 
     @Override
@@ -526,9 +605,10 @@ public class OSIndexAPIImpl implements IndexAPI {
     }
 
     @Override
-    public Map<String, String> getAliasToIndexMap(List<String> indices) {
-        Logger.info(this.getClass(), "getAliasToIndexMap not yet implemented for OpenSearch");
-        return new HashMap<>();
+    public Map<String, String> getAliasToIndexMap(final List<String> indices) {
+        final Map<String, String> reverse = new HashMap<>();
+        getIndexAlias(indices).forEach((index, alias) -> reverse.put(alias, index));
+        return reverse;
     }
 
     // =========================================================================
@@ -536,26 +616,145 @@ public class OSIndexAPIImpl implements IndexAPI {
     // =========================================================================
 
     @Override
-    public Map<String, Integer> flushCaches(List<String> indexNames) {
-        Logger.info(this.getClass(), "flushCaches not yet implemented for OpenSearch");
-        return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+    public Map<String, Integer> flushCaches(final List<String> indexNames) {
+        Logger.warn(this.getClass(), "Flushing OpenSearch index caches:" + indexNames);
+        if (indexNames == null || indexNames.isEmpty()) {
+            return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+        }
+        try {
+            final List<String> physicalNames = indexNames.stream()
+                    .map(this::getNameWithClusterIDPrefix)
+                    .collect(Collectors.toList());
+            final ClearCacheResponse response = clientProvider.getClient().indices()
+                    .clearCache(ClearCacheRequest.of(b -> b.index(physicalNames)));
+            final Map<String, Integer> map = ImmutableMap.of(
+                    "failedShards", response.shards().failed(),
+                    "successfulShards", response.shards().successful());
+            Logger.warn(this.getClass(), "Flushed OpenSearch index caches:" + map);
+            return map;
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Error flushing OpenSearch index caches: " + indexNames, e);
+            throw new RuntimeException("Failed to flush OpenSearch index caches: " + indexNames, e);
+        }
     }
 
     @Override
-    public boolean optimize(List<String> indexNames) {
-        Logger.info(this.getClass(), "optimize not yet implemented for OpenSearch");
-        return true;
+    public boolean optimize(final List<String> indexNames) {
+        try {
+            final List<String> physicalNames = indexNames.stream()
+                    .map(this::getNameWithClusterIDPrefix)
+                    .collect(Collectors.toList());
+            final ForcemergeResponse response = clientProvider.getClient().indices()
+                    .forcemerge(ForcemergeRequest.of(b -> b.index(physicalNames)));
+            Logger.info(this.getClass(),
+                "Optimizing " + indexNames + " :" + response.shards().successful()
+                    + "/" + response.shards().total() + " shards optimized");
+            return true;
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Error optimizing OpenSearch indices: " + indexNames, e);
+            throw new RuntimeException("Failed to optimize OpenSearch indices: " + indexNames, e);
+        }
     }
 
     @Override
-    public void updateReplicas(String indexName, int replicas) throws DotDataException {
-        Logger.info(this.getClass(), "updateReplicas not yet implemented for OpenSearch");
+    public void updateReplicas(final String indexName, final int replicas) throws DotDataException {
+        if (!ClusterUtils.isReplicasSet()
+                || !StringUtils.isNumeric(
+                        IndexConfigHelper.getString(OSIndexProperty.INDEX_REPLICAS, null))) {
+            AdminLogger.log(this.getClass(), "updateReplicas",
+                    "Replicas can only be updated when an Enterprise License is used and "
+                        + "OS_INDEX_REPLICAS (or ES_INDEX_REPLICAS) is set to a specific value.");
+            throw new DotDataException(
+                    "Replicas can only be updated when an Enterprise License is used and "
+                        + "OS_INDEX_REPLICAS (or ES_INDEX_REPLICAS) is set to a specific value.");
+        }
+
+        AdminLogger.log(this.getClass(), "updateReplicas",
+                "Trying to update replicas to index: " + indexName);
+
+        // Unlike ES, we do not read the current replica count via getClusterHealth() to skip a
+        // no-op update: OS getClusterHealth() keys are logical names (cluster prefix stripped,
+        // .os tag preserved), so an ES-style prefixed lookup would miss and silently no-op.
+        // Setting unconditionally after the gate above is simpler and always correct.
+        try {
+            clientProvider.getClient().indices().putSettings(
+                    PutIndicesSettingsRequest.of(b -> b
+                            .index(getNameWithClusterIDPrefix(indexName))
+                            .settings(s -> s.numberOfReplicas(replicas))));
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Error updating replicas for OpenSearch index: " + indexName, e);
+            throw new DotDataException("Failed to update replicas for index: " + indexName, e);
+        }
+
+        AdminLogger.log(this.getClass(), "updateReplicas",
+                "Replicas updated to index: " + indexName);
     }
 
     @Override
-    public void deleteInactiveLiveWorkingIndices(int inactiveLiveWorkingSetsToKeep) {
-        Logger.info(this.getClass(),
-            "deleteInactiveLiveWorkingIndices not yet implemented for OpenSearch");
+    public void deleteInactiveLiveWorkingIndices(final int inactiveLiveWorkingSetsToKeep) {
+        // List of live/working indices ordered by embedded timestamp, newest first.
+        final List<String> indices = getLiveWorkingIndicesSortedByCreationDateDesc();
+
+        // Never delete the currently-active OS live/working set.
+        removeActiveLiveAndWorkingFromList(indices);
+
+        int kept = 0;
+        String lastTimestamp = "";
+        final List<String> indicesToRemove = new ArrayList<>(indices);
+
+        for (final String index : indices) {
+            if (kept == inactiveLiveWorkingSetsToKeep) {
+                break;
+            }
+
+            final String indexTimestamp = getIndexTimestamp(index);
+
+            deleteLiveWorkingSetFromList(indicesToRemove, index, indexTimestamp);
+
+            if (!Objects.equals(indexTimestamp, lastTimestamp)) {
+                kept++;
+            }
+
+            lastTimestamp = indexTimestamp;
+        }
+
+        if (!indicesToRemove.isEmpty()) {
+            deleteMultiple(indicesToRemove.toArray(new String[0]));
+            Logger.info(this, "The following OpenSearch indices were deleted: "
+                    + String.join(",", indicesToRemove));
+        }
+    }
+
+    /**
+     * Removes {@code index} from {@code indicesToRemove}, along with the sibling index that shares
+     * its timestamp (the other half of the live/working set) when it is next in the ordered list.
+     */
+    private void deleteLiveWorkingSetFromList(final List<String> indicesToRemove,
+            final String index, final String indexTimestamp) {
+        indicesToRemove.remove(index);
+        final String nextIndex = Try.of(() -> indicesToRemove.get(0)).getOrNull();
+        if (UtilMethods.isSet(nextIndex)
+                && Objects.equals(indexTimestamp, getIndexTimestamp(nextIndex))) {
+            indicesToRemove.remove(0);
+        }
+    }
+
+    /**
+     * Drops the currently-active OS live and working indices from the candidate list so they are
+     * never deleted. The active set is resolved from {@link VersionedIndices} (the OS store) — its
+     * names are canonical physical form, so the cluster prefix is stripped to match the logical
+     * names produced by {@link #getLiveWorkingIndicesSortedByCreationDateDesc()}; the {@code .os}
+     * tag is preserved on both sides.
+     */
+    private void removeActiveLiveAndWorkingFromList(final List<String> indices) {
+        final Optional<VersionedIndices> info = Try.of(() ->
+                APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices())
+                .getOrElse(Optional.empty());
+        info.ifPresent(versioned -> {
+            versioned.live().ifPresent(name -> indices.remove(removeClusterIdFromName(name)));
+            versioned.working().ifPresent(name -> indices.remove(removeClusterIdFromName(name)));
+        });
     }
 
     // =========================================================================

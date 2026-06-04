@@ -16,9 +16,11 @@ import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -598,8 +600,197 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     // =========================================================================
+    // Tests – performance operations (flushCaches / optimize / updateReplicas)
+    // =========================================================================
+
+    /**
+     * Given scenario: cache flush is requested for a freshly created index.
+     * Expected: the response map carries both shard counters and a non-negative
+     * {@code successfulShards}; an empty input list short-circuits to the zero map.
+     */
+    @Test
+    public void test_flushCaches_shouldReportShardsForCreatedIndex() throws Exception {
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+
+        final Map<String, Integer> result = osIndexAPI.flushCaches(List.of(OS_WORKING_TAGGED));
+
+        assertNotNull("flushCaches must return a non-null map", result);
+        assertTrue("map must contain successfulShards", result.containsKey("successfulShards"));
+        assertTrue("map must contain failedShards", result.containsKey("failedShards"));
+        assertTrue("successfulShards must be non-negative", result.get("successfulShards") >= 0);
+
+        final Map<String, Integer> empty = osIndexAPI.flushCaches(List.of());
+        assertEquals("empty input must yield zero successfulShards",
+                Integer.valueOf(0), empty.get("successfulShards"));
+        Logger.info(this, "✅ test_flushCaches_shouldReportShardsForCreatedIndex passed");
+    }
+
+    /**
+     * Given scenario: optimize (force-merge) is requested for a freshly created index.
+     * Expected: the call completes and returns {@code true}.
+     */
+    @Test
+    public void test_optimize_shouldReturnTrueForCreatedIndex() throws Exception {
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+
+        assertTrue("optimize must return true for an existing index",
+                osIndexAPI.optimize(List.of(OS_WORKING_TAGGED)));
+        Logger.info(this, "✅ test_optimize_shouldReturnTrueForCreatedIndex passed");
+    }
+
+    /**
+     * Given scenario: replicas are updated on a freshly created index.
+     * Expected: the call is gated on the same Enterprise-license + numeric-replicas config that
+     * ES enforces. Depending on the test environment's license/config the gate may be open or
+     * closed, so the test asserts the <em>contract</em>: the call either completes, or fails with
+     * a {@link DotDataException} — it must never leak any other exception type out of the layer.
+     */
+    @Test
+    public void test_updateReplicas_shouldApplyOrThrowDotDataException() throws Exception {
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+
+        try {
+            osIndexAPI.updateReplicas(OS_WORKING_TAGGED, 0);
+            Logger.info(this, "✅ test_updateReplicas: applied (gate open)");
+        } catch (DotDataException expected) {
+            Logger.info(this, "✅ test_updateReplicas: rejected with DotDataException (gate closed)");
+        }
+    }
+
+    // =========================================================================
+    // Tests – alias management
+    // =========================================================================
+
+    /**
+     * Given scenario: an alias is created for an index, then read back through every getter.
+     * Expected: {@code getIndexAlias} (list + single) returns the alias keyed by index, and
+     * {@code getAliasToIndexMap} returns the reverse mapping. All names are reported as logical
+     * (cluster prefix stripped, {@code .os} tag preserved).
+     */
+    @Test
+    public void test_alias_createAndResolve_shouldRoundTrip() throws Exception {
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+        final String aliasName = "alias_" + RUN_ID;
+
+        osIndexAPI.createAlias(OS_WORKING_TAGGED, aliasName);
+
+        final Map<String, String> indexToAlias = osIndexAPI.getIndexAlias(List.of(OS_WORKING_TAGGED));
+        assertEquals("getIndexAlias(list) must map the index to its alias",
+                aliasName, indexToAlias.get(OS_WORKING_TAGGED));
+
+        assertEquals("getIndexAlias(single) must return the alias",
+                aliasName, osIndexAPI.getIndexAlias(OS_WORKING_TAGGED));
+
+        final Map<String, String> aliasToIndex = osIndexAPI.getAliasToIndexMap(List.of(OS_WORKING_TAGGED));
+        assertEquals("getAliasToIndexMap must reverse the mapping",
+                OS_WORKING_TAGGED, aliasToIndex.get(aliasName));
+
+        Logger.info(this, "✅ test_alias_createAndResolve_shouldRoundTrip passed");
+    }
+
+    /**
+     * Given scenario: an index has no alias attached.
+     * Expected: {@code getIndexAlias} returns an empty map (no entry for that index) and never
+     * throws, and an empty/blank input list short-circuits to an empty map.
+     */
+    @Test
+    public void test_getIndexAlias_withoutAlias_shouldReturnEmpty() throws Exception {
+        osIndexAPI.createIndex(OS_WORKING_TAGGED, 1);
+
+        final Map<String, String> aliases = osIndexAPI.getIndexAlias(List.of(OS_WORKING_TAGGED));
+        assertFalse("an index with no alias must not appear in the result",
+                aliases.containsKey(OS_WORKING_TAGGED));
+
+        assertTrue("empty input must yield an empty map",
+                osIndexAPI.getIndexAlias(List.of()).isEmpty());
+        Logger.info(this, "✅ test_getIndexAlias_withoutAlias_shouldReturnEmpty passed");
+    }
+
+    // =========================================================================
+    // Tests – inactive live/working set cleanup
+    // =========================================================================
+
+    /**
+     * Given scenario: two live/working indices with different embedded timestamps exist.
+     * Expected: {@link OSIndexAPIImpl#getLiveWorkingIndicesSortedByCreationDateDesc()} orders them
+     * newest-first by the embedded timestamp (not by raw string), with the {@code .os} tag preserved.
+     */
+    @Test
+    public void test_getLiveWorkingIndicesSorted_shouldOrderByTimestampDesc() throws Exception {
+        final String older = IndexTag.OS.tag("working_20200101000001");
+        final String newer = IndexTag.OS.tag("working_20210101000001");
+        try {
+            osIndexAPI.createIndex(older, 1);
+            osIndexAPI.createIndex(newer, 1);
+
+            final List<String> sorted = osIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
+            final int idxNewer = sorted.indexOf(newer);
+            final int idxOlder = sorted.indexOf(older);
+
+            assertTrue("newer index must be present in the sorted list", idxNewer >= 0);
+            assertTrue("older index must be present in the sorted list", idxOlder >= 0);
+            assertTrue("newer index must come before the older one (descending)",
+                    idxNewer < idxOlder);
+            Logger.info(this, "✅ test_getLiveWorkingIndicesSorted_shouldOrderByTimestampDesc passed");
+        } finally {
+            safeDelete(older, newer);
+        }
+    }
+
+    /**
+     * Given scenario: an inactive (not registered in the OS default versioned set) live/working
+     * set exists, alongside whatever the cluster considers active.
+     * Expected: {@code deleteInactiveLiveWorkingIndices(0)} deletes the inactive set, while the
+     * active set returned by {@link VersionedIndicesAPI#loadDefaultVersionedIndices()} is preserved.
+     */
+    @Test
+    public void test_deleteInactiveLiveWorkingIndices_shouldDeleteInactiveAndPreserveActive()
+            throws Exception {
+        final String oldLive    = IndexTag.OS.tag("live_19990101000001");
+        final String oldWorking = IndexTag.OS.tag("working_19990101000001");
+        try {
+            osIndexAPI.createIndex(oldLive, 1);
+            osIndexAPI.createIndex(oldWorking, 1);
+            assertTrue(osIndexAPI.indexExists(oldLive));
+            assertTrue(osIndexAPI.indexExists(oldWorking));
+
+            final Optional<VersionedIndices> active = versionedIndicesAPI.loadDefaultVersionedIndices();
+
+            // keep 0 inactive sets -> every set except the active default becomes eligible.
+            osIndexAPI.deleteInactiveLiveWorkingIndices(0);
+
+            assertFalse("inactive live index must be deleted", osIndexAPI.indexExists(oldLive));
+            assertFalse("inactive working index must be deleted", osIndexAPI.indexExists(oldWorking));
+
+            // The active set (if any is registered) must survive the cleanup.
+            active.flatMap(VersionedIndices::live).ifPresent(name ->
+                    assertTrue("active live index must be preserved: " + name,
+                            osIndexAPI.indexExists(name)));
+            active.flatMap(VersionedIndices::working).ifPresent(name ->
+                    assertTrue("active working index must be preserved: " + name,
+                            osIndexAPI.indexExists(name)));
+            Logger.info(this, "✅ test_deleteInactiveLiveWorkingIndices_shouldDeleteInactiveAndPreserveActive passed");
+        } finally {
+            safeDelete(oldLive, oldWorking);
+        }
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
+
+    /** Deletes the given indices, ignoring any that are already gone. */
+    private void safeDelete(final String... indexNames) {
+        for (final String idx : indexNames) {
+            try {
+                if (osIndexAPI.indexExists(idx)) {
+                    osIndexAPI.delete(idx);
+                }
+            } catch (Exception e) {
+                Logger.warn(this, "Cleanup: error removing OS index '" + idx + "': " + e.getMessage());
+            }
+        }
+    }
 
     /**
      * Deletes every test-scoped index that actually exists in OpenSearch.
