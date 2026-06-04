@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
 
@@ -153,6 +153,22 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             expect(spectator.component.$selection()).toEqual([]);
             expect(store.removeFilter).toHaveBeenCalledWith('workflow');
+        });
+
+        it('should keep the persisted filter and surface the error when schemes fail to load', () => {
+            const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
+            stubFilters({ workflow: ['a'] });
+            (workflowService.get as jest.Mock).mockReturnValue(throwError(() => new Error('boom')));
+
+            spectator.detectChanges();
+
+            // The error is surfaced, not swallowed silently.
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            // A transient backend failure must NOT drop the persisted/URL-restored
+            // selection (no reconcile against an empty list).
+            expect(store.removeFilter).not.toHaveBeenCalled();
+            expect(spectator.component.$selection()).toEqual([{ scheme: 'a' }]);
+            expect(spectator.component.$state().loadingSchemes).toBe(false);
         });
     });
 
