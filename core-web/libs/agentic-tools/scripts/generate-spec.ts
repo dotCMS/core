@@ -10,6 +10,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ALLOWED_PREFIXES = [
     '/api/v1/contenttype',
     '/api/v1/page',
+    '/api/v1/page-scanner/a11y/check',
+    '/api/v1/page-scanner/geo/check',
     '/api/v1/nav',
     '/api/v1/workflow',
     '/api/v1/categories',
