@@ -121,7 +121,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final ExistsRequest request = ExistsRequest.of(builder ->
-                builder.index(toPhysicalName(indexName))
+                builder.index(getNameWithClusterIDPrefix(indexName))
             );
             return clientProvider.getClient().indices().exists(request).value();
         } catch (Exception e) {
@@ -196,7 +196,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
 
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
-                builder.index(toPhysicalName(indexName))
+                builder.index(getNameWithClusterIDPrefix(indexName))
                         .settings(indexSettings)
                         .timeout(Time.of(timeBuilder ->
                                 timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
@@ -305,7 +305,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void closeIndex(String indexName) {
         try {
             clientProvider.getClient().indices().close(b ->
-                b.index(toPhysicalName(indexName))
+                b.index(getNameWithClusterIDPrefix(indexName))
                  .timeout(Time.of(t -> t.time(INDEX_OPERATIONS_TIMEOUT)))
             );
             AdminLogger.log(this.getClass(), "closeIndex", "Index closed: " + indexName);
@@ -319,7 +319,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public void openIndex(String indexName) {
         try {
             clientProvider.getClient().indices().open(b ->
-                b.index(toPhysicalName(indexName))
+                b.index(getNameWithClusterIDPrefix(indexName))
                  .timeout(Time.of(t -> t.time(INDEX_OPERATIONS_TIMEOUT)))
             );
             AdminLogger.log(this.getClass(), "openIndex", "Index opened: " + indexName);
@@ -650,7 +650,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final List<String> physicalNames = indexNames.stream()
-                    .map(this::toPhysicalName)
+                    .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
             final ClearCacheResponse response = clientProvider.getClient().indices()
                     .clearCache(ClearCacheRequest.of(b -> b.index(physicalNames)));
@@ -669,7 +669,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public boolean optimize(final List<String> indexNames) {
         try {
             final List<String> physicalNames = indexNames.stream()
-                    .map(this::toPhysicalName)
+                    .map(this::getNameWithClusterIDPrefix)
                     .collect(Collectors.toList());
             final ForcemergeResponse response = clientProvider.getClient().indices()
                     .forcemerge(ForcemergeRequest.of(b -> b.index(physicalNames)));
@@ -706,7 +706,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         try {
             clientProvider.getClient().indices().putSettings(
                     PutIndicesSettingsRequest.of(b -> b
-                            .index(toPhysicalName(indexName))
+                            .index(getNameWithClusterIDPrefix(indexName))
                             .settings(s -> s.numberOfReplicas(replicas))));
         } catch (Exception e) {
             Logger.error(this.getClass(),
@@ -837,6 +837,14 @@ public class OSIndexAPIImpl implements IndexAPI {
      *
      * <p>Idempotent: names already carrying the cluster prefix and/or the {@code .os} tag are not
      * double-applied.</p>
+     *
+     * <p>Scope note: only {@link #delete(String)} uses this. {@code delete} is reached by the
+     * router with the raw, untagged ES name (the reported bug: it orphaned the real {@code .os}
+     * index). The other lifecycle/maintenance methods deliberately keep bare
+     * {@link #getNameWithClusterIDPrefix} semantics — in production they already receive
+     * {@code .os}-tagged names (from {@code VersionedIndices}), so tagging again buys nothing, and
+     * the OS IT suites create indices by bare name and read them back by bare name. Broadening the
+     * canonicalization belongs in its own PR, not bundled here.</p>
      */
     private String toPhysicalName(final String name) {
         return IndexTag.OS.tag(getNameWithClusterIDPrefix(name));
