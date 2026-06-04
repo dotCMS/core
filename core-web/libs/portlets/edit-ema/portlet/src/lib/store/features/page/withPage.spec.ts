@@ -86,7 +86,8 @@ describe('withPage', () => {
         /**
          * resetClientConfiguration clears page asset and ready state but intentionally
          * preserves requestMetadata so headless/GraphQL clients keep their query across
-         * pageLoad cycles (see withPageApi / shell behavior).
+         * pageLoad cycles. Cross-page staleness is handled in withPageApi's pageLoad,
+         * which drops the stored request when it belongs to another page.
          */
         it('should reset page asset and ready state but preserve requestMetadata', () => {
             const graphql = {
@@ -114,6 +115,27 @@ describe('withPage', () => {
             expect(store.requestMetadata()).toEqual(graphql);
             expect(store.isClientReady()).toBe(false);
             expect(store.pageAssetResponse()).toBeNull();
+        });
+
+        it('should drop only the stored client request via resetRequestMetadata', () => {
+            const graphql = {
+                query: 'test',
+                variables: {}
+            };
+            store.setCustomClient(graphql);
+            store.setIsClientReady(true);
+            store.setPageAsset({
+                pageAsset: { page: { identifier: 'p1' } } as Parameters<
+                    typeof store.setPageAsset
+                >[0]['pageAsset']
+            });
+
+            store.resetRequestMetadata();
+
+            expect(store.requestMetadata()).toBeNull();
+            // Everything else stays untouched
+            expect(store.isClientReady()).toBe(true);
+            expect(store.pageAssetResponse()).not.toBeNull();
         });
     });
 
