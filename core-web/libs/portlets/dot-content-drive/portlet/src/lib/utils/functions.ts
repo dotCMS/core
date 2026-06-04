@@ -3,11 +3,7 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import {
-    DotContentDriveFolder,
-    DotContentDriveItem,
-    DotFolder
-} from '@dotcms/dotcms-models';
+import { DotContentDriveFolder, DotContentDriveItem, DotFolder } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
