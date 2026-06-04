@@ -36,7 +36,7 @@ export default function StoreProductList({
 }
 
 function ProductCard({ product }: { product: Product }) {
-  const { inode, title, retailPrice, salePrice } = product;
+  const { image, title, retailPrice, salePrice } = product;
 
   const hasDiscount =
     salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
@@ -50,7 +50,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
         <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
           <img
-            src={`/dA/${inode}`}
+            src={image}
             alt={title}
             className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
           />

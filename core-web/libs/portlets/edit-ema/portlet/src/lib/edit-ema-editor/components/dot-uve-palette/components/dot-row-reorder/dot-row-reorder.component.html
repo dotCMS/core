@@ -1,0 +1,179 @@
+@if (rows().length > 0) {
+    <div
+        cdkDropList
+        cdkDropListLockAxis="y"
+        (cdkDropListDropped)="drop($event)"
+        class="flex flex-col">
+        @for (row of rows(); track $index; let i = $index) {
+            <div
+                cdkDrag
+                class="flex cursor-default flex-col items-stretch gap-2 rounded-sm bg-(--surface-ground) px-2 transition-shadow duration-200"
+                data-testid="row-item"
+                [cdkDragDisabled]="isColumnDragging()">
+                <div
+                    class="flex min-w-0 cursor-pointer items-center gap-2 rounded-sm py-2 hover:bg-primary-50">
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [icon]="isRowExpanded(i) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        data-testid="row-toggle"
+                        [attr.aria-expanded]="isRowExpanded(i)"
+                        [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
+                        (click)="toggleRow(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()" />
+                    <div
+                        class="inline-flex shrink-0 cursor-grab items-center justify-center rounded-sm bg-primary-50 p-1.5 text-primary-600 select-none active:cursor-grabbing"
+                        cdkDragHandle
+                        (click)="$event.stopPropagation()">
+                        <span
+                            class="material-symbols-outlined"
+                            style="font-size: 18px; width: 18px; height: 18px; overflow: hidden">
+                            splitscreen
+                        </span>
+                    </div>
+                    <div
+                        class="min-w-0 flex-1 cursor-pointer truncate rounded-sm px-1.5 py-0.5 text-sm font-semibold text-black transition-colors duration-150 select-none"
+                        data-testid="row-label"
+                        [title]="'Double-click to rename'"
+                        (click)="selectRow(i + 1)"
+                        (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        {{ getRowLabel(row, i) }}
+                    </div>
+                </div>
+
+                @if (isRowExpanded(i) && row.columns?.length) {
+                    <div
+                        class="ml-4 border-l border-(--gray-300) px-2 pl-5.5"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        <div
+                            cdkDropList
+                            cdkDropListLockAxis="y"
+                            [cdkDropListData]="row.columns"
+                            (cdkDropListDropped)="dropColumn($event, i)"
+                            data-testid="row-columns"
+                            class="flex flex-col">
+                            @for (column of row.columns; track $index; let j = $index) {
+                                <div
+                                    cdkDrag
+                                    class="row-column flex flex-col gap-2 rounded-sm bg-(--surface-card) text-sm"
+                                    (cdkDragStarted)="setColumnDragging(true)"
+                                    (cdkDragEnded)="setColumnDragging(false)">
+                                    <div
+                                        class="flex items-center gap-2 rounded-sm py-2 hover:bg-emerald-50">
+                                        <p-button
+                                            [text]="true"
+                                            [rounded]="true"
+                                            size="small"
+                                            [icon]="
+                                                isColumnExpanded(i, j)
+                                                    ? 'pi pi-chevron-down'
+                                                    : 'pi pi-chevron-right'
+                                            "
+                                            data-testid="column-toggle"
+                                            [attr.aria-expanded]="isColumnExpanded(i, j)"
+                                            [attr.aria-label]="
+                                                isColumnExpanded(i, j)
+                                                    ? 'Collapse column'
+                                                    : 'Expand column'
+                                            "
+                                            (click)="toggleColumn(i, j); $event.stopPropagation()"
+                                            (mousedown)="$event.stopPropagation()"
+                                            (touchstart)="$event.stopPropagation()" />
+                                        <div
+                                            class="inline-flex shrink-0 cursor-grab items-center justify-center rounded-sm bg-emerald-50 p-1.5 text-emerald-600 select-none active:cursor-grabbing"
+                                            cdkDragHandle>
+                                            <span
+                                                class="material-symbols-outlined"
+                                                style="
+                                                    font-size: 18px;
+                                                    width: 18px;
+                                                    height: 18px;
+                                                    overflow: hidden;
+                                                    transform: rotate(90deg);
+                                                ">
+                                                splitscreen
+                                            </span>
+                                        </div>
+                                        <div
+                                            class="min-w-0 flex-1 cursor-pointer truncate rounded-sm px-1.5 py-0.5 text-sm font-semibold text-black transition-colors duration-150 select-none"
+                                            data-testid="column-label"
+                                            [title]="'Double-click to rename'"
+                                            (dblclick)="
+                                                openEditColumnDialog(i, j); $event.stopPropagation()
+                                            "
+                                            (mousedown)="$event.stopPropagation()"
+                                            (touchstart)="$event.stopPropagation()">
+                                            {{ getColumnLabel(column, j) }}
+                                        </div>
+                                    </div>
+
+                                    @if (
+                                        isColumnExpanded(i, j) && getColumnContainers(column).length
+                                    ) {
+                                        <div
+                                            class="ml-4 flex flex-col gap-2 border-l border-(--gray-300) pl-16">
+                                            @for (
+                                                container of getColumnContainers(column);
+                                                track $index
+                                            ) {
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                    data-testid="container-item">
+                                                    <div
+                                                        class="inline-flex shrink-0 items-center justify-center rounded-sm bg-slate-100 p-1.5 text-slate-600">
+                                                        <i class="pi pi-stop text-sm"></i>
+                                                    </div>
+                                                    <span
+                                                        class="truncate text-sm font-semibold text-(--text-color-secondary) select-none"
+                                                        [pTooltip]="container.title"
+                                                        tooltipPosition="bottom">
+                                                        {{ container.title }}
+                                                    </span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+} @else {
+    <div
+        class="flex items-center justify-center p-8 text-(--text-color-secondary)"
+        data-testid="empty-state">
+        <span>No rows available</span>
+    </div>
+}
+
+<p-dialog
+    [header]="
+        editingColumn()
+            ? ('uve.edit-ema-editor.row-reorder.edit-column' | dm)
+            : ('uve.edit-ema-editor.row-reorder.edit-row' | dm)
+    "
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [appendTo]="'body'"
+    [(visible)]="editRowDialogOpen"
+    (onHide)="closeEditRowDialog()">
+    <form class="flex min-w-80 flex-col gap-3" (submit)="$event.preventDefault(); submitEditRow()">
+        <label class="text-sm text-(--text-color)" for="row-styleClass">
+            {{ 'uve.edit-ema-editor.row-reorder.name' | dm }}
+        </label>
+        <input id="row-styleClass" type="text" pInputText [formControl]="rowNameControl" />
+
+        <div class="flex justify-end">
+            <button pButton type="submit" [label]="'Save' | dm"></button>
+        </div>
+    </form>
+</p-dialog>

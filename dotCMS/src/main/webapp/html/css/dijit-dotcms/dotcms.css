@@ -1,4 +1,39 @@
 @charset "UTF-8";
+/*
+  ========================== WARNING ==========================
+  Don't use this in your components, use $font-size-md instead,
+  this is only for the root element
+  =============================================================
+*/
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url("/dotAdmin/assets/MaterialSymbolsOutlined-Regular.woff2") format("woff2");
+}
+:root {
+  --mdc-icon-font: "Material Symbols Outlined";
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
 /* FONT PATH
  * -------------------------- */
 @font-face {
@@ -8985,7 +9020,8 @@ Styles for commons fields along the backend
 }
 
 .tagLink {
-  height: 1.5rem;
+  min-height: 1.5rem;
+  height: auto;
   padding: 0.5rem;
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
@@ -8996,10 +9032,7 @@ Styles for commons fields along the backend
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
   width: auto;
-  max-width: 112px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   padding-left: 1.25rem;
   position: relative;
 }
@@ -11238,13 +11271,6 @@ Resize Handle
   font-display: swap;
   src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
-@font-face {
-  font-family: "Material Icons";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
-}
 #structure_inode_popup .dijitMenuItem .label {
   display: flex;
   align-items: center;
@@ -11288,23 +11314,6 @@ blockquote,
 th,
 td {
   font-size: 0.875rem;
-}
-
-.material-icons {
-  font-family: "Material Icons", sans-serif;
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px; /* Preferred icon size */
-  display: inline-block;
-  line-height: 1;
-  text-transform: none;
-  letter-spacing: normal;
-  word-wrap: normal;
-  white-space: nowrap;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 dialog:modal {

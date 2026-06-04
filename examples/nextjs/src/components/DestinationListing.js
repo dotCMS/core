@@ -1,6 +1,6 @@
-import Link from "next/link";
-import Image from "next/image";
-import { EditButton } from "./editor/EditButton";
+import Link from 'next/link';
+import Image from 'next/image';
+import { EditButton } from './editor/EditButton';
 
 export default function DestinationListing({ destinations }) {
     if (!destinations || !destinations.length) {
@@ -16,17 +16,18 @@ export default function DestinationListing({ destinations }) {
                 {destinations.map((destination) => (
                     <div
                         key={destination.identifier}
-                        className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
-                    >
+                        className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                         <EditButton contentlet={destination} />
                         <div className="relative h-64">
-                            <Image
-                                src={destination.inode}
-                                alt={destination.title}
-                                layout="fill"
-                                objectFit="cover"
-                                className="transition-transform duration-300 hover:scale-105"
-                            />
+                            {destination.image && (
+                                <Image
+                                    src={destination.image}
+                                    alt={destination.title}
+                                    layout="fill"
+                                    objectFit="cover"
+                                    className="transition-transform duration-300 hover:scale-105"
+                                />
+                            )}
                             {destination.selectValue && (
                                 <div className="absolute top-4 left-4 bg-orange-500 text-white text-sm font-bold px-4 py-1 rounded">
                                     {destination.selectValue.toUpperCase()}
@@ -37,8 +38,7 @@ export default function DestinationListing({ destinations }) {
                             <h2 className="text-2xl font-bold mb-3 text-gray-800">
                                 <Link
                                     href={destination.url}
-                                    className="hover:text-orange-500 transition-colors duration-300"
-                                >
+                                    className="hover:text-orange-500 transition-colors duration-300">
                                     {destination.title}
                                 </Link>
                             </h2>
@@ -46,35 +46,21 @@ export default function DestinationListing({ destinations }) {
                                 {destination.shortDescription}
                             </p>
 
-                            {destination.activities &&
-                                destination.activities.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                        <div className="font-medium text-gray-700 mb-1">
-                                            Activites:
-                                        </div>
-                                        <div className="text-gray-600">
-                                            {destination.activities.map(
-                                                (activity, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="inline-block"
-                                                    >
-                                                        {activity}
-                                                        {index <
-                                                            destination
-                                                                .activities
-                                                                .length -
-                                                                1 && (
-                                                            <span className="mx-1 text-orange-400">
-                                                                ,
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                ),
-                                            )}
-                                        </div>
+                            {destination.activities && destination.activities.length > 0 && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <div className="font-medium text-gray-700 mb-1">Activites:</div>
+                                    <div className="text-gray-600">
+                                        {destination.activities.map((activity, index) => (
+                                            <span key={index} className="inline-block">
+                                                {activity}
+                                                {index < destination.activities.length - 1 && (
+                                                    <span className="mx-1 text-orange-400">,</span>
+                                                )}
+                                            </span>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}

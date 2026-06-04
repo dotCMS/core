@@ -1,9 +1,9 @@
-import { Component, input, inject, computed } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { Select } from 'primeng/select';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 @Component({
     selector: 'dot-uve-style-editor-field-dropdown',

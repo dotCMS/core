@@ -266,6 +266,8 @@ import com.dotmarketing.startup.runonce.Task260324AddIdentifierPathTriggerIndex;
 import com.dotmarketing.startup.runonce.Task260403SetLz4CompressionOnTextColumns;
 import com.dotmarketing.startup.runonce.Task260403SetPermissionReferenceUnlogged;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifier;
+import com.dotmarketing.startup.runonce.Task260408CreateS3VanityAliasTable;
+import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenu;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -606,6 +608,8 @@ public class TaskLocatorUtil {
         .add(Task260403SetLz4CompressionOnTextColumns.class)
         .add(Task260403SetPermissionReferenceUnlogged.class)
         .add(Task260407AddBaseTypeColumnToIdentifier.class)
+        .add(Task260408CreateS3VanityAliasTable.class)
+        .add(Task260505AddPluginsPortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

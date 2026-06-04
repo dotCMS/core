@@ -82,7 +82,7 @@ public class SearchResource {
                                       @QueryParam("site") String site,
                                       @QueryParam("contentType") String contentType,
                                       @DefaultValue("default") @QueryParam("indexName") String indexName,
-                                      @DefaultValue(".5") @QueryParam("threshold") float threshold,
+                                      @DefaultValue(".25") @QueryParam("threshold") float threshold,
                                       @DefaultValue("false") @QueryParam("stream") boolean stream,
                                       @DefaultValue("1024") @QueryParam("responseLength") int responseLength,
                                       @DefaultValue("<=>") @QueryParam("operator") String operator,
@@ -126,10 +126,18 @@ public class SearchResource {
                 .init()
                 .getUser();
 
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        if (!APILocator.getDotAIAPI().getEmbeddingsAPI(host).indexExists(form.indexName)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of(AiKeys.ERROR, "Index '" + form.indexName + "' not found"))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(form).withUser(user).build();
 
         return Response.ok(
-                APILocator.getDotAIAPI().getEmbeddingsAPI().searchForContent(searcher).toString(),
+                APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher).toString(),
                 MediaType.APPLICATION_JSON).build();
     }
 

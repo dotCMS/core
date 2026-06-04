@@ -191,14 +191,14 @@ describe('DotEditContentKeyValueComponent', () => {
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
-        it('should coalesce null values to empty string after import', () => {
+        it('should display null values as the string "null" after import', () => {
             const testData = { key1: null, key2: 'value2' };
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
             keyValueField.writeValue(testData);
             spectator.detectChanges();
 
             expect(keyValueField.$initialValue()).toEqual([
-                { key: 'key1', value: '' },
+                { key: 'key1', value: 'null' },
                 { key: 'key2', value: 'value2' }
             ]);
         });

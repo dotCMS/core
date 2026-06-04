@@ -61,7 +61,7 @@ export class SelectExistingContentDialog {
     }
 
     async toggleSelectAll(): Promise<void> {
-        await this.table.locator('p-tableheadercheckbox').click();
+        await this.table.locator('[data-testid="header-checkbox"]').click();
     }
 
     async expectCheckboxes(): Promise<void> {
@@ -69,7 +69,7 @@ export class SelectExistingContentDialog {
     }
 
     async expectHeaderCheckbox(): Promise<void> {
-        await expect(this.table.locator('p-tableheadercheckbox')).toBeVisible();
+        await expect(this.table.locator('[data-testid="header-checkbox"]')).toBeVisible();
     }
 
     // ─── Apply / Cancel ─────────────────────────────────────────────

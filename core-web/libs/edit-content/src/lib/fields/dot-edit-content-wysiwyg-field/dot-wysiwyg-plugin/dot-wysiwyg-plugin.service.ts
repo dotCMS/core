@@ -35,9 +35,9 @@ export class DotWysiwygPluginService {
             .getKey('WYSIWYG_IMAGE_URL_PATTERN')
             .pipe(
                 takeUntilDestroyed(this.destroyRef$),
-                filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN)
+                filter((value): value is string => typeof value === 'string' && !!value)
             )
-            .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
+            .subscribe((value) => (this.IMAGE_URL_PATTERN = value));
     }
 
     /**
@@ -80,16 +80,23 @@ export class DotWysiwygPluginService {
                 width: '800px',
                 height: '500px',
                 contentStyle: { padding: 0 },
+                closable: true,
+                closeOnEscape: true,
+                dismissableMask: true,
                 data: {
                     assetType: 'image'
                 }
             });
 
-            ref.onClose
-                .pipe(filter((asset) => !!asset))
-                .subscribe((asset: DotCMSContentlet) =>
-                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset))
-                );
+            ref.onClose.subscribe((asset: DotCMSContentlet) => {
+                if (asset) {
+                    editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));
+                }
+
+                // Return focus to the editor on every close (insert or dismiss via
+                // X, Esc or overlay mask) so the user is never left without focus.
+                editor.focus();
+            });
         });
     }
 

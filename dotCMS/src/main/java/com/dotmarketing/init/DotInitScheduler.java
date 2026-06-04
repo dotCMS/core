@@ -16,6 +16,7 @@ import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteSiteSearchIndicesJob;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
+import com.dotmarketing.quartz.job.EncryptPlainPasswordsJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
@@ -298,6 +299,50 @@ public class DotInitScheduler {
             } else {
                 if ((sched.getJobDetail(CUUjobName, CUUjobGroup)) != null) {
                     sched.deleteJob(CUUjobName, CUUjobGroup);
+                }
+            }
+
+            //Schedule EncryptPlainPasswordsJob
+            final String EPPjobName = "EncryptPlainPasswordsJob";
+            final String EPPjobGroup = DOTCMS_JOB_GROUP_NAME;
+            final String EPPtriggerName = "trigger27";
+            final String EPPtriggerGroup = "group27";
+
+            if (EncryptPlainPasswordsJob.isEnabled()) {
+                try {
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail(EPPjobName, EPPjobGroup)) == null) {
+                            job = new JobDetail(EPPjobName, EPPjobGroup, EncryptPlainPasswordsJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob(EPPjobName, EPPjobGroup);
+                        job = new JobDetail(EPPjobName, EPPjobGroup, EncryptPlainPasswordsJob.class);
+                        isNew = true;
+                    }
+                    calendar = Calendar.getInstance();
+                    calendar.add(Calendar.MINUTE, 1);
+                    // By default, the job runs every minute
+                    trigger = new CronTrigger(EPPtriggerName, EPPtriggerGroup, EPPjobName, EPPjobGroup,
+                            calendar.getTime(), null,
+                            Config.getStringProperty(EncryptPlainPasswordsJob.CRON_PROPERTY,
+                                    EncryptPlainPasswordsJob.DEFAULT_CRON_EXPRESSION));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+                    sched.addJob(job, true);
+
+                    if (isNew) {
+                        sched.scheduleJob(trigger);
+                    } else {
+                        sched.rescheduleJob(EPPtriggerName, EPPtriggerGroup, trigger);
+                    }
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(), e);
+                }
+            } else {
+                if ((sched.getJobDetail(EPPjobName, EPPjobGroup)) != null) {
+                    sched.deleteJob(EPPjobName, EPPjobGroup);
                 }
             }
 

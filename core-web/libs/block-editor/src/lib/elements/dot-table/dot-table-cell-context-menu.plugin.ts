@@ -178,7 +178,9 @@ function initializeComponent(options: TableContextMenuOptions): {
     // Configure component instance
     component.instance.title = '';
     component.instance.items = getCellsOptions(editor, tippyInstance);
-    component.instance.currentLanguage = editor.storage.dotConfig?.lang || 'en';
+    // `lang` is now strictly typed as `number` after the A5 storage augmentation;
+    // the legacy `'en'` fallback never matched the consumer signature — preserve runtime behavior with a cast.
+    component.instance.currentLanguage = (editor.storage.dotConfig?.lang || 'en') as number;
     component.changeDetectorRef.detectChanges();
 
     return { component, tippyInstance };

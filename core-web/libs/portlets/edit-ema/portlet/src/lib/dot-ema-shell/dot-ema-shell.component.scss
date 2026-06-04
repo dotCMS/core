@@ -8,6 +8,10 @@
     router-outlet {
         display: none;
     }
+
+    dot-edit-ema-navigation-bar {
+        grid-column-start: -1;
+    }
 }
 
 ::ng-deep {

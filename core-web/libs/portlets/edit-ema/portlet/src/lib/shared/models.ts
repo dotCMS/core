@@ -4,18 +4,11 @@ import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 
 export interface MessagePipeOptions {
     message: string;
     args: string[];
-}
-
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
 }
 
 export interface InfoOptions {
@@ -55,6 +48,21 @@ export interface ActionPayload extends PositionPayload {
 
 export interface StyleEditorContentletPayload extends ActionPayload {
     contentlet: ContentletPayload;
+}
+
+/**
+ * The currently-selected contentlet in the editor: bounds + payload.
+ * Bounds drive the floating overlay; payload feeds the side panel /
+ * style editor / pencil dialog. Both travel together because every
+ * selection arrives with bounds (you got there by clicking somewhere).
+ *
+ * Replaces the historical split between `editorSelectedContentletArea`
+ * (had bounds) and `editorActiveContentlet` (had payload). They were
+ * always set/cleared in lockstep; the split was vestigial.
+ */
+export interface SelectedContentlet {
+    bounds: { x: number; y: number; width: number; height: number };
+    payload: ActionPayload;
 }
 
 export interface PageContainer {
@@ -105,8 +113,7 @@ export interface SaveStylePropertiesPayload {
 }
 
 export interface NavigationBarItem {
-    icon?: string;
-    iconURL?: string;
+    materialIcon: string;
     label: string;
     href?: string;
     id: string;
@@ -277,16 +284,6 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
-
-export interface ToggleLockOptions {
-    inode: string;
-    isLocked: boolean;
-    lockedBy: string;
-    canLock: boolean;
-    isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
-}
 
 export type DotUVEPaletteListType =
     | DotCMSBaseTypesContentTypes.CONTENT

@@ -6,7 +6,7 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent } from 'primeng/fileupload';
 
-import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -38,7 +38,7 @@ describe('DotTagsImportComponent', () => {
     const mockFile = new File(['tag1,SYSTEM_HOST'], 'test.csv', { type: 'text/csv' });
 
     const IMPORT_RESPONSE = {
-        entity: { totalRows: 10, successCount: 10, failureCount: 0 }
+        entity: { totalRows: 10, successCount: 10, failureCount: 0, success: true }
     };
 
     const createComponent = createComponentFactory({
@@ -49,7 +49,6 @@ describe('DotTagsImportComponent', () => {
             mockProvider(DotTagsService, {
                 importTags: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -118,19 +117,36 @@ describe('DotTagsImportComponent', () => {
             expect(component.importing()).toBe(false);
         });
 
-        it('should handle import error', () => {
+        it('should show inline error and keep dialog open on HTTP error', () => {
             const tagsService = spectator.inject(DotTagsService);
-            const httpErrorManager = spectator.inject(DotHttpErrorManagerService);
+            const ref = spectator.inject(DynamicDialogRef);
 
             (tagsService.importTags as jest.Mock).mockReturnValue(
-                throwError(() => new Error('fail'))
+                throwError(() => ({ error: { message: 'Import failed' } }))
             );
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(component.errorMessage()).toBe('Import failed');
             expect(component.importing()).toBe(false);
+            expect(ref.close).not.toHaveBeenCalled();
+        });
+
+        it('should show inline error and keep dialog open when API returns success:false', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+
+            (tagsService.importTags as jest.Mock).mockReturnValue(
+                of({ entity: { totalRows: 5, successCount: 0, failureCount: 5, success: false } })
+            );
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(component.errorMessage()).toBeTruthy();
+            expect(component.importing()).toBe(false);
+            expect(ref.close).not.toHaveBeenCalled();
         });
     });
 

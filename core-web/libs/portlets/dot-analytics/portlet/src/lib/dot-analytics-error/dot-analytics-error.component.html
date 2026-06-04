@@ -1,3 +1,7 @@
-<div class="flex flex-col h-full w-full p-4 bg-white" data-testid="analytics-error">
-    <dot-empty-container [configuration]="$errorConfig()" [hideContactUsLink]="true" />
+<div class="flex size-full flex-col bg-white p-4" data-testid="analytics-error">
+    <dot-empty-container
+        [configuration]="$errorConfig()"
+        [hideContactUsLink]="true"
+        [buttonLabel]="'analytics.error.retry' | dm"
+        (buttonAction)="onRetry()" />
 </div>

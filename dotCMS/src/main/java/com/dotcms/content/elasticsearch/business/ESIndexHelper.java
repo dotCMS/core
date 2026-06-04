@@ -3,7 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseService;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.UtilMethods;

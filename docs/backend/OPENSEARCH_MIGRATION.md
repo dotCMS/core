@@ -20,13 +20,84 @@ Controlled via feature flag: `FEATURE_FLAG_OPEN_SEARCH_PHASE`
 
 ---
 
+## Phase Transitions
+
+Phases are advanced **manually** by changing the value of `FEATURE_FLAG_OPEN_SEARCH_PHASE`
+in `dotmarketing-config.properties` (or the equivalent environment variable).
+The system reads the flag at startup and on each routing decision — no restart is required
+for the change to take effect, but all nodes in the cluster must be updated consistently.
+
+| Transition      | Precondition                                                              |
+|-----------------|---------------------------------------------------------------------------|
+| Phase 0 → 1     | OS cluster reachable; OS index created via bootstrap or catchup           |
+| Phase 1 → 2     | OS data quality validated; mapping schemas must be identical (see Rollback risk) |
+| Phase 2 → 3     | OS confirmed stable under production read load; ES decommission approved  |
+
+> There is no automated promotion. Advancing a phase is a deliberate operator action.
+
+---
+
 ## Shadow Index Strategy
 
-During Phase 1, OpenSearch receives all writes in parallel to ES but no reads are served from it.
-This allows real data to accumulate and consistency to be validated before enabling reads.
+### Definition
 
-**Accepted limitation**: dual-write alone does not guarantee perfect sync between indices.
-Adopted strategy: dual-write for ~2 weeks on low-volume customers → validate → activate Phase 2.
+The **shadow index** is the OpenSearch index during the dual-write phases (1 and 2).
+It receives every write that goes to ES, acting as a continuously-updated replica.
+It is called "shadow" because it follows ES writes rather than owning them.
+
+This is a **transitional state**: once Phase 3 is reached, the shadow index is promoted
+to the **primary index** — OS becomes the source of truth and ES is decommissioned.
+
+### Phase lifecycle
+
+| Phase | OS write role | OS read role    | Write failure    | Read failure          |
+|-------|---------------|-----------------|------------------|-----------------------|
+| 0     | absent        | absent          | —                | —                     |
+| 1     | shadow        | absent (ES)     | fire-and-forget  | n/a                   |
+| 2     | shadow        | **primary**     | fire-and-forget  | fallback to ES        |
+| 3     | **primary**   | **primary**     | propagates       | propagates            |
+
+### Fire-and-forget writes (Phases 1 and 2)
+
+When OS is a shadow, a write failure must **never** affect the ES write or the caller:
+
+- The OS failure is **logged** (warn-level) for observability
+- The reindex queue entry is **not** marked as failed
+- No `BulkProcessor` rebuild is triggered
+- The caller receives a successful result based on ES
+
+Rationale: ES remains the source of truth through Phases 1 and 2. An OS failure is a
+consistency concern, not a data-loss event — ES still holds the authoritative state.
+
+### Read fallback (Phase 2 only)
+
+In Phase 2 OS serves reads but ES is still active. If OS throws an exception on a read,
+`PhaseRouter` catches it, logs at **ERROR** level, and retries against ES automatically.
+
+- The caller receives a correct result from ES
+- The ERROR log makes the OS failure visible for operators
+- In Phase 3 there is no fallback — ES is decommissioned and OS failures propagate normally
+
+**Limitation**: the fallback only activates on exceptions. If OS has stale data from a
+prior write failure (no exception, just wrong data), the fallback does not trigger — the
+caller receives the stale OS data. This is the accepted residual risk of the shadow strategy.
+
+### Implementation
+
+The `shadow` flag on `CompositeBulkProcessor.Entry` carries these semantics.
+`BulkProcessorListener.forShadowProvider()` creates a listener that enforces the
+fire-and-forget contract: it logs failures but never calls `handleFailure()` on the
+reindex queue and never triggers a rebuild.
+
+```
+Phase 0 / 3  →  isDualWrite = false  →  shadow = false  →  failures propagate
+Phase 1 / 2  →  isDualWrite = true, ops == operationsOS  →  shadow = true  →  fire-and-forget
+```
+
+### Accepted limitation
+
+Dual-write alone does not guarantee perfect sync between indices. Adopted strategy:
+dual-write for ~2 weeks on low-volume customers → validate → activate Phase 2.
 
 Full reindex on OS is not viable at scale (up to 1000 sites × 100k content pieces per customer).
 
@@ -46,6 +117,26 @@ Full reindex on OS is not viable at scale (up to 1000 sites × 100k content piec
 cluster_08abc3567e.live_20260305193221
 cluster_08abc3567e.working_20260305193221
 ```
+
+Both ES and OS follow the same logical name pattern. The difference is only at the DB storage layer:
+
+| Layer                         | ES name                             | OS name                                    |
+|-------------------------------|-------------------------------------|--------------------------------------------|
+| Stored in DB                  | `cluster_08abc3.working_20230101`   | `os::cluster_08abc3.working_20260406`      |
+| Everywhere else (all callers) | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406`          |
+
+#### `os::` tag ownership rule
+
+The `os::` tag is a **DB uniqueness artifact** — it prevents name collisions between ES and OS rows
+in the shared `indicies` table. It is **exclusively managed by `VersionedIndicesAPIImpl`**:
+
+- **`saveIndices`** always adds `os::` before writing (idempotent via `IndexTag.OS.tag()`).
+- **All load methods** (`loadIndices`, `loadAllIndices`, `loadNonVersionedIndices`) always strip
+  `os::` before returning — the cache also stores stripped names.
+
+**No other class in the codebase adds or removes the `os::` tag.**
+Callers of `VersionedIndicesAPI` always receive clean, client-ready names.
+`toPhysicalName` on both ES and OS providers produces `cluster_{id}.name` — no tag involved.
 
 ### What lives in the index
 | Content                    | Live | Working |
@@ -87,30 +178,33 @@ cluster_08abc3567e.working_20260305193221
 - Creates a new index copy in the background
 - Inserts all rows from `contentlet_version_info` into `dist_reindex_journal`
 - Keeps the current index live during the process
+- **OS is excluded** — a user-triggered full reindex only rebuilds the ES index.
+  See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
 
 ---
 
 ## Operations to Replicate in Shadow Index
 
-| Operation                            | Replicate to OS? |
-|--------------------------------------|------------------|
-| Content write (publish/save)         | ✅ Yes            |
-| Content delete                       | ✅ Yes            |
-| Content-type create                  | ✅ Yes            |
-| Content-type delete + content cleanup| ✅ Yes            |
-| Permission update                    | ✅ Yes            |
-| User-triggered reindex               | ❌ No             |
-| User-triggered index shutdown        | ❌ No             |
-| Site Search index operations         | ✅ Yes            |
+| Operation                            | Replicate to OS? | Notes                                                        |
+|--------------------------------------|------------------|--------------------------------------------------------------|
+| Content write (publish/save)         | ✅ Yes            |                                                              |
+| Content delete                       | ✅ Yes            |                                                              |
+| Content-type create                  | ✅ Yes            |                                                              |
+| Content-type delete + content cleanup| ✅ Yes            |                                                              |
+| Permission update                    | ✅ Yes            |                                                              |
+| User-triggered reindex               | ❌ No             | Full reindex at OS scale is not viable — see Accepted Limitation |
+| User-triggered index shutdown        | ❌ No             | Lifecycle ops on the shadow index are not user-controllable  |
+| Site Search index operations         | ✅ Yes (deferred) | In scope, lower priority than core content index            |
 
 ---
 
 ## Design Rules
 
 - **Never modify ES code** when adding the OS counterpart — zero changes to existing ES classes
-- **Errors in OS are fire-and-forget** — a shadow index failure must never affect the business operation or the ES write
-- **Routing lives in one place**: `IndexAPIImpl` (and its search/content equivalents) — never dispersed across callers
-- **ES is always authoritative** during Phases 1 and 2 — its result is what gets returned to the caller
+- **OS write failures are fire-and-forget** in Phases 1 and 2 — a shadow write failure must never affect the business operation or the ES write
+- **OS read failures fall back to ES** in Phase 2 — `PhaseRouter` catches the exception, logs at ERROR, and retries against ES
+- **Routing lives in one place**: `IndexAPIImpl`, `ContentletIndexAPIImpl`, and their search equivalents — never dispersed across callers
+- **ES is the authoritative write store** during Phases 1 and 2 — OS is the read source in Phase 2 but ES holds the canonical state for recovery
 
 ---
 
@@ -119,17 +213,13 @@ cluster_08abc3567e.working_20260305193221
 ### Naming conventions
 - ES classes keep their original names
 - OS counterpart classes use the `OS` suffix — e.g. `ContentSearchRepositoryOS`
-- Shared interfaces/abstractions must not carry `ES` or OS in their name
-- Shared interfaces/abstractions must not carry `OS` in their name
+- Shared interfaces/abstractions must not carry `ES` or `OS` in their name
 - OpenSearch-specific classes must be placed under `com.dotcms.content.index.opensearch`
 - General purpose index classes must be placed under `com.dotcms.content.index`
 
 ### `@IndexRouter` annotation
 Marks the class where the routing decision lives — which index receives a given request.
 There must be **one and only one** routing point per functional area. Never duplicate this logic in callers.
-
-### Package structure
-OS classes live in the same package as their ES counterparts.
 
 ---
 
@@ -176,7 +266,7 @@ final T         target = (vendor == IndexTag.OS) ? osImpl : esImpl;
 target.someOperation(IndexTag.strip(indexName));
 ```
 
-`PhaseRouter` exposes `readTagged` / `writeTagged` / `writeTaggedChecked` for this pattern.
+Tag-dispatch is implemented inline in each router class using `IndexTag.resolve()` + direct provider selection. `PhaseRouter` does not have dedicated tagged-routing methods — the routing decision is explicit at the call site.
 
 ### IndexTag-parameter overload pattern
 
@@ -227,25 +317,25 @@ private void putContentTypeMapping(ContentType ct, Map<String,JSONObject> fields
 
 **Existing implementations**: `ContentletIndexAPIImpl#createContentIndex(String, int, IndexTag)`,
 `ESMappingAPIImpl#putMapping(List, String, IndexTag)`,
-`ESMappingUtilHelper#addCustomMapping(List, IndexTag)`,
-`ESMappingUtilHelper#addCustomMapping(Field, List, IndexTag)`.
+`MappingHelper#addCustomMapping(List, IndexTag)`,
+`MappingHelper#addCustomMapping(Field, List, IndexTag)`.
 
 ### Decision rule
 
-| Name format | Correct router method | Routing key |
+| Name format | How to route | Routing key |
 |---|---|---|
 | `working_20240101` (plain logical) | `router.write(…)` | Migration phase |
 | `cluster_<id>.working_…` (physical, no tag) | `router.write(…)` | Migration phase |
-| `os::cluster_<id>.working_…` (vendor-tagged) | `router.writeTagged(…)` | Vendor tag |
+| `os::cluster_<id>.working_…` (vendor-tagged) | `IndexTag.resolve(name)` → select provider directly | Vendor tag |
 
-### Why stripping early is wrong
+### Why the tag is not a routing key
 
-Both `cluster_<id>.working_20240101` (ES) and `os::cluster_<id>.working_20240101` (OS) strip to
-the identical physical name `cluster_<id>.working_20240101`. If the tag is stripped before routing,
-the discriminator is lost and a phase-dispatch fan-out would reach both providers when only one
-was intended.
+Under the current design `os::` never appears outside of `VersionedIndicesAPIImpl`.
+All routing decisions use an **explicit `IndexTag` parameter** passed by the caller — never the
+presence or absence of `os::` in an index name string.
 
-**Strip the tag inside the provider implementation, never before the routing decision.**
+The tag-dispatch pattern (reading `os::` from a name via `IndexTag.resolve()`) remains valid for
+hypothetical future use cases, but no production code path currently relies on it.
 
 ---
 
@@ -321,6 +411,9 @@ OS would serve stale or inconsistent data.
 Option 2 is the recommended minimum: it makes drift observable from the first restart after a
 rollback, with no impact on normal operation.
 
+> **Status**: Option 1 (runbook) is the only mitigation currently in place. Option 2 and 3 are
+> not yet implemented — tracked as technical debt before Phase 2 goes to production.
+
 ---
 
 ### ⚠ Open issue — fan-out error handling with divergent index names
@@ -362,7 +455,7 @@ Never add migration tests to general test suites — keep them isolated and easy
 
 ---
 
-## Out of Scope (for now)
-- Site Search (`site-search` index) — separate pipeline, separate decision
-- Full reindex orchestration for OS
-- User-facing query routing during dual-write phase
+## Deferred (lower priority)
+- **Site Search** (`site-search` index) — in scope, but separate pipeline; will be addressed after core content index migration is stable
+- **Full reindex orchestration for OS** — not viable at current scale; deferred until a targeted catchup strategy is defined
+- **User-facing query routing during dual-write phase** — search queries are not yet phase-aware beyond the read provider selection in `PhaseRouter`

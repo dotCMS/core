@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\".*How has data analytics transformed the strategies and performance of professional sports teams.*"
+        "matches": ".*\"content\" : \".*How has data analytics transformed the strategies and performance of professional sports teams.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,

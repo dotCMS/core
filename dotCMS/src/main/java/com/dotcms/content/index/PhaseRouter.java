@@ -4,6 +4,8 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
+
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,18 +24,24 @@ import java.util.function.Function;
  * 3 — OS only               | OS            | [OS]
  * </pre>
  *
- * <h2>Dual-write error handling</h2>
- * <p>In single-provider phases (0 and 3) exceptions propagate normally.
- * In dual-write phases (1 and 2) all write providers are <em>always</em> called — a failure
- * in one provider never skips the other. The error handling is asymmetric:</p>
+ * <h2>Error handling</h2>
+ *
+ * <h3>Writes (dual-write phases 1 and 2)</h3>
+ * <p>All write providers are <em>always</em> called — a failure in one provider never skips
+ * the other. The handling is asymmetric:</p>
  * <ul>
- *   <li><strong>Primary provider failure</strong> (the provider that also serves reads) —
- *       exception is <em>re-thrown</em> after the shadow provider has been called, so callers
- *       observe the failure while the shadow index remains consistent.</li>
- *   <li><strong>Shadow provider failure</strong> (the non-read provider) — exception is
+ *   <li><strong>Primary provider failure</strong> — exception is <em>re-thrown</em> after
+ *       the shadow has been called, so callers observe the failure.</li>
+ *   <li><strong>Shadow provider failure</strong> (OS in phases 1 and 2) — exception is
  *       <em>swallowed</em> and logged at {@code WARN}. The shadow index may drift, but the
  *       business operation and the primary index are unaffected.</li>
  * </ul>
+ *
+ * <h3>Reads (Phase 2 only — OS reads with ES still active)</h3>
+ * <p>{@link #read} and {@link #readChecked} apply an automatic <strong>ES fallback</strong>
+ * in Phase 2: if OS throws an exception the error is logged at {@code ERROR} and the read
+ * is retried against ES. This keeps reads correct even if the OS shadow index is temporarily
+ * unavailable or inconsistent. In Phase 3 there is no fallback — ES is decommissioned.</p>
  *
  * <h2>Typical usage in a router class</h2>
  * <pre>{@code
@@ -137,6 +145,16 @@ public final class PhaseRouter<T> {
     }
 
     /**
+     * Returns {@code true} when the system is in Phase 2 (OS reads, ES still active).
+     *
+     * <p>This is the only phase where a read fallback to ES is both meaningful and safe:
+     * OS is the preferred read source, but ES has not yet been decommissioned.</p>
+     */
+    private boolean isPhase2() {
+        return isReadEnabled() && !isMigrationComplete();
+    }
+
+    /**
      * All providers that should receive WRITE operations in the current phase.
      * Phase 0 → [ES]; phases 1/2 → [ES, OS]; phase 3 → [OS].
      */
@@ -155,13 +173,29 @@ public final class PhaseRouter<T> {
     // -------------------------------------------------------------------------
 
     /**
-     * Delegates a read to the single current read provider.
+     * Delegates a read to the current read provider with automatic ES fallback in Phase 2.
+     *
+     * <p><strong>Phase 2 only</strong>: OS is the read provider but ES is still active.
+     * If OS throws a runtime exception the error is logged at {@code ERROR} level and the
+     * read is retried against ES, so a transient OS failure never surfaces to the caller.
+     * In all other phases the call is forwarded to the read provider without a safety net:
+     * Phase 0/1 read from ES (no fallback needed); Phase 3 reads from OS (ES decommissioned).</p>
      *
      * @param fn  must not throw checked exceptions; use {@link #readChecked} otherwise
-     * @return    result from the read provider
+     * @return    result from the read provider (or ES fallback in Phase 2)
      */
     public <R> R read(final Function<T, R> fn) {
-        return fn.apply(readProvider());
+        if (!isPhase2()) {
+            return fn.apply(readProvider());
+        }
+        try {
+            return fn.apply(osImpl);
+        } catch (final RuntimeException e) {
+            Logger.error(PhaseRouter.class,
+                    "OS read failed in Phase 2 — falling back to ES. "
+                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            return fn.apply(esImpl);
+        }
     }
 
     /**
@@ -201,7 +235,7 @@ public final class PhaseRouter<T> {
         }
         // Dual-write: call every provider; only primary result is returned
         final T primary = readProvider();
-        boolean primaryResult = true;
+        boolean primaryResult = false; // safe default: assume failure until primary confirms success
         RuntimeException primaryEx = null;
         for (final T impl : providers) {
             try {
@@ -214,7 +248,7 @@ public final class PhaseRouter<T> {
                 if (impl == primary) {
                     primaryEx = e;
                 } else {
-                    Logger.warn(PhaseRouter.class,
+                    logShadowWriteFailure(PhaseRouter.class,
                             "Shadow write failed (fire-and-forget in dual-write phase): "
                             + e.getMessage(), e);
                 }
@@ -253,12 +287,26 @@ public final class PhaseRouter<T> {
     // -------------------------------------------------------------------------
 
     /**
-     * Delegates a checked read to the single current read provider.
+     * Delegates a checked read to the current read provider with automatic ES fallback in Phase 2.
      *
-     * @throws Exception any checked exception thrown by {@code fn}
+     * <p>Same fallback semantics as {@link #read}: in Phase 2 an OS exception is caught,
+     * logged at {@code ERROR}, and the read is retried against ES.
+     * In Phase 0/1 reads from ES; in Phase 3 reads from OS — no fallback in either case.</p>
+     *
+     * @throws Exception the exception thrown by the fallback provider (ES), if both fail
      */
     public <R> R readChecked(final ThrowingFunction<T, R> fn) throws Exception {
-        return fn.apply(readProvider());
+        if (!isPhase2()) {
+            return fn.apply(readProvider());
+        }
+        try {
+            return fn.apply(osImpl);
+        } catch (final Exception e) {
+            Logger.error(PhaseRouter.class,
+                    "OS read failed in Phase 2 — falling back to ES. "
+                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            return fn.apply(esImpl);
+        }
     }
 
     /**
@@ -286,7 +334,7 @@ public final class PhaseRouter<T> {
                 if (impl == primary) {
                     primaryEx = e;  // record — shadow must still be called
                 } else {
-                    Logger.warn(PhaseRouter.class,
+                    logShadowWriteFailure(PhaseRouter.class,
                             "Shadow write failed (fire-and-forget in dual-write phase): "
                             + e.getMessage(), e);
                 }
@@ -326,7 +374,7 @@ public final class PhaseRouter<T> {
         try {
             fn.apply(shadow);
         } catch (Exception e) {
-            Logger.warn(PhaseRouter.class,
+            logShadowWriteFailure(PhaseRouter.class,
                     "Shadow write failed (fire-and-forget in dual-write phase): "
                     + e.getMessage(), e);
         }

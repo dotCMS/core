@@ -161,7 +161,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should render content type icon when icon is provided', () => {
-            const iconElement = spectator.query('i.material-icons');
+            const iconElement = spectator.query('i.material-symbols-outlined');
 
             expect(iconElement).toBeTruthy();
             expect(iconElement?.textContent?.trim()).toBe('article');
@@ -177,7 +177,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.hostFixture.changeDetectorRef.markForCheck();
             spectator.hostFixture.detectChanges();
 
-            const iconElement = spectator.query('i.material-icons');
+            const iconElement = spectator.query('i.material-symbols-outlined');
 
             expect(iconElement).toBeTruthy();
             expect(iconElement?.textContent?.trim()).toBe('palette');
@@ -222,7 +222,8 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             };
 
             componentSpectator = createComponent({
-                props: { contentType: disabledContentType, view: 'grid' }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                props: { contentType: disabledContentType, view: 'grid' } as any
             });
             componentSpectator.detectChanges();
 
@@ -244,7 +245,8 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             };
 
             componentSpectator = createComponent({
-                props: { contentType: enabledContentType, view: 'grid' }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                props: { contentType: enabledContentType, view: 'grid' } as any
             });
             componentSpectator.detectChanges();
 
@@ -263,7 +265,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     describe('Component Structure', () => {
         it('should have correct CSS classes structure', () => {
             expect(spectator.query('.drag-handle')).toBeTruthy();
-            expect(spectator.query('i.material-icons')).toBeTruthy();
+            expect(spectator.query('i.material-symbols-outlined')).toBeTruthy();
             expect(spectator.query('.chevron')).toBeTruthy();
         });
     });
@@ -280,7 +282,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should emit correct variable when contentType changes and chevron is clicked', (done) => {
-            const newContentType: DotCMSContentType = {
+            const newContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 variable: 'NewVariableName'
             };

@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, computed, input, inject, output } f
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
@@ -16,6 +15,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+import { DotHistoryTimelineListComponent } from './components/dot-history-timeline-list/dot-history-timeline-list.component';
 import { DotPushpublishTimelineItemComponent } from './components/dot-pushpublish-timeline-item/dot-pushpublish-timeline-item.component';
 
 import {
@@ -31,7 +31,6 @@ import {
     selector: 'dot-edit-content-sidebar-history',
     imports: [
         SkeletonModule,
-        TimelineModule,
         TooltipModule,
         ButtonModule,
         MenuModule,
@@ -40,6 +39,7 @@ import {
         DotSidebarAccordionComponent,
         DotSidebarAccordionTabComponent,
         DotHistoryTimelineItemComponent,
+        DotHistoryTimelineListComponent,
         DotPushpublishTimelineItemComponent
     ],
     providers: [DatePipe, DotMessagePipe],

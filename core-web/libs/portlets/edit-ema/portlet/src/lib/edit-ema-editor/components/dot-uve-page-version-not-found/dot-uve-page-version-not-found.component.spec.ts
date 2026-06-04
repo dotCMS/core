@@ -25,7 +25,7 @@ describe('DotUveErrorComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    errorCode: signal(404)
+                    pageErrorCode: signal(404)
                 }
             },
             {

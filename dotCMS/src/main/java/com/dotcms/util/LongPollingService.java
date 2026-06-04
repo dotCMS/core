@@ -2,7 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.system.AppContext;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;

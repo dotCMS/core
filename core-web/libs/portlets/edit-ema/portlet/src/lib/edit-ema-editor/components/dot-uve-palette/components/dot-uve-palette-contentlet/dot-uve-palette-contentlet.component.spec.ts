@@ -107,26 +107,21 @@ describe('DotUvePaletteContentletComponent', () => {
     });
 
     describe('Template Rendering', () => {
-        it('should render drag handle with correct icons', () => {
-            // Drag handle is a simple icon container; we don't assert on custom CSS classes.
-            const icons = spectator.queryAll('i.pi.pi-ellipsis-v');
-            expect(icons).toHaveLength(2);
-        });
-
         it('should render dot-contentlet-thumbnail with correct properties', () => {
-            const thumbnail = spectator.query('dot-contentlet-thumbnail') as HTMLElement & {
+            const thumbnail = spectator.query(
+                '[data-testid="contentlet-thumbnail"]'
+            ) as HTMLElement & {
                 iconSize: string;
                 contentlet: DotCMSContentlet;
             };
 
             expect(thumbnail).toBeTruthy();
-            expect(thumbnail.iconSize).toBe('24px');
             expect(thumbnail.contentlet).toBeDefined();
             expect(thumbnail.contentlet.identifier).toBe('test-identifier');
         });
 
         it('should render contentlet title', () => {
-            const titleElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
+            const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement).toBeTruthy();
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
         });
@@ -140,21 +135,15 @@ describe('DotUvePaletteContentletComponent', () => {
             spectator.setInput('contentlet', newContentlet);
             spectator.detectChanges();
 
-            const titleElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
+            const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement.textContent?.trim()).toBe('Updated Title');
         });
     });
 
     describe('Component Structure', () => {
         it('should have correct CSS classes structure', () => {
-            // Structure assertions: we only verify key pieces exist.
-            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
-            expect(spectator.query('div.text-sm.font-semibold')).toBeTruthy();
-        });
-
-        it('should nest dot-contentlet-thumbnail inside icon container', () => {
-            // Thumbnail exists and is rendered inside the component.
-            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
+            expect(spectator.query('[data-testid="contentlet-thumbnail"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="contentlet-title"]')).toBeTruthy();
         });
     });
 });

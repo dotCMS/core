@@ -9,7 +9,8 @@
         justify-content: space-between;
     }
 
-    dot-block-editor {
+    dot-block-editor,
+    dot-old-block-editor {
         display: flex;
         flex-direction: column;
         height: calc(100% - 4rem);
@@ -29,7 +30,8 @@
             }
         }
     }
-    dot-block-editor .editor-wrapper {
+    dot-block-editor .editor-wrapper,
+    dot-old-block-editor .editor-wrapper {
         height: 100% !important;
     }
 }

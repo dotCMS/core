@@ -14,7 +14,7 @@ import { ImageModule } from 'primeng/image';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAIImageOrientation, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DEFAULT_IMAGE_SIZE, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 
 import {
     DotEmptyContainerComponent,
@@ -52,10 +52,10 @@ export class AiImagePromptGalleryComponent implements OnChanges {
     activeImageIndex = 0;
 
     /**
-     * The orientation of the images. helps to define the initial placeholder
+     * The image size string (e.g. "1024x1024"). Used to set the placeholder CSS class.
      */
     @Input()
-    orientation = DotAIImageOrientation.HORIZONTAL;
+    size = DEFAULT_IMAGE_SIZE;
 
     /**
      * An event that is emitted when the active image index changes.
@@ -77,9 +77,15 @@ export class AiImagePromptGalleryComponent implements OnChanges {
     };
 
     ngOnChanges(changes: SimpleChanges): void {
-        const error = changes.images?.currentValue?.[this.activeImageIndex]?.error;
+        const currentImages = changes.images?.currentValue ?? this.images;
+        const currentIndex = changes.activeImageIndex?.currentValue ?? this.activeImageIndex;
+        const error = currentImages?.[currentIndex]?.error;
         if (error) {
             this.emptyConfiguration.title = this.dotMessageService.get(error);
+        } else {
+            this.emptyConfiguration.title = this.dotMessageService.get(
+                'block-editor.extension.ai-image.error'
+            );
         }
     }
 }

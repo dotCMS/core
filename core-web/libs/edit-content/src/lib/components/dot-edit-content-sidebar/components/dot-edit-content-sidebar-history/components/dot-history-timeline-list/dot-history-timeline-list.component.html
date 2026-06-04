@@ -1,0 +1,25 @@
+<div
+    class="flex-1 min-h-0 overflow-y-auto px-4 pt-3 pb-2"
+    (scroll)="scrolled.emit($event)"
+    [attr.data-testid]="containerTestId()">
+    <p-timeline
+        [value]="$items()"
+        layout="vertical"
+        [pt]="{
+            eventOpposite: {
+                class: 'p-0! flex-none!'
+            }
+        }"
+        [attr.data-testid]="timelineTestId()">
+        <ng-template #marker let-item>
+            <ng-container
+                [ngTemplateOutlet]="markerTemplate()"
+                [ngTemplateOutletContext]="{ $implicit: item }" />
+        </ng-template>
+        <ng-template #content let-item>
+            <ng-container
+                [ngTemplateOutlet]="contentTemplate()"
+                [ngTemplateOutletContext]="{ $implicit: item }" />
+        </ng-template>
+    </p-timeline>
+</div>

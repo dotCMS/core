@@ -66,7 +66,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.HashSet;
 import java.util.Set;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -736,20 +737,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     query = query.replace("{2}", String.valueOf(limit));
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("recent-contents");
-      JSONArray ja = jo.getJSONArray("buckets");
-      List<ContentType> ret = new ArrayList<>();
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject joe = ja.getJSONObject(i);
-        String var = joe.getString("key");
-
-        ret.add(find(var));
+      final List<ContentType> ret = new ArrayList<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("recent-contents", List.of())) {
+        ret.add(find(bucket.key()));
       }
-
-
 
       return ImmutableList.copyOf(ret);
     } catch (Exception e) {
@@ -781,21 +776,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     String query = queryBuilder.toString();
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("sterms#entries");
-      JSONArray ja = jo.getJSONArray("buckets");
-
-      Map<String, Long> result = new HashMap<>();
-
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject jsonObject = ja.getJSONObject(i);
-        String contentTypeName = jsonObject.getString("key");
-        long count = jsonObject.getLong("doc_count");
-
-        result.put(contentTypeName, count);
+      final Map<String, Long> result = new HashMap<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("entries", java.util.List.of())) {
+          result.put(bucket.key(), bucket.docCount());
       }
-
       return result;
     } catch (Exception e) {
       throw new DotStateException(e);
@@ -845,35 +833,53 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               this.respectFrontendRoles);
 
       try {
-          // Handle explicitly requested Content Types
+          int adjustedOffset = offset;
+
+          // Handle explicitly requested Content Types (the "ensure" parameter)
           if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
+              // Always look up ensure items from offset 0. Using the client offset here
+              // was the root of two bugs: on page 2+ the offset would skip past the single
+              // matching row, leaving includedIds empty and allowing the item to reappear
+              // in the normal paginated query at its natural sort position (duplicate).
               final List<ContentType> includedContentTypes = this.contentTypeFactory.find(
-                      requestedContentTypes, null, offset, limit, orderBy);
+                      requestedContentTypes, null, 0, limit, orderBy);
 
               final List<ContentType> authorizedIncluded = this.perms.filterCollection(
                       includedContentTypes, PermissionAPI.PERMISSION_READ,
                       this.respectFrontendRoles, this.user);
 
+              // Always register ALL found IDs for exclusion — including items the user is
+              // not authorized to see — so they cannot surface via the normal paginated query.
+              for (ContentType contentType : includedContentTypes) {
+                  includedIds.add(contentType.id());
+              }
+
+              // Only surface authorized ensure items in the response on page 1 (offset == 0).
               for (ContentType contentType : authorizedIncluded) {
-                  if (limit < 0 || returnTypes.size() < limit) {
+                  if (offset == 0 && (limit < 0 || returnTypes.size() < limit)) {
                       returnTypes.add(contentType);
-                      includedIds.add(contentType.inode());
-                      includedIds.add(contentType.id());
                   }
               }
 
-              // Early return if limit reached
-              if (limit > 0 && returnTypes.size() >= limit) {
+              // Early return only on page 1 when ensure items already fill the page.
+              if (offset == 0 && limit > 0 && returnTypes.size() >= limit) {
                   return returnTypes;
+              }
+
+              // Pages 2+: shift the offset back by the number of ensure items that were
+              // returned on page 1. Without this, the item immediately following the
+              // displaced slot (e.g. item3 in a 7-item list) would be permanently skipped.
+              if (offset > 0) {
+                  adjustedOffset = Math.max(0, offset - authorizedIncluded.size());
               }
           }
 
           // Calculate remaining limit
           int remainingLimit = (limit < 0) ? -1 : (limit - returnTypes.size());
 
-          // Perform paginated search
+          // Perform paginated search — ensure items excluded via includedIds, offset corrected
           final List<ContentType> searchResults = performSearch(resolvedSiteIds, condition, base,
-                  orderBy, remainingLimit, offset, includedIds);
+                  orderBy, remainingLimit, adjustedOffset, includedIds);
 
           returnTypes.addAll(searchResults);
 
@@ -970,11 +976,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (ContentType rawContentType : rawContentTypes) {
           if (this.perms.doesUserHavePermission(rawContentType,
                   PermissionAPI.PERMISSION_READ, this.user, this.respectFrontendRoles)
-                  && !includedIds.contains(rawContentType.inode())
                   && !includedIds.contains(rawContentType.id())) {
 
               filteredContentTypes.add(rawContentType);
-              includedIds.add(rawContentType.inode());
               includedIds.add(rawContentType.id());
           }
       }

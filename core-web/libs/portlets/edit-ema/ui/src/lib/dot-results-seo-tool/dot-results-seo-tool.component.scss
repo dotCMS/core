@@ -74,6 +74,8 @@
 .results-seo-tool__result-card {
     width: 47.6rem;
     margin-bottom: spacing.$spacing-4;
+    border: 1px solid colors.$color-palette-gray-400;
+    border-radius: common.$border-radius-xl;
 }
 
 .results-seo-tool__result-card-title {
@@ -135,26 +137,29 @@
 }
 
 :host ::ng-deep {
-    .results-seo-tool__result-card .p-card {
-        border: 1px solid colors.$color-palette-gray-400;
-        border-radius: common.$border-radius-xl;
-    }
-
-    .results-seo-tool__result-card .p-card .p-card-header {
+    // PrimeNG 21: .p-card class is applied to the host element via host bindings,
+    // so .results-seo-tool__result-card and .p-card are on the SAME element.
+    // .p-card-header / .p-card-body are direct children of the host — no intermediate wrapper.
+    .results-seo-tool__result-card .p-card-header {
         border-bottom: 1px solid colors.$color-palette-gray-400;
         padding: spacing.$spacing-3 spacing.$spacing-4;
     }
 
-    .results-seo-tool__result-card .p-card .p-card-body {
+    .results-seo-tool__result-card .p-card-body {
         padding: 0;
-    }
-
-    .results-seo-tool__main-card .p-card {
-        border-radius: common.$border-radius-xl;
     }
 
     .results-seo-tool__result-card .p-card-content {
         flex-direction: column;
+    }
+
+    // Main card wraps <p-card> in a div, so .p-card still selects the host element.
+    .results-seo-tool__main-card .p-card {
+        border-radius: common.$border-radius-xl;
+    }
+
+    .results-seo-tool__main-card .p-card .p-card-body {
+        padding: spacing.$spacing-3;
     }
 
     .results-seo-tool__result-card-list .pi-external-link {
@@ -162,14 +167,15 @@
         font-size: fonts.$font-size-xs;
     }
 
-    .results-seo-tool__main-card .p-card .p-card-body {
-        padding: spacing.$spacing-3;
-    }
-
     .results-seo-tool__read-more-label {
         span {
             display: flex;
             align-items: center;
+            gap: spacing.$spacing-0;
+
+            span {
+                gap: spacing.$spacing-0;
+            }
         }
     }
 

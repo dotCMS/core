@@ -1,13 +1,20 @@
 @let showSidebar = $store.isSidebarOpen();
 
-<div class="flex min-w-0 overflow-auto flex-col h-full">
+<div class="flex h-full min-w-0 flex-col overflow-auto">
     <div
-        class="flex items-center w-full min-h-[52px] border-b border-gray-300"
+        class="flex min-h-[52px] w-full items-center border-b border-gray-300"
         data-testId="edit-content-actions">
         <!-- Left group for lock controls -->
 
         <!-- Right group for all other actions -->
-        <div class="flex items-center gap-4 ml-auto">
+        <div class="ml-auto flex items-center gap-4">
+            <button
+                pButton
+                class="p-button-tertiary p-button-text"
+                (click)="$store.exitCompareView()"
+                data-testId="return-to-current-version-button">
+                {{ 'edit.content.sidebar.history.return.to.current' | dm }}
+            </button>
             <button
                 pButton
                 (click)="$store.restoreCurrentHistoricalVersion()"
@@ -17,7 +24,7 @@
 
             <!-- Sidebar toggle always visible -->
             <div
-                class="flex items-center justify-center border-l border-gray-300 transition-all duration-200 ease-in-out overflow-hidden min-h-[52px] min-w-16"
+                class="flex min-h-[52px] min-w-16 items-center justify-center overflow-hidden border-l border-gray-300 transition-all duration-200 ease-in-out"
                 [class.opacity-0]="showSidebar"
                 [class.translate-x-full]="showSidebar"
                 [class.max-w-0]="showSidebar"
@@ -27,7 +34,7 @@
                 [class.min-w-0]="showSidebar"
                 data-testId="sidebar-toggle">
                 <button
-                    class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only transition-all duration-200 ease-in-out [&_rect]:stroke-[var(--color-palette-primary)] [&_path]:fill-[var(--color-palette-primary)]"
+                    class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only transition-all duration-200 ease-in-out [&_path]:fill-primary-500 [&_rect]:stroke-primary-500"
                     (click)="$store.toggleSidebar()"
                     data-testId="sidebar-toggle-button">
                     <svg
@@ -57,7 +64,10 @@
         </div>
     </div>
 
-    <div class="flex-1 h-full overflow-y-auto p-6">
-        <dot-content-compare [showActions]="false" [data]="$store.compareData()" />
+    <div class="h-full flex-1 overflow-y-auto p-6">
+        <dot-content-compare
+            [showActions]="false"
+            [reverseColumns]="true"
+            [data]="$store.compareData()" />
     </div>
 </div>

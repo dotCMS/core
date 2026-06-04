@@ -65,7 +65,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field-label');
+            const label = spectator.query('.field label');
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Font Family');
         });

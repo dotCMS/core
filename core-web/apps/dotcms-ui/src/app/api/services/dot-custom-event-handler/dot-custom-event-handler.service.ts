@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
@@ -57,8 +57,10 @@ export class DotCustomEventHandlerService {
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
-                const contentEditorFeatureFlag =
-                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
+                // Accept native boolean true (current backend) or the legacy string 'true'
+                // (N-1 backend during a rollback window).
+                const val = response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+                const contentEditorFeatureFlag = val === true || val === 'true';
 
                 if (!this.handlers) {
                     this.handlers = {
@@ -120,7 +122,14 @@ export class DotCustomEventHandlerService {
                     return this.createContentletLegacy($event);
                 }
 
-                this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+                const queryParams: Params = {};
+                if ($event.detail.data.folderPath) {
+                    queryParams['folderPath'] = $event.detail.data.folderPath;
+                }
+
+                this.router.navigate([`content/new/${$event.detail.data.contentType}`], {
+                    queryParams
+                });
             });
     }
 

@@ -6,3 +6,5 @@ export * from './lib/dot-select-seo-tool/dot-select-seo-tool.component';
 export * from './lib/dot-seo-image-preview/dot-seo-image-preview.component';
 export * from './lib/dot-content-compare/dot-content-compare.component';
 export * from './lib/dot-content-compare/components/dot-content-compare-dialog/dot-content-compare-dialog.component';
+export * from './lib/dot-page-scanner-report/dot-page-scanner-report.component';
+export * from './lib/dot-page-scanner-report/dot-page-scanner.service';

@@ -55,25 +55,44 @@ export function withLock() {
                     return null;
                 }
 
-                const { lockedBy } = contentlet;
+                const { lockedBy, lockedByName } = contentlet;
 
-                const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
-
-                // content is not locked or locked by the current user
-                if (!lockedBy || isLockedByCurrentUser) {
+                if (!lockedBy) {
                     return null;
                 }
 
-                const userDisplay = [lockedBy.firstName, lockedBy.lastName]
-                    .filter(Boolean)
-                    .join(' ');
+                // The `lockedBy` field has two shapes depending on the API endpoint:
+                // a plain string (userId) when `lockedByName` carries the display name,
+                // or a { userId, firstName, lastName } object.
+                // TODO: remove this branching once the backend normalizes the shape across content types.
+                const isLockedByString = typeof lockedBy === 'string';
+                const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
+                const userDisplay = (
+                    isLockedByString
+                        ? (lockedByName ?? '')
+                        : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+                ).trim();
 
-                // If user doesn't have permission to lock, use the no permission message
+                if (currentUser?.userId === lockerUserId) {
+                    return null;
+                }
+
+                // If user doesn't have permission to lock, use the no permission message.
+                // Fall back to the name-less key when the locker's display name is unavailable.
                 if (!userCanLock) {
-                    return dotMessageService.get(
-                        'edit.content.locked.no.permission.user',
-                        userDisplay
-                    );
+                    return userDisplay
+                        ? dotMessageService.get(
+                              'edit.content.locked.no.permission.user',
+                              userDisplay
+                          )
+                        : dotMessageService.get('edit.content.locked.no.permission');
+                }
+
+                // Without a display name, the "Content locked by <b>{name}.</b>" template would
+                // render as "Content locked by ." — suppress the banner instead. The lock switch
+                // UI still indicates the locked state.
+                if (!userDisplay) {
+                    return null;
                 }
 
                 return dotMessageService.get('edit.content.locked.by.user', userDisplay);
@@ -102,9 +121,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -135,9 +164,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

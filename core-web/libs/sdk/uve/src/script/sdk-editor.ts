@@ -2,6 +2,7 @@ import { UVE_MODE } from '@dotcms/types';
 
 import {
     addClassToEmptyContentlets,
+    injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
     scrollHandler,
@@ -15,7 +16,7 @@ import {
     reorderMenu,
     updateNavigation
 } from '../lib/editor/public';
-import { registerStyleEditorSchemas } from '../lib/style-editor/public';
+import { registerStyleEditorSchemas } from '../lib/style-editor/internal';
 
 declare global {
     interface Window {
@@ -42,4 +43,5 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     addClassToEmptyContentlets();
     setClientIsReady();
     listenBlockEditorInlineEvent();
+    injectEmptyStateStyles();
 }

@@ -67,7 +67,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field-label');
+            const label = spectator.query('.field label');
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Alignment');
         });
@@ -259,7 +259,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$hasRadioImage()).toBe(true);
-            expect(spectator.query('.form-field .grid')).toBeTruthy();
+            expect(spectator.query('.field .grid')).toBeTruthy();
         });
 
         it('should not detect radio image when no options have imageURL', () => {
@@ -284,7 +284,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$hasRadioImage()).toBe(false);
-            expect(spectator.query('.form-field .grid')).toBeFalsy();
+            expect(spectator.query('.field .grid')).toBeFalsy();
         });
 
         it('should render image radio inputs when hasRadioImage is true', () => {
@@ -311,7 +311,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             );
             spectator.detectChanges();
 
-            const imageInputs = spectator.queryAll('.form-field .grid input[type="radio"]');
+            const imageInputs = spectator.queryAll('.field .grid input[type="radio"]');
             expect(imageInputs.length).toBe(1);
             expect(imageInputs[0].getAttribute('type')).toBe('radio');
         });
@@ -338,7 +338,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
 
             const radioButtons = spectator.queryAll(RadioButton);
             expect(radioButtons.length).toBe(1);
-            expect(spectator.queryAll('.form-field .grid input[type="radio"]').length).toBe(0);
+            expect(spectator.queryAll('.field .grid input[type="radio"]').length).toBe(0);
         });
     });
 
@@ -426,7 +426,7 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             );
             spectator.detectChanges();
 
-            const radioImageGroup = spectator.query('.form-field .grid');
+            const radioImageGroup = spectator.query('.field .grid');
             expect(radioImageGroup).toBeTruthy();
             expect(radioImageGroup?.getAttribute('style')).toContain(
                 'grid-template-columns: repeat(2, 1fr)'

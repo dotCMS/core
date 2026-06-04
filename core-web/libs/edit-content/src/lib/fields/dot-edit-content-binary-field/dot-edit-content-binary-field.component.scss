@@ -16,10 +16,17 @@
     padding: $spacing-1;
     height: 14.4rem;
     min-width: 12.5rem;
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
 
     &:has(.binary-field__actions:empty) {
         gap: 0; // Remove gap when there are no actions, is cleaner than removing the div by logic
     }
+}
+
+.binary-field__container:not(.binary-field__container--disabled):hover {
+    border-color: var(--p-inputtext-hover-border-color);
 }
 
 :host.ng-invalid.ng-touched .binary-field__container {
@@ -57,7 +64,7 @@
 
 .binary-field__drop-zone {
     border: $field-border-size dashed $input-border-color;
-    border-radius: $border-radius-md;
+    border-radius: var(--p-inputtext-border-radius);
     height: 100%;
     flex: 1;
     overflow: auto;
@@ -80,7 +87,7 @@
 }
 
 .binary-field__drop-zone--active {
-    border-radius: $border-radius-md;
+    border-radius: var(--p-inputtext-border-radius);
     border-color: $color-palette-secondary-500;
     background: $white;
     box-shadow: $shadow-l;

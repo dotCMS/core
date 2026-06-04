@@ -10,7 +10,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;

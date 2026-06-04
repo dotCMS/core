@@ -1,0 +1,379 @@
+<p-splitter [panelSizes]="[33, 67]" class="min-h-0 flex-1" [pt]="splitterPt">
+    <!-- LEFT: Query editor + Parameters + Run footer -->
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-hidden">
+            <p-panel
+                [pt]="{
+                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' },
+                    header: { class: 'min-h-14 px-4! py-2!' },
+                    content: { class: 'hidden!' }
+                }"
+                data-testid="query-tool-query-panel">
+                <ng-template pTemplate="header">
+                    <div class="flex items-center gap-1">
+                        <span class="font-semibold">{{ 'queryTool.query.label' | dm }}</span>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            icon="pi pi-question-circle"
+                            [pTooltip]="'queryTool.action.help' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'queryTool.action.help' | dm"
+                            (onClick)="$helpPopover().toggle($event)"
+                            data-testid="query-tool-help-btn" />
+                    </div>
+                </ng-template>
+            </p-panel>
+
+            <ngx-monaco-editor
+                class="min-h-0 flex-1"
+                [ngModel]="store.query()"
+                [options]="QUERY_EDITOR_OPTIONS"
+                (ngModelChange)="onQueryChange($event)"
+                data-testid="query-tool-query-editor" />
+
+            <p-panel
+                [header]="'queryTool.parameters.title' | dm"
+                [toggleable]="true"
+                toggler="header"
+                [collapsed]="!$paramsOpen()"
+                (collapsedChange)="$paramsOpen.set(!$event)"
+                [pt]="{
+                    root: {
+                        class: 'border-x-0! border-b-0! rounded-none! shadow-none! flex-shrink-0 border-t border-surface-200'
+                    },
+                    content: { class: 'p-0!' }
+                }"
+                data-testid="query-tool-params-panel">
+                <ng-template pTemplate="headericons">
+                    <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                </ng-template>
+                <div class="form p-3">
+                    <div class="field">
+                        <label for="query-tool-offset">{{ 'queryTool.param.offset' | dm }}</label>
+                        <p-inputNumber
+                            inputId="query-tool-offset"
+                            [min]="0"
+                            [ngModel]="store.offset()"
+                            (ngModelChange)="store.setOffset($event ?? DEFAULT_OFFSET)"
+                            data-testid="query-tool-offset-input" />
+                    </div>
+                    <div class="field">
+                        <label for="query-tool-limit">{{ 'queryTool.param.limit' | dm }}</label>
+                        <p-inputNumber
+                            inputId="query-tool-limit"
+                            [min]="1"
+                            [ngModel]="store.limit()"
+                            (ngModelChange)="store.setLimit($event ?? DEFAULT_LIMIT)"
+                            data-testid="query-tool-limit-input" />
+                    </div>
+                    <div class="field">
+                        <label for="query-tool-sort">{{ 'queryTool.param.sort' | dm }}</label>
+                        <input
+                            pInputText
+                            id="query-tool-sort"
+                            [ngModel]="store.sort()"
+                            (ngModelChange)="store.setSort($event)"
+                            [placeholder]="'queryTool.param.sort.placeholder' | dm"
+                            class="w-full"
+                            data-testid="query-tool-sort-input" />
+                    </div>
+                    @if (store.isAdmin()) {
+                        <div class="field">
+                            <label for="query-tool-userid">
+                                {{ 'queryTool.param.userId' | dm }}
+                            </label>
+                            <input
+                                pInputText
+                                id="query-tool-userid"
+                                [ngModel]="store.userId()"
+                                (ngModelChange)="store.setUserId($event)"
+                                [placeholder]="'queryTool.param.userId.placeholder' | dm"
+                                class="w-full"
+                                data-testid="query-tool-userid-input" />
+                        </div>
+                    }
+                </div>
+            </p-panel>
+
+            <div
+                class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
+                data-testid="query-tool-run-footer">
+                <p-button
+                    [label]="'queryTool.action.run' | dm"
+                    icon="pi pi-play"
+                    [loading]="store.isLoading()"
+                    (onClick)="onRun()"
+                    data-testid="query-tool-run-btn" />
+            </div>
+        </div>
+    </ng-template>
+
+    <!-- RIGHT: Stats bar + Tabs (Results / Raw) -->
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-hidden">
+            @if (
+                store.status() === ComponentStatus.INIT || store.status() === ComponentStatus.ERROR
+            ) {
+                @let emptyConfig = store.emptyStateConfig();
+                @if (emptyConfig) {
+                    <dot-empty-container
+                        class="flex-1"
+                        [configuration]="emptyConfig"
+                        [hideContactUsLink]="true" />
+                }
+            } @else if (store.isLoading()) {
+                <div class="flex flex-col gap-2 p-4" data-testid="query-tool-loading">
+                    @for (_ of [1, 2, 3, 4, 5]; track $index) {
+                        <p-skeleton height="2.5rem" />
+                    }
+                </div>
+            } @else {
+                <div
+                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
+                    data-testid="query-tool-stats-bar">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
+                        <span>{{ 'queryTool.results.ready' | dm }}</span>
+                        <span class="text-color-secondary mx-1">&middot;</span>
+                        <span class="inline-flex items-center gap-1">
+                            @if (store.resultsSize() > 0) {
+                                {{
+                                    'queryTool.results.showing'
+                                        | dm
+                                            : [
+                                                  store.contentlets().length.toString(),
+                                                  store.resultsSize().toString()
+                                              ]
+                                }}
+                            } @else {
+                                <span class="font-bold text-color">0</span>
+                                {{ 'queryTool.results.count' | dm }}
+                            }
+                        </span>
+                        <span class="text-color-secondary mx-1">&middot;</span>
+                        <span class="inline-flex items-center gap-1">
+                            <span class="font-bold text-color">{{ store.queryTimeMs() ?? 0 }}</span>
+                            {{ 'queryTool.results.timing' | dm }}
+                        </span>
+                    </div>
+                    @if (store.hasLoadedResults()) {
+                        <div class="ml-auto flex items-center gap-2">
+                            <p-button
+                                text
+                                size="small"
+                                [label]="'queryTool.action.share' | dm"
+                                icon="pi pi-chevron-down"
+                                iconPos="right"
+                                (onClick)="toggleExportMenu($event)"
+                                data-testid="query-tool-share-btn" />
+                            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+                            <p-button
+                                [outlined]="true"
+                                size="small"
+                                [label]="'queryTool.action.export' | dm"
+                                icon="pi pi-download"
+                                (onClick)="downloadRawJson()"
+                                data-testid="query-tool-export-btn" />
+                        </div>
+                    }
+                </div>
+
+                @if (store.limitWasCapped()) {
+                    <p-message
+                        severity="warn"
+                        icon="pi pi-exclamation-triangle"
+                        [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
+                        data-testid="query-tool-size-cap-warning">
+                        {{ 'queryTool.results.sizeCapped' | dm: [MAX_RESULTS.toString()] }}
+                    </p-message>
+                }
+
+                <p-tabs
+                    [value]="store.activeTab()"
+                    (valueChange)="onTabChange($event)"
+                    class="flex min-h-0 flex-1 flex-col"
+                    styleClass="h-full flex flex-col">
+                    <p-tablist>
+                        <p-tab value="results" data-testid="query-tool-tab-results">
+                            {{ 'queryTool.results.tab' | dm }}
+                        </p-tab>
+                        <p-tab value="raw" data-testid="query-tool-tab-raw">
+                            {{ 'queryTool.results.raw' | dm }}
+                        </p-tab>
+                    </p-tablist>
+                    <div class="border-t border-surface-200"></div>
+
+                    <p-tabpanels [pt]="tabPanelsPt">
+                        <p-tabpanel value="results" [pt]="tabPanelPt">
+                            @if (store.contentlets().length === 0) {
+                                <dot-empty-container
+                                    class="flex-1"
+                                    [configuration]="noHitsConfig"
+                                    [hideContactUsLink]="true"
+                                    data-testid="query-tool-no-hits" />
+                            } @else {
+                                <p-table
+                                    [value]="store.contentlets()"
+                                    [scrollable]="true"
+                                    scrollHeight="flex"
+                                    [virtualScroll]="true"
+                                    [virtualScrollItemSize]="46"
+                                    [rowHover]="true"
+                                    sortMode="single"
+                                    data-testid="query-tool-results-table">
+                                    <ng-template pTemplate="header">
+                                        <tr>
+                                            <th pSortableColumn="title">
+                                                {{ 'queryTool.table.title' | dm }}
+                                                <p-sortIcon field="title" />
+                                            </th>
+                                            <th pSortableColumn="contentType">
+                                                {{ 'queryTool.table.type' | dm }}
+                                                <p-sortIcon field="contentType" />
+                                            </th>
+                                            <th pSortableColumn="inode">
+                                                {{ 'queryTool.table.inode' | dm }}
+                                                <p-sortIcon field="inode" />
+                                            </th>
+                                            <th pSortableColumn="identifier">
+                                                {{ 'queryTool.table.identifier' | dm }}
+                                                <p-sortIcon field="identifier" />
+                                            </th>
+                                        </tr>
+                                    </ng-template>
+                                    <ng-template pTemplate="body" let-contentlet>
+                                        <tr data-testid="query-tool-result-row">
+                                            <td class="max-w-[280px] truncate">
+                                                <a
+                                                    href="#"
+                                                    class="text-primary hover:underline"
+                                                    [title]="contentlet['title']"
+                                                    (click)="onResultClick(contentlet, $event)"
+                                                    data-testid="query-tool-result-link">
+                                                    {{ contentlet['title'] || contentlet['inode'] }}
+                                                </a>
+                                            </td>
+                                            <td>{{ contentlet['contentType'] }}</td>
+                                            <td class="max-w-[180px]">
+                                                <div class="group flex items-center gap-1">
+                                                    <span
+                                                        class="truncate font-mono text-xs"
+                                                        [title]="contentlet['inode']">
+                                                        {{ contentlet['inode'] }}
+                                                    </span>
+                                                    <p-button
+                                                        text
+                                                        size="small"
+                                                        icon="pi pi-copy"
+                                                        styleClass="opacity-0 group-hover:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                                        [pTooltip]="
+                                                            'queryTool.table.copyInode' | dm
+                                                        "
+                                                        tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'queryTool.table.copyInode' | dm
+                                                        "
+                                                        (onClick)="
+                                                            copyToClipboard(contentlet['inode'])
+                                                        "
+                                                        data-testid="query-tool-copy-inode" />
+                                                </div>
+                                            </td>
+                                            <td class="max-w-[180px]">
+                                                <div class="group flex items-center gap-1">
+                                                    <span
+                                                        class="truncate font-mono text-xs"
+                                                        [title]="contentlet['identifier']">
+                                                        {{ contentlet['identifier'] }}
+                                                    </span>
+                                                    <p-button
+                                                        text
+                                                        size="small"
+                                                        icon="pi pi-copy"
+                                                        styleClass="opacity-0 group-hover:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                                        [pTooltip]="
+                                                            'queryTool.table.copyIdentifier' | dm
+                                                        "
+                                                        tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'queryTool.table.copyIdentifier' | dm
+                                                        "
+                                                        (onClick)="
+                                                            copyToClipboard(
+                                                                contentlet['identifier']
+                                                            )
+                                                        "
+                                                        data-testid="query-tool-copy-identifier" />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </ng-template>
+                                </p-table>
+                            }
+                        </p-tabpanel>
+
+                        <p-tabpanel value="raw" [pt]="tabPanelPt">
+                            <ngx-monaco-editor
+                                class="h-full"
+                                [ngModel]="store.rawJson()"
+                                [options]="RAW_EDITOR_OPTIONS"
+                                data-testid="query-tool-raw-editor" />
+                        </p-tabpanel>
+                    </p-tabpanels>
+                </p-tabs>
+            }
+        </div>
+    </ng-template>
+</p-splitter>
+
+<p-popover
+    #helpPopoverEl
+    data-testid="query-tool-help-popover"
+    [pt]="{ content: { style: { overflow: 'visible' } } }">
+    <div class="flex w-[600px] flex-col">
+        <p class="m-0 pb-3 text-sm font-semibold text-color">
+            {{ 'queryTool.help.title' | dm }}
+        </p>
+        <div class="flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
+            @for (example of helpExamples; track $index) {
+                <div
+                    class="rounded-lg border border-surface-200"
+                    data-testid="query-tool-help-example">
+                    <div
+                        class="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-3 py-2">
+                        <span class="text-sm font-semibold text-color">
+                            {{ example.title | dm }}
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <p-button
+                                text
+                                size="small"
+                                icon="pi pi-copy"
+                                [label]="'queryTool.help.copy' | dm"
+                                (onClick)="copyToClipboard(example.query)"
+                                data-testid="query-tool-help-copy-btn" />
+                            <p-button
+                                text
+                                size="small"
+                                [label]="'queryTool.help.copyToEditor' | dm"
+                                (onClick)="useExample(example.query)"
+                                data-testid="query-tool-help-use-btn" />
+                        </div>
+                    </div>
+                    @if (example.description) {
+                        <p
+                            class="text-color-secondary m-0 border-b border-surface-200 bg-white px-3 py-2 text-xs">
+                            {{ example.description | dm }}
+                        </p>
+                    }
+                    <pre
+                        class="m-0 overflow-x-auto border-0 bg-surface-50 p-3 font-mono text-xs text-color"
+                        >{{ example.query }}</pre
+                    >
+                </div>
+            }
+        </div>
+    </div>
+</p-popover>

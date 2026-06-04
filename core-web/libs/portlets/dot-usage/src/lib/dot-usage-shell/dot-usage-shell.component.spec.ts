@@ -42,8 +42,7 @@ describe('DotUsageShellComponent', () => {
                     displayLabel: 'usage.metric.LANGUAGES_COUNT'
                 }
             }
-        },
-        lastUpdated: '2024-01-15T15:30:00Z'
+        }
     };
 
     const createMockService = () => ({
@@ -127,23 +126,6 @@ describe('DotUsageShellComponent', () => {
         expect(spectator.query(byTestId('content-CONTENTLETS_COUNT-card'))).toBeTruthy();
         expect(spectator.query(byTestId('user-USERS_COUNT_OF_USERS-card'))).toBeTruthy();
         expect(spectator.query(byTestId('system-LANGUAGES_COUNT-card'))).toBeTruthy();
-    });
-
-    it('should handle refresh button click', () => {
-        // Reset call count before test
-        (usageService.getSummary as jest.Mock).mockClear();
-        const refreshButton = spectator.query(byTestId('refresh-button'));
-        expect(refreshButton).toBeTruthy();
-
-        // PrimeNG buttons use onClick event, not native click
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-
-        expect(usageService.getSummary).toHaveBeenCalled();
     });
 
     it('should handle retry button click', () => {
@@ -232,17 +214,6 @@ describe('DotUsageShellComponent', () => {
         expect(spectator.query(byTestId('message-content'))).toBeTruthy();
     });
 
-    it('should display last updated timestamp when data is loaded', () => {
-        spectator.component.loading.set(false);
-        spectator.component.summary.set(mockSummary);
-        spectator.component.lastUpdated.set(new Date('2024-01-15T15:30:00Z'));
-        spectator.detectChanges();
-
-        // Check that last updated is displayed in toolbar
-        const toolbar = spectator.query('p-toolbar');
-        expect(toolbar).toBeTruthy();
-    });
-
     it('should format metric value correctly for string values', () => {
         const stringValue = 'N/A';
         expect(spectator.component.formatMetricValue(stringValue)).toBe('N/A');
@@ -329,37 +300,5 @@ describe('DotUsageShellComponent', () => {
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         }
-    });
-
-    it('should handle multiple refresh calls correctly', () => {
-        // Reset call count before test
-        (usageService.getSummary as jest.Mock).mockClear();
-
-        const refreshButton = spectator.query(byTestId('refresh-button'));
-        expect(refreshButton).toBeTruthy();
-
-        // PrimeNG buttons use onClick event, not native click
-        // Click refresh multiple times
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-
-        // Should call getSummary for each click
-        expect(usageService.getSummary).toHaveBeenCalledTimes(3);
     });
 });

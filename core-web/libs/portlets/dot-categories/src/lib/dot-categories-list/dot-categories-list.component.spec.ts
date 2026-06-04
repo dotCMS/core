@@ -366,7 +366,7 @@ describe('DotCategoriesListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'categories.add.category',
-                    width: '500px',
+                    width: '700px',
                     data: { parentName: null },
                     closable: true,
                     closeOnEscape: true
@@ -442,7 +442,7 @@ describe('DotCategoriesListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'categories.edit.category',
-                    width: '500px',
+                    width: '700px',
                     data: { category },
                     closable: true,
                     closeOnEscape: true
@@ -520,7 +520,7 @@ describe('DotCategoriesListComponent', () => {
             expect(openSpy).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
-                    width: '500px',
+                    width: '700px',
                     data: { parentInode: null },
                     closable: true,
                     closeOnEscape: true,

@@ -343,6 +343,10 @@ describe('DotContentCompareTableComponent', () => {
             const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
         });
+        it('should show data.compare as the initially selected version in the dropdown', () => {
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
+            expect(dropdown.value).toEqual(dotContentCompareTableDataMock.compare);
+        });
         it('should show selectButton', () => {
             const select: SelectButton = de.query(
                 By.css('[data-testId="show-diff"]')

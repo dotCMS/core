@@ -6,6 +6,7 @@ import {
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
+import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
 
 /**
  * Custom hook to manage the editable state of a DotCMS page.
@@ -121,6 +122,10 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
         // And wait for the UVE to resolve the page
         if (pageURI) {
             updateNavigation(pageURI);
+        }
+
+        if (pageResponse.styleEditorSchemas?.length) {
+            registerStyleEditorSchemas(pageResponse.styleEditorSchemas);
         }
 
         return () => {

@@ -1,4 +1,5 @@
 // Components (now standalone)
+export * from './lib/components/dot-color-icon/dot-color-icon.component';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 // Components
@@ -82,6 +83,9 @@ export * from './lib/validators/dotValidators';
 
 // Animations
 export * from './lib/animations/fade.animations';
+
+// Monaco editor presets
+export * from './lib/monaco/editor-options';
 
 // Theme
 export * from './lib/theme';

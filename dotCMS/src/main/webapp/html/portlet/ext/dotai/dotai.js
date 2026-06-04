@@ -87,7 +87,10 @@ const reinitializeDatabase = async () => {
         .then(response => response.json())
         .then(data => {
             document.getElementById("indexingMessages").innerHTML = "DB dropped/created:" + data.created;
-            setTimeout(tab2, 4000);
+            refreshIndexes().then(() => {
+                writeIndexesToDropdowns();
+                writeIndexManagementTable();
+            });
         });
 };
 
@@ -124,53 +127,98 @@ const writeIndexesToDropdowns = async () => {
 
 const writeModelToDropdown = async () => {
     const modelName = document.getElementById("modelName");
-    let options = modelName.getElementsByTagName('option');
+    modelName.innerHTML = '<option disabled value="">Select a Model</option>';
 
-    for (i = 1; i < options.length; i++) {
-        indexName.removeChild(options[i]);
+    let models = [];
+    try {
+        const providerConfig = JSON.parse(dotAiState.config.providerConfig);
+        const chatModel = providerConfig?.chat?.model ?? '';
+        models = chatModel.split(',').map(m => m.trim()).filter(m => m.length > 0);
+    } catch (e) {
+        console.error('[DotAI] writeModelToDropdown: providerConfig missing or not valid JSON', e);
     }
 
-    for (i = 0; i < dotAiState.config.availableModels.length; i++) {
-        if (dotAiState.config.availableModels[i].type !== 'TEXT') {
-            continue;
-        }
-
-        const newOption = document.createElement("option");
-        newOption.value = dotAiState.config.availableModels[i].name;
-        newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i].current) {
-            newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
-        }
-        modelName.appendChild(newOption);
+    if (models.length === 0) {
+        console.warn('[DotAI] writeModelToDropdown: models is empty, dropdown will not be populated');
     }
+
+    models.forEach((model, index) => {
+        const opt = document.createElement("option");
+        opt.value = model;
+        opt.text = index === 0 ? `${model} (default)` : model;
+        if (index === 0) opt.selected = true;
+        modelName.appendChild(opt);
+    });
 };
 
 
 const writeConfigTable = async () => {
-
-    const configTable = document.getElementById("configTable")
-    //console.log("config", dotAiState.config)
-
+    const configTable = document.getElementById("configTable");
     configTable.innerHTML = "";
 
-    const table = document.createElement("table");
-    table.className = "propTable";
-    configTable.appendChild(table);
+    const cfg = dotAiState.config ?? {};
 
-    for (const [key, value] of Object.entries(dotAiState.config)) {
-        //console.log(key)
-        const tr = document.createElement("tr");
-        tr.style.borderBottom = "1px solid #eeeeee"
-        const th = document.createElement("th");
-        th.className = "propTh";
-        const td = document.createElement("td");
-        td.className = "propTd";
-        table.appendChild(tr)
-        tr.appendChild(th);
-        tr.appendChild(td);
-        th.innerHTML = key;
-        td.innerHTML = value;
+    // configHost — informational label
+    if (cfg.configHost) {
+        const hostLabel = document.createElement("p");
+        hostLabel.style.color = "#666";
+        hostLabel.style.marginBottom = "16px";
+        hostLabel.innerText = "Config host: " + cfg.configHost;
+        configTable.appendChild(hostLabel);
+    }
+
+    // providerConfig — pretty-printed JSON block
+    const raw = cfg.providerConfig;
+    if (raw) {
+        const heading = document.createElement("h4");
+        heading.innerText = "Provider Config";
+        heading.style.marginBottom = "8px";
+        configTable.appendChild(heading);
+
+        const pre = document.createElement("pre");
+        pre.style.background = "#f5f5f5";
+        pre.style.border = "1px solid #ddd";
+        pre.style.borderRadius = "6px";
+        pre.style.padding = "16px";
+        pre.style.overflowX = "auto";
+        pre.style.fontFamily = "monospace";
+        pre.style.fontSize = "13px";
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.wordBreak = "break-word";
+        pre.style.marginBottom = "24px";
+        try {
+            pre.innerText = JSON.stringify(JSON.parse(raw), null, 2);
+        } catch {
+            pre.innerText = raw;
+        }
+        configTable.appendChild(pre);
+    }
+
+    // settings — flat table with resolved/default values
+    const settings = cfg.settings;
+    if (settings && typeof settings === 'object') {
+        const heading = document.createElement("h4");
+        heading.innerText = "Resolved Settings (including defaults)";
+        heading.style.marginBottom = "8px";
+        configTable.appendChild(heading);
+
+        const table = document.createElement("table");
+        table.className = "propTable";
+        configTable.appendChild(table);
+
+        for (const [key, value] of Object.entries(settings)) {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #eeeeee";
+            const th = document.createElement("th");
+            th.className = "propTh";
+            const td = document.createElement("td");
+            td.className = "propTd";
+            th.innerText = key;
+            td.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+            tr.appendChild(th);
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
     }
 };
 
@@ -399,7 +447,7 @@ const showResultTables = () => {
         document.getElementById("answerChat").style.display = "none";
         document.getElementById("semanticSearchResults").style.display = "block";
     } else {
-        const prompt = "Current Prompt: \n\n" + dotAiState.config["com.dotcms.ai.completion.text.prompt"];
+        const prompt = "Current Prompt: \n\n" + dotAiState.config?.settings?.completionTextPrompt;
         document.getElementById("answerChat").placeholder = prompt.replaceAll('\\n', '\n').replaceAll("\\\"", "\"")
         document.getElementById("answerChat").style.display = "block";
         document.getElementById("semanticSearchResults").style.display = "none";
@@ -473,6 +521,9 @@ const loadPrompt = (num) =>{
 }
 
 const doImageJson = () => {
+    if (!document.getElementById("imageForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitImage").style.display = "none";
     document.getElementById("loaderImage").style.display = "block";
     setTimeout(function () {
@@ -520,14 +571,14 @@ const doImageJsonDebounced = async () => {
         const temp =  json.response;
         const width = formData.size.split("x")[0];
         const height = formData.size.split("x")[1];
-        const jsonString=JSON.stringify(json, 2);
+        const jsonString = JSON.stringify(json, null, 2);
         const rewrittenPrompt = json.revised_prompt;
         const imageTemplate =`
-            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;">
+            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;overflow:hidden;">
                 <a href="/dA/${temp}/asset.png" target="_blank">
                     <img src="/dA/${temp}/asset.png" style="max-width:750px;max-height:750px;display: block;margin:auto;"  />
                 </a>
-                
+
                 <div style="padding:1rem;margin:auto;text-align: center">
                     <button id="saveImageButton" class="button dijit dijitReset dijitInline dijitButton"
                             onclick="saveImage('${temp}')">
@@ -535,12 +586,13 @@ const doImageJsonDebounced = async () => {
                     </button><br>
                     <div id="imageSavedMessage">&nbsp;</div>
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;overflow-wrap:break-word;word-break:break-word;">
                     <b>OpenAI Prompt (Rewritten):</b> <br>
                     ${rewrittenPrompt}
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
-                    <b>JSON Response:</b> <br>${jsonString}
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;">
+                    <b>JSON Response:</b>
+                    <pre style="white-space:pre-wrap;word-break:break-word;overflow-x:auto;overflow-y:auto;max-height:300px;margin:0.5rem 0 0 0;font-size:0.85em;">${jsonString}</pre>
                 </div>
             </div>
 
@@ -600,6 +652,9 @@ const clearSaveMessage =() =>{
 
 
 const doSearchChatJson = () => {
+    if (!document.getElementById("chatForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitChat").style.display = "none";
     document.getElementById("loaderChat").style.display = "block";
     setTimeout(function () {
@@ -763,7 +818,12 @@ const doJsonResponse = async (formData) => {
     });
     response.json().then(json => {
         //console.log("json", json)
-        document.getElementById("answerChat").value = json.openAiResponse.choices[0].message.content + "\n\n------\nJSON Response\n------\n" + JSON.stringify(json, null, 2);
+        if (json.error) {
+            document.getElementById("answerChat").value =
+                typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred');
+        } else {
+            document.getElementById("answerChat").value = json.openAiResponse.choices[0].message.content + "\n\n------\nJSON Response\n------\n" + JSON.stringify(json, null, 2);
+        }
     });
     resetLoader();
 }
@@ -807,7 +867,14 @@ const doChatResponse = async (formData) => {
                 try {
                     const json = JSON.parse(line);
                     line = "";
-                    const value = json.choices[0].delta.content;
+                    if (json.error || json.message) {
+                        const errMsg = json.error
+                            ? (typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred'))
+                            : json.message;
+                        document.getElementById("answerChat").value = errMsg;
+                        continue;
+                    }
+                    const value = json.choices?.[0]?.delta?.content;
                     if (value === undefined) {
                         continue;
                     }
@@ -881,30 +948,42 @@ const doSearch = async (formData) => {
             table.append(tr)
 
 
-            data.dotCMSResults.map(row => {
-                //console.log("row", row)
+            if (data.dotCMSResults.length === 0) {
                 tr = document.createElement("tr");
-                tr.style.borderBottom = "1px solid #eeeeee"
-                td1 = document.createElement("td");
+                const tdEmpty = document.createElement("td");
+                tdEmpty.colSpan = 4;
+                tdEmpty.style.textAlign = "center";
+                tdEmpty.style.padding = "20px";
+                tdEmpty.style.color = "gray";
+                tdEmpty.innerText = "No matching content found in the index for your query.";
+                tr.append(tdEmpty);
+                table.append(tr);
+            } else {
+                data.dotCMSResults.map(row => {
+                    //console.log("row", row)
+                    tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #eeeeee"
+                    td1 = document.createElement("td");
 
-                td2 = document.createElement("td");
-                td2.style.textAlign = "center"
-                td3 = document.createElement("td");
-                td3.style.textAlign = "center"
-                td4 = document.createElement("td");
-                td4.style.minWidth = "400px;"
+                    td2 = document.createElement("td");
+                    td2.style.textAlign = "center"
+                    td3 = document.createElement("td");
+                    td3.style.textAlign = "center"
+                    td4 = document.createElement("td");
+                    td4.style.minWidth = "400px;"
 
-                td1.innerHTML = `<a href="/dotAdmin/#/c/content/${row.inode}" target="_top">${row.title}</a>`;
-                td2.innerHTML = row.matches.length;
-                td3.innerHTML = parseFloat(row.matches[0].distance).toFixed(2);
-                td4.innerHTML = truncateString(row.matches[0].extractedText, 200);
+                    td1.innerHTML = `<a href="/dotAdmin/#/c/content/${row.inode}" target="_top">${row.title}</a>`;
+                    td2.innerHTML = row.matches.length;
+                    td3.innerHTML = parseFloat(row.matches[0].distance).toFixed(2);
+                    td4.innerHTML = truncateString(row.matches[0].extractedText, 200);
 
-                tr.append(td1);
-                tr.append(td2);
-                tr.append(td3);
-                tr.append(td4);
-                table.append(tr)
-            })
+                    tr.append(td1);
+                    tr.append(td2);
+                    tr.append(td3);
+                    tr.append(td4);
+                    table.append(tr)
+                });
+            }
             resetLoader()
         })
 };

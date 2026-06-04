@@ -60,33 +60,32 @@ public class Xss {
     }
 
     /**
-     * Checks into the request query string for possible XSS hacks and return true if any possible XSS fragment is found.
+     * Checks the request query string for possible XSS hacks.
      *
-     * @param request
-     * @return true if any possible XSS fragment is found
+     * @param request the incoming HTTP request
+     * @return {@code true} if any possible XSS fragment is found in the query string
      */
-    public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
-        return ParamsHaveXSS( request.getQueryString() );
+    public static boolean paramsHaveXSS ( final HttpServletRequest request ) {
+        return paramsHaveXSS( request.getQueryString() );
     }
 
     /**
-     * Checks into a given query string for possible XSS hacks and return true if any possible XSS fragment is found.
+     * Checks the given query string for possible XSS hacks.
      *
-     * @param queryString
-     * @return true if any possible XSS fragment is found
+     * @param queryString the raw query string to inspect
+     * @return {@code true} if any possible XSS fragment is found
      */
-    public static boolean ParamsHaveXSS ( String queryString ) {
-        queryString = UtilMethods.decodeURL( queryString );
-        return RegEX.contains( queryString, XSS_REGEXP_PATTERN );
+    public static boolean paramsHaveXSS ( final String queryString ) {
+        return RegEX.contains( UtilMethods.decodeURL( queryString ), XSS_REGEXP_PATTERN );
     }
 
     /**
-     * Checks in the given uri for possible XSS hacks and return true if any possible XSS fragment is found.
+     * Checks the given URI for possible XSS hacks.
      *
-     * @param uri
-     * @return true if any possible XSS fragment is found
+     * @param uri the URI to inspect
+     * @return {@code true} if any possible XSS fragment is found
      */
-    public static boolean URIHasXSS ( String uri ) {
+    public static boolean uriHasXSS ( final String uri ) {
         if ( uri == null ) {
             return false;
         }
@@ -94,17 +93,42 @@ public class Xss {
     }
 
     /**
-     * Checks in the given url for possible XSS hacks and return true if any possible XSS fragment is found.
+     * Checks the given URL for possible XSS hacks.
      *
-     * @param url
-     * @return true if any possible XSS fragment is found
-     * @deprecated Use {@link #URIHasXSS(String)} and {@link #ParamsHaveXSS(String)} individually.
+     * @param url the URL to inspect
+     * @return {@code true} if any possible XSS fragment is found
+     * @deprecated Use {@link #uriHasXSS(String)} and {@link #paramsHaveXSS(String)} individually.
      */
-    public static boolean URLHasXSS ( String url ) {
+    @Deprecated
+    public static boolean urlHasXSS ( final String url ) {
         if ( url == null ) {
             return false;
         }
         return RegEX.contains( url, XSS_REGEXP_PATTERN );
+    }
+
+    /** @deprecated Use {@link #paramsHaveXSS(HttpServletRequest)} */
+    @Deprecated
+    public static boolean ParamsHaveXSS ( final HttpServletRequest request ) {
+        return paramsHaveXSS( request );
+    }
+
+    /** @deprecated Use {@link #paramsHaveXSS(String)} */
+    @Deprecated
+    public static boolean ParamsHaveXSS ( final String queryString ) {
+        return paramsHaveXSS( queryString );
+    }
+
+    /** @deprecated Use {@link #uriHasXSS(String)} */
+    @Deprecated
+    public static boolean URIHasXSS ( final String uri ) {
+        return uriHasXSS( uri );
+    }
+
+    /** @deprecated Use {@link #urlHasXSS(String)} */
+    @Deprecated
+    public static boolean URLHasXSS ( final String url ) {
+        return urlHasXSS( url );
     }
 
     /**

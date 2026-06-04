@@ -23,14 +23,21 @@
         
         if (!newSlug || newSlug === currentValue) {
             suggestion.style.display = 'none';
+            suggestion.innerHTML = '';
             return;
         }
 
-        suggestion.innerHTML = `
-            <a href="#" onclick="applySuggestion('${newSlug}'); return false">
-                Use: ${newSlug}
-            </a>
-        `;
+        suggestion.innerHTML = '';
+
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = `Use: ${newSlug}`;
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            applySuggestion(newSlug);
+        });
+
+        suggestion.appendChild(link);
         suggestion.style.display = 'block';
     };
 
@@ -65,13 +72,14 @@
                 const newSlug = slugifyText(value);
                 showSuggestion(newSlug);
         });
+
+        input.addEventListener('keyup', handleInput);
     });
 </script>
 
 <input 
     type="text" 
     id="slugInput" 
-    onkeyup="handleInput()" 
     class="dijitTextBox" 
     style="background:#FAFAFA"
 />

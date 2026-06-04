@@ -29,6 +29,8 @@ export enum EDITOR_STATE {
     DRAGGING = 'dragging',
     SCROLL_DRAG = 'scroll-drag',
     SCROLLING = 'scrolling',
+    /** User is dragging an iframe resize handle. Overlays hide; bounds re-emit on release. */
+    RESIZING = 'resizing',
     INLINE_EDITING = 'inline-editing'
 }
 

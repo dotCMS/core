@@ -105,6 +105,11 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField);
             expect(result).toBe('default value');
         });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField, undefined, true);
+            expect(result).toBeNull();
+        });
     });
 
     describe('textFieldResolutionFn', () => {
@@ -118,9 +123,14 @@ describe('DotEditContentFormResolutions', () => {
             expect(result).toBe('test-value');
         });
 
-        it('should handle null values', () => {
+        it('should return defaultValue when contentlet is null', () => {
             const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
             expect(result).toBe('default value');
+        });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField, undefined, true);
+            expect(result).toBeNull();
         });
 
         it('should remove leading slash from URL field in HTMLPAGE content', () => {
@@ -289,6 +299,41 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field);
             expect(result).toBe('');
         });
+
+        describe('with queryParams', () => {
+            it('should return folderPath from queryParams when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'default/level1/level2/'
+                });
+                expect(result).toBe('default/level1/level2/');
+            });
+
+            it('should return folderPath from queryParams when contentlet is undefined', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField, {
+                    folderPath: 'default/level1/'
+                });
+                expect(result).toBe('default/level1/');
+            });
+
+            it('should prefer folderPath over field defaultValue when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'myhost/folder1/'
+                });
+                expect(result).toBe('myhost/folder1/');
+            });
+
+            it('should fall back to defaultValue when queryParams has no folderPath', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {});
+                expect(result).toBe('default value');
+            });
+
+            it('should ignore queryParams when contentlet has valid hostName and url', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField, {
+                    folderPath: 'default/should-be-ignored/'
+                });
+                expect(result).toBe('https://example.com');
+            });
+        });
     });
 
     describe('categoryResolutionFn', () => {
@@ -317,6 +362,22 @@ describe('DotEditContentFormResolutions', () => {
             delete field.defaultValue;
 
             const result = resolutionValue[FIELD_TYPES.CATEGORY](mockContentlet, field);
+            expect(result).toEqual([]);
+        });
+
+        it('should return empty array when contentlet is null and isManualTranslation is true', () => {
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](null, mockField, undefined, true);
+            expect(result).toEqual([]);
+        });
+
+        it('should return empty array instead of defaultValue when isManualTranslation is true', () => {
+            const contentlet = { ...mockContentlet, testField: 'not-an-array' };
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](
+                contentlet,
+                mockField,
+                undefined,
+                true
+            );
             expect(result).toEqual([]);
         });
     });
@@ -392,6 +453,16 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.SELECT](mockContentlet, mockField);
             expect(result).toBe('Option 2');
         });
+
+        it('should return null when contentlet is null and isManualTranslation is true', () => {
+            const field = createFakeSelectField({
+                values: 'Option 1|1\r\nOption 2|2',
+                defaultValue: 'Option 1',
+                variable: 'testField'
+            });
+            const result = resolutionValue[FIELD_TYPES.SELECT](null, field, undefined, true);
+            expect(result).toBeNull();
+        });
     });
 
     describe('field type mappings', () => {
@@ -466,6 +537,16 @@ describe('DotEditContentFormResolutions', () => {
             it('should return defaultValue when contentlet is null', () => {
                 const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](null, blockField);
                 expect(result).toBe(blockField.defaultValue);
+            });
+
+            it('should return null when contentlet is null and isManualTranslation is true', () => {
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](
+                    null,
+                    blockField,
+                    undefined,
+                    true
+                );
+                expect(result).toBeNull();
             });
         });
 

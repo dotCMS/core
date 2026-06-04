@@ -1,22 +1,25 @@
 @let contentlet = $contentlet();
 
-<!-- Drag handle -->
+<!-- Thumbnail fills full height -->
 <div
-    class="opacity-0 transition-opacity group-hover:opacity-100 text-gray-300 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-4 h-4">
-    <i class="pi pi-ellipsis-v text-[14px]"></i>
-    <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+    class="flex h-full w-20 shrink-0 items-center justify-center overflow-hidden"
+    [ngClass]="
+        $isIconThumbnail()
+            ? 'bg-gray-100 group-hover:bg-(--color-palette-primary-200) group-hover:[--gray-700:var(--color-palette-primary-600)]'
+            : ''
+    ">
+    <!-- group-hover:[--gray-700:...] overrides the CSS variable used internally by
+         dot-contentlet-thumbnail > dot-contentlet-icon (shadow DOM) for icon color -->
+    <dot-contentlet-thumbnail
+        data-testid="contentlet-thumbnail"
+        class="pointer-events-none size-full *:size-full [&_img]:size-full [&_img]:object-cover"
+        [contentlet]="contentlet"
+        [iconSize]="'32px'" />
 </div>
 
-<!-- Contentlet icon and name -->
-<div class="flex min-w-0 flex-1 items-center gap-2">
-    <div
-        class="h-9 w-[54px] min-w-[54px] shrink-0 overflow-hidden rounded-sm flex items-center justify-center">
-        <dot-contentlet-thumbnail
-            class="pointer-events-none"
-            [contentlet]="contentlet"
-            [iconSize]="'24px'" />
-    </div>
-    <div class="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-gray-800">
-        {{ contentlet.title }}
-    </div>
+<!-- Title -->
+<div
+    data-testid="contentlet-title"
+    class="min-w-0 flex-1 truncate pr-2 pl-3 text-sm leading-tight text-gray-800 group-hover:text-(--color-palette-primary-700)">
+    {{ contentlet.title }}
 </div>

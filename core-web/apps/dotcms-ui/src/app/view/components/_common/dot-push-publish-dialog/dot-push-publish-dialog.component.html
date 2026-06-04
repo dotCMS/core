@@ -2,6 +2,7 @@
     [(visible)]="dialogShow"
     [header]="eventData?.title"
     [modal]="true"
+    [draggable]="false"
     [style]="{ width: '35rem' }"
     (visibleChange)="close()">
     @if (eventData) {

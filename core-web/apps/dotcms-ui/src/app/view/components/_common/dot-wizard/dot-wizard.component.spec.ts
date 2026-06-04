@@ -302,6 +302,13 @@ describe('DotWizardComponent', () => {
             expect(transform).toEqual('translateX(-400px)');
         }));
 
+        it('should notify the service on dismiss so leaked subscriptions unsubscribe', fakeAsync(() => {
+            const cancelSpy = jest.spyOn(dotWizardService, 'cancel');
+            spectator.component.close();
+            tick(0);
+            expect(cancelSpy).toHaveBeenCalledTimes(1);
+        }));
+
         it('should update transform property on previous', fakeAsync(() => {
             form1.valid.emit(true);
             form2.valid.emit(true);

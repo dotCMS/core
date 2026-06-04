@@ -105,9 +105,21 @@ export enum DotCMSUVEAction {
      */
     SET_BOUNDS = 'set-bounds',
     /**
-     * Send the information of the hovered contentlet
+     * Send the information of a *hovered* contentlet (fires on pointermove).
+     * The editor uses this to render the transient hover overlay around the
+     * contentlet under the cursor. Pairs with {@link SET_SELECTED_CONTENTLET}
+     * for clicks. The name is kept as `SET_CONTENTLET` for backwards
+     * compatibility with external SDK consumers — semantically it is
+     * "set hovered contentlet".
      */
     SET_CONTENTLET = 'set-contentlet',
+    /**
+     * Send the information of a contentlet that was *clicked* inside the iframe.
+     * The editor uses this to promote the clicked contentlet to "selected"
+     * (persistent action toolbar + opens the quick-edit panel). Pairs with
+     * {@link SET_CONTENTLET} which handles hover.
+     */
+    SET_SELECTED_CONTENTLET = 'set-selected-contentlet',
     /**
      * Tell the editor that the page is being scrolled
      */
@@ -154,13 +166,21 @@ export enum DotCMSUVEAction {
      */
     REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
     /**
+     * Tell the editor to report the iframe height
+     */
+    IFRAME_HEIGHT = 'iframe-height',
+    /**
      * Tell the editor to create a contentlet without adding it to the page
      */
     CREATE_CONTENTLET = 'create-contentlet',
     /**
      * Tell the editor to do nothing
      */
-    NOOP = 'noop'
+    NOOP = 'noop',
+    /**
+     * Report the offsetTop of a page section so the editor can scroll to it
+     */
+    SECTION_OFFSET = 'section-offset'
 }
 
 /**
@@ -186,11 +206,6 @@ export enum UVEEventType {
     PAGE_RELOAD = 'page-reload',
 
     /**
-     * Triggered when the editor requests container bounds
-     */
-    REQUEST_BOUNDS = 'request-bounds',
-
-    /**
      * Triggered when scroll action is needed inside the iframe
      */
     IFRAME_SCROLL = 'iframe-scroll',
@@ -198,7 +213,42 @@ export enum UVEEventType {
     /**
      * Triggered when a contentlet is hovered
      */
-    CONTENTLET_HOVERED = 'contentlet-hovered'
+    CONTENTLET_HOVERED = 'contentlet-hovered',
+
+    /**
+     * Triggered when a contentlet is clicked (capture-phase `click` event on
+     * its element). Used by the editor to promote the clicked contentlet to
+     * "selected" without the editor having to capture pointer events on its
+     * hover overlay.
+     */
+    CONTENTLET_CLICKED = 'contentlet-clicked',
+
+    /**
+     * Triggered when the editor requests a scroll to a specific page section
+     * @internal
+     */
+    SCROLL_TO_SECTION = 'scroll-to-section',
+
+    /**
+     * Triggered when the editor clears its selection (resize, scroll, navigation).
+     * The SDK uses this to reset its "last selected" tracker so a subsequent click
+     * on the same contentlet re-emits CONTENTLET_CLICKED instead of being treated
+     * as a passthrough.
+     * @internal
+     */
+    SELECTION_CLEARED = 'selection-cleared',
+
+    /**
+     * The single bounds-sync channel. The SDK observes the iframe document
+     * and every `[data-dot-object="container"]` with a debounced
+     * ResizeObserver and emits the full page bounds whenever the layout
+     * settles (sidebar open/close, device/zoom change, media-query
+     * reflows, image/font load shifts, scroll, etc.). The editor can
+     * also send a UVE_FLUSH_BOUNDS message to bypass the debounce when it
+     * needs an immediate snapshot (drag/drop dropzone).
+     * @internal
+     */
+    AUTO_BOUNDS = 'auto-bounds'
 }
 
 /**
@@ -207,10 +257,13 @@ export enum UVEEventType {
 export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
-    [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
+    [UVEEventType.CONTENTLET_CLICKED]: unknown;
+    [UVEEventType.SCROLL_TO_SECTION]: { sectionIndex: number };
+    [UVEEventType.SELECTION_CLEARED]: undefined;
+    [UVEEventType.AUTO_BOUNDS]: DotCMSContainerBound[];
 };
 
 /**

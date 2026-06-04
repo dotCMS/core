@@ -1,4 +1,5 @@
 @use "variables" as *;
+@use "../shared/material-symbols-outlined";
 
 // @import "forms";
 @use "mixins";
@@ -12,32 +13,6 @@
 @include assistant-font-face(700, "Bold");
 
 @include redhatmono-font-face(400, "Regular");
-
-// MATERIAL DESIGN ICONS
-@font-face {
-    font-family: "Material Icons";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
-}
-
-.material-icons {
-    font-family: "Material Icons", $font-default;
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1;
-    letter-spacing: normal;
-    text-transform: none;
-    display: inline-block;
-    white-space: nowrap;
-    word-wrap: normal;
-    direction: ltr;
-    font-feature-settings: "liga";
-    -webkit-font-feature-settings: "liga";
-    -webkit-font-smoothing: antialiased;
-}
 
 :root {
     --border-radius: 0.375rem; // 6px;
@@ -73,7 +48,7 @@ html {
         "Segoe UI Emoji",
         Segoe UI Symbol;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    line-height: normal;
+    line-height: 1.4rem;
 }
 
 // html {
@@ -129,14 +104,6 @@ However this is for the dragula we use in the angular components the one in the 
 }
 .gu-unselectable {
     user-select: none !important;
-}
-
-code {
-    color: $color-accessible-text-purple !important;
-    background-color: $color-accessible-text-purple-bg;
-    padding: $spacing-0 $spacing-1;
-    font-family: $font-code;
-    line-break: anywhere;
 }
 
 .dot-mask {

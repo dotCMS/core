@@ -203,7 +203,6 @@ describe('DotTagsListComponent', () => {
                 const menuItems = spectator.component.addTagMenuItems;
                 expect(menuItems).toHaveLength(1);
                 expect(menuItems[0].label).toBe('tags.import');
-                expect(menuItems[0].icon).toBe('pi pi-upload');
             });
 
             it('should call openCreateDialog when split button main action clicked', () => {
@@ -345,7 +344,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.add.tag',
-                    width: '400px',
+                    width: '700px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,
@@ -398,7 +397,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.edit.tag',
-                    width: '400px',
+                    width: '700px',
                     data: { tag },
                     closable: true,
                     closeOnEscape: true,
@@ -506,7 +505,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.import.header',
-                    width: '600px',
+                    width: '700px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,

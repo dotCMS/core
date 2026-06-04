@@ -1150,7 +1150,7 @@ public class VanityUrlAPITest {
                 .nextPersistedAndPublish();
 
         final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
-                "/Testing", 200);
+                "/Testing", 200, false);
 
         assertEquals(2, byForward.size());
 
@@ -1213,7 +1213,7 @@ public class VanityUrlAPITest {
                 .nextPersistedAndPublish();
 
         final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
-                "/Testing", 200);
+                "/Testing", 200, false);
 
         assertEquals(1, byForward.size());
 
@@ -1282,7 +1282,7 @@ public class VanityUrlAPITest {
                 .nextPersistedAndPublish();
 
         final List<CachedVanityUrl> byForward = APILocator.getVanityUrlAPI().findByForward(host, language,
-                "/Testing", 200);
+                "/Testing", 200, false);
 
         assertTrue(byForward.isEmpty());
     }

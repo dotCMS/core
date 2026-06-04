@@ -1,0 +1,191 @@
+<dot-editor-popover popoverId="link">
+    <div
+        [attr.aria-label]="
+            (isEditing()
+                ? 'dot.block.editor.dialog.link.aria-label.edit'
+                : 'dot.block.editor.dialog.link.aria-label.insert'
+            ) | dm
+        "
+        class="w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+        <div class="flex flex-col gap-3 p-4" (keydown.enter)="$event.preventDefault(); onInsert()">
+            <p class="m-0 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                {{
+                    (isEditing()
+                        ? 'dot.block.editor.dialog.link.title.edit'
+                        : 'dot.block.editor.dialog.link.title.insert'
+                    ) | dm
+                }}
+            </p>
+
+            <div class="flex flex-col gap-1">
+                <label for="link-url" class="text-xs font-medium text-gray-700">
+                    {{ 'dot.block.editor.dialog.link.field.url.label' | dm }}
+                </label>
+                <p-autoComplete
+                    inputId="link-url"
+                    appendTo="body"
+                    optionLabel="url"
+                    [size]="'small'"
+                    [ngModel]="linkModel()"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="onLinkModelChange($event)"
+                    [suggestions]="suggestions()"
+                    [minLength]="1"
+                    [delay]="250"
+                    [showEmptyMessage]="!isExternalUrl()"
+                    [emptyMessage]="'dot.block.editor.dialog.link.search.empty' | dm"
+                    [placeholder]="'dot.block.editor.dialog.link.field.url.placeholder' | dm"
+                    [panelStyle]="{ width: '18rem', minWidth: '18rem', maxWidth: '18rem' }"
+                    (completeMethod)="onComplete($event)"
+                    (onSelect)="onSelectPage($event)"
+                    styleClass="w-full"
+                    inputStyleClass="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none"
+                    data-testid="link-url-autocomplete">
+                    <ng-template let-item pTemplate="item">
+                        <div
+                            class="flex min-w-0 items-center gap-2 py-1"
+                            data-testid="link-url-suggestion">
+                            @if (item.hasTitleImage && item.inode) {
+                                <img
+                                    [src]="'/dA/' + item.inode"
+                                    alt=""
+                                    class="size-8 shrink-0 rounded-sm object-cover" />
+                            } @else {
+                                <span
+                                    aria-hidden="true"
+                                    class="material-symbols-outlined shrink-0 text-gray-400">
+                                    description
+                                </span>
+                            }
+                            <div class="flex min-w-0 flex-col">
+                                <span
+                                    class="truncate text-sm font-medium text-gray-800"
+                                    data-testid="link-url-suggestion-name">
+                                    {{ item.name }}
+                                </span>
+                                <span
+                                    class="truncate text-xs text-gray-500"
+                                    data-testid="link-url-suggestion-url">
+                                    {{ item.url }}
+                                </span>
+                            </div>
+                        </div>
+                    </ng-template>
+                </p-autoComplete>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label for="link-text" class="text-xs font-medium text-gray-700">
+                    {{ 'dot.block.editor.dialog.link.field.text.label' | dm }}
+                    <span class="font-normal text-gray-400">
+                        {{ 'dot.block.editor.dialog.link.field.text.optional' | dm }}
+                    </span>
+                </label>
+                <input
+                    pInputText
+                    id="link-text"
+                    type="text"
+                    [formControl]="form.controls.displayText"
+                    [placeholder]="'dot.block.editor.dialog.link.field.text.placeholder' | dm"
+                    pSize="small"
+                    class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+            </div>
+
+            <label class="flex cursor-pointer items-center gap-2" for="open-in-new-tab">
+                <input
+                    id="open-in-new-tab"
+                    type="checkbox"
+                    [formControl]="form.controls.openInNewTab"
+                    class="size-4 shrink-0 rounded-sm border border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+                <span class="text-sm text-gray-700">
+                    {{ 'dot.block.editor.dialog.link.field.new-tab' | dm }}
+                </span>
+            </label>
+
+            <button
+                type="button"
+                [attr.aria-expanded]="advancedOpen()"
+                aria-controls="link-advanced-section"
+                data-testid="link-advanced-toggle"
+                (mousedown)="$event.preventDefault(); toggleAdvanced()"
+                class="flex items-center gap-1 self-start rounded-sm text-xs font-medium text-gray-600 hover:text-indigo-700 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                <span>{{ 'dot.block.editor.dialog.link.advanced' | dm }}</span>
+                <span aria-hidden="true" class="material-symbols-outlined text-base">
+                    {{ advancedOpen() ? 'expand_less' : 'expand_more' }}
+                </span>
+            </button>
+
+            @if (advancedOpen()) {
+                <div id="link-advanced-section" class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label for="link-title" class="text-xs font-medium text-gray-700">
+                            {{ 'dot.block.editor.dialog.link.field.title.label' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="link-title"
+                            type="text"
+                            [formControl]="form.controls.title"
+                            [placeholder]="
+                                'dot.block.editor.dialog.link.field.title.placeholder' | dm
+                            "
+                            pSize="small"
+                            class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label for="link-aria-label" class="text-xs font-medium text-gray-700">
+                            {{ 'dot.block.editor.dialog.link.field.aria-label.label' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="link-aria-label"
+                            type="text"
+                            [formControl]="form.controls.ariaLabel"
+                            [placeholder]="
+                                'dot.block.editor.dialog.link.field.aria-label.placeholder' | dm
+                            "
+                            pSize="small"
+                            class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label for="link-rel" class="text-xs font-medium text-gray-700">
+                            {{ 'dot.block.editor.dialog.link.field.rel.label' | dm }}
+                        </label>
+                        <p-select
+                            inputId="link-rel"
+                            appendTo="body"
+                            [size]="'small'"
+                            [showClear]="true"
+                            [options]="relOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="
+                                'dot.block.editor.dialog.link.field.rel.placeholder' | dm
+                            "
+                            pSize="small"
+                            [formControl]="form.controls.rel"
+                            [pt]="selectPt" />
+                    </div>
+                </div>
+            }
+
+            <div class="flex justify-end gap-2 pt-1">
+                <button
+                    type="button"
+                    (mousedown)="$event.preventDefault(); manager.close()"
+                    class="rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
+                    {{ 'Cancel' | dm }}
+                </button>
+                <button
+                    type="button"
+                    (mousedown)="$event.preventDefault(); onInsert()"
+                    [disabled]="form.controls.href.invalid"
+                    class="rounded-sm bg-indigo-500 px-4 py-1.5 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+                    {{ (isEditing() ? 'Save' : 'Insert') | dm }}
+                </button>
+            </div>
+        </div>
+    </div>
+</dot-editor-popover>

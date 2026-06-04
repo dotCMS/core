@@ -18,17 +18,24 @@
             <dot-native-field [field]="field" [contentlet]="$contentlet()" />
         }
     </dot-card-field-content>
-    @if (field.hint) {
+    @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {
         <dot-card-field-footer>
-            <div class="flex justify-between items-center">
-                <div class="hint-message">
-                    <small
-                        [attr.data-testId]="'hint-' + field.variable"
-                        data-testid="calendar-field-hint">
-                        {{ field.hint }}
-                    </small>
+            @if (fieldHasError && isRequired) {
+                <small class="p-field-error">
+                    {{ 'dot.edit.content.form.field.required' | dm }}
+                </small>
+            }
+            @if (!fieldHasError && field.hint) {
+                <div class="flex justify-between items-center">
+                    <div class="hint-message">
+                        <small
+                            [attr.data-testId]="'hint-' + field.variable"
+                            data-testid="calendar-field-hint">
+                            {{ field.hint }}
+                        </small>
+                    </div>
                 </div>
-            </div>
+            }
         </dot-card-field-footer>
     }
 </dot-card-field>

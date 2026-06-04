@@ -1,15 +1,15 @@
-import { useIsEditMode } from "@/hooks/isEditMode";
-import { editContentlet } from "@dotcms/uve";
-import Image from "next/image";
+import { useIsEditMode } from '@/hooks/isEditMode';
+import { editContentlet } from '@dotcms/uve';
+import Image from 'next/image';
 
 const dateFormatOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
 };
 
 export default function BlogCard({ blog }) {
-    const { title, image, urlMap, inode, modDate, urlTitle, teaser } = blog;
+    const { title, urlMap, inode, modDate, urlTitle, teaser } = blog;
 
     const isEditMode = useIsEditMode();
 
@@ -18,14 +18,13 @@ export default function BlogCard({ blog }) {
             {isEditMode && (
                 <button
                     onClick={() => editContentlet(blog)}
-                    className="absolute top-2 right-2 z-10 bg-blue-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600"
-                >
+                    className="absolute top-2 right-2 z-10 bg-blue-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600">
                     Edit
                 </button>
             )}
 
             <div className="relative h-48 w-full">
-                {image ? (
+                {inode ? (
                     <Image
                         src={inode}
                         alt={urlTitle || title}
@@ -44,18 +43,11 @@ export default function BlogCard({ blog }) {
                     <a href={urlMap}>{title}</a>
                 </h3>
 
-                {teaser && (
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {teaser}
-                    </p>
-                )}
+                {teaser && <p className="text-gray-600 text-sm mb-3 line-clamp-2">{teaser}</p>}
 
                 <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                     <time className="text-sm text-gray-500">
-                        {new Date(modDate).toLocaleDateString(
-                            "en-US",
-                            dateFormatOptions,
-                        )}
+                        {new Date(modDate).toLocaleDateString('en-US', dateFormatOptions)}
                     </time>
                 </div>
             </div>

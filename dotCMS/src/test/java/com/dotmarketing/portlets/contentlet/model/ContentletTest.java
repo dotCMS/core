@@ -15,9 +15,11 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ContentletTest {
 
@@ -104,6 +106,32 @@ public class ContentletTest {
             // causing DOT_NAME_KEY to be set to the aliases value.
             assertEquals(hostNameValue, contentlet.getName());
         }
+    }
+
+    /**
+     * Regression test for <a href="https://github.com/dotCMS/core/issues/35188">Issue #35188</a>.
+     * <p>
+     * Before the fix, {@code BinaryViewStrategy} wrote {@code Collections.emptyMap()} into the
+     * contentlet's backing map under the bare field variable key for empty binary fields. A
+     * subsequent call to {@link Contentlet#getBinary} would then try to cast that {@code Map} to
+     * {@code File}, throwing a {@code ClassCastException} (surfaced as
+     * {@code DotDataException: null}).
+     * <p>
+     * After the fix, {@code getBinary} uses an {@code instanceof} guard and returns {@code null}
+     * for any non-{@code File} value rather than throwing.
+     */
+    @Test
+    public void testGetBinary_whenMapContainsNonFileValue_returnsNullWithoutException()
+            throws Exception {
+
+        final Contentlet contentlet = new Contentlet();
+        // Simulate the map-poisoning that BinaryViewStrategy caused before the fix.
+        contentlet.getMap().put("productImage", Collections.emptyMap());
+
+        final java.io.File result = contentlet.getBinary("productImage");
+
+        assertNull("getBinary() must return null — not throw ClassCastException — "
+                + "when the backing map holds a non-File value for the field key", result);
     }
 
     private Field createFieldWithVarname(final String varname) {

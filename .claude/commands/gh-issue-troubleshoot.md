@@ -2,7 +2,7 @@
 name: gh-issue-troubleshoot
 description: Fix a dotCMS GitHub issue end-to-end — fetches the issue, researches the codebase, proposes a concrete code fix with before/after diffs, iterates on developer feedback, then applies the approved fix to a new git branch.
 argument-hint: <issue-number|issue-url>
-allowed-tools: Bash(gh issue view:*), Bash(gh api:*), Bash(gh auth status:*), Bash(gh repo view:*), Bash(git checkout -b:*), Bash(git diff:*), Bash(git log:*), Bash(git blame:*), Bash(./mvnw *), Read, Edit, Write, Grep, Glob, Agent, WebFetch
+allowed-tools: Bash(gh issue view:*), Bash(gh api:*), Bash(gh auth status:*), Bash(gh repo view:*), Bash(git checkout -b:*), Bash(git checkout:*), Bash(git pull:*), Bash(git show-ref:*), Bash(git diff:*), Bash(git log:*), Bash(git blame:*), Bash(./mvnw *), Read, Edit, Write, Grep, Glob, Agent, WebFetch
 ---
 
 **Input:** $ARGUMENTS
@@ -167,22 +167,29 @@ After presenting the proposal:
 
 ## Step 6 — Apply the fix
 
-### 6a. Create a branch
+### 6a. Pull latest main and create a branch
+
+First, ensure the local `main` branch is up to date:
+
+```
+git checkout main
+git pull origin main
+```
 
 Where `<short-slug>` is 3–5 words from the issue title, lowercased, hyphenated.
 Examples:
-- "NPE in workflow transitions" → `fix/issue-34901-workflow-npe`
-- "Content editor fails to save" → `fix/issue-34902-content-editor-save`
-- "REST endpoint returns 500 on missing param" → `fix/issue-34903-rest-missing-param-500`
+- "NPE in workflow transitions" → `issue-34901-workflow-npe`
+- "Content editor fails to save" → `issue-34902-content-editor-save`
+- "REST endpoint returns 500 on missing param" → `issue-34903-rest-missing-param-500`
 
 Check whether the branch already exists before creating it:
 
 ```
-git show-ref --verify --quiet refs/heads/fix/issue-<N>-<short-slug>
+git show-ref --verify --quiet refs/heads/issue-<N>-<short-slug>
 ```
 
-- If the branch **does not exist** → `git checkout -b fix/issue-<N>-<short-slug>`
-- If the branch **already exists** → `git checkout fix/issue-<N>-<short-slug>` (switch to it and continue applying changes on top)
+- If the branch **does not exist** → `git checkout -b issue-<N>-<short-slug>`
+- If the branch **already exists** → `git checkout issue-<N>-<short-slug>` (switch to it and continue applying changes on top)
 
 ### 6b. Apply changes
 
@@ -190,7 +197,36 @@ Before applying, verify that every file path in the approved diff is within the 
 
 Use Edit (for modifying existing files) or Write (for new files). Apply the approved diff exactly as proposed.
 
-### 6c. Show the diff
+### 6c. Register new integration tests in the test suite
+
+**Only run this step if any new test file was written in `dotcms-integration/src/test/java/`.**
+
+For each new test class created:
+
+1. **Determine the JUnit version** by reading the new file:
+   - Imports `org.junit.platform.*` or `org.junit.jupiter.*` → **JUnit 5**
+   - Imports `org.junit.Test` or `org.junit.runner.*` → **JUnit 4**
+
+2. **Pick the target suite file:**
+
+   - **JUnit 5** → `dotcms-integration/src/test/java/com/dotcms/Junit5Suite1.java`
+     - Add a `@SelectClasses` entry and the corresponding `import` statement.
+
+   - **JUnit 4** → one of `MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a`
+     (all in `dotcms-integration/src/test/java/com/dotcms/`).
+     - Read each suite file to count `@SuiteClasses` entries.
+     - Add the new class to the **suite with the fewest entries** to keep load balanced.
+     - Add the corresponding `import` statement at the top of that suite file.
+
+3. **Apply the suite edit** using Edit. Add:
+   - The `import com.fully.qualified.NewTestClass;` line in alphabetical order with the other imports.
+   - The `NewTestClass.class,` entry at the end of the `@SuiteClasses` / `@SelectClasses` list, before the closing `})`.
+
+4. **Confirm** in the output: "Added `NewTestClass` to `<SuiteFileName>.java`."
+
+If the test class package cannot be determined, warn and skip this step rather than guessing.
+
+### 6d. Show the diff
 
 ```
 git diff
@@ -198,13 +234,14 @@ git diff
 
 Display the full diff output so the developer can review what was applied.
 
-### 6d. Offer to run tests
+### 6e. Offer to run tests
 
 Ask:
 > **Run the test to verify the fix? (`y` / `n`)**
 > `<test command from Step 3>`
 
 If `y`, run the command and display its output.
+
 
 ---
 
@@ -215,7 +252,7 @@ Print this block:
 ```
 ## Fix applied
 
-- **Branch:** fix/issue-<N>-<slug>
+- **Branch:** issue-<N>-<slug>
 - **Files changed:** <list each file>
 - **Tests:** passed / skipped / failed
 

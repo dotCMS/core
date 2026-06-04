@@ -13,9 +13,8 @@
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:!border-b-0"
+    class="dot-relationship-field-table overflow-hidden rounded-lg border border-solid [&_tr:last-child_td]:border-b-0!"
     [rowHover]="true"
-    [style]="{ 'border-color': 'var(--p-inputtext-border-color)' }"
     [paginator]="false"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
@@ -25,33 +24,33 @@
     <ng-template pTemplate="header" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
-        <tr class="font-bold bg-[var(--gray-100)]">
+        <tr class="bg-gray-100 font-bold">
             <th scope="col" class="w-12 min-w-12"></th>
 
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" class="flex-1 min-w-0">
+                        <th scope="col" class="min-w-0 flex-1">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" class="w-32 min-w-32 max-w-32">
+                        <th scope="col" class="w-32 max-w-32 min-w-32">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 min-w-32 max-w-32 !text-right">
+                        <th scope="col" class="w-32 max-w-32 min-w-32 text-right!">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" class="w-24 min-w-24 max-w-24">
+                        <th scope="col" class="w-24 max-w-24 min-w-24">
                             <p class="truncate capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" class="w-32 min-w-32 max-w-32">
+                        <th scope="col" class="w-32 max-w-32 min-w-32">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
@@ -74,10 +73,10 @@
         <tr>
             <td [colSpan]="$totalColumns()">
                 <div
-                    class="flex p-2 gap-2 justify-center items-center"
+                    class="flex items-center justify-center gap-2 p-2"
                     data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-[var(--gray-600)]">
+                    <p class="text-gray-600">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
                     </p>
                 </div>
@@ -94,14 +93,14 @@
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
                     <span
-                        class="flex items-center cursor-grab text-[var(--gray-600)]"
+                        class="flex cursor-grab items-center text-gray-600"
                         pReorderableRowHandle
                         data-testid="relationship-drag-handle">
                         <i class="pi pi-ellipsis-v text-[14px]"></i>
                         <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
                     </span>
                 } @else {
-                    <span class="flex items-center text-[var(--gray-600)] cursor-not-allowed">
+                    <span class="flex cursor-not-allowed items-center text-gray-600">
                         <i class="pi pi-ellipsis-v text-[14px]"></i>
                         <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
                     </span>
@@ -111,11 +110,11 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
+                        <td class="min-w-0 flex-1" [class.cursor-not-allowed]="isDisabled">
                             <div class="flex items-center gap-3">
                                 @if (showThumbnail) {
                                     <div
-                                        class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+                                        class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
                                         <dot-contentlet-thumbnail
                                             [iconSize]="'24px'"
                                             [contentlet]="item"
@@ -128,22 +127,20 @@
                         </td>
                     }
                     @case ('language') {
-                        <td class="w-32 min-w-32 max-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-32 max-w-32 min-w-32" [class.cursor-not-allowed]="isDisabled">
                             {{ item.language | language }}
                         </td>
                     }
                     @case ('status') {
                         <td
-                            class="w-32 min-w-32 max-w-32 !text-right"
+                            class="w-32 max-w-32 min-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
-                            <p-chip
-                                [class]="'p-chip-sm ' + status.classes"
-                                [label]="status.label" />
+                            <p-chip [class]="status.classes" [label]="status.label" />
                         </td>
                     }
                     @case ('image') {
-                        <td class="w-24 min-w-24 max-w-24" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-24 max-w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
                             <div class="flex items-center justify-center">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
@@ -154,7 +151,7 @@
                         </td>
                     }
                     @default {
-                        <td class="w-32 min-w-32 max-w-32">
+                        <td class="w-32 max-w-32 min-w-32">
                             <p class="truncate">{{ item[column.nameField] }}</p>
                         </td>
                     }
@@ -187,14 +184,14 @@
                 [class.justify-between]="hintText || hasError"
                 [class.justify-center]="!hintText && !hasError">
                 @if (hasError) {
-                    <div class="text-[var(--color-palette-red)]">
+                    <div class="text-red-500">
                         @if (isRequired) {
                             <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                         }
                     </div>
                 }
                 @if (!hasError && hintText) {
-                    <div class="text-[var(--gray-600)]">
+                    <div class="text-gray-600">
                         <small [attr.data-testId]="'hint-' + field.variable">
                             {{ hintText }}
                         </small>

@@ -25,13 +25,12 @@
                 "port": 4400,
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
-                    "apps/dotcms-ui/src/assets/material-icons.css",
+                    "apps/dotcms-ui/src/assets/material-symbols-outlined.css",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ]
@@ -49,14 +48,13 @@
                 "outputDir": "dist/storybook/template-builder",
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
-                    "apps/dotcms-ui/src/assets/material-icons.css",
+                    "apps/dotcms-ui/src/assets/material-symbols-outlined.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ]
             },

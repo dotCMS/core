@@ -1201,7 +1201,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		File f = (File) map.get(velocityVarName);
+		final Object rawValue = map.get(velocityVarName);
+		File f = (rawValue instanceof File) ? (File) rawValue : null;
 		if((f==null || !f.exists()) ){
 			f=null;
 			map.remove(velocityVarName);
@@ -1538,6 +1539,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
+						// INVARIANT (issue #35861): this containsKey guard is what lets a tag clear stick. When a tag field is
+						// cleared, ESContentletAPIImpl.clearOrNullifyProperty stores an empty string ("") rather than null so the
+						// key stays in the map; that blocks the re-hydration below from resurrecting the prior version's tags.
+						// Do not relax this guard (e.g. to also re-hydrate when the value is blank) without revisiting that fix.
 						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 

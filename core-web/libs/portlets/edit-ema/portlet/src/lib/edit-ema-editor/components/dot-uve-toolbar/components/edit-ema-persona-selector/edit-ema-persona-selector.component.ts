@@ -28,7 +28,7 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 
 interface PersonaSelector {
     items: DotPersona[];
@@ -108,7 +108,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * @memberof EditEmaPersonaSelectorComponent
      */
     onSelect({ value }: { value: DotCMSViewAsPersona }) {
-        if (value.identifier === this.value.identifier) {
+        if (value?.identifier === this.value?.identifier || !value) {
             return;
         }
 

@@ -1,7 +1,6 @@
 package com.dotcms.ai.client;
 
-import com.dotcms.ai.client.openai.OpenAIClient;
-import com.dotcms.ai.client.openai.OpenAIResponseEvaluator;
+import com.dotcms.ai.client.langchain4j.LangChain4jAIClient;
 import com.dotcms.ai.domain.AIProvider;
 import com.dotcms.ai.domain.AIResponse;
 import io.vavr.Lazy;
@@ -39,9 +38,9 @@ public class AIProxyClient {
     private AIProxyClient() {
         proxiedClients = new ConcurrentHashMap<>();
         addClient(
-                AIProvider.OPEN_AI.name(),
-                AIProxiedClient.of(OpenAIClient.get(), AIProxyStrategy.MODEL_FALLBACK, OpenAIResponseEvaluator.get()));
-        currentProvider = new AtomicReference<>(AIProvider.OPEN_AI);
+                AIProvider.LANGCHAIN4J.name(),
+                AIProxiedClient.of(LangChain4jAIClient.get(), AIProxyStrategy.DEFAULT));
+        currentProvider = new AtomicReference<>(AIProvider.LANGCHAIN4J);
     }
 
     public static AIProxyClient get() {

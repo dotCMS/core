@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItemCommandEvent, MessageService } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotContentDriveService,
@@ -26,8 +27,10 @@ import {
 import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveFolder,
-    DotContentDriveItem
+    DotContentDriveItem,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
+import { DotPermissionsIframeDialogComponent } from '@dotcms/ui';
 import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
@@ -62,7 +65,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotFolderListViewContextMenuComponent,
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [DotContentDriveStore, DialogService],
         providers: [
             mockProvider(DotContentDriveService, {
                 search: jest
@@ -298,7 +301,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 owner: 'admin',
                 parent: '/',
                 path: '/documents/',
-                permissions: [],
+                permissions: [PERMISSIONS_TYPE.EDIT],
                 showOnMenu: true,
                 sortOrder: 0,
                 title: 'Test Folder',
@@ -384,11 +387,105 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(component.$items()).toHaveLength(1);
             });
 
+            it('should build empty menu when folder has no permissions', async () => {
+                const folderNoPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: []
+                };
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: folderNoPermissions,
+                    showAddToBundle: false
+                });
+
+                expect(component.$items()).toHaveLength(0);
+            });
+
+            it('should not show context menu when folder has no applicable permissions', async () => {
+                const mockContextMenu = {
+                    show: jest.fn(),
+                    visible: jest.fn().mockReturnValue(false)
+                } as unknown as ContextMenu;
+
+                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+                const folderNoPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: []
+                };
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: folderNoPermissions,
+                    showAddToBundle: false
+                });
+
+                expect(mockContextMenu.show).not.toHaveBeenCalled();
+            });
+
             it('should use identifier as memoization key for folders, not inode', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
                 expect(component.$memoizedMenuItems()[mockFolder.inode]).toBeUndefined();
+            });
+
+            describe('permissions dialog', () => {
+                const folderWithEditPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.EDIT, PERMISSIONS_TYPE.EDIT_PERMISSIONS]
+                };
+
+                const folderContextMenuWithEditPermissions: DotContentDriveContextMenu = {
+                    triggeredEvent: mockEvent,
+                    contentlet: folderWithEditPermissions,
+                    showAddToBundle: false
+                };
+
+                let dialogService: SpyObject<DialogService>;
+
+                beforeEach(() => {
+                    dialogService = spectator.inject(DialogService, true);
+                    jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Edit-Permissions item when folder has EDIT_PERMISSIONS permission', async () => {
+                    await component.getMenuItems(folderContextMenuWithEditPermissions);
+
+                    expect(
+                        component.$items().find((item) => item.label === 'Edit-Permissions')
+                    ).toBeDefined();
+                });
+
+                it('should not show Edit-Permissions item when folder lacks EDIT_PERMISSIONS permission', async () => {
+                    await component.getMenuItems(mockFolderContextMenuData);
+
+                    expect(
+                        component.$items().find((item) => item.label === 'Edit-Permissions')
+                    ).toBeUndefined();
+                });
+
+                it('should open DotPermissionsIframeDialogComponent with correct config when triggered', async () => {
+                    await component.getMenuItems(folderContextMenuWithEditPermissions);
+
+                    component
+                        .$items()
+                        .find((item) => item.label === 'Edit-Permissions')
+                        ?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(dialogService.open).toHaveBeenCalledWith(
+                        DotPermissionsIframeDialogComponent,
+                        expect.objectContaining({
+                            width: 'min(92vw, 75rem)',
+                            closable: true,
+                            closeOnEscape: true,
+                            data: {
+                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`
+                            }
+                        })
+                    );
+                });
             });
         });
 

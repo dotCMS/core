@@ -3,7 +3,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 @Component({
     selector: 'dot-uve-style-editor-field-checkbox-group',

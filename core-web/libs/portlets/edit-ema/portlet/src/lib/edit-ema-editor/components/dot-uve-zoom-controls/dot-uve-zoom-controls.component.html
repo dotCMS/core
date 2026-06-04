@@ -1,0 +1,20 @@
+<p-select
+    size="small"
+    appendTo="body"
+    styleClass="[&_.p-select-label]:!p-0"
+    [options]="$zoomOptions()"
+    [ngModel]="$viewZoomLevelPct()"
+    (onChange)="onZoomChange($event.value)"
+    optionLabel="label"
+    optionValue="value"
+    data-testId="zoom-select"
+    [dt]="{
+        background: 'transparent',
+        borderColor: 'transparent',
+        hoverBorderColor: 'transparent',
+        focusBorderColor: 'transparent',
+        shadow: 'none',
+        paddingX: '0',
+        paddingY: '0',
+        focusRing: { shadow: 'none', color: 'transparent' }
+    }" />

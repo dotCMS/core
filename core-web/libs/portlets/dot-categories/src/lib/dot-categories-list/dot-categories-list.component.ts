@@ -254,7 +254,7 @@ export class DotCategoriesListComponent {
             : null;
         const ref = this.#dialogService.open(DotCategoriesCreateComponent, {
             header: this.#dotMessageService.get('categories.add.category'),
-            width: '500px',
+            width: '700px',
             data: { parentName },
             closable: true,
             closeOnEscape: true,
@@ -271,7 +271,7 @@ export class DotCategoriesListComponent {
     openEditDialog(category: DotCategory): void {
         const ref = this.#dialogService.open(DotCategoriesCreateComponent, {
             header: this.#dotMessageService.get('categories.edit.category'),
-            width: '500px',
+            width: '700px',
             data: { category },
             closable: true,
             closeOnEscape: true,
@@ -293,7 +293,7 @@ export class DotCategoriesListComponent {
     openImportDialog(): void {
         const ref = this.#dialogService.open(DotCategoriesImportComponent, {
             header: this.#dotMessageService.get('categories.import'),
-            width: '500px',
+            width: '700px',
             contentStyle: { height: '460px' },
             data: { parentInode: this.store.parentInode() },
             closable: true,

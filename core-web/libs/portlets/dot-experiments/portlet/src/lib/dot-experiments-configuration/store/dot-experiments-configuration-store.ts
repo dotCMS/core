@@ -47,7 +47,7 @@ export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
-    configProps: Record<string, string>;
+    configProps: Record<string, string | boolean>;
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
     pushPublishEnvironments: DotEnvironment[];
@@ -866,7 +866,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             trafficProportion,
             status,
             isExperimentADraft,
-            canLockPage: dotPageRenderState.page.canLock,
+            canLockPage: dotPageRenderState?.page?.canLock,
             pageSate: dotPageRenderState.state,
             disabledTooltipLabel
         })
@@ -970,7 +970,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     constructor() {
         const route = inject(ActivatedRoute);
-        const dotPageRenderState = route.parent.parent.parent.snapshot.data['content'];
+        const dotPageRenderState = route.parent.parent.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
         const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
@@ -1011,7 +1011,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     ): string | null {
         return experiment?.status !== DotExperimentStatus.DRAFT
             ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
-            : dotPageRenderState.state.lockedByAnotherUser
+            : dotPageRenderState?.state?.lockedByAnotherUser
               ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED
               : null;
     }

@@ -37,7 +37,11 @@ export const DEBOUNCE_TIME = 5000;
     imports: [TemplateBuilderComponent],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // Note: Needed because gridstack is using the window:mousemove event to scroll the page when dragging an element
+    host: {
+        class: 'overflow-hidden'
+    }
 })
 export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly dotRouterService = inject(DotRouterService);
@@ -52,7 +56,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
-        if (this.uveStore.$canEditLayout()) {
+        if (this.uveStore.editorCanEditLayout()) {
             return;
         }
 
@@ -168,7 +172,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
         this.uveStore.setIsClientReady(false);
     }
 

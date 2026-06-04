@@ -86,7 +86,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     @Override
     public String getParameter(final String param) {
         String ret = super.getParameter(param);
-        if (UtilMethods.isSet(ret) && Xss.URLHasXSS(ret)) {
+        if (UtilMethods.isSet(ret) && Xss.urlHasXSS(ret)) {
             ret = USE_OWASP_ENCODING_FOR_XSS_PARAMS.get()
                     ? Xss.encodeForHTML(ret)
                     : UtilMethods.htmlifyString(ret);
