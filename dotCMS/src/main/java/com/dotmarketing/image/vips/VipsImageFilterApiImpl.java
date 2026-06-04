@@ -108,16 +108,26 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
             throw new DotRuntimeException("imageFile is null");
         }
         final AtomicReference<Dimension> dim = new AtomicReference<>();
-        VipsManager.run(arena -> {
-            // libvips reads only the header here; SVG is rendered natively via librsvg.
-            final VImage img = VImage.newFromFile(arena, imageFile.getAbsolutePath());
-            final boolean animated = VipsManager.metaInt(img, "n-pages", 1) > 1;
-            final int height = animated
-                    ? VipsManager.metaInt(img, "page-height", img.getHeight())
-                    : img.getHeight();
-            dim.set(new Dimension(img.getWidth(), height));
-        });
-        return dim.get();
+        try {
+            VipsManager.run(arena -> {
+                // libvips reads only the header here; SVG is rendered natively via librsvg.
+                final VImage img = VImage.newFromFile(arena, imageFile.getAbsolutePath());
+                final boolean animated = VipsManager.metaInt(img, "n-pages", 1) > 1;
+                final int height = animated
+                        ? VipsManager.metaInt(img, "page-height", img.getHeight())
+                        : img.getHeight();
+                dim.set(new Dimension(img.getWidth(), height));
+            });
+            return dim.get();
+        } catch (Exception e) {
+            // Degrade to the legacy reader if libvips cannot open this file (e.g. missing delegate).
+            if (Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true)) {
+                Logger.warnAndDebug(this.getClass(), "libvips getWidthHeight failed for " + imageFile.getName()
+                        + "; falling back to legacy engine: " + e.getMessage(), e);
+                return ImageFilterAPI.apiInstance.apply().getWidthHeight(imageFile);
+            }
+            throw e;
+        }
     }
 
     @Override

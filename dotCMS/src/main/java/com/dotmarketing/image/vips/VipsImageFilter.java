@@ -59,10 +59,31 @@ public abstract class VipsImageFilter extends ImageFilter {
             }
             return resultFile;
         } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "libvips filter failed for " + file + ": " + e.getMessage(), e);
             io.vavr.control.Try.run(tempResultFile::delete);
-            throw new DotRuntimeException("unable to convert file: " + file + " : " + e.getMessage(), e);
+            return fallbackOrThrow(file, parameters, e);
         }
+    }
+
+    /**
+     * When a libvips operation fails (corrupt image, a delegate such as PDF/AVIF not built into the
+     * host libvips, etc.) degrade to the equivalent legacy filter rather than serving an error. This
+     * is enabled by default and can be disabled with {@code IMAGE_API_LIBVIPS_FALLBACK=false}.
+     */
+    private File fallbackOrThrow(final File file, final Map<String, String[]> parameters, final Exception cause) {
+        final boolean fallbackEnabled =
+                com.dotmarketing.util.Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true);
+        if (fallbackEnabled) {
+            final java.util.Optional<com.dotmarketing.image.filter.ImageFilter> legacy =
+                    VipsLegacyFilters.forName(getFilterName());
+            if (legacy.isPresent()) {
+                Logger.warnAndDebug(this.getClass(),
+                        "libvips filter '" + getFilterName() + "' failed for " + file
+                                + "; falling back to legacy engine: " + cause.getMessage(), cause);
+                return legacy.get().runFilter(file, parameters);
+            }
+        }
+        Logger.warnAndDebug(this.getClass(), "libvips filter failed for " + file + ": " + cause.getMessage(), cause);
+        throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);
     }
 
     /** Parse an int parameter under this filter's prefix, with a default. */

@@ -219,6 +219,42 @@ public class VipsParityTest {
         assertTrue("gif decodes", ImageIO.read(out) != null);
     }
 
+    // ---- Resilience: fall back to the legacy engine when a libvips op fails --------------------
+
+    /** A libvips PNG filter whose pixel work always fails, to exercise the fallback path. */
+    static class FailingVipsPngFilter extends VipsPngImageFilter {
+        @Override
+        protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
+            throw new RuntimeException("forced libvips failure for test");
+        }
+        @Override
+        protected String getFilterName() {
+            return "png";
+        }
+    }
+
+    @Test
+    public void failed_vips_op_falls_back_to_legacy_engine() throws Exception {
+        // Name the input with the GENERATED_FILE prefix so getResultsFile writes alongside it
+        // (no DB / generated-path config needed in a unit test).
+        final File dir = java.nio.file.Files.createTempDirectory("vips-fallback").toFile();
+        final File in = new File(dir, "dotGenerated_fallback_src.png");
+        java.nio.file.Files.copy(image("test.png").toPath(), in.toPath());
+
+        final File result = new FailingVipsPngFilter().runFilter(in, new HashMap<>());
+
+        assertTrue("fallback produced a result file", result.exists() && result.length() > 50);
+        assertTrue("fallback output is a valid image", ImageIO.read(result) != null);
+    }
+
+    @Test
+    public void legacy_fallback_map_covers_every_filter() {
+        for (final String name : new String[] {"crop", "resize", "scale", "thumbnail", "rotate", "flip",
+                "gamma", "grayscale", "hsb", "exposure", "subsample", "jpeg", "png", "webp", "gif", "pdf"}) {
+            assertTrue("missing legacy fallback for " + name, VipsLegacyFilters.forName(name).isPresent());
+        }
+    }
+
     /** Mean absolute luma difference (0-255) between two equally-sized images. */
     private double meanLumaDelta(final BufferedImage a, final BufferedImage b) {
         final int w = Math.min(a.getWidth(), b.getWidth());
