@@ -34,6 +34,10 @@
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+        <!-- Enable JDK preview features (e.g. java.lang.StableValue, JEP 502) by default.
+             Requires release == build JDK feature version, so modules pinned to an older
+             release (Tika plugins, dotcms-cli) MUST set this to false. -->
+        <maven.compiler.enablePreview>true</maven.compiler.enablePreview>
         <java.module.args>
             --add-modules java.se,jdk.management.agent
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
@@ -752,6 +756,7 @@
                     <configuration>
                         <fork>true</fork>
                         <release>${maven.compiler.release}</release>
+                        <enablePreview>${maven.compiler.enablePreview}</enablePreview>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -792,6 +797,8 @@
                         -->
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            --enable-preview
+                            -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 
@@ -944,6 +951,8 @@
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            --enable-preview
+                            -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 
