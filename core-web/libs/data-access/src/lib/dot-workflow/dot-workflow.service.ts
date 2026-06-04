@@ -95,9 +95,7 @@ export class DotWorkflowService {
                 map((response) => {
                     const schemesById = new Map<string, DotCMSWorkflow>();
                     (response?.entity ?? []).forEach((view) =>
-                        view.contentTypeSchemes?.forEach((scheme) =>
-                            schemesById.set(scheme.id, scheme)
-                        )
+                        view.schemes?.forEach((scheme) => schemesById.set(scheme.id, scheme))
                     );
 
                     return Array.from(schemesById.values());

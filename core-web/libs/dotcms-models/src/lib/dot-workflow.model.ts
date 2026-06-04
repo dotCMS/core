@@ -18,7 +18,8 @@ export interface DotCMSWorkflow {
  */
 export interface ContentTypeWorkflowSchemesView {
     contentTypeId: string;
-    contentTypeSchemes: DotCMSWorkflow[];
+    contentTypeVariable: string;
+    schemes: DotCMSWorkflow[];
 }
 
 export interface DotWorkflowPayload {
