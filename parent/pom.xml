@@ -170,6 +170,11 @@
         <surefireArgline/>
         <integrationTestCoverageAgent/>
         <argLine/>
+        <!-- Empty by default; a module that needs the byte-buddy agent preloaded for tests
+             (e.g. dotcms-core for Instrumentation.getObjectSize) sets this to
+             "-javaagent:${net.bytebuddy:byte-buddy-agent:jar}" and binds the dependency-plugin
+             'properties' goal to populate that path. -->
+        <bytebuddy.agent.argline/>
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
         <surefire.fork.count>1</surefire.fork.count>
@@ -800,6 +805,7 @@
                             --enable-preview
                             -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
+                            ${bytebuddy.agent.argline}
                         </argLine>
 
                         <trimStackTrace>false</trimStackTrace>
@@ -954,6 +960,7 @@
                             --enable-preview
                             -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
+                            ${bytebuddy.agent.argline}
                         </argLine>
 
                         <systemPropertyVariables/>

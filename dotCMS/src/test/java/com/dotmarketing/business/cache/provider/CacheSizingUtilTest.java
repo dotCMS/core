@@ -1,11 +1,15 @@
 package com.dotmarketing.business.cache.provider;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.instrument.Instrumentation;
+import org.junit.Assume;
 import org.junit.Test;
 import com.google.common.base.Optional;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import net.bytebuddy.agent.ByteBuddyAgent;
 
 /**
  * Sanity tests for {@link CacheSizingUtil}.
@@ -49,5 +53,30 @@ public class CacheSizingUtilTest {
         // Wrapping a String must retain more than an empty Optional (it adds the referenced String).
         assertTrue("a present Optional (" + presentSize + ") must be larger than an empty one ("
                 + emptySize + ")", presentSize > emptySize);
+    }
+
+    /**
+     * Verifies the byte-buddy agent is preloaded for this module's tests (via the surefire
+     * {@code -javaagent} wiring), so {@link CacheSizingUtil} sizes objects with the authoritative
+     * {@link Instrumentation#getObjectSize(Object)} rather than the Unsafe fallback. Skips (rather
+     * than fails) when run without the agent — e.g. an IDE launch that omits the {@code -javaagent}.
+     */
+    @Test
+    public void instrumentationAgent_isPreloaded() {
+        final Instrumentation inst;
+        try {
+            inst = ByteBuddyAgent.getInstrumentation();
+        } catch (IllegalStateException noAgent) {
+            Assume.assumeNoException(
+                    "byte-buddy agent not preloaded; run via Maven surefire (sets -javaagent) to exercise "
+                            + "the Instrumentation.getObjectSize path", noAgent);
+            return;
+        }
+        assertNotNull(inst);
+        // getObjectSize is shallow; sizeOf is retained, so retained(String) >= shallow(String).
+        final long shallow = inst.getObjectSize(fourLetters);
+        assertTrue("shallow size must be positive", shallow > 0);
+        assertTrue("retained size must be >= shallow size",
+                cacheSizer.sizeOf(fourLetters) >= shallow);
     }
 }
