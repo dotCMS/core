@@ -18,6 +18,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.comparators.GenericMapFieldComparator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -1781,7 +1782,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      *   <li><b>Step-pinned entries</b> ({@code workflowStepIds}) match the contentlet's current
      *   task via {@code workflow_task.status}.</li>
      * </ul>
-     * No-ops when both sets are empty. All ids are bound as {@code ?} parameters.
+     * No-ops when both sets are empty. All ids are sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)} and bound as {@code ?} parameters.
      */
     private void appendWorkflowQuery(final StringBuilder sqlQuery,
             final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
@@ -1801,7 +1803,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             orClauses.add(" exists (select 1 from workflow_scheme_x_structure wss "
                     + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
                     + ")) ");
-            parameters.addAll(workflowSchemeIds);
+            workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
         }
 
         if (hasSteps) {
@@ -1810,7 +1812,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             orClauses.add(" exists (select 1 from workflow_task wt "
                     + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
                     + " and wt.status in (" + placeholders + ")) ");
-            parameters.addAll(workflowStepIds);
+            workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
         }
 
         sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
