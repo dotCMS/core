@@ -210,12 +210,13 @@ export class DotStyleEditorBuilderComponent {
             };
         }
 
-        // `systemActionMappings` contains full workflow-action objects that the API
-        // misinterprets as action IDs when round-tripped in a PUT body. Strip it out.
+        // Strip `systemActionMappings` (full objects misinterpreted as IDs) and `fields`
+        // (stale snapshot — omitting the key tells the API to leave existing fields untouched;
+        // sending an incomplete list would trigger deletion of fields added after load).
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { systemActionMappings: _wf, ...contentTypeData } = contentType;
+        const { systemActionMappings: _wf, fields: _fields, ...contentTypeData } = contentType;
 
-        const payload: DotCMSContentType = {
+        const payload: Omit<DotCMSContentType, 'fields' | 'systemActionMappings'> = {
             ...contentTypeData,
             metadata: updatedMetadata
         };

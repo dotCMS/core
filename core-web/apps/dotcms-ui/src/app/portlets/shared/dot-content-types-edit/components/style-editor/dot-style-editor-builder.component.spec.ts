@@ -38,6 +38,12 @@ const MOCK_CONTENT_TYPE = {
     metadata: {}
 } as DotCMSContentType;
 
+const MOCK_CONTENT_TYPE_WITH_FIELDS = {
+    ...MOCK_CONTENT_TYPE,
+    fields: [{ id: 'field-1', variable: 'title', name: 'Title' }],
+    systemActionMappings: { NEW: { id: 'wf-action-id' } }
+} as unknown as DotCMSContentType;
+
 describe('DotStyleEditorBuilderComponent', () => {
     let spectator: Spectator<DotStyleEditorBuilderComponent>;
 
@@ -262,6 +268,28 @@ describe('DotStyleEditorBuilderComponent', () => {
                 `v1/contenttype/id/${MOCK_CONTENT_TYPE.id}`,
                 expect.anything()
             );
+        });
+
+        it('should not include `fields` in the PUT payload even when the content type has fields', () => {
+            setup(MOCK_CONTENT_TYPE_WITH_FIELDS);
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            const payload = (spectator.inject(DotCrudService).putData as jest.Mock).mock
+                .calls[0][1];
+            expect(payload).not.toHaveProperty('fields');
+        });
+
+        it('should not include `systemActionMappings` in the PUT payload', () => {
+            setup(MOCK_CONTENT_TYPE_WITH_FIELDS);
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            const payload = (spectator.inject(DotCrudService).putData as jest.Mock).mock
+                .calls[0][1];
+            expect(payload).not.toHaveProperty('systemActionMappings');
         });
 
         it('should handle API errors by calling the error manager', () => {
