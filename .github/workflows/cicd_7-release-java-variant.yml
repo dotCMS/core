@@ -33,9 +33,6 @@ name: '-7 Release Java Variant'
 run-name: "Release Java Variant - ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
 
 on:
-  # NOTE: Automatic trigger on release-* branches has been removed.
-  # Java 25 is now the default build (see #33865), so the previously
-  # auto-built java-25 variant is redundant with the primary release image.
   # This workflow is now manual-only and can be repurposed for other variants
   # (e.g. a future java-11 build) via workflow_dispatch or repository variables.
   workflow_dispatch:
