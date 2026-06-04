@@ -1,1601 +1,1609 @@
 {
-	"info": {
-		"_postman_id": "6f8ea334-6e61-4516-8d8c-4a8e7ac5d4d9",
-		"name": "Workflow Resource Documentation",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "24818383"
-	},
-	"item": [
-		{
-			"name": "Setup",
-			"item": [
-				{
-					"name": "Get default site",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"",
-									"    const entity = pm.response.json().entity;",
-									"    pm.collectionVariables.set(\"hostname\", entity.hostname);",
-									"    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/defaultSite",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"defaultSite"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Test Content Type",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Store first content type ID\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.not.be.null;",
-									"    pm.expect(entity[0]).to.not.be.null;",
-									"    pm.expect(entity[0].id).to.not.be.null;",
-									"    pm.collectionVariables.set(\"contentTypeId\", entity[0].id);",
-									"    pm.collectionVariables.set(\"contentTypeName\", entity[0].name);",
-									"    pm.collectionVariables.set(\"contentTypeVarName\", entity[0].variable);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"First content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"{{systemWorkflowId}}\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"contenttype"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "copyScheme",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Store first content type ID\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.not.be.null;",
-									"    pm.collectionVariables.set(\"copiedWorkflowId\", entity.id);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-                        }
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/copy",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"schemes",
-								"d61a59e1a4",
-								"copy"
-							]
-						},
-						"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
-					},
-					"response": []
-				},
-				{
-					"name": "Create Test Content Type 2",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Store first content type ID\", function () {",
-									"    const entity = pm.response.json().entity;",
-									"    pm.expect(entity).to.not.be.null;",
-									"    pm.expect(entity[0]).to.not.be.null;",
-									"    pm.expect(entity[0].id).to.not.be.null;",
-									"    pm.collectionVariables.set(\"contentTypeId_2\", entity[0].id);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									"pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"Second content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"{{copiedWorkflowId}}\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"contenttype"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Test Contentlet 1",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Test Rich Text created successfully\", function () {",
-									"    const json = pm.response.json();",
-									"    pm.expect(json.errors.length).to.eql(0);",
-									"    pm.collectionVariables.set(\"Contentlet_1\", json.entity.identifier);",
-									"    pm.collectionVariables.set(\"contentletInode_1\", json.entity.inode);",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName}}\",\n        \"title\": \"Contentlet 1\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							],
-							"query": [
-								{
-									"key": "indexPolicy",
-									"value": "WAIT_FOR"
-								}
-							]
-						},
-						"description": "Creates test data"
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "findSchemes",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes"
-					]
-				},
-				"description": "Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.\n\n@Path(\"/schemes\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findAllSchemesAndSchemesByContentType",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Body matches string\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"schemes\");",
-							"});",
-							"",
-							"pm.test(\"Body matches string\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/{{contentTypeId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"schemescontenttypes",
-						"{{contentTypeId}}"
-					]
-				},
-				"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
-			},
-			"response": []
-		},
-		{
-			"name": "findAllSchemesByContentType",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Body matches string\", function () {",
-							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/contenttypes/schemes?contentTypeIds={{contentTypeId}},{{contentTypeId_2}}",
-					"host": [
-						"{{serverURL}}"
-                    ],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"contenttypes",
-						"schemes"
-					],
-					"query": [
-						{
-							"key": "contentTypeIds",
-							"value": "{{contentTypeId}},{{contentTypeId_2}}"
-						}
-					]
-				},
-				"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
+  "info": {
+    "_postman_id": "6f8ea334-6e61-4516-8d8c-4a8e7ac5d4d9",
+    "name": "Workflow Resource Documentation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "24818383"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Get default site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+                  "    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/defaultSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "defaultSite"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Content Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Store first content type ID\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.not.be.null;",
+                  "    pm.expect(entity[0]).to.not.be.null;",
+                  "    pm.expect(entity[0].id).to.not.be.null;",
+                  "    pm.collectionVariables.set(\"contentTypeId\", entity[0].id);",
+                  "    pm.collectionVariables.set(\"contentTypeName\", entity[0].name);",
+                  "    pm.collectionVariables.set(\"contentTypeVarName\", entity[0].variable);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
             },
-			"response": []
-		},
-		{
-			"name": "findStepsByScheme",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/{{systemWorkflowId}}/steps",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"{{systemWorkflowId}}",
-						"steps"
-					]
-				},
-				"description": "Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/schemes/{schemeId}/steps\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findAvailableActions",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Store action ID\", function () {",
-							"    const entity = pm.response.json().entity;",
-							"    pm.expect(entity).to.not.be.null;",
-							"    pm.expect(entity[0]).to.not.be.null;",
-							"    pm.expect(entity[0].id).to.not.be.null;",
-							"    pm.collectionVariables.set(\"actionId\", entity[0].id);",
-							"});",
-                          ""
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode_1}}/actions",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"contentlet",
-						"{{contentletInode_1}}",
-						"actions"
-					]
-				},
-				"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findAction",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"{{actionId}}"
-					]
-				},
-				"description": "Returns a single action, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/actions/{actionId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findActionByStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/{{actionId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-						"actions",
-						"{{actionId}}"
-					]
-				},
-				"description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findActionsByStep (all the actions)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"6cb7e3bd-1710-4eed-8838-d3db60f78f19",
-						"actions"
-					]
-				},
-				"description": "Returns a collection of actions associated to the step, if step does not have any will returns 200 and an empty list.\n\n@Path(\"/steps/{stepId}/actions\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findActionsByScheme",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/{{systemWorkflowId}}/actions",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"{{systemWorkflowId}}",
-						"actions"
-					]
-				},
-				"description": "Returns a set of actions associated to the schemeId\n\n@Path(\"/schemes/{schemeId}/actions\")"
-			},
-			"response": []
-		},
-		{
-			"name": "Save action",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{systemWorkflowId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"actions"
-					]
-				},
-				"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
-			},
-			"response": []
-		},
-		{
-			"name": "updateAction",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"Republish\",\n      \"schemeId\": \"{{systemWorkflowId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/4958588d-9c8e-40e4-bfcb-4ded",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"4958588d-9c8e-40e4-bfcb-4ded"
-					]
-				},
-				"description": "This resource updates the workflow action \n404 if the id does not exist \n\n@Path(\"/actions/{actionId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "saveActionToStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \"actionId\": \"777f1c6b-c877-4a37-ba4b-10627316c2cc\" }"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/actions",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
-						"actions"
-					]
-				},
-				"description": "This method saves the actions and associate to a specific step\n\n@Path(\"/steps/{stepId}/actions\")"
-			},
-			"response": []
-		},
-		{
-			"name": "deleteStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/f7dc56cd-aa81-4ca8-8174-1bb30756df82",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"f7dc56cd-aa81-4ca8-8174-1bb30756df82"
-					]
-				},
-				"description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
-			},
-			"response": []
-		},
-		{
-			"name": "deleteAction (from step)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/0c5018fc-4773-4524-9ba8-328ca4c3d0b2/actions/658278d3-aa3b-4ce4-a028-c9e1656e4f9e",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"0c5018fc-4773-4524-9ba8-328ca4c3d0b2",
-						"actions",
-						"658278d3-aa3b-4ce4-a028-c9e1656e4f9e"
-					]
-				},
-				"description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "deleteAction (permanently)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/c8a03c24-277a-49a5-b5e0-7f99490a004d",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"c8a03c24-277a-49a5-b5e0-7f99490a004d"
-					]
-				},
-				"description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
-			},
-			"response": []
-		},
-		{
-			"name": "reorderStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/reorder/step/94178d17-96a0-4e08-b9aa-94214a7fb31e/order/0",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"reorder",
-						"step",
-						"94178d17-96a0-4e08-b9aa-94214a7fb31e",
-						"order",
-						"0"
-					]
-				},
-				"description": "Change the order of the steps in a scheme\n\n@Path(\"/reorder/step/{stepId}/order/{order}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "updateStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": " { \"stepOrder\":5, \"stepName\":\"REST\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"94178d17-96a0-4e08-b9aa-94214a7fb31e"
-					]
-				},
-				"description": "This method update the some step using the id \n\n@Path(\"/steps/{stepId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "addStep",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": " { \"schemeId\" : \"bf886961-42fe-4e49-b0e9-0347cacc81ba\", \"stepName\":\"REST123\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps"
-					]
-				},
-				"description": "Add a new workflow step \n\n@Path(\"/steps\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findStepById",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"steps",
-						"94178d17-96a0-4e08-b9aa-94214a7fb31e"
-					]
-				},
-				"description": "Get the step by id \n\n@Path(\"/steps/{stepId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "Fire action",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/936f14eef2/fire",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"actions",
-						"936f14eef2",
-						"fire"
-					]
-				},
-				"description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
-			},
-			"response": []
-		},
-		{
-			"name": "reorderAction",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"order\" : 3}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/reorder/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e/actions/7075981c-eda2-4896-a65c-71749ee2877e",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"reorder",
-						"steps",
-						"94178d17-96a0-4e08-b9aa-94214a7fb31e",
-						"actions",
-						"7075981c-eda2-4896-a65c-71749ee2877e"
-					]
-				},
-				"description": "Change the order of an action associated to the step\n\n@Path(\"/reorder/steps/{stepId}/actions/{actionId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "ImportScheme ",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "    {\n        \"workflowImportObject\": {\n            \"schemes\": [\n                {\n                    \n                    \"creationDate\": 1523640559394,\n                    \"name\": \"Test3\",\n                    \"description\": \"\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1523640423771,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"step2\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save it\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"NEW\",\n                        \"UNLOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"name\": \"TEst\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"UNLOCKED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"actionId\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"2298b780-e1d3-4916-b981-e22fd5553086\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"nextStep\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n}\n    \n"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/import",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"import"
-					]
-				},
-				"description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/import\")"
-			},
-			"response": []
-		},
-		{
-			"name": "exportScheme",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/766d9cef-e138-4fe0-9acc-b8e7e40bbed3/export",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"766d9cef-e138-4fe0-9acc-b8e7e40bbed3",
-						"export"
-					]
-				},
-				"description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/{schemeId}/export\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findAvailableDefaultActionsByContentType",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/defaultactions/contenttype/{{contentTypeId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"defaultactions",
-						"contenttype",
-						"{{contentTypeId}}"
-					]
-				},
-				"description": "Returns all the possible default actions associated to the content type workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/contenttype/{contentTypeId}\")\n"
-			},
-			"response": []
-		},
-		{
-			"name": "findAvailableDefaultActionsBySchemes",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"defaultactions",
-						"schemes"
-					]
-				},
-				"description": "Returns all the possible default actions associated to the workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/schemes\")"
-			},
-			"response": []
-		},
-		{
-			"name": "findInitialAvailableActionsByContentType",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/{{contentTypeId}}",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"initialactions",
-						"contenttype",
-						"{{contentTypeId}}"
-					]
-				},
-				"description": "Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated with a content type Id.\n\n@Path(\"/initialactions/contenttype/{contentTypeId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "saveScheme",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"schemeName\": \"REST1\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes"
-					]
-				},
-				"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
-			},
-			"response": []
-		},
-		{
-			"name": "updateScheme",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"schemeName\": \"REST2\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/211040db-5d79-4e3c-807a-1f2dec2ff16b",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"211040db-5d79-4e3c-807a-1f2dec2ff16b"
-					]
-				},
-				"description": "Updates an existing scheme\n\n@Path(\"/schemes/{schemeId}\")"
-			},
-			"response": []
-		},
-		{
-			"name": "deleteScheme",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {}
-					}
-				}
-			],
-			"request": {
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/85c1515c-c4f3-463c-bac2-860b8fcacc34",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"85c1515c-c4f3-463c-bac2-860b8fcacc34"
-					]
-				},
-				"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")\n"
-			},
-			"response": []
-		}
-	],
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{jwt}}",
-				"type": "string"
-			}
-		]
-	},
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"requests": {},
-				"exec": [
-					"const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"// If we are unable to get the JWT we need to generate a new one",
-					"if (!pm.environment.get('jwt')) {",
-					"    const username = pm.environment.get('user');",
-					"    const password = pm.environment.get('password');",
-					"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"    const requestOptions = {",
-					"        url: apiUrl,",
-					"        method: 'POST',",
-					"        header: {",
-					"            'accept': '*/*',",
-					"            'content-type': 'application/json',",
-					"            'Authorization': `Basic ${basicAuth}`",
-					"        },",
-					"        body: {",
-					"            mode: 'raw',",
-					"            raw: JSON.stringify({",
-					"                expirationSeconds: 7200,",
-					"                userId: 'dotcms.org.1',",
-					"                network: '0.0.0.0/0',",
-					"                claims: { label: 'postman-tests' }",
-					"            })",
-					"        }",
-					"    };",
-					"",
-					"    pm.sendRequest(requestOptions, function (err, response) {",
-					"        if (err) {",
-					"            console.log(err);",
-					"        } else {",
-					"            const jwt = response.json().entity.jwt;",
-					"            pm.environment.set('jwt', jwt);",
-					"            console.log(jwt);",
-					"        }",
-					"    });",
-					"}"
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"requests": {},
-				"exec": [
-					""
-				]
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "localServer",
-			"value": "http://localhost:8080"
-		},
-		{
-			"key": "hostname",
-			"value": ""
-		},
-		{
-			"key": "hostIdentifier",
-			"value": ""
-		},
-		{
-			"key": "systemWorkflowId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeName",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVarName",
-			"value": ""
-		},
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"First content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"{{systemWorkflowId}}\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "copyScheme",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Store first content type ID\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.not.be.null;",
+                  "    pm.collectionVariables.set(\"copiedWorkflowId\", entity.id);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/copy",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "schemes",
+                "d61a59e1a4",
+                "copy"
+              ]
+            },
+            "description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Content Type 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Store first content type ID\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.not.be.null;",
+                  "    pm.expect(entity[0]).to.not.be.null;",
+                  "    pm.expect(entity[0].id).to.not.be.null;",
+                  "    pm.collectionVariables.set(\"contentTypeId_2\", entity[0].id);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"Second content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"{{copiedWorkflowId}}\"\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/contenttype",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "contenttype"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Test Contentlet 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test Rich Text created successfully\", function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.errors.length).to.eql(0);",
+                  "    pm.collectionVariables.set(\"Contentlet_1\", json.entity.identifier);",
+                  "    pm.collectionVariables.set(\"contentletInode_1\", json.entity.inode);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName}}\",\n        \"title\": \"Contentlet 1\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ],
+              "query": [
+                {
+                  "key": "indexPolicy",
+                  "value": "WAIT_FOR"
+                }
+              ]
+            },
+            "description": "Creates test data"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "findSchemes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes"
+          ]
+        },
+        "description": "Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.\n\n@Path(\"/schemes\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findAllSchemesAndSchemesByContentType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Body matches string\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
+              "});",
+              "",
+              "pm.test(\"Body matches string\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/{{contentTypeId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "schemescontenttypes",
+            "{{contentTypeId}}"
+          ]
+        },
+        "description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
+      },
+      "response": []
+    },
+    {
+      "name": "findAllSchemesByContentType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Entity contains scheme results\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"schemes\");",
+              "});",
+              "",
+              "pm.test(\"Unknown IDs are reported in errors array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.errors && jsonData.errors.length > 0) {",
+              "        pm.expect(jsonData.errors[0]).to.have.property(\"errorCode\");",
+              "        pm.expect(jsonData.errors[0]).to.have.property(\"fieldName\");",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/contenttypes/schemes?contentTypeIds={{contentTypeId}},{{contentTypeId_2}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "contenttypes",
+            "schemes"
+          ],
+          "query": [
+            {
+              "key": "contentTypeIds",
+              "value": "{{contentTypeId}},{{contentTypeId_2}}"
+            }
+          ]
+        },
+        "description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
+      },
+      "response": []
+    },
+    {
+      "name": "findStepsByScheme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/{{systemWorkflowId}}/steps",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "{{systemWorkflowId}}",
+            "steps"
+          ]
+        },
+        "description": "Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/schemes/{schemeId}/steps\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findAvailableActions",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Store action ID\", function () {",
+              "    const entity = pm.response.json().entity;",
+              "    pm.expect(entity).to.not.be.null;",
+              "    pm.expect(entity[0]).to.not.be.null;",
+              "    pm.expect(entity[0].id).to.not.be.null;",
+              "    pm.collectionVariables.set(\"actionId\", entity[0].id);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode_1}}/actions",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "contentlet",
+            "{{contentletInode_1}}",
+            "actions"
+          ]
+        },
+        "description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findAction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "{{actionId}}"
+          ]
+        },
+        "description": "Returns a single action, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/actions/{actionId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findActionByStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/{{actionId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
+            "actions",
+            "{{actionId}}"
+          ]
+        },
+        "description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findActionsByStep (all the actions)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "6cb7e3bd-1710-4eed-8838-d3db60f78f19",
+            "actions"
+          ]
+        },
+        "description": "Returns a collection of actions associated to the step, if step does not have any will returns 200 and an empty list.\n\n@Path(\"/steps/{stepId}/actions\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findActionsByScheme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/{{systemWorkflowId}}/actions",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "{{systemWorkflowId}}",
+            "actions"
+          ]
+        },
+        "description": "Returns a set of actions associated to the schemeId\n\n@Path(\"/schemes/{schemeId}/actions\")"
+      },
+      "response": []
+    },
+    {
+      "name": "Save action",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"saveContent FROM REST NEW\",\n      \"schemeId\": \"{{systemWorkflowId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions"
+          ]
+        },
+        "description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+      },
+      "response": []
+    },
+    {
+      "name": "updateAction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n   \"stepId\": \"ee24a4cb-2d15-4c98-b1bd-6327126451f3\",\n      \"actionName\": \"Republish\",\n      \"schemeId\": \"{{systemWorkflowId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/4958588d-9c8e-40e4-bfcb-4ded",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "4958588d-9c8e-40e4-bfcb-4ded"
+          ]
+        },
+        "description": "This resource updates the workflow action \n404 if the id does not exist \n\n@Path(\"/actions/{actionId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "saveActionToStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"actionId\": \"777f1c6b-c877-4a37-ba4b-10627316c2cc\" }"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/actions",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
+            "actions"
+          ]
+        },
+        "description": "This method saves the actions and associate to a specific step\n\n@Path(\"/steps/{stepId}/actions\")"
+      },
+      "response": []
+    },
+    {
+      "name": "deleteStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/f7dc56cd-aa81-4ca8-8174-1bb30756df82",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "f7dc56cd-aa81-4ca8-8174-1bb30756df82"
+          ]
+        },
+        "description": "This method deletes a step using the ID\n\n@Path(\"/steps/{stepId}\")\n"
+      },
+      "response": []
+    },
+    {
+      "name": "deleteAction (from step)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/0c5018fc-4773-4524-9ba8-328ca4c3d0b2/actions/658278d3-aa3b-4ce4-a028-c9e1656e4f9e",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "0c5018fc-4773-4524-9ba8-328ca4c3d0b2",
+            "actions",
+            "658278d3-aa3b-4ce4-a028-c9e1656e4f9e"
+          ]
+        },
+        "description": "Deletes an action associated to the step\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "deleteAction (permanently)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/c8a03c24-277a-49a5-b5e0-7f99490a004d",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "c8a03c24-277a-49a5-b5e0-7f99490a004d"
+          ]
+        },
+        "description": "Deletes an action associated to the scheme and all references into steps\n\n@Path(\"/actions/{actionId}\")\n"
+      },
+      "response": []
+    },
+    {
+      "name": "reorderStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/reorder/step/94178d17-96a0-4e08-b9aa-94214a7fb31e/order/0",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "reorder",
+            "step",
+            "94178d17-96a0-4e08-b9aa-94214a7fb31e",
+            "order",
+            "0"
+          ]
+        },
+        "description": "Change the order of the steps in a scheme\n\n@Path(\"/reorder/step/{stepId}/order/{order}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "updateStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": " { \"stepOrder\":5, \"stepName\":\"REST\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "94178d17-96a0-4e08-b9aa-94214a7fb31e"
+          ]
+        },
+        "description": "This method update the some step using the id \n\n@Path(\"/steps/{stepId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "addStep",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": " { \"schemeId\" : \"bf886961-42fe-4e49-b0e9-0347cacc81ba\", \"stepName\":\"REST123\", \"enableEscalation\":false, \"escalationAction\":\"\", \"escalationTime\":\"0\",\"stepResolved\":false} "
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps"
+          ]
+        },
+        "description": "Add a new workflow step \n\n@Path(\"/steps\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findStepById",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "steps",
+            "94178d17-96a0-4e08-b9aa-94214a7fb31e"
+          ]
+        },
+        "description": "Get the step by id \n\n@Path(\"/steps/{stepId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "Fire action",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"contentletFormData\" : {\n  \"stInode\" : \"678d00bf-10b0-4080-99b4-9517ab9ea580\",\n  \"languageId\" : 1,\n  \"name\": \"postman1\"\n}\n}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/936f14eef2/fire",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "936f14eef2",
+            "fire"
+          ]
+        },
+        "description": "Fire any action uysing the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here. \n\n@Path(\"/actions/{actionId}/fire\")"
+      },
+      "response": []
+    },
+    {
+      "name": "reorderAction",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order\" : 3}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/reorder/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e/actions/7075981c-eda2-4896-a65c-71749ee2877e",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "reorder",
+            "steps",
+            "94178d17-96a0-4e08-b9aa-94214a7fb31e",
+            "actions",
+            "7075981c-eda2-4896-a65c-71749ee2877e"
+          ]
+        },
+        "description": "Change the order of an action associated to the step\n\n@Path(\"/reorder/steps/{stepId}/actions/{actionId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "ImportScheme ",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "    {\n        \"workflowImportObject\": {\n            \"schemes\": [\n                {\n                    \n                    \"creationDate\": 1523640559394,\n                    \"name\": \"Test3\",\n                    \"description\": \"\",\n                    \"archived\": false,\n                    \"mandatory\": false,\n                    \"defaultScheme\": false,\n                    \"modDate\": 1523640423771,\n                    \"entryActionId\": null,\n                    \"system\": false\n                }\n            ],\n            \"steps\": [\n                {\n                    \"id\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"Step1\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 0,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                },\n                {\n                    \"id\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"creationDate\": 1523643857447,\n                    \"name\": \"step2\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"myOrder\": 1,\n                    \"resolved\": false,\n                    \"enableEscalation\": false,\n                    \"escalationAction\": null,\n                    \"escalationTime\": 0\n                }\n            ],\n            \"actions\": [\n                {\n                    \"id\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save it\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": false,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"NEW\",\n                        \"UNLOCKED\"\n                    ]\n                },\n                {\n                    \"id\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"name\": \"TEst\",\n                    \"schemeId\": \"766d9cef-e138-4fe0-9acc-b8e7e40bbed3\",\n                    \"condition\": \"\",\n                    \"nextStep\": \"currentstep\",\n                    \"nextAssign\": \"e7d4e34e-5127-45fc-8123-d48b62d510e3\",\n                    \"icon\": \"workflowIcon\",\n                    \"roleHierarchyForAssign\": false,\n                    \"assignable\": false,\n                    \"commentable\": false,\n                    \"order\": 0,\n                    \"owner\": null,\n                    \"nextStepCurrentStep\": true,\n                    \"showOn\": [\n                        \"LOCKED\",\n                        \"UNLOCKED\"\n                    ]\n                }\n            ],\n            \"actionSteps\": [\n                {\n                    \"stepId\": \"01d5d41a-007e-463d-a5b5-c35ea27b1a30\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"actionOrder\": \"0\"\n                },\n                {\n                    \"stepId\": \"2cbf9872-0ed3-407b-b803-70a9a161a7db\",\n                    \"actionId\": \"687c0729-95fe-4e1d-b37c-e9f70615df23\",\n                    \"actionOrder\": \"0\"\n                }\n            ],\n            \"actionClasses\": [\n                {\n                    \"id\": \"2298b780-e1d3-4916-b981-e22fd5553086\",\n                    \"actionId\": \"81522b66-221b-4496-aec6-0e4c484973f7\",\n                    \"name\": \"Save content\",\n                    \"order\": 0,\n                    \"clazz\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet\",\n                    \"actionlet\": {\n                        \"name\": \"Save content\",\n                        \"parameters\": null,\n                        \"nextStep\": null,\n                        \"howTo\": \"This actionlet will checkin the content.\",\n                        \"localizedName\": \"Save content\",\n                        \"localizedHowto\": \"com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet.howTo\"\n                    }\n                }\n            ],\n            \"actionClassParams\": []\n        },\n        \"permissions\": []\n}\n    \n"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/import",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "import"
+          ]
+        },
+        "description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/import\")"
+      },
+      "response": []
+    },
+    {
+      "name": "exportScheme",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/766d9cef-e138-4fe0-9acc-b8e7e40bbed3/export",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "766d9cef-e138-4fe0-9acc-b8e7e40bbed3",
+            "export"
+          ]
+        },
+        "description": "Do an export of the scheme with all dependencies to rebuild it (such as steps and actions) in addition the permission (who can use) will be also returned.\n\n@Path(\"/schemes/{schemeId}/export\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findAvailableDefaultActionsByContentType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/defaultactions/contenttype/{{contentTypeId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "defaultactions",
+            "contenttype",
+            "{{contentTypeId}}"
+          ]
+        },
+        "description": "Returns all the possible default actions associated to the content type workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/contenttype/{contentTypeId}\")\n"
+      },
+      "response": []
+    },
+    {
+      "name": "findAvailableDefaultActionsBySchemes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "defaultactions",
+            "schemes"
+          ]
+        },
+        "description": "Returns all the possible default actions associated to the workflow schemes.\n401 if the user does not have permission.\n\n@Path(\"/defaultactions/schemes\")"
+      },
+      "response": []
+    },
+    {
+      "name": "findInitialAvailableActionsByContentType",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/{{contentTypeId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "initialactions",
+            "contenttype",
+            "{{contentTypeId}}"
+          ]
+        },
+        "description": "Finds the available actions of the initial/first step(s) of the workflow scheme(s) associated with a content type Id.\n\n@Path(\"/initialactions/contenttype/{contentTypeId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "saveScheme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"schemeName\": \"REST1\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes"
+          ]
+        },
+        "description": "Creates a new scheme \n\n@Path(\"/schemes\")"
+      },
+      "response": []
+    },
+    {
+      "name": "updateScheme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"schemeName\": \"REST2\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/211040db-5d79-4e3c-807a-1f2dec2ff16b",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "211040db-5d79-4e3c-807a-1f2dec2ff16b"
+          ]
+        },
+        "description": "Updates an existing scheme\n\n@Path(\"/schemes/{schemeId}\")"
+      },
+      "response": []
+    },
+    {
+      "name": "deleteScheme",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/schemes/85c1515c-c4f3-463c-bac2-860b8fcacc34",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "schemes",
+            "85c1515c-c4f3-463c-bac2-860b8fcacc34"
+          ]
+        },
+        "description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")\n"
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          "const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "// If we are unable to get the JWT we need to generate a new one",
+          "if (!pm.environment.get('jwt')) {",
+          "    const username = pm.environment.get('user');",
+          "    const password = pm.environment.get('password');",
+          "    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "    const requestOptions = {",
+          "        url: apiUrl,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'accept': '*/*',",
+          "            'content-type': 'application/json',",
+          "            'Authorization': `Basic ${basicAuth}`",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                expirationSeconds: 7200,",
+          "                userId: 'dotcms.org.1',",
+          "                network: '0.0.0.0/0',",
+          "                claims: { label: 'postman-tests' }",
+          "            })",
+          "        }",
+          "    };",
+          "",
+          "    pm.sendRequest(requestOptions, function (err, response) {",
+          "        if (err) {",
+          "            console.log(err);",
+          "        } else {",
+          "            const jwt = response.json().entity.jwt;",
+          "            pm.environment.set('jwt', jwt);",
+          "            console.log(jwt);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "localServer",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "hostname",
+      "value": ""
+    },
+    {
+      "key": "hostIdentifier",
+      "value": ""
+    },
+    {
+      "key": "systemWorkflowId",
+      "value": ""
+    },
+    {
+      "key": "contentTypeId",
+      "value": ""
+    },
+    {
+      "key": "contentTypeName",
+      "value": ""
+    },
+    {
+      "key": "contentTypeVarName",
+      "value": ""
+    },
     {
       "key": "Contentlet_1",
       "value": ""

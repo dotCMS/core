@@ -19603,10 +19603,11 @@ paths:
       description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
         \ grouped by content type for a list of content type identifiers. Each entry\
         \ in the response maps a resolved content type to its associated schemes.\
-        \ Unknown or invalid IDs are silently skipped — only successfully resolved\
-        \ content types appear in the result (note: the single-content-type endpoint\
-        \ returns 404 for an unknown ID; this batch endpoint omits it instead). Maximum\
-        \ 100 tokens per request (checked before deduplication)."
+        \ Unknown or unresolvable identifiers are reported in the `errors` array of\
+        \ the response body (field `fieldName` contains the original input token;\
+        \ `errorCode` is `CONTENT_TYPE_NOT_FOUND`). At least one non-blank identifier\
+        \ is required; an empty or missing `contentTypeIds` parameter returns 400.\
+        \ Maximum 100 tokens per request (checked before deduplication)."
       operationId: getWorkflowSchemesByContentTypeList
       parameters:
       - description: "Content type identifiers. Repeat the parameter (?contentTypeIds=a&contentTypeIds=b)\
@@ -19626,7 +19627,8 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
           description: Schemes returned successfully
         "400":
-          description: More than 100 content type IDs supplied
+          description: contentTypeIds is empty or all tokens are blank; or more than
+            100 tokens supplied
         "401":
           description: User does not have permission
         "403":
@@ -24920,8 +24922,11 @@ components:
       properties:
         contentTypeId:
           type: string
-          description: Identifier of the content type
-        contentTypeSchemes:
+          description: UUID of the content type
+        contentTypeVariable:
+          type: string
+          description: Variable name of the content type
+        schemes:
           type: array
           description: Workflow schemes associated with the content type
           items:
@@ -24935,7 +24940,8 @@ components:
               $ref: "#/components/schemas/WorkflowScheme"
       required:
       - contentTypeId
-      - contentTypeSchemes
+      - contentTypeVariable
+      - schemes
     ContentView:
       type: object
       properties:

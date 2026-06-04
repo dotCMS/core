@@ -1,4 +1,4 @@
-<p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -13,7 +13,7 @@
                 class="w-80" />
         </p-iconField>
 
-        <div class="flex gap-2 ml-auto items-center">
+        <div class="ml-auto flex items-center gap-2">
             @if (store.selectedCategories().length > 0) {
                 <p-button
                     [label]="'categories.delete' | dm"
@@ -53,7 +53,7 @@
     data-testid="category-breadcrumb" />
 
 <!-- Table -->
-<div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="categories-table-wrapper">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="categories-table-wrapper">
     <p-table
         [value]="store.categories()"
         [lazy]="true"
@@ -109,7 +109,7 @@
                 </td>
                 <td
                     data-testid="category-sort-order"
-                    class="flex justify-center items-center"
+                    class="flex items-center justify-center"
                     (click)="$event.stopPropagation()">
                     <p-inputNumber
                         [ngModel]="category.sortOrder"
@@ -124,7 +124,7 @@
                 </td>
                 <td class="text-center!" (click)="$event.stopPropagation()">
                     <p-button
-                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                         icon="pi pi-ellipsis-v"
                         [rounded]="true"
                         [text]="true"
@@ -137,21 +137,19 @@
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
-            <tr class="hover:bg-transparent! h-full">
-                <td colspan="7" class="p-6 text-center h-full border-none">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="7" class="h-full border-none p-6 text-center">
                     <div
-                        class="flex flex-col items-center gap-4 max-w-100 mx-auto"
+                        class="mx-auto flex max-w-100 flex-col items-center gap-4"
                         data-testid="categories-empty-state">
-                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
-                            <i
-                                class="pi pi-tag text-[var(--surface-500)] text-6xl!"
-                                aria-hidden="true"></i>
+                        <div class="flex size-20 items-center justify-center rounded-full">
+                            <i class="pi pi-tag text-6xl! text-surface-500" aria-hidden="true"></i>
                         </div>
                         <div class="flex flex-col text-center">
                             <h3 class="m-0 text-lg font-medium text-gray-800">
                                 {{ 'categories.empty.state.title' | dm }}
                             </h3>
-                            <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                            <p class="m-0 text-base leading-6 text-color">
                                 {{ 'categories.empty.state.description' | dm }}
                             </p>
                         </div>

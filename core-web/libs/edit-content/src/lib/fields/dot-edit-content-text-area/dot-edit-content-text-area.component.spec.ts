@@ -96,10 +96,9 @@ describe('DotEditContentTextAreaComponent', () => {
         });
 
         it('should have min height as 9.375rem and resize as vertical', () => {
-            const classes = textArea.getAttribute('class');
-            expect(classes).toContain('min-h-[9.375rem]');
-            expect(classes).toContain('resize-y');
-            expect(classes).toContain('w-full');
+            expect(textArea).toHaveClass('min-h-37.5');
+            expect(textArea).toHaveClass('resize-y');
+            expect(textArea).toHaveClass('w-full');
         });
 
         it('should have editor selector dropdown', () => {

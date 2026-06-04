@@ -148,6 +148,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -540,9 +541,12 @@ public class WorkflowResource {
 
     /**
      * Returns workflow schemes grouped by content type for a list of content type identifiers.
-     * Unknown or invalid IDs are silently skipped — the response only contains entries for IDs
-     * that were successfully resolved. At most {@value #MAX_CONTENT_TYPE_IDS} distinct IDs may
-     * be requested in a single call; exceeding this limit returns 400.
+     * Unknown identifiers are reported in the {@code errors} array of the response body with
+     * {@code errorCode = CONTENT_TYPE_NOT_FOUND}. Identifiers for which scheme retrieval fails
+     * are reported with {@code errorCode = SCHEMES_FETCH_FAILED}.
+     * An empty or all-blank {@code contentTypeIds} parameter returns 400.
+     * At most {@value #MAX_CONTENT_TYPE_IDS} distinct IDs may be requested in a single call;
+     * exceeding this limit also returns 400.
      * Returns 401 if the user does not have the required backend permissions.
      *
      * @param request        {@link HttpServletRequest}
@@ -563,8 +567,9 @@ public class WorkflowResource {
             description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
                     "grouped by content type for a list of content type identifiers. " +
                     "Each entry in the response maps a resolved content type to its associated schemes. " +
-                    "Unknown or invalid IDs are silently skipped — only successfully resolved content types appear in the result " +
-                    "(note: the single-content-type endpoint returns 404 for an unknown ID; this batch endpoint omits it instead). " +
+                    "Unknown or unresolvable identifiers are reported in the `errors` array of the response body " +
+                    "(field `fieldName` contains the original input token; `errorCode` is `CONTENT_TYPE_NOT_FOUND`). " +
+                    "At least one non-blank identifier is required; an empty or missing `contentTypeIds` parameter returns 400. " +
                     "Maximum " + MAX_CONTENT_TYPE_IDS + " tokens per request (checked before deduplication).",
             tags = {"Workflow"},
             responses = {
@@ -573,7 +578,7 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityContentTypeWorkflowSchemesView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "More than " + MAX_CONTENT_TYPE_IDS + " content type IDs supplied"),
+                    @ApiResponse(responseCode = "400", description = "contentTypeIds is empty or all tokens are blank; or more than " + MAX_CONTENT_TYPE_IDS + " tokens supplied"),
                     @ApiResponse(responseCode = "401", description = "User does not have permission")
             }
     )
@@ -615,33 +620,48 @@ public class WorkflowResource {
                     .distinct()
                     .collect(Collectors.toList());
 
-            final List<String> skippedIds = new ArrayList<>();
-
-            final List<ContentTypeWorkflowSchemesView> result = ids.stream()
-                    .map(contentTypeId -> {
-                        try {
-                            return ContentTypeWorkflowSchemesView.builder()
-                                    .contentTypeId(contentTypeId)
-                                    .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(
-                                            contentTypeId, user))
-                                    .build();
-                        } catch (DotWorkflowException e) {
-                            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
-                                skippedIds.add(contentTypeId);
-                                return null;
-                            }
-                            throw e; // permission errors and unexpected causes propagate
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            if (!skippedIds.isEmpty()) {
-                Logger.warn(this.getClass(), "Skipped " + skippedIds.size() +
-                        " unknown content type ID(s): " + skippedIds);
+            if (ids.isEmpty()) {
+                throw new IllegalArgumentException("contentTypeIds must not be empty");
             }
 
-            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
+            // Resolve each token to a ContentType; deduplicate by UUID; report unknowns
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+            final LinkedHashMap<String, ContentType> resolvedTypes = new LinkedHashMap<>();
+            final List<ErrorEntity> errors = new ArrayList<>();
+
+            for (final String token : ids) {
+                try {
+                    final ContentType ct = contentTypeAPI.find(token);
+                    resolvedTypes.putIfAbsent(ct.id(), ct);
+                } catch (NotFoundInDbException e) {
+                    errors.add(new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", token));
+                } catch (DotDataException | DotSecurityException e) {
+                    throw new DotWorkflowException(e.getMessage(), e);
+                }
+            }
+
+            final List<ContentTypeWorkflowSchemesView> result = new ArrayList<>();
+            for (final ContentType ct : resolvedTypes.values()) {
+                try {
+                    result.add(ContentTypeWorkflowSchemesView.builder()
+                            .contentTypeId(ct.id())
+                            .contentTypeVariable(ct.variable())
+                            .schemes(this.workflowAPI.findSchemesForContentType(ct))
+                            .build());
+                } catch (DotDataException e) {
+                    Logger.warn(this, "Failed to retrieve schemes for content type '" +
+                            ct.id() + "': " + e.getMessage(), e);
+                    errors.add(new ErrorEntity("SCHEMES_FETCH_FAILED",
+                            "Failed to retrieve schemes for content type", ct.id()));
+                }
+            }
+
+            if (!errors.isEmpty()) {
+                Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
+                        errors.stream().map(ErrorEntity::getFieldName).collect(Collectors.toList()));
+            }
+
+            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
 
         } catch (Exception e) {
 

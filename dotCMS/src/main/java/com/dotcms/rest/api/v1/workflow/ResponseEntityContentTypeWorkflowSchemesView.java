@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import java.util.List;
 
@@ -17,5 +18,15 @@ public class ResponseEntityContentTypeWorkflowSchemesView extends
     public ResponseEntityContentTypeWorkflowSchemesView(
             final List<ContentTypeWorkflowSchemesView> contentTypeWorkflowSchemesView) {
         super(contentTypeWorkflowSchemesView);
+    }
+
+    /**
+     * @param errors                         list of identifiers that could not be resolved
+     * @param contentTypeWorkflowSchemesView list of content-type/scheme associations to return
+     */
+    public ResponseEntityContentTypeWorkflowSchemesView(
+            final List<ErrorEntity> errors,
+            final List<ContentTypeWorkflowSchemesView> contentTypeWorkflowSchemesView) {
+        super(errors, contentTypeWorkflowSchemesView);
     }
 }
