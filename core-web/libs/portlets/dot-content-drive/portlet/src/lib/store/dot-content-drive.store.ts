@@ -39,7 +39,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { buildContentDriveQuery, decodeFilters, parseWorkflowFilter } from '../utils/functions';
+import { decodeFilters, parseWorkflowFilter } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -89,15 +89,6 @@ export const DotContentDriveStore = signalStore(
                         !filters()?.languageId?.length &&
                         !filters()?.workflow?.length
                 };
-            }),
-            // We will need this for the global select all in the future, so I'll leave it here for now
-            // https://github.com/dotCMS/core/issues/33338
-            $query: computed<string>(() => {
-                return buildContentDriveQuery({
-                    path: path(),
-                    currentSite: currentSite() ?? SYSTEM_HOST,
-                    filters: filters()
-                });
             })
         };
     }),

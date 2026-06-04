@@ -7,13 +7,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
 import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
-import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
-    BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -65,125 +63,6 @@ describe('DotContentDriveStore', () => {
     });
 
     describe('Computed Properties', () => {
-        describe('$query', () => {
-            it('should build base query when no path or filters are provided', () => {
-                const baseQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
-
-                expect(store.$query()).toEqual(baseQuery);
-            });
-
-            it('should include path in query when provided', () => {
-                const testPath = '/test/path/';
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: testPath,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(testPath)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include custom site in query when provided', () => {
-                const customSite = MOCK_SITES[0] as DotSite;
-
-                store.initContentDrive({
-                    currentSite: customSite,
-                    path: DEFAULT_PATH,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include filters in query when provided', () => {
-                const filters = {
-                    contentType: ['Blog'],
-                    status: 'published'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .field('contentType')
-                    .equals('Blog')
-                    .field('status')
-                    .equals('published')
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided', () => {
-                const filters = {
-                    title: 'Blog'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided with multiple words', () => {
-                const filters = {
-                    title: 'Blog Post'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(
-                        `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-        });
-
         describe('$request', () => {
             it('should build request with default values when no path or filters are provided', () => {
                 store.initContentDrive({

@@ -318,7 +318,10 @@ export class DotContentDriveWorkflowFilterComponent {
             .getSteps(schemeId)
             .pipe(
                 take(1),
-                catchError(() => of([] as WorkflowStep[])),
+                catchError((error) => {
+                    this.#httpErrorManager.handle(error);
+                    return of([] as WorkflowStep[]);
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((steps) => {
@@ -340,7 +343,10 @@ export class DotContentDriveWorkflowFilterComponent {
                     .getSteps(id)
                     .pipe(
                         take(1),
-                        catchError(() => of([] as WorkflowStep[])),
+                        catchError((error) => {
+                            this.#httpErrorManager.handle(error);
+                            return of([] as WorkflowStep[]);
+                        }),
                         takeUntilDestroyed(this.#destroyRef)
                     )
                     .subscribe((steps) => {

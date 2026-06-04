@@ -155,6 +155,18 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             expect(store.removeFilter).toHaveBeenCalledWith('workflow');
         });
 
+        it('should keep the workflow selection when a content-type filter coexists and the scheme still exists', () => {
+            // Workflow and content-type filters active together; the content-type
+            // schemes still include the pinned scheme, so the selection survives.
+            stubFilters({ contentType: ['ct1'], workflow: ['a'] });
+
+            spectator.detectChanges();
+
+            expect(workflowService.getSchemesByContentTypes).toHaveBeenCalledWith(['ct1']);
+            expect(spectator.component.$selection()).toEqual([{ scheme: 'a' }]);
+            expect(store.removeFilter).not.toHaveBeenCalled();
+        });
+
         it('should keep the persisted filter and surface the error when schemes fail to load', () => {
             const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
             stubFilters({ workflow: ['a'] });
@@ -235,6 +247,21 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
 
             expect(workflowService.getSteps).toHaveBeenCalledWith('a');
             expect(spectator.component.$state().steps).toEqual(STEPS_A);
+        });
+
+        it('should surface the error and show an empty step column when steps fail to load', () => {
+            const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
+            (workflowService.getSteps as jest.Mock).mockReturnValue(
+                throwError(() => new Error('boom'))
+            );
+            spectator.detectChanges();
+            openPanel();
+
+            focusScheme('a');
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(spectator.component.$state().steps).toEqual([]);
+            expect(spectator.component.$state().loadingSteps).toBe(false);
         });
 
         it('should pin a step (and select its scheme) when a step is chosen', () => {
