@@ -60,6 +60,11 @@ public  class WebResource {
 
     public static final String BASIC  = "Basic ";
 
+    // Credential-source labels (used for audit logging and to scope the anonymous fallback).
+    private static final String CRED_SOURCE_REQUEST_PARAMETER = "request-parameter";
+    private static final String CRED_SOURCE_DOTAUTH = "DOTAUTH";
+    private static final String CRED_SOURCE_BASIC = "BASIC Authorization";
+
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
@@ -522,21 +527,22 @@ public  class WebResource {
                 .anyMatch(AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals);
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
-        // Track which header supplied the credential so the audit log names the real source.
-        String credentialSource = userPass.isPresent() ? "request-parameter" : null;
+        // Track which source supplied the credential so the audit log names it and so the anonymous
+        // fallback can be scoped to header-based auth only (never to explicit request-parameter logins).
+        String credentialSource = userPass.isPresent() ? CRED_SOURCE_REQUEST_PARAMETER : null;
 
         // Both header parsers (DOTAUTH and BASIC) can throw on a malformed header; route them through
         // the same tolerant policy so the fallback option's guarantee holds for every credential header.
         if(userPass.isEmpty()) {
             userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromHeaderAuth(request),
-                    "DOTAUTH", fallbackToAnonymousOnAuthFailure);
-            credentialSource = userPass.isPresent() ? "DOTAUTH" : null;
+                    CRED_SOURCE_DOTAUTH, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_DOTAUTH : null;
         }
 
         if(userPass.isEmpty()) {
             userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromBasicAuth(request),
-                    "BASIC Authorization", fallbackToAnonymousOnAuthFailure);
-            credentialSource = userPass.isPresent() ? "BASIC Authorization" : null;
+                    CRED_SOURCE_BASIC, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_BASIC : null;
         }
 
         if(userPass.isPresent()) {
@@ -544,14 +550,17 @@ public  class WebResource {
             try {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
-                // Credentials are not a valid dotCMS user. Abort for REST endpoints; for asset
-                // servlets fall through to anonymous and let the resource permission check decide.
-                if (!fallbackToAnonymousOnAuthFailure) {
+                // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
+                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // never silently downgraded to anonymous. REST callers (option off) also fail hard.
+                if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
                     throw e;
                 }
                 Logger.debug(this, () -> source + " credentials are not a valid dotCMS user; "
                         + "falling through to anonymous.");
-                SecurityLogger.logInfo(WebResource.class, () -> source
+                // A correctly-formatted credential that fails authentication is a real auth failure
+                // (potential credential-stuffing against the fallback path), so log at WARN.
+                SecurityLogger.logWarn(WebResource.class, () -> source
                         + " credential failure on asset request absorbed; proceeding as anonymous.");
                 user = null;
             }
@@ -611,11 +620,12 @@ public  class WebResource {
             final boolean fallbackToAnonymous) {
         try {
             return parser.get();
-        } catch (RuntimeException e) {
-            // Catch RuntimeException (not just SecurityException) so malformed Base64 producing
-            // IllegalArgumentException / NPE also degrades gracefully on servlet requests instead of
-            // surfacing a 500. When the fallback option is not set (REST callers) the exception is
-            // rethrown unchanged, preserving strict behavior.
+        } catch (IllegalArgumentException | SecurityException e) {
+            // Catch the malformed-input exceptions a parser can raise (IllegalArgumentException from
+            // bad Base64, SecurityException from bad syntax) so a servlet request degrades gracefully
+            // instead of returning a 500. Other RuntimeExceptions (e.g. an NPE from a code defect) are
+            // intentionally NOT caught — they should surface so the bug can be fixed. When the fallback
+            // option is not set (REST callers) the exception is rethrown unchanged.
             if (!fallbackToAnonymous) {
                 throw e;
             }
@@ -993,8 +1003,8 @@ public  class WebResource {
             // Explicit runtime guard: the SERVLET_ONLY option must never be reachable through the
             // generic options API, where a REST resource could include it (e.g. by copy-paste).
             // It can only be enabled via servletAnonymousFallbackOnAuthFailure().
-            if (Arrays.asList(options).contains(
-                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE)) {
+            if (Arrays.stream(options).anyMatch(
+                    AuthCheckOptions.SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE::equals)) {
                 throw new IllegalArgumentException(
                         "SERVLET_ONLY_FALLBACK_TO_ANONYMOUS_ON_AUTH_FAILURE cannot be set via "
                         + "authCheckOptions(); it is reserved for the static/binary asset servlets. "
