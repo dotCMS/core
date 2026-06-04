@@ -1,6 +1,8 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { EMPTY, of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -11,7 +13,8 @@ import {
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotEnvironment } from '@dotcms/dotcms-models';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -43,7 +46,11 @@ describe('DotPluginsListComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService,
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) })
+            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) }),
+            mockProvider(ActivatedRoute, {
+                snapshot: { data: { pushPublishEnvironments: [], isEnterprise: false } }
+            }),
+            mockProvider(DotPushPublishDialogService, { open: jest.fn() })
         ],
         shallow: true
     });
@@ -95,26 +102,30 @@ describe('DotPluginsListComponent', () => {
 
         it('should show an error and not upload when dropped files contain no jars', () => {
             const event = makeDragEvent([makeFile('readme.txt')]);
-            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
+            const dotMessageDisplayService =
+                spectator.debugElement.injector.get(DotMessageDisplayService);
+            jest.spyOn(dotMessageDisplayService, 'push');
             jest.spyOn(component.store, 'uploadBundles');
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(pushSpy).toHaveBeenCalledWith(
+            expect(dotMessageDisplayService.push).toHaveBeenCalledWith(
                 expect.objectContaining({ severity: expect.any(String) })
             );
         });
 
         it('should do nothing when drop event has no files', () => {
             const event = makeDragEvent([]);
+            const dotMessageDisplayService =
+                spectator.debugElement.injector.get(DotMessageDisplayService);
             jest.spyOn(component.store, 'uploadBundles');
-            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
+            jest.spyOn(dotMessageDisplayService, 'push');
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(pushSpy).not.toHaveBeenCalled();
+            expect(dotMessageDisplayService.push).not.toHaveBeenCalled();
         });
     });
 
@@ -213,6 +224,66 @@ describe('DotPluginsListComponent', () => {
                 });
                 component.contextMenuItems()[4].command!({} as never);
                 expect(component.addToBundleIdentifier()).toBe('test.jar');
+            });
+
+            it('should show push publish action when enterprise and environments are available', () => {
+                component.store.setEnterpriseData(true, [
+                    { id: 'env1', name: 'Production' }
+                ] as DotEnvironment[]);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(
+                    items.find((i) => i.label === 'contenttypes.content.push_publish')
+                ).toBeDefined();
+            });
+
+            it('should call dotPushPublishDialogService.open when push publish is triggered', () => {
+                const pushPublishService = spectator.debugElement.injector.get(
+                    DotPushPublishDialogService
+                );
+                component.store.setEnterpriseData(true, [
+                    { id: 'env1', name: 'Production' }
+                ] as DotEnvironment[]);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const pushPublishItem = component
+                    .contextMenuItems()
+                    .find((i) => i.label === 'contenttypes.content.push_publish');
+                pushPublishItem?.command!({} as never);
+                expect(pushPublishService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetIdentifier: 'test.jar' })
+                );
+            });
+
+            it('should not show push publish action when not enterprise', () => {
+                component.store.setEnterpriseData(false, [
+                    { id: 'env1', name: 'Production' }
+                ] as DotEnvironment[]);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items).toHaveLength(5);
+            });
+
+            it('should not show push publish action when no environments', () => {
+                component.store.setEnterpriseData(true, []);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items).toHaveLength(5);
             });
         });
 

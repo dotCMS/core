@@ -14,7 +14,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.VariantAPI;

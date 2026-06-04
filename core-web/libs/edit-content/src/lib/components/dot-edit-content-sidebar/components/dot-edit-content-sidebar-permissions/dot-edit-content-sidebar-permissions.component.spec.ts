@@ -5,13 +5,17 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { Subject } from 'rxjs';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPermissionsIframeDialogComponent } from '@dotcms/ui';
 
-import { DotPermissionsDialogComponent } from './components/permissions-dialog/permissions-dialog.component';
-import { DotEditContentSidebarPermissionsComponent } from './dot-edit-content-sidebar-permissions.component';
+import {
+    CONTENTLET_PERMISSIONS_IFRAME_PATH,
+    DotEditContentSidebarPermissionsComponent
+} from './dot-edit-content-sidebar-permissions.component';
 
 describe('DotEditContentSidebarPermissionsComponent', () => {
     let spectator: Spectator<DotEditContentSidebarPermissionsComponent>;
@@ -30,7 +34,7 @@ describe('DotEditContentSidebarPermissionsComponent', () => {
 
     beforeEach(() => {
         mockDialogRef = {
-            onClose: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) },
+            onClose: new Subject<void>(),
             close: jest.fn()
         } as unknown as DynamicDialogRef;
         dialogOpenSpy = jest.fn().mockReturnValue(mockDialogRef);
@@ -73,28 +77,39 @@ describe('DotEditContentSidebarPermissionsComponent', () => {
     });
 
     describe('openPermissionsDialog - Success', () => {
-        it('should open permissions dialog when card is clicked with valid identifier and languageId', () => {
+        it('should open permissions dialog with DotPermissionsIframeDialogComponent', () => {
             spectator.setInput('identifier', 'content-789');
             spectator.setInput('languageId', 2);
             spectator.detectChanges();
 
             spectator.click(byTestId('permissions-card'));
 
-            expect(dialogOpenSpy).toHaveBeenCalledWith(DotPermissionsDialogComponent, {
-                header: 'edit.content.sidebar.permissions.title',
-                width: 'min(92vw, 75rem)',
-                contentStyle: { overflow: 'hidden' },
-                data: { identifier: 'content-789', languageId: 2 },
-                transitionOptions: null,
-                modal: true,
-                appendTo: 'body',
-                closeOnEscape: false,
-                closable: true,
-                draggable: false,
-                keepInViewport: false,
-                resizable: false,
-                position: 'center'
-            });
+            expect(dialogOpenSpy).toHaveBeenCalledWith(
+                DotPermissionsIframeDialogComponent,
+                expect.objectContaining({
+                    header: 'edit.content.sidebar.permissions.title',
+                    width: 'min(92vw, 75rem)',
+                    contentStyle: { overflow: 'hidden' },
+                    modal: true,
+                    appendTo: 'body',
+                    closeOnEscape: false,
+                    closable: true
+                })
+            );
+        });
+
+        it('should build url with contentletId, languageId and popup', () => {
+            spectator.setInput('identifier', 'content-789');
+            spectator.setInput('languageId', 2);
+            spectator.detectChanges();
+
+            spectator.click(byTestId('permissions-card'));
+
+            const callData = dialogOpenSpy.mock.calls[0][1].data;
+            expect(callData.url).toContain(CONTENTLET_PERMISSIONS_IFRAME_PATH);
+            expect(callData.url).toContain('contentletId=content-789');
+            expect(callData.url).toContain('languageId=2');
+            expect(callData.url).toContain('popup=true');
         });
 
         it('should call DotMessageService.get for header when opening dialog', () => {

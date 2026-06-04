@@ -9,7 +9,7 @@ import {
 
 export const getDotCMSPage = cache(async (path) => {
     try {
-        const pageData = await dotCMSClient.page.get(path, {
+        return await dotCMSClient.page.get(path, {
             graphql: {
                 content: {
                     blogs: blogQuery,
@@ -19,10 +19,7 @@ export const getDotCMSPage = cache(async (path) => {
                 fragments: [fragmentNav],
             },
         });
-        return pageData;
     } catch (e) {
-        console.error("ERROR FETCHING PAGE: ", e.message);
-
-        return null;
+        return { error: e };
     }
 });

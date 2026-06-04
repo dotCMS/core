@@ -3,6 +3,7 @@ package com.dotcms.content.index;
 import com.dotcms.content.index.opensearch.OSIndexProperty;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 /**
  * Central helper for reading index-layer configuration properties.
@@ -34,6 +35,35 @@ import com.dotmarketing.util.Config;
  * "not set" for numeric and boolean properties.</p>
  */
 public interface IndexConfigHelper {
+
+    /**
+     * Config key controlling the log level for OS shadow write failures in dual-write phases.
+     *
+     * <p>Valid values: {@code DEBUG}, {@code INFO}, {@code WARN}, {@code ERROR} (default: {@code WARN}).
+     * Set to {@code ERROR} or {@code DEBUG} to increase/decrease visibility during migration QA.</p>
+     */
+    String SHADOW_WRITE_LOG_LEVEL_KEY = "DOTCMS_SHADOW_WRITE_LOG_LEVEL";
+
+    /**
+     * Logs an OS shadow write failure at the level configured by
+     * {@value #SHADOW_WRITE_LOG_LEVEL_KEY} (default: {@code WARN}).
+     *
+     * @param clazz   the class to attribute the log entry to
+     * @param message the log message
+     * @param t       the throwable, or {@code null} if none
+     */
+    static void logShadowWriteFailure(final Class<?> clazz,
+                                      final String message,
+                                      final Throwable t) {
+        final String level = Config.getStringProperty(SHADOW_WRITE_LOG_LEVEL_KEY, "WARN")
+                                   .toUpperCase();
+        switch (level) {
+            case "DEBUG": Logger.debug(clazz, message, t); break;
+            case "INFO":  Logger.info(clazz,  message, t); break;
+            case "ERROR": Logger.error(clazz, message, t); break;
+            default:      Logger.warn(clazz,  message, t); break;
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Migration phase
@@ -117,6 +147,38 @@ public interface IndexConfigHelper {
         public boolean isReadEnabled() {
             return this == PHASE_2_DUAL_WRITE_OS_READS || this == PHASE_3_OPENSEARCH_ONLY;
         }
+
+        // ── Mutation ─────────────────────────────────────────────────────────
+
+        /**
+         * Resets the active migration phase to {@link #PHASE_0_MIGRATION_NOT_STARTED} at
+         * runtime by writing ordinal {@code 0} back to {@code FEATURE_FLAG_OPEN_SEARCH_PHASE}.
+         *
+         * <p>This is a runtime-only change — it affects in-memory config for the current
+         * JVM lifetime but does not persist to {@code dotmarketing-config.properties}. After a
+         * restart the phase will revert to whatever the file or environment variable says.
+         * Persist the change in the properties file to survive restarts.</p>
+         *
+         * <p><strong>System-table shadowing:</strong> {@link Config#getIntProperty} consults the
+         * DB-backed {@code ConfigSystemTable} <em>before</em> the in-memory props store.  If
+         * {@code FEATURE_FLAG_OPEN_SEARCH_PHASE} was set via the system-table config source,
+         * {@link Config#setProperty} writes to the in-memory store and the system-table value
+         * continues to win — making this reset a no-op from {@link #current()}'s perspective.
+         * Clear the system-table entry via the dotCMS config API before relying on this method
+         * in that case.</p>
+         *
+         * <p>Intended for rollback scenarios where OS becomes unavailable and the operator
+         * needs to route all traffic back to ES immediately without a restart.</p>
+         */
+        public static void reset() {
+            final MigrationPhase previous = current();
+            Config.setProperty(FLAG_KEY, 0);
+            Logger.warn(MigrationPhase.class,
+                    "Migration phase reset to PHASE_0_MIGRATION_NOT_STARTED"
+                    + " (was " + previous.name() + ")."
+                    + " This change is runtime-only — persist it in dotmarketing-config.properties"
+                    + " to survive a restart.");
+        }
     }
 
     static boolean isMigrationNotStarted(){
@@ -137,6 +199,10 @@ public interface IndexConfigHelper {
 
     static boolean isReadEnabled(){
         return MigrationPhase.current().isReadEnabled();
+    }
+
+    static void haltMigration(){
+        MigrationPhase.reset();
     }
 
     // -------------------------------------------------------------------------

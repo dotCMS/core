@@ -35,7 +35,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.util.CollectionsUtils;

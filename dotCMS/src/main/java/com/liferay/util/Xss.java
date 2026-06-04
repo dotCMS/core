@@ -27,10 +27,15 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.HashSet;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.owasp.encoder.Encode;
 
 /**
  * <a href="Xss.java.html"><b><i>View Source</i></b></a>
+ *
+ * <p>XSS detection and encoding utilities. Encoding methods now delegate to the
+ * <a href="https://owasp.org/www-project-java-encoder/">OWASP Java Encoder</a> library,
+ * which provides context-aware, standards-compliant output encoding for HTML, JavaScript,
+ * CSS, and URI contexts.</p>
  *
  * @author Brian Wing Shun Chan
  * @author Clarence Shen
@@ -39,15 +44,17 @@ import org.apache.commons.lang.StringEscapeUtils;
 public class Xss {
 
     public static final String XSS_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern" ) );
-    
+
     private static Set<String> excludeList = null;
 
     /**
-     * Removes from the given text possible XSS hacks
+     * Removes from the given text possible XSS hacks.
      *
      * @param text
      * @return
-     * @deprecated Is recommended to use instead methods like URIHasXSS or ParamsHaveXSS and handle properly a possible XSS attack
+     * @deprecated Use context-specific encoding methods such as {@link #escapeHTMLAttrib(String)},
+     *             {@link #encodeForHTML(String)}, or {@link #encodeForURL(String)} instead of
+     *             stripping content.
      */
     public static String strip ( String text ) {
         if ( text == null ) {
@@ -57,70 +64,154 @@ public class Xss {
     }
 
     /**
-     * Checks into the request query string for possible XSS hacks and return true if any possible XSS fragment is found
+     * Checks the request query string for possible XSS hacks.
      *
-     * @param request
-     * @return true if any possible XSS fragment is found
+     * @param request the incoming HTTP request
+     * @return {@code true} if any possible XSS fragment is found in the query string
      */
-    @SuppressWarnings ("unchecked")
-    public static boolean ParamsHaveXSS ( HttpServletRequest request ) {
-        return ParamsHaveXSS( request.getQueryString() );
+    public static boolean paramsHaveXSS ( final HttpServletRequest request ) {
+        return paramsHaveXSS( request.getQueryString() );
     }
 
     /**
-     * Checks into a given query string for possible XSS hacks and return true if any possible XSS fragment is found
+     * Checks the given query string for possible XSS hacks.
      *
-     * @param queryString
-     * @return true if any possible XSS fragment is found
+     * @param queryString the raw query string to inspect
+     * @return {@code true} if any possible XSS fragment is found
      */
-    @SuppressWarnings ("unchecked")
-    public static boolean ParamsHaveXSS ( String queryString ) {
-
-        queryString = UtilMethods.decodeURL( queryString );
-        return RegEX.contains( queryString, XSS_REGEXP_PATTERN );
+    public static boolean paramsHaveXSS ( final String queryString ) {
+        return RegEX.contains( UtilMethods.decodeURL( queryString ), XSS_REGEXP_PATTERN );
     }
 
     /**
-     * Checks in the given uri for possible XSS hacks and return true if any possible XSS fragment is found
+     * Checks the given URI for possible XSS hacks.
      *
-     * @param uri
-     * @return true if any possible XSS fragment is found
+     * @param uri the URI to inspect
+     * @return {@code true} if any possible XSS fragment is found
      */
-    public static boolean URIHasXSS ( String uri ) {
-
+    public static boolean uriHasXSS ( final String uri ) {
         if ( uri == null ) {
             return false;
         }
-
         return RegEX.contains( uri, XSS_REGEXP_PATTERN );
-     }
+    }
 
     /**
-     * Checks in the given url for possible XSS hacks and return true if any possible XSS fragment is found
+     * Checks the given URL for possible XSS hacks.
      *
-     * @param url
-     * @return true if any possible XSS fragment is found
-     * @deprecated Use instead individually URIHasXSS and ParamsHaveXSS
+     * @param url the URL to inspect
+     * @return {@code true} if any possible XSS fragment is found
+     * @deprecated Use {@link #uriHasXSS(String)} and {@link #paramsHaveXSS(String)} individually.
      */
-    public static boolean URLHasXSS ( String url ) {
-
+    @Deprecated
+    public static boolean urlHasXSS ( final String url ) {
         if ( url == null ) {
             return false;
         }
         return RegEX.contains( url, XSS_REGEXP_PATTERN );
     }
 
-    public static String encodeForURL ( String value )  throws Exception{
-        return value != null ? UtilMethods.encodeURL( value ) : "";
+    /** @deprecated Use {@link #paramsHaveXSS(HttpServletRequest)} */
+    @Deprecated
+    public static boolean ParamsHaveXSS ( final HttpServletRequest request ) {
+        return paramsHaveXSS( request );
     }
 
+    /** @deprecated Use {@link #paramsHaveXSS(String)} */
+    @Deprecated
+    public static boolean ParamsHaveXSS ( final String queryString ) {
+        return paramsHaveXSS( queryString );
+    }
+
+    /** @deprecated Use {@link #uriHasXSS(String)} */
+    @Deprecated
+    public static boolean URIHasXSS ( final String uri ) {
+        return uriHasXSS( uri );
+    }
+
+    /** @deprecated Use {@link #urlHasXSS(String)} */
+    @Deprecated
+    public static boolean URLHasXSS ( final String url ) {
+        return urlHasXSS( url );
+    }
+
+    /**
+     * Encodes a value for safe use in a URI component (query parameter value, path segment, etc.)
+     * using the OWASP Java Encoder.
+     *
+     * @param value the raw value to encode
+     * @return the percent-encoded value, or an empty string if {@code value} is null
+     */
+    public static String encodeForURL ( String value ) {
+        return value != null ? Encode.forUriComponent( value ) : "";
+    }
+
+    /**
+     * Encodes a value for safe inclusion in HTML content or an HTML attribute using the
+     * OWASP Java Encoder. Replaces the previous {@code StringEscapeUtils.escapeHtml()} call
+     * with a standards-compliant encoder that covers a broader set of dangerous characters.
+     *
+     * @param value the raw value to encode
+     * @return the HTML-encoded value, or an empty string if {@code value} is null
+     */
     public static String escapeHTMLAttrib ( String value ) {
-        return value != null ? StringEscapeUtils.escapeHtml( value ) : "";
+        return value != null ? Encode.forHtml( value ) : "";
     }
 
+    /**
+     * Encodes a value for safe inclusion in HTML body content using the OWASP Java Encoder.
+     *
+     * @param value the raw value to encode
+     * @return the HTML-encoded value, or an empty string if {@code value} is null
+     */
+    public static String encodeForHTML ( String value ) {
+        return value != null ? Encode.forHtml( value ) : "";
+    }
 
+    /**
+     * Encodes a value for safe inclusion in an HTML attribute (inside a quoted attribute value)
+     * using the OWASP Java Encoder.
+     *
+     * @param value the raw value to encode
+     * @return the HTML-attribute-encoded value, or an empty string if {@code value} is null
+     */
+    public static String encodeForHTMLAttribute ( String value ) {
+        return value != null ? Encode.forHtmlAttribute( value ) : "";
+    }
+
+    /**
+     * Encodes a value for safe embedding inside a JavaScript string literal using the
+     * OWASP Java Encoder.
+     *
+     * @param value the raw value to encode
+     * @return the JavaScript-encoded value, or an empty string if {@code value} is null
+     */
+    public static String encodeForJavaScript ( String value ) {
+        return value != null ? Encode.forJavaScript( value ) : "";
+    }
+
+    /**
+     * Encodes a value for safe use as a CSS string or identifier using the OWASP Java Encoder.
+     *
+     * @param value the raw value to encode
+     * @return the CSS-encoded value, or an empty string if {@code value} is null
+     */
+    public static String encodeForCSS ( String value ) {
+        return value != null ? Encode.forCssString( value ) : "";
+    }
+
+    /**
+     * Decodes HTML entities in the given value.
+     *
+     * @param value the HTML-encoded value to decode
+     * @return the decoded value, or an empty string if {@code value} is null
+     */
     public static String unEscapeHTMLAttrib ( String value ) {
-        return value != null ? StringEscapeUtils.unescapeHtml( value ) : "";
+        if (value == null) {
+            return "";
+        }
+        // OWASP encoder does not provide a decoder; Apache Commons Text is the appropriate tool.
+        return org.apache.commons.lang.StringEscapeUtils.unescapeHtml( value );
     }
 
     private static void buildExcludeList () {

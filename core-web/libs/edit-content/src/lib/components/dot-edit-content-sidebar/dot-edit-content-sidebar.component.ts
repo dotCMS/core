@@ -14,6 +14,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
@@ -27,7 +28,6 @@ import { DotEditContentSidebarRulesComponent } from './components/dot-edit-conte
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
-import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
     DotHistoryTimelineItemAction,
     DotWorkflowState
@@ -41,13 +41,14 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
+    styleUrl: './dot-edit-content-sidebar.component.scss',
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
         TabsModule,
-        TabViewInsertDirective,
+        TooltipModule,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
         ConfirmDialogModule,
@@ -62,8 +63,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        // bg-[var(--gray-100)]
-        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)]  shadow-md relative min-w-0 max-w-full overflow-x-hidden'
+        class: 'flex w-[21.875rem] h-full flex-col items-start border-l border-[var(--gray-400)] [&:not([inert])]:shadow-[-4px_0_12px_rgba(0,0,0,0.08)] relative min-w-0 overflow-x-hidden'
     }
 })
 export class DotEditContentSidebarComponent {
@@ -122,13 +122,17 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
-     * Effect that triggers the reference pages based on the contentlet identifier.
+     * Effect that loads sidebar data (reference pages and activities) when the
+     * sidebar is open and the contentlet identifier is available.
+     * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
+     * page load when the user never actually opens the sidebar.
      */
     #informationEffect = effect(() => {
         const identifier = this.$identifier();
+        const isSidebarOpen = this.$store.isSidebarOpen();
 
         untracked(() => {
-            if (identifier) {
+            if (identifier && isSidebarOpen) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
             }
@@ -223,21 +227,11 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        navContainer: {
-            class: 'sticky top-0 z-[2] bg-[var(--gray-100)] p-0 border-b border-[var(--gray-300)]'
-        },
         nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
-        navContent: { class: 'flex items-center w-full gap-3 overflow-visible justify-between' },
+        navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
         },
         panel: { class: 'h-full' }
-    };
-
-    /**
-     * Button passthrough (pt) configuration for the toggle sidebar button.
-     */
-    readonly toggleButtonPt = {
-        root: { class: 'text-[var(--primary-color)]' }
     };
 }

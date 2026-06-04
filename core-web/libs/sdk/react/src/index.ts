@@ -22,8 +22,6 @@ export type { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBo
 
 export { useAISearch } from './lib/next/hooks/useAISearch';
 
-export { useStyleEditorSchemas } from './lib/next/hooks/useStyleEditorSchemas';
-
 //Export AI types from shared types
 export type { DotCMSAISearchValue, DotCMSAISearchProps } from './lib/next/shared/types';
 

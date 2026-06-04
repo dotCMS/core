@@ -17,8 +17,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-base-type-selector/dot-content-drive-base-type-selector.component';
-import { DotContentDriveContentTypeFieldComponent } from './components/dot-content-drive-content-type-field/dot-content-drive-content-type-field.component';
+import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
@@ -48,8 +47,7 @@ interface ToolbarAnimationState {
         MenuModule,
         DotMessagePipe,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveBaseTypeSelectorComponent,
-        DotContentDriveContentTypeFieldComponent,
+        DotContentDriveContentTypeFilterComponent,
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
         DotContentDriveWorkflowActionsComponent
@@ -106,6 +104,11 @@ export class DotContentDriveToolbarComponent {
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
+    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    onClearAll(): void {
+        this.#store.clearFilters();
+    }
 
     /**
      * Controls visibility of toolbar elements to prevent overlap during animations

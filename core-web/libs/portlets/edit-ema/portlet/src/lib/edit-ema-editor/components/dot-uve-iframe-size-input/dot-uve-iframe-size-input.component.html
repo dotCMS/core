@@ -1,0 +1,15 @@
+<input
+    type="number"
+    class="w-14 appearance-none border-none bg-transparent p-0 text-center text-sm tabular-nums focus:rounded-sm focus:bg-black/5 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+    aria-label="Iframe width"
+    data-testid="iframe-size-width"
+    [value]="$width()"
+    (change)="onWidthChange($event)" />
+<span class="text-sm text-black/40 select-none" aria-hidden="true">×</span>
+<input
+    type="number"
+    class="w-14 appearance-none border-none bg-transparent p-0 text-center text-sm tabular-nums focus:rounded-sm focus:bg-black/5 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+    aria-label="Iframe height"
+    data-testid="iframe-size-height"
+    [value]="$height()"
+    (change)="onHeightChange($event)" />

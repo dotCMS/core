@@ -1,7 +1,8 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { format } from 'date-fns';
+import { forkJoin, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -16,25 +17,39 @@ import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
-    ContentAttributionEntity,
-    ConversionsOverviewEntity,
+    ContentAttributionData,
+    ConversionOverviewData,
     ConvertingVisitorsEntity,
-    DEFAULT_GRANULARITY,
     RequestState,
     TimeRangeInput,
-    TotalConversionsEntity
+    TotalEventsByDayData,
+    TotalEventsData,
+    UniqueVisitorsByDayData
 } from '../../types';
-import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
-    aggregateTotalConversions,
-    ConversionTrendEntity,
-    createEmptyAnalyticsEntity,
-    createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    fillMissingDates,
-    toTimeRangeCubeJS,
-    TrafficVsConversionsEntity
+    fillMissingApiDates,
+    toApiRangeParams,
+    TrafficVsConversionsDayData
 } from '../../utils/data/analytics-data.utils';
+import {
+    analyticsResponseBodyMessage,
+    zipDailyUniqueVisitorsForTrafficChart
+} from '../../utils/data/conversions-store.utils';
+
+function conversionsFeatureErrorMessage(
+    error: unknown,
+    dotMessageService: DotMessageService,
+    i18nKey: string
+): string {
+    if (error instanceof HttpErrorResponse) {
+        return analyticsResponseBodyMessage(error) ?? dotMessageService.get(i18nKey);
+    }
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    return dotMessageService.get(i18nKey);
+}
 
 /**
  * State interface for the Conversions feature.
@@ -42,19 +57,19 @@ import {
  */
 export interface ConversionsState {
     /** Total conversions metric */
-    totalConversions: RequestState<TotalConversionsEntity>;
+    totalConversions: RequestState<TotalEventsData>;
     /** Converting visitors metric (includes uniqueVisitors and uniqueConvertingVisitors) */
     convertingVisitors: RequestState<ConvertingVisitorsEntity>;
     /** Site-wide conversion rate */
     conversionRate: RequestState<number>;
     /** Conversion trend timeline data */
-    conversionTrend: RequestState<ConversionTrendEntity[]>;
+    conversionTrend: RequestState<TotalEventsByDayData[]>;
     /** Traffic vs conversions comparison data (per day) */
-    trafficVsConversions: RequestState<TrafficVsConversionsEntity[]>;
+    trafficVsConversions: RequestState<TrafficVsConversionsDayData[]>;
     /** Content attribution table data */
-    contentConversions: RequestState<ContentAttributionEntity[]>;
+    contentConversions: RequestState<ContentAttributionData[]>;
     /** Conversions overview table data */
-    conversionsOverview: RequestState<ConversionsOverviewEntity[]>;
+    conversionsOverview: RequestState<ConversionOverviewData[]>;
 }
 
 /**
@@ -112,43 +127,40 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .conversions()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
-                                tapResponse({
-                                    next: (entities) => {
-                                        const totalConversionsEntity =
-                                            aggregateTotalConversions(entities);
-                                        patchState(store, {
-                                            totalConversions: {
-                                                status: ComponentStatus.LOADED,
-                                                data: totalConversionsEntity,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.total-conversions'
-                                            );
-                                        patchState(store, {
-                                            totalConversions: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
+                            return analyticsService
+                                .getTotalEvents({
+                                    ...rangeParams,
+                                    eventType: 'conversion',
+                                    siteId: currentSiteId
                                 })
-                            );
+                                .pipe(
+                                    tapResponse({
+                                        next: (data) => {
+                                            patchState(store, {
+                                                totalConversions: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        error: (error: unknown) => {
+                                            patchState(store, {
+                                                totalConversions: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error: conversionsFeatureErrorMessage(
+                                                        error,
+                                                        dotMessageService,
+                                                        'analytics.error.loading.total-conversions'
+                                                    )
+                                                }
+                                            });
+                                        }
+                                    })
+                                );
                         })
                     )
                 ),
@@ -171,49 +183,52 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .conversions()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
-                                map((entities) =>
-                                    fillMissingDates<ConversionTrendEntity>(
-                                        entities,
-                                        timeRange,
-                                        DEFAULT_GRANULARITY,
-                                        createEmptyAnalyticsEntity
-                                    )
-                                ),
-                                tapResponse({
-                                    next: (data) => {
-                                        patchState(store, {
-                                            conversionTrend: {
-                                                status: ComponentStatus.LOADED,
-                                                data,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.conversion-trend'
-                                            );
-                                        patchState(store, {
-                                            conversionTrend: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
+                            return analyticsService
+                                .getTotalEvents({
+                                    ...rangeParams,
+                                    granularity: 'day',
+                                    eventType: 'conversion',
+                                    siteId: currentSiteId
                                 })
-                            );
+                                .pipe(
+                                    map((items) =>
+                                        fillMissingApiDates(
+                                            items as TotalEventsByDayData[],
+                                            timeRange,
+                                            'day',
+                                            (date) => ({
+                                                day: format(date, 'yyyy-MM-dd'),
+                                                totalEvents: 0
+                                            })
+                                        )
+                                    ),
+                                    tapResponse({
+                                        next: (data) => {
+                                            patchState(store, {
+                                                conversionTrend: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        error: (error: unknown) => {
+                                            patchState(store, {
+                                                conversionTrend: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error: conversionsFeatureErrorMessage(
+                                                        error,
+                                                        dotMessageService,
+                                                        'analytics.error.loading.conversion-trend'
+                                                    )
+                                                }
+                                            });
+                                        }
+                                    })
+                                );
                         })
                     )
                 ),
@@ -236,35 +251,44 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<ConvertingVisitorsEntity>(query).pipe(
+                            return forkJoin({
+                                uniqueVisitorsData: analyticsService.getUniqueVisitors({
+                                    ...rangeParams,
+                                    eventType: 'pageview',
+                                    siteId: currentSiteId
+                                }),
+                                uniqueConvertingData: analyticsService.getUniqueVisitors({
+                                    ...rangeParams,
+                                    eventType: 'conversion',
+                                    siteId: currentSiteId
+                                })
+                            }).pipe(
+                                map(({ uniqueVisitorsData, uniqueConvertingData }) => ({
+                                    uniqueVisitors: uniqueVisitorsData.uniqueVisitors,
+                                    uniqueConvertingVisitors: uniqueConvertingData.uniqueVisitors
+                                })),
                                 tapResponse({
-                                    next: (entities) => {
+                                    next: (data: ConvertingVisitorsEntity) => {
                                         patchState(store, {
                                             convertingVisitors: {
                                                 status: ComponentStatus.LOADED,
-                                                data: entities[0] ?? null,
+                                                data,
                                                 error: null
                                             }
                                         });
                                     },
-                                    error: (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.converting-visitors'
-                                            );
+                                    error: (error: unknown) => {
                                         patchState(store, {
                                             convertingVisitors: {
                                                 status: ComponentStatus.ERROR,
                                                 data: null,
-                                                error: errorMessage
+                                                error: conversionsFeatureErrorMessage(
+                                                    error,
+                                                    dotMessageService,
+                                                    'analytics.error.loading.converting-visitors'
+                                                )
                                             }
                                         });
                                     }
@@ -276,7 +300,7 @@ export function withConversions() {
 
                 /**
                  * Loads traffic vs conversions chart data (per day).
-                 * Returns uniqueVisitors (bars) and conversion rate % (line) per day.
+                 * Returns uniqueVisitors (bars) and unique converting visitors (line) per day.
                  */
                 _loadTrafficVsConversions: rxMethod<{
                     timeRange: TimeRangeInput;
@@ -293,57 +317,81 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService
-                                .cubeQuery<TrafficVsConversionsEntity>(query)
-                                .pipe(
-                                    map((entities) =>
-                                        fillMissingDates(
-                                            entities,
-                                            timeRange,
-                                            DEFAULT_GRANULARITY,
-                                            createEmptyTrafficVsConversionsEntity
-                                        )
-                                    ),
-                                    tapResponse({
-                                        next: (entities) => {
-                                            patchState(store, {
-                                                trafficVsConversions: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data: entities,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
+                            return forkJoin({
+                                visitors: analyticsService.getUniqueVisitors({
+                                    ...rangeParams,
+                                    granularity: 'day',
+                                    eventType: 'pageview',
+                                    siteId: currentSiteId
+                                }),
+                                converting: analyticsService.getUniqueVisitors({
+                                    ...rangeParams,
+                                    granularity: 'day',
+                                    eventType: 'conversion',
+                                    siteId: currentSiteId
+                                })
+                            }).pipe(
+                                map(({ visitors, converting }) => {
+                                    const visitorsArr = visitors as UniqueVisitorsByDayData[];
+                                    const convertingArr = converting as UniqueVisitorsByDayData[];
+
+                                    const filledVisitors = fillMissingApiDates(
+                                        visitorsArr,
+                                        timeRange,
+                                        'day',
+                                        (d) => ({
+                                            day: format(d, 'yyyy-MM-dd'),
+                                            uniqueVisitors: 0
+                                        })
+                                    );
+                                    const filledConverting = fillMissingApiDates(
+                                        convertingArr,
+                                        timeRange,
+                                        'day',
+                                        (d) => ({
+                                            day: format(d, 'yyyy-MM-dd'),
+                                            uniqueVisitors: 0
+                                        })
+                                    );
+
+                                    return zipDailyUniqueVisitorsForTrafficChart(
+                                        filledVisitors,
+                                        filledConverting
+                                    );
+                                }),
+                                tapResponse({
+                                    next: (data: TrafficVsConversionsDayData[]) => {
+                                        patchState(store, {
+                                            trafficVsConversions: {
+                                                status: ComponentStatus.LOADED,
+                                                data,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: (error: unknown) => {
+                                        patchState(store, {
+                                            trafficVsConversions: {
+                                                status: ComponentStatus.ERROR,
+                                                data: null,
+                                                error: conversionsFeatureErrorMessage(
+                                                    error,
+                                                    dotMessageService,
                                                     'analytics.error.loading.traffic-vs-conversions'
-                                                );
-                                            patchState(store, {
-                                                trafficVsConversions: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
+                                                )
+                                            }
+                                        });
+                                    }
+                                })
+                            );
                         })
                     )
                 ),
 
                 /**
                  * Loads content attribution table data.
-                 * Shows content present in conversions with event type, identifier, title, etc.
                  */
                 _loadContentConversions: rxMethod<{
                     timeRange: TimeRangeInput;
@@ -360,48 +408,49 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('ContentAttribution')
-                                .dimensions(['eventType', 'identifier', 'title'])
-                                .measures(['sumConversions', 'sumEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<ContentAttributionEntity>(query).pipe(
-                                tapResponse({
-                                    next: (entities) => {
-                                        patchState(store, {
-                                            contentConversions: {
-                                                status: ComponentStatus.LOADED,
-                                                data: entities,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.content-conversions'
-                                            );
-                                        patchState(store, {
-                                            contentConversions: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
+                            return analyticsService
+                                .getContentAttribution({
+                                    ...rangeParams,
+                                    siteId: currentSiteId,
+                                    page: 1,
+                                    pageSize: 20,
+                                    orderBy: 'attributionCount',
+                                    orderDir: 'desc'
                                 })
-                            );
+                                .pipe(
+                                    tapResponse({
+                                        next: (data) => {
+                                            patchState(store, {
+                                                contentConversions: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        error: (error: unknown) => {
+                                            patchState(store, {
+                                                contentConversions: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error: conversionsFeatureErrorMessage(
+                                                        error,
+                                                        dotMessageService,
+                                                        'analytics.error.loading.content-conversions'
+                                                    )
+                                                }
+                                            });
+                                        }
+                                    })
+                                );
                         })
                     )
                 ),
 
                 /**
                  * Loads conversions overview table data.
-                 * Shows conversion names with total conversions, conversion rate, and top attributed content.
                  */
                 _loadConversionsOverview: rxMethod<{
                     timeRange: TimeRangeInput;
@@ -418,42 +467,38 @@ export function withConversions() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('Conversion')
-                                .dimensions([
-                                    'conversionName',
-                                    'totalConversion',
-                                    'convRate',
-                                    'topAttributedContent'
-                                ])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                            const rangeParams = toApiRangeParams(timeRange);
 
                             return analyticsService
-                                .cubeQuery<ConversionsOverviewEntity>(query)
+                                .getConversionsOverview({
+                                    ...rangeParams,
+                                    siteId: currentSiteId,
+                                    page: 1,
+                                    pageSize: 20,
+                                    orderBy: 'totalConversions',
+                                    orderDir: 'desc'
+                                })
                                 .pipe(
                                     tapResponse({
-                                        next: (entities) => {
+                                        next: (data) => {
                                             patchState(store, {
                                                 conversionsOverview: {
                                                     status: ComponentStatus.LOADED,
-                                                    data: entities,
+                                                    data,
                                                     error: null
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.conversions-overview'
-                                                );
+                                        error: (error: unknown) => {
                                             patchState(store, {
                                                 conversionsOverview: {
                                                     status: ComponentStatus.ERROR,
                                                     data: null,
-                                                    error: errorMessage
+                                                    error: conversionsFeatureErrorMessage(
+                                                        error,
+                                                        dotMessageService,
+                                                        'analytics.error.loading.conversions-overview'
+                                                    )
                                                 }
                                             });
                                         }
@@ -472,10 +517,18 @@ export function withConversions() {
                     const timeRange = store.timeRange();
 
                     if (!currentSiteId) {
+                        patchState(store, {
+                            totalConversions: createInitialRequestState(),
+                            convertingVisitors: createInitialRequestState(),
+                            conversionRate: createInitialRequestState(),
+                            conversionTrend: createInitialRequestState(),
+                            trafficVsConversions: createInitialRequestState(),
+                            contentConversions: createInitialRequestState(),
+                            conversionsOverview: createInitialRequestState()
+                        });
                         return;
                     }
 
-                    // Load all conversions metrics
                     this._loadTotalConversions({ timeRange, currentSiteId });
                     this._loadConversionTrend({ timeRange, currentSiteId });
                     this._loadConvertingVisitors({ timeRange, currentSiteId });

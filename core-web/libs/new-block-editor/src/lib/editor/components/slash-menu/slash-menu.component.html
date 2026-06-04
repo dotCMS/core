@@ -1,0 +1,37 @@
+<ul class="m-0 max-h-96 list-none overflow-y-auto p-1" role="presentation">
+    @for (item of service.items(); track item.label; let i = $index) {
+        <li
+            [id]="'slash-opt-' + i"
+            role="option"
+            [attr.aria-selected]="service.activeIndex() === i"
+            [class]="itemClass(i)"
+            (mousedown)="$event.preventDefault(); service.select(item)"
+            (mousemove)="onMouseMove(i)">
+            @if (item.icon) {
+                <span
+                    class="slash-menu-item-icon material-symbols-outlined flex size-10 shrink-0 items-center justify-center rounded-sm border border-gray-200 bg-white text-gray-700"
+                    aria-hidden="true">
+                    {{ item.icon }}
+                </span>
+            }
+            <span class="flex min-w-0 flex-col">
+                <span class="text-sm leading-tight font-medium text-gray-900">
+                    {{ item.label }}
+                </span>
+                <span class="truncate text-xs text-gray-500">{{ item.description }}</span>
+            </span>
+        </li>
+    }
+    @if (service.isLoading()) {
+        <li class="flex items-center gap-3 rounded-sm p-2 text-sm text-gray-400" role="status">
+            <span class="material-symbols-outlined animate-spin text-base" aria-hidden="true">
+                progress_activity
+            </span>
+            {{ 'dot.block.editor.slash-menu.loading' | dm }}
+        </li>
+    } @else if (service.items().length === 0) {
+        <p role="status" class="px-3 py-4 text-center text-sm text-gray-400">
+            {{ 'dot.block.editor.slash-menu.no-matches' | dm }}
+        </p>
+    }
+</ul>

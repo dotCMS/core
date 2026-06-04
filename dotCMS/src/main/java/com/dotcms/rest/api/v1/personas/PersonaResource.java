@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.personas;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;

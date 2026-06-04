@@ -6,7 +6,6 @@ interface ProductProps extends DotCMSBasicContentlet {
   urlTitle: string;
 }
 function Product({
-  inode,
   image,
   title,
   salePrice,
@@ -26,7 +25,7 @@ function Product({
         {image && (
           <img
             className="object-contain w-full max-h-60"
-            src={`/dA/${inode}`}
+            src={`${image.idPath}`}
             width={100}
             height={100}
             alt="Activity Image"

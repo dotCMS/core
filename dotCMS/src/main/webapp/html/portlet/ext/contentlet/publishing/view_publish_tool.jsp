@@ -42,6 +42,7 @@
 
     dojo.require("dijit.form.NumberTextBox");
     dojo.require("dojox.layout.ContentPane");
+    dojo.require("dojox.form.Uploader");
 
     function doQueueFilter() {
         refreshQueueList("");
@@ -63,8 +64,6 @@
 
         }
     const debouncedAuditFilter = debounce(doAuditFilter, 250);
-
-    var lastUrlParams;
 
     function refreshQueueList(urlParams) {
 
@@ -102,8 +101,6 @@
         myCp.attr("href", url);
 
         myCp.refresh();
-
-
 
     }
 
@@ -233,7 +230,37 @@
                     }
                 });
 
+        var uploader = dijit.byId("uploadBundleFile");
+        if (uploader) {
+            dojo.connect(uploader, "onChange", function (files) {
+                updateBundleFileNameDisplay(files);
+            });
+            applyBundleAcceptFilter();
+        }
+
     });
+
+    /** dojox.form.Uploader often omits `accept` on the real file input; sync it here. */
+    function applyBundleAcceptFilter() {
+        var uploader = dijit.byId("uploadBundleFile");
+        if (uploader && uploader.domNode) {
+            dojo.query('input[type="file"]', uploader.domNode).forEach(function (input) {
+                input.accept = ".tar.gz,.gz,.tgz";
+            });
+        }
+    }
+
+    function updateBundleFileNameDisplay(files) {
+        var display = dojo.byId("uploadBundleFileName");
+        if (!display) { return; }
+        if (files && files.length) {
+            var names = [];
+            dojo.forEach(files, function (f) { names.push(f.name); });
+            display.innerHTML = names.join(", ");
+        } else {
+            display.innerHTML = "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "No-file-chosen")) %>";
+        }
+    }
 
     function doEnterSearch(e) {
         if (e.keyCode == dojo.keys.ENTER) {
@@ -242,64 +269,80 @@
         }
     }
 
-    function showBundleUpload() {
-    	dojo.byId("uploadBundleFile").value="";
-        dijit.byId("uploadBundleDiv").show();
-
+    /** File from dojox Uploader (widget root has id, not the native file input). */
+    function getBundleUploadFile() {
+        var w = dijit.byId("uploadBundleFile");
+        if (!w) {
+            return null;
+        }
+        if (w._files && w._files.length) {
+            return w._files[0];
+        }
+        if (w.inputNode && w.inputNode.files && w.inputNode.files.length) {
+            return w.inputNode.files[0];
+        }
+        return null;
     }
 
-
+    function showBundleUpload() {
+        var uw = dijit.byId("uploadBundleFile");
+        if (uw && uw.reset) {
+            uw.reset();
+        }
+        updateBundleFileNameDisplay(null);
+        dijit.byId("uploadBundleDiv").show();
+        applyBundleAcceptFilter();
+    }
 
     function doBundleUpload() {
 
-        var suffix = ".tar.gz";
-        var filename = dojo.byId("uploadBundleFile").value;
+        var file = getBundleUploadFile();
+        var filename = file ? file.name : "";
+        var validSuffixes = [".tar.gz", ".gz", ".tgz"];
+        var hasValidSuffix = validSuffixes.some(function (s) {
+            return filename.length > s.length && filename.slice(-s.length) === s;
+        });
 
-        if (filename.indexOf(suffix) == -1 || (filename.length - suffix.length != filename.indexOf(suffix))) {
+        if (!file || !hasValidSuffix) {
             alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_please_upload_bundle_ending_with_targz")) %>");
             return false;
         }
         dijit.byId("uploadBundleBtn").setDisabled(true);
 
+        var formData = new FormData();
+        formData.append("file", file, filename);
 
-        const fileInput = document.getElementById('uploadBundleFile');
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
-        fetch('/api/bundle/sync', {  // Replace with your actual upload endpoint
-            method: 'POST',
+        fetch("/api/bundle/sync", {
+            method: "POST",
             body: formData,
-            headers: {
-
-            }
+            credentials: "same-origin"
         })
-        .then(response => {
-            dijit.byId("uploadBundleBtn").setDisabled(false);
-            backToBundleList();
+        .then(function (response) {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                return response.text().then(function (text) {
+                    throw new Error(text || ("HTTP " + response.status));
+                });
             }
-
-
             return response.json();
         })
-        .then(data => {
-
-            console.log('Upload successful:', data);
-
+        .then(function (data) {
+            backToBundleList();
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Upload failed: ' + error.message);
+        .catch(function (error) {
+            console.error("Bundle upload error:", error);
+            alert("Upload failed: " + (error && error.message ? error.message : String(error)));
+        })
+        .finally(function () {
+            dijit.byId("uploadBundleBtn").setDisabled(false);
         });
-
-
-
     }
 
     function backToBundleList() {
-        dojo.byId("uploadBundleFile").value="";
+        var uw = dijit.byId("uploadBundleFile");
+        if (uw && uw.reset) {
+            uw.reset();
+        }
+        updateBundleFileNameDisplay(null);
         dijit.byId("uploadBundleDiv").hide();
         refreshAuditList("");
     }
@@ -376,10 +419,22 @@
 
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
     <form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
-        <div>
-            <%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile" accept="application/gzip">
+        <div class="form-horizontal">
+            <label for="uploadBundleFile" class="control-label" style="margin-right: 10px;">
+                <%= LanguageUtil.get(pageContext, "File") %>:
+            </label>
+            <input name="uploadBundleFile"
+                   id="uploadBundleFile"
+                   dojoType="dojox.form.Uploader"
+                   label="<%= LanguageUtil.get(pageContext, "Choose-File") %>"
+                   accept=".tar.gz,.gz,.tgz"
+                   multiple="false"
+                   uploadOnSelect="false" />
+            <span id="uploadBundleFileName" class="file-name-display" style="margin-left: 10px;">
+                <%= LanguageUtil.get(pageContext, "No-file-chosen") %>
+            </span>
         </div>
-        <div style="text-align: center">
+        <div style="text-align: center; margin-top: 20px;">
             <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" id="uploadBundleBtn" iconClass="uploadIcon">
                 <%= LanguageUtil.get(pageContext, "publisher_upload") %>
             </button>

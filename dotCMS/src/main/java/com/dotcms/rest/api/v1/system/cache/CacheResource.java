@@ -1,22 +1,28 @@
 package com.dotcms.rest.api.v1.system.cache;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.workflow.ResponseEntityWorkflowHistoryCommentsView;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -29,12 +35,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Cache Resource for diff provides
@@ -44,21 +56,26 @@ import java.util.TreeMap;
 @Tag(name = "Cache Management", description = "Cache provider management and operations")
 public class CacheResource {
 
-    private final WebResource          webResource;
+    private final WebResource webResource;
     private final CacheProviderAPIImpl providerAPI;
+    private final CacheMaintenanceHelper cacheMaintenanceHelper;
     private Method method = null;
 
     public CacheResource() {
 
-        this(new WebResource(), (CacheProviderAPIImpl) APILocator.getCacheProviderAPI());
+        this(new WebResource(),
+             (CacheProviderAPIImpl) APILocator.getCacheProviderAPI(),
+             new CacheMaintenanceHelper());
     }
 
     @VisibleForTesting
     public CacheResource(final WebResource webResource,
-                         final CacheProviderAPIImpl providerAPI) {
+                         final CacheProviderAPIImpl providerAPI,
+                         final CacheMaintenanceHelper cacheMaintenanceHelper) {
 
         this.webResource = webResource;
         this.providerAPI = providerAPI;
+        this.cacheMaintenanceHelper = cacheMaintenanceHelper;
     }
 
     private final List<CacheProvider> getProviders(final String group) {
@@ -325,12 +342,25 @@ public class CacheResource {
     }
 
     /**
-     * Deletes an objects for a provider (will clean all group and generates a new key)
+     * Flushes all caches across all providers, resets permission references,
+     * and reloads PushPublishing filters. The provider path parameter is ignored —
+     * all caches are flushed regardless.
+     *
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
-     *  @param provider {@link String}
+     *  @param provider {@link String} ignored — all providers are flushed
      * @return Response
      */
+    @Operation(
+            summary = "Flush all caches",
+            description = "Flushes all caches across all providers, resets permission references, "
+                    + "and reloads PushPublishing filters. The provider path parameter is ignored."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All caches flushed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush")
@@ -348,10 +378,207 @@ public class CacheResource {
 
         Logger.debug(this, ()-> "Deletes all objects on  cache provider = " + provider);
 
-        MaintenanceUtil.flushCache();
+        cacheMaintenanceHelper.flushAllCaches();
         return Response.ok(new ResponseEntityView("flushed all")).build();
     }
 
+
+    /**
+     * Returns an alphabetically sorted list of all cache region names.
+     * Used to populate the flush-cache dropdown in the Cache tab.
+     *
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return sorted list of region names
+     */
+    @Operation(
+            summary = "List cache region names",
+            description = "Returns an alphabetically sorted list of all cache region names. "
+                    + "Used to populate the flush-cache dropdown in the Maintenance portlet Cache tab."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache regions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListStringView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+    })
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityListStringView listRegions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        Logger.debug(this, () -> "Listing cache regions");
+
+        final Object[] caches = CacheLocator.getCacheIndexes();
+        final List<String> regions = Stream.of(caches)
+                .map(Object::toString)
+                .sorted()
+                .collect(Collectors.toList());
+
+        return new ResponseEntityListStringView(regions);
+    }
+
+    /**
+     * Returns JVM memory information and per-provider per-region cache statistics.
+     * Used to render the Cache Stats section in the Maintenance portlet.
+     *
+     * @param request  {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @return cache statistics with memory and provider details
+     */
+    @Operation(
+            summary = "Get cache statistics",
+            description = "Returns JVM memory information and per-provider per-region cache statistics "
+                    + "including hit counts, miss counts, and memory usage."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache statistics retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCacheStatsView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+    })
+    @GET
+    @Path("/stats")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityCacheStatsView getCacheStats(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        Logger.debug(this, () -> "Retrieving cache statistics");
+
+        return new ResponseEntityCacheStatsView(buildCacheStatsView());
+    }
+
+    /**
+     * Flushes a specific cache region across all providers, resets permission references,
+     * and conditionally reloads PushPublishing filters. Pass {@code "all"} to flush all caches.
+     *
+     * @param request    {@link HttpServletRequest}
+     * @param response   {@link HttpServletResponse}
+     * @param regionName the cache region name or {@code "all"}
+     * @return confirmation message
+     */
+    @Operation(
+            summary = "Flush a cache region",
+            description = "Flushes a specific cache region across all providers, resets permission "
+                    + "references, and conditionally reloads PushPublishing filters. "
+                    + "Pass 'all' to flush all caches."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cache region flushed successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - unknown cache region name"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+    })
+    @DELETE
+    @Path("/region/{regionName: .*}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityStringView flushRegion(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "Cache region name (case-insensitive, as returned by "
+                    + "GET /api/v1/caches) or 'all' to flush all caches",
+                    required = true, example = "Permission")
+            @PathParam("regionName") final String regionName) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        if ("all".equalsIgnoreCase(regionName)) {
+            Logger.info(this, "Flushing all caches");
+            cacheMaintenanceHelper.flushAllCaches();
+            return new ResponseEntityStringView("Flushed all caches");
+        }
+
+        final String canonical = cacheMaintenanceHelper.flushRegion(regionName);
+        Logger.info(this, "Flushed cache region: " + canonical);
+        return new ResponseEntityStringView("Flushed " + canonical);
+    }
+
+    /**
+     * Builds the full cache statistics view from JVM runtime memory and cache provider stats.
+     */
+    private CacheStatsView buildCacheStatsView() {
+
+        final long maxMemory = Runtime.getRuntime().maxMemory();
+        final long allocatedMemory = Runtime.getRuntime().totalMemory();
+        final long usedMemory = allocatedMemory - Runtime.getRuntime().freeMemory();
+        final long freeMemory = maxMemory - usedMemory;
+
+        final JvmMemoryView memory = JvmMemoryView.builder()
+                .maxMemory(maxMemory)
+                .allocatedMemory(allocatedMemory)
+                .usedMemory(usedMemory)
+                .freeMemory(freeMemory)
+                .build();
+
+        final List<CacheProviderStats> providerStatsList =
+                CacheLocator.getCacheAdministrator().getCacheStatsList();
+
+        final List<CacheProviderStatsView> providers = new ArrayList<>();
+        for (final CacheProviderStats ps : providerStatsList) {
+
+            final List<String> columns = new ArrayList<>(ps.getStatColumns());
+            final List<Map<String, String>> stats = new ArrayList<>();
+
+            for (final CacheStats cs : ps.getStats()) {
+                final Map<String, String> row = new LinkedHashMap<>();
+                for (final String col : ps.getStatColumns()) {
+                    row.put(col, cs.getStatValue(col));
+                }
+                stats.add(row);
+            }
+
+            providers.add(CacheProviderStatsView.builder()
+                    .providerName(ps.getProviderName())
+                    .columns(columns)
+                    .stats(stats)
+                    .build());
+        }
+
+        String hostName = "localhost";
+        try {
+            hostName = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (java.net.UnknownHostException e) {
+            Logger.debug(this, "Unable to resolve hostname", e);
+        }
+
+        return CacheStatsView.builder()
+                .clusterId(ClusterFactory.getClusterId())
+                .serverId(APILocator.getServerAPI().readServerId())
+                .serverName(hostName)
+                .memory(memory)
+                .providers(providers)
+                .build();
+    }
 
     /**
      * Deletes the menu cache

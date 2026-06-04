@@ -18,68 +18,205 @@ on:
         required: false
         type: string
         default: ''
-      ref:
-        description: 'Branch to build from'
-        required: false
-        type: string
-        default: 'main'
 
 jobs:
   release-sdks:
     name: 'Release SDK Packages'
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
-      - name: 'Checkout repository'
+      - name: 'Checkout main'
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: 'Validate inputs'
         run: |
           echo "::group::Input validation"
           echo "Version type: ${{ inputs.version-type }}"
           echo "Custom version: ${{ inputs.custom-version }}"
-          echo "Branch: ${{ inputs.ref }}"
-          
-          # Validate that custom-version is provided when version-type is custom
+
           if [ "${{ inputs.version-type }}" = "custom" ]; then
             if [ -z "${{ inputs.custom-version }}" ]; then
-              echo "::error::Custom version must be provided when version-type is 'custom'"
-              echo "Please provide a valid semantic version (e.g., 1.3.4, 2.0.0, 1.2.1)"
+              echo "::error::custom-version must be provided when version-type is 'custom'"
               exit 1
             fi
-            
-            # Basic semver validation
             if [[ ! "${{ inputs.custom-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "::error::Invalid custom version format: '${{ inputs.custom-version }}'"
-              echo "Version must follow semantic versioning format: major.minor.patch (e.g., 1.3.4)"
               exit 1
             fi
-            
             echo "✅ Custom version '${{ inputs.custom-version }}' is valid"
           fi
           echo "::endgroup::"
 
-      - name: 'Deploy JavaScript SDK'
+      - name: 'Compute release version'
+        id: compute_version
+        run: |
+          set -euo pipefail
+          if [ ! -f "core-web/libs/sdk/VERSION" ]; then
+            echo "::error::VERSION file not found at core-web/libs/sdk/VERSION"
+            exit 1
+          fi
+          CURRENT=$(cat core-web/libs/sdk/VERSION | tr -d '[:space:]')
+          echo "Current VERSION: $CURRENT"
+
+          if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version in VERSION file: '$CURRENT'. Must be semver (e.g. 1.2.6)"
+            exit 1
+          fi
+
+          IFS='.' read -ra PARTS <<< "$CURRENT"
+          MAJOR=${PARTS[0]}; MINOR=${PARTS[1]}; PATCH=${PARTS[2]}
+
+          case "${{ inputs.version-type }}" in
+            major)  MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor)  MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch)  PATCH=$((PATCH + 1)) ;;
+            custom)
+              IFS='.' read -ra CPARTS <<< "${{ inputs.custom-version }}"
+              MAJOR=${CPARTS[0]}; MINOR=${CPARTS[1]}; PATCH=${CPARTS[2]}
+              ;;
+          esac
+
+          RELEASE_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          NEXT_DEV_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+
+          if [ "$RELEASE_VERSION" = "$CURRENT" ]; then
+            echo "::error::Computed release version '$RELEASE_VERSION' matches current VERSION. Choose a different version."
+            exit 1
+          fi
+
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "next_dev_version=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
+          echo "release_branch=sdk/release-${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+          echo "Release: $RELEASE_VERSION, Next dev: $NEXT_DEV_VERSION"
+
+      - name: 'Create release branch and bump VERSION'
+        env:
+          RELEASE_VERSION: ${{ steps.compute_version.outputs.release_version }}
+          RELEASE_BRANCH: ${{ steps.compute_version.outputs.release_branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Idempotent: if branch exists from a previous failed run, reset it to main and re-use it.
+          # These are bot-managed branches so force push is safe.
+          if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" > /dev/null 2>&1; then
+            echo "Branch $RELEASE_BRANCH already exists remotely — resetting to origin/main."
+            git fetch origin main "$RELEASE_BRANCH"
+            git checkout -B "$RELEASE_BRANCH" origin/main
+          else
+            git checkout -b "$RELEASE_BRANCH"
+          fi
+
+          echo "$RELEASE_VERSION" > core-web/libs/sdk/VERSION
+          git add core-web/libs/sdk/VERSION
+
+          if git diff --cached --quiet; then
+            echo "VERSION already at $RELEASE_VERSION — nothing to commit."
+          else
+            git commit -m "chore(sdk): bump SDK version to $RELEASE_VERSION"
+          fi
+
+          git push --force origin "$RELEASE_BRANCH"
+
+      - name: 'Publish @latest from release branch'
         id: deploy-javascript-sdk
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ steps.compute_version.outputs.release_branch }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
-          npm-package-tag: 'latest'
-          version-type: ${{ inputs.version-type }}
-          custom-version: ${{ inputs.custom-version }}
+          publish-latest: 'true'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Open post-release PR to bump VERSION on main'
+        id: post_release_pr
+        if: success()
+        env:
+          RELEASE_VERSION: ${{ steps.compute_version.outputs.release_version }}
+          NEXT_DEV_VERSION: ${{ steps.compute_version.outputs.next_dev_version }}
+          RELEASE_BRANCH: ${{ steps.compute_version.outputs.release_branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          PR_BRANCH="sdk/post-release-${RELEASE_VERSION}"
+          git reset --hard
+          git clean -fdx
+          git fetch origin main
+
+          # Idempotent: reset branch to origin/main regardless of whether it already exists.
+          git checkout -B "$PR_BRANCH" origin/main
+          echo "$NEXT_DEV_VERSION" > core-web/libs/sdk/VERSION
+          git add core-web/libs/sdk/VERSION
+
+          if git diff --cached --quiet; then
+            echo "VERSION already at $NEXT_DEV_VERSION — nothing to commit."
+          else
+            git commit -m "chore(sdk): bump SDK version to $NEXT_DEV_VERSION after $RELEASE_VERSION release"
+          fi
+
+          git push --force origin "$PR_BRANCH"
+
+          # Reuse the PR if it was already created by a previous run.
+          EXISTING_PR=$(gh pr list --head "$PR_BRANCH" --base main --json url --jq '.[0].url' 2>/dev/null || true)
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR already exists: $EXISTING_PR"
+            PR_URL="$EXISTING_PR"
+          else
+            PR_URL=$(gh pr create \
+              --title "chore(sdk): bump SDK version to $NEXT_DEV_VERSION after $RELEASE_VERSION release" \
+              --body "Automated post-release bump. Moves the VERSION file from \`$RELEASE_VERSION\` to \`$NEXT_DEV_VERSION\` so trunk \`@next\` builds stay ahead of \`@latest\`." \
+              --base main \
+              --head "$PR_BRANCH")
+          fi
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: 'Slack Notification (SDK release announcement)'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_green_circle: *Attention dotters:* SDK libs (Angular, Client, Experiments and React) officially released!
+            >
+            > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.deploy-javascript-sdk.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
+            > *Release type:* `${{ inputs.version-type }}`  |  *Triggered by:* `${{ github.actor }}`
+            > :memo: *Please review and merge the post-release PR ASAP:* <${{ steps.post_release_pr.outputs.pr_url }}|View PR>
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: 'Slack Notification (SDK release failure)'
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *SDK Release FAILED!*
+            >
+            > The SDK release workflow failed while trying to publish version `${{ steps.compute_version.outputs.release_version }}`.
+            > *Release type:* `${{ inputs.version-type }}`  |  *Triggered by:* `${{ github.actor }}`
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: 'Display results'
         if: always()
         run: |
           echo "::group::Release Summary"
-          echo "Version type used: ${{ steps.deploy-javascript-sdk.outputs.version-type-used || inputs.version-type }}"
+          echo "Release version:     ${{ steps.compute_version.outputs.release_version }}"
+          echo "Next dev version:    ${{ steps.compute_version.outputs.next_dev_version }}"
           echo "Published to latest: ${{ steps.deploy-javascript-sdk.outputs.published-latest || 'unknown' }}"
-          echo "Published to next: ${{ steps.deploy-javascript-sdk.outputs.published-next || 'unknown' }}"
+          echo "Published to next:   ${{ steps.deploy-javascript-sdk.outputs.published-next || 'unknown' }}"
           echo "NPM package version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version || 'unknown' }}"
-          echo "Next version: ${{ steps.deploy-javascript-sdk.outputs.npm-package-version-next || 'unknown' }}"
+          echo "Post-release PR:     ${{ steps.post_release_pr.outputs.pr_url || 'not created' }}"
           echo "::endgroup::"

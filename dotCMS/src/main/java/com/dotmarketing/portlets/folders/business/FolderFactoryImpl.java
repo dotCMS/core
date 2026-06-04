@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.transform.DBTransformer;
@@ -42,6 +43,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.AssetsComparator;
@@ -409,7 +411,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Host destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Host destination, Hashtable copiedObjects)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
 
     boolean rename = APILocator.getHostAPI().doesHostContainsFolder(destination, folder.getName());
@@ -432,10 +434,11 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Folder destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Folder destination, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
 
     boolean rename = folderContains(folder.getName(), destination);
@@ -457,14 +460,16 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
+  @SuppressWarnings("unchecked")
   private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
     User systemUser = APILocator.getUserAPI().getSystemUser();
 
     if (copiedObjects == null) {
-			copiedObjects = new Hashtable();
+			copiedObjects = new Hashtable<String, Object>();
     }
 
     // Copying folder permissions
@@ -528,8 +533,8 @@ public class FolderFactoryImpl extends FolderFactory {
       linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
     }
 
-    List links = getChildrenClass(source, Link.class);
-    for (Link link : (List<Link>) links) {
+    final List<Link> links = getChildrenClass(source, Link.class);
+    for (Link link : links) {
       if (link.isWorking()) {
         Link newLink = LinkFactory.copyLink(link, newFolder);
         // Saving copied pages to update template - pages relationships
@@ -540,20 +545,22 @@ public class FolderFactoryImpl extends FolderFactory {
 
     // Copying Inner Folders
     List<Folder> childrenFolder = APILocator.getFolderAPI().findSubFolders(source, systemUser, false);
-    for (Folder childFolder : (List<Folder>) childrenFolder) {
+    for (Folder childFolder : childrenFolder) {
       copy(childFolder, newFolder, copiedObjects);
     }
 
   }
 
-  protected void copy(Folder folder, Host destination)
+  @Override
+  protected Folder copy(Folder folder, Host destination)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
-  protected void copy(Folder folder, Folder destination)
+  @Override
+  protected Folder copy(Folder folder, Folder destination)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
   @SuppressWarnings("unchecked")
@@ -569,8 +576,7 @@ public class FolderFactoryImpl extends FolderFactory {
     return false;
   }
 
-  @SuppressWarnings("unchecked")
-  private boolean move(final Folder folder, final Object destination)
+  private Optional<Folder> move(final Folder folder, final Object destination)
       throws DotDataException, DotStateException, DotSecurityException {
 
     final MutableBoolean successOperation = new MutableBoolean(true);
@@ -608,11 +614,11 @@ public class FolderFactoryImpl extends FolderFactory {
 
     if (contains) {
 
-      return false;
+      return Optional.empty();
     }
 
     final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
-    final List links = this.getChildrenClass(folder, Link.class);
+    final List<Link> links = this.getChildrenClass(folder, Link.class);
     final List<Contentlet> contentlets = contentletAPI.
         findContentletsByFolder(folder, systemUser, false);
 
@@ -629,7 +635,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     delete(folder);
 
-    return successOperation.getValue();
+    return successOperation.getValue() ? Optional.of(newFolder) : Optional.empty();
   }
 
   private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode)
@@ -695,7 +701,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     for (final Folder subFolder : subFolders) {
 
-      moved &= move(subFolder, folder);
+      moved &= move(subFolder, folder).isPresent();
     }
 
     return moved;
@@ -719,11 +725,10 @@ public class FolderFactoryImpl extends FolderFactory {
     }
   }
 
-  private void moveLinks(final Folder folder, final List links) throws DotDataException, DotSecurityException {
+  private void moveLinks(final Folder folder, final List<Link> links) throws DotDataException, DotSecurityException {
 
-    for (final Object linkObject : links) {
+    for (final Link link : links) {
 
-      final Link link = (Link) linkObject;
       if (link.isWorking()) {
 
         LinkFactory.moveLink(link, folder);
@@ -744,11 +749,13 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
 
-  protected boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
+  @Override
+  protected Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
-  protected boolean move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
+  @Override
+  protected Optional<Folder> move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
@@ -789,105 +796,67 @@ public class FolderFactoryImpl extends FolderFactory {
     }
     final String parentPath = ident.getParentPath();
     final String hostId = ident.getHostId();
-    // Use ident.getAssetName() (DB value) not folder.getName(): when called from saveFolder the
-    // folder object already carries the new name, which would make oldPath == newPath and leave
-    // all children with a stale parent_path pointing to a non-existent folder.
+    // Use DB value (ident), not folder.getName(): caller may have already set the new name on the object.
     final String oldPath = parentPath + ident.getAssetName() + "/";
     final String newPath = parentPath + newName + (newName.endsWith("/") ? "" : "/");
 
-    // Check for name collision with a different existing folder
     final Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
     final Folder existing = findFolderByPath(newPath, host);
     if (UtilMethods.isSet(existing.getInode()) && !folder.getIdentifier().equals(existing.getIdentifier())) {
       return false;
     }
 
-    // Snapshot sub-folder old-path data BEFORE any update so targeted cache eviction is possible
+    // Snapshot sub-folder data before any path mutation so cache eviction can reference old paths.
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
-    // Set the new name on the folder object so getNewFolderRecord() picks it up via
-    // initialFolder.getName(). Restore the original name if a subsequent DB operation fails,
-    // since @WrapInTransaction rolls back DB changes but Java object state is not automatically
-    // restored.
-    folder.setName(newName);
-
-    // Create a new folder record
-    // getNewFolderRecord() calls IdentifierAPI.createNew() which generates the deterministic hash
-    // based on assetType:hostname:parentPath:folderName — changing the URL changes the identity.
-    final Folder newFolder;
-    try {
-      newFolder = getNewFolderRecord(folder, user, parentPath, hostId);
-    } catch (final DotDataException | RuntimeException e) {
-      folder.setName(ident.getAssetName()); // restore original name
-      // A concurrent rename to the same destination path can race past the collision check and
-      // hit the DB unique constraint on identifier(parent_path, asset_name, host_inode).
-      // Treat this the same as a pre-checked collision: restore state and return false.
-      if (DbConnectionFactory.isConstraintViolationException(e.getCause() != null ? e.getCause() : e)) {
-        return false;
-      }
-      throw e;
-    }
-
-    // Evict identifier cache for the entire old subtree BEFORE the bulk UPDATE so the eviction
-    // can reliably find the old-path-keyed cache entries.
+    // Evict old-path cache entries before mutating the DB.
     clearIdentifierCacheForSubtree(oldPath, hostId);
+    evictContentletCacheForSubtree(oldPath, hostId);
+    // Evict the root folder's FolderCache and IdentifierCache entries before the UPDATE.
+    // clearIdentifierCacheForSubtree covers children (parent_path LIKE oldPath%), not the root
+    // itself (whose parent_path is the grandparent). Both must be cleared pre-mutation so no
+    // window exists where the DB has the new asset_name but the cache still holds the old one.
+    folderCache.removeFolder(folder, ident);
+    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 
-    // Bulk-update every child identifier's parent_path, processing parent folders before children.
-    // The new folder identifier already exists in the DB (created above), so the trigger's
-    // parent-path existence check passes at every depth level as parents are updated first.
+    // Update the folder identifier in place — identifier ID is preserved across renames.
+    // full_path_lc is a generated column (parent_path || asset_name) updated automatically by the DB.
+    new DotConnect().executeUpdate(
+        "UPDATE identifier SET asset_name = ? WHERE id = ?",
+        newName, folder.getIdentifier());
+
+    folder.setName(newName);
+    folder.setModDate(new Date());
+    save(folder);
+
+    // Bulk-update parent_path for all identifiers in the sub-tree, depth-first (ascending path
+    // length) to satisfy the identifier_parent_path_trigger ordering requirement.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
-    // Evict identifier caches rooted at the new path after the bulk update.
-    clearIdentifierCacheForSubtree(newPath, hostId);
+    // Bump version_ts for contentlets and mod_date for sub-folders so push-publish detects them
+    // as changed after the path move. Must run after updateChildPaths (queries on newPath).
+    bumpVersionTsForSubtree(newPath, hostId);
+    bumpModDateForSubFolders(subFolderSnapshot);
 
-    // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot).
+    clearIdentifierCacheForSubtree(newPath, hostId);
     evictSubFolderCache(subFolderSnapshot, hostId);
 
-    // Nav cache cleanup — evict the renamed folder, its parent, and every sub-folder in the tree.
-    // Uses folder.getInode() (old inode) before it is replaced below.
     CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
     CacheLocator.getNavToolCache().removeNavByPath(hostId, parentPath);
     for (final Map<String, Object> row : subFolderSnapshot) {
       CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
     }
 
-    // Transfer content-type structure and permission references from old inode to new inode.
-    updateOtherFolderReferences(newFolder.getInode(), folder.getInode());
-
-    // Delete old folder. All children have been moved to the new path by updateChildPaths(),
-    // so check_child_assets() finds no remaining children pointing to the old path and the
-    // delete succeeds without a constraint violation.
-    delete(folder);
-
-    // Update the caller's folder reference to the new inode and identifier so that
-    // FolderAPIImpl.refreshContentUnderFolder() targets the correct renamed folder.
-    // folder.getName() was already set to newName above.
-    folder.setInode(newFolder.getInode());
-    folder.setIdentifier(newFolder.getIdentifier());
-
-    // Evict the new folder's own identifier cache entry. clearIdentifierCacheForSubtree()
-    // only covers items whose parent_path starts with newPath (the folder's children), not the
-    // folder itself (whose parent_path is parentPath). Without this eviction, a prior URI-keyed
-    // entry for the same path could be served until natural LRU expiry.
-    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(newFolder.getIdentifier());
-
     return true;
   }
 
   /**
-   * Captures inode, parent_path, and asset_name of every sub-folder whose path falls under
-   * {@code oldPath}. Must be called <em>before</em> the bulk path update so old path data is
-   * available for targeted {@link FolderCache} eviction afterwards.
+   * Returns inode, parent_path, and asset_name for every sub-folder under {@code oldPath}.
+   * Must be called before the path mutation so old-path data is available for cache eviction.
    */
   private List<Map<String, Object>> loadSubFolderSnapshot(final String oldPath, final String hostId)
       throws DotDataException {
 
-    // LIKE 'oldPath%' covers ALL levels of the sub-tree:
-    //   - Direct sub-folders have parent_path = oldPath (e.g. '/original/').
-    //     Since oldPath ends with '/' and '%' matches zero or more chars,
-    //     '/original/' LIKE '/original/%' evaluates to TRUE.
-    //   - Deeper descendants have parent_path starting with oldPath (e.g. '/original/sub/').
-    // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(oldPath) + "%";
     return new DotConnect()
         .setSQL("SELECT f.inode, i.parent_path, i.asset_name"
@@ -899,29 +868,18 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Bulk-updates the {@code parent_path} column for every identifier in the sub-tree rooted at
-   * {@code startOldPath}, processing parent folders before their children to satisfy the
-   * {@code identifier_parent_path_trigger} ordering requirement.
-   * <p>
-   * Instead of issuing a SELECT after each UPDATE to discover the next folder level (which would
-   * cause N+1 queries for wide, flat trees), this method derives all (oldPath → newPath) pairs
-   * directly from {@code subFolderSnapshot} — data already loaded before the rename began.
-   * Each pair is sorted by ascending old-path length: a parent path is always shorter than any
-   * of its descendant paths, so length-order guarantees the required parent-before-child sequence.
+   * Bulk-updates {@code parent_path} for every identifier in the sub-tree, processing entries
+   * depth-first (ascending path length) to satisfy the {@code identifier_parent_path_trigger}.
    */
   private void updateChildPaths(final String startOldPath, final String startNewPath,
       final String hostId, final List<Map<String, Object>> subFolderSnapshot)
       throws DotDataException {
 
-    // Build the complete set of (oldPath, newPath) pairs: root level plus one pair per sub-folder.
     final List<String[]> levels = new ArrayList<>();
     levels.add(new String[]{startOldPath, startNewPath});
 
     for (final Map<String, Object> row : subFolderSnapshot) {
       final String oldFolderPath = (String) row.get("parent_path") + (String) row.get("asset_name") + "/";
-      // Guard against corrupt snapshot data: every sub-folder path must start with the root.
-      // Throw rather than skipping: a partial rename that returns true is worse than a rollback,
-      // because the caller has no way to know which levels were left with a stale parent_path.
       if (!oldFolderPath.startsWith(startOldPath)) {
         throw new DotDataException(
             "Rename aborted: sub-folder path '"
@@ -931,19 +889,13 @@ public class FolderFactoryImpl extends FolderFactory {
             + "'. This indicates corrupt parent_path data in the identifier table."
             + " The transaction will be rolled back.");
       }
-      // Compute new path by replacing the startOldPath prefix with startNewPath
       final String newFolderPath = startNewPath + oldFolderPath.substring(startOldPath.length());
       levels.add(new String[]{oldFolderPath, newFolderPath});
     }
 
-    // Sort by old-path length ascending: shorter (shallower) paths are processed first,
-    // ensuring every parent folder's parent_path is updated before its children's rows are touched.
     levels.sort(Comparator.comparingInt(pair -> pair[0].length()));
 
     for (final String[] pair : levels) {
-      // No asset_type filter is intentional: every identifier that lives directly under the
-      // renamed folder path (files, pages, content, sub-folders alike) must have its
-      // parent_path updated, not just folders.
       new DotConnect().executeUpdate(
           "UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?",
           pair[1], pair[0], hostId);
@@ -951,14 +903,7 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Evicts path-keyed entries from the folder cache for all sub-folders captured in the snapshot.
-   * Uses the <em>old</em> path data so stale cache entries keyed by the pre-rename paths are
-   * properly removed.
-   * <p>
-   * The stub objects set only the fields consumed by {@link com.dotmarketing.cache.FolderCacheImpl#removeFolder}:
-   * {@code inode} and {@code hostId} for the inode-keyed cache entry, and {@code parentPath} +
-   * {@code assetName} (via {@link com.dotmarketing.beans.Identifier#getPath()}) for the
-   * path-keyed cache entry. No other fields are needed.
+   * Evicts FolderCache entries for all sub-folders in the snapshot using pre-rename path data.
    */
   private void evictSubFolderCache(final List<Map<String, Object>> subFolderSnapshot,
       final String hostId) {
@@ -971,9 +916,8 @@ public class FolderFactoryImpl extends FolderFactory {
       final Identifier oldIdent = new Identifier();
       oldIdent.setParentPath((String) row.get("parent_path"));
       oldIdent.setAssetName((String) row.get("asset_name"));
-      // assetType must be "folder" so Identifier.getPath() appends a trailing '/'.
-      // FolderCacheImpl keys path-based entries with the slash, so without this the eviction
-      // silently misses every sub-folder path-keyed cache entry.
+      // asset_type must be "folder" so Identifier.getPath() appends a trailing slash,
+      // which FolderCacheImpl uses as the path-keyed cache key.
       oldIdent.setAssetType("folder");
 
       folderCache.removeFolder(stub, oldIdent);
@@ -981,24 +925,13 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Evicts from the identifier cache every identifier whose {@code parent_path} starts
-   * with {@code rootPath} (direct children and all nested descendants).
-   * A single prefix query covers all levels in one round-trip.
-   * <p>
-   * Uses {@link com.dotmarketing.business.IdentifierCache#removeFromCacheDirect} which removes
-   * both the UUID-keyed and URI-keyed cache entries without triggering the recursive
-   * {@code findByParentPath} DB call that the standard eviction methods perform for folder
-   * entries. Because this method already iterates the full flat set of descendants, the
-   * recursive re-discovery would cause O(F × depth) redundant DB queries.
-   * <p>
-   * Note: {@code ContentletCache} and {@code HTMLPageCache} are keyed by inode/UUID, not by
-   * path, so no additional eviction is needed for non-folder children after a parent_path update.
+   * Evicts identifier cache entries for all identifiers whose {@code parent_path} starts with
+   * {@code rootPath}. Uses {@code removeFromCacheDirect} to avoid the recursive DB re-discovery
+   * that standard eviction methods trigger for folder entries.
    */
   private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
 
-    // rootPath always ends with '/' so it cannot accidentally match sibling folder paths.
-    // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(rootPath) + "%";
     final List<Map<String, Object>> rows = new DotConnect()
         .setSQL("SELECT id, parent_path, asset_name FROM identifier"
@@ -1012,6 +945,116 @@ public class FolderFactoryImpl extends FolderFactory {
       final String oldUri = (String) row.get("parent_path") + (String) row.get("asset_name");
       identifierCache.removeFromCacheDirect((String) row.get("id"), hostId, oldUri);
     }
+  }
+
+  /**
+   * Bumps {@code version_ts} for every contentlet under {@code rootPath} so push-publish detects
+   * them as changed after a folder rename. Must be called after {@link #updateChildPaths}.
+   */
+  private void bumpVersionTsForSubtree(final String rootPath, final String hostId)
+      throws DotDataException {
+
+    final String likeParam = escapeLikeParam(rootPath) + "%";
+
+    final List<Map<String, Object>> affected = new DotConnect()
+        .setSQL("SELECT i.id FROM identifier i"
+            + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
+            + "   AND i.host_inode = ?"
+            + "   AND i.asset_type != 'folder'")
+        .addParam(likeParam)
+        .addParam(hostId)
+        .loadObjectResults();
+
+    if (affected.isEmpty()) {
+      return;
+    }
+
+    final List<String> ids = affected.stream()
+        .map(r -> (String) r.get("id"))
+        .collect(Collectors.toList());
+
+    // Only the DEFAULT variant is read by push-publish, so restrict the UPDATE accordingly.
+    // Reuse the ids already collected above to avoid a second identifier table scan.
+    final String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(", "));
+    final Object[] params = new Object[ids.size() + 2];
+    params[0] = new Date();
+    for (int i = 0; i < ids.size(); i++) {
+      params[i + 1] = ids.get(i);
+    }
+    params[ids.size() + 1] = VariantAPI.DEFAULT_VARIANT.name();
+    new DotConnect().executeUpdate(
+        "UPDATE contentlet_version_info SET version_ts = ?"
+            + " WHERE identifier IN (" + placeholders + ")"
+            + "   AND variant_id = ?",
+        params);
+    final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
+    final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+    for (final String identifierId : ids) {
+      for (final Language lang : languages) {
+        identifierCache.removeContentletVersionInfoToCache(identifierId, lang.getId());
+      }
+    }
+
+    Logger.debug(FolderFactoryImpl.class,
+        () -> "Bumped version_ts for " + ids.size()
+            + " contentlet(s) under path '" + rootPath.replaceAll("[\\r\\n]", " ") + "'");
+  }
+
+  /**
+   * Bumps {@code mod_date} for every sub-folder in {@code subFolderSnapshot} so push-publish
+   * detects them as changed after a parent rename. Uses inodes from the snapshot (primary key
+   * on {@code folder}) to avoid an extra identifier table scan.
+   */
+  private void bumpModDateForSubFolders(final List<Map<String, Object>> subFolderSnapshot)
+      throws DotDataException {
+
+    if (subFolderSnapshot.isEmpty()) {
+      return;
+    }
+
+    final List<String> inodes = subFolderSnapshot.stream()
+        .map(row -> (String) row.get("inode"))
+        .collect(Collectors.toList());
+
+    final String placeholders = inodes.stream().map(i -> "?").collect(Collectors.joining(", "));
+    final Object[] params = new Object[inodes.size() + 1];
+    params[0] = new Date();
+    for (int i = 0; i < inodes.size(); i++) {
+      params[i + 1] = inodes.get(i);
+    }
+
+    new DotConnect().executeUpdate(
+        "UPDATE folder SET mod_date = ? WHERE inode IN (" + placeholders + ")",
+        params);
+
+    Logger.debug(FolderFactoryImpl.class,
+        () -> "Bumped mod_date for " + inodes.size() + " sub-folder(s)");
+  }
+
+  /**
+   * Evicts contentlet cache entries for all contentlets under {@code rootPath}.
+   * Must be called before {@link #updateChildPaths} so the query matches pre-rename paths.
+   */
+  private void evictContentletCacheForSubtree(final String rootPath, final String hostId)
+      throws DotDataException {
+
+    final String likeParam = escapeLikeParam(rootPath) + "%";
+    final List<Map<String, Object>> rows = new DotConnect()
+        .setSQL("SELECT c.inode FROM identifier i"
+            + " JOIN contentlet c ON c.identifier = i.id"
+            + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
+            + "   AND i.host_inode = ?"
+            + "   AND i.asset_type != 'folder'")
+        .addParam(likeParam)
+        .addParam(hostId)
+        .loadObjectResults();
+
+    for (final Map<String, Object> row : rows) {
+      CacheLocator.getContentletCache().remove((String) row.get("inode"));
+    }
+
+    Logger.debug(FolderFactoryImpl.class,
+        "Evicted " + rows.size() + " contentlet cache entries under path '" + rootPath + "'");
   }
 
   /**
@@ -1135,8 +1178,10 @@ public class FolderFactoryImpl extends FolderFactory {
     return folderList;
   }
 
-  protected List<Treeable> getChildrenClass(Folder parent, Class clazz) throws DotStateException, DotDataException {
-    return getChildrenClass(parent, clazz, null, null, 0, 1000);
+  @Override
+  @SuppressWarnings("unchecked")
+  protected <T> List<T> getChildrenClass(Folder parent, Class<T> clazz) throws DotStateException, DotDataException {
+    return (List<T>) getChildrenClass(parent, clazz, null, null, 0, 1000);
   }
 
   protected List<Treeable> getChildrenClass(Host host, Class clazz) throws DotStateException, DotDataException {

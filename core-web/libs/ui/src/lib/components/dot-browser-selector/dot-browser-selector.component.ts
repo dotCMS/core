@@ -95,6 +95,7 @@ export class DotBrowserSelectorComponent implements OnInit {
         }
 
         this.$folderParams.update((prev) => ({ ...prev, hostFolderId: id }));
+        this.store.setSelectedContent(null);
     }
 
     /**

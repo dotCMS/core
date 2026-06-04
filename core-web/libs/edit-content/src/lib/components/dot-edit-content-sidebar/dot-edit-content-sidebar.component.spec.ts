@@ -6,7 +6,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -100,7 +100,7 @@ describe('DotEditContentSidebarComponent', () => {
                 provide: DialogService,
                 useValue: {
                     open: jest.fn().mockReturnValue({
-                        onClose: { subscribe: jest.fn() },
+                        onClose: new Subject<void>(),
                         close: jest.fn()
                     })
                 }
@@ -245,10 +245,6 @@ describe('DotEditContentSidebarComponent', () => {
     describe('Elements by data-testId', () => {
         it('should have sidebar-tabs element', () => {
             expect(spectator.query(byTestId('sidebar-tabs'))).toBeTruthy();
-        });
-
-        it('should have toggle-button element', () => {
-            expect(spectator.query(byTestId('toggle-button'))).toBeTruthy();
         });
 
         it('should render information section with data-testId when on info tab', () => {
@@ -562,28 +558,6 @@ describe('DotEditContentSidebarComponent', () => {
                 const rulesComponent = spectator.query(DotEditContentSidebarRulesComponent);
                 expect(rulesComponent).toBeTruthy();
             }));
-        });
-    });
-
-    describe('Sidebar Controls', () => {
-        it('should render toggle button', () => {
-            const toggleButton = spectator.query(byTestId('toggle-button'));
-            expect(toggleButton).toBeTruthy();
-        });
-
-        it('should render append content in Tabs', () => {
-            const appendContent = spectator.query(byTestId('tabview-append-content'));
-            expect(appendContent).toBeTruthy();
-        });
-
-        it('should call toggleSidebar when toggle button is clicked', () => {
-            spectator.detectChanges();
-            const storeSpy = jest.spyOn(store, 'toggleSidebar');
-            const toggleButton = spectator.query(byTestId('toggle-button'));
-            const innerButton = toggleButton?.querySelector('button') as HTMLButtonElement;
-            spectator.click(innerButton ?? (toggleButton as HTMLElement));
-            spectator.detectChanges();
-            expect(storeSpy).toHaveBeenCalled();
         });
     });
 

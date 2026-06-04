@@ -76,7 +76,7 @@ export const DotBrowserSelectorStore = signalStore(
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
-            setSelectedContent: (selectedContent: DotCMSContentlet) => {
+            setSelectedContent: (selectedContent: DotCMSContentlet | null) => {
                 patchState(store, {
                     selectedContent
                 });
@@ -222,7 +222,10 @@ export const DotBrowserSelectorStore = signalStore(
                             .uploadDotAsset(file, { hostFolder: folderParams.hostFolderId })
                             .pipe(
                                 tapResponse({
-                                    next: () => store.loadContent(folderParams),
+                                    next: (uploadedContentlet) => {
+                                        store.setSelectedContent(uploadedContentlet);
+                                        store.loadContent(folderParams);
+                                    },
                                     error: (err: { status?: number }) =>
                                         patchState(store, {
                                             content: {

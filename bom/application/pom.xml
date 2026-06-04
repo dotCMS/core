@@ -15,11 +15,12 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.70</bouncy-castle.version>
+        <bouncy-castle.version>1.84</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
@@ -27,6 +28,7 @@
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
+        <langchain4j.version>1.0.0</langchain4j.version>
     </properties>
     <dependencyManagement>
 
@@ -70,13 +72,63 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${langchain4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
 
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+            <!-- google-http-client: pin to 1.45.0 to resolve conflict between existing deps (1.19.0)
+                 and langchain4j-vertex-ai-gemini (1.45+). Required for PercentEscaper(String). -->
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.45.0</version>
+            </dependency>
+
+            <!-- reactor-core: pin to 3.4.41 to resolve conflict between existing deps (3.3.16)
+                 and langchain4j-azure-open-ai (3.4+). Required for ContextView. -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.4.41</version>
+            </dependency>
+
+            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
+                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
 
 
             <!--
@@ -219,11 +271,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.google</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.guava</artifactId>
-                <version>11.0.1_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -570,7 +617,14 @@
                 <!-- Google Guava: Google Core Libraries -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>27.0.1-android</version>
+                <version>32.0.1-jre</version>
+                <exclusions>
+                    <!-- checker-qual is a banned dependency in this project -->
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -602,7 +656,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
+                <version>1.11.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -627,7 +681,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.11.0</version>
+                <version>2.14.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -648,7 +702,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.12.0</version>
+                <version>3.18.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -823,6 +877,14 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
                 <version>${aws-java-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1146,6 +1208,12 @@
 
             <!-- Security -->
             <dependency>
+                <groupId>org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>1.3.1</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>0.9.1</version>
@@ -1153,12 +1221,12 @@
 
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
 
@@ -1531,7 +1599,7 @@
             <dependency>
                 <groupId>com.dotcms</groupId>
                 <artifactId>tomcat-redis-session-manager</artifactId>
-                <version>1.5</version>
+                <version>2.0</version>
                 <scope>provided</scope>
             </dependency>
 

@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, output, signal, viewChild } from '@angular/core';
+import { Component, inject, input, output, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,9 +18,11 @@ import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -39,6 +42,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [
         FormsModule,
+        DotCMSEditorComponent,
         BlockEditorModule,
         DrawerModule,
         DotMessagePipe,
@@ -51,8 +55,25 @@ export class DotBlockEditorSidebarComponent {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    /**
+     * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
+     * is in flight, then `true` / `false` once it returns. The template uses a truthy check
+     * so the legacy editor renders for **everything except an explicit `true`** (false, missing
+     * key, in-flight). That defaults to the safer, known-good editor whenever the flag's
+     * answer isn't yet a definite "on".
+     */
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.#dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
+            false
+        )
+    );
 
     readonly drawerRef = viewChild<Drawer>('drawerRef');
+
+    variantName = input<string>(DEFAULT_VARIANT_ID);
 
     protected readonly contentlet = signal<BlockEditorData>(null);
     protected readonly value = signal<JSONContent>(null);
@@ -116,6 +137,7 @@ export class DotBlockEditorSidebarComponent {
             .saveContentlet({
                 inode,
                 indexPolicy: 'WAIT_FOR',
+                variantName: this.variantName(),
                 [fieldName]: JSON.stringify(this.value())
             })
             .pipe(take(1))

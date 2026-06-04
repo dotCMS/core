@@ -17,7 +17,8 @@ import {
     FormControl,
     FormGroup,
     FormGroupDirective,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    Validators
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
@@ -823,5 +824,65 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccessor', () => {
         spectator.component.setTempFile(TEMP_FILE_MOCK);
         const formValue = spectator.hostComponent.form.get('binaryField').value; // Get the form value
         expect(formValue).toBe(TEMP_FILE_MOCK.id); // Check if the form value was set
+    });
+});
+
+/**
+ * Mock host with required validation
+ */
+@Component({
+    standalone: false,
+    selector: 'dot-required-host',
+    template: ''
+})
+class MockRequiredFormComponent {
+    field = BINARY_FIELD_MOCK;
+    contentlet = null;
+    form = new FormGroup({
+        binaryField: new FormControl('', Validators.required)
+    });
+}
+
+describe('DotEditContentBinaryFieldComponent - Validation', () => {
+    let spectator: SpectatorHost<DotEditContentBinaryFieldComponent, MockRequiredFormComponent>;
+    const createHost = createHostFactory({
+        component: DotEditContentBinaryFieldComponent,
+        host: MockRequiredFormComponent,
+        imports: [
+            ButtonModule,
+            DialogModule,
+            MonacoEditorModule,
+            ReactiveFormsModule,
+            DotEditContentBinaryFieldComponent
+        ],
+        providers: [DotAiService, provideHttpClient()]
+    });
+
+    beforeEach(() => {
+        spectator = createHost(` <form [formGroup]="form">
+            <dot-edit-content-binary-field [contentlet]="contentlet" [field]="field" formControlName="binaryField"></dot-edit-content-binary-field>
+        </form>`);
+    });
+
+    it('should have ng-invalid class when required field is empty', () => {
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
+        expect(hostElement).toHaveClass('ng-invalid');
+    });
+
+    it('should show validation border when form is marked as touched with empty required field', () => {
+        spectator.hostComponent.form.markAllAsTouched();
+        spectator.detectChanges();
+
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
+        expect(hostElement).toHaveClass('ng-invalid');
+        expect(hostElement).toHaveClass('ng-touched');
+    });
+
+    it('should remove ng-invalid class when a file is selected', () => {
+        spectator.component.setTempFile(TEMP_FILE_MOCK);
+        spectator.detectChanges();
+
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
+        expect(hostElement).not.toHaveClass('ng-invalid');
     });
 });

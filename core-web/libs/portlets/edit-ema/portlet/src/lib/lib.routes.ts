@@ -1,14 +1,23 @@
+import { inject } from '@angular/core';
 import { Route } from '@angular/router';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     CanDeactivateGuardService,
+    DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotESContentService,
-    DotEditPageResolver,
     DotExperimentsService,
     DotFavoritePageService,
-    DotPageRenderService,
-    DotPageStateService
+    DotLanguagesService,
+    DotLicenseService,
+    DotPageLayoutService,
+    DotPropertiesService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
@@ -19,9 +28,13 @@ import {
     DotPushPublishEnvironmentsResolver,
     portletHaveLicenseResolver
 } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
+import { DotActionUrlService } from './services/dot-action-url/dot-action-url.service';
+import { DotPageApiService } from './services/dot-page-api/dot-page-api.service';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
+import { UVEStore } from './store/dot-uve.store';
 
 export const dotEmaRoutes: Route[] = [
     {
@@ -29,19 +42,33 @@ export const dotEmaRoutes: Route[] = [
         canActivate: [editEmaGuard],
         component: DotEmaShellComponent,
         providers: [
-            DotEditPageResolver,
-            DotPageStateService,
+            // UVEStore and its direct dependencies (needed for store to persist across child routes)
+            UVEStore,
+            DotPageApiService,
+            DotActionUrlService,
+            DotLanguagesService,
+            DotWorkflowsActionsService,
+            DotPageLayoutService,
+            DotAnalyticsTrackerService,
+            DotPropertiesService,
+            DotLicenseService,
+            MessageService,
+            ConfirmationService,
+            DialogService,
             DotContentletLockerService,
-            DotPageRenderService,
-            DotFavoritePageService,
             DotESContentService,
-            DotExperimentsService
+            DotExperimentsService,
+            DotFavoritePageService,
+            DotSeoMetaTagsService,
+            DotSeoMetaTagsUtilService,
+            {
+                provide: WINDOW,
+                useValue: window
+            }
         ],
         resolve: {
-            haveLicense: portletHaveLicenseResolver,
-            content: DotEditPageResolver
+            haveLicense: portletHaveLicenseResolver
         },
-        runGuardsAndResolvers: 'always',
         children: [
             {
                 path: 'content',
@@ -64,6 +91,22 @@ export const dotEmaRoutes: Route[] = [
             },
             {
                 path: 'experiments',
+                resolve: {
+                    content: () => {
+                        const uveStore = inject(UVEStore);
+                        const pageAsset = uveStore.pageAsset();
+                        const lockOptions = uveStore.$lockOptions();
+
+                        return {
+                            page: pageAsset?.page,
+                            state: {
+                                lockedByAnotherUser: !!(
+                                    lockOptions?.isLocked && !lockOptions?.isLockedByCurrentUser
+                                )
+                            }
+                        };
+                    }
+                },
                 providers: [
                     DotEnterpriseLicenseResolver,
                     DotExperimentExperimentResolver,

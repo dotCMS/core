@@ -23,7 +23,8 @@ public class BinaryFieldDataFetcher implements DataFetcher<Map<String, Object>> 
 
             Logger.debug(this, ()-> "Fetching binary field for contentlet: " + contentlet.getIdentifier());
             final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
-            return (Map<String, Object>) transformer.asMap().get(var + "Map");
+            final Map<String, Object> binaryMap = (Map<String, Object>) transformer.asMap().get(var + "Map");
+            return binaryMap != null ? binaryMap : Collections.emptyMap();
         } catch (IllegalArgumentException e) {
             Logger.warn(this, "Binary is null");
             return Collections.emptyMap();

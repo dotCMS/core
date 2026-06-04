@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { dotCMSClient } from "@/utils/dotCMSClient";
+import { useEffect, useState } from 'react';
+import { dotCMSClient } from '@/utils/dotCMSClient';
 
-import { useDebounce } from "@/hooks/useDebounce";
-import { useEditableDotCMSPage } from "@dotcms/react";
-import Header from "@/components/header/Header";
-import BlogCard from "@/components/BlogCard";
+import { useDebounce } from '@/hooks/useDebounce';
+import { useEditableDotCMSPage } from '@dotcms/react';
+import Header from '@/components/header/Header';
+import BlogCard from '@/components/BlogCard';
 
 export function BlogListingPage(pageResponse) {
-    const { content } = useEditableDotCMSPage(pageResponse);
-    const [searchQuery, setSearchQuery] = useState("");
+    const { content = {} } = useEditableDotCMSPage(pageResponse);
+    const [searchQuery, setSearchQuery] = useState('');
     const [filteredBlogs, setFilteredBlogs] = useState([]);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const navigation = content.navigation;
@@ -24,14 +24,14 @@ export function BlogListingPage(pageResponse) {
         }
 
         dotCMSClient.content
-            .getCollection("Blog")
+            .getCollection('Blog')
             .limit(3)
-            .query((qb) => qb.field("title").equals(`${debouncedSearchQuery}*`))
+            .query((qb) => qb.field('title').equals(`${debouncedSearchQuery}*`))
             .sortBy([
                 {
-                    field: "Blog.postingDate",
-                    order: "desc",
-                },
+                    field: 'Blog.postingDate',
+                    order: 'desc'
+                }
             ])
             .then(({ contentlets }) => {
                 setFilteredBlogs(contentlets);
@@ -39,25 +39,19 @@ export function BlogListingPage(pageResponse) {
     }, [debouncedSearchQuery, content.blogs]);
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
+        <div className="flex flex-col gap-6 bg-slate-50">
             <Header navItems={navigation?.children} />
             <main className="container mx-auto px-4 py-8">
                 <div className="flex flex-col gap-4 mb-8">
-                    <h1 className="text-4xl font-bold text-center">
-                        Travel Blog
-                    </h1>
+                    <h1 className="text-4xl font-bold text-center">Travel Blog</h1>
                     <p className="text-gray-600 text-center">
-                        Get inspired to experience the world. Our writers will
-                        give you their first-hand stories and recommendations
-                        that will inspire, excite you, and help you make the
-                        best decisions for planning your next adventure.
+                        Get inspired to experience the world. Our writers will give you their
+                        first-hand stories and recommendations that will inspire, excite you, and
+                        help you make the best decisions for planning your next adventure.
                     </p>
                 </div>
 
-                <SearchBar
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                />
+                <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBlogs.map((blog) => (
@@ -76,8 +70,7 @@ export function BlogListingPage(pageResponse) {
             <footer className="bg-slate-50 text-slate-900 py-4">
                 <div className="container mx-auto px-4">
                     <p className="text-center">
-                        &copy; {new Date().getFullYear()} TravelLux. All rights
-                        reserved.
+                        &copy; {new Date().getFullYear()} TravelLux. All rights reserved.
                     </p>
                 </div>
             </footer>
@@ -95,8 +88,7 @@ const SearchBar = ({ searchQuery, setSearchQuery }) => {
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
+                        stroke="currentColor">
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"

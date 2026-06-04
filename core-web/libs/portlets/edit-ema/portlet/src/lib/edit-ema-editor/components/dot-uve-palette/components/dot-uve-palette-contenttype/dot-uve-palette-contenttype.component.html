@@ -2,10 +2,10 @@
 
 <!-- Drag handle -->
 <div
-    class="drag-handle opacity-0 transition-opacity text-gray-400 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-8 h-8 rounded hover:text-gray-500 hover:bg-black/5"
+    class="drag-handle flex size-8 cursor-grab items-center justify-center rounded-sm text-gray-400 opacity-0 transition-opacity select-none group-hover:text-(--color-palette-primary-600) hover:bg-black/5 hover:text-gray-500 active:cursor-grabbing"
     [ngClass]="
         contentType.disabled
-            ? 'cursor-not-allowed pointer-events-none opacity-0'
+            ? 'pointer-events-none cursor-not-allowed opacity-0'
             : 'group-hover:opacity-100'
     ">
     <i class="pi pi-ellipsis-v text-[14px]"></i>
@@ -14,18 +14,21 @@
 
 <!-- Content type icon and name -->
 <div
-    class="flex flex-1 items-center justify-center min-w-0"
+    class="flex min-w-0 flex-1 items-center justify-center"
     [pTooltip]="'uve.palette.item.disabled.tooltip' | dm"
     [tooltipDisabled]="!contentType.disabled"
-    [ngClass]="$isListView() ? 'flex-row gap-2 justify-start' : 'flex-col gap-2'">
-    <div class="flex items-center justify-center shrink-0">
-        <i class="material-icons material-icons-outlined leading-none text-[28px]! text-gray-600">
+    [ngClass]="$isListView() ? 'flex-row justify-start gap-3' : 'flex-col gap-3'">
+    <div class="flex shrink-0 items-center justify-center">
+        <i
+            class="material-symbols-outlined material-symbols-outlined-outlined text-[28px]! leading-none text-gray-600 group-hover:text-(--color-palette-primary-600)">
             {{ contentType.icon || 'palette' }}
         </i>
     </div>
     <div
-        class="text-sm font-semibold leading-tight text-gray-600 min-w-0"
-        [ngClass]="$isListView() ? 'truncate text-left' : 'text-center line-clamp-2'">
+        class="text-sm leading-tight font-semibold text-gray-600 group-hover:text-(--color-palette-primary-700)"
+        [ngClass]="
+            $isListView() ? 'min-w-0 flex-1 truncate text-left' : 'line-clamp-2 text-center'
+        ">
         {{ contentType.name }}
     </div>
 </div>
@@ -33,14 +36,15 @@
 <!-- Chevron -->
 <button
     type="button"
-    class="chevron opacity-0 transition-opacity text-gray-300 hover:text-gray-500 flex items-center justify-center w-8 h-8 rounded hover:bg-black/5"
+    class="chevron flex size-8 items-center justify-center rounded-sm text-gray-300 opacity-0 transition-opacity group-hover:text-(--color-palette-primary-600) hover:bg-black/5 hover:text-gray-500"
     [ngClass]="
         contentType.disabled
-            ? 'cursor-not-allowed opacity-0 pointer-events-none'
+            ? 'pointer-events-none cursor-not-allowed opacity-0'
             : 'cursor-pointer group-hover:opacity-100'
     "
     (click)="onChevronClick(contentType)"
     [disabled]="contentType.disabled"
     [attr.aria-label]="'Open ' + contentType.name">
-    <i class="pi pi-chevron-right text-[14px] text-gray-400 group-hover:text-gray-500"></i>
+    <i
+        class="pi pi-chevron-right text-[14px] text-gray-400 group-hover:text-(--color-palette-primary-600)"></i>
 </button>

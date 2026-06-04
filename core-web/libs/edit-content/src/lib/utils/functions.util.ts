@@ -417,16 +417,29 @@ export const saveStoreUIState = (state: UIState): void => {
 };
 
 /**
- * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ * Prepares a contentlet for copying by ensuring it's not locked and clearing binary fields.
+ * Binary assets live on the filesystem and must be re-uploaded per locale, so they are nulled out.
  *
  * @param contentlet - The original contentlet to be copied
- * @returns The contentlet with locked=false and no lockedBy property
+ * @param fields - The content type fields used to identify binary fields to clear
+ * @returns The contentlet ready to populate a new locale version
  */
-export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
-    ...contentlet,
-    locked: false,
-    lockedBy: undefined
-});
+export const prepareContentletForCopy = (
+    contentlet: DotCMSContentlet,
+    fields?: DotCMSContentTypeField[]
+): DotCMSContentlet => {
+    const clearedBinaryFields = (fields ?? [])
+        .filter((f) => f.fieldType === FIELD_TYPES.BINARY)
+        .reduce((acc, f) => ({ ...acc, [f.variable]: null }), {});
+
+    return {
+        ...contentlet,
+        inode: undefined,
+        locked: false,
+        lockedBy: undefined,
+        ...clearedBinaryFields
+    };
+};
 
 /**
  * Extracts and parses custom field options from field variables.
@@ -505,7 +518,7 @@ export const createCustomFieldConfig = (
  * @returns True if the field should be flattened
  */
 export const isFlattenedField = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: unknown,
     field: DotCMSContentTypeField
 ): fieldValue is string[] => {
     return (
@@ -533,7 +546,7 @@ export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
  * @returns Numeric timestamp or null/undefined
  */
 export const processCalendarFieldValue = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: unknown,
     fieldName: string
 ): number | null | undefined => {
     // Handle null/undefined values
@@ -597,6 +610,7 @@ export const processCalendarFieldValue = (
  * Applies appropriate transformations for different field types:
  * - Flattened fields: Joins arrays with commas
  * - Calendar fields: Converts to numeric timestamps
+ * - Block Editor: Stringifies object values (see details below)
  * - Other fields: Returns as-is
  *
  * @param fieldValue - The raw field value
@@ -604,12 +618,12 @@ export const processCalendarFieldValue = (
  * @returns The processed field value
  */
 export const processFieldValue = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: string | string[] | Date | number | Record<string, unknown> | null | undefined,
     field: DotCMSContentTypeField
 ): string | number | null | undefined => {
     // Handle flattened fields (multi-select, etc.)
     if (isFlattenedField(fieldValue, field)) {
-        return (fieldValue as string[]).join(',');
+        return fieldValue.join(',');
     }
 
     // Handle category fields: join inode array into comma-separated string for the API
@@ -620,6 +634,19 @@ export const processFieldValue = (
     // Handle calendar fields (date, datetime, time)
     if (isCalendarField(field)) {
         return processCalendarFieldValue(fieldValue, field.variable);
+    }
+
+    // Handle Block Editor: the FormControl may hold an object when the form is
+    // initialized from a translated contentlet (blockEditorResolutionFn parses
+    // the JSON string to an object so the editor can render it). The backend
+    // expects a JSON string — sending an object causes it to be stored as
+    // Map.toString(), corrupting the field on save.
+    if (
+        field.fieldType === FIELD_TYPES.BLOCK_EDITOR &&
+        fieldValue &&
+        typeof fieldValue === 'object'
+    ) {
+        return JSON.stringify(fieldValue);
     }
 
     // For all other fields, return as-is

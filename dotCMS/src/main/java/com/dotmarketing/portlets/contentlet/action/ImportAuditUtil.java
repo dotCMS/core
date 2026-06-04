@@ -17,6 +17,7 @@ public class ImportAuditUtil {
 	public static final int STATUS_PENDING = 10;
 	public static final int STATUS_COMPLETED = 20;
 	public static final int STATUS_USERSTOPPED = 30;
+	public static final int STATUS_FAILED = 40;
 
 	public static LRUMap cancelledImports = new LRUMap(50);
 
@@ -300,5 +301,20 @@ public class ImportAuditUtil {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
 		}
 	}
-	
+
+	@WrapInTransaction
+	public static void setAuditRecordAsFailed(long id, String errorMessage){
+		DotConnect dc = new DotConnect();
+		try {
+			dc.setSQL("UPDATE import_audit SET status=?, errors=? where id=?");
+			dc.addParam(STATUS_FAILED);
+			dc.addParam(UtilMethods.isSet(errorMessage) && errorMessage.length() > 500
+					? errorMessage.substring(0, 500) : errorMessage);
+			dc.addParam(id);
+			dc.loadResult();
+		} catch (Exception e) {
+			Logger.error(ImportAuditUtil.class, e.getMessage(), e);
+		}
+	}
+
 }

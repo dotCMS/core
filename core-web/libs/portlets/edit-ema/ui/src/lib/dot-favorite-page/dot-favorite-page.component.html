@@ -6,26 +6,36 @@
         [saveButtonLoading]="vm.loading"
         data-testId="dialogForm">
         @if (form) {
-            <form [formGroup]="form" class="p-fluid" data-testId="form">
+            <form [formGroup]="form" class="w-full" data-testId="form">
                 <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     <div class="lg:col-span-2">
                         <div class="flex flex-col gap-4" data-testId="thumbnailField">
                             @if (vm.showFavoriteEmptySkeleton) {
                                 <dot-pages-favorite-page-empty-skeleton />
                             } @else {
-                                <div
-                                    class="w-full overflow-hidden rounded-md border border-surface-200">
-                                    @if (vm.renderThumbnail) {
-                                        <dot-html-to-image
-                                            [value]="vm.pageRenderedHtml"
-                                            [width]="vm.imgWidth"
-                                            [height]="vm.imgHeight" />
-                                    } @else {
-                                        <div data-testId="favoriteCardImageContainer">
-                                            <img
-                                                class="h-auto w-full object-cover"
-                                                [alt]="vm.formState.title"
-                                                [src]="vm.formState.thumbnail + '?' + timeStamp" />
+                                <div class="relative h-[540px] max-w-full overflow-hidden">
+                                    <div class="w-full overflow-hidden rounded-md border-none">
+                                        @if (vm.renderThumbnail) {
+                                            <dot-html-to-image
+                                                [value]="vm.pageRenderedHtml"
+                                                [width]="vm.imgWidth"
+                                                [height]="vm.imgHeight" />
+                                        } @else {
+                                            <div data-testId="favoriteCardImageContainer">
+                                                <img
+                                                    class="h-auto w-full object-cover"
+                                                    [alt]="vm.formState.title"
+                                                    [src]="vm.formState.thumbnail + '?' + timeStamp"
+                                                    (load)="onPreviewLoaded()"
+                                                    (error)="onPreviewLoaded()" />
+                                            </div>
+                                        }
+                                    </div>
+                                    @if (isThumbnailLoading()) {
+                                        <div
+                                            class="absolute inset-0 flex items-center justify-center rounded-md bg-surface-0 h-full"
+                                            data-testId="thumbnailLoadingOverlay">
+                                            <dot-pages-favorite-page-empty-skeleton />
                                         </div>
                                     }
                                 </div>

@@ -91,10 +91,8 @@ describe('DotEmaDialogComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    pageParams: signal({
-                        variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    }),
-                    $variantId: signal('DEFAULT')
+                    pageVariantId: signal('DEFAULT'),
+                    pageAsset: signal({ site: { identifier: 'test-site-id' } })
                 }
             },
             {

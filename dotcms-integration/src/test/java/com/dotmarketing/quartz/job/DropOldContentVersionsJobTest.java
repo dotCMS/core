@@ -7,6 +7,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -27,9 +28,14 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the {@link DropOldContentVersionsJob} Quartz Job is working as expected.
@@ -63,8 +69,12 @@ public class DropOldContentVersionsJobTest {
      *     Drop Old Content Versions Job can analyze them. The default rules are: Dropping
      *     versions OLDER than 365 days, and keeping NO MORE than 100 versions per language</li>
      *     <li><b>Expected Result:</b> For the two-year-old Contentlet, there will only be 1
-     *     version as it is the Published version. For the one-year-old Contentlet, 5 versions will
-     *     be deleted so that only 100 versions are kept.</li>
+     *     version as it is the Published version. For the one-year-old Contentlet, 4 of the
+     *     105 versions get deleted, leaving 101: the 100 most-recent old versions are kept
+     *     by the {@code OFFSET 100} clause, and the working/live inode is correctly excluded
+     *     from the deletion candidate set. (Before the NULL-handling SQL fix, the previous
+     *     {@code NOT IN ... UNION ALL} query silently failed to exclude the working/live
+     *     inode in this scenario, so 5 versions were deleted leaving 100.)</li>
      * </ul>
      */
     @Test
@@ -112,13 +122,77 @@ public class DropOldContentVersionsJobTest {
                 assertEquals("There should only be 1 version of the two-year-old Contentlet!" + allVersions.size(), 1, allVersions.size());
             }
 
-            // The one-year-old Contentlet should have 5 versions removed, so that only 100 are kept
+            // The one-year-old Contentlet has 105 versions; the SQL excludes the working/live
+            // inode (1 row), then ORDER BY mod_date DESC OFFSET 100 returns 4 deletion
+            // candidates → 105 - 4 = 101 versions remain.
             final List<Versionable> contentletVersions =
                     versionableAPI.findAllVersions(contentWithManyVersions.getIdentifier());
-            assertEquals("There must be only 100 versions of the one-year-old Contentlet!" + contentletVersions.size(), 100, contentletVersions.size());
+            assertEquals("Expected 101 versions to remain after the job (105 created - 4 deleted): "
+                    + contentletVersions.size(), 101, contentletVersions.size());
         } finally {
             Config.setProperty("OLD_CONTENT_BATCH_SIZE", defaultBatchSize);
         }
+    }
+
+    /**
+     * Regression test for the {@code NOT IN} vs {@code NOT EXISTS} bug — when a
+     * Contentlet has only a working version (never published),
+     * {@code contentlet_version_info.live_inode} is NULL. The original SQL used
+     * {@code c.inode NOT IN (... live_inode ...)}, which returns UNKNOWN against any
+     * NULL and therefore zero rows — silently skipping cleanup of unpublished assets
+     * (the dominant case for the EFS bloat this job is meant to address) and
+     * spinning the outer loop indefinitely.
+     *
+     * <p>This test creates a draft Contentlet with multiple versions, asserts
+     * {@code live_inode} really is NULL, then calls the helper directly and
+     * verifies: (1) the working inode is never in the deletion candidate list,
+     * (2) the remaining old versions ARE returned (the original buggy query would
+     * have returned an empty list).</p>
+     */
+    @Test
+    public void findContentVersionsGreaterThan_protectsWorkingInodeWhenLiveInodeIsNull()
+            throws DotDataException, DotSecurityException {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Date now = new Date();
+
+        Contentlet draft = TestDataUtils.getGenericContentContent(false, languageId);
+        draft = createContentlet(draft, "Draft Never Published 1", now);
+        // Add 5 more working versions — never publish, so live_inode stays NULL.
+        draft = createContentletVersions(draft, "Draft Never Published", now, 2, 6);
+        contentletAPI.unlock(draft, SYSTEM_USER, false);
+
+        final String workingInode = draft.getInode();
+        final String identifier = draft.getIdentifier();
+
+        // Sanity: confirm the contentlet really has NULL live_inode — otherwise the
+        // regression would not be exercised.
+        final List<Map<String, Object>> cviRows = new DotConnect()
+                .setSQL("SELECT working_inode, live_inode FROM contentlet_version_info " +
+                        "WHERE identifier = ? AND lang = ?")
+                .addParam(identifier).addParam(languageId)
+                .loadObjectResults();
+        assertEquals("Expected exactly 1 contentlet_version_info row", 1, cviRows.size());
+        assertNotNull("working_inode must be set", cviRows.get(0).get("working_inode"));
+        assertNull("live_inode must be NULL for a never-published contentlet — test " +
+                "precondition not met", cviRows.get(0).get("live_inode"));
+        assertEquals(workingInode, cviRows.get(0).get("working_inode"));
+
+        // Pass 0 as the OFFSET so the helper returns every old version it considers
+        // a deletion candidate.
+        final DropOldContentVersionsJobHelper helper = new DropOldContentVersionsJobHelper();
+        final List<String> deletionCandidates =
+                helper.findContentVersionsGreaterThan(identifier, languageId, 0);
+
+        assertFalse("Working inode must NEVER appear as a deletion candidate, even " +
+                        "when live_inode is NULL",
+                deletionCandidates.contains(workingInode));
+        // 6 versions persisted, 1 is the working — the other 5 are deletion candidates.
+        // The original NOT IN query would have returned 0 here.
+        assertEquals("Old versions must be returned for a draft with NULL live_inode " +
+                        "(NOT IN bug regression check)",
+                5, deletionCandidates.size());
+        assertTrue("Returned candidates must all be inodes other than the working one",
+                deletionCandidates.stream().noneMatch(workingInode::equals));
     }
 
     /**

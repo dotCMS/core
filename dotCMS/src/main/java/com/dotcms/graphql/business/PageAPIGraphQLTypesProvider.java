@@ -18,10 +18,11 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
+import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
-import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
+import com.dotcms.graphql.datafetcher.page.StyleEditorSchemasDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
@@ -49,6 +50,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
@@ -90,6 +92,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public static final String DOT_PAGE_CONTAINER = "DotPageContainer";
     public static final String DOT_PAGE_VANITY_URL = "DotPageVanityURL";
     public static final String DOT_PAGE_BODY = "DotPageBody";
+    public static final String DOT_PAGE_METADATA = "DotPageMetadata";
     Map<String, GraphQLOutputType> typesMap = new HashMap<>();
 
     @Override
@@ -166,7 +169,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 GraphQLString, new RunningExperimentFetcher())
         );
         pageFields.put("numberContents", new TypeFetcher(GraphQLInt, new NumberContentsDataFetcher()));
-        
+
+        pageFields.put("styleEditorSchemas", new TypeFetcher(list(ExtendedScalars.Json),
+                new StyleEditorSchemasDataFetcher()));
+
         // Expose the page as its underlying contentlet type to enable inline fragments
         // for accessing content-type-specific fields like SEO metadata
         pageFields.put("page", new TypeFetcher(
@@ -375,12 +381,19 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         typesMap.put(DOT_PAGE_BODY, TypeUtil.createObjectType(DOT_PAGE_BODY,
                 bodyFields));
 
+        // DotPageMetadata type — shared by rows, columns, and containers
+        final Map<String, TypeFetcher> metadataFields = new HashMap<>();
+        metadataFields.put("name", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
+        typesMap.put(DOT_PAGE_METADATA, TypeUtil.createObjectType(DOT_PAGE_METADATA, metadataFields));
+
         // LayoutRow type
         final Map<String, TypeFetcher> rowFields = new HashMap<>();
         rowFields.put("columns", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_LAYOUT_COLUMN)),
                 new PropertyDataFetcher<TemplateLayoutRow>("columns")));
         rowFields.put("styleClass", new TypeFetcher((GraphQLString),
                 new PropertyDataFetcher<TemplateLayoutRow>("styleClass")));
+        rowFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
+                new PropertyDataFetcher<TemplateLayoutRow>("metadata")));
 
         typesMap.put(DOT_PAGE_LAYOUT_ROW, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_ROW,
                 rowFields));
@@ -401,6 +414,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<TemplateLayoutColumn>("preview")));
         columnFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_UUID)),
                 new PropertyDataFetcher<ContainerHolder>("containers")));
+        columnFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
+                new PropertyDataFetcher<TemplateLayoutColumn>("metadata")));
 
         typesMap.put(DOT_PAGE_LAYOUT_COLUMN, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_COLUMN,
                 columnFields));

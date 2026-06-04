@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/theme-variables" as *;
 
 :host {
     display: flex;

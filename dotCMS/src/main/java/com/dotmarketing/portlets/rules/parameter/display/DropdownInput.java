@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;

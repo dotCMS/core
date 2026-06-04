@@ -59,6 +59,10 @@ export class DotContainersService {
             .getKey(this.#DEFAULT_CONTAINER_KEY)
             .pipe(
                 switchMap((title) => {
+                    if (typeof title !== 'string') {
+                        return of(null);
+                    }
+
                     const isNotSet = title === DEFAULT_CONTAINER_CONFIG.NOT_FOUND;
 
                     if (!title || title === DEFAULT_CONTAINER_CONFIG.NULL_VALUE) {

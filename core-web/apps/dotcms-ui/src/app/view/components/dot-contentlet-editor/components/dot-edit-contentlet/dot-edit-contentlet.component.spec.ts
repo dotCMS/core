@@ -8,7 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
@@ -63,6 +63,10 @@ describe('DotEditContentletComponent', () => {
                     useValue: {
                         handle: jest.fn()
                     }
+                },
+                {
+                    provide: DotcmsConfigService,
+                    useValue: { getConfig: () => observableOf({}) }
                 }
             ]
         });

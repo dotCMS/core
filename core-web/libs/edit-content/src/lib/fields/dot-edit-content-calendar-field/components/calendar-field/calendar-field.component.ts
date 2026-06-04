@@ -57,6 +57,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     selector: 'dot-calendar-field',
     imports: [DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
+    styleUrls: ['./calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {

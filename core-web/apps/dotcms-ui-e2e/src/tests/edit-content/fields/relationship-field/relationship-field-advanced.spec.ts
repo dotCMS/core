@@ -22,12 +22,12 @@ function blogTypeWithRelationships(
     name: string,
     variable: string,
     authorTypeVariable: string,
-    extraRelationshipFields: Array<{
+    extraRelationshipFields: {
         name: string;
         variable: string;
         sortOrder: number;
         cardinality: number;
-    }> = []
+    }[] = []
 ): Record<string, unknown> {
     return {
         clazz: IMMUTABLE_SIMPLE_CT,

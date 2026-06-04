@@ -74,10 +74,10 @@ export class DotDataViewComponent {
     $rowsPerPage = signal<number>(9);
 
     /**
-     * Reactive model holding the currently selected product.
+     * Reactive model holding the currently selected content row.
      * Can be a `DotCMSContentlet` or `null`.
      */
-    $selectedProduct = model<DotCMSContentlet | null>(null);
+    $selectedContent = model<DotCMSContentlet | null>(null, { alias: 'selectedContent' });
 
     /**
      * Emits the selected `DotCMSContentlet` when a row is selected.

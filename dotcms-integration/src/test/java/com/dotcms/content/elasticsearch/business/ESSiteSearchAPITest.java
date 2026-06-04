@@ -108,7 +108,7 @@ public class ESSiteSearchAPITest {
         siteSearchAPI.activateIndex(indexName);
 
         try {
-            indexTimestamp = contentletIndexAPI.fullReindexStart();
+            indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             CacheLocator.getIndiciesCache().clearCache();
             assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
             assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
@@ -141,7 +141,7 @@ public class ESSiteSearchAPITest {
         siteSearchAPI.activateIndex(indexName);
 
         try {
-            indexTimestamp = contentletIndexAPI.fullReindexStart();
+            indexTimestamp = contentletIndexAPI.fullReindexStart().indexSuffixES();
             contentletIndexAPI.fullReindexAbort();
             CacheLocator.getIndiciesCache().clearCache();
             assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());

@@ -393,3 +393,25 @@ export function getDotContainerAttributes({
         'data-dot-uuid': uuid
     };
 }
+
+/**
+ * Read a contentlet's dataset attributes off a DOM element and return a
+ * normalized contentlet object. Mirrors the shape consumed by the editor's
+ * SET_BOUNDS and CONTENTLET_CLICKED events. Optionally parses the
+ * `dotStyleProperties` JSON when present.
+ */
+export function readContentletDataset(element: HTMLElement) {
+    const dataset = element.dataset ?? {};
+    return {
+        identifier: dataset['dotIdentifier'],
+        title: dataset['dotTitle'],
+        inode: dataset['dotInode'],
+        contentType: dataset['dotType'],
+        baseType: dataset['dotBasetype'],
+        widgetTitle: dataset['dotWidgetTitle'],
+        onNumberOfPages: dataset['dotOnNumberOfPages'],
+        ...(dataset['dotStyleProperties'] && {
+            dotStyleProperties: JSON.parse(dataset['dotStyleProperties'])
+        })
+    };
+}

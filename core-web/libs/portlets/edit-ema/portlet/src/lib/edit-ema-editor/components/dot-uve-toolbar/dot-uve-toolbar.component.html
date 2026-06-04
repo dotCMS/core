@@ -1,69 +1,21 @@
-@let preview = $isPreviewMode();
-@let live = $isLiveMode();
+@let preview = $mode() === UVE_MODE.PREVIEW;
+@let live = $mode() === UVE_MODE.LIVE;
 @let runningExperiment = $toolbar().runningExperiment;
 
-<p-toolbar>
+<p-toolbar
+    [pt]="{
+        root: {
+            style: {
+                borderRadius: '0',
+                border: 'none',
+                borderBottom: 'solid 1px var(--color-gray-200)'
+            }
+        }
+    }">
     <ng-template #start>
         <div class="flex items-center gap-1" [class.p-0]="preview || live">
-            @if ($isEditMode() && $canEditPage()) {
-                <p-button
-                    [text]="true"
-                    size="small"
-                    [rounded]="true"
-                    (click)="togglePalette()"
-                    data-testId="uve-toolbar-palette-toggle">
-                    <img
-                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
-                        alt="Left Panel Open"
-                        [class.hidden]="!$isPaletteOpen()"
-                        data-testId="palette-open-icon" />
-                    <img
-                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
-                        alt="Left Panel Close"
-                        [class.hidden]="$isPaletteOpen()"
-                        data-testId="palette-close-icon" />
-                </p-button>
-            }
             <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
             <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-            <p-button
-                size="small"
-                (click)="op.toggle($event)"
-                [text]="true"
-                [rounded]="true"
-                [pTooltip]="'editpage.header.copy' | dm"
-                tooltipPosition="bottom"
-                icon="pi pi-copy"
-                data-testId="uve-toolbar-copy-url">
-                <p-popover #op [pt]="copyUrlPopoverPt">
-                    <div class="flex flex-col divide-y divide-gray-200">
-                        @for (url of $pageURLS(); track url.value) {
-                            <div class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0">
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ url.label | dm }}:
-                                </span>
-                                <div class="flex min-w-0 items-center gap-2">
-                                    <a
-                                        [href]="url.value"
-                                        class="block min-w-0 flex-1 truncate text-gray-900 !no-underline hover:underline"
-                                        target="_blank"
-                                        rel="noreferrer noopener">
-                                        {{ url.value }}
-                                    </a>
-                                    <p-button
-                                        icon="pi pi-copy"
-                                        [text]="true"
-                                        [rounded]="true"
-                                        class="shrink-0"
-                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                        [cdkCopyToClipboard]="url.value"
-                                        data-testId="copy-url-button" />
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </p-popover>
-            </p-button>
             <a
                 size="small"
                 [text]="true"
@@ -71,7 +23,7 @@
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="text-[var(--color-palette-primary)]! visited:text-[var(--color-palette-primary)]! !no-underline"
+                class="text-(--color-palette-primary)! visited:text-(--color-palette-primary)! no-underline!"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
@@ -80,7 +32,10 @@
 
             @if ($showDeviceSelector()) {
                 <dot-uve-device-selector
+                    [state]="$deviceSelectorState()"
                     [devices]="$devices()"
+                    [isTraditionalPage]="isTraditionalPage()"
+                    (stateChange)="deviceSelectorChange.emit($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
 
@@ -127,7 +82,14 @@
 
     <ng-template #end>
         <div class="flex items-center gap-1 uve-toolbar-end-actions">
-            <dot-toggle-lock-button />
+            @if ($lockOptions(); as lockOptions) {
+                @if (lockOptions.shouldShowButton) {
+                    <dot-toggle-lock-button
+                        [toggleLockOptions]="lockOptions"
+                        (toggleLockClick)="handleToggleLock($event)"
+                        data-testId="uve-toolbar-toggle-lock" />
+                }
+            }
 
             @if (runningExperiment) {
                 <dot-ema-running-experiment
@@ -135,8 +97,9 @@
                     data-testId="uve-toolbar-running-experiment" />
             }
             <dot-language-selector
+                #languageSelector
                 [value]="$toolbar().currentLanguage"
-                (onChange)="onLanguageSelected($event)"
+                (onLanguageChange)="onLanguageSelected($event)"
                 data-testId="uve-toolbar-language-selector" />
 
             <dot-edit-ema-persona-selector
@@ -155,5 +118,8 @@
 </p-toolbar>
 
 @if ($infoDisplayProps(); as options) {
-    <dot-ema-info-display data-testId="info-display" [options]="options" />
+    <dot-ema-info-display
+        data-testId="info-display"
+        [options]="options"
+        (actionClicked)="handleInfoDisplayAction($event)" />
 }

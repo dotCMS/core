@@ -55,9 +55,7 @@ public class CompletionsTool implements ViewTool {
                 AppKeys.COMPLETION_ROLE_PROMPT.key,
                 this.config.getConfig(AppKeys.COMPLETION_ROLE_PROMPT),
                 AppKeys.COMPLETION_TEXT_PROMPT.key,
-                this.config.getConfig(AppKeys.COMPLETION_TEXT_PROMPT),
-                AppKeys.TEXT_MODEL_NAMES.key,
-                this.config.getConfig(AppKeys.TEXT_MODEL_NAMES));
+                this.config.getConfig(AppKeys.COMPLETION_TEXT_PROMPT));
     }
 
     /**

@@ -179,6 +179,8 @@ export class DotMaterialIcon {
     render() {
         // reason: https://github.com/dotCMS/core/issues/22861
         const LABEL_IMPORTANT_ICON = 'label_important';
+        const isValidIcon =
+            this.value !== LABEL_IMPORTANT_ICON && this.suggestionlist.includes(this.value);
 
         return (
             <Host
@@ -193,7 +195,7 @@ export class DotMaterialIcon {
                         <mwc-icon
                             class="dot-material-icon__preview"
                             style={{ color: this.colorValue }}>
-                            {this.value === LABEL_IMPORTANT_ICON ? '' : this.value}
+                            {isValidIcon ? this.value : ''}
                         </mwc-icon>
                         <input
                             class="dot-material-icon__input"

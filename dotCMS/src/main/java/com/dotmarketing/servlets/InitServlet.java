@@ -91,7 +91,7 @@ public class InitServlet extends HttpServlet {
         new StartupLogger().log();
 
         //Check and start the ES Content Store
-        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
         Logger.info(this, "");
 
         Logger.info(this, "");

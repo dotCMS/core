@@ -1,0 +1,256 @@
+# dotCMS — Single Node OS Migration Stack
+#
+# Runs BOTH search backends side-by-side for the OS 1.x → OS 3.x migration:
+#   - OpenSearch 1.3.x  + OS Dashboards 1.3.x → http://localhost:5601
+#   - OpenSearch 3.4.0  + OS Dashboards 3.0.0  → http://localhost:5602
+#
+# dotCMS is configured to write to OpenSearch 1.x (primary) while OpenSearch 3.x
+# shadows the traffic. Flip DOT_ES_ENDPOINTS to the opensearch3 service URL
+# to promote OS 3.x as primary once the migration is validated.
+#
+# Usage:
+#   docker compose up -d
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: pgvector/pgvector:pg18
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 1.3.x  (primary — dotCMS writes here during migration)
+  # REST API  → http://localhost:9200
+  # ---------------------------------------------------------------------------
+  opensearch1:
+    image: opensearchproject/opensearch:1.3.20
+    environment:
+      cluster.name: "opensearch1-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch1-data:/usr/share/opensearch/data
+    networks:
+      - search_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch Dashboards 1.3.x  (visualize OpenSearch 1.x indices)
+  # UI → http://localhost:5601
+  # ---------------------------------------------------------------------------
+  opensearch1-dashboards:
+    image: opensearchproject/opensearch-dashboards:1
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch1:9200"]'
+      opensearch.ssl.verificationMode: "none"
+      opensearch.username: "admin"
+      opensearch.password: "admin"
+    ports:
+      - "5601:5601"
+    networks:
+      - search_net
+    depends_on:
+      - opensearch1
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 3.4.0  (shadow/target)
+  # REST API → http://localhost:9201
+  # ---------------------------------------------------------------------------
+  opensearch3:
+    image: opensearchproject/opensearch:3.4.0
+    environment:
+      cluster.name: "opensearch3-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "Dev!Search3-Kx9mP-2026"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9201:9200"
+      - "9601:9600"
+    volumes:
+      - opensearch3-data:/usr/share/opensearch/data
+    networks:
+      - search_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:9200 -u admin:Dev!Search3-Kx9mP-2026 | grep -q cluster_name"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch Dashboards 3.0.0
+  # UI → http://localhost:5602
+  # ---------------------------------------------------------------------------
+  opensearch3-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.0.0
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch3:9200"]'
+      opensearch.ssl.verificationMode: "none"
+      opensearch.username: "admin"
+      opensearch.password: "Dev!Search3-Kx9mP-2026"
+    ports:
+      - "5602:5601"
+    networks:
+      - search_net
+    depends_on:
+      - opensearch3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 1.x user provisioning
+  # ---------------------------------------------------------------------------
+  opensearch1-provision:
+    build:
+      context: .
+      dockerfile: Dockerfile-opensearch-py
+    environment:
+      OS_SCHEME: "https"
+      OS_HOST: "opensearch1"
+      OS_PORT: "9200"
+      OS_ADMIN_USER: "admin"
+      OS_ADMIN_PASS: "admin"
+      OS_PASSWORD: "Dev!dotcms-EsUser-2026"
+      OS_CUSTOMER: "dotcms"
+      OS_DEBUG: "true"
+    networks:
+      - search_net
+    depends_on:
+      opensearch1:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 3.x user provisioning
+  # ---------------------------------------------------------------------------
+  opensearch3-provision:
+    build:
+      context: .
+      dockerfile: Dockerfile-opensearch-py
+    environment:
+      OS_SCHEME: "https"
+      OS_HOST: "opensearch3"
+      OS_PORT: "9200"
+      OS_ADMIN_USER: "admin"
+      OS_ADMIN_PASS: "Dev!Search3-Kx9mP-2026"
+      OS_PASSWORD: "Dev!dotcms-EsUser-2026"
+      OS_CUSTOMER: "dotcms"
+      OS_DEBUG: "true"
+    networks:
+      - search_net
+    depends_on:
+      opensearch3:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # dotCMS
+  # HTTP  → http://localhost:8082
+  # HTTPS → https://localhost:8443
+  #
+  # During migration:
+  #   DOT_ES_ENDPOINTS points to opensearch1 (primary).
+  #   When ready to promote OS 3.x, switch to: https://opensearch3:9200
+  # ---------------------------------------------------------------------------
+  dotcms:
+    image: dotcms/dotcms:latest
+    environment:
+      CMS_JAVA_OPTS: '-Xmx1g '
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      # --- ES / OS 1.x (primary reads+writes in Phase 0–2) ---
+      DOT_ES_ENDPOINTS: 'https://opensearch1:9200'
+      DOT_ES_AUTH_TYPE: 'BASIC'
+      DOT_ES_AUTH_BASIC_USER: 'dotcms-es-user'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'Dev!dotcms-EsUser-2026'
+      # --- OS 3.x (shadow writes in Phase 1–2, primary in Phase 3) ---
+      DOT_OS_ENDPOINTS: 'https://opensearch3:9200'
+      DOT_OS_AUTH_TYPE: 'BASIC'
+      DOT_OS_AUTH_BASIC_USER: 'dotcms-es-user'
+      DOT_OS_AUTH_BASIC_PASSWORD: 'Dev!dotcms-EsUser-2026'
+      DOT_OS_TLS_TRUST_SELF_SIGNED: 'true'
+      # --- Migration phase: 0=ES only, 1=dual-write/ES-reads, 2=dual-write/OS-reads, 3=OS only ---
+      DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE: '1'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-os-migration'
+      GLOWROOT_ENABLED: 'true'
+      GLOWROOT_WEB_UI_ENABLED: 'true'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
+    depends_on:
+      db:
+        condition: service_healthy
+      opensearch1-provision:
+        condition: service_completed_successfully
+      opensearch3-provision:
+        condition: service_completed_successfully
+    volumes:
+      - cms-shared:/data/shared
+      # - {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+      - search_net
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+      - "4000:4000"  # Glowroot web UI
+    restart: unless-stopped
+
+networks:
+  db_net:
+  search_net:
+
+volumes:
+  cms-shared:
+  dbdata:
+  opensearch1-data:
+  opensearch3-data:

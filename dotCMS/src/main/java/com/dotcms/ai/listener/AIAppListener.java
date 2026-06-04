@@ -1,10 +1,7 @@
 package com.dotcms.ai.listener;
 
-import com.dotcms.ai.app.AIModels;
-import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
-import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.validator.AIAppValidator;
+import com.dotcms.ai.client.langchain4j.LangChain4jAIClient;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
@@ -45,8 +42,7 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
      * <ul>
      *   <li>Logs a debug message if the event is null or the event's host identifier is blank.</li>
      *   <li>Finds the host associated with the event's host identifier.</li>
-     *   <li>Resets the AI models for the found host's hostname.</li>
-     *   <li>Validates the AI configuration using the {@link AIAppValidator}.</li>
+     *   <li>Evicts cached LangChain4J model instances for the host so new credentials take effect immediately.</li>
      * </ul>
      * </p>
      *
@@ -67,10 +63,7 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found.getHostname()));
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-
-        AIAppValidator.get().validateAIConfig(appConfig, event.getUserId());
+        Optional.ofNullable(host).ifPresent(found -> LangChain4jAIClient.get().flushCachesForHost(found.getHostname()));
     }
 
     @Override

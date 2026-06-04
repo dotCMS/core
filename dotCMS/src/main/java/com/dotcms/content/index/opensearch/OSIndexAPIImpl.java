@@ -1,11 +1,9 @@
 package com.dotcms.content.index.opensearch;
 
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
-import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
-import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -13,7 +11,6 @@ import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -21,7 +18,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -34,11 +30,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jakarta.json.stream.JsonParser;
+import org.opensearch.client.json.JsonpMapper;
+import org.opensearch.client.opensearch._types.ExpandWildcard;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
 import org.opensearch.client.opensearch.indices.CreateIndexResponse;
@@ -63,10 +61,12 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
 @Default
 public class OSIndexAPIImpl implements IndexAPI {
 
+    /** OS analog of {@code ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS}. */
+    public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
+            () -> IndexConfigHelper.getString(OSIndexProperty.INDEX_OPERATIONS_TIMEOUT, "15s")).get();
+
     @Inject
     private OSClientProvider clientProvider;
-
-    private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     private Lazy<String> clusterPrefix =
             Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + ".");
@@ -126,29 +126,51 @@ public class OSIndexAPIImpl implements IndexAPI {
             "Trying to create index: " + indexName + " with shards: " + shards);
 
         shards = shards > 0 ? shards : IndexConfigHelper.getInt(OSIndexProperty.INDEX_NUMBER_OF_SHARDS, 1);
-        if(shards>1){
-            Logger.warn(this.getClass(),"Number of OS shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+        if (shards > 1) {
+            Logger.warn(this.getClass(), "Number of OS shards : " + shards
+                + ". Important to note that the more shards you enable, the slower the index reads."
+                + "  dotCMS recommends using only 1 shard per replica. ");
         }
-        Map<String, Object> settingsMap = (settings == null) ? new HashMap<>() :
-            objectMapper.readValue(settings, LinkedHashMap.class);
 
-        final String autoExpandReplicas = IndexConfigHelper.getString(OSIndexProperty.INDEX_AUTO_EXPAND_REPLICAS, "0-1");
-
-        settingsMap.put("index.number_of_shards", shards);
-        settingsMap.put("index.auto_expand_replicas", autoExpandReplicas);
-        settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
-        settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
-        settingsMap.putIfAbsent("index.query.default_field",
-            IndexConfigHelper.getString(OSIndexProperty.INDEX_QUERY_DEFAULT_FIELD, "catchall"));
-
+        final String autoExpandReplicas = IndexConfigHelper.getString(
+            OSIndexProperty.INDEX_AUTO_EXPAND_REPLICAS, "0-1");
         final int finalShards = shards;
+
+        // Parse the full settings JSON (including the nested "analysis" block with custom
+        // analyzers) via IndexSettings._DESERIALIZER + the transport's JsonpMapper.
+        // IndexSettings.Builder does NOT implement PlainDeserializable, so withJson() is
+        // unavailable; instead we deserialize a full IndexSettings object, then call
+        // toBuilder() to apply dynamic overrides (shards, replicas) on top.
+        // Flat "index.*" keys in the JSON (e.g. "index.mapping.total_fields.limit") are
+        // captured in IndexSettings.customSettings and forwarded to OpenSearch unchanged.
+        final IndexSettings indexSettings;
+        if (settings != null && !settings.isEmpty()) {
+            try {
+                final JsonpMapper mapper = clientProvider.getClient()._transport().jsonpMapper();
+                try (JsonParser parser = mapper.jsonProvider().createParser(
+                        new java.io.StringReader(settings))) {
+                    indexSettings = IndexSettings._DESERIALIZER.deserialize(parser, mapper)
+                            .toBuilder()
+                            .numberOfShards(finalShards)
+                            .autoExpandReplicas(autoExpandReplicas)
+                            .build();
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(),
+                    "Failed to parse settings JSON for index: " + indexName
+                        + " — index will be created with defaults only", e);
+                throw new DotStateException("Failed to parse index settings for: " + indexName, e);
+            }
+        } else {
+            indexSettings = new IndexSettings.Builder()
+                    .numberOfShards(finalShards)
+                    .autoExpandReplicas(autoExpandReplicas)
+                    .build();
+        }
+
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
                 builder.index(getNameWithClusterIDPrefix(indexName))
-                        .settings(IndexSettings.of(settingsBuilder -> {
-                            settingsBuilder.numberOfShards(finalShards)
-                                    .autoExpandReplicas(autoExpandReplicas);
-                            return settingsBuilder;
-                        }))
+                        .settings(indexSettings)
                         .timeout(Time.of(timeBuilder ->
                                 timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                         ))
@@ -294,15 +316,28 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getClosedIndexes() {
-        // OpenSearch does not expose closed index state via GetIndexRequest easily.
-        // Full implementation requires enumerating state via cat or cluster API.
-        Logger.info(this.getClass(), "getClosedIndexes not yet fully implemented for OpenSearch");
-        return new ArrayList<>();
+        try {
+            final GetIndexRequest request = GetIndexRequest.of(b ->
+                b.index(clusterPrefix.get() + "*")
+                 .expandWildcards(ExpandWildcard.Closed)
+                 .allowNoIndices(true)
+            );
+            final GetIndexResponse response = clientProvider.getClient().indices().get(request);
+            return response.result().keySet().stream()
+                    .filter(this::hasClusterPrefix)
+                    .map(this::removeClusterIdFromName)
+                    .sorted(Comparator.reverseOrder())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Could not retrieve closed OpenSearch indices: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
     public boolean isIndexClosed(String index) {
-        return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+        return getClosedIndexes().contains(index);
     }
 
     @Override
@@ -434,13 +469,13 @@ public class OSIndexAPIImpl implements IndexAPI {
         String settings = null;
         try {
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            final URL url = classLoader.getResource("opensearch-content-settings.json");
+            final URL url = classLoader.getResource("os-content-settings.json");
             if (url != null) {
                 settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
             }
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                "Cannot load opensearch-content-settings.json file, using defaults", e);
+                "Cannot load os-content-settings.json file, using defaults", e);
         }
 
         if (settings == null) {

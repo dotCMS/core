@@ -244,6 +244,9 @@
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+            String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
+                    ? "dotcms-block-editor"
+                    : "dotcms-old-block-editor";
 
             %>
             <script src="/html/showdown.min.js"></script>
@@ -258,7 +261,7 @@
                     function autoexecute() {
                         const blockEditorContainer = document.querySelector('#block-editor-<%=field.getVelocityVarName()%>-container');
                         const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
-                        const blockEditor = document.createElement('dotcms-block-editor');
+                        const blockEditor = document.createElement('<%=blockEditorTag%>');
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
@@ -275,8 +278,16 @@
                         }
 
 
-                        // Set current value in the hidden field
-                        field.value = content || '';
+                        // Set current value in the hidden field.
+                        // When the stored value is JSON, `content` is a parsed object — assigning
+                        // it directly would coerce via toString() and write "[object Object]" into
+                        // the input. The form submits the input verbatim, so without the explicit
+                        // JSON.stringify the field is corrupted on save whenever the user edits
+                        // another field without touching the Block Editor (the `valueChange`
+                        // listener below only fires on user input).
+                        field.value = (content && typeof content === 'object')
+                            ? JSON.stringify(content)
+                            : (content || '');
 
                         const contentlet =  (<%=contentletObj%>);
                         const fieldData = {
@@ -1484,13 +1495,13 @@
         while (iterator.hasNext()) {
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
-            if(null != object) {
-                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
-                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
-                if (iterator.hasNext()) {
-                    keyValueDataRaw.append(',');
-                    dotKeyValueDataRaw.append(',');
-                }
+            final String encodedKey = key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;");
+            final String encodedValue = null != object ? object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") : "null";
+            keyValueDataRaw.append(encodedKey).append(":").append(encodedValue);
+            dotKeyValueDataRaw.append("&#x22;" + encodedKey + "&#x22;").append(":").append("&#x22;" + encodedValue + "&#x22;");
+            if (iterator.hasNext()) {
+                keyValueDataRaw.append(',');
+                dotKeyValueDataRaw.append(',');
             }
         }
         keyValueDataRaw.append("}");

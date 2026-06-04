@@ -24,7 +24,7 @@ import { TableModule, TableRowReorderEvent } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
@@ -52,6 +52,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
+    styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
@@ -162,14 +163,25 @@ export class DotRelationshipFieldComponent
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
 
     /**
-     * Computed signal that holds the field and contentlet.
+     * Computed signal that holds the field, contentlet, and locale context.
+     * When copying a locale (manual translation or populate), passes both the
+     * target language id and the full DotLanguage object so related items can be
+     * resolved to their translated versions and the language column renders correctly.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $inputs = computed(() => ({
-        field: this.$field(),
-        contentlet: this.$contentlet()
-    }));
+    $inputs = computed(() => {
+        const locale = this.#editContentStore.isCopyingLocale()
+            ? this.#editContentStore.currentLocale()
+            : undefined;
+
+        return {
+            field: this.$field(),
+            contentlet: this.$contentlet(),
+            targetLanguageId: locale?.id,
+            targetLanguage: locale
+        };
+    });
 
     /**
      * Computed signal that holds the total number of columns.
@@ -192,10 +204,15 @@ export class DotRelationshipFieldComponent
     /**
      * Initializes the store with the field and contentlet.
      *
+     * Passes the signal reference (not its value) so that signalMethod creates a
+     * reactive effect — the store re-initializes whenever $inputs changes. This is
+     * required for manual translation, where this component is preserved (not flushed)
+     * and ngOnInit does not run again.
+     *
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs());
+        this.initialize(this.$inputs);
     }
 
     /**
@@ -303,7 +320,7 @@ export class DotRelationshipFieldComponent
         const [movedItem] = reorderedData.splice(globalDragIndex, 1);
         reorderedData.splice(globalDropIndex, 0, movedItem);
 
-        this.store.setData(reorderedData);
+        this.store.reorderData(reorderedData);
     }
 
     /**
@@ -375,11 +392,10 @@ export class DotRelationshipFieldComponent
     readonly initialize = signalMethod<{
         field: DotCMSContentTypeField;
         contentlet: DotCMSContentlet;
+        targetLanguageId?: number;
+        targetLanguage?: DotLanguage;
     }>((params) => {
-        this.store.initialize({
-            field: params.field,
-            contentlet: params.contentlet
-        });
+        this.store.initialize(params);
     });
 
     /**

@@ -636,6 +636,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
 
+    @Override
+    @WrapInTransaction
+    public void updateStyleProperties(final List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty()) {
+            throw new DotDataException("empty list passed in");
+        }
+
+        for (final MultiTree tree : mTrees) {
+            _dbUpsert(tree);
+            this.multiTreeCache.get().removeContentletReferenceCount(tree.getContentlet());
+        }
+
+        final MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
+        refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
+    }
+
     /**
      * Saves a collection of {@link MultiTree} objects linked to an HTML Page and removes all
      * previously existing entries for that page. This is a convenience overload that performs a

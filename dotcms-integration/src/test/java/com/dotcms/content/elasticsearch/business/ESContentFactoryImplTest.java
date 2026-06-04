@@ -95,7 +95,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
 
-
     public static class TestCase {
 
         String formatPattern;
@@ -177,7 +176,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         }
 
         // ten inodes
-        assertTrue("We've added 10 contentlets", inodesToOrderBy.size()==10);
+        assertEquals("We've added 10 contentlets", 10, inodesToOrderBy.size());
 
         //load the cache with the 9th one and the 7th one
         instance.find(inodesToOrderBy.get(9));

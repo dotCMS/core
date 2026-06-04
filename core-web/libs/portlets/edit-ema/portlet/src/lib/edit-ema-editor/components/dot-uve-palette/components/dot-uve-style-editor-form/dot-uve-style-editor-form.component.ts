@@ -1,5 +1,6 @@
-import { timer } from 'rxjs';
+import { EMPTY, Observable, of, timer } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,42 +20,47 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import {
+    catchError,
     debounce,
-    debounceTime,
     distinctUntilChanged,
     filter,
     map,
     mergeMap,
+    switchMap,
     tap
 } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorProperties } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
 import { UveStyleEditorFieldDropdownComponent } from './components/uve-style-editor-field-dropdown/uve-style-editor-field-dropdown.component';
 import { UveStyleEditorFieldInputComponent } from './components/uve-style-editor-field-input/uve-style-editor-field-input.component';
 import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor-field-radio/uve-style-editor-field-radio.component';
 import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
-import {
-    extractStylePropertiesFromGraphQL,
-    updateStylePropertiesInGraphQL
-} from './utils/style-editor-graphql.utils';
 
-import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
+import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import {
+    STYLE_EDITOR_DEBOUNCE_TIME,
     STYLE_EDITOR_FIELD_TYPES,
     STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
 } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { PageType } from '../../../../../store/models';
 import { filterFormValues } from '../../utils';
+
+type SaveResult =
+    | { ok: true; isTraditionalPage: boolean }
+    | { ok: false; error: { message?: string } | null; isTraditionalPage: boolean };
 
 @Component({
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
     imports: [
+        CommonModule,
         ReactiveFormsModule,
         AccordionModule,
         ButtonModule,
@@ -63,6 +69,7 @@ import { filterFormValues } from '../../utils';
         UveStyleEditorFieldCheckboxGroupComponent,
         UveStyleEditorFieldRadioComponent
     ],
+    providers: [UveOptimisticSaveService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block h-full w-full'
@@ -74,7 +81,7 @@ export class DotUveStyleEditorFormComponent {
     readonly #formBuilder = inject(StyleEditorFormBuilderService);
     readonly #form = signal<FormGroup | null>(null);
     readonly #uveStore = inject(UVEStore);
-    readonly #iframeMessenger = inject(UveIframeMessengerService);
+    readonly #optimisticSave = inject(UveOptimisticSaveService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -85,24 +92,37 @@ export class DotUveStyleEditorFormComponent {
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     /**
-     * Computed property that returns an array of all section indices to keep all tabs open by default
+     * Tracks only the contentlet identifier so that bounds updates (which call setSelected
+     * with the same contentlet but new coordinates) do not cause spurious form rebuilds
+     * that would reset the user's in-progress input.
      */
-    $activeTabIndices = computed(() => {
-        const sections = this.$sections();
-        return sections.map((_, index) => index);
-    });
+    readonly #selectedContentletId = computed(
+        () => this.#uveStore.editorSelected()?.payload?.contentlet?.identifier ?? null
+    );
 
     /**
-     * Effect that (by design) only runs once, using `untracked()` to read the style editor form schema
-     * without subscribing to future changes. This allows the form to be (re)built a single time
-     * in reaction to schema input, ensuring no further re-execution even if the schema changes.
-     * Intended for one-time initialization rather than reactive synchronization.
+     * Writable signal for open accordion panels. Initialized to all-open in #buildForm
+     * (on contentlet change) and kept in sync via (valueChange) on the template.
+     * Using a signal (not computed) prevents schema/section reference changes from
+     * creating a new array reference that would force the accordion to reset.
+     * Intentionally not re-seeded on schema-only changes — schema is treated as
+     * stable per contentlet (it is content-type-derived and does not change mid-session).
+     */
+    readonly #activeTabIndices = signal<number[]>([]);
+    readonly $activeTabIndices = this.#activeTabIndices.asReadonly();
+
+    /**
+     * Rebuilds the form when the selected contentlet changes.
+     * Tracks only the contentlet identifier — not the full editorSelected signal — so
+     * bounds updates (which emit a new editorSelected object for the same contentlet)
+     * do not trigger a rebuild and erase the user's in-progress input.
      */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
+        const contentletId = this.#selectedContentletId();
 
-        if (schema) {
-            this.#buildForm(schema);
+        if (schema && contentletId) {
+            untracked(() => this.#buildForm(schema));
         }
     });
 
@@ -110,19 +130,32 @@ export class DotUveStyleEditorFormComponent {
         this.#listenToFormChanges();
     }
 
+    onAccordionChange(indices: number[]): void {
+        this.#activeTabIndices.set(indices);
+    }
+
     /**
-     * Builds a form from the schema using the form builder service
+     * Builds a form from the schema using the form builder service.
+     * Reads initial values from pageAsset (the source of truth) rather than from
+     * editorSelected.payload, which is populated from SDK postMessages and may not
+     * include persisted dotStyleProperties.
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
+        this.#activeTabIndices.set(schema.sections.map((_, i) => i));
 
-        // Get styleProperties directly from the contentlet payload (already in the postMessage)
-        const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
+
+        // pageAsset is already untracked here (called from within untracked() in the effect).
+        // extractFromRollback reads the current pageAsset, which always reflects the latest
+        // saved or optimistically-updated dotStyleProperties.
+        const extracted = activeContentlet
+            ? this.#optimisticSave.extractFromRollback(activeContentlet, ['dotStyleProperties'])
+            : null;
+        const initialValues = extracted?.dotStyleProperties as StyleEditorProperties | undefined;
 
         // Clear form first so the template destroys the form block and unbinds old controls.
         // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
         this.#form.set(null);
-
         queueMicrotask(() => {
             const form = this.#formBuilder.buildForm(schema, initialValues);
             this.#form.set(form);
@@ -130,7 +163,7 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Restores form values from the rolled-back graphqlResponse state.
+     * Restores form values from the rolled-back pageAssetResponse state.
      * Used when rollback occurs to sync form with restored state.
      *
      * This method rebuilds the entire form (rather than patching) to trigger
@@ -138,7 +171,7 @@ export class DotUveStyleEditorFormComponent {
      * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
         const schema = this.$schema();
 
         if (!activeContentlet || !schema) {
@@ -146,24 +179,11 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Use the internal graphqlResponse signal directly (it's already been rolled back)
-            // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackGraphqlResponse = this.#uveStore.graphqlResponse();
-
-            if (!rolledBackGraphqlResponse) {
-                return;
-            }
-
-            // Extract style properties from the rolled-back state using utility function
-            const styleProperties = extractStylePropertiesFromGraphQL(
-                rolledBackGraphqlResponse,
-                activeContentlet
-            );
-
-            // Rebuild the ENTIRE form with rolled-back values
-            // This causes the #form signal to change, which triggers switchMap in #listenToFormChanges
-            // to cancel the old subscription (including any pending debounced saves)
-            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties || undefined);
+            const extracted = this.#optimisticSave.extractFromRollback(activeContentlet, [
+                'dotStyleProperties'
+            ]);
+            const styleProperties = extracted?.dotStyleProperties as StyleEditorProperties;
+            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties);
             this.#form.set(restoredForm);
         } catch (error) {
             console.error('Error restoring form from rollback:', error);
@@ -193,125 +213,118 @@ export class DotUveStyleEditorFormComponent {
                 // Merge with the new form's valueChanges
                 // mergeMap keeps all inner subscriptions active, so both old and new forms'
                 // valueChanges will be processed, including any pending debounced saves
-                mergeMap((form) => {
-                    const isTraditionalPage = this.#uveStore.isTraditionalPage();
-
-                    const valueChanges$ = form.valueChanges.pipe(
+                mergeMap((form) =>
+                    form.valueChanges.pipe(
                         distinctUntilChanged(
                             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
                         ),
+                        // Capture activeContentlet at the time of form change (before debounce)
+                        // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.activeContentlet(),
-                            isTraditionalPage
-                        }))
-                    );
-
-                    if (isTraditionalPage) {
-                        // Debounce so rapid input (e.g. typing) only triggers one save
-                        // after the user stops, rather than on every keystroke.
-                        return valueChanges$.pipe(
-                            debounceTime(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
-                        );
-                    }
-
-                    // Headless: optimistic update fires immediately on every change for instant
-                    // visual feedback; the actual API save is debounced 2s.
-                    return valueChanges$.pipe(
-                        tap(({ formValues, activeContentlet }) => {
-                            this.#updateIframeOptimistically(formValues, activeContentlet);
+                            activeContentlet: this.#uveStore.editorSelected()?.payload,
+                            isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
+                        })),
+                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
+                            // Traditional pages do not support instant iframe updates.
+                            if (!isTraditionalPage) {
+                                this.#optimisticSave.updateIframeOptimistically(activeContentlet, {
+                                    dotStyleProperties: formValues
+                                });
+                            }
                         }),
-                        debounce(() => timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME))
-                    );
-                }),
+                        // Traditional: 500ms — short window so the iframe reload
+                        // following the save still feels responsive.
+                        // Headless: 2s — coalesces rapid slider/picker drags.
+                        debounce((changeEvent) =>
+                            changeEvent.isTraditionalPage
+                                ? timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
+                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        ),
+                        // switchMap cancels the previous in-flight save when a new
+                        // debounced emission arrives, so a fast burst of edits
+                        // resolves to a single save (and a single toast) for the
+                        // latest value rather than one per change.
+                        switchMap(({ formValues, activeContentlet, isTraditionalPage }) =>
+                            this.#performSave(formValues, activeContentlet, isTraditionalPage)
+                        )
+                    )
+                ),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
-                this.#saveStyleProperties(formValues, activeContentlet, isTraditionalPage);
+            .subscribe((result) => {
+                // 'error' in result narrows the discriminated union reliably
+                // across the rxjs/switchMap call site (plain `result.ok` does not
+                // always narrow here, depending on operator inference depth).
+                if ('error' in result) {
+                    // Rollback already happened synchronously in store's error handler,
+                    // so we can restore the form immediately.
+                    this.#restoreFormFromRollback();
+
+                    if (result.isTraditionalPage) {
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'editpage.content.update.contentlet.error'
+                        ),
+                        detail: result.error?.message || '',
+                        life: 2000
+                    });
+
+                    return;
+                }
+
+                if (result.isTraditionalPage) {
+                    // Re-fetch the page from the backend so the iframe renders
+                    // the updated styles. pageReload() handles LOADING→LOADED status.
+                    this.#uveStore.pageReload();
+                }
+
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get('message.content.saved'),
+                    detail: this.#dotMessageService.get('message.content.note.already.published'),
+                    life: 2000
+                });
             });
     }
 
     /**
-     * Immediately updates the iframe with new form values (no debounce)
-     * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
+     * Wraps `saveStyleEditor` in an inner observable so the outer pipeline can
+     * `switchMap` onto it. Returns a single result envelope (`ok`/`error`) so a
+     * single subscribe handles both branches without re-throwing.
+     *
+     * Side effects (`addCurrentPageToHistory`, `setUveStatus(LOADING)`) live
+     * inside the factory so they only run when this inner observable is
+     * actually subscribed — i.e. the debounced emission survived to reach
+     * switchMap.
      */
-    #updateIframeOptimistically(
+    #performSave(
         formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null
-    ): void {
+        activeContentlet: ActionPayload | null | undefined,
+        isTraditionalPage: boolean
+    ): Observable<SaveResult> {
         if (!activeContentlet) {
-            return;
+            return EMPTY;
         }
 
-        try {
-            // Get the internal graphqlResponse for optimistic update
-            const internalGraphqlResponse = this.#uveStore.graphqlResponse();
-            if (!internalGraphqlResponse) {
-                return;
-            }
-
-            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
-            // This ensures that mutations don't affect the stored state in history
-            const clonedResponse = structuredClone(internalGraphqlResponse);
-
-            // Update the cloned response (mutates the clone in place)
-            const updatedInternalResponse = updateStylePropertiesInGraphQL(
-                clonedResponse,
-                activeContentlet,
-                formValues
-            );
-
-            // Optimistic update: Update state WITHOUT saving to history
-            // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setGraphqlResponse(updatedInternalResponse);
-
-            // Send updated response to iframe immediately for instant feedback
-            // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.$customGraphqlResponse();
-            if (!updatedCustomResponse) {
-                return;
-            }
-            this.#iframeMessenger.sendPageData(updatedCustomResponse);
-        } catch (error) {
-            console.error('Error updating iframe:', error);
-        }
-    }
-
-    /**
-     * Saves style properties to API with debounce
-     * Saves current state to history before API call, so rollback can restore to this point
-     */
-    #saveStyleProperties(
-        formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null,
-        isTraditionalPage = false
-    ): void {
-        if (!activeContentlet) {
-            return;
-        }
-
-        // Filter out null and undefined values before sending to API
         const filteredFormValues = filterFormValues(formValues);
-
-        // Don't make API call if there are no values to save
         if (Object.keys(filteredFormValues).length === 0) {
-            return;
+            return EMPTY;
         }
 
-        // Save current state to history BEFORE making the API call
-        // This ensures that if the API call fails, we can rollback to this exact state
-        const currentGraphqlResponse = this.#uveStore.graphqlResponse();
-        if (currentGraphqlResponse) {
-            this.#uveStore.addHistory(currentGraphqlResponse);
-        }
+        // Save current state to history BEFORE making the API call so rollback
+        // on failure restores this exact state.
+        this.#uveStore.addCurrentPageToHistory();
 
         if (isTraditionalPage) {
             this.#uveStore.setUveStatus(UVE_STATUS.LOADING);
         }
 
-        // Use the store's saveStyleEditor method which handles API call and rollback on failure
-        // Subscribe to handle success/error and show toast notifications
-        this.#uveStore
+        return this.#uveStore
             .saveStyleEditor({
                 containerIdentifier: activeContentlet.container.identifier,
                 contentletIdentifier: activeContentlet.contentlet.identifier,
@@ -319,47 +332,12 @@ export class DotUveStyleEditorFormComponent {
                 pageId: activeContentlet.pageId,
                 containerUUID: activeContentlet.container.uuid
             })
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe({
-                next: () => {
-                    if (isTraditionalPage) {
-                        // Reload the store after a delay to allow server-side cache to clear.
-                        // reloadCurrentPage() fetches fresh page data, which updates $pageRender,
-                        // and causes $iframeURL to return a new String('') reference — triggering
-                        // the iframe src binding to update and re-render with the new content.
-                        this.#uveStore.reloadCurrentPage();
-                    }
-
-                    // Success toast - style properties saved successfully
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('message.content.saved'),
-                        detail: this.#dotMessageService.get(
-                            'message.content.note.already.published'
-                        ),
-                        life: 2000
-                    });
-                },
-                error: (error) => {
-                    // Restore form values from rolled-back state
-                    // Rollback already happened synchronously in store's error handler,
-                    // so we can restore the form immediately
-                    this.#restoreFormFromRollback();
-
-                    if (isTraditionalPage) {
-                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
-                    }
-
-                    // Error toast - rollback already handled in store
-                    this.#messageService.add({
-                        severity: 'error',
-                        summary: this.#dotMessageService.get(
-                            'editpage.content.update.contentlet.error'
-                        ),
-                        detail: error?.message || '',
-                        life: 2000
-                    });
-                }
-            });
+            .pipe(
+                map((): SaveResult => ({ ok: true, isTraditionalPage })),
+                catchError(
+                    (error): Observable<SaveResult> =>
+                        of({ ok: false, error: error ?? null, isTraditionalPage })
+                )
+            );
     }
 }

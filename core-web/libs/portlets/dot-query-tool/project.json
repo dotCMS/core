@@ -1,0 +1,21 @@
+{
+    "name": "portlets-dot-query-tool-portlet",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-query-tool/src",
+    "prefix": "dot",
+    "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:query-tool"],
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/portlets/dot-query-tool/jest.config.ts",
+                "tsConfig": "libs/portlets/dot-query-tool/tsconfig.spec.json"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        }
+    }
+}

@@ -6,8 +6,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
@@ -19,6 +21,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
@@ -33,6 +36,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,6 +63,25 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * associated contentlets.
      */
     private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
+    /**
+     * Maximum map-nesting depth allowed when {@link #refreshNestedStoryBlockValues} searches a
+     * hydrated relationship payload for embedded Story Block fields.
+     * <p>
+     * The relationship depth is always capped at {@code 0–3} by {@link #getInitialDepthValue()}.
+     * For the deepest case (depth 3) a Story Block string sits at nesting level
+     * {@code field value → level-1 contentlet map → level-2 contentlet map → level-3 Story Block string},
+     * so 4 levels of traversal are sufficient. Using a larger value would allow unbounded recursion
+     * on malformed or adversarially crafted payloads.
+     * </p>
+     */
+    private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 4;
+    /**
+     * Thread-local set of contentlet identifiers currently being processed by
+     * {@link #refreshBlockEditorDataMap}. Used to detect and break circular reference chains
+     * (e.g. A → B → A) that would otherwise cause a {@link StackOverflowError}.
+     */
+    private static final ThreadLocal<Set<String>> REFRESH_PROCESSING_IDENTIFIERS =
+            ThreadLocal.withInitial(HashSet::new);
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
@@ -175,7 +199,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed;
-        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+        if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -203,15 +227,23 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed = false;
         for (final Map<String, Object> contentMap : contentsMap) {
             if (UtilMethods.isSet(contentMap)) {
-                final String type = contentMap.get(TYPE_KEY).toString();
-                if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
+                // Isolate per-block failures so that one bad nested reference
+                // does not prevent the rest of the Story Block from refreshing.
+                try {
+                    final String type = contentMap.get(TYPE_KEY).toString();
+                    if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
 
-                    refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
-                } else {
-                    final Object nestedContent = contentMap.get(CONTENT_KEY);
-                    if (nestedContent instanceof List) {
-                        refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                    } else {
+                        final Object nestedContent = contentMap.get(CONTENT_KEY);
+                        if (nestedContent instanceof List) {
+                            refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                        }
                     }
+                } catch (final Exception e) {
+                    Logger.warnAndDebug(StoryBlockAPIImpl.class, String.format(
+                            "Skipping Story Block child while refreshing parent '%s': %s",
+                            parentContentletIdentifier, ExceptionUtil.getErrorMessage(e)), e);
                 }
             }
         }
@@ -314,7 +346,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
         try {
 
-            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+            if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
                 final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 Object contentsMap = blockEditorMap.getOrDefault(CONTENT_KEY, List.of());
                 if(!(contentsMap instanceof List)) {
@@ -444,6 +476,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             dataMap.put(Contentlet.HAS_TITLE_IMAGE_KEY, false);
             dataMap.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
         });
+        this.loadCategoryFields(contentlet, dataMap);
+        this.loadTagFields(contentlet, dataMap);
         //Transform fileAssets into url
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         if(null != request) {
@@ -452,6 +486,71 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                             fileLink -> dataMap.put(field.variable(), fileLink))
             );
         }
+    }
+
+    private void loadTagFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
+        final List<Field> tagFields = contentlet.getContentType().fields(TagField.class);
+        if (tagFields.isEmpty()) {
+            return;
+        }
+
+        try {
+            contentlet.setTags();
+            for (final Field tagField : tagFields) {
+                final Object value = contentlet.get(tagField.variable());
+                if (null != value) {
+                    dataMap.putIfAbsent(tagField.variable(), value);
+                }
+            }
+        } catch (final DotDataException e) {
+            Logger.warn(this, String.format("An error occurred when loading Tags for Contentlet with ID '%s': %s",
+                    contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)));
+        }
+    }
+
+    private void loadCategoryFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
+        final List<Field> categoryFields = contentlet.getContentType().fields(CategoryField.class);
+        if (categoryFields.isEmpty()) {
+            return;
+        }
+
+        final User user = APILocator.systemUser();
+        try {
+            final var categoryAPI = APILocator.getCategoryAPI();
+            final List<Category> categories = categoryAPI.getParents(contentlet, user, true);
+            if (categories == null) {
+                for (final Field categoryField : categoryFields) {
+                    dataMap.put(categoryField.variable(), Map.of("categories", Collections.emptyList()));
+                }
+                return;
+            }
+            for (final Field categoryField : categoryFields) {
+                final List<Map<String, Object>> childCategories = new ArrayList<>();
+                final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
+                if (parentCategory != null) {
+                    for (final Category category : categories) {
+                        if (categoryAPI.isParent(category, parentCategory, user, true)) {
+                            childCategories.add(this.toCategoryMap(category));
+                        }
+                    }
+                }
+                dataMap.put(categoryField.variable(), Map.of("categories", childCategories));
+            }
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, String.format("An error occurred when loading Categories for Contentlet with ID '%s': %s",
+                    contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)));
+        }
+    }
+
+    private Map<String, Object> toCategoryMap(final Category category) {
+        final Map<String, Object> categoryMap = new LinkedHashMap<>();
+        categoryMap.put("inode", category.getInode());
+        categoryMap.put("active", category.isActive());
+        categoryMap.put("name", category.getCategoryName());
+        categoryMap.put("key", category.getKey());
+        categoryMap.put("keywords", category.getKeywords());
+        categoryMap.put("velocityVar", category.getCategoryVelocityVarName());
+        return categoryMap;
     }
 
     /**
@@ -479,6 +578,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
+    /**
+     * Returns {@code true} when the supplied String is valid JSON whose root
+     * token is an object. Story Block documents are always JSON objects, so
+     * scalar JSON tokens (numbers, strings, booleans) and arrays must be
+     * rejected here — otherwise {@link #toMap(Object)} fails to deserialize
+     * them into a {@link LinkedHashMap} and the entire transformer pipeline
+     * aborts (see issue surfaced via /api/content/_search).
+     */
+    private static boolean isJsonObject(final String value) {
+        if (value == null) {
+            return false;
+        }
+        final String trimmed = value.trim();
+        return trimmed.startsWith("{") && JsonUtil.isValidJSON(trimmed);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
@@ -502,12 +617,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *                previous data map.
      */
     private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        // If 'true', it means that the parent Block Editor is being processed, and not its
+        // potential child contents
+        final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
         try {
-
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            // If 'true', it means that the parent Block Editor is being processed, and not its
-            // potential child contents
-            final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
             // If the current depth parameter is set, then it must be decreased in order to
             // account for the number of levels that will be processed for related contents,
             // including both associated Block Editor fields and Relationship fields
@@ -522,14 +636,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES, true);
 
             if (null != fattyContentlet) {
-                this.addContentletRelationships(fattyContentlet, currentDepth);
-                final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
-                this.excludeNonExistingProperties(dataMap, updatedDataMap);
-                dataMap.putAll(updatedDataMap);
-            }
-
-            if (isCurrentDepthEmpty) {
-                request.removeAttribute(CURRENT_DEPTH_ATTR);
+                final String fattyIdentifier = fattyContentlet.getIdentifier();
+                final Set<String> processing = REFRESH_PROCESSING_IDENTIFIERS.get();
+                // Set.add() returns false when the identifier is already present, meaning a
+                // circular reference chain (e.g. A → B → A) was detected that would cause a
+                // StackOverflowError if left unchecked.
+                if (!processing.add(fattyIdentifier)) {
+                    Logger.warn(this, String.format(
+                            "Circular Story Block reference detected for contentlet '%s'; " +
+                            "skipping re-entrant refresh to prevent StackOverflowError.",
+                            fattyIdentifier));
+                    return;
+                }
+                try {
+                    this.addContentletRelationships(fattyContentlet, currentDepth);
+                    final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
+                    this.excludeNonExistingProperties(dataMap, updatedDataMap);
+                    dataMap.putAll(updatedDataMap);
+                } finally {
+                    processing.remove(fattyIdentifier);
+                }
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
@@ -537,6 +663,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when retrieving contentlet with Inode " +
                     "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
+        } finally {
+            if (isCurrentDepthEmpty) {
+                request.removeAttribute(CURRENT_DEPTH_ATTR);
+                // Remove the thread-local set when exiting the top-level call to
+                // prevent memory leaks in servlet-container thread pools.
+                REFRESH_PROCESSING_IDENTIFIERS.remove();
+            }
         }
     }
 
@@ -637,18 +770,132 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         for (final Field field : fields) {
             final Object value = contentlet.get(field.variable());
             if (null != value) {
-                if (field instanceof StoryBlockField) {
-                    // At this depth, if the Contentlet inside the Block Editor also has a Block
-                    // Editor field, we'll return the raw JSON data of any potential Contentlets it
-                    // is referencing. This will prevent infinite recursion problems.
-                    dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
-                            "_raw")));
-                } else {
+                // Isolate per-field failures so that one malformed field on a
+                // nested contentlet does not abort hydration of the rest.
+                try {
+                    if (field instanceof StoryBlockField) {
+                        // At this depth, if the Contentlet inside the Block Editor also has a Block
+                        // Editor field, we'll return the raw JSON data of any potential Contentlets it
+                        // is referencing. This will prevent infinite recursion problems.
+                        // Prefer the _raw companion field when it contains valid JSON; otherwise fall
+                        // back to the story block value itself. If neither is valid JSON (e.g. a test
+                        // or misconfigured field whose default value is plain text), skip the field
+                        // entirely so the rest of the data map is still populated correctly.
+                        final Object rawValue = contentlet.get(field.variable() + "_raw");
+                        final String rawStr = rawValue != null ? rawValue.toString() : null;
+                        if (rawStr != null && isJsonObject(rawStr)) {
+                            dataMap.put(field.variable(), this.toMap(rawValue));
+                        } else if (isJsonObject(value.toString())) {
+                            dataMap.put(field.variable(), this.toMap(value));
+                        }
+                    } else {
+                        dataMap.putIfAbsent(field.variable(),
+                                this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
+                                        MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
+                    }
+                } catch (final Exception e) {
+                    Logger.warnAndDebug(StoryBlockAPIImpl.class, String.format(
+                            "Skipping field '%s' while hydrating contentlet '%s': %s",
+                            field.variable(), contentlet.getIdentifier(),
+                            ExceptionUtil.getErrorMessage(e)), e);
+                    // Fall back to the raw value so the field still appears in the response.
                     dataMap.putIfAbsent(field.variable(), value);
                 }
             }
         }
         return dataMap;
+    }
+
+    /**
+     * Recursively traverses nested values coming from hydrated relationship payloads and refreshes
+     * Story Block values found at any level.
+     *
+     * @param value The current value to inspect (Map, List, String, or scalar).
+     * @param parentContentletIdentifier The parent contentlet identifier used to prevent self-refresh loops.
+     * @param remainingDepth Remaining recursive traversal depth allowed.
+     *
+     * @return A refreshed value preserving the same logical structure.
+     *
+     * @throws JsonProcessingException If Story Block JSON cannot be transformed while refreshing.
+     */
+    @SuppressWarnings("unchecked")
+    private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier,
+            final int remainingDepth)
+            throws JsonProcessingException {
+        if (remainingDepth <= 0) {
+            return value;
+        }
+
+        if (value instanceof Map) {
+            final Map<String, Object> valueMap = (Map<String, Object>) value;
+            if (this.isStoryBlockMap(valueMap)) {
+                // refreshStoryBlockValueReferences currently processes JSON values, so Story Block maps
+                // must be normalized to JSON before refresh and parsed back afterwards.
+                final StoryBlockReferenceResult refreshedValue =
+                        this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
+                return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
+            }
+            Map<String, Object> refreshedMap = null;
+            for (final Map.Entry<String, Object> entry : valueMap.entrySet()) {
+                final Object nestedValue = entry.getValue();
+                final Object refreshedNestedValue = this.refreshNestedStoryBlockValues(nestedValue,
+                        parentContentletIdentifier, remainingDepth - 1);
+
+                if (refreshedMap != null) {
+                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
+                } else if (refreshedNestedValue != nestedValue) {
+                    refreshedMap = new LinkedHashMap<>(valueMap.size());
+                    for (final Map.Entry<String, Object> existingEntry : valueMap.entrySet()) {
+                        if (existingEntry.getKey().equals(entry.getKey())) {
+                            break;
+                        }
+                        refreshedMap.put(existingEntry.getKey(), existingEntry.getValue());
+                    }
+                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
+                }
+            }
+
+            return refreshedMap != null ? refreshedMap : valueMap;
+        }
+
+        if (value instanceof List) {
+            final List<Object> valueList = (List<Object>) value;
+            List<Object> refreshedList = null;
+            for (int i = 0; i < valueList.size(); i++) {
+                final Object item = valueList.get(i);
+                final Object refreshedItem = this.refreshNestedStoryBlockValues(item, parentContentletIdentifier,
+                        remainingDepth - 1);
+
+                if (refreshedList != null) {
+                    refreshedList.add(refreshedItem);
+                } else if (refreshedItem != item) {
+                    refreshedList = new ArrayList<>(valueList.size());
+                    refreshedList.addAll(valueList.subList(0, i));
+                    refreshedList.add(refreshedItem);
+                }
+            }
+
+            return refreshedList != null ? refreshedList : valueList;
+        }
+
+        if (!(value instanceof String)) {
+            return value;
+        }
+
+        final StoryBlockReferenceResult result =
+                this.refreshStoryBlockValueReferences(value, parentContentletIdentifier);
+        return result.isRefreshed() ? result.getValue() : value;
+    }
+
+    /**
+     * Determines whether a map matches the expected Story Block document structure.
+     *
+     * @param valueMap Candidate map.
+     *
+     * @return {@code true} when the map looks like a Story Block root document.
+     */
+    private boolean isStoryBlockMap(final Map<String, Object> valueMap) {
+        return "doc".equals(valueMap.get(TYPE_KEY)) && valueMap.get(CONTENT_KEY) instanceof List;
     }
 
     /**

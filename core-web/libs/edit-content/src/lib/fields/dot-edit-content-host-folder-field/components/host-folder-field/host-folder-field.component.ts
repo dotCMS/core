@@ -74,6 +74,19 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
+     * Re-applies the current selection when PrimeNG tries to toggle-deselect
+     * the already-selected node in single selection mode.
+     */
+    preventDeselect(): void {
+        const currentNode = this.store.nodeSelected();
+        if (currentNode) {
+            this.pathControl.setValue(currentNode);
+        }
+
+        this.$treeSelect()?.hide();
+    }
+
+    /**
      * A signal that handles the path to save change of the field.
      * It is used to save the path to the field.
      */

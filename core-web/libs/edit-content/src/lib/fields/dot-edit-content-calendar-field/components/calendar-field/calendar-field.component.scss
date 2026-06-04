@@ -1,0 +1,53 @@
+// Move the focus ring from the internal <input> to the <p-datepicker> wrapper so
+// the ring encloses both the input and the calendar icon button as one unit.
+
+:host ::ng-deep p-datepicker {
+    display: flex;
+    width: 100%;
+    border-radius: var(--p-inputtext-border-radius);
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
+
+    .p-datepicker-input {
+        border-right: 0;
+    }
+
+    .p-datepicker-dropdown {
+        border-left: 0;
+    }
+
+    // Suppress PrimeNG's default hover/focus styles on the inner input so the
+    // ring only appears on the wrapper and encloses both input and button.
+    .p-datepicker-input:hover,
+    .p-datepicker-input:focus,
+    .p-datepicker-input:focus-visible {
+        border-color: var(--p-inputtext-border-color);
+        box-shadow: none;
+        outline: none;
+    }
+
+    &:hover:not(:focus-within) {
+        .p-datepicker-input,
+        .p-datepicker-dropdown {
+            border-color: var(--p-inputtext-hover-border-color);
+        }
+    }
+
+    &:focus-within {
+        border-color: var(--p-inputtext-focus-border-color);
+        box-shadow: var(--p-focus-ring-shadow);
+
+        .p-datepicker-input,
+        .p-datepicker-dropdown {
+            border-color: var(--p-inputtext-focus-border-color);
+        }
+    }
+}
+
+:host.ng-invalid.ng-touched ::ng-deep p-datepicker {
+    .p-datepicker-input,
+    .p-datepicker-dropdown {
+        border-color: var(--p-inputtext-invalid-border-color);
+    }
+}

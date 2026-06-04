@@ -1,0 +1,22 @@
+name: "Page Health"
+icon: "health_and_safety"
+color: "#3b82f6"
+allowExtraParameters: false
+description: "Run health checks on your pages directly from the editor. Catch accessibility issues, optimize for AI-powered search engines, and validate compliance, before you publish."
+
+params:
+  apiUrl:
+    label: "API URL"
+    value: "https://a11y.api.dotcms.site"
+    hidden: false
+    type: "STRING"
+    hint: "The base URL of the Page Scanner API service."
+    required: true
+
+  apiAuthToken:
+    label: "API Auth Token"
+    value: ""
+    hidden: true
+    type: "STRING"
+    hint: "The authentication token used to authorize requests to the Page Scanner API service."
+    required: true

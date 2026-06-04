@@ -28,6 +28,12 @@ export class DotContentCompareComponent {
         }
     }
     $showActions = input<boolean>(true, { alias: 'showActions' });
+    /**
+     * Forwards to `dot-content-compare-table`'s `reverseColumns` input.
+     * When `true`, the previous (compare) version renders on the LEFT and
+     * the current (working) version on the RIGHT.
+     */
+    readonly $reverseColumns = input<boolean>(false, { alias: 'reverseColumns' });
     @Output() shutdown = new EventEmitter<boolean>();
     @Output() letMeBringBack = new EventEmitter<{ name: string; args: string[] }>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;

@@ -96,7 +96,7 @@ public class CategoryForm extends Validated {
         @JsonProperty
         private String categoryName;
         @JsonProperty
-        private boolean active;
+        private boolean active = true;
         @JsonProperty
         private int sortOrder;
         @JsonProperty

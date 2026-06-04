@@ -3,10 +3,12 @@ import {
     Component,
     computed,
     inject,
+    OnInit,
     signal,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -32,7 +34,8 @@ import {
     DotMessageService,
     PluginRow
 } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotEnvironment, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -69,7 +72,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
-export class DotPluginsListComponent {
+export class DotPluginsListComponent implements OnInit {
     readonly store = inject(DotPluginsListStore);
     protected readonly BUNDLE_STATE = BUNDLE_STATE;
     readonly skeletonRows = Array(10).fill(null);
@@ -80,21 +83,21 @@ export class DotPluginsListComponent {
             ? this.store.rows()
             : this.store.rows().filter((r) => r.state !== 'undeployed')
     );
-    private dragCounter = 0;
-    private readonly selectedBundle = signal<PluginRow | null>(null);
+    #dragCounter = 0;
+    readonly #selectedBundle = signal<PluginRow | null>(null);
     readonly addToBundleIdentifier = signal<string | null>(null);
     readonly contextMenu = viewChild<ContextMenu>('contextMenu');
     readonly toolbarMenu = viewChild.required<Menu>('toolbarMenu');
     private readonly table = viewChild<Table>('dt');
 
     readonly contextMenuItems = computed<MenuItem[]>(() => {
-        const bundle = this.selectedBundle();
+        const bundle = this.#selectedBundle();
         if (!bundle) return [];
 
         if (bundle.state === 'undeployed') {
             return [
                 {
-                    label: this.dotMessageService.get('plugins.deploy'),
+                    label: this.#dotMessageService.get('plugins.deploy'),
                     command: () => this.store.deploy(bundle.jarFile)
                 }
             ];
@@ -103,43 +106,73 @@ export class DotPluginsListComponent {
         const stateAction: MenuItem =
             bundle.state === BUNDLE_STATE.ACTIVE
                 ? {
-                      label: this.dotMessageService.get('plugins.stop'),
+                      label: this.#dotMessageService.get('plugins.stop'),
                       command: () => this.store.stop(bundle.jarFile)
                   }
                 : {
-                      label: this.dotMessageService.get('plugins.start'),
+                      label: this.#dotMessageService.get('plugins.start'),
                       command: () => this.store.start(bundle.jarFile)
                   };
+
+        const isPushPublishEnabled =
+            this.store.isEnterprise() && this.store.pushPublishEnvironments().length > 0;
 
         return [
             stateAction,
             {
-                label: this.dotMessageService.get('plugins.undeploy'),
+                label: this.#dotMessageService.get('plugins.undeploy'),
                 command: () => this.confirmUndeploy(bundle)
             },
             { separator: true },
             {
-                label: this.dotMessageService.get('plugins.process-exports'),
+                label: this.#dotMessageService.get('plugins.process-exports'),
                 command: () => this.confirmProcessExports(bundle.jarFile)
             },
             {
-                label: this.dotMessageService.get('plugins.add-to-bundle'),
+                label: this.#dotMessageService.get('plugins.add-to-bundle'),
                 command: () => this.addToBundleIdentifier.set(bundle.jarFile)
-            }
+            },
+            ...(isPushPublishEnabled
+                ? [
+                      {
+                          label: this.#dotMessageService.get('contenttypes.content.push_publish'),
+                          // The jarFile name (e.g. "my-plugin.jar") is the correct identifier
+                          // for OSGi assets — the backend detects them by checking for ".jar"
+                          // in RemotePublishAjaxAction and classifies via PublisherAPIImpl.
+                          command: () =>
+                              this.#dotPushPublishDialogService.open({
+                                  assetIdentifier: bundle.jarFile,
+                                  title: this.#dotMessageService.get(
+                                      'contenttypes.content.push_publish'
+                                  )
+                              })
+                      }
+                  ]
+                : [])
         ];
     });
 
     readonly toolbarMenuItems = computed<MenuItem[]>(() => [
         {
-            label: this.dotMessageService.get('plugins.restart-osgi'),
+            label: this.#dotMessageService.get('plugins.restart-osgi'),
             command: () => this.confirmRestart()
         }
     ]);
 
-    private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #route = inject(ActivatedRoute);
+    readonly #dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
+    ngOnInit(): void {
+        const isEnterprise = this.#route.snapshot.data['isEnterprise'] as boolean;
+        const pushPublishEnvironments = this.#route.snapshot.data[
+            'pushPublishEnvironments'
+        ] as DotEnvironment[];
+        this.store.setEnterpriseData(isEnterprise, pushPublishEnvironments);
+    }
 
     filterTable(value: string): void {
         this.table()?.filterGlobal(value, 'contains');
@@ -150,25 +183,26 @@ export class DotPluginsListComponent {
     }
 
     openUploadDialog(): void {
-        const ref = this.dialogService.open(DotPluginsUploadComponent, {
-            header: this.dotMessageService.get('plugins.upload.title'),
-            width: '450px',
+        const ref = this.#dialogService.open(DotPluginsUploadComponent, {
+            header: this.#dotMessageService.get('plugins.upload.title'),
+            width: '700px',
+            contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
             resizable: false,
             draggable: false
         });
-        ref?.onClose.pipe(take(1)).subscribe((files: File[] | null) => {
-            if (files?.length) {
-                this.store.uploadBundles(files);
+        ref?.onClose.pipe(take(1)).subscribe((success: boolean | null) => {
+            if (success) {
+                this.store.setUploadingStatus();
             }
         });
     }
 
     openExtraPackagesDialog(): void {
-        const ref = this.dialogService.open(DotPluginsExtraPackagesComponent, {
-            header: this.dotMessageService.get('plugins.extra-packages.title'),
-            width: '540px',
+        const ref = this.#dialogService.open(DotPluginsExtraPackagesComponent, {
+            header: this.#dotMessageService.get('plugins.extra-packages.title'),
+            width: '700px',
             height: '540px',
             closable: true,
             closeOnEscape: true,
@@ -183,11 +217,11 @@ export class DotPluginsListComponent {
     }
 
     confirmProcessExports(jarFile: string): void {
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get('plugins.confirm.process-exports.message'),
-            header: this.dotMessageService.get('plugins.confirm.process-exports.header'),
-            acceptLabel: this.dotMessageService.get('Ok'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+        this.#confirmationService.confirm({
+            message: this.#dotMessageService.get('plugins.confirm.process-exports.message'),
+            header: this.#dotMessageService.get('plugins.confirm.process-exports.header'),
+            acceptLabel: this.#dotMessageService.get('Ok'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-outlined',
             defaultFocus: 'reject',
@@ -198,14 +232,14 @@ export class DotPluginsListComponent {
     }
 
     confirmUndeploy(bundle: PluginRow): void {
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            message: this.#dotMessageService.get(
                 'plugins.confirm.undeploy.message',
                 bundle.symbolicName ?? bundle.jarFile
             ),
-            header: this.dotMessageService.get('plugins.confirm.undeploy.header'),
-            acceptLabel: this.dotMessageService.get('Ok'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+            header: this.#dotMessageService.get('plugins.confirm.undeploy.header'),
+            acceptLabel: this.#dotMessageService.get('Ok'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-outlined',
             rejectButtonStyleClass: 'p-button-primary',
             defaultFocus: 'reject',
@@ -217,14 +251,14 @@ export class DotPluginsListComponent {
 
     onDragEnter(event: DragEvent): void {
         event.preventDefault();
-        this.dragCounter++;
+        this.#dragCounter++;
         this.isDragging.set(true);
     }
 
     onDragLeave(event: DragEvent): void {
         event.preventDefault();
-        this.dragCounter--;
-        if (this.dragCounter === 0) {
+        this.#dragCounter--;
+        if (this.#dragCounter === 0) {
             this.isDragging.set(false);
         }
     }
@@ -235,7 +269,7 @@ export class DotPluginsListComponent {
 
     onDrop(event: DragEvent): void {
         event.preventDefault();
-        this.dragCounter = 0;
+        this.#dragCounter = 0;
         this.isDragging.set(false);
 
         const allFiles = Array.from(event.dataTransfer?.files ?? []);
@@ -244,9 +278,9 @@ export class DotPluginsListComponent {
         const jarFiles = allFiles.filter((f) => f.name.toLowerCase().endsWith('.jar'));
 
         if (jarFiles.length === 0) {
-            this.dotMessageDisplayService.push({
+            this.#dotMessageDisplayService.push({
                 life: 5000,
-                message: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.detail'),
+                message: this.#dotMessageService.get('plugins.drag-and-drop.invalid-files.detail'),
                 severity: DotMessageSeverity.ERROR,
                 type: DotMessageType.SIMPLE_MESSAGE
             });
@@ -261,16 +295,16 @@ export class DotPluginsListComponent {
     }
 
     onContextMenu(event: MouseEvent, bundle: PluginRow): void {
-        this.selectedBundle.set(bundle);
+        this.#selectedBundle.set(bundle);
         this.contextMenu()?.show(event);
     }
 
     confirmRestart(): void {
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get('plugins.confirm.restart.message'),
-            header: this.dotMessageService.get('plugins.restart-osgi'),
-            acceptLabel: this.dotMessageService.get('Ok'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+        this.#confirmationService.confirm({
+            message: this.#dotMessageService.get('plugins.confirm.restart.message'),
+            header: this.#dotMessageService.get('plugins.restart-osgi'),
+            acceptLabel: this.#dotMessageService.get('Ok'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-outlined',
             defaultFocus: 'reject',

@@ -14,6 +14,7 @@ import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angul
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DataViewModule } from 'primeng/dataview';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TextareaModule } from 'primeng/textarea';
@@ -41,6 +42,7 @@ const COMMENT_MAX_LENGTH = 500;
         ReactiveFormsModule,
         AvatarModule,
         ButtonModule,
+        CardModule,
         DataViewModule,
         TextareaModule,
         DotMessagePipe,
@@ -104,19 +106,49 @@ export class DotEditContentSidebarActivitiesComponent {
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
 
     /**
-     * View children for the activity items
+     * Whether the activities tab is currently the active/visible tab.
+     * Needed to trigger the scroll-to-bottom effect when the user switches
+     * into this tab after activities were already rendered (otherwise the
+     * panel is display:none when `viewChildren` first emits and
+     * `scrollIntoView` is a no-op).
      */
-    activityItems = viewChildren<ElementRef>('activityItem');
+    $isActive = input<boolean>(false, { alias: 'isActive' });
 
     /**
-     * Effect to scroll to bottom when activities change
+     * View children for the activity items. We read `ElementRef` explicitly so
+     * that switching the underlying element to a PrimeNG component (e.g.
+     * `<p-card>`) still gives us a DOM element to scroll to.
+     */
+    activityItems = viewChildren('activityItem', { read: ElementRef });
+
+    /**
+     * Effect to scroll to the last activity when the list changes or when the
+     * activities tab becomes the active one. Reacting to `$isActive` is needed
+     * because the effect first fires while the tab panel is still hidden
+     * (display:none) and any scroll on a 0-height element is a no-op.
      */
     #scrollEffect = effect(() => {
         const items = this.activityItems();
-        if (items.length > 0) {
-            const lastItem = items[items.length - 1];
-            lastItem.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const isActive = this.$isActive();
+
+        if (items.length === 0 || !isActive) {
+            return;
         }
+
+        const lastItem = items[items.length - 1].nativeElement;
+        // Defer one animation frame so PrimeNG can apply the tabpanel
+        // visibility change (display:none -> block) and the scroll container
+        // has its real dimensions before we scroll.
+        requestAnimationFrame(() => {
+            const scrollContainer = lastItem.closest('.overflow-y-auto') as HTMLElement | null;
+            if (scrollContainer) {
+                // Direct assignment is synchronous and cannot be interrupted by
+                // subsequent re-renders, unlike scrollIntoView({ behavior: 'smooth' }).
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            } else {
+                lastItem.scrollIntoView({ block: 'end' });
+            }
+        });
     });
 
     /**

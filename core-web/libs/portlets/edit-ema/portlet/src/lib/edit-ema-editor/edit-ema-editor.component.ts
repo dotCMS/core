@@ -1,6 +1,7 @@
-import { tapResponse } from '@ngrx/operators';
+import { patchState, signalState } from '@ngrx/signals';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -11,7 +12,6 @@ import {
     DestroyRef,
     ElementRef,
     OnDestroy,
-    OnInit,
     ViewChild,
     WritableSignal,
     computed,
@@ -21,69 +21,80 @@ import {
     untracked
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { TabsModule } from 'primeng/tabs';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
-    DotAlertConfirmService,
+    DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotCMSClazzes,
+    DotCMSContentType,
     DotCMSContentlet,
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
-    SeoMetaTags
+    FeaturedFlags,
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    DotCMSInlineEditingPayload,
-    DotCMSInlineEditingType,
-    DotCMSPage,
-    DotCMSURLContentMap,
-    DotCMSUVEAction
-} from '@dotcms/types';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import { GlobalStore } from '@dotcms/store';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { getContentletsInContainer } from '@dotcms/uve/internal';
 
+import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
+import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
+import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
+import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-resize-handles/dot-uve-iframe-resize-handles.component';
+import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
+import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
+import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
+import { DeviceSelectorChange } from './components/dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
+import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import {
-    ClientContentletArea,
-    Container,
-    EmaDragItem,
-    InlineEditingContentletDataset,
-    UpdatedContentlet
-} from './components/ema-page-dropzone/types';
+import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
+import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
     NG_CUSTOM_EVENTS,
-    PALETTE_CLASSES,
     UVE_STATUS
 } from '../shared/enums';
 import {
@@ -95,27 +106,21 @@ import {
     PageContainer,
     PositionPayload,
     PostMessage,
-    ReorderMenuPayload,
-    SetUrlPayload,
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { UVE_PALETTE_TABS } from '../store/features/editor/models';
+import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
-    compareUrlPaths,
-    convertClientParamsToPageParams,
-    createReorderMenuURL,
+    createFullURL,
     deleteContentletFromContainer,
-    getDragItemData,
-    getHrefFromClickTarget,
     getTargetUrl,
-    injectBaseTag,
     insertContentletInContainer,
+    isSamePageNavigation,
+    measureCanvasAvailableSize,
     shouldNavigate
 } from '../utils';
-import { addEditorPageScript } from '../utils/ema-legacy-script-injection';
 
 // Message keys constants
 const MESSAGE_KEY = {
@@ -135,8 +140,10 @@ const MESSAGE_KEY = {
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
+        NgClass,
+        NgStyle,
         FormsModule,
-        SafeUrlPipe,
+        ReactiveFormsModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
@@ -146,73 +153,273 @@ const MESSAGE_KEY = {
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
+        DotUveContentletQuickEditComponent,
+        DotUveStyleEditorEmptyStateComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
-        NgClass,
-        NgStyle
+        DotUveStyleEditorFormComponent,
+        DotUveIframeComponent,
+        DotUveIframeResizeHandlesComponent,
+        DotUveIframeSizeInputComponent,
+        ButtonModule,
+        ToolbarModule,
+        TabsModule,
+        InputGroupModule,
+        InputGroupAddonModule,
+        DotUveZoomControlsComponent,
+        ClipboardModule,
+        PopoverModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotUveDeviceControlsComponent
     ],
     providers: [
-        DotCopyContentModalService,
+        DotPaletteListStore,
         DotCopyContentService,
+        DotCopyContentModalService,
         DotHttpErrorManagerService,
         DotContentletService,
-        DotTempFileUploadService
+        DotTempFileUploadService,
+        DotUveActionsHandlerService,
+        DotUveDragDropService
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
+export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
-    @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
+    @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
+    @ViewChild('canvasViewport') canvasViewport!: ElementRef<HTMLDivElement>;
+    @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;
+
+    get iframe(): ElementRef<HTMLIFrameElement> | undefined {
+        return this.iframeComponent?.iframe;
+    }
 
     protected readonly uveStore = inject(UVEStore);
+
+    /**
+     * Right sidebar tab management using NgRx signalState (similar to palette component).
+     * Tabs: 0 = Contentlet Quick Edit, 1 = Style Editor
+     */
+    readonly #rightSidebarTabState = signalState({
+        currentTab: 0
+    });
+
+    readonly $editorPanelActiveTab = this.#rightSidebarTabState.currentTab;
+    readonly $showStyleEditorTab = computed(() => this.uveStore.editorCanEditStyles());
+    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
+        return this.uveStore.$styleSchema();
+    });
+    readonly $styleSchemaContentTypeVar = computed(
+        () => this.uveStore.editorSelected()?.payload?.contentlet?.contentType ?? ''
+    );
+
+    protected readonly $contentletEditData = computed(() => {
+        const { container, contentlet: contentletPayload } =
+            this.uveStore.editorSelected()?.payload ?? {};
+
+        // Get the full contentlet from containers using the SDK utility.
+        // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
+        let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
+        const pageAsset = this.uveStore.pageAsset();
+
+        if (
+            container?.identifier &&
+            container?.uuid &&
+            contentletPayload?.identifier &&
+            pageAsset?.containers?.[container.identifier]
+        ) {
+            const contentlets = getContentletsInContainer(pageAsset, {
+                identifier: container.identifier,
+                uuid: container.uuid,
+                historyUUIDs: []
+            });
+            const foundContentlet = contentlets.find(
+                (c) => c.identifier === contentletPayload.identifier
+            );
+
+            if (foundContentlet) {
+                contentlet = foundContentlet as DotCMSContentlet;
+            }
+        }
+
+        return { container, contentlet };
+    });
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
-    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
-    private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
-    private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+    private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotContentTypeService = inject(DotContentTypeService);
+    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly dialogService = inject(DialogService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    private readonly destroyRef = inject(DestroyRef);
+    private readonly actionsHandler = inject(DotUveActionsHandlerService);
+    private readonly globalStore = inject(GlobalStore);
+    private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
-    #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-    readonly $editorProps = this.uveStore.$editorProps;
 
-    readonly $isPreviewMode = this.uveStore.$isPreviewMode;
-    readonly $editorContentStyles = this.uveStore.$editorContentStyles;
-    readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
+    // Component builds its own editor props locally
+    protected readonly $showDialogs = computed<boolean>(() => {
+        const canEditPage = this.uveStore.editorCanEditContent();
+        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
+        return canEditPage && isEditState;
+    });
 
-    readonly $paletteOpen = this.uveStore.palette.open;
-    readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
+        const canEditPage = this.uveStore.editorCanEditContent();
+        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
+        return canEditPage && isEditState;
+    });
+
+    protected readonly $isIframeLoading = computed<boolean>(() => {
+        const mode = this.uveStore.viewMode();
+        const pageType = this.uveStore.pageType();
+        const isClientReady = this.uveStore.isClientReady();
+        const isEditMode = mode === UVE_MODE.EDIT;
+        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
+
+        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+    });
+
+    protected readonly $progressBar = computed<boolean>(() => {
+        const mode = this.uveStore.viewMode();
+        const pageType = this.uveStore.pageType();
+        const isClientReady = this.uveStore.isClientReady();
+
+        const isEditMode = mode === UVE_MODE.EDIT;
+        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
+        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+    });
+
+    protected readonly $dropzone = computed(() => {
+        const canEditPage = this.uveStore.editorCanEditContent();
+        const state = this.uveStore.editorState();
+        const bounds = this.uveStore.editorBounds();
+        const dragItem = this.uveStore.editorDragItem();
+
+        const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
+
+        return showDropzone
+            ? {
+                  bounds,
+                  dragItem
+              }
+            : null;
+    });
+
+    protected readonly $seoResults = computed(() => {
+        const socialMedia = this.uveStore.viewSocialMedia();
+        const ogTags = this.uveStore.editorOgTags();
+        const shouldShowSeoResults = socialMedia && ogTags;
+
+        return shouldShowSeoResults
+            ? {
+                  ogTags,
+                  socialMedia
+              }
+            : null;
+    });
+
+    readonly $mode = this.uveStore.viewMode;
+
+    // Component-level computed to avoid cross-feature dependency
+    readonly $editorContentStyles = computed<Record<string, string>>(() => {
+        const socialMedia = this.uveStore.viewSocialMedia();
+        return {
+            display: socialMedia ? 'none' : 'grid'
+        };
+    });
+
+    readonly ogTagsResults$ = toObservable<SeoMetaTagsResult[]>(this.uveStore.viewOgTagsResults);
+
+    get $paletteOpen() {
+        return this.uveStore.editorPaletteOpen();
+    }
+    get $editPanelOpen() {
+        return this.uveStore.editorEditPanelOpen();
+    }
+    readonly $lockOptions = this.uveStore.$lockOptions;
+    readonly $showLockOverlay = computed(() => {
+        const mode = this.uveStore.viewMode();
+        if (mode !== UVE_MODE.EDIT) {
+            return false;
+        }
+
+        const lockOptions = this.$lockOptions();
+
+        const lockFeatureEnabled = this.uveStore.$lockFeatureEnabled();
+        const isLocked = lockOptions?.isLocked;
+        const isLockedByCurrentUser = lockOptions?.isLockedByCurrentUser;
+        const canLock = lockOptions?.canLock;
+
+        // For feature flag, we force the user to lock pages to edit
+        // So we show the lock overlay if the page is not locked
+        if (lockFeatureEnabled) {
+            return !isLocked;
+        }
+
+        // Without feature flag, we show the lock overlay if the page is locked
+        // And is not locked by the current user or the user has no permission to lock/unlock
+        if (isLocked && (!isLockedByCurrentUser || !canLock)) {
+            return true;
+        }
+
+        return false;
+    });
+
     readonly $showContentletControls = this.uveStore.$showContentletControls;
-    readonly $contentArea = this.uveStore.contentArea;
+    get $contentArea() {
+        return this.uveStore.editorContentArea();
+    }
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly $isDragging = this.uveStore.$isDragging;
 
     readonly UVE_STATUS = UVE_STATUS;
+    readonly UVE_MODE = UVE_MODE;
+    readonly DotCMSClazzes = DotCMSClazzes;
 
-    readonly $paletteClass = computed(() => {
-        return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+    readonly $viewCanvasOuterStyles = this.uveStore.$viewCanvasOuterStyles;
+    readonly $viewCanvasInnerStyles = this.uveStore.$viewCanvasInnerStyles;
+
+    readonly $iframeSrc = computed((): string => {
+        const url = this.uveStore.$iframeURL();
+        return (typeof url === 'string' ? url : '') || '';
+    });
+    readonly $iframePointerEvents = computed((): string => {
+        // Block iframe pointer events while a drag is in flight (with or
+        // without iframe scroll) so the dropzone reads drag events instead
+        // of the page underneath.
+        const state = this.uveStore.editorState();
+        const dragIsActive = state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG;
+        return dragIsActive ? 'none' : 'auto';
+    });
+    readonly $iframeOpacity = computed((): number => {
+        return this.$isIframeLoading() ? 0.5 : 1;
+    });
+
+    readonly $pageURL = computed((): string => {
+        return this.$pageURLS()[0]?.value ?? '/';
     });
 
     get contentWindow(): Window | null {
-        return this.iframe?.nativeElement?.contentWindow || null;
+        return this.iframeComponent?.contentWindow || null;
     }
 
     readonly $translatePageEffect = effect(() => {
-        const { page, currentLanguage } = this.uveStore.$translateProps();
+        const { page, currentLanguage } = this.uveStore.pageTranslateProps();
 
         if (currentLanguage && !currentLanguage?.translated) {
             this.createNewTranslation(currentLanguage, page);
@@ -224,7 +431,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
          * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
          * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
          */
-        const { isTraditionalPage } = this.uveStore.$reloadEditorContent();
+        const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
 
         untracked(() => {
@@ -232,11 +439,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             this.dialog?.resetActionPayload();
         });
 
-        if (isTraditionalPage || !isClientReady) {
+        if (pageType === PageType.TRADITIONAL || !isClientReady) {
             return;
         }
 
         this.reloadIframeContent();
+    });
+
+    /**
+     * Notify the iframe whenever the editor clears its contentlet selection
+     * (canvas resize, scroll, device switch, etc.). The SDK keeps a
+     * `lastSelectedInode` tracker that gates click→passthrough behavior; if
+     * the editor drops the selection without telling the SDK, a follow-up
+     * click on the same contentlet would be silently treated as a passthrough
+     * (page click) and the toolbar wouldn't reappear.
+     */
+    #lastSelectedAreaWasSet = false;
+    readonly $notifySelectionClearedEffect = effect(() => {
+        const hasSelection = !!this.uveStore.editorSelected();
+
+        untracked(() => {
+            if (this.#lastSelectedAreaWasSet && !hasSelection) {
+                this.iframeMessenger.selectionCleared();
+            }
+            this.#lastSelectedAreaWasSet = hasSelection;
+        });
     });
 
     readonly $handleIsDraggingEffect = effect(() => {
@@ -246,37 +473,247 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.iframeMessenger.requestBounds();
+        // Drag needs bounds NOW so the dropzone can compute targets
+        // before the user moves another pixel — bypass the auto-bounds
+        // debounce.
+        this.iframeMessenger.flushBounds();
+    });
+
+    // Reflow re-anchoring (sidebar open/close, scroll-end, device switch,
+    // zoom change, image/font load shifts, media-query reflows) flows
+    // through the SDK's debounced ResizeObserver in onAutoBounds, which
+    // emits SET_BOUNDS automatically when the iframe layout settles. The
+    // editor only needs to flip editorState back to IDLE so the overlay
+    // un-hides; SET_BOUNDS lands ~100ms later with fresh coords.
+
+    // Device-switch / zoom-change recovery is handled by the SET_BOUNDS
+    // handler in DotUveActionsHandlerService: when the SDK's auto-bounds
+    // channel pushes fresh bounds after the layout settles, the handler
+    // flips editorState back to IDLE. Flipping IDLE earlier (on rAF after
+    // the trigger) used to race the bounds round-trip and caused the
+    // selected overlay to flash at stale coordinates before snapping to
+    // the new ones.
+
+    readonly $responsiveModeSyncEffect = effect(() => {
+        const isResponsive = this.uveStore.$viewIsResponsiveMode();
+        if (!isResponsive) {
+            return;
+        }
+
+        untracked(() => {
+            if (this.uveStore.editorState() === EDITOR_STATE.RESIZING) {
+                return;
+            }
+            const width = this.uveStore.viewCanvasAvailableWidth();
+            const height = this.uveStore.viewCanvasAvailableHeight();
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+            this.uveStore.viewSetIframeSize({ width, height });
+        });
     });
 
     /**
-     * Reset activeContentlet when page is unlocked
-     *
-     * Business Rule: When a page is unlocked (isLocked === false), any active contentlet
-     * selection should be cleared to prevent editing conflicts.
+     * Handle right sidebar tab changes
      */
-    readonly $resetActiveContentletOnUnlockEffect = effect(() => {
-        const toggleLockOptions = this.$toggleLockOptions();
-        const activeContentlet = this.uveStore.activeContentlet();
-
-        // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
-        if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
-            this.uveStore.resetActiveContentlet();
+    protected handleRightSidebarTabChange(index: string | number | undefined): void {
+        if (index === undefined) {
+            return;
         }
-    });
 
-    ngOnInit(): void {
-        this.handleDragEvents();
+        const currentTab = Number(index);
 
-        fromEvent(this.window, 'message')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
+        if (isNaN(currentTab)) {
+            return;
+        }
+
+        patchState(this.#rightSidebarTabState, { currentTab });
     }
 
     ngAfterViewInit(): void {
-        this.#setupContentletAreaReset();
-        // Initialize iframe messenger with the iframe window
-        this.iframeMessenger.setIframeWindow(this.contentWindow);
+        if (!this.iframe) {
+            return;
+        }
+
+        fromEvent<MessageEvent>(this.window, 'message')
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                filter((event) => this.#isMessageFromUvePreviewFrame(event))
+            )
+            .subscribe((event) => {
+                const data = event.data;
+                if (this.#isUvePostMessage(data)) {
+                    this.handleUveMessage(data);
+                }
+            });
+
+        this.setupDragDrop();
+        this.#setupCanvasViewportObserver();
+    }
+
+    #canvasResizeObserver: ResizeObserver | null = null;
+
+    #setupCanvasViewportObserver(): void {
+        const el = this.canvasViewport?.nativeElement;
+        if (!el) {
+            return;
+        }
+
+        const apply = () => {
+            const size = measureCanvasAvailableSize(el);
+            if (!size) {
+                return;
+            }
+
+            // Snapshot the previous canvas size *before* the store update so
+            // we can tell whether the iframe was auto-filling it.
+            const prevCanvasW = this.uveStore.viewCanvasAvailableWidth();
+            const prevCanvasH = this.uveStore.viewCanvasAvailableHeight();
+            // viewSetCanvasAvailableSize flips RESIZING internally when the
+            // canvas actually changes size — overlays hide until SET_BOUNDS
+            // settles them.
+            this.uveStore.viewSetCanvasAvailableSize(size);
+
+            if (!this.uveStore.$viewIsResponsiveMode()) {
+                return;
+            }
+
+            const iframeWidth = this.uveStore.viewIframeWidth();
+            const iframeHeight = this.uveStore.viewIframeHeight();
+
+            // The iframe was auto-filling the canvas (its dimensions match the
+            // previous canvas size), so keep it filling. If the user has
+            // explicitly resized it, leave their size alone — but re-apply it
+            // through viewSetIframeSize so its built-in canvas-clamp can
+            // shrink it when the canvas shrinks (e.g. a side panel opens).
+            const wasAutoFilling = iframeWidth === prevCanvasW && iframeHeight === prevCanvasH;
+
+            if (wasAutoFilling) {
+                this.uveStore.viewSetIframeSize(size);
+            } else {
+                this.uveStore.viewSetIframeSize({
+                    width: iframeWidth,
+                    height: iframeHeight
+                });
+            }
+        };
+
+        // Initial sync — runs synchronously in ngAfterViewInit before first paint
+        apply();
+
+        this.#canvasResizeObserver = new ResizeObserver(() => apply());
+        this.#canvasResizeObserver.observe(el);
+
+        this.destroyRef.onDestroy(() => {
+            this.#canvasResizeObserver?.disconnect();
+            this.#canvasResizeObserver = null;
+        });
+    }
+
+    private setupDragDrop(): void {
+        if (!this.iframe) {
+            return;
+        }
+
+        this.dragDropService.setupDragEvents(
+            this.uveStore,
+            this.iframe,
+            this.customDragImage,
+            this.contentWindow,
+            this.host,
+            {
+                onDrop: (event) => this.handleDrop(event),
+                onDragEnter: () => {
+                    // Handled in dragDropService
+                },
+                onDragOver: () => {
+                    // Handled in dragDropService
+                },
+                onDragLeave: () => {
+                    this.uveStore.resetEditorProperties();
+                },
+                onDragEnd: () => {
+                    this.uveStore.resetEditorProperties();
+                },
+                onDragStart: () => {
+                    // Handled in dragDropService
+                }
+            }
+        );
+    }
+
+    private handleUveMessage(message: PostMessage): void {
+        if (
+            !this.#isUvePostMessage(message) ||
+            (message.action === DotCMSUVEAction.IFRAME_HEIGHT &&
+                this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL)
+        ) {
+            return;
+        }
+
+        this.actionsHandler.handleAction(message, {
+            uveStore: this.uveStore,
+            dialog: this.dialog,
+            blockSidebar: this.blockSidebar,
+            inlineEditingService: this.inlineEditingService,
+            contentWindow: this.contentWindow,
+            host: this.host,
+            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
+            onSectionOffset: (payload) => this.handleSectionOffset(payload)
+        });
+    }
+
+    /**
+     * Scroll the iframe to the given y offset (sent by the SDK from inside the
+     * iframe, e.g. when a section node is selected in the palette).
+     *
+     * Pre-PR-35539 this scrolled the canvas viewport, but the canvas viewport
+     * is now overflow:hidden and the iframe scrolls internally. offsetTop is
+     * already in the iframe's CSS coordinate space, so no zoom math is needed.
+     */
+    protected handleSectionOffset({ offsetTop }: { offsetTop: number }): void {
+        this.iframeComponent?.contentWindow?.scrollTo({
+            top: Math.max(0, offsetTop),
+            left: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    private handleDrop(event: DragEvent): void {
+        event.preventDefault();
+        const target = event.target as HTMLDivElement;
+        const { position, payload, dropzone } = target.dataset;
+
+        if (dropzone !== 'true') {
+            this.uveStore.resetEditorProperties();
+            return;
+        }
+
+        const data: ClientData = JSON.parse(payload || '{}');
+        const file = event.dataTransfer?.files[0];
+        const dragItem = this.uveStore.editorDragItem();
+
+        if (file) {
+            this.handleFileUpload({
+                file,
+                data,
+                position,
+                dragItem
+            });
+            return;
+        }
+
+        if (!isEqual(dragItem, TEMPORAL_DRAG_ITEM) && dragItem) {
+            const positionPayload = <PositionPayload>{
+                position,
+                ...data
+            };
+
+            this.placeItem(positionPayload, dragItem);
+            return;
+        }
+
+        this.uveStore.resetEditorProperties();
     }
 
     /**
@@ -286,8 +723,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const href = getHrefFromClickTarget(e.target);
-        const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
+        const target = e.target as HTMLAnchorElement;
+        const anchor = target.closest('a');
+        const rawHref = anchor?.getAttribute('href') ?? '';
+
+        // Same-page anchors (#section) are browser-handled scrolls. Bail
+        // before any URL parsing — for traditional VTL pages the iframe
+        // sits at about:blank, so target.href resolves to "about:blank#section",
+        // whose hostname is "" and would incorrectly trip the external-link
+        // branch below.
+        if (rawHref.startsWith('#')) {
+            return;
+        }
+
+        const href = target.href || rawHref;
+        const isInlineEditing = this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
         if (!href || isInlineEditing) {
@@ -304,7 +754,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.uveStore.loadPageAsset({ url: url.pathname, ...urlQueryParams });
+        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
+        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
+            return;
+        }
+
+        this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
     }
 
@@ -312,7 +767,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Handles the inline editing functionality triggered by a mouse event.
      * @param e - The mouse event that triggered the inline editing.
      */
-    handleInlineEditing(e: MouseEvent) {
+    handleInlineEditing(e: MouseEvent): void {
         const target = e.target as HTMLElement;
         const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
 
@@ -322,280 +777,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         this.inlineEditingService.handleInlineEdit({
             ...element.dataset
-        } as unknown as InlineEditingContentletDataset);
+        } as unknown as { language: string; mode: string; inode: string; fieldName: string });
     }
 
-    handleDragEvents() {
-        fromEvent(this.window, 'dragstart')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DragEvent) => {
-                const { dataset } = event.target as HTMLDivElement;
-                const data = getDragItemData(dataset);
-                const shouldUseCustomDragImage = dataset.useCustomDragImage === 'true';
+    onIframePageLoad(): void {
+        this.iframeMessenger.setIframeWindow(this.iframe?.nativeElement.contentWindow ?? null);
 
-                if (shouldUseCustomDragImage) {
-                    this.setDragImage(event);
-                }
-
-                // Needed to identify if a dotcms dragItem from the window left and came back
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
-                event.dataTransfer?.setData('dotcms/item', '');
-
-                // If there is no data, we do nothing because it's not a valid dragItem
-                if (!data) {
-                    return;
-                }
-
-                // Wait for the browser to finish initializing the drag before hiding controls
-                requestAnimationFrame(() => this.uveStore.setEditorDragItem(data));
-            });
-
-        fromEvent(this.window, 'dragenter')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                // For some reason the fromElement is not in the DragEvent type
-                filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement) // I just want to trigger this when we are dragging from the outside
-            )
-            .subscribe((event: DragEvent) => {
-                event.preventDefault();
-
-                const types = event.dataTransfer?.types || [];
-                const dragItem = this.uveStore.dragItem();
-
-                // Identify if the dotcms dragItem entered the editor from the outside
-                // We do not set dragging state, forcing users to do the dragging action again
-                // This check does not apply if users drag something from their computer
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
-                if (!dragItem && types.includes('dotcms/item')) {
-                    return;
-                }
-
-                this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                this.iframeMessenger.requestBounds();
-
-                if (dragItem) {
-                    return;
-                }
-
-                this.uveStore.setEditorDragItem(TEMPORAL_DRAG_ITEM);
-            });
-
-        fromEvent(this.window, 'dragend')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
-            )
-            .subscribe(() => {
-                this.uveStore.resetEditorProperties();
-            });
-
-        fromEvent(this.window, 'dragover')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                // Check that  `dragItem()` is not empty because there is a scenario where a dragover
-                // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
-                // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
-                filter((_event: DragEvent) => !!this.uveStore.dragItem())
-            )
-            .subscribe((event: DragEvent) => {
-                event.preventDefault(); // Prevent file opening
-
-                if (!this.iframe?.nativeElement) {
-                    return;
-                }
-
-                const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
-
-                const isInsideIframe =
-                    event.clientX > iframeRect.left && event.clientX < iframeRect.right;
-
-                if (!isInsideIframe) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-
-                    return;
-                }
-
-                let direction: 'up' | 'down';
-
-                if (
-                    event.clientY > iframeRect.top &&
-                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
-                ) {
-                    direction = 'up';
-                }
-
-                if (
-                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
-                    event.clientY <= iframeRect.bottom
-                ) {
-                    direction = 'down';
-                }
-
-                if (!direction) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-
-                    return;
-                }
-
-                this.uveStore.updateEditorScrollDragState();
-
-                this.iframeMessenger.scrollInsideIframe(direction);
-            });
-
-        fromEvent(this.window, 'dragleave')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
-            )
-            .subscribe(() => {
-                this.uveStore.resetEditorProperties();
-            });
-
-        fromEvent(this.window, 'drop')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DragEvent) => {
-                event.preventDefault();
-                const target = event.target as HTMLDivElement;
-                const { position, payload, dropzone } = target.dataset;
-
-                // If we drop in a container that is not a dropzone, we just reset the editor state
-                if (dropzone !== 'true') {
-                    this.uveStore.resetEditorProperties();
-
-                    return;
-                }
-
-                const data: ClientData = JSON.parse(payload);
-                const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
-                const dragItem = this.uveStore.dragItem();
-
-                // If we have a file, we need to upload it
-                if (file) {
-                    // I need to publish the temp file to use it.
-                    this.handleFileUpload({
-                        file,
-                        data,
-                        position,
-                        dragItem
-                    });
-
-                    return;
-                }
-
-                // If we have a dragItem, we need to place it
-                if (!isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
-                    const positionPayload = <PositionPayload>{
-                        position,
-                        ...data
-                    };
-
-                    this.placeItem(positionPayload, dragItem);
-
-                    return;
-                }
-
-                this.uveStore.resetEditorProperties();
-            });
-    }
-
-    /**
-     * Handle the iframe page load
-     *
-     * @param {string} clientHost
-     * @memberof EditEmaEditorComponent
-     */
-    onIframePageLoad() {
-        // Update iframe window reference in case it changed
-        this.iframeMessenger.setIframeWindow(this.contentWindow);
-
-        if (!this.uveStore.isTraditionalPage()) {
-            return;
-        }
-
-        this.#insertPageContent();
-        this.#setSeoData();
-
-        if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
+        if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
-
-        this.uveStore.setIsClientReady(true);
-    }
-
-    /**
-     * Add custom styles to the rendered content
-     *
-     * @param {string} rendered
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    addCustomStyles(rendered = ''): string {
-        const styles = `<style>
-
-        [data-dot-object="container"]:empty {
-            width: 100%;
-            background-color: #ECF0FD;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #030E32;
-            height: 10rem;
-        }
-
-        [data-dot-object="contentlet"].empty-contentlet {
-            min-height: 4rem;
-            width: 100%;
-        }
-
-        [data-dot-object="container"]:empty::after {
-            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
-        }
-        </style>
-        `;
-
-        const headExists = rendered.includes('</head>');
-
-        /*
-         * For advance template case. It might not include `head` tag.
-         */
-        if (!headExists) {
-            return rendered + styles;
-        }
-
-        return rendered.replace('</head>', styles + '</head>');
-    }
-
-    /**
-     * Inject the editor page styles (and optionally the legacy UVE script)
-     * into the VTL content before writing it to the iframe.
-     *
-     * When `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the
-     * `dot-uve.js` script tag is also injected. This restores the pre-PR
-     * #34995 behavior for EMA customers whose headless frontends do not
-     * consume the backend-rendered output where the script now lives.
-     *
-     * @private
-     * @param html - Raw rendered HTML from the Page API.
-     * @returns Transformed HTML ready for `document.write()`.
-     * @see {@link addEditorPageScript} for the legacy script injection logic.
-     */
-    private injectCodeToVTL(html: string): string {
-        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
-        const origin = this.window.location.origin;
-        const fileWithBase = injectBaseTag({ html, url, origin });
-        const fileWithStyles = this.addCustomStyles(fileWithBase);
-
-        if (this.uveStore.$isEmaLegacyScriptInjectionEnabled()) {
-            return addEditorPageScript(fileWithStyles);
-        }
-
-        return fileWithStyles;
     }
 
     ngOnDestroy(): void {
-        this.#iframeResizeObserver?.disconnect();
-        this.#iframeResizeObserver = null;
-        if (this.uveStore.isTraditionalPage()) {
+        if (this.uveStore.pageType() === PageType.TRADITIONAL) {
             this.uveStore.setIsClientReady(true);
         }
     }
@@ -619,23 +813,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     #checkAndResetActiveContentlet(pageContainers: PageContainer[]): void {
-        const activeContentlet = this.uveStore.activeContentlet();
+        const selected = this.uveStore.editorSelected();
+        const payload = selected?.payload;
 
-        if (!activeContentlet?.contentlet?.identifier) {
+        if (!payload?.contentlet?.identifier) {
             return;
         }
 
-        const activeContentletId = activeContentlet.contentlet.identifier;
+        const activeContentletId = payload.contentlet.identifier;
         const stillExists = pageContainers.some((container) => {
             // For now, if is not the same container, we deactivate the active contentlet
             // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
             // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
-            const isSameContainer = areContainersEquals(container, activeContentlet.container);
+            const isSameContainer = areContainersEquals(container, payload.container);
             return container.contentletsId?.includes(activeContentletId) && isSameContainer;
         });
 
         if (!stillExists) {
-            this.uveStore.resetActiveContentlet();
+            this.uveStore.resetSelected();
         }
     }
 
@@ -697,17 +892,31 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             // Check if active contentlet was removed during move operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.savePage(pageContainers);
+            this.uveStore.editorSave(pageContainers);
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            this.dialog.createContentletFromPalette({
-                ...dragItem.draggedPayload.item,
-                actionPayload: payload,
-                language_id: this.uveStore.$languageId()
-            });
+            const item = dragItem.draggedPayload.item;
+            const languageId = this.uveStore.pageLanguageId();
+
+            this.#openNewContentDialogOrFallback(
+                item.variable,
+                (contentType) =>
+                    this.#openNewEditContentDialogForPaletteDrop(
+                        payload,
+                        item.variable,
+                        contentType?.name ?? item.name
+                    ),
+                () => {
+                    this.dialog.createContentletFromPalette({
+                        ...item,
+                        actionPayload: payload,
+                        language_id: languageId
+                    });
+                }
+            );
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
@@ -727,7 +936,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             // Check if active contentlet was removed during temp insert operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.savePage(pageContainers);
+            this.uveStore.editorSave(pageContainers);
         }
     }
     /**
@@ -752,73 +961,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 // Check if active contentlet was removed during delete operation
                 this.#checkAndResetActiveContentlet(pageContainers);
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
             }
         });
     }
 
-    /**
-     * Sets up the iframe content for traditional (VTL) pages.
-     *
-     * The `dot-uve.js` editor script is normally included by the backend
-     * directly in `entity.page.rendered` (see PR #34927). However, when
-     * `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the script
-     * is also injected from the frontend to support EMA customers whose
-     * headless setup does not consume the backend-rendered output.
-     *
-     * @memberof EditEmaEditorComponent
-     */
-    #insertPageContent(): void {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        const doc = iframeElement.contentDocument;
-
-        const enableInlineEdit = this.uveStore.$enableInlineEdit();
-        const pageRender = this.uveStore.$pageRender();
-
-        if (!doc || !pageRender) {
-            return;
-        }
-
-        const newDoc = this.injectCodeToVTL(pageRender);
-
-        doc.open();
-        doc.write(newDoc);
-        doc.close();
-
-        this.handleInlineScripts(enableInlineEdit);
+    handleInternalNavFromIframe(e: MouseEvent): void {
+        this.handleInternalNav(e);
     }
 
-    /**
-     * Handle the Injection and removal of the inline editing scripts
-     *
-     * @param {boolean} enableInlineEdit
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    handleInlineScripts(enableInlineEdit: boolean) {
-        const win = this.contentWindow;
-
-        if (!win) {
-            return;
-        }
-
-        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-            this.handleInternalNav(e);
-            this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-        });
-
-        if (enableInlineEdit) {
-            this.inlineEditingService.injectInlineEdit(this.iframe);
-
-            return;
-        }
-
-        this.inlineEditingService.removeInlineEdit(this.iframe);
+    handleInlineEditingFromIframe(e: MouseEvent): void {
+        this.handleInlineEditing(e);
     }
 
     protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
@@ -844,7 +997,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
                 this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
@@ -857,13 +1010,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 if (!actionPayload) {
-                    this.uveStore.reloadCurrentPage();
+                    this.uveStore.pageReload();
 
                     return;
                 }
 
                 if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.iframeMessenger.reloadPage();
+                    this.sendMessageToIframe(
+                        {
+                            name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                        },
+                        this.host
+                    );
                 }
 
                 const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -881,15 +1039,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
             },
+            /**
+             * Handles the create contentlet event emitted from within the JSP/iframe
+             * when a content type is selected (e.g. via the + button in a container).
+             *
+             * Opens the contentlet creation dialog with the pre-resolved action URL and
+             * inserts the new contentlet into the target container on save.
+             *
+             * @see {NG_CUSTOM_EVENTS.CREATE_CONTENTLET}
+             * @memberof EditEmaEditorComponent
+             */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.dialog.createContentlet({
-                    contentType: detail.data.contentType,
-                    url: detail.data.url,
-                    actionPayload
-                });
-                this.cd.detectChanges();
+                this.#openNewContentDialogOrFallback(
+                    detail.data.contentType,
+                    (contentType) =>
+                        this.#openNewEditContentDialogForPaletteDrop(
+                            actionPayload,
+                            detail.data.contentType,
+                            contentType?.name ?? detail.data.contentType
+                        ),
+                    () => {
+                        this.dialog.createContentlet({
+                            contentType: detail.data.contentType,
+                            url: detail.data.url,
+                            actionPayload
+                        });
+                        this.cd.detectChanges();
+                    }
+                );
             },
             [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
                 const formId = detail.data.identifier;
@@ -921,7 +1100,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                             }
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
-                            this.uveStore.savePage(pageContainers);
+                            this.uveStore.editorSave(pageContainers);
                             this.dialog.resetDialog();
                         }
                     });
@@ -936,12 +1115,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     life: 2000
                 });
 
-                this.uveStore.reloadCurrentPage();
+                this.uveStore.pageReload();
                 this.dialog.resetDialog();
 
                 // This is a temporary solution to "reload" the content by reloading the window
                 // we should change this with a new SDK reload strategy
-                this.iframeMessenger.reloadPage();
+                this.sendMessageToIframe(
+                    {
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -964,219 +1148,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
                 const targetUrl = getTargetUrl(
                     url.pathname,
-                    this.uveStore.pageAPIResponse().urlContentMap
+                    this.uveStore.pageAsset()?.urlContentMap
                 );
                 const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
                 if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
                     // Navigate to the new URL if it's different from the current one
-                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
+                    this.uveStore.pageLoad({ url: targetUrl, language_id });
 
                     return;
                 }
 
-                this.uveStore.loadPageAsset({
+                this.uveStore.pageLoad({
                     language_id
                 });
             }
         })[detail.name];
-    }
-
-    /**
-     * Handle the post message event
-     *
-     * @private
-     * @param {{ action: CLIENT_ACTIONS; payload: DotCMSContentlet }} data
-     * @return {*}
-     * @memberof DotEmaComponent
-     */
-    private handlePostMessage({ action, payload }: PostMessage): void {
-        const CLIENT_ACTIONS_FUNC_MAP = {
-            [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
-                // When we set the url, we trigger in the shell component a load to get the new state of the page
-                // This triggers a rerender that makes nextjs to send the set_url again
-                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = compareUrlPaths(this.uveStore.pageParams()?.url, payload.url);
-
-                if (isSameUrl) {
-                    this.uveStore.setEditorState(EDITOR_STATE.IDLE);
-                } else {
-                    this.uveStore.loadPageAsset({
-                        url: payload.url,
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-                }
-            },
-            [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
-                this.uveStore.setEditorBounds(payload);
-            },
-            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
-                const payload = this.uveStore.getPageSavePayload(coords.payload);
-
-                this.uveStore.setContentletArea({
-                    x: coords.x,
-                    y: coords.y,
-                    width: coords.width,
-                    height: coords.height,
-                    payload
-                });
-            },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                this.uveStore.updateEditorScrollState();
-            },
-            [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
-                // TODO: Maybe add a small debounce to avoid multiple calls
-                this.uveStore.updateEditorOnScrollEnd();
-            },
-            [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
-                dataset: InlineEditingContentletDataset;
-            }) => {
-                // The iframe say the contentlet that the content is queue to be inline edited is in multiple pages
-                // So the editor should open the dialog to ask if the edit is in ALL contentlets or only in this page.
-
-                if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
-                    return;
-                }
-
-                const { contentlet, container } = this.uveStore.contentArea().payload;
-
-                const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
-
-                this.dotCopyContentModalService
-                    .open()
-                    .pipe(
-                        switchMap(({ shouldCopy }) => {
-                            if (!shouldCopy) {
-                                return of(null);
-                            }
-
-                            return this.handleCopyContent(currentTreeNode);
-                        }),
-                        tap((res) => {
-                            this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-
-                            if (res) {
-                                this.uveStore.reloadCurrentPage();
-                            }
-                        })
-                    )
-                    .subscribe((res: DotCMSContentlet | null) => {
-                        const data = {
-                            oldInode: payload.dataset.inode,
-                            inode: res?.inode || payload.dataset.inode,
-                            fieldName: payload.dataset.fieldName,
-                            mode: payload.dataset.mode,
-                            language: payload.dataset.language
-                        };
-
-                        if (!this.uveStore.isTraditionalPage()) {
-                            this.iframeMessenger.copyContentletInlineEditingSuccess(data);
-
-                            return;
-                        }
-
-                        this.inlineEditingService.setTargetInlineMCEDataset(data);
-
-                        if (!res) {
-                            this.inlineEditingService.initEditor();
-                        }
-                    });
-            },
-            [DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING]: (payload: UpdatedContentlet) => {
-                this.uveStore.setEditorState(EDITOR_STATE.IDLE);
-
-                // If there is no payload, we don't need to do anything
-                if (!payload) {
-                    return;
-                }
-
-                const dataset = payload.dataset;
-
-                const contentlet = {
-                    inode: dataset['inode'],
-                    [dataset.fieldName]: payload.content
-                };
-
-                this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                this.dotPageApiService
-                    .saveContentlet({ contentlet })
-                    .pipe(
-                        take(1),
-                        tapResponse({
-                            next: () => {
-                                this.messageService.add({
-                                    severity: 'success',
-                                    summary: this.dotMessageService.get('message.content.saved'),
-                                    detail: this.dotMessageService.get(
-                                        'message.content.note.already.published'
-                                    ),
-                                    life: 2000
-                                });
-                            },
-                            error: (e) => {
-                                console.error(e);
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: this.dotMessageService.get(
-                                        'editpage.content.update.contentlet.error'
-                                    ),
-                                    life: 2000
-                                });
-                            }
-                        })
-                    )
-                    .subscribe(() => this.uveStore.reloadCurrentPage());
-            },
-            [DotCMSUVEAction.CLIENT_READY]: (devConfig) => {
-                const isClientReady = this.uveStore.isClientReady();
-
-                if (isClientReady) {
-                    return;
-                }
-
-                const { graphql, params, query: rawQuery } = devConfig || {};
-                const { query = rawQuery, variables } = graphql || {};
-                const legacyGraphqlResponse = !!rawQuery;
-
-                if (query || rawQuery) {
-                    this.uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
-                }
-
-                const pageParams = convertClientParamsToPageParams(params);
-                this.uveStore.reloadCurrentPage(pageParams);
-                this.uveStore.setIsClientReady(true);
-            },
-            [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                this.dialog.editContentlet({ ...contentlet, clientAction: action });
-            },
-            [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
-                const urlObject = createReorderMenuURL({
-                    startLevel,
-                    depth,
-                    pagePath: this.uveStore.pageParams().url,
-                    hostId: this.uveStore.pageAPIResponse().site.identifier
-                });
-
-                this.dialog.openDialogOnUrl(
-                    urlObject,
-                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
-                );
-            },
-            [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
-                this.#handleInlineEditingEvent(payload),
-
-            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
-                schemas: StyleEditorFormSchema[];
-            }) => {
-                const { schemas } = payload;
-                this.uveStore.setStyleSchemas(schemas);
-            },
-            [DotCMSUVEAction.NOOP]: () => {
-                /* Do Nothing because is not the origin we are expecting */
-            }
-        };
-        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
-        actionToExecute?.(payload);
     }
 
     /**
@@ -1185,8 +1172,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @private
      * @memberof DotEmaComponent
      */
-    reloadIframeContent() {
-        this.iframeMessenger.sendPageData(this.#clientPayload());
+    reloadIframeContent(): void {
+        this.sendMessageToIframe(
+            {
+                name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
+                payload: this.#clientPayload()
+            },
+            this.host
+        );
+    }
+
+    private sendMessageToIframe(message: unknown, host = '*'): void {
+        this.iframe?.nativeElement.contentWindow?.postMessage(message, host);
+    }
+
+    /**
+     * Only handle postMessage events sent from the UVE preview iframe (or a nested frame
+     * inside it). Ignores same-window messages (e.g. dot-html-to-image thumbnail iframes).
+     */
+    #isMessageFromUvePreviewFrame(event: MessageEvent): boolean {
+        const previewWindow = this.iframe?.nativeElement?.contentWindow;
+        const source = event.source as Window;
+        if (!previewWindow || !source) {
+            return false;
+        }
+        return source === previewWindow || source === previewWindow.parent;
+    }
+
+    #isUvePostMessage(data: unknown): data is PostMessage {
+        return !!data && typeof data === 'object' && 'action' in data;
     }
 
     private handleDuplicatedContentlet() {
@@ -1226,34 +1240,209 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    protected handleEditContentlet(payload: ActionPayload) {
-        const { contentlet, container } = payload;
-        const { onNumberOfPages = '1', title } = contentlet;
+    protected handleOpenQuickEdit(): void {
+        this.uveStore.setEditPanelOpen(true);
+        patchState(this.#rightSidebarTabState, { currentTab: 0 });
+    }
 
-        if (Number(onNumberOfPages) <= 1) {
-            this.dialog?.editContentlet(contentlet);
+    protected handleOpenFullEditor(): void {
+        // Use $contentletEditData (not editorSelected directly) so the dialog
+        // always receives the freshest contentlet from the page asset. After
+        // a dialog save + pageReload(), the page asset is updated with a new
+        // inode, but editorSelected().payload still holds the stale one.
+        // $contentletEditData looks up the contentlet by identifier from the
+        // updated page asset, so it reflects the post-save version.
+        const { contentlet } = this.$contentletEditData();
 
+        if (!contentlet?.inode) {
             return;
         }
 
-        const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
+        this.#openContentForEdit(contentlet);
+    }
+
+    /**
+     * Opens the Angular-based edit content dialog (same shell as relationship field "create").
+     */
+    #openNewEditContentDialog(contentlet: DotCMSContentlet): void {
+        const dialogData: EditContentDialogData = {
+            mode: 'edit',
+            contentletInode: contentlet.inode,
+            onContentSaved: () => {
+                this.uveStore.pageReload();
+            }
+        };
+
+        this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
+    }
+
+    /**
+     * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
+     * otherwise calls the legacy fallback.
+     */
+    #openNewContentDialogOrFallback(
+        contentTypeVariable: string,
+        onNewEditor: (contentType: DotCMSContentType | null) => void,
+        legacyFallback: () => void
+    ): void {
+        this.dotContentTypeService
+            .getContentType(contentTypeVariable)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentType) => {
+                if (
+                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                    true
+                ) {
+                    onNewEditor(contentType);
+                } else {
+                    legacyFallback();
+                }
+            });
+    }
+
+    /**
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
+     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     */
+    #openContentForEdit(contentlet: DotCMSContentlet): void {
+        const contentTypeVariable = contentlet.contentType;
+        if (!contentTypeVariable) {
+            this.dialog?.editContentlet(contentlet);
+            return;
+        }
+
+        this.#openNewContentDialogOrFallback(
+            contentTypeVariable,
+            () => this.#openNewEditContentDialog(contentlet),
+            () => this.dialog?.editContentlet(contentlet)
+        );
+    }
+
+    /**
+     * Create flow when a content type is dropped from the palette and the type uses the new editor.
+     */
+    #openNewEditContentDialogForPaletteDrop(
+        actionPayload: ActionPayload,
+        contentTypeVariable: string,
+        contentTypeName: string
+    ): void {
+        this.dialog.resetDialog();
+
+        const dialogData: EditContentDialogData = {
+            mode: 'new',
+            contentTypeId: contentTypeVariable,
+            onContentSaved: (contentlet) => {
+                if (!contentlet?.identifier) {
+                    return;
+                }
+
+                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+                    ...actionPayload,
+                    newContentletId: contentlet.identifier
+                });
+
+                if (!didInsert) {
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                    } else {
+                        this.handleDuplicatedContentlet();
+                    }
+
+                    return;
+                }
+
+                this.#checkAndResetActiveContentlet(pageContainers);
+                this.uveStore.editorSave(pageContainers);
+            }
+        };
+
+        this.#openDotEditContentShell(
+            this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName),
+            dialogData
+        );
+    }
+
+    /**
+     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     */
+    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        this.dialogService.open(DotEditContentDialogComponent, {
+            appendTo: 'body',
+            baseZIndex: 10000,
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            keepInViewport: true,
+            modal: true,
+            resizable: true,
+            position: 'center',
+            width: '95%',
+            height: '95%',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
+            style: { 'max-width': '1400px', 'max-height': '900px' },
+            contentStyle: { padding: '0' },
+            data: dialogData,
+            header
+        });
+    }
+
+    /**
+     * Pencil button on the hover toolbar: open the full content editor
+     * dialog. If the contentlet appears on more than one page, prompt
+     * the user first ("edit on all pages" vs "this page only"). On
+     * "this page only", fork the contentlet via copyInPage so the
+     * other pages are unaffected, then open the dialog with the new copy.
+     *
+     * Reads the contentlet from the event payload, NOT from
+     * editorSelected — pencil is intentionally stateless
+     * with respect to editor selection. Selection (border) and active
+     * (side panel) are owned by other actions.
+     */
+    protected handleEditWithCopyDecision(payload: ActionPayload): void {
+        const contentlet = payload?.contentlet;
+        if (!contentlet?.inode) {
+            return;
+        }
+
+        const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
+        if (!onMultiplePages) {
+            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
+            return;
+        }
+
+        const treeNode = this.uveStore.getCurrentTreeNode(payload.container, contentlet);
 
         this.dotCopyContentModalService
             .open()
             .pipe(
-                switchMap(({ shouldCopy }) => {
-                    if (!shouldCopy) {
-                        return of(contentlet);
+                takeUntilDestroyed(this.destroyRef),
+                switchMap(({ shouldCopy }) =>
+                    shouldCopy ? this.dotCopyContentService.copyInPage(treeNode) : of(null)
+                )
+            )
+            .subscribe({
+                next: (copied) => {
+                    // shouldCopy === false → edit the original (affects all pages).
+                    // shouldCopy === true  → copyInPage forked it; edit the new copy.
+                    const target = copied ?? (contentlet as unknown as DotCMSContentlet);
+                    if (copied) {
+                        this.uveStore.pageReload();
                     }
 
-                    this.dialog.showLoadingIframe(title);
-
-                    return this.handleCopyContent(currentTreeNode);
-                })
-            )
-            .subscribe((contentlet) => {
-                this.dialog.editContentlet(contentlet);
+                    this.#openContentForEdit(target);
+                },
+                error: (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                }
             });
+    }
+
+    private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
+        return this.dotCopyContentService.copyInPage(treeNode);
     }
 
     /**
@@ -1275,25 +1464,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      */
     protected editContentMap(contentlet: DotCMSURLContentMap): void {
         this.dialog.editUrlContentMapContentlet(contentlet);
-    }
-
-    /**
-     * Handle copy content
-     *
-     * @private
-     * @return {*}
-     * @memberof DotEmaDialogComponent
-     */
-    private handleCopyContent(currentTreeNode: DotTreeNode): Observable<DotCMSContentlet> {
-        return this.dotCopyContentService.copyInPage(currentTreeNode).pipe(
-            catchError((error) =>
-                this.dotHttpErrorManagerService.handle(error).pipe(
-                    tap(() => this.dialog.resetDialog()), // If there is an error, we set the status to idle
-                    map(() => null)
-                )
-            ),
-            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
-        );
     }
 
     /**
@@ -1344,13 +1514,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.uveStore.loadPageAsset({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore.pageLoad({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.uveStore.reloadCurrentPage();
+                this.uveStore.pageReload();
             });
     }
 
@@ -1409,7 +1579,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Reloads the component from the dialog/sidebar.
      */
     reloadPage() {
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
     }
 
     /**
@@ -1519,46 +1689,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
     }
 
-    /**
-     * Handle the inline editing event
-     *
-     * @param {*} { type, data }
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    #handleInlineEditingEvent({
-        type,
-        data
-    }: {
-        type: DotCMSInlineEditingType;
-        data?: DotCMSInlineEditingPayload;
-    }) {
-        if (!this.uveStore.isEnterprise()) {
-            this.#dotAlertConfirmService.alert({
-                header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
-                message: this.dotMessageService.get('editpage.not.lincese.error')
-            });
-
-            return;
-        }
-
-        switch (type) {
-            case 'BLOCK_EDITOR':
-                this.blockSidebar?.open(data);
-                break;
-
-            case 'WYSIWYG':
-                this.inlineEditingService.initEditor();
-                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-                break;
-
-            default:
-                console.warn('Unknown block editor type', type);
-
-                break;
-        }
-    }
-
     private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
@@ -1591,88 +1721,100 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        this.uveStore.loadPageAsset({ language_id: '1' });
-    }
-
-    #setSeoData() {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        const doc = iframeElement.contentDocument;
-
-        if (!doc) {
-            return;
-        }
-
-        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
-            const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
-            this.uveStore.setOgTags(ogTags);
-            this.uveStore.setOGTagResults(results);
-        });
+        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
+        this.uveStore.pageLoad({ language_id: currentLanguageId });
     }
 
     #clientPayload() {
-        const graphqlResponse = this.uveStore.$customGraphqlResponse();
+        const clientResponse = this.uveStore.pageAsset()?.clientResponse;
 
-        if (graphqlResponse) {
-            return graphqlResponse;
+        if (clientResponse) {
+            return clientResponse;
         }
 
         return {
-            ...this.uveStore.pageAPIResponse(),
+            // Removed pageAPIResponse spread
             params: this.uveStore.pageParams()
         };
     }
 
-    #setupContentletAreaReset(): void {
-        const iframeElement = this.iframe?.nativeElement;
+    protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
+        // The hover toolbar's `promoteHoverToSelected` (called inline in
+        // the (click) before this output fires) has already pinned the
+        // contentlet as `editorSelected`. We just need to open the
+        // style editor — the side panel binds to editorSelected().payload
+        // for its data.
+        this.#openStyleEditor();
+    }
 
-        if (!iframeElement) {
-            return;
+    protected togglePalette(): void {
+        this.uveStore.setPaletteOpen(!this.$paletteOpen);
+    }
+
+    protected toggleEditPanel(): void {
+        this.uveStore.setEditPanelOpen(!this.$editPanelOpen);
+    }
+
+    readonly $deviceSelectorState = computed(() => ({
+        device: this.uveStore.viewDevice(),
+        socialMedia: this.uveStore.viewSocialMedia(),
+        orientation: this.uveStore.viewDeviceOrientation()
+    }));
+
+    handleDeviceSelectorChange(change: DeviceSelectorChange): void {
+        switch (change.type) {
+            case 'device':
+                this.uveStore.viewSetDevice(change.device);
+                break;
+            case 'socialMedia':
+                this.uveStore.viewSetSEO(change.socialMedia);
+                break;
+            case 'orientation':
+                this.uveStore.viewSetOrientation(change.orientation);
+                break;
         }
+    }
 
-        if (typeof ResizeObserver !== 'undefined') {
-            this.#iframeResizeObserver = new ResizeObserver(() => {
-                this.#resetContentletArea();
+    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
+        const params = this.uveStore.pageParams();
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
+        const host = params?.clientHost || this.window.location.origin;
+        const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
+
+        const currentSiteHostname = this.globalStore.siteDetails()?.hostname;
+
+        const urls: { label: string; value: string }[] = [
+            {
+                label: 'uve.toolbar.page.live.url',
+                value: new URL(path, host).toString()
+            },
+            {
+                label: 'uve.toolbar.page.current.view.url',
+                value: createFullURL(params, siteId)
+            }
+        ];
+
+        if (currentSiteHostname) {
+            urls.push({
+                label: 'uve.toolbar.page.current.site.url',
+                value: new URL(path, `https://${currentSiteHostname}`).toString()
             });
-
-            this.#iframeResizeObserver.observe(iframeElement);
-        } else {
-            fromEvent(this.window, 'resize')
-                .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe(() => this.#resetContentletArea());
-        }
-    }
-
-    #resetContentletArea(): void {
-        this.uveStore.resetContentletArea();
-    }
-
-    protected handleSelectContent(contentletActionPayload: ActionPayload): void {
-        this.uveStore.setActiveContentlet(contentletActionPayload);
-    }
-
-    /**
-     * Applies the custom drag preview used when the drag originates from the
-     * contentlet controls (identified via `data-drag-origin="contentlet-controls"`).
-     * Keeping this logic here ensures future contributors know where the drag
-     * control trigger lives.
-     *
-     * @param event - The drag event.
-     */
-    protected setDragImage(event: DragEvent): void {
-        if (!event.dataTransfer) {
-            return;
         }
 
-        event.dataTransfer.setDragImage(this.customDragImage.nativeElement, 0, 0);
+        return urls;
+    });
+
+    protected triggerCopyToast(): void {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
     }
 
-    protected handleTabChange(tab: UVE_PALETTE_TABS): void {
-        this.uveStore.setPaletteTab(tab);
+    #openStyleEditor(): void {
+        this.uveStore.setEditPanelOpen(true);
+        patchState(this.#rightSidebarTabState, { currentTab: 1 });
     }
 
     protected handleAddContent(event: {
@@ -1690,5 +1832,28 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 this.dialog.addWidget(event.payload);
                 break;
         }
+    }
+
+    /**
+     * Handles palette node selection by asking the iframe SDK for the section's offsetTop,
+     * then scrolling the editor-content container once the reply arrives.
+     *
+     * @param event Event containing selector and type of the selected node
+     */
+    protected handlePaletteNodeSelect(event: { selector: string; type: string }): void {
+        // Extract 1-based section index from '#section-N' or '#dot-section-N'
+        const match = event.selector.match(/#(?:dot-)?section-(\d+)/);
+
+        if (!match) {
+            return;
+        }
+
+        this.sendMessageToIframe(
+            {
+                name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
+                sectionIndex: parseInt(match[1], 10)
+            },
+            this.host
+        );
     }
 }

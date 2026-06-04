@@ -2897,7 +2897,7 @@
           "response": []
         },
         {
-          "name": "Check Content Type Schema",
+          "name": "Check Content Type Schema Within Script",
           "event": [
             {
               "listen": "test",
@@ -3301,7 +3301,7 @@
           "response": []
         },
         {
-          "name": "Save Contentlet_1 & Contentlet_3 in FirstPage Copy",
+          "name": "Save Contentlet_1 & Contentlet_3 in FirstPage",
           "event": [
             {
               "listen": "test",
@@ -3378,7 +3378,7 @@
           "response": []
         },
         {
-          "name": "Check Schema per Content Type",
+          "name": "Check Schema per Content Type Within Script",
           "event": [
             {
               "listen": "test",
@@ -3448,6 +3448,73 @@
                 }
               ]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Content of the Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet3 = pm.collectionVariables.get(\"Contentlet_3\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.empty;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": []\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Add Content into the Page: Container and Contentlets."
           },
           "response": []
         }

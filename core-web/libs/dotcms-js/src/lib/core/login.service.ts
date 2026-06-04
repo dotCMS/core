@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -136,10 +137,8 @@ export class LoginService {
      * @memberof LoginService
      */
     changePassword(password: string, token: string): Observable<string> {
-        const body = JSON.stringify({ password: password, token: token });
-
         return this.http
-            .post<DotCMSResponse<string>>(this.urls.changePassword, body)
+            .post<DotCMSResponse<string>>(this.urls.changePassword, { password, token })
             .pipe(map((response) => response.entity));
     }
 
@@ -335,6 +334,7 @@ export class LoginService {
 }
 
 export interface CurrentUser {
+    admin: boolean;
     email: string;
     givenName: string;
     loginAs: boolean;

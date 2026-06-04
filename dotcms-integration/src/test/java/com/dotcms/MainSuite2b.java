@@ -1,10 +1,8 @@
 package com.dotcms;
 
-import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
-import com.dotcms.ai.validator.AIAppValidatorTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -109,6 +107,7 @@ import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
+import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
@@ -162,6 +161,7 @@ import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
+import com.dotmarketing.quartz.job.EncryptPlainPasswordsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
@@ -419,10 +419,8 @@ import org.junit.runners.Suite.SuiteClasses;
         SearchToolTest.class,
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
-        AIModelsTest.class,
         ConfigServiceTest.class,
         AIProxyClientTest.class,
-        AIAppValidatorTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
@@ -474,6 +472,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.tag.business.TagAPITest.class,
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
+        EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
@@ -526,6 +525,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
         PublishingResourceIntegrationTest.class,
+        BundleManagementResourceIntegrationTest.class,
         PushNowActionletTest.class,
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,

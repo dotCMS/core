@@ -87,24 +87,38 @@ public class AppDescriptorHelper {
      */
      public List<AppDescriptor> loadAppDescriptors()
             throws IOException, URISyntaxException {
+        return loadAppDescriptorsWithErrors()._1;
+    }
+
+    /**
+     * Same as {@link #loadAppDescriptors()} but also returns the list of files that
+     * failed to load, so the REST layer can surface partial failures to callers.
+     *
+     * @return a tuple of (successfully-loaded descriptors, per-file load errors)
+     */
+    public Tuple2<List<AppDescriptor>, List<AppDescriptorLoadError>> loadAppDescriptorsWithErrors()
+            throws IOException, URISyntaxException {
 
         final ImmutableList.Builder<AppDescriptor> builder = new ImmutableList.Builder<>();
+        final List<AppDescriptorLoadError> errors = new ArrayList<>();
         final Set<Tuple2<Path, Boolean>> filePaths = listAvailableYamlFiles();
         for (final Tuple2<Path, Boolean> filePath : filePaths) {
+            final Path path = filePath._1;
+            final String fileName = path.getFileName().toString();
             try {
-                final Path path = filePath._1;
                 final boolean systemApp = filePath._2;
                 final AppSchema appSchema = readAppFile(path);
                 if (validateAppDescriptor(appSchema)) {
-                    builder.add(new AppDescriptorImpl(path.getFileName().toString(), systemApp, appSchema));
+                    builder.add(new AppDescriptorImpl(fileName, systemApp, appSchema));
                 }
             } catch (Exception e) {
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", filePath), e);
+                errors.add(new AppDescriptorLoadError(fileName, e.getMessage()));
             }
         }
 
-        return builder.build();
+        return Tuple.of(builder.build(), errors);
     }
 
     /**
@@ -126,8 +140,10 @@ public class AppDescriptorHelper {
             errors.add("The required field `description` isn't set on the incoming file.");
         }
 
-        if(isNotSet(appDescriptor.getIconUrl())){
-            errors.add("The required field `iconUrl` isn't set on the incoming file.");
+        // An app needs a visual identity: either an `iconUrl` (image) or an `icon` (Material icon name).
+        // Both may be set; the frontend prefers the image when available.
+        if(isNotSet(appDescriptor.getIconUrl()) && isNotSet(appDescriptor.getIcon())){
+            errors.add("One of the fields `iconUrl` or `icon` must be set on the incoming file.");
         }
 
         if(!isSet(appDescriptor.getAllowExtraParameters())){

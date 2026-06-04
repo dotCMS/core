@@ -13,7 +13,7 @@ export class DotContentletLockIcon {
     render() {
         return (
             <Host style={{ '--mdc-icon-size': this.size }}>
-                <mwc-icon>{this.locked ? 'locked' : 'lock_open'}</mwc-icon>
+                <mwc-icon>{this.locked ? 'lock' : 'lock_open'}</mwc-icon>
             </Host>
         );
     }

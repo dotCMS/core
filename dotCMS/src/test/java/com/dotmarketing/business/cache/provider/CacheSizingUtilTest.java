@@ -1,7 +1,7 @@
 package com.dotmarketing.business.cache.provider;
 
 import org.junit.Test;
-import com.dotcms.repackage.com.google.common.base.Optional;
+import com.google.common.base.Optional;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 public class CacheSizingUtilTest {

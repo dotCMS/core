@@ -11,9 +11,12 @@
         refreshConfigs().then(() => {
             writeConfigTable();
             writeModelToDropdown();
-            alert
-            if (dotAiState.config["apiKey"] != "*****") {
+            if (!dotAiState.config["providerConfig"]) {
                 document.getElementById("openAIKeyWarn").style.display = "block";
+            }
+            const configuredThreshold = dotAiState.config?.settings?.embeddingsSearchThreshold;
+            if (configuredThreshold) {
+                document.querySelector("input[name='threshold']").value = configuredThreshold;
             }
         });
         showResultTables();
@@ -23,7 +26,7 @@
 
 <div id="openAIKeyWarn"
      style="display: none;padding:20px; border-radius: 10px;color:indianred;border:1px solid indianred;margin:20px auto;max-width: 800px;text-align: center">
-    Your OpenAI API key is not set. Please add a valid API key in your <a
+    dotAI is not configured. Please add a valid Provider Config in your <a
         href="/dotAdmin/#/apps/dotAI/edit/SYSTEM_HOST"
         target="_top">App screen</a>.
 </div>
@@ -56,8 +59,8 @@
                                 Content index to search:
                             </th>
                             <td>
-                                <select name="indexName" id="indexNameChat" style="min-width:400px;">
-                                    <option disabled="true" placeholder="Select an Index">Select an Index</option>
+                                <select name="indexName" id="indexNameChat" required style="min-width:400px;">
+                                    <option disabled value="">Select an Index</option>
                                 </select>
                             </td>
                         </tr>
@@ -95,7 +98,7 @@
                             </th>
                             <td><span class="clearPromptX" id="searchQueryX" onclick="clearPrompt('searchQuery')"
                                       style="visibility: hidden">&#10006;</span>
-                                <textarea class="prompt" name="prompt" id="searchQuery"
+                                <textarea class="prompt" name="prompt" id="searchQuery" required
                                           onkeyup="showClearPrompt('searchQuery')"
                                           onchange="showClearPrompt('searchQuery')"
                                           placeholder="Search text or phrase"></textarea>
@@ -175,7 +178,7 @@
                                 Distance Threshold:
                             </th>
                             <td>
-                                <input type="number" step="0.05" value=".25" name="threshold" min="0.05" max="100"
+                                <input type="number" step="0.05" value=".5" name="threshold" min="0.05" max="100"
                                        style="min-width:100px;"><br>
                                 The lower this number, the more semantically similar the results.
                             </td>
@@ -354,18 +357,8 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>
-                            Size:
-                        </th>
-                        <td>
-                            <select name="size" style="min-width:400px;">
-                                <option value="1024x1024">1024x1024 (Square)</option>
-                                <option value="1024x1792">1024x1792 (Vertical)</option>
-                                <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
-
-
-                            </select>
-                        </td>
+                        <th style="width:30%"><b>Size:</b></th>
+                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024 (widthxheight)" pattern="^[1-9][0-9]{1,3}x[1-9][0-9]{1,3}$" style="min-width:200px;"></td>
                     </tr>
                     <tr>
                         <td colspan="2" style="text-align: center">

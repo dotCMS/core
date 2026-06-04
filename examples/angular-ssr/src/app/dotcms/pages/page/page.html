@@ -1,4 +1,6 @@
-@if (pageAsset()) {
+@if (error()) {
+  <app-error [status]="error()!.status" [heading]="error()!.heading" [body]="error()!.body" />
+} @else if (pageAsset()) {
   <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
 } @else {
   <app-loading />

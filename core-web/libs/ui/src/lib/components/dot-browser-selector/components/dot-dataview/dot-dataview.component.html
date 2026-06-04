@@ -10,7 +10,7 @@
     [rows]="rowsPerPage"
     selectionMode="single"
     dataKey="identifier"
-    [(selection)]="$selectedProduct"
+    [(selection)]="$selectedContent"
     [globalFilterFields]="['title', 'modUserName']"
     (onRowSelect)="onRowSelect.emit($event.data)"
     styleClass="flex flex-col h-full justify-between">

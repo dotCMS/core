@@ -1,6 +1,9 @@
 @let field = $field();
 
-<div class="border-none rounded-md">
+<div
+    [class.dot-wysiwyg-tinymce__container--error]="$hasError()"
+    [class.dot-wysiwyg-tinymce__container--focused]="$isFocused()"
+    class="dot-wysiwyg-tinymce__container">
     <editor
         [formControlName]="field.variable"
         [init]="$editorConfig()"
