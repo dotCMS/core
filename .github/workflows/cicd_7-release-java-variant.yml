@@ -24,7 +24,7 @@
 # Java version for the same release are prevented via concurrency groups.
 #
 # Configuration:
-# Set repository variables for automatic parallel builds:
+# Repository variables provide defaults when the dispatch inputs are left empty:
 #   RELEASE_JAVA_VARIANT_VERSION: Java version in SDKMAN format (e.g., 25.0.2-ms)
 #   RELEASE_JAVA_VARIANT_SUFFIX: Artifact suffix without separator (e.g., java-25-ms)
 #
@@ -45,7 +45,7 @@ on:
         required: true
         type: string
       java_version:
-        description: 'Java version to build (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use the RELEASE_JAVA_VARIANT_VERSION repository variable (same as push-triggered builds).'
+        description: 'Java version to build (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use the RELEASE_JAVA_VARIANT_VERSION repository variable.'
         required: false
         type: string
         default: ''
@@ -58,7 +58,10 @@ on:
 # Prevent duplicate runs for the same release branch AND Java version
 # Different Java versions can run in parallel, but duplicate builds of the same version are prevented
 concurrency:
-  group: release-java-variant-${{ github.ref_name }}-${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+  # Key on the release_branch input, not github.ref_name: with workflow_dispatch the
+  # ref is the branch the workflow was dispatched from (usually main), which would
+  # collapse all dispatches into one group and cancel in-flight builds for other releases.
+  group: release-java-variant-${{ inputs.release_branch }}-${{ inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
   cancel-in-progress: true
 
 jobs:
@@ -74,11 +77,8 @@ jobs:
       - name: Parse Version from Branch
         id: parse
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            branch="${{ inputs.release_branch }}"
-          else
-            branch="${{ github.ref_name }}"
-          fi
+          # workflow_dispatch is the only trigger; the release branch always comes from the input
+          branch="${{ inputs.release_branch }}"
 
           # Extract version from release-{version} branch name
           if [[ ! ${branch} =~ ^release- ]]; then
