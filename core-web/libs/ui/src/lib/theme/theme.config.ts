@@ -42,6 +42,20 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `
         },
+        chip: {
+            // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
+            // tall, vertically centered, with a small label. Applied to the base
+            // `.p-chip` so every chip (Content Status, locale, relationship, etc.)
+            // gets the size without per-template classes. PrimeNG has no chip size
+            // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
+            css: `
+                .p-chip {
+                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
+                    font-size: var(--text-xs); /* 0.75rem */
+                }
+            `
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
