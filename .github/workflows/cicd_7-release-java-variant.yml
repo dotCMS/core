@@ -24,17 +24,18 @@
 # Java version for the same release are prevented via concurrency groups.
 #
 # Configuration:
-# Repository variables provide defaults when the dispatch inputs are left empty:
-#   RELEASE_JAVA_VARIANT_VERSION: Java version in SDKMAN format (e.g., 25.0.2-ms)
-#   RELEASE_JAVA_VARIANT_SUFFIX: Artifact suffix without separator (e.g., java-25-ms)
+# There are NO repository-variable defaults. The default Java version lives in ONE
+# place: the release branch's .sdkmanrc (built by the primary release workflow).
+# Building a variant requires deliberately dispatching with a java_version that
+# differs from that default; the workflow fails fast otherwise.
 #
 
 name: '-7 Release Java Variant'
-run-name: "Release Java Variant - ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
+run-name: "Release Java Variant - ${{ inputs.release_branch }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
 
 on:
-  # This workflow is now manual-only and can be repurposed for other variants
-  # (e.g. a future java-11 build) via workflow_dispatch or repository variables.
+  # This workflow is manual-only and can be repurposed for other variants
+  # (e.g. a future java-29 build) by dispatching with an explicit java_version.
   workflow_dispatch:
     inputs:
       release_branch:
@@ -42,10 +43,9 @@ on:
         required: true
         type: string
       java_version:
-        description: 'Java version to build (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use the RELEASE_JAVA_VARIANT_VERSION repository variable.'
-        required: false
+        description: 'Java version to build (SDKMAN format, e.g., 21.0.8-ms). Must differ from the release branch .sdkmanrc default — the primary release image already covers the default.'
+        required: true
         type: string
-        default: ''
       artifact_suffix:
         description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
@@ -58,7 +58,7 @@ concurrency:
   # Key on the release_branch input, not github.ref_name: with workflow_dispatch the
   # ref is the branch the workflow was dispatched from (usually main), which would
   # collapse all dispatches into one group and cancel in-flight builds for other releases.
-  group: release-java-variant-${{ inputs.release_branch }}-${{ inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+  group: release-java-variant-${{ inputs.release_branch }}-${{ inputs.java_version }}
   cancel-in-progress: true
 
 jobs:
@@ -96,6 +96,31 @@ jobs:
           echo "Release tag: ${tag}"
           echo "Release branch: ${branch}"
 
+      # The default Java lives in ONE place: the release branch's .sdkmanrc, which the
+      # primary release already builds. A variant build must target something different —
+      # fail fast on an empty or same-as-default request rather than producing a
+      # redundant duplicate of the primary release image.
+      - name: Require Non-Default Java Version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAVA_VERSION: ${{ inputs.java_version }}
+        run: |
+          branch="${{ steps.parse.outputs.branch }}"
+
+          if [[ -z "${JAVA_VERSION}" ]]; then
+            echo "Error: java_version is required. The primary release already builds the .sdkmanrc default; variant builds must explicitly target a different Java version."
+            exit 1
+          fi
+
+          default_java=$(gh api "repos/${{ github.repository }}/contents/.sdkmanrc?ref=${branch}" --jq .content | base64 --decode | awk -F= '/^java=/ {print $2}')
+          echo "Default Java on ${branch} (.sdkmanrc): ${default_java}"
+          echo "Requested variant Java version:        ${JAVA_VERSION}"
+
+          if [[ "${JAVA_VERSION}" == "${default_java}" ]]; then
+            echo "Error: requested java_version (${JAVA_VERSION}) equals the ${branch} default — the primary release image already covers it. Nothing to build."
+            exit 1
+          fi
+
   # Initialize - standard initialization phase
   initialize:
     name: Initialize
@@ -116,8 +141,8 @@ jobs:
       validate: false
       version: ${{ needs.extract-version.outputs.version }}
       generate-docker: true
-      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
-      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ inputs.artifact_suffix }}
     permissions:
       contents: read
       packages: write
@@ -134,8 +159,8 @@ jobs:
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
       deploy-dev-image: true
-      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
-      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ inputs.artifact_suffix }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -158,8 +183,8 @@ jobs:
       upload_javadocs: false      # Skip - already done by primary release
       update_plugins: false        # Skip - already done by primary release
       update_github_labels: false  # Skip - already done by primary release
-      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
-      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ inputs.artifact_suffix }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
