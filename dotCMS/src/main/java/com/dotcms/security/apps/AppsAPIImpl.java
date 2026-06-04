@@ -842,8 +842,10 @@ public class AppsAPIImpl implements AppsAPI {
     private boolean isRequiredWithNoDefaultValue(final ParamDescriptor descriptor, final Secret secret ){
         //Verify we have a param marked required and no default Value
         final boolean isRequiredWithNoDefaultParam = (descriptor.isRequired() && isEmpty(descriptor.getValue()));
-        //Verify the secret is empty
-        final boolean isSecretWithEmptyValue = (null == secret || isNotSet(secret.getValue()));
+        //Verify the secret is empty. An env-locked (tier-1) value lives in envVarValue, not value, so
+        // honor hasEnvVarValue() — otherwise an env-provisioned required param is wrongly flagged missing.
+        final boolean isSecretWithEmptyValue =
+                (null == secret || (!secret.hasEnvVarValue() && isNotSet(secret.getValue())));
         return isRequiredWithNoDefaultParam && isSecretWithEmptyValue;
     }
 
