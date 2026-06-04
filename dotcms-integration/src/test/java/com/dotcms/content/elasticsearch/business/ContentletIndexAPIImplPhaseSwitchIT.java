@@ -33,18 +33,24 @@ import org.junit.runner.RunWith;
  * Phase-by-phase contract tests for {@link ContentletIndexAPIImpl#getCurrentIndex()}.
  *
  * <h2>Contract under test</h2>
+ * <p>{@code getCurrentIndex()} is a <strong>display/status</strong> getter (it drives the
+ * "active" flag in the maintenance UI and the index status endpoints), <em>not</em> the read
+ * path. Per product decision it reports the ES pointers until the migration is complete:</p>
  * <ul>
- *   <li><strong>Phases 0 &amp; 1</strong> — {@code getCurrentIndex()} reads the active working
+ *   <li><strong>Phases 0, 1 &amp; 2</strong> — {@code getCurrentIndex()} reads the active working
  *       and live slot from {@code legacyIndiciesAPI} (ES pointer store) and strips the cluster
- *       prefix. OS pointers are irrelevant.</li>
- *   <li><strong>Phases 2 &amp; 3</strong> — {@code getCurrentIndex()} reads from
- *       {@code versionedIndicesAPI} (OS pointer store). ES pointers are irrelevant.</li>
+ *       prefix. Even though OS serves reads in Phase&nbsp;2, these status getters keep reporting
+ *       ES so the dashboard's "active" flag stays aligned with the indices it shows (OS indices
+ *       are hidden before Phase&nbsp;3). OS pointers are irrelevant here.</li>
+ *   <li><strong>Phase 3</strong> — {@code getCurrentIndex()} reads from
+ *       {@code versionedIndicesAPI} (OS pointer store). ES is decommissioned.</li>
  * </ul>
  *
  * <h2>Full initialization cycle</h2>
  * <p>One test walks the complete ES→OS migration path: activates ES indices in Phase 0 then
  * follows the phase progression through 1→2→3, verifying at each step that
- * {@code getCurrentIndex()} returns the indices that belong to the current read provider.</p>
+ * {@code getCurrentIndex()} reports the indices the maintenance UI marks active (ES through
+ * Phase&nbsp;2, then OS in Phase&nbsp;3).</p>
  *
  * <h2>Run command</h2>
  * <pre>
@@ -202,18 +208,20 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
     }
 
     // =========================================================================
-    // getCurrentIndex — Phase 2 (dual-write, OS reads)
+    // getCurrentIndex — Phase 2 (dual-write, OS reads — but display still reports ES)
     // =========================================================================
 
     /**
      * Given: Phase 2 (dual-write, OS reads). ES is pointed at ES_WORKING / ES_LIVE.
      *        OS is pointed at OS_WORKING / OS_LIVE (separate names — catchup scenario).
      * When:  getCurrentIndex() is called.
-     * Then:  Returns [OS_WORKING, OS_LIVE] — Phase 2 reads are served by OS.
-     *        ES pointers are unchanged but irrelevant to getCurrentIndex in this phase.
+     * Then:  Returns [ES_WORKING, ES_LIVE]. Although Phase 2 routes <em>reads</em> to OS, the
+     *        status getters keep reporting ES until the migration completes (Phase 3), so the
+     *        maintenance dashboard's "active" flag stays aligned with the visible ES indices.
+     *        The OS pointers exist in the DB but must NOT appear here.
      */
     @Test
-    public void test_getCurrentIndex_phase2_returnsOsPointers() throws DotDataException {
+    public void test_getCurrentIndex_phase2_returnsEsPointers() throws DotDataException {
         // Point ES DB independently
         setPhase(0);
         contentletIndexAPI().activateIndex(ES_WORKING);
@@ -226,14 +234,17 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
 
         final List<String> current = contentletIndexAPI().getCurrentIndex();
 
-        assertTrue("working slot must be the OS index (Phase 2 reads from OS)",
+        assertTrue("working slot must stay the ES index (Phase 2 display reports ES)",
+                current.contains(ES_WORKING));
+        assertTrue("live slot must stay the ES index (Phase 2 display reports ES)",
+                current.contains(ES_LIVE));
+        assertFalse("OS working must NOT be returned in Phase 2 display",
                 current.contains(OS_WORKING_TAGGED));
-        assertTrue("live slot must be the OS index (Phase 2 reads from OS)",
+        assertFalse("OS live must NOT be returned in Phase 2 display",
                 current.contains(OS_LIVE_TAGGED));
-        assertFalse("ES working must NOT be returned in Phase 2", current.contains(ES_WORKING));
-        assertFalse("ES live must NOT be returned in Phase 2",    current.contains(ES_LIVE));
 
-        Logger.info(this, "✅ getCurrentIndex Phase 2 — OS pointers returned: " + current);
+        Logger.info(this, "✅ getCurrentIndex Phase 2 — ES pointers reported (OS serves reads): "
+                + current);
     }
 
     // =========================================================================
@@ -275,8 +286,9 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
      * <pre>
      * Phase 0: activate ES_WORKING + ES_LIVE → getCurrentIndex returns [ES_WORKING, ES_LIVE]
      * Phase 1: same ES pointers, OS DB independent → getCurrentIndex still returns ES names
-     * Phase 2: OS DB switched to OS_WORKING + OS_LIVE → getCurrentIndex returns OS names
-     * Phase 3: ES decommissioned, OS pointers unchanged → getCurrentIndex still returns OS names
+     * Phase 2: OS DB set to OS_WORKING + OS_LIVE → getCurrentIndex STILL returns ES names
+     *          (display reports ES until migration completes, even though OS serves reads)
+     * Phase 3: ES decommissioned, OS pointers unchanged → getCurrentIndex returns OS names
      * </pre>
      *
      * <p>This is the canonical "happy path" of the migration — no rollback, no errors.</p>
@@ -311,16 +323,16 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
                 current.contains(OS_WORKING_TAGGED));
         Logger.info(this, "Phase 1 ✅ getCurrentIndex: " + current);
 
-        // ── Phase 2: reads switch to OS ───────────────────────────────────────
+        // ── Phase 2: reads switch to OS, but the display getter still reports ES ──
         setPhase(2);
 
         current = contentletIndexAPI().getCurrentIndex();
-        assertTrue("Phase 2: working slot must be OS index (reads switched to OS)",
-                current.contains(OS_WORKING_TAGGED));
-        assertTrue("Phase 2: live slot must be OS index (reads switched to OS)",
-                current.contains(OS_LIVE_TAGGED));
-        assertFalse("Phase 2: ES working must NOT appear (reads are now served by OS)",
+        assertTrue("Phase 2: working slot must still be ES index (display reports ES)",
                 current.contains(ES_WORKING));
+        assertTrue("Phase 2: live slot must still be ES index (display reports ES)",
+                current.contains(ES_LIVE));
+        assertFalse("Phase 2: OS working must NOT appear in the display getter",
+                current.contains(OS_WORKING_TAGGED));
         Logger.info(this, "Phase 2 ✅ getCurrentIndex: " + current);
 
         // ── Phase 3: ES decommissioned, OS remains primary ────────────────────
@@ -368,45 +380,36 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
     }
 
     /**
-     * Given: Phase 2. The OS store has no record yet (versionedIndicesAPI returns empty).
+     * Given: Phase 2, ES pointers set. The OS store is whatever the environment left it —
+     *        this test deliberately does NOT point it.
      * When:  getCurrentIndex() is called.
-     * Then:  Returns an empty list — no NPE, no fallback to ES.
-     *
-     * <p>This documents the Phase 2 contract: if OS pointers are missing and the phase
-     * already switched to OS reads, the result is empty rather than silently falling back
-     * to ES. The operator must ensure OS pointers are set before transitioning to Phase 2.</p>
+     * Then:  Returns the ES pointers regardless of OS store state. Because the Phase 2 display
+     *        contract reads the ES store (see {@code ContentletIndexAPIImpl#displayUsesOsStore}),
+     *        the OS store is never consulted here — there is no NPE and no dependency on OS
+     *        pointers being present, even though OS already serves reads in Phase 2.
      */
     @Test
-    public void test_getCurrentIndex_phase2_noOsRecord_returnsEmpty()
+    public void test_getCurrentIndex_phase2_reportsEsRegardlessOfOsStore()
             throws DotDataException {
-        // Ensure OS store is empty by saving a record then removing it via the
-        // save mechanism (there is no explicit "delete" — we use a known state
-        // from setUp where we haven't pointed the OS store yet for this test).
         setPhase(0);
         contentletIndexAPI().activateIndex(ES_WORKING);
         contentletIndexAPI().activateIndex(ES_LIVE);
 
-        // Do NOT call pointOsDirectly — leave the OS store in whatever state setUp left it.
-        // Restore the OS store to the saved state (may be empty on a fresh environment).
-        if (savedOsIndices.isEmpty()) {
-            // Wipe any OS record that setUp or previous tests may have left.
-            // VersionedIndicesAPI.deleteAll() is not available, so we rely on
-            // the fact that setUp restores from savedOsIndices in @After.
-            // For this test, directly clear by saving the pre-test snapshot (empty).
-            // If savedOsIndices was empty before setUp, the OS store is now empty.
-        }
-        // Re-apply saved (pre-test) OS state to guarantee a clean OS store.
-        // If the environment has OS indices from a previous test run, clear them.
-        clearOsPointers();
-
+        // Intentionally do NOT point the OS store: the Phase 2 display getter must report ES
+        // independently of whatever the OS store contains (set, empty, or stale).
         setPhase(2);
 
         final List<String> current = contentletIndexAPI().getCurrentIndex();
 
-        assertTrue("Empty OS store in Phase 2 must return empty list, not throw",
-                current.isEmpty());
+        assertTrue("Phase 2 display must report the ES working slot regardless of OS store",
+                current.contains(ES_WORKING));
+        assertTrue("Phase 2 display must report the ES live slot regardless of OS store",
+                current.contains(ES_LIVE));
+        assertFalse("Phase 2 display must not contain empty/null entries",
+                current.contains("") || current.contains(null));
 
-        Logger.info(this, "✅ getCurrentIndex Phase 2 no-OS-record — returns empty: " + current);
+        Logger.info(this, "✅ getCurrentIndex Phase 2 — reports ES regardless of OS store: "
+                + current);
     }
 
     // =========================================================================
@@ -445,18 +448,6 @@ public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
            .onFailure(e -> {
                throw new RuntimeException("pointOsDirectly failed: " + e.getMessage(), e);
            });
-    }
-
-    /**
-     * Clears the OS versioned-indices store by reverting it to the pre-test snapshot.
-     * If the pre-test snapshot was absent (fresh environment), this is a no-op.
-     */
-    private void clearOsPointers() {
-        if (savedOsIndices.isPresent()) {
-            Try.run(() -> APILocator.getVersionedIndicesAPI().saveIndices(savedOsIndices.get()))
-               .onFailure(e -> Logger.warn(this,
-                       "clearOsPointers: could not restore saved OS state: " + e.getMessage()));
-        }
     }
 
     private void cleanupTestIndices() {

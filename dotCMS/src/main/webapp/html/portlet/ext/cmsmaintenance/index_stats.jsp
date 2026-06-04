@@ -14,9 +14,7 @@
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@ page import="com.dotcms.content.index.domain.IndexStats" %>
-<%@page import="com.dotcms.content.index.IndexTag"%>
-<%@page import="com.dotcms.content.index.IndexConfigHelper.MigrationPhase"%>
-<%@page import="java.util.ArrayList"%>
+<%@ page import="com.dotcms.content.index.MigrationIndexVisibility" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -47,22 +45,10 @@ try {
 List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
-List<String> indices=idxApi.listDotCMSIndices();
-List<String> closedIndices=idxApi.listDotCMSClosedIndices();
-
-// Hide OS-tagged (.os) indices unless we are in Phase 3 (OS-only). Outside Phase 3 the .os
-// tag is a migration/uniqueness artifact and the operator should only see the active ES set;
-// in Phase 3, OS is the live store so its indices must be visible. Detection goes through
-// IndexTag (never name.endsWith(".os")) per docs/backend/OPENSEARCH_MIGRATION.md.
-if (!MigrationPhase.current().isMigrationComplete()) {
-	List<String> visibleIndices = new ArrayList<>();
-	for (String idxName : indices) { if (!IndexTag.OS.isTagged(idxName)) { visibleIndices.add(idxName); } }
-	indices = visibleIndices;
-	List<String> visibleClosed = new ArrayList<>();
-	for (String idxName : closedIndices) { if (!IndexTag.OS.isTagged(idxName)) { visibleClosed.add(idxName); } }
-	closedIndices = visibleClosed;
-}
-
+// Hide OS-tagged (.os) migration indices outside Phase 3 unless the user holds the configured
+// QA/preview role. Only this display sink filters; operational paths keep the full set.
+List<String> indices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices(), user);
+List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices(), user);
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");

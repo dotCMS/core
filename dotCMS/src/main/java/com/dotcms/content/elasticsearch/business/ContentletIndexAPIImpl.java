@@ -2694,11 +2694,32 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return operations.getIndexDocumentCount(operations.toPhysicalName(indexName));
     }
 
+    /**
+     * Whether the status/display getters ({@link #getCurrentIndex()}, {@link #getNewIndex()}
+     * and {@link #getActiveIndexName(String)}) report indices from the OS store.
+     *
+     * <p><strong>This is a display contract, not the read path.</strong> The actual read
+     * routing ({@code router.readProvider()}) switches to OS in Phase&nbsp;2; these getters
+     * only drive what the maintenance dashboard marks as <em>active</em>/<em>building</em> and
+     * what the index REST/AJAX status endpoints report. Per product decision they keep
+     * reporting the ES pointers until the migration is complete (Phase&nbsp;3), even though OS
+     * already serves reads in Phase&nbsp;2.</p>
+     *
+     * <p>This keeps the dashboard's flags aligned with the indices it actually shows:
+     * {@code MigrationIndexVisibility} hides {@code .os} indices before Phase&nbsp;3, so marking
+     * an OS index "active" in Phase&nbsp;2 would point at a row the operator cannot see. <strong>Do
+     * not change this back to {@code isReadEnabled()} to "match" the read provider</strong> — the
+     * divergence between display and read path in Phase&nbsp;2 is intentional.</p>
+     */
+    private boolean displayUsesOsStore() {
+        return isMigrationComplete();
+    }
+
     public synchronized List<String> getCurrentIndex() throws DotDataException {
 
         final LinkedHashSet<String> result = new LinkedHashSet<>();
 
-        if (isReadEnabled() || isMigrationComplete()) {
+        if (displayUsesOsStore()) {
             versionedIndicesAPI.loadDefaultVersionedIndices().ifPresent(vi -> {
                 vi.working().map(indexAPI::removeClusterIdFromName).ifPresent(result::add);
                 vi.live().map(indexAPI::removeClusterIdFromName).ifPresent(result::add);
@@ -2717,14 +2738,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public synchronized List<String> getNewIndex() throws DotDataException {
         final LinkedHashSet<String> result = new LinkedHashSet<>();
 
-        if (isReadEnabled() || isMigrationComplete()) {
-            // Phase 2+: OS is the read provider — return OS reindex slots.
+        if (displayUsesOsStore()) {
+            // Phase 3: report OS reindex slots (see displayUsesOsStore).
             versionedIndicesAPI.loadDefaultVersionedIndices().ifPresent(vi -> {
                 vi.reindexWorking().map(indexAPI::removeClusterIdFromName).ifPresent(result::add);
                 vi.reindexLive().map(indexAPI::removeClusterIdFromName).ifPresent(result::add);
             });
         } else {
-            // Phase 0/1: ES is the read provider.
+            // Phases 0/1/2: report ES reindex slots for display.
             final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
             Optional.ofNullable(info.getReindexWorking())
                     .map(indexAPI::removeClusterIdFromName).ifPresent(result::add);
@@ -2736,8 +2757,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public String getActiveIndexName(final String type) throws DotDataException {
-        if (isReadEnabled() || isMigrationComplete()) {
-            // Phase 2+: resolve from the OS store.
+        if (displayUsesOsStore()) {
+            // Phase 3: resolve from the OS store (see displayUsesOsStore).
             final Optional<VersionedIndices> vi =
                     versionedIndicesAPI.loadDefaultVersionedIndices();
             if (IndexType.WORKING.is(type)) {
@@ -2748,7 +2769,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         .map(indexAPI::removeClusterIdFromName).orElse(null);
             }
         } else {
-            // Phase 0/1: resolve from the ES store.
+            // Phases 0/1/2: resolve from the ES store for display.
             final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
             if (IndexType.WORKING.is(type)) {
                 return indexAPI.removeClusterIdFromName(info.getWorking());
