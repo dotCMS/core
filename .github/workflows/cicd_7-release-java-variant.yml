@@ -127,17 +127,8 @@ jobs:
             exit 1
           fi
 
-          # tr strips any \r from a CRLF-committed .sdkmanrc (no global text=auto in
-          # .gitattributes), which would otherwise make the equality guard fail open.
-          if ! sdkmanrc=$(gh api "repos/${{ github.repository }}/contents/.sdkmanrc?ref=${branch}" --jq .content 2>/dev/null); then
-            echo "Error: could not read .sdkmanrc from '${branch}' — does the release branch exist?"
-            exit 1
-          fi
-          default_java=$(base64 --decode <<<"${sdkmanrc}" | tr -d '\r' | awk -F= '/^java=/ {print $2}')
-          if [[ -z "${default_java}" ]]; then
-            echo "Error: no 'java=' entry found in .sdkmanrc on '${branch}'."
-            exit 1
-          fi
+          # tr -d '\r' guards against a CRLF-committed .sdkmanrc making the equality check fail open
+          default_java=$(gh api "repos/${{ github.repository }}/contents/.sdkmanrc?ref=${branch}" --jq .content | base64 --decode | tr -d '\r' | awk -F= '/^java=/ {print $2}')
           echo "Default Java on ${branch} (.sdkmanrc): ${default_java}"
           echo "Requested variant Java version:        ${JAVA_VERSION}"
 
