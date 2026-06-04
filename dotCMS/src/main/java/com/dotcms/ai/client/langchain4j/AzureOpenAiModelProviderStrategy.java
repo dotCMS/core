@@ -79,7 +79,8 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .isMicrosoftFoundry(true)
                 .baseUrl(config.endpoint())
                 .apiKey(config.apiKey())
-                .microsoftFoundryDeploymentName(deploymentName(config));
+                .microsoftFoundryDeploymentName(deploymentName(config))
+                .modelName(deploymentName(config));
         if (config.apiVersion() != null) {
             builder.azureOpenAIServiceVersion(AzureOpenAIServiceVersion.Companion.fromString(config.apiVersion()));
         }
