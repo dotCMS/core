@@ -3,12 +3,44 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational --enable-preview "}
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
+export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:+UseG1GC -XX:MaxRAMPercentage=68.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -XX:NativeMemoryTracking=summary -Djdk.nio.maxCachedBufferSize=262144"}
+
+# Cap direct (off-heap) buffer memory so a runaway throws a catchable
+# OutOfMemoryError ("Direct buffer memory", with a stack trace) instead of silently
+# growing RSS until the kernel OOM-kills the container.
+# There is no percentage flag for direct memory, so derive an absolute value from the
+# container's cgroup memory limit (DOT_DIRECT_MEM_PCT% clamped to [MIN_MB, MAX_MB]).
+# Defaults are intentionally generous (won't false-trip under normal load); tighten from
+# observed NMT high-water marks. Override JAVA_OPTS_DIRECT (or set it to "") to bypass.
+if [ -z "${JAVA_OPTS_DIRECT+set}" ]; then
+  _cg_limit=""
+  if [ -r /sys/fs/cgroup/memory.max ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)                   # cgroup v2
+  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null) # cgroup v1
+  fi
+  # Treat missing / "max" / non-numeric / > 256GB (i.e. no real limit) as unbounded.
+  if [ -z "$_cg_limit" ] || [ "$_cg_limit" = "max" ] \
+     || [ -n "$(printf '%s' "$_cg_limit" | tr -d '0-9')" ] \
+     || { [ "$_cg_limit" -gt 274877906944 ] 2>/dev/null; }; then
+    JAVA_OPTS_DIRECT=""
+  else
+    _pct=${DOT_DIRECT_MEM_PCT:-20}
+    _min=${DOT_DIRECT_MEM_MIN_MB:-512}
+    _max=${DOT_DIRECT_MEM_MAX_MB:-4096}
+    _mb=$(( _cg_limit / 1048576 * _pct / 100 ))
+    [ "$_mb" -lt "$_min" ] && _mb=$_min
+    [ "$_mb" -gt "$_max" ] && _mb=$_max
+    JAVA_OPTS_DIRECT="-XX:MaxDirectMemorySize=${_mb}m"
+    echo "setenv: ${JAVA_OPTS_DIRECT} (${_pct}% of $(( _cg_limit / 1048576 ))MB cgroup limit; override via DOT_DIRECT_MEM_PCT / DOT_DIRECT_MEM_MIN_MB / DOT_DIRECT_MEM_MAX_MB / JAVA_OPTS_DIRECT)"
+  fi
+  export JAVA_OPTS_DIRECT
+fi
 
 # $CMS_JAVA_OPTS is last so it trumps them all
-export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
+export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $JAVA_OPTS_DIRECT $CMS_JAVA_OPTS"}
 
 # Asset and Internal Paths
 export DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:-"/data/shared/assets"}
@@ -112,8 +144,22 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
 
 # Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
-# jaz is a transparent shim that invokes `java` from PATH, adding crash-dump
-# capture and arg validation. Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
+# jaz can auto-tune heap sizing and GC from the container's cgroup limits, BUT only when
+# it detects NO user-supplied tuning flags; ANY -X/-XX flag (except diagnostics like
+# -Xlog/-XX:ErrorFile/-XX:*HeapDump*/-XX:*OnOutOfMemoryError) makes jaz tune nothing and
+# just launch java with the user's flags.
+#
+# We deliberately tune manually here: we want -XX:+UseCompactObjectHeaders (JEP 519, ~5-15%
+# heap savings) which jaz does NOT set, and jaz bundled in this image flags JDK 25 as
+# "not certified" so it applies only generic tuning anyway (verified via JAZ_DRY_RUN: G1 +
+# computed -Xmx + heap-free ratios, no compact headers). So the -XX flags above intentionally
+# put jaz in hands-off mode; jaz still provides crash-dump capture and graceful signal
+# forwarding. Heap is therefore sized explicitly via -XX:MaxRAMPercentage above.
+# (--enable-preview and -D/--add-opens are NOT tuning flags and never affect jaz.)
+# Inspect what jaz would inject: JAZ_DRY_RUN=1.  Force jaz to override user flags:
+# JAZ_IGNORE_USER_TUNING=1 (note: that drops our compact-headers flag).
+# Docs: https://learn.microsoft.com/java/jaz/faq
+# Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
 # Set _RUNJAVA=/java/bin/java to bypass jaz.
 if [ -z "$_RUNJAVA" ] && command -v jaz >/dev/null 2>&1; then
   export _RUNJAVA="$(command -v jaz)"

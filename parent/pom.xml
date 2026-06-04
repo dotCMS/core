@@ -798,6 +798,7 @@
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
                             --enable-preview
+                            -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 
@@ -951,6 +952,7 @@
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
                             --enable-preview
+                            -XX:+UseCompactObjectHeaders
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 
