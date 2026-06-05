@@ -39,10 +39,19 @@ import java.util.List;
  * <p>AWS Bedrock:
  * <ul>
  *   <li>{@code region}</li>
- *   <li>{@code accessKeyId}</li>
+ *   <li>{@code accessKeyId} – set together with {@code secretAccessKey}, or omit both to use the
+ *       AWS default credential chain (env, profile, container/EKS IRSA)</li>
  *   <li>{@code secretAccessKey}</li>
  *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
+ *   <li>{@code timeout} and {@code maxRetries} (common fields above) apply to the Bedrock runtime
+ *       clients: {@code timeout} as the per-request {@code apiCallTimeout};
+ *       {@code maxRetries} as the SDK retry-strategy {@code maxAttempts} (= {@code maxRetries + 1})</li>
  * </ul>
+ *
+ * <p>Bedrock {@code model} ID forms: use an inference-profile prefix ({@code us.}, {@code eu.},
+ * {@code apac.}) for models offered only via cross-region inference profiles
+ * (e.g. {@code us.deepseek.r1-v1:0}); use the bare ID for on-demand models
+ * (e.g. {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}).
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
  * <ul>
