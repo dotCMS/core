@@ -19,6 +19,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -740,8 +741,20 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     /**
      * Given scenario: an inactive (not registered in the OS default versioned set) live/working
      * set exists, alongside whatever the cluster considers active.
-     * Expected: {@code deleteInactiveLiveWorkingIndices(0)} deletes the inactive set, while the
-     * active set returned by {@link VersionedIndicesAPI#loadDefaultVersionedIndices()} is preserved.
+     * Expected: {@code deleteInactiveLiveWorkingIndices(0)} deletes the inactive set, while any
+     * genuinely-present active index registered in {@link VersionedIndicesAPI#loadDefaultVersionedIndices()}
+     * is preserved.
+     *
+     * <p>Preservation is asserted only for active names that actually resolve via
+     * {@link OSIndexAPIImpl#indexExists} <em>before</em> the cleanup. The ambient default can point
+     * at a name that does not belong to the current cluster — e.g. a foreign cluster prefix
+     * ({@code cluster_default.*} from a different/bootstrap cluster id) or a site-search index
+     * ({@code live_search_*}). Such names neither round-trip through {@code removeClusterIdFromName}
+     * (so the production preserve logic cannot protect them — tracked separately as a latent
+     * hardening item) nor resolve through {@code indexExists}, so asserting on them made this test
+     * non-deterministic across environments. Scoping the assertion to verifiably-present names keeps
+     * it deterministic while still catching a real regression when a current-cluster active index
+     * is wrongly deleted.</p>
      */
     @Test
     public void test_deleteInactiveLiveWorkingIndices_shouldDeleteInactiveAndPreserveActive()
@@ -754,7 +767,14 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
             assertTrue(osIndexAPI.indexExists(oldLive));
             assertTrue(osIndexAPI.indexExists(oldWorking));
 
+            // Snapshot the active names that genuinely exist now — only these can be meaningfully
+            // asserted as "preserved" after the cleanup (see method javadoc).
             final Optional<VersionedIndices> active = versionedIndicesAPI.loadDefaultVersionedIndices();
+            final List<String> protectable = new ArrayList<>();
+            active.ifPresent(versioned -> {
+                versioned.live().filter(osIndexAPI::indexExists).ifPresent(protectable::add);
+                versioned.working().filter(osIndexAPI::indexExists).ifPresent(protectable::add);
+            });
 
             // keep 0 inactive sets -> every set except the active default becomes eligible.
             osIndexAPI.deleteInactiveLiveWorkingIndices(0);
@@ -762,14 +782,13 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
             assertFalse("inactive live index must be deleted", osIndexAPI.indexExists(oldLive));
             assertFalse("inactive working index must be deleted", osIndexAPI.indexExists(oldWorking));
 
-            // The active set (if any is registered) must survive the cleanup.
-            active.flatMap(VersionedIndices::live).ifPresent(name ->
-                    assertTrue("active live index must be preserved: " + name,
-                            osIndexAPI.indexExists(name)));
-            active.flatMap(VersionedIndices::working).ifPresent(name ->
-                    assertTrue("active working index must be preserved: " + name,
-                            osIndexAPI.indexExists(name)));
-            Logger.info(this, "✅ test_deleteInactiveLiveWorkingIndices_shouldDeleteInactiveAndPreserveActive passed");
+            // A current-cluster active index that existed before the cleanup must survive it.
+            for (final String activeName : protectable) {
+                assertTrue("active index present before cleanup must be preserved: " + activeName,
+                        osIndexAPI.indexExists(activeName));
+            }
+            Logger.info(this, "✅ test_deleteInactiveLiveWorkingIndices_shouldDeleteInactiveAndPreserveActive passed"
+                    + " (asserted preservation of " + protectable.size() + " active index/indices)");
         } finally {
             safeDelete(oldLive, oldWorking);
         }
