@@ -21,6 +21,13 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.*;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.EndpointFailureDetail;
+import com.dotcms.system.event.local.type.pushpublish.FailureCategory;
+import com.dotcms.system.event.local.type.staticpublish.AllStaticPublishEndpointsFailureEvent;
+import com.dotcms.system.event.local.type.staticpublish.AllStaticPublishEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.staticpublish.SingleStaticPublishEndpointFailureEvent;
+import com.dotcms.system.event.local.type.staticpublish.SingleStaticPublishEndpointSuccessEvent;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -74,6 +81,7 @@ public class AWSS3Publisher extends Publisher {
     private final S3VanityAliasService vanityAliasService;
     private final ContentletAPI contentletAPI;
     private final LanguageAPI languageAPI;
+    private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 
     /**
      * Class constructor.
@@ -260,6 +268,7 @@ public class AWSS3Publisher extends Publisher {
             //Increment numTries
             currentStatusHistory.addNumTries();
             int failedEnvironmentCounter = 0;
+            final List<EndpointFailureDetail> failureDetails = new ArrayList<>();
 
             for (Environment environment : environments) {
                 List<PublishingEndPoint> allEndpoints = this.publisherEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
@@ -312,6 +321,7 @@ public class AWSS3Publisher extends Publisher {
 					AWSS3EndPointPublisher endPointPublisher = getAWSS3EndPointPublisher(tokenProp,
                             secretProp, wsEndpoint, bucketRegion);
                     EndpointDetail detail = new EndpointDetail();
+                    EndpointFailureDetail endpointFailureDetail = null;
 
                     try {
                         endPointPublisher.checkConnectSuccessfully(bucketValidationName);
@@ -319,6 +329,7 @@ public class AWSS3Publisher extends Publisher {
                         String error = updateStatusFailedToSend(currentStatusHistory, environment, endpoint, detail);
                         failedEnvironment |= true;
                         Logger.error(this.getClass(), error);
+                        endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.CONNECTION_ERROR, e);
                     }
 
                     try {
@@ -382,6 +393,9 @@ public class AWSS3Publisher extends Publisher {
                                             String error = updateStatusFailedToSend(currentStatusHistory, environment, endpoint, detail);
                                             failedEnvironment |= true;
                                             Logger.error(this.getClass(), error, e);
+                                            if (endpointFailureDetail == null) {
+                                                endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
+                                            }
                                         }
                                     }
                                     publishVanityAliasesForCanonicalFilesIfEnabled(endPointPublisher, endpoint,
@@ -405,6 +419,9 @@ public class AWSS3Publisher extends Publisher {
                         String error = 	"An error occurred for the endpoint "+ endpoint.getId() + " with address "+ endpoint.getAddress() + ".  Error: " + e.getMessage();
                         detail.setInfo(error);
                         failedEnvironment |= true;
+                        if (endpointFailureDetail == null) {
+                            endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, e);
+                        }
 
                         Logger.error(this.getClass(), error, e);
                         PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish bundle");
@@ -423,6 +440,17 @@ public class AWSS3Publisher extends Publisher {
                     if (isHistoryEmpty || failedEnvironment) {
                         currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
                     }
+
+                    if (detail.getStatus() == PublishAuditStatus.Status.SUCCESS.getCode()) {
+                        localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointSuccessEvent(config, endpoint));
+                    } else {
+                        if (endpointFailureDetail == null) {
+                            endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, null);
+                        }
+                        failureDetails.add(endpointFailureDetail);
+                        localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointFailureEvent(
+                                config.getAssets(), Collections.singletonList(endpointFailureDetail)));
+                    }
                 }
                 if(failedEnvironment) {
                     failedEnvironmentCounter++;
@@ -433,11 +461,14 @@ public class AWSS3Publisher extends Publisher {
                 //Updating Audit table
                 PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
                 this.publishAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
+                localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsSuccessEvent(config));
             } else {
                 if(failedEnvironmentCounter == environments.size()) {
                     this.publishAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
+                    localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsFailureEvent(config.getAssets(), failureDetails));
                 } else {
                     this.publishAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+                    localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointFailureEvent(config.getAssets(), failureDetails));
                 }
             }
 
@@ -455,6 +486,28 @@ public class AWSS3Publisher extends Publisher {
 
         return config;
     } // process.
+
+    private EndpointFailureDetail buildFailureDetail(
+            final Environment environment,
+            final PublishingEndPoint endpoint,
+            final EndpointDetail detail,
+            final FailureCategory category,
+            final Throwable throwable) {
+        final PublishAuditStatus.Status auditStatus =
+                PublishAuditStatus.getStatusObjectByCode(detail.getStatus());
+        return EndpointFailureDetail.builder()
+                .endpointId(endpoint.getId())
+                .endpointName(endpoint.getServerName() != null ? endpoint.getServerName().toString() : null)
+                .address(endpoint.getAddress())
+                .environmentId(environment.getId())
+                .environmentName(environment.getName())
+                .failureCategory(category)
+                .auditStatus(auditStatus)
+                .httpStatusCode(null)
+                .message(detail.getInfo())
+                .exceptionClass(throwable != null ? throwable.getClass().getName() : null)
+                .build();
+    }
 
     @NotNull
     private String updateStatusFailedToSend(PublishAuditHistory currentStatusHistory, Environment environment, PublishingEndPoint endpoint, EndpointDetail detail) throws DotDataException {
