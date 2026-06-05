@@ -284,6 +284,32 @@
                                             (onClick)="toggleOptionImageURL(i)" />
                                     }
                                     <p-button
+                                        data-testid="move-option-up-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-chevron-up"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.move.up.title'
+                                                | dm
+                                        "
+                                        [disabled]="i === 0"
+                                        (onClick)="moveOptionUp(i)" />
+                                    <p-button
+                                        data-testid="move-option-down-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-chevron-down"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.move.down.title'
+                                                | dm
+                                        "
+                                        [disabled]="i === $options().length - 1"
+                                        (onClick)="moveOptionDown(i)" />
+                                    <p-button
                                         data-testid="remove-option-btn"
                                         class="invisible group-hover/option:visible"
                                         icon="pi pi-times"

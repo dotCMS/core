@@ -30,7 +30,7 @@ import { StyleEditorFieldSchema, StyleEditorFormSchema } from '@dotcms/types/int
 import { DotMessagePipe } from '@dotcms/ui';
 import { StyleEditorField, defineStyleEditorSchema, styleEditorField } from '@dotcms/uve/internal';
 
-import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
+import { DotStyleEditorSectionComponent } from './components/dot-style-editor-section/dot-style-editor-section.component';
 import {
     BuilderField,
     BuilderOption,
