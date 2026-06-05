@@ -6,26 +6,22 @@ import { DotUiColorsService } from '@dotcms/data-access';
 /**
  * Custom Lara preset for dotCMS
  *
- * The primary color palette is generated from DEFAULT_COLORS.primary (#426BF0)
- * using the same logic as DotUiColorsService. This ensures consistency between:
- * - Initial theme configuration (this file)
- * - Runtime color updates (DotUiColorsService)
+ * The primary palette is generated from DEFAULT_COLORS.primary (#426BF0) via the same
+ * PrimeNG palette() generator DotUiColorsService uses, keeping this initial preset and
+ * runtime updates (updatePrimaryPalette) in sync.
  *
- * When colors are loaded from the server, DotUiColorsService.updatePrimeNGColors()
- * will dynamically update the palette using updatePrimaryPalette().
+ * Brand secondary is intentionally absent here. PrimeNG models a single accent (primary)
+ * plus neutral surfaces and has no second-accent slot, so the dotCMS secondary brand color
+ * lives only in the legacy --color-palette-secondary-* CSS vars (set at runtime by
+ * DotUiColorsService, consumed by Angular components and the JSP/Dojo iframe).
+ * Note: severity="secondary" is unrelated — it is PrimeNG's neutral/gray variant, not a brand color.
  *
- * Note: Secondary color is NOT defined here in semantic tokens because PrimeNG doesn't
- * support dynamic updates for secondary semantic tokens (only primary can be updated at runtime).
- * Components using severity="secondary" will use the default Lara preset value.
- *
- * However, secondary color IS updated dynamically via CSS variables (--color-palette-secondary-*)
- * which are used by Angular components and custom PrimeNG styles that reference CSS variables.
+ * Future direction: register secondary as a custom token group via the preset's `extend`
+ * option to get engine-managed --p-secondary-* tokens. See issue #35869.
  */
 export const CustomLaraPreset = definePreset(Lara, {
     semantic: {
         primary: DotUiColorsService.getDefaultPrimeNGPalette()
-        // Secondary could be added here, but it wouldn't be updatable at runtime
-        // secondary: DotUiColorsService.getDefaultSecondaryPalette() // Not implemented
     },
     components: {
         treeselect: {
@@ -43,6 +39,20 @@ export const CustomLaraPreset = definePreset(Lara, {
             css: `
                 .p-card {
                     border: 1px solid dt('gray.300');
+                }
+            `
+        },
+        chip: {
+            // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
+            // tall, vertically centered, with a small label. Applied to the base
+            // `.p-chip` so every chip (Content Status, locale, relationship, etc.)
+            // gets the size without per-template classes. PrimeNG has no chip size
+            // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
+            css: `
+                .p-chip {
+                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
+                    font-size: var(--text-xs); /* 0.75rem */
                 }
             `
         },

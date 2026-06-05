@@ -59,8 +59,8 @@
                                 Content index to search:
                             </th>
                             <td>
-                                <select name="indexName" id="indexNameChat" style="min-width:400px;">
-                                    <option disabled="true" placeholder="Select an Index">Select an Index</option>
+                                <select name="indexName" id="indexNameChat" required style="min-width:400px;">
+                                    <option disabled value="">Select an Index</option>
                                 </select>
                             </td>
                         </tr>
@@ -98,7 +98,7 @@
                             </th>
                             <td><span class="clearPromptX" id="searchQueryX" onclick="clearPrompt('searchQuery')"
                                       style="visibility: hidden">&#10006;</span>
-                                <textarea class="prompt" name="prompt" id="searchQuery"
+                                <textarea class="prompt" name="prompt" id="searchQuery" required
                                           onkeyup="showClearPrompt('searchQuery')"
                                           onchange="showClearPrompt('searchQuery')"
                                           placeholder="Search text or phrase"></textarea>
@@ -357,18 +357,8 @@
                         </td>
                     </tr>
                     <tr>
-                        <th>
-                            Size:
-                        </th>
-                        <td>
-                            <select name="size" style="min-width:400px;">
-                                <option value="1024x1024">1024x1024 (Square)</option>
-                                <option value="1024x1792">1024x1792 (Vertical)</option>
-                                <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
-
-
-                            </select>
-                        </td>
+                        <th style="width:30%"><b>Size:</b></th>
+                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024 (widthxheight)" pattern="^[1-9][0-9]{1,3}x[1-9][0-9]{1,3}$" style="min-width:200px;"></td>
                     </tr>
                     <tr>
                         <td colspan="2" style="text-align: center">

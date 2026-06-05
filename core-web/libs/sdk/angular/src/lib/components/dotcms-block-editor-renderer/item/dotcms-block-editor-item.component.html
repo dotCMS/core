@@ -86,7 +86,7 @@
             }
 
             @case (BLOCKS.TABLE) {
-                <dotcms-block-editor-renderer-table [content]="node.content" />
+                <dotcms-block-editor-renderer-table [content]="node.content" [attrs]="node.attrs" />
             }
 
             @case (BLOCKS.GRID_BLOCK) {

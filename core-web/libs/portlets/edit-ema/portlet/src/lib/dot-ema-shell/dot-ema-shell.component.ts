@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, signalMethod } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
 import {
@@ -33,7 +33,7 @@ import {
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -164,7 +164,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
         const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
-        const requestHostName = getRequestHostName(this.uveStore.pageParams());
+        const requestHostName = getRequestHostName(
+            this.uveStore.pageParams(),
+            this.uveStore.pageAsset()?.site?.hostname
+        );
 
         return {
             siteId: this.uveStore.pageAsset()?.site?.identifier,
@@ -206,17 +209,35 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#updateLocation(cleanedParams);
     });
 
-    readonly $updateBreadcrumbEffect = effect(() => {
+    readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
         const page = this.uveStore.pageAsset()?.page;
 
-        if (page) {
-            this.#globalStore.addNewBreadcrumb({
-                label: page?.title,
-                url: this.uveStore.pageParams().url,
-                id: `${page?.identifier}`
-            });
-        }
+        const status = this.uveStore.uveStatus();
+
+        return page && status === UVE_STATUS.LOADED ? page : null;
     });
+
+    readonly $updateBreadcrumb = signalMethod<DotCMSPage | null>((page) => {
+        if (!page || !this.uveStore.pageParams()) return;
+
+        const params = this.uveStore.pageFriendlyParams();
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
+
+        this.#globalStore.addNewBreadcrumb({
+            label,
+            url: `/dotAdmin/#${urlTree.toString()}`,
+            id: `${identifier}`
+        });
+    });
+
+    constructor() {
+        this.$updateBreadcrumb(this.$breadcrumbPage);
+    }
 
     ngOnInit(): void {
         const params = this.#getPageParams();
@@ -264,6 +285,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 this.handleSavePageEvent(event);
                 break;
             }
+
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
+                // Fired by the edit content portlet when a page is saved in a new language
+                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
+                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
+                // dropdown reflects the newly created version.
+                this.uveStore.pageReload();
+                break;
+            }
         }
     }
 
@@ -275,6 +305,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+
+        if (!htmlPageReferer) {
+            this.uveStore.pageReload();
+
+            return;
+        }
+
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
 

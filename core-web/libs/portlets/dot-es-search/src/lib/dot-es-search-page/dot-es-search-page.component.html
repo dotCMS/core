@@ -1,8 +1,8 @@
 <!-- Main split pane -->
-<p-splitter [panelSizes]="[33, 67]" class="flex-1 min-h-0" [pt]="splitterPt">
+<p-splitter [panelSizes]="[33, 67]" class="min-h-0 flex-1" [pt]="splitterPt">
     <!-- Left: Query Editor + Parameters -->
     <ng-template pTemplate>
-        <div class="flex flex-col h-full overflow-hidden">
+        <div class="flex h-full flex-col overflow-hidden">
             <!-- Query header — p-panel for Lara-native styling, content area hidden -->
             <p-panel
                 [pt]="{
@@ -55,7 +55,7 @@
 
             <!-- Monaco editor -->
             <ngx-monaco-editor
-                class="flex-1 min-h-0"
+                class="min-h-0 flex-1"
                 [ngModel]="store.query()"
                 [options]="$queryEditorOptions()"
                 (ngModelChange)="onQueryChange($event)"
@@ -78,7 +78,7 @@
                 <ng-template pTemplate="headericons">
                     <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
-                <div class="form px-3 py-3" data-testid="es-search-params-content">
+                <div class="form p-3" data-testid="es-search-params-content">
                     <div class="form-checkbox">
                         <p-checkbox
                             inputId="es-live-only"
@@ -111,7 +111,7 @@
 
             <!-- Run footer -->
             <div
-                class="flex items-center justify-end px-3 py-3 border-t border-surface-200 bg-surface-0 flex-shrink-0"
+                class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
                 data-testid="es-search-run-footer">
                 <p-button
                     [label]="'esSearch.action.run' | dm"
@@ -127,7 +127,7 @@
 
     <!-- Right: Results -->
     <ng-template pTemplate>
-        <div class="flex flex-col h-full overflow-hidden">
+        <div class="flex h-full flex-col overflow-hidden">
             @if (
                 store.status() === ComponentStatus.INIT || store.status() === ComponentStatus.ERROR
             ) {
@@ -147,10 +147,10 @@
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="flex items-center gap-2 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
+                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
                     data-testid="es-search-stats-bar">
                     <div class="flex items-center gap-1.5">
-                        <i class="pi pi-circle-fill text-green-600 text-[0.5rem]"></i>
+                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
                         {{ 'esSearch.results.ready' | dm }}
                         <span class="text-color-secondary mx-1">&middot;</span>
                         @if (store.hasPartialResults()) {
@@ -178,7 +178,7 @@
                         </span>
                     </div>
                     @if (store.hasLoadedResults()) {
-                        <div class="flex items-center gap-2 ml-auto">
+                        <div class="ml-auto flex items-center gap-2">
                             <p-button
                                 text
                                 size="small"
@@ -213,34 +213,20 @@
                 <p-tabs
                     [value]="store.activeTab()"
                     (valueChange)="onTabChange($event)"
-                    class="flex flex-col flex-1 min-h-0"
+                    class="flex min-h-0 flex-1 flex-col"
                     styleClass="h-full flex flex-col">
                     <p-tablist>
                         <p-tab value="results" data-testid="es-search-tab-results">
                             {{ 'esSearch.results.tab' | dm }}
-                            @if (store.returnedCount() > 0) {
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ store.returnedCount() }}
-                                </span>
-                            }
                         </p-tab>
                         @if (store.hasAggregations()) {
                             <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
                                 {{ 'esSearch.results.aggregations' | dm }}
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ $parsedAggregations().length }}
-                                </span>
                             </p-tab>
                         }
                         @if (store.hasSuggestions()) {
                             <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
                                 {{ 'esSearch.results.suggestions' | dm }}
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ $parsedSuggestions().length }}
-                                </span>
                             </p-tab>
                         }
                         <p-tab value="raw" data-testid="es-search-tab-raw">
@@ -304,9 +290,9 @@
                                             </td>
                                             <td>{{ contentlet['contentType'] }}</td>
                                             <td class="max-w-[140px]">
-                                                <div class="flex items-center gap-1 group">
+                                                <div class="group flex items-center gap-1">
                                                     <span
-                                                        class="font-mono text-xs truncate"
+                                                        class="truncate font-mono text-xs"
                                                         [title]="contentlet['identifier']">
                                                         {{ contentlet['identifier'] }}
                                                     </span>
@@ -319,6 +305,9 @@
                                                             'esSearch.table.copyIdentifier' | dm
                                                         "
                                                         tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'esSearch.table.copyIdentifier' | dm
+                                                        "
                                                         (onClick)="
                                                             copyToClipboard(
                                                                 contentlet['identifier']
@@ -339,13 +328,13 @@
                             <div class="flex flex-col gap-4 p-4">
                                 @for (agg of $parsedAggregations(); track agg.id) {
                                     <div
-                                        class="border border-surface-200 rounded-lg overflow-hidden"
+                                        class="overflow-hidden rounded-lg border border-surface-200"
                                         data-testid="es-search-agg-block">
                                         <!-- Aggregation header -->
                                         <div
-                                            class="flex items-center gap-2 px-3 py-2 bg-surface-50 border-b border-surface-200">
+                                            class="flex items-center gap-2 border-b border-surface-200 bg-surface-50 px-3 py-2">
                                             <span
-                                                class="font-semibold text-sm text-color"
+                                                class="text-sm font-semibold text-color"
                                                 data-testid="es-search-agg-name">
                                                 {{ agg.name }}
                                             </span>
@@ -402,7 +391,7 @@
                                             </p-table>
                                             @if (agg.sumOtherDocCount > 0) {
                                                 <div
-                                                    class="px-3 py-1.5 text-xs text-color-secondary bg-surface-50 border-t border-surface-200"
+                                                    class="text-color-secondary border-t border-surface-200 bg-surface-50 px-3 py-1.5 text-xs"
                                                     data-testid="es-search-agg-more">
                                                     {{
                                                         'esSearch.agg.moreNotShown'
@@ -433,12 +422,12 @@
                             <div class="flex flex-col gap-4 p-4">
                                 @for (suggester of $parsedSuggestions(); track suggester.name) {
                                     <div
-                                        class="border border-surface-200 rounded-lg overflow-hidden"
+                                        class="overflow-hidden rounded-lg border border-surface-200"
                                         data-testid="es-search-suggest-block">
                                         <div
-                                            class="px-3 py-2 bg-surface-50 border-b border-surface-200">
+                                            class="border-b border-surface-200 bg-surface-50 px-3 py-2">
                                             <span
-                                                class="font-semibold text-sm text-color"
+                                                class="text-sm font-semibold text-color"
                                                 data-testid="es-search-suggest-name">
                                                 {{ suggester.name }}
                                             </span>
@@ -456,7 +445,7 @@
                                             </ng-template>
                                             <ng-template pTemplate="body" let-term>
                                                 <tr data-testid="es-search-suggest-row">
-                                                    <td class="font-mono text-sm align-top w-32">
+                                                    <td class="w-32 align-top font-mono text-sm">
                                                         {{ term.original }}
                                                     </td>
                                                     <td>
@@ -466,7 +455,7 @@
                                                                 track opt.text
                                                             ) {
                                                                 <span
-                                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary-50 text-primary-700 border border-primary-200"
+                                                                    class="inline-flex items-center gap-1 rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs text-primary-700"
                                                                     data-testid="es-search-suggest-option">
                                                                     {{ opt.text }}
                                                                     <span class="text-primary-400">
@@ -507,15 +496,15 @@
     #helpPopoverEl
     data-testid="es-search-help-dialog"
     [pt]="{ content: { style: { overflow: 'visible' } } }">
-    <div class="flex flex-col w-[600px]">
-        <p class="text-sm font-semibold text-color m-0 pb-3">{{ 'esSearch.help.title' | dm }}</p>
-        <div class="flex flex-col gap-3 max-h-[65vh] overflow-y-auto pr-1">
+    <div class="flex w-[600px] flex-col">
+        <p class="m-0 pb-3 text-sm font-semibold text-color">{{ 'esSearch.help.title' | dm }}</p>
+        <div class="flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
             @for (example of helpExamples; track $index) {
                 <div
-                    class="border border-surface-200 rounded-lg"
+                    class="rounded-lg border border-surface-200"
                     data-testid="es-search-help-example">
                     <div
-                        class="flex items-center justify-between px-3 py-2 bg-surface-50 border-b border-surface-200">
+                        class="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-3 py-2">
                         <span class="text-sm font-semibold text-color">
                             {{ example.title | dm }}
                         </span>
@@ -525,7 +514,7 @@
                                 size="small"
                                 icon="pi pi-copy"
                                 [label]="'esSearch.help.copy' | dm"
-                                (onClick)="copyQuery(example.query)"
+                                (onClick)="copyToClipboard(example.query)"
                                 data-testid="es-search-help-copy-btn" />
                             <p-button
                                 text
@@ -537,13 +526,13 @@
                     </div>
                     @if (example.description) {
                         <p
-                            class="m-0 px-3 py-2 text-xs text-color-secondary border-b border-surface-200 bg-white"
+                            class="text-color-secondary m-0 border-b border-surface-200 bg-white px-3 py-2 text-xs"
                             data-testid="es-search-help-description">
                             {{ example.description | dm }}
                         </p>
                     }
                     <pre
-                        class="m-0 p-3 text-xs font-mono bg-surface-50 text-color border-0 overflow-x-auto"
+                        class="m-0 overflow-x-auto border-0 bg-surface-50 p-3 font-mono text-xs text-color"
                         >{{ example.query }}</pre
                     >
                 </div>

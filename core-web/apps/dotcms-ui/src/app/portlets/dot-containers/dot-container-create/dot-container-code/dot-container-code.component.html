@@ -42,12 +42,12 @@
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel [value]="0">
-                <div class="h-[500px] flex justify-center items-center flex-col">
+                <div class="flex h-[500px] flex-col items-center justify-center">
                     <i data-testId="code" class="pi pi-code text-[100px] text-primary"></i>
                     <div class="text-base" data-testId="empty-content-title">
                         {{ 'message.containers.empty.content_type_message' | dm }}
                     </div>
-                    <div class="text-sm mb-1">
+                    <div class="mb-1 text-sm">
                         <span data-testId="empty-content-subtitle">
                             {{ 'message.containers.empty.content_type_need_help' | dm }}?
                         </span>
@@ -72,7 +72,7 @@
                                 (click)="handleAddVariable(containerContent.value)"
                                 [disabled]="contentTypes.length === 0"
                                 [label]="'add-variable' | dm"
-                                class="p-button-outlined ml-4 mb-2 mt-2 p-button-sm"
+                                class="p-button-outlined p-button-sm my-2 ml-4"
                                 pButton></button>
                             <dot-textarea-content
                                 (monacoInit)="monacoInit($event)"

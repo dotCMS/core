@@ -149,6 +149,7 @@ export const BlockEditorBlock = ({
                     <TableRenderer
                         key={key}
                         content={node.content ?? []}
+                        attrs={node.attrs}
                         blockEditorItem={BlockEditorBlock}
                     />
                 );

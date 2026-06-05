@@ -33,7 +33,8 @@ public enum PortletID {
     MY_ACCOUNT,
     PERSONAS,
     PUBLISHING_QUEUE, 
-    QUERY_TOOL, 
+    QUERY_TOOL,
+    QUERY_TOOL_LEGACY("query-tool-legacy"),
     TAGS,
     TAGS_LEGACY("tags-legacy"),
     TEMPLATES,
@@ -52,7 +53,9 @@ public enum PortletID {
     WORKFLOW_SCHEMES,
     LOCALES,
     ANALYTICS_DASHBOARD,
-    USAGE;
+    USAGE,
+    VELOCITY_PLAYGROUND("velocity_playground"),
+    VELOCITY_PLAYGROUND_LEGACY("velocity_playground-legacy");
 
     private final String url;
 

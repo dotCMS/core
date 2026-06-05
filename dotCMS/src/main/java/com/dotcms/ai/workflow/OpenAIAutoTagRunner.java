@@ -1,7 +1,10 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
+import com.dotmarketing.beans.Host;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -135,7 +138,9 @@ public class OpenAIAutoTagRunner implements Runnable {
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI()
+        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
                 .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
