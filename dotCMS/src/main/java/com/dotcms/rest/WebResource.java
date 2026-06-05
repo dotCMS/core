@@ -585,6 +585,7 @@ public  class WebResource {
 
         if(userPass.isPresent()) {
             final String source = credentialSource;
+            final String attemptedUsername = userPass.get().username;
             try {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
@@ -597,9 +598,11 @@ public  class WebResource {
                 Logger.debug(this, () -> source + " credentials are not a valid dotCMS user; "
                         + "falling through to anonymous.");
                 // A correctly-formatted credential that fails authentication is a real auth failure
-                // (potential credential-stuffing against the fallback path), so log at WARN.
+                // (potential credential-stuffing against the fallback path), so log at WARN and
+                // include the attempted username (never the password) for forensic correlation.
                 SecurityLogger.logWarn(WebResource.class, () -> source
-                        + " credential failure on asset request absorbed; proceeding as anonymous.");
+                        + " credential failure for user [" + attemptedUsername + "] on asset request "
+                        + "absorbed; proceeding as anonymous.");
                 user = null;
             }
         }
