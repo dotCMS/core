@@ -348,6 +348,19 @@ public class VipsParityTest {
         assertEquals(120, d.height);
     }
 
+    @Test
+    public void smartcrop_clamps_oversized_request_instead_of_failing() throws Exception {
+        final File in = image("test.jpg");
+        final Dimension src = new VipsImageFilterApiImpl().getWidthHeight(in);
+        final File out = tempOut("png");
+        // Request a height far larger than the source — must clamp, not throw "bad extract area".
+        new VipsSmartCropImageFilter().transform(in, out,
+                params("smartcrop_w", "120", "smartcrop_h", String.valueOf(src.height * 10)));
+        final Dimension d = dims(out);
+        assertEquals(120, d.width);
+        assertTrue("height clamped to source", d.height <= src.height);
+    }
+
     // ---- Resilience: fall back to the legacy engine when a libvips op fails --------------------
 
     /** A libvips PNG filter whose pixel work always fails, to exercise the fallback path. */

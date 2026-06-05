@@ -36,8 +36,11 @@ public class VipsSmartCropImageFilter extends VipsImageFilter {
 
         VipsManager.run(arena -> {
             final VImage src = VipsManager.load(arena, in);
-            final int targetW = width > 0 ? width : src.getWidth();
-            final int targetH = height > 0 ? height : src.getHeight();
+            // libvips smartcrop cannot extract a region larger than the source, so clamp the target
+            // to the image bounds — an oversized request returns the largest valid crop rather than
+            // failing with "bad extract area" (smartcrop has no legacy fallback).
+            final int targetW = Math.min(width > 0 ? width : src.getWidth(), src.getWidth());
+            final int targetH = Math.min(height > 0 ? height : src.getHeight(), src.getHeight());
             final VImage cropped = src.smartcrop(targetW, targetH,
                     VipsOption.Enum("interesting", interesting));
             cropped.writeToFile(out.getAbsolutePath());
