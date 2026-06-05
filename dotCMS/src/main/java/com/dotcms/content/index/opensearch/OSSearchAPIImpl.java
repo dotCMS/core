@@ -95,7 +95,7 @@ public class OSSearchAPIImpl implements SearchAPI {
 
         for (final com.dotcms.content.index.domain.SearchHit sh : resp.hits()) {
             try {
-                final Map<String, Object> sourceMap = sh.sourceAsMap();
+                final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 list.add(
                         ImmutableContentletSearch.builder()
                                 .inode(sourceMap.get("inode").toString())

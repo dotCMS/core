@@ -12,13 +12,8 @@ import org.immutables.value.Value;
  * allowing the application to work with search hits without depending on specific
  * search engine libraries (Elasticsearch, OpenSearch, etc.).</p>
  *
- * <p><strong>Key Benefits:</strong></p>
- * <ul>
- *   <li>Search engine agnostic - switch between Elasticsearch and OpenSearch transparently</li>
- *   <li>Type-safe immutable objects using Immutables library</li>
- *   <li>JSON serialization support for REST APIs and caching</li>
- *   <li>Factory methods for easy conversion from underlying search engine types</li>
- * </ul>
+ * <p>Accessors are bean-style ({@code getId()}, {@code getSourceAsMap()}, …) so the type works
+ * directly from Velocity templates (e.g. {@code $hit.id}) without any extra alias methods.</p>
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
@@ -29,9 +24,9 @@ import org.immutables.value.Value;
  * SearchHit hit = SearchHit.from(openSearchHit);
  *
  * // Access unified data
- * String docId = hit.id();
- * Map&lt;String, Object&gt; content = hit.sourceAsMap();
- * float relevanceScore = hit.score();
+ * String docId = hit.getId();
+ * Map&lt;String, Object&gt; content = hit.getSourceAsMap();
+ * float relevanceScore = hit.getScore();
  * </pre>
  *
  * @author Fabrizio Araya
@@ -48,28 +43,28 @@ public interface SearchHit {
      *
      * @return the document ID
      */
-    String id();
+    String getId();
 
     /**
      * Returns the index name where this search hit was found.
      *
      * @return the index name, or null if not available
      */
-    String index();
+    String getIndex();
 
     /**
      * Returns the source document as a map of field names to values.
      *
      * @return the source document map
      */
-    Map<String, Object> sourceAsMap();
+    Map<String, Object> getSourceAsMap();
 
     /**
      * Returns the search relevance score for this hit.
      *
      * @return the score
      */
-    float score();
+    float getScore();
 
     /**
      * Returns the document fields retrieved by the search query.
@@ -78,7 +73,7 @@ public interface SearchHit {
      *
      * @return a map of field names to field values, empty if no fields were requested
      */
-    Map<String, Object> fields();
+    Map<String, Object> getFields();
 
     /**
      * Creates a new SearchHit builder.

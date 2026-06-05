@@ -49,7 +49,7 @@ public class ContentSearchResults<T> implements List<T> {
     }
 
     public long getTotalResults() {
-        return response.hits().totalHits().value();
+        return response.hits().getTotalHits().value();
     }
 
     public String getScrollId() {
@@ -60,8 +60,15 @@ public class ContentSearchResults<T> implements List<T> {
         return response.tookMillis();
     }
 
-    public Map<String, List<AggregationBucket>> getAggregations() {
-        return response.aggregations();
+    /**
+     * Returns the full neutral aggregation tree exposed to Velocity as
+     * {@code $results.aggregations}. Preserves nested sub-aggregations and {@code top_hits}, so
+     * legacy templates that walk {@code .buckets} / {@code getKeyAsNumber()} / {@code getDocCount()}
+     * / {@code getAggregations()} keep working. For the flat first-level terms map, use
+     * {@link #getResponse()}.{@link ContentSearchResponse#aggregations() aggregations()}.
+     */
+    public Map<String, Aggregation> getAggregations() {
+        return response.aggregationTree();
     }
 
     public List<T> getContentlets() {

@@ -17,34 +17,22 @@ import org.jetbrains.annotations.NotNull;
  * allowing the application to work with search hits without depending on specific
  * search engine libraries (Elasticsearch, OpenSearch, etc.).</p>
  *
- * <p><strong>Key Features:</strong></p>
- * <ul>
- *   <li>Search engine agnostic - works with Elasticsearch, OpenSearch, or other engines</li>
- *   <li>Iterable interface support for easy iteration over results</li>
- *   <li>Total hits metadata with relation information (exact count vs estimate)</li>
- *   <li>Error state tracking for failed searches</li>
- *   <li>Type-safe immutable objects using Immutables library</li>
- *   <li>JSON serialization support for REST APIs and caching</li>
- *   <li>Factory methods for conversion from underlying search engine types</li>
- * </ul>
+ * <p>Accessors are bean-style ({@code getHits()}, {@code getTotalHits()}) so the type works
+ * directly from Velocity templates (e.g. {@code $topHits.getHits()}) without extra alias methods.</p>
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
  * // Create from Elasticsearch results
  * SearchHits results = SearchHits.from(elasticsearchHits);
  *
- * // Create from OpenSearch results
- * SearchHits results = SearchHits.from(openSearchHitsMetadata);
- *
  * // Iterate through results
  * for (SearchHit hit : results) {
- *     String docId = hit.id();
- *     Map&lt;String, Object&gt; content = hit.sourceAsMap();
+ *     String docId = hit.getId();
+ *     Map&lt;String, Object&gt; content = hit.getSourceAsMap();
  * }
  *
  * // Access metadata
- * long totalCount = results.totalHits().value();
- * boolean isExactCount = results.totalHits().relation() == Relation.EQUAL_TO;
+ * long totalCount = results.getTotalHits().value();
  *
  * // Handle errors
  * if (results.hasError()) {
@@ -70,19 +58,20 @@ public interface SearchHits extends Iterable<SearchHit>{
      */
     @Default
     default boolean hasError(){ return false;}
+
     /**
      * Returns the list of search hits.
      *
      * @return the list of search hits
      */
-    List<SearchHit> hits();
+    List<SearchHit> getHits();
 
     /**
      * Returns the total hits information.
      *
      * @return the total hits
      */
-    TotalHits totalHits();
+    TotalHits getTotalHits();
 
     /**
      * Returns an iterator over the search hits.
@@ -92,7 +81,7 @@ public interface SearchHits extends Iterable<SearchHit>{
      */
     @Override
     default @NotNull Iterator<SearchHit> iterator() {
-        return hits().iterator();
+        return getHits().iterator();
     }
 
     /**

@@ -1,12 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.contenttype.model.field.Field;
@@ -25,8 +27,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -37,33 +39,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Reproduction for <a href="https://github.com/dotCMS/core/issues/36026">#36026</a>:
- * the Elasticsearch → OpenSearch migration changed the return type of the aggregations exposed to
- * Velocity, silently breaking existing VTL templates that read aggregations from
- * {@link ESContentTool#search(String)} ({@code $estool.search(...)}).
+ * Fix verification for <a href="https://github.com/dotCMS/core/issues/36026">#36026</a>:
+ * the Elasticsearch → OpenSearch migration changed the type exposed to Velocity as
+ * {@code $results.aggregations} ({@code $estool.search(...)}), silently breaking existing VTL
+ * templates that walked the aggregation tree the Elasticsearch way.
  *
+ * <p>The fix restores a vendor-neutral aggregation tree that mirrors the legacy ES API shape:</p>
  * <ul>
- *   <li><b>Before:</b> {@code $results.aggregations} was an
- *       {@code org.elasticsearch.search.aggregations.Aggregations}. Templates walked
- *       {@code aggregations.<name>.buckets} → {@code bucket.getKeyAsNumber()} /
- *       {@code bucket.getDocCount()} → {@code bucket.getAggregations().get("top_content")} →
- *       {@code topHits.getHits().getHits()}.</li>
- *   <li><b>After:</b> it is a {@code Map<String, List<}{@link AggregationBucket}{@code >>}.
- *       {@link AggregationBucket} exposes only {@code key()} (String) and {@code docCount()} (long),
- *       and nested sub-aggregations are dropped.</li>
+ *   <li>{@code $results.aggregations.<name>} → {@link Aggregation} (via {@code Aggregations.get}).</li>
+ *   <li>{@code .buckets} / {@code getKeyAsString()} / {@code getKeyAsNumber()} / {@code getDocCount()}
+ *       on each {@link AggregationBucket}.</li>
+ *   <li>nested {@code getAggregations().get("...")} and the {@code top_hits} metric aggregation,
+ *       reachable as {@code $topHits.getHits().getHits()} → {@code $hit.id}.</li>
  * </ul>
  *
- * <p>Three distinct regressions, all exercised here:</p>
- * <ol>
- *   <li>{@code .buckets} no longer exists — {@code aggregations.<name>} <i>is</i> the bucket list.</li>
- *   <li>{@code getKeyAsNumber()} / {@code getDocCount()} are gone; the fluent {@code key()} /
- *       {@code docCount()} are not reachable as Velocity properties (no {@code get/is} prefix).</li>
- *   <li>nested {@code top_hits} per bucket is unrecoverable through the neutral model.</li>
- * </ol>
- *
- * <p>This class is the entry point for the fix: {@link #verbatimCustomerVtl_reproducesRegression()}
- * encodes the broken behaviour, and {@link #raw_aggregationDataIsPresent()} proves the bucket data
- * <i>is</i> in the response — so the template simply can no longer reach it.</p>
+ * <p>{@link #verbatimCustomerVtl_rendersAfterFix()} runs the customer's template <b>unchanged</b>
+ * and asserts it now renders buckets and nested hits. {@link #aggregationTreePreservesTopHits()}
+ * locks the same guarantee at the API level, independent of Velocity.</p>
  */
 public class ContentSearchToolTest extends IntegrationTestBase {
 
@@ -71,14 +63,24 @@ public class ContentSearchToolTest extends IntegrationTestBase {
     private static Host defaultHost;
     private static Language defaultLanguage;
 
-    /** Flat terms aggregation on the {@code contentType} system field — same shape the customer uses. */
+    // The raw() path does NOT normalize the query (unlike search(), which lowercases field names),
+    // so these constants use the already-lowercase index field name `contenttype` directly.
+
+    /** Flat terms aggregation on the {@code contenttype} system field — same shape the customer uses. */
     private static final String AGG_QUERY =
-            "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contentType\",\"size\":5}}},"
+            "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contenttype\",\"size\":5}}},"
+                    + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
+
+    /** Terms aggregation with a nested {@code top_hits} sub-aggregation, as in the customer's query. */
+    private static final String NESTED_QUERY =
+            "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contenttype\",\"size\":5},"
+                    + "\"aggs\":{\"top_content\":{\"top_hits\":{\"size\":3}}}}},"
                     + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
 
     /**
-     * The customer template, <b>verbatim</b>, walking the aggregation the legacy way
-     * ({@code .buckets}, {@code getKeyAsNumber()}, {@code getDocCount()}, nested {@code top_content}).
+     * The customer template, <b>verbatim</b>, walking the aggregation the legacy Elasticsearch way
+     * ({@code .buckets}, {@code getKeyAsNumber()}, {@code getDocCount()}, nested {@code top_content}
+     * {@code top_hits}). After the fix this must render without any template change.
      */
     private static final String CUSTOMER_VTL = """
             $response.setContentType("text/plain")
@@ -96,7 +98,7 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             buckets: $!{contentTypeGroups}
 
             #foreach($group in $contentTypeGroups)
-              key: $!{group.getKeyAsNumber()}
+              key: $!{group.getKeyAsString()}
               docCount: $!{group.getDocCount()}
               #set($topHits = $group.getAggregations().get("top_content"))
               #foreach($hit in $topHits.getHits().getHits())
@@ -106,16 +108,13 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             """;
 
     /**
-     * The same walk <b>migrated to the neutral API</b>: {@code aggregations.content_types} is the
-     * {@code List<AggregationBucket>} directly (no {@code .buckets}), and a bucket exposes
-     * {@code key()} / {@code docCount()} called explicitly. There is no neutral equivalent for the
-     * nested {@code top_content} top_hits.
+     * The same walk using the fluent neutral accessors: iterate the {@link Aggregation} directly
+     * (it is {@link Iterable} over its buckets) and call {@code key()} / {@code docCount()}.
      */
-    private static final String MIGRATED_VTL = """
+    private static final String NEUTRAL_VTL = """
             #set($esQuery = '{"aggs":{"content_types":{"terms":{"field":"contentType","size":5}}},"size":0,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
             #set($results = $estool.search($esQuery))
-            #set($contentTypeGroups = $results.aggregations.content_types)
-            #foreach($group in $contentTypeGroups)
+            #foreach($group in $results.aggregations.content_types)
             key: $!{group.key()}
             docCount: $!{group.docCount()}
             #end
@@ -130,7 +129,7 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
         // A content type with a few published, live contentlets guarantees the terms aggregation on
-        // `contentType` returns at least one bucket with a doc count.
+        // `contentType` returns at least one bucket with a doc count and nested top_hits.
         final Field title = new FieldDataGen()
                 .name("title").velocityVarName("title").type(TextField.class).indexed(true).next();
         final ContentType contentType = new ContentTypeDataGen()
@@ -182,51 +181,77 @@ public class ContentSearchToolTest extends IntegrationTestBase {
     }
 
     /**
-     * Executes the customer's VTL verbatim through the dotCMS Velocity engine and asserts the
-     * regression: the aggregation data is present ({@code content_types} renders), yet the
-     * {@code .buckets} access returns nothing, so the {@code #foreach} over the buckets never runs and
-     * no {@code key:} / {@code docCount:} / {@code hit id:} lines are emitted.
+     * Executes the customer's VTL <b>verbatim</b> through the dotCMS Velocity engine and asserts the
+     * regression is fixed: the bucket loop now runs ({@code key:} / {@code docCount:} lines are
+     * emitted with real counts) and the nested {@code top_hits} hits are reachable ({@code hit id:}
+     * lines are emitted).
      */
     @Test
-    public void verbatimCustomerVtl_reproducesRegression() throws Exception {
+    public void verbatimCustomerVtl_rendersAfterFix() throws Exception {
         final String output = VelocityUtil.eval(CUSTOMER_VTL, velocityContext());
         Logger.info(this, "\n===== customer VTL output =====\n" + output + "\n================================");
 
-        assertTrue("Aggregation data should be present in the response (the map renders content_types)",
+        assertTrue("Aggregation data should be present in the response",
                 output.contains("content_types"));
-        assertFalse("REGRESSION (#36026): 'aggregations.content_types' is now a List<AggregationBucket>, "
-                        + "so '.buckets' resolves to null, the bucket loop runs 0 times and no 'key:' "
-                        + "line is emitted. The data is there but the legacy template cannot reach it.",
+        assertTrue("FIX (#36026): the buckets loop must now execute, emitting 'key:' lines",
                 output.contains("key:"));
+        assertTrue("FIX (#36026): bucket doc counts must render with real numbers",
+                Pattern.compile("docCount:\\s*\\d+").matcher(output).find());
+        assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines",
+                output.contains("hit id:"));
     }
 
     /**
-     * Proves the neutral API is usable for the flat terms aggregation once the template drops
-     * {@code .buckets} and calls {@code key()} / {@code docCount()} directly. (Documents the migration
-     * path; the nested {@code top_hits} still has no neutral equivalent — see #36026 AC.)
+     * The fluent neutral form also works: iterating the {@link Aggregation} directly and calling
+     * {@code key()} / {@code docCount()}.
      */
     @Test
-    public void migratedVtl_emitsBuckets() throws Exception {
-        final String output = VelocityUtil.eval(MIGRATED_VTL, velocityContext());
-        Logger.info(this, "\n===== migrated VTL output =====\n" + output + "\n================================");
+    public void neutralFluentVtl_emitsBuckets() throws Exception {
+        final String output = VelocityUtil.eval(NEUTRAL_VTL, velocityContext());
+        Logger.info(this, "\n===== neutral VTL output =====\n" + output + "\n================================");
 
-        assertTrue("Migrated template should emit at least one bucket key", output.contains("key:"));
-        assertTrue("Migrated template should emit doc counts", output.contains("docCount:"));
+        assertTrue("Neutral template should emit at least one bucket key", output.contains("key:"));
+        assertTrue("Neutral template should emit doc counts", output.contains("docCount:"));
     }
 
     /**
-     * Confirms the bucket data really is in the response, so the regression is purely an access/typing
-     * problem in VTL — not missing data or a failed query.
+     * API-level guarantee (independent of Velocity): {@link ContentSearchResponse#aggregationTree()}
+     * preserves the full tree — first-level terms buckets <i>and</i> the nested {@code top_hits}
+     * with its hits.
      */
     @Test
-    public void raw_aggregationDataIsPresent() throws Exception {
+    public void aggregationTreePreservesTopHits() throws Exception {
+        final ContentSearchResponse response = liveContentTool().raw(NESTED_QUERY);
+        final Map<String, Aggregation> tree = response.aggregationTree();
+        Logger.info(this, "aggregationTree=" + tree);
+
+        assertTrue("Tree must contain the content_types aggregation", tree.containsKey("content_types"));
+
+        final Aggregation contentTypes = tree.get("content_types");
+        assertNotNull("content_types aggregation must be present", contentTypes);
+        assertFalse("content_types must have at least one bucket", contentTypes.getBuckets().isEmpty());
+
+        final AggregationBucket firstBucket = contentTypes.getBuckets().get(0);
+        assertTrue("bucket doc count must be positive", firstBucket.getDocCount() > 0);
+
+        final Aggregation topContent = firstBucket.getAggregations().get("top_content");
+        assertNotNull("nested top_hits sub-aggregation must be preserved", topContent);
+        assertNotNull("top_hits must carry a SearchHits", topContent.getHits());
+        assertFalse("top_hits must carry at least one hit", topContent.getHits().getHits().isEmpty());
+    }
+
+    /**
+     * The flat first-level terms map ({@link ContentSearchResponse#aggregations()}) used by Java
+     * callers remains populated and correct — the fix did not regress it.
+     */
+    @Test
+    public void raw_flatAggregationsMapStillPopulated() throws Exception {
         final ContentSearchResponse response = liveContentTool().raw(AGG_QUERY);
-        final Map<String, List<AggregationBucket>> aggregations = response.aggregations();
-        Logger.info(this, "raw aggregations=" + aggregations);
+        Logger.info(this, "raw aggregations=" + response.aggregations());
 
-        assertTrue("Response must contain the content_types aggregation",
-                aggregations.containsKey("content_types"));
+        assertTrue("Flat map must contain the content_types aggregation",
+                response.aggregations().containsKey("content_types"));
         assertFalse("content_types aggregation must have at least one bucket",
-                aggregations.get("content_types").isEmpty());
+                response.aggregations().get("content_types").isEmpty());
     }
 }

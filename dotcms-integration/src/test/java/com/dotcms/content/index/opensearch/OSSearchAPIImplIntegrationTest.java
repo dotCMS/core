@@ -165,7 +165,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
         assertNotNull("aggregations map must not be null", response.aggregations());
         Logger.info(this,
                 "✅ test_searchRaw_matchAll_shouldReturnEmptyResultsWithNonNullStructure passed"
-                        + " – totalHits=" + response.hits().totalHits().value());
+                        + " – totalHits=" + response.hits().getTotalHits().value());
     }
 
     /**
@@ -332,14 +332,14 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
                 osSearchAPI.searchRaw(matchAll, false, systemUser, false);
 
         assertNotNull("searchRaw must return a non-null response", response);
-        assertEquals("Exactly one hit expected", 1, response.hits().totalHits().value());
+        assertEquals("Exactly one hit expected", 1, response.hits().getTotalHits().value());
 
         final com.dotcms.content.index.domain.SearchHit hit =
                 response.hits().iterator().next();
         assertEquals("identifier must be present in sourceAsMap",
-                TEST_DOC_IDENTIFIER, hit.sourceAsMap().get("identifier"));
+                TEST_DOC_IDENTIFIER, hit.getSourceAsMap().get("identifier"));
         assertEquals("inode must be present in sourceAsMap — _source rewrite must include it",
-                TEST_DOC_INODE, hit.sourceAsMap().get("inode"));
+                TEST_DOC_INODE, hit.getSourceAsMap().get("inode"));
 
         Logger.info(this, "✅ test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode passed");
     }
@@ -366,12 +366,12 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
                 osSearchAPI.searchRaw(queryWithSource, false, systemUser, false);
 
         assertNotNull(response);
-        assertTrue("Response must have at least one hit", response.hits().totalHits().value() > 0);
+        assertTrue("Response must have at least one hit", response.hits().getTotalHits().value() > 0);
 
         final com.dotcms.content.index.domain.SearchHit hit =
                 response.hits().iterator().next();
         assertNotNull("inode must still be present after _source overwrite",
-                hit.sourceAsMap().get("inode"));
+                hit.getSourceAsMap().get("inode"));
 
         Logger.info(this, "✅ test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode passed");
     }
