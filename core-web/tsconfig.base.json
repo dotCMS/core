@@ -102,7 +102,8 @@
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
-            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"]
+            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
+            "@dotcms/dot-ai-chat": ["libs/dot-ai-chat/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

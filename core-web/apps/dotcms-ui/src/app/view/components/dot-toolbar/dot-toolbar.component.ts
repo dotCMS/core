@@ -1,7 +1,8 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -26,6 +27,7 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
     templateUrl: './dot-toolbar.component.html',
     imports: [
         ToolbarModule,
+        ButtonModule,
         DividerModule,
         DotCrumbtrailComponent,
         DotToolbarNotificationsComponent,
@@ -45,6 +47,8 @@ export class DotToolbarComponent implements OnInit {
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+    readonly aiChatVisible = input(false);
+    readonly aiChatVisibleChange = output<boolean>();
 
     ngOnInit(): void {
         this.#dotcmsEventsService
@@ -79,5 +83,9 @@ export class DotToolbarComponent implements OnInit {
                     this.globalStore.setCurrentSite(site);
                 });
         }
+    }
+
+    openAiChat(): void {
+        this.aiChatVisibleChange.emit(true);
     }
 }
