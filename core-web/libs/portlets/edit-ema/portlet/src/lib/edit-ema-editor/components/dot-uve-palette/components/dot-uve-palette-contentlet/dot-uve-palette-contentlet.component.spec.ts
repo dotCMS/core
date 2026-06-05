@@ -133,7 +133,7 @@ describe('DotUvePaletteContentletComponent', () => {
             expect(titleElement).toBeTruthy();
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
             expect(titleElement).toHaveClass('line-clamp-2');
-            expect(titleElement).toHaveClass('break-words');
+            expect(titleElement).toHaveClass('wrap-break-word');
         });
 
         it('should expose the full title through a PrimeNG tooltip on the title element', () => {
