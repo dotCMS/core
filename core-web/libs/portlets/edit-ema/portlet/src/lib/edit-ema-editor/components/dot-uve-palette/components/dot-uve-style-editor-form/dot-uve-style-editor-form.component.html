@@ -11,7 +11,9 @@
                     </p-accordion-header>
                     <p-accordion-content
                         [pt]="{
-                            root: { class: 'group/uve-section' },
+                            root: {
+                                class: 'group/uve-section data-[p-active=false]:overflow-hidden'
+                            },
                             content: { class: 'border-none!' }
                         }">
                         <div class="flex flex-col gap-4">
@@ -28,7 +30,9 @@
                                         <dot-uve-style-editor-field-radio [field]="field" />
                                     }
                                     @case (STYLE_EDITOR_FIELD_TYPES.INPUT) {
-                                        <dot-uve-style-editor-field-input [field]="field" />
+                                        <dot-uve-style-editor-field-input
+                                            [field]="field"
+                                            (commit)="onInputCommit()" />
                                     }
                                 }
                             }

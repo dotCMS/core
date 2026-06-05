@@ -23,7 +23,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFieldType } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from './models';
+import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from '../../models';
 
 /** Per-option validation error messages. */
 interface OptionErrors {
@@ -343,6 +343,28 @@ export class DotStyleEditorFieldFormComponent {
             updated[index] = { ...updated[index], imageURL };
 
             return { options: updated };
+        });
+        this.#emitChange();
+    }
+
+    moveOptionUp(index: number): void {
+        if (index <= 0) return;
+        this.#swapOptions(index, index - 1);
+    }
+
+    moveOptionDown(index: number): void {
+        if (index >= this.#state.options().length - 1) return;
+        this.#swapOptions(index, index + 1);
+    }
+
+    #swapOptions(from: number, to: number): void {
+        patchState(this.#state, ({ options, optionValueTouched }) => {
+            const updatedOptions = [...options];
+            const updatedTouched = [...optionValueTouched];
+            [updatedOptions[from], updatedOptions[to]] = [updatedOptions[to], updatedOptions[from]];
+            [updatedTouched[from], updatedTouched[to]] = [updatedTouched[to], updatedTouched[from]];
+
+            return { options: updatedOptions, optionValueTouched: updatedTouched };
         });
         this.#emitChange();
     }

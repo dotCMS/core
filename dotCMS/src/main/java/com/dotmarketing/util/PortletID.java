@@ -53,7 +53,9 @@ public enum PortletID {
     WORKFLOW_SCHEMES,
     LOCALES,
     ANALYTICS_DASHBOARD,
-    USAGE;
+    USAGE,
+    VELOCITY_PLAYGROUND("velocity_playground"),
+    VELOCITY_PLAYGROUND_LEGACY("velocity_playground-legacy");
 
     private final String url;
 

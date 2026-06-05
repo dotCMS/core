@@ -1,0 +1,258 @@
+<!-- Main split pane -->
+<p-splitter
+    [panelSizes]="store.splitterRatio()"
+    [pt]="splitterPt"
+    (onResizeEnd)="onSplitterResize($event)"
+    data-testid="velocity-playground-splitter">
+    <!-- Left: Velocity editor + History + Run footer -->
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-hidden">
+            <!-- Editor header panel — title + help + wrap toggle -->
+            <p-panel
+                [pt]="{
+                    root: { class: 'shrink-0 border-0! rounded-none! shadow-none!' },
+                    header: { class: 'min-h-14 px-4! py-2!' },
+                    content: { class: 'hidden!' }
+                }"
+                data-testid="velocity-playground-editor-panel">
+                <ng-template pTemplate="header">
+                    <div class="flex items-center gap-1">
+                        <span class="font-semibold">
+                            {{ 'velocityPlayground.editor.label' | dm }}
+                        </span>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            icon="pi pi-question-circle"
+                            [pTooltip]="'velocityPlayground.action.help' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'velocityPlayground.action.help' | dm"
+                            (onClick)="$helpPopover().toggle($event)"
+                            data-testid="velocity-playground-help-btn" />
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="icons">
+                    <div class="form-checkbox">
+                        <p-checkbox
+                            inputId="velocity-playground-wrap"
+                            [binary]="true"
+                            [ngModel]="store.wrapCode()"
+                            (ngModelChange)="store.setWrapCode($event)"
+                            data-testid="velocity-playground-wrap-toggle" />
+                        <label for="velocity-playground-wrap">
+                            {{ 'velocityPlayground.action.wrap' | dm }}
+                        </label>
+                    </div>
+                </ng-template>
+            </p-panel>
+
+            <!-- Velocity Monaco editor -->
+            <ngx-monaco-editor
+                class="min-h-0 flex-1"
+                [ngModel]="store.code()"
+                (ngModelChange)="store.setCode($event)"
+                (onInit)="onEditorInit()"
+                [options]="$editorOptions()"
+                data-testid="velocity-playground-editor" />
+
+            <!-- History panel (collapsable) -->
+            <p-panel
+                [header]="'velocityPlayground.history.label' | dm"
+                [toggleable]="true"
+                toggler="header"
+                [collapsed]="!$historyOpen()"
+                (collapsedChange)="$historyOpen.set(!$event)"
+                [pt]="{
+                    root: {
+                        class: 'border-x-0! border-b-0! rounded-none! shadow-none! shrink-0 border-t border-surface-200'
+                    },
+                    content: { class: 'p-0!' }
+                }"
+                data-testid="velocity-playground-history-panel">
+                <ng-template pTemplate="headericons">
+                    <i [class]="$historyOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                </ng-template>
+                <div class="form p-3" data-testid="velocity-playground-history-content">
+                    <div class="field">
+                        <label for="velocity-playground-history">
+                            {{ 'velocityPlayground.history.recent' | dm }}
+                        </label>
+                        <p-select
+                            inputId="velocity-playground-history"
+                            [options]="$historyOptions()"
+                            [ngModel]="null"
+                            (ngModelChange)="onHistoryChange($event)"
+                            [placeholder]="'velocityPlayground.history.placeholder' | dm"
+                            [disabled]="!store.hasHistory()"
+                            optionLabel="label"
+                            optionValue="value"
+                            appendTo="body"
+                            [showClear]="false"
+                            class="w-full"
+                            data-testid="velocity-playground-history-select" />
+                    </div>
+                    <div class="flex justify-end">
+                        <p-button
+                            text
+                            size="small"
+                            icon="pi pi-trash"
+                            [label]="'velocityPlayground.action.clearHistory' | dm"
+                            [disabled]="!store.hasHistory()"
+                            (onClick)="store.clearHistory()"
+                            data-testid="velocity-playground-clear-history-btn" />
+                    </div>
+                </div>
+            </p-panel>
+
+            <!-- Run footer -->
+            <div
+                class="flex shrink-0 items-center justify-end border-t border-surface-200 bg-surface-0 p-3"
+                data-testid="velocity-playground-run-footer">
+                <p-button
+                    [label]="'velocityPlayground.action.run' | dm"
+                    icon="pi pi-play"
+                    [loading]="store.isLoading()"
+                    (onClick)="onRun()"
+                    data-testid="velocity-playground-run-btn" />
+            </div>
+        </div>
+    </ng-template>
+
+    <!-- Right: Output -->
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-hidden">
+            @if (store.hasError()) {
+                <p-message
+                    severity="error"
+                    icon="pi pi-exclamation-triangle"
+                    [pt]="{
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
+                    }"
+                    data-testid="velocity-playground-error-banner">
+                    {{ store.errorMessage() | dm }}
+                </p-message>
+            }
+            @if (store.status() === ComponentStatus.INIT && !store.hasError()) {
+                <dot-empty-container
+                    class="flex-1"
+                    [configuration]="emptyOutputConfig"
+                    [hideContactUsLink]="true"
+                    data-testid="velocity-playground-empty-output" />
+            } @else if (store.isLoading()) {
+                <div
+                    class="flex flex-1 flex-col items-center justify-center gap-3"
+                    data-testid="velocity-playground-loading">
+                    <dot-spinner size="3rem" borderSize="3px" />
+                    <span class="text-color-secondary text-sm">
+                        {{ 'velocityPlayground.output.running' | dm }}
+                    </span>
+                </div>
+            } @else {
+                <!-- Stats bar -->
+                <div
+                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
+                    data-testid="velocity-playground-stats-bar">
+                    <div class="flex items-center gap-1.5">
+                        @if (store.hasOutput()) {
+                            <span
+                                class="font-semibold text-color"
+                                data-testid="velocity-playground-content-type-chip">
+                                {{ 'velocityPlayground.output.viewing' | dm }}
+                                {{ store.outputContentType() }}
+                            </span>
+                            <span class="text-color-secondary mx-1">&middot;</span>
+                        }
+                        <i class="pi pi-circle-fill text-[0.5rem] text-green-600"></i>
+                        {{ 'velocityPlayground.output.ready' | dm }}
+                        @if (store.elapsedMs() !== null) {
+                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="inline-flex items-center gap-1">
+                                <span class="font-bold text-color">{{ store.elapsedMs() }}</span>
+                                {{ 'velocityPlayground.output.timing' | dm }}
+                            </span>
+                        }
+                    </div>
+                    @if (store.hasOutput()) {
+                        <div class="ml-auto flex items-center gap-2">
+                            <p-button
+                                text
+                                size="small"
+                                [label]="'velocityPlayground.action.share' | dm"
+                                icon="pi pi-chevron-down"
+                                iconPos="right"
+                                (onClick)="toggleExportMenu($event)"
+                                data-testid="velocity-playground-share-btn" />
+                            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+                            <p-button
+                                [outlined]="true"
+                                size="small"
+                                [label]="'velocityPlayground.action.export' | dm"
+                                icon="pi pi-download"
+                                (onClick)="downloadOutput()"
+                                data-testid="velocity-playground-export-btn" />
+                        </div>
+                    }
+                </div>
+
+                <ngx-monaco-editor
+                    class="min-h-0 flex-1"
+                    [ngModel]="store.output()"
+                    [options]="$outputOptions()"
+                    data-testid="velocity-playground-output-editor" />
+            }
+        </div>
+    </ng-template>
+</p-splitter>
+
+<!-- Help popover with Velocity examples -->
+<p-popover
+    #helpPopoverEl
+    data-testid="velocity-playground-help-dialog"
+    [pt]="{ content: { style: { overflow: 'visible' } } }">
+    <div class="flex w-[600px] flex-col">
+        <p class="m-0 pb-3 text-sm font-semibold text-color">
+            {{ 'velocityPlayground.help.title' | dm }}
+        </p>
+        <div class="flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
+            @for (example of helpExamples; track $index) {
+                <div
+                    class="rounded-lg border border-surface-200"
+                    data-testid="velocity-playground-help-example">
+                    <div
+                        class="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-3 py-2">
+                        <span class="text-sm font-semibold text-color">
+                            {{ example.title | dm }}
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <p-button
+                                text
+                                size="small"
+                                icon="pi pi-copy"
+                                [label]="'velocityPlayground.help.copy' | dm"
+                                (onClick)="copyToClipboard(example.code)"
+                                data-testid="velocity-playground-help-copy-btn" />
+                            <p-button
+                                text
+                                size="small"
+                                [label]="'velocityPlayground.help.copyToEditor' | dm"
+                                (onClick)="useExample(example.code)"
+                                data-testid="velocity-playground-help-use-btn" />
+                        </div>
+                    </div>
+                    @if (example.description) {
+                        <p
+                            class="text-color-secondary m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs"
+                            data-testid="velocity-playground-help-description">
+                            {{ example.description | dm }}
+                        </p>
+                    }
+                    <pre
+                        class="m-0 overflow-x-auto border-0 bg-surface-50 p-3 font-mono text-xs text-color"
+                        >{{ example.code }}</pre
+                    >
+                </div>
+            }
+        </div>
+    </div>
+</p-popover>
