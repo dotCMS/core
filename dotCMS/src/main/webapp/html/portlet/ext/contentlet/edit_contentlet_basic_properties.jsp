@@ -109,10 +109,18 @@
 	// context needed by EditContentletAction to auto-link the content to its parent.
 	if (request.getParameter("relwith") != null) {
 		params.put("relwith", new String[] { request.getParameter("relwith") });
-		params.put("relisparent", new String[] { request.getParameter("relisparent") });
-		params.put("reltype", new String[] { request.getParameter("reltype") });
-		params.put("relname", new String[] { request.getParameter("relname") });
-		params.put("relname_inodes", new String[] { request.getParameter("relname_inodes") });
+		if (request.getParameter("relisparent") != null) {
+			params.put("relisparent", new String[] { request.getParameter("relisparent") });
+		}
+		if (request.getParameter("reltype") != null) {
+			params.put("reltype", new String[] { request.getParameter("reltype") });
+		}
+		if (request.getParameter("relname") != null) {
+			params.put("relname", new String[] { request.getParameter("relname") });
+		}
+		if (request.getParameter("relname_inodes") != null) {
+			params.put("relname_inodes", new String[] { request.getParameter("relname_inodes") });
+		}
 	}
 	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 	WorkflowScheme scheme = null;
