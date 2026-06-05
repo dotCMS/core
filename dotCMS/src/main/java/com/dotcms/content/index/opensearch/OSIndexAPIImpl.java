@@ -44,9 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
-import org.opensearch.client.opensearch._types.ErrorCause;
 import org.opensearch.client.opensearch._types.ExpandWildcard;
-import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch.indices.ClearCacheRequest;
 import org.opensearch.client.opensearch.indices.ClearCacheResponse;
@@ -244,42 +242,17 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
         try {
             final DeleteIndexRequest request = DeleteIndexRequest.of(builder ->
-                builder.index(toPhysicalName(indexName))
+                builder.index(getNameWithClusterIDPrefix(indexName))
                        .timeout(Time.of(timeBuilder ->
                            timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                        ))
             );
             final var response = clientProvider.getClient().indices().delete(request);
             return response.acknowledged();
-        } catch (OpenSearchException e) {
-            // Safety net: deleting an index that is already gone is a successful no-op (idempotent
-            // delete). The name is canonicalized to its physical .os form above, so the normal
-            // case now targets the real index; this only triggers for a genuinely-absent index
-            // (e.g. a double-delete). It must NOT propagate as a failure once OS is primary in
-            // Phase 3.
-            if (isIndexNotFound(e)) {
-                Logger.debug(this.getClass(),
-                    () -> "OpenSearch index already absent, treating delete as no-op: " + indexName);
-                return true;
-            }
-            Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
-            throw new RuntimeException("Failed to delete index: " + indexName, e);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error deleting index: " + indexName, e);
             throw new RuntimeException("Failed to delete index: " + indexName, e);
         }
-    }
-
-    /**
-     * Detects an OpenSearch {@code index_not_found_exception} (HTTP 404), so callers can treat a
-     * delete of an already-absent index as an idempotent no-op rather than a hard failure.
-     */
-    private static boolean isIndexNotFound(final OpenSearchException e) {
-        if (e.status() == 404) {
-            return true;
-        }
-        final ErrorCause cause = e.error();
-        return cause != null && "index_not_found_exception".equals(cause.type());
     }
 
     @Override
@@ -820,34 +793,6 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name : clusterPrefix.get() + name;
-    }
-
-    /**
-     * Resolves a vendor-neutral logical (or ES-style) index name to its canonical OS physical
-     * form: cluster-ID prefix + {@code .os} tag.
-     *
-     * <p>The {@link com.dotcms.content.index.IndexAPIImpl} router fans out the <em>same</em>
-     * logical name to both the ES and OS providers (e.g. {@code live_20260604211839}); each
-     * provider is responsible for mapping it to its own physical naming. The ES provider only
-     * adds the cluster prefix; the OS provider must ALSO add the {@code .os} tag, because the tag
-     * is part of the canonical OS name at every layer — including the physical index in the
-     * cluster (see {@link IndexTag}). Resolving here, rather than expecting callers to pre-tag,
-     * keeps the router vendor-neutral and prevents silently targeting an untagged name that does
-     * not exist (which would, for delete, orphan the real {@code .os} index).</p>
-     *
-     * <p>Idempotent: names already carrying the cluster prefix and/or the {@code .os} tag are not
-     * double-applied.</p>
-     *
-     * <p>Scope note: only {@link #delete(String)} uses this. {@code delete} is reached by the
-     * router with the raw, untagged ES name (the reported bug: it orphaned the real {@code .os}
-     * index). The other lifecycle/maintenance methods deliberately keep bare
-     * {@link #getNameWithClusterIDPrefix} semantics — in production they already receive
-     * {@code .os}-tagged names (from {@code VersionedIndices}), so tagging again buys nothing, and
-     * the OS IT suites create indices by bare name and read them back by bare name. Broadening the
-     * canonicalization belongs in its own PR, not bundled here.</p>
-     */
-    private String toPhysicalName(final String name) {
-        return IndexTag.OS.tag(getNameWithClusterIDPrefix(name));
     }
 
     /**

@@ -371,38 +371,6 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Given scenario: An OS index is created with its {@code .os}-tagged name, then {@code delete}
-     *                 is invoked with the UNtagged logical name — exactly what the
-     *                 {@link com.dotcms.content.index.IndexAPIImpl} router does when it fans out a
-     *                 vendor-neutral name (the ES name, e.g. {@code live_20260604211839}) to both
-     *                 providers.
-     * Expected: {@code delete} resolves the untagged name to the real physical {@code .os} index
-     *           and removes it. Regression for the reported bug where the OS provider applied only
-     *           the cluster prefix and not the {@code .os} tag on delete, so a router-driven delete
-     *           missed the real index (logging {@code index_not_found_exception}) and left it
-     *           orphaned. Only {@code delete} canonicalizes the untagged router name; the other
-     *           lifecycle methods keep bare-name semantics (see {@code OSIndexAPIImpl.toPhysicalName}).
-     */
-    @Test
-    public void test_deleteWithUntaggedRouterName_shouldRemoveTaggedIndex() throws Exception {
-        // The bare logical name the router broadcasts — no .os tag, no cluster prefix.
-        final String untagged = IndexTag.strip(OS_LIVE_TAGGED);
-        assertFalse("Pre-condition: name under test must actually be untagged",
-                IndexTag.OS.isTagged(untagged));
-
-        osIndexAPI.createIndex(OS_LIVE_TAGGED, 1);
-        assertTrue("Pre-condition: the .os index must exist before deletion",
-                osIndexAPI.indexExists(OS_LIVE_TAGGED));
-
-        final boolean ack = osIndexAPI.delete(untagged);
-
-        assertTrue("delete via the untagged router name must be acknowledged", ack);
-        assertFalse("The real .os index must be gone after deleting via the untagged name",
-                osIndexAPI.indexExists(OS_LIVE_TAGGED));
-        Logger.info(this, "✅ test_deleteWithUntaggedRouterName_shouldRemoveTaggedIndex passed");
-    }
-
-    /**
      * Given scenario: Several realistic cluster-name formats are used to build a cluster prefix.
      * Expected: {@code getNameWithClusterIDPrefix} is idempotent, {@code hasClusterPrefix} and
      *           {@code removeClusterIdFromName} are consistent inverses for every format —
