@@ -1,6 +1,5 @@
 package com.dotcms.ai.client.langchain4j;
 
-import com.dotmarketing.util.Logger;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.bedrock.BedrockChatRequestParameters;
 import dev.langchain4j.model.bedrock.BedrockCohereEmbeddingModel;
@@ -14,9 +13,16 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.retry.AwsRetryStrategy;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClientBuilder;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilder;
+
+import java.time.Duration;
+import java.util.Optional;
 
 class BedrockModelProviderStrategy implements ModelProviderStrategy {
 
@@ -28,7 +34,6 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public ChatModel buildChatModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
-        warnIgnoredOptions(config);
         final BedrockChatModel.Builder builder = BedrockChatModel.builder()
                 .modelId(config.model())
                 .client(bedrockClient(config));
@@ -44,7 +49,6 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public StreamingChatModel buildStreamingChatModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
-        warnIgnoredOptions(config);
         final BedrockStreamingChatModel.Builder builder = BedrockStreamingChatModel.builder()
                 .modelId(config.model())
                 .client(bedrockAsyncClient(config));
@@ -60,7 +64,6 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public EmbeddingModel buildEmbeddingModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
-        warnIgnoredOptions(config);
         final String model = config.model();
         final AwsCredentialsProvider credentials = credentials(config);
         final Region region = Region.of(config.region());
@@ -95,13 +98,6 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
         ModelProviderStrategy.requireNonBlank(config.model(), "model", modelType);
     }
 
-    private static void warnIgnoredOptions(final ProviderConfig config) {
-        if (config.timeout() != null || config.maxRetries() != null) {
-            Logger.warn(BedrockModelProviderStrategy.class,
-                    "timeout and maxRetries are not applied to Bedrock providers and will be ignored");
-        }
-    }
-
     private static AwsCredentialsProvider credentials(final ProviderConfig config) {
         final boolean hasKeyId = config.accessKeyId() != null && !config.accessKeyId().isBlank();
         final boolean hasSecret = config.secretAccessKey() != null && !config.secretAccessKey().isBlank();
@@ -117,17 +113,47 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     }
 
     private static BedrockRuntimeClient bedrockClient(final ProviderConfig config) {
-        return BedrockRuntimeClient.builder()
+        final BedrockRuntimeClientBuilder builder = BedrockRuntimeClient.builder()
                 .region(Region.of(config.region()))
-                .credentialsProvider(credentials(config))
-                .build();
+                .credentialsProvider(credentials(config));
+        overrideConfiguration(config).ifPresent(builder::overrideConfiguration);
+        return builder.build();
     }
 
     private static BedrockRuntimeAsyncClient bedrockAsyncClient(final ProviderConfig config) {
-        return BedrockRuntimeAsyncClient.builder()
+        final BedrockRuntimeAsyncClientBuilder builder = BedrockRuntimeAsyncClient.builder()
                 .region(Region.of(config.region()))
-                .credentialsProvider(credentials(config))
-                .build();
+                .credentialsProvider(credentials(config));
+        overrideConfiguration(config).ifPresent(builder::overrideConfiguration);
+        return builder.build();
+    }
+
+    /**
+     * Builds a {@link ClientOverrideConfiguration} carrying the request timeout and/or retry
+     * settings, but only when at least one option is set. Returns {@link Optional#empty()} when
+     * neither {@code timeout} nor {@code maxRetries} is configured, so the AWS SDK defaults apply
+     * untouched.
+     *
+     * <p>{@code timeout} (seconds) maps to {@link ClientOverrideConfiguration.Builder#apiCallTimeout(Duration)}.
+     * {@code maxRetries} maps to the non-deprecated retry API
+     * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code maxRetries + 1}
+     * (one initial call plus the configured number of retries).
+     */
+    private static Optional<ClientOverrideConfiguration> overrideConfiguration(final ProviderConfig config) {
+        if (config.timeout() == null && config.maxRetries() == null) {
+            return Optional.empty();
+        }
+        final ClientOverrideConfiguration.Builder builder = ClientOverrideConfiguration.builder();
+        if (config.timeout() != null) {
+            builder.apiCallTimeout(Duration.ofSeconds(config.timeout()));
+        }
+        if (config.maxRetries() != null) {
+            builder.retryStrategy(AwsRetryStrategy.standardRetryStrategy()
+                    .toBuilder()
+                    .maxAttempts(config.maxRetries() + 1)
+                    .build());
+        }
+        return Optional.of(builder.build());
     }
 
 }

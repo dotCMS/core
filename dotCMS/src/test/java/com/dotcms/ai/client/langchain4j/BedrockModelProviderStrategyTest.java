@@ -170,6 +170,61 @@ public class BedrockModelProviderStrategyTest {
     }
 
     /**
+     * Given a Bedrock config with timeout and maxRetries set,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned (the client override-configuration branch is exercised).
+     */
+    @Test
+    public void test_buildChatModel_withTimeoutAndMaxRetries_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("openai.gpt-oss-120b-1:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .timeout(30)
+                .maxRetries(2)
+                .build();
+        assertNotNull(strategy.buildChatModel(config, MODEL_TYPE));
+    }
+
+    /**
+     * Given a Bedrock config with only timeout set,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned.
+     */
+    @Test
+    public void test_buildChatModel_withTimeoutOnly_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("us.deepseek.r1-v1:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .timeout(15)
+                .build();
+        assertNotNull(strategy.buildChatModel(config, MODEL_TYPE));
+    }
+
+    /**
+     * Given a Bedrock config with only maxRetries set,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned.
+     */
+    @Test
+    public void test_buildChatModel_withMaxRetriesOnly_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("us.deepseek.r1-v1:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .maxRetries(4)
+                .build();
+        assertNotNull(strategy.buildChatModel(config, MODEL_TYPE));
+    }
+
+    /**
      * Given a Bedrock config with only an accessKeyId (secretAccessKey absent),
      * When buildStreamingChatModel is called,
      * Then an IllegalArgumentException is thrown with the both-or-neither message.
@@ -234,6 +289,25 @@ public class BedrockModelProviderStrategyTest {
                 .secretAccessKey("test-secret-key")
                 .temperature(0.5)
                 .maxTokens(256)
+                .build();
+        assertNotNull(strategy.buildStreamingChatModel(config, MODEL_TYPE));
+    }
+
+    /**
+     * Given a Bedrock config with timeout and maxRetries set,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned (the async client override-configuration branch is exercised).
+     */
+    @Test
+    public void test_buildStreamingChatModel_withTimeoutAndMaxRetries_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("us.deepseek.r1-v1:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .timeout(20)
+                .maxRetries(3)
                 .build();
         assertNotNull(strategy.buildStreamingChatModel(config, MODEL_TYPE));
     }
