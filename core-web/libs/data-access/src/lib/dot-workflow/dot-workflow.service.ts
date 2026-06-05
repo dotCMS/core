@@ -113,7 +113,7 @@ export class DotWorkflowService {
     getSteps(schemeId: string): Observable<WorkflowStep[]> {
         return this.httpClient
             .get<{ entity: WorkflowStep[] }>(`${this.WORKFLOW_URL}/schemes/${schemeId}/steps`)
-            .pipe(map((x) => x?.entity));
+            .pipe(map((x) => x?.entity ?? []));
     }
 
     /**

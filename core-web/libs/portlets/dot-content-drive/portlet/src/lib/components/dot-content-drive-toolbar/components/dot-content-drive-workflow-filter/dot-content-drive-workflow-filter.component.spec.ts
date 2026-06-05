@@ -84,7 +84,7 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
         (store.getFilterValue as jest.Mock).mockImplementation((key: string) => values[key]);
 
     const openPanel = () => {
-        spectator.click(testId('workflow-filter-chip'));
+        spectator.click(byTestId('workflow-filter-chip'));
         spectator.detectChanges();
     };
 
