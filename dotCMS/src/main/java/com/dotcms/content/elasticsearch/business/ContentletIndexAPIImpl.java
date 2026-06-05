@@ -1459,7 +1459,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public boolean delete(String indexName) {
-        return indexAPI.delete(indexName);
+        // Mirror createContentIndex: resolve the per-provider physical name (ES → bare,
+        // OS → .os tag) via ops.toPhysicalName so a router-driven delete targets the REAL
+        // OS index. Routing the bare logical name straight to OSIndexAPIImpl.delete would
+        // hit an untagged name that does not exist and orphan the actual .os index.
+        // Track the primary provider's result; shadow failures in dual-write phases are
+        // fire-and-forget (the primary ES delete must not be undone by an OS shadow miss).
+        final ContentletIndexOperations primary = router.readProvider();
+        boolean primaryResult = false;
+        for (final ContentletIndexOperations ops : router.writeProviders()) {
+            final String physicalName = ops.toPhysicalName(indexName);
+            try {
+                final boolean r = ops.indexAPI().delete(physicalName);
+                if (ops == primary) {
+                    primaryResult = r;
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
+                if (ops == primary) {
+                    primaryResult = false;
+                }
+                // shadow failures are fire-and-forget in dual-write phases
+            }
+        }
+        return primaryResult;
     }
 
     public boolean optimize(List<String> indexNames) {

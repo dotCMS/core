@@ -403,6 +403,33 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         Logger.info(this, "✅ createContentIndex Phase 3 — OS only: " + DUAL_WORKING);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} is created in both clusters via
+     *                 the fan-out (ES bare, OS {@code .os}).
+     * When : {@code contentletIndexAPI().delete(DUAL_WORKING)} is called with the BARE logical name
+     *        — exactly what {@code ESIndexResource}/the router hand in.
+     * Then : both the ES index AND the OS {@code .os} index are removed. Regression for the orphan
+     *        bug where delete routed the bare name straight to the OS provider, missed the real
+     *        {@code .os} index, and left it behind. Works in single-cluster mode because the OS
+     *        physical name carries the {@code .os} tag, distinct from the ES bare name.
+     */
+    @Test
+    public void test_delete_phase1_removesFromBothClusters() throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        contentletIndexAPI().delete(DUAL_WORKING);
+
+        assertFalse("ES index must be gone after delete", esImpl().indexExists(DUAL_WORKING));
+        assertFalse("OS .os index must be gone after delete (must not be orphaned)",
+                osIndexAPI.indexExists(physicalDualWorking));
+
+        Logger.info(this, "✅ delete Phase 1 — both removed: " + DUAL_WORKING);
+    }
+
     // =========================================================================
     // activateIndex — pointer-store writes verified against real DB
     // =========================================================================
