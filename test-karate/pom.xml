@@ -12,9 +12,9 @@
     <artifactId>dotcms-test-karate</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.source>${dotcms.core.compiler.release}</maven.compiler.source>
+        <maven.compiler.target>${dotcms.core.compiler.release}</maven.compiler.target>
+        <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
 
         <license.use>true</license.use>
         <clean.docker.volumes>true</clean.docker.volumes>

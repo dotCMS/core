@@ -18,6 +18,8 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.release>11</maven.compiler.release>
+        <!-- Pinned to Java 11 for OSGi/portability; preview features cannot be enabled at release 11. -->
+        <maven.compiler.enablePreview>false</maven.compiler.enablePreview>
     </properties>
     <dependencies>
 
