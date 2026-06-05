@@ -31,7 +31,7 @@
 #
 
 name: '-7 Release Java Variant'
-run-name: "Release Java Variant - ${{ inputs.release_branch }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
+run-name: "Release Java Variant - ${{ inputs.release_branch }} [${{ inputs.java_version }}]"
 
 on:
   # This workflow is manual-only and can be repurposed for other variants
@@ -128,6 +128,10 @@ jobs:
           fi
 
           # tr -d '\r' guards against a CRLF-committed .sdkmanrc making the equality check fail open
+          # Reads .sdkmanrc from the branch tip, while the build job checks out the tag
+          # (v${version}). For release branches these point at the same commit; if they ever
+          # diverge the worst case is a redundant variant of the default — harmless, since the
+          # explicit artifact suffix derived below means it can never overwrite primary tags.
           default_java=$(gh api "repos/${{ github.repository }}/contents/.sdkmanrc?ref=${branch}" --jq .content | base64 --decode | tr -d '\r' | awk -F= '/^java=/ {print $2}')
           echo "Default Java on ${branch} (.sdkmanrc): ${default_java}"
           echo "Requested variant Java version:        ${JAVA_VERSION}"
