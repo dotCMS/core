@@ -86,6 +86,10 @@ public class ContentDriveWorkflowFilterTest extends IntegrationTestBase {
     private static Contentlet cAtStep1;       // current task at scheme C step 1
     private static Contentlet cNeverActioned; // no workflow_task at all
 
+    // Content types (assigned to schemes A and C respectively).
+    private static ContentType typeA;
+    private static ContentType typeC;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -111,7 +115,7 @@ public class ContentDriveWorkflowFilterTest extends IntegrationTestBase {
         schemeCStep1 = workflowAPI.findSteps(schemeC).get(0);
 
         // Content types governed by each scheme.
-        final ContentType typeA = new ContentTypeDataGen()
+        typeA = new ContentTypeDataGen()
                 .name("DriveWfTypeA_" + uniqueId)
                 .velocityVarName("driveWfTypeA_" + uniqueId)
                 .baseContentType(BaseContentType.CONTENT)
@@ -119,7 +123,7 @@ public class ContentDriveWorkflowFilterTest extends IntegrationTestBase {
                 .workflowId(schemeA.getId())
                 .nextPersisted();
 
-        final ContentType typeC = new ContentTypeDataGen()
+        typeC = new ContentTypeDataGen()
                 .name("DriveWfTypeC_" + uniqueId)
                 .velocityVarName("driveWfTypeC_" + uniqueId)
                 .baseContentType(BaseContentType.CONTENT)
@@ -254,6 +258,27 @@ public class ContentDriveWorkflowFilterTest extends IntegrationTestBase {
                 inodes.contains(cAtStep1.getInode()));
         assertFalse("Task-less C content must not match a step-pinned C entry",
                 inodes.contains(cNeverActioned.getInode()));
+    }
+
+    /**
+     * A content-type filter and a workflow filter combine with AND: the result is the intersection
+     * (type A content governed by scheme A), and type C content is excluded by the content-type
+     * clause even though it has its own scheme.
+     */
+    @Test
+    public void testContentTypeFilterCombinesWithWorkflowFilter()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .contentTypes(List.of(typeA.variable()))
+                .workflow(List.of(WorkflowFilterForm.builder().scheme(schemeA.getId()).build()))
+                .build());
+
+        assertTrue(inodes.contains(aNeverActioned.getInode()));
+        assertTrue(inodes.contains(aAtStep1.getInode()));
+        assertTrue(inodes.contains(aAtStep2.getInode()));
+        // Excluded by the content-type clause, not the workflow clause.
+        assertFalse(inodes.contains(cAtStep1.getInode()));
+        assertFalse(inodes.contains(cNeverActioned.getInode()));
     }
 
     /**
