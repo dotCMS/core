@@ -50,7 +50,10 @@ import {
     mockMatchMedia
 } from '@dotcms/utils-testing';
 
-import { DotEditContentFormComponent } from './dot-edit-content-form.component';
+import {
+    contentStatusSeverity,
+    DotEditContentFormComponent
+} from './dot-edit-content-form.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
@@ -801,13 +804,13 @@ describe('DotFormComponent', () => {
             expect(commandBar).toBeFalsy();
         });
 
-        describe('statusSeverity', () => {
+        describe('contentStatusSeverity', () => {
             it('should map status labels to PrimeNG severities', () => {
-                expect(component.statusSeverity('Published')).toBe('success');
-                expect(component.statusSeverity('Archived')).toBe('danger');
-                expect(component.statusSeverity('Revision')).toBe('info');
-                expect(component.statusSeverity('Draft')).toBe('warn');
-                expect(component.statusSeverity('New')).toBe('warn');
+                expect(contentStatusSeverity('Published')).toBe('success');
+                expect(contentStatusSeverity('Archived')).toBe('danger');
+                expect(contentStatusSeverity('Revision')).toBe('info');
+                expect(contentStatusSeverity('Draft')).toBe('warn');
+                expect(contentStatusSeverity('New')).toBe('warn');
             });
         });
     });

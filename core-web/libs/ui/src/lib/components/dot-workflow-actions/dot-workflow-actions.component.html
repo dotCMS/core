@@ -33,7 +33,7 @@
             [loading]="loading()"
             [disabled]="!loading()"
             [size]="getButtonSize()"
-            styleClass="h-11 w-full justify-center"
+            [fluid]="true"
             [label]="(loading() ? 'Loading' : 'edit.ema.page.no.workflow.action') | dm"
             data-testId="empty-button" />
     } @else {
@@ -44,7 +44,7 @@
                 [disabled]="loading() || disabled()"
                 [size]="getButtonSize()"
                 [variant]="getVariant(idx)"
-                styleClass="h-11 w-full justify-center"
+                [fluid]="true"
                 [label]="action.name"
                 [attr.data-testId]="'action-button-' + action.id" />
         }

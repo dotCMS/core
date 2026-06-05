@@ -70,6 +70,25 @@ import { blockEditorRequiredValidator } from '../../utils/validators';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
+ * Maps a contentlet status label to its PrimeNG Tag severity.
+ *
+ * Kept as a pure, exported function so the mapping stays unit-testable in isolation
+ * (no component/store needed) and is consumed by the `$statusSeverity` computed.
+ */
+export function contentStatusSeverity(status: string): Tag['severity'] {
+    switch (status) {
+        case 'Published':
+            return 'success';
+        case 'Archived':
+            return 'danger';
+        case 'Revision':
+            return 'info';
+        default:
+            return 'warn';
+    }
+}
+
+/**
  * DotEditContentFormComponent
  *
  * A standalone component responsible for rendering and managing the form for editing content in DotCMS.
@@ -103,11 +122,11 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         TagModule,
         TabViewInsertDirective,
         DotMessagePipe,
-        DotContentletStatusPipe,
         DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet
     ],
+    providers: [DotContentletStatusPipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeIn', [
@@ -132,6 +151,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
     readonly #appRef = inject(ApplicationRef);
+    readonly #statusPipe = inject(DotContentletStatusPipe);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -193,6 +213,24 @@ export class DotEditContentFormComponent implements OnInit {
     });
 
     /**
+     * Status label shown in the command-bar tag. A brand-new contentlet has no status yet,
+     * so it shows "New"; otherwise the contentlet state is mapped via DotContentletStatusPipe.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $contentStatus = computed(() =>
+        this.$store.isNew() ? 'New' : this.#statusPipe.transform(this.$store.contentlet())
+    );
+
+    /**
+     * PrimeNG Tag severity derived from the current status label. A computed (not a template
+     * method) so it is memoized and only recomputes when the status changes.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $statusSeverity = computed<Tag['severity']>(() => contentStatusSeverity(this.$contentStatus()));
+
+    /**
      * FormGroup instance that contains the form controls for the fields in the content type
      *
      * @type {FormGroup}
@@ -251,7 +289,8 @@ export class DotEditContentFormComponent implements OnInit {
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
             currentIdentifier: this.$store.currentIdentifier(),
-            statusSeverity: (status: string) => this.statusSeverity(status),
+            $contentStatus: this.$contentStatus,
+            $statusSeverity: this.$statusSeverity,
             showPreview: () => this.showPreview()
         };
     }
@@ -764,26 +803,6 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         window.open(realUrl, '_blank');
-    }
-
-    /**
-     * Maps a contentlet status string to a PrimeNG Tag severity.
-     *
-     * @param {string} status - The contentlet status label
-     * @returns {Tag['severity']} The matching PrimeNG Tag severity
-     * @memberof DotEditContentFormComponent
-     */
-    statusSeverity(status: string): Tag['severity'] {
-        switch (status) {
-            case 'Published':
-                return 'success';
-            case 'Archived':
-                return 'danger';
-            case 'Revision':
-                return 'info';
-            default:
-                return 'warn';
-        }
     }
 
     /**

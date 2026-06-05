@@ -98,11 +98,11 @@
             </button>
             <!-- Compare button hidden as requested -->
         } @else {
-            <!-- Status tag: a brand-new contentlet has no status yet, so show "New" -->
-            @let status = $store.isNew() ? 'New' : ($store.contentlet() | dotContentletStatus);
+            <!-- Status tag: label + severity are memoized computeds on the component
+                 (a brand-new contentlet has no status yet, so it shows "New"). -->
             <p-tag
-                [value]="status"
-                [severity]="statusSeverity(status)"
+                [value]="$contentStatus()"
+                [severity]="$statusSeverity()"
                 data-testId="content-status-tag" />
 
             <!-- Vertical separator between the status tag and the actions -->

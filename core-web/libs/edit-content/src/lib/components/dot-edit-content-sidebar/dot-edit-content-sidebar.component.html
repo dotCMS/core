@@ -53,7 +53,7 @@
                             <button
                                 pButton
                                 type="button"
-                                class="h-11 w-full justify-center"
+                                [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="$store.lockSwitchLabel() | dm"
                                 [icon]="$store.isContentLocked() ? 'pi pi-unlock' : 'pi pi-lock'"

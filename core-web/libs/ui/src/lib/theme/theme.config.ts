@@ -57,11 +57,16 @@ export const CustomLaraPreset = definePreset(Lara, {
             `
         },
         tag: {
-            // Soft status tags per the dotCMS design spec: a tinted background with
-            // dark text instead of Lara's default solid fill + white text
-            // ({green.500}/{surface.0}). Overriding the token here applies globally to
-            // every p-tag success (e.g. the Edit Content command-bar status), and the
-            // {green.100}/{green.700} primitives map 1:1 to the design's green tones.
+            // Status tags follow the dotCMS design spec globally (not per-instance, so a
+            // forgotten class can never make one look different): a fully-rounded pill with
+            // a tinted background + dark text instead of Lara's default small-radius solid
+            // fill + white text. Shape/typography live in `root`; the soft per-severity
+            // colors live in `colorScheme`. {green.100}/{green.700} map 1:1 to the design.
+            root: {
+                borderRadius: '9999px',
+                padding: '4px 12px',
+                fontWeight: '600'
+            },
             colorScheme: {
                 light: {
                     success: {

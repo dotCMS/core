@@ -398,12 +398,12 @@ describe('DotWorkflowActionsComponent', () => {
             expect(buttons[2].variant).toBe('outlined');
         });
 
-        it('should render every button full-width (w-full)', () => {
+        it('should render every button full-width (fluid)', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();
 
             spectator.queryAll(Button).forEach((button) => {
-                expect(button.styleClass).toContain('w-full');
+                expect(button.fluid()).toBe(true);
             });
         });
 
