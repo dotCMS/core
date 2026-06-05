@@ -260,6 +260,7 @@ public class BedrockModelProviderStrategyTest {
         assertTrue(ex.getMessage().contains("both be set or both be absent"));
     }
 
+
     // ── buildStreamingChatModel ──────────────────────────────────────────────
 
     /**

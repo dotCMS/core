@@ -147,7 +147,7 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
      * matching the per-request semantics of other providers (OpenAI, Azure). Each attempt gets the
      * full timeout budget; {@code maxRetries} controls how many additional attempts are made.
      * {@code maxRetries} maps to the non-deprecated retry API
-     * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code maxRetries + 1}
+     * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code max(1, maxRetries + 1)}
      * (one initial call plus the configured number of retries), clamped to a minimum of 1.
      */
     private static Optional<ClientOverrideConfiguration> overrideConfiguration(final ProviderConfig config) {
