@@ -7,11 +7,13 @@ import {
     input
 } from '@angular/core';
 
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-uve-palette-contentlet',
-    imports: [NgClass],
+    imports: [NgClass, TooltipModule],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-uve-palette-contentlet.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
