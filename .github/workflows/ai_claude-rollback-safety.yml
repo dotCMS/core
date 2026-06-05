@@ -282,6 +282,8 @@ jobs:
         env:
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           git notes --ref=refs/notes/doc-objects add -F /tmp/doc-object.md "$MERGE_SHA"
           git push origin refs/notes/doc-objects
           echo "✅ Doc object attached to $MERGE_SHA and pushed to refs/notes/doc-objects"
