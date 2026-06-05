@@ -20,6 +20,8 @@
 <!-- Title -->
 <div
     data-testid="contentlet-title"
-    class="min-w-0 flex-1 truncate pr-2 pl-3 text-sm leading-tight text-gray-800 group-hover:text-(--color-palette-primary-700)">
+    [pTooltip]="contentlet.title"
+    tooltipPosition="top"
+    class="line-clamp-2 min-w-0 flex-1 pr-2 pl-3 text-sm leading-tight wrap-break-word text-gray-800 group-hover:text-(--color-palette-primary-700)">
     {{ contentlet.title }}
 </div>

@@ -17,15 +17,22 @@ public interface AbstractContentTypeWorkflowSchemesView {
 
     @JsonProperty("contentTypeId")
     @Schema(
-            description = "Identifier of the content type",
+            description = "UUID of the content type",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     String contentTypeId();
 
-    @JsonProperty("contentTypeSchemes")
+    @JsonProperty("contentTypeVariable")
+    @Schema(
+            description = "Variable name of the content type",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    String contentTypeVariable();
+
+    @JsonProperty("schemes")
     @Schema(
             description = "Workflow schemes associated with the content type",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    List<WorkflowScheme> contentTypeSchemes();
+    List<WorkflowScheme> schemes();
 }

@@ -1,4 +1,4 @@
-<div class="grid gap-5 grid-cols-[2fr_3fr]">
+<div class="grid grid-cols-[2fr_3fr] gap-5">
     <dot-ai-image-prompt-form
         class="flex flex-col justify-center"
         (valueChange)="store.setFormValue($event)"
@@ -17,7 +17,7 @@
             [activeImageIndex]="store.galleryActiveIndex()"
             [size]="store.formValue()?.size ?? '1024x1024'" />
         @if (store.isLoading() || store.hasImages()) {
-            <div class="flex gap-1 justify-end">
+            <div class="flex justify-end gap-1">
                 <p-button
                     (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"

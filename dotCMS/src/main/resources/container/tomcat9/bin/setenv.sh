@@ -5,15 +5,11 @@ export LANG=${LANG:-"C.UTF-8"}
 
 export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:+UseG1GC -XX:MaxRAMPercentage=68.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -XX:NativeMemoryTracking=summary -Djdk.nio.maxCachedBufferSize=262144"}
+# This is what MS jaz always runs 
+export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:+UseG1GC -XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -XX:NativeMemoryTracking=summary -Djdk.nio.maxCachedBufferSize=262144"}
 
-# Cap direct (off-heap) buffer memory so a runaway throws a catchable
-# OutOfMemoryError ("Direct buffer memory", with a stack trace) instead of silently
-# growing RSS until the kernel OOM-kills the container.
-# There is no percentage flag for direct memory, so derive an absolute value from the
-# container's cgroup memory limit (DOT_DIRECT_MEM_PCT% clamped to [MIN_MB, MAX_MB]).
-# Defaults are intentionally generous (won't false-trip under normal load); tighten from
-# observed NMT high-water marks. Override JAVA_OPTS_DIRECT (or set it to "") to bypass.
+# Calculate direct (off-heap) buffer memory based on container memory to prevent unbound growth 
+# can't use a percentage here so we have to calc it ourselves
 if [ -z "${JAVA_OPTS_DIRECT+set}" ]; then
   _cg_limit=""
   if [ -r /sys/fs/cgroup/memory.max ]; then
@@ -161,7 +157,7 @@ export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"
 # Docs: https://learn.microsoft.com/java/jaz/faq
 # Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
 # Set _RUNJAVA=/java/bin/java to bypass jaz.
-if [ -z "$_RUNJAVA" ] && command -v jaz >/dev/null 2>&1; then
+if [ -z "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
   export _RUNJAVA="$(command -v jaz)"
 fi
 
