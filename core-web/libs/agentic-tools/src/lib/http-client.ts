@@ -56,7 +56,11 @@ function assertSafeRemoteUrl(rawUrl: string): URL {
     const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
 
     // Block obvious metadata / loopback hostnames.
-    if (host === 'localhost' || host.endsWith('.localhost') || host === 'metadata.google.internal') {
+    if (
+        host === 'localhost' ||
+        host.endsWith('.localhost') ||
+        host === 'metadata.google.internal'
+    ) {
         throw new Error(`File URL host "${host}" is not allowed`);
     }
 
