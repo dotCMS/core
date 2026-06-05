@@ -56,7 +56,7 @@
                                 [label]="
                                     ($store.isContentLocked() ? 'Unlock' : 'Make-Editable') | dm
                                 "
-                                [icon]="$store.isContentLocked() ? 'pi pi-unlock' : 'pi pi-lock'"
+                                [icon]="$store.isContentLocked() ? 'pi pi-lock' : 'pi pi-lock-open'"
                                 (click)="
                                     $store.isContentLocked()
                                         ? $store.unlockContent()
