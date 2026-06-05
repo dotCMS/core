@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -59,7 +60,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.liferay.util.StringPool.BLANK;
-import static io.lettuce.core.ScriptOutputType.STATUS;
 
 /**
  * Master replica implementation of redis cache. It works as a replicator when there is more than 1 URIs as part of the
@@ -90,6 +90,7 @@ import static io.lettuce.core.ScriptOutputType.STATUS;
  * @param <V> The Class representing the value stored in Redis. Usually an Object.
  * @author jsanca
  */
+@SuppressWarnings("deprecation") // implements deprecated (but retained) RedisClient methods
 public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     public static final String REDIS_SESSION_ENABLED_PROP = "TOMCAT_REDIS_SESSION_ENABLED";
@@ -103,6 +104,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
     private static final String OK_RESPONSE = "OK";
     private static final String ERROR_RESPONSE = "ERROR";
+    private static final int DELETE_SCAN_BATCH_SIZE = 1000;
 
     private final List<RedisURI> redisUris = this.createRedisConnection();
     private final GenericObjectPool<StatefulRedisConnection<String, V>> pool;
@@ -209,7 +211,10 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
      */
     protected K unwrapKey(final String key) {
 
-        return  this.stringToKeyConverter.convert(key.replace(keyPrefix(), BLANK));
+        // strip only the leading cluster prefix; replace() would remove the prefix substring anywhere it occurs
+        final String prefix = keyPrefix();
+        final String unwrapped = key.startsWith(prefix) ? key.substring(prefix.length()) : key;
+        return this.stringToKeyConverter.convert(unwrapped);
     }
     /**
      * Returns a StatefulRedisConnection
@@ -342,8 +347,12 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
             if (this.isOpen(conn)) {
 
-                conn.sync().set(this.wrapKey(key), value,
-                        SetArgs.Builder.px(ttlMillis));
+                // px(-1) is an invalid Redis expire time; -1 means "persist without ttl"
+                if (ttlMillis == -1) {
+                    conn.sync().set(this.wrapKey(key), value);
+                } else {
+                    conn.sync().set(this.wrapKey(key), value, SetArgs.Builder.px(ttlMillis));
+                }
             }
         }
     }
@@ -511,7 +520,8 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         try (StatefulRedisConnection<String,V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
-                return conn.sync().del(ConversionUtils.INSTANCE.convertToArray(this.keyToStringConverter, String.class, keys));
+                // must wrap with the cluster prefix (like deleteNonBlocking) or stored keys never match
+                return conn.sync().del(ConversionUtils.INSTANCE.convertToArray(this::wrapKey, String.class, keys));
             }
         }
 
@@ -796,7 +806,11 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     Tuple.of(dotPubSubListener, conn);
 
             this.channelStatefulRedisPubSubConnectionMap.put(channelUUID, channelRedisPubSubAsyncCommandsTuple);
-            this.channelReferenceMap.computeIfAbsent(channel, key -> new ArrayList<>()).add(channelUUID);
+            // CopyOnWriteArrayList so concurrent subscribe/unsubscribe/getSubscribers don't race the plain list
+            this.channelReferenceMap.computeIfAbsent(channel, key -> new CopyOnWriteArrayList<>()).add(channelUUID);
+        } else if (null != conn) {
+            // avoid leaking the pub/sub connection when it could not be opened
+            Try.run(conn::close).onFailure(e -> Logger.debug(this, e.getMessage()));
         }
     }
 
@@ -919,12 +933,26 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     @Override
     public void deleteFromPattern(final String pattern) {
 
-        try (StatefulRedisConnection<String,V> conn = this.getConn()) {
+        try (StatefulRedisConnection<String, V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
 
-                conn.async().eval("return redis.call('del', unpack(redis.call('keys', '" + pattern + "')))",
-                        STATUS, new String[0]);
+                // SCAN + UNLINK instead of a Lua KEYS+DEL: cluster-scoped (keyPrefix), non-blocking on the
+                // server, immune to the empty-match `del()` error, and not vulnerable to Lua string injection
+                final RedisCommands<String, V> syncCommand = conn.sync();
+                final ScanArgs scanArgs = ScanArgs.Builder
+                        .matches(this.keyPrefix() + pattern).limit(DELETE_SCAN_BATCH_SIZE);
+                KeyScanCursor<String> scanCursor = null;
+                do {
+                    scanCursor = scanCursor == null
+                            ? syncCommand.scan(scanArgs)
+                            : syncCommand.scan(scanCursor, scanArgs);
+
+                    final List<String> keys = scanCursor.getKeys();
+                    if (!keys.isEmpty()) {
+                        syncCommand.unlink(keys.toArray(new String[0]));
+                    }
+                } while (!scanCursor.isFinished());
             }
         }
     }

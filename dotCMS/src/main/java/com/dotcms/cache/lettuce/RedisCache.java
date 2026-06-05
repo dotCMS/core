@@ -18,7 +18,7 @@ import io.vavr.control.Try;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -229,19 +229,6 @@ public class RedisCache extends CacheProvider {
         }
     }
 
-    /**
-     * removes cache keys async and resets the get timer that reenables get functions
-     *
-     * @param keys
-     */
-    private void removeKeysRaw(final String... keys) {
-
-        if (UtilMethods.isSet(keys)) {
-
-            this.getClient().deleteNonBlocking(keys);
-        }
-    }
-
     @Override
     public void remove(final String group, final String key) {
 
@@ -254,21 +241,19 @@ public class RedisCache extends CacheProvider {
 
         if (!UtilMethods.isEmpty(group)) {
 
-            // todo: this should be a wildcard deletion instead of keys scan
-
-            final String prefix =  StringPool.STAR + cacheKey(group) + StringPool.STAR;
-            // Getting all the keys for the given groups
-            /*DotConcurrentFactory.getInstance().getSingleSubmitter
-                    (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));*/
-            this.getClient().deleteFromPattern(prefix);
+            // No leading "*": deleteFromPattern prepends the cluster prefix so the scan stays scoped to THIS
+            // client's keys. A leading "*" would match (and delete) other clusters' keys in a shared Redis space.
+            final String pattern = cacheKey(group) + StringPool.STAR;
+            this.getClient().deleteFromPattern(pattern);
         }
     }
 
     @Override
     public void removeAll() {
 
-        final String prefix = StringPool.STAR + this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
-        this.getClient().deleteFromPattern(prefix);
+        // cluster-scoped by deleteFromPattern (keyPrefix); no leading "*" so we never touch other clusters' keys
+        final String pattern = this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
+        this.getClient().deleteFromPattern(pattern);
     }
 
     @Override
@@ -277,9 +262,13 @@ public class RedisCache extends CacheProvider {
         final String prefix = this.cacheKey(group);
         final String matchesPattern = prefix + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
-        this.getClient().scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
-                redisKeys -> redisKeys.stream().map(redisKey ->  // we remove the prefix in order to have the real key
-                        redisKey.replace(prefix, StringPool.BLANK)).forEach(keys::add));
+        this.getClient().scanKeys(matchesPattern, this.keyBatchingSize,
+                redisKeys -> redisKeys.stream()
+                        // strip only the leading group prefix to recover the real key (replace() is global)
+                        .map(redisKey -> redisKey.startsWith(prefix)
+                                ? redisKey.substring(prefix.length())
+                                : redisKey)
+                        .forEach(keys::add));
 
         return keys;
     }
@@ -300,21 +289,31 @@ public class RedisCache extends CacheProvider {
      */
     private long keyCount(final String group) {
 
-        final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(this.getClient())
-                .wrapKey(this.cacheKey(group) + StringPool.STAR);
-        final String script = "return #redis.pcall('keys', '" + prefix + "')";
-        Object keyCount = ZERO;
+        // Never throw: getStats() aggregates per-provider and a thrown exception here makes
+        // CacheProviderAPIImpl.getStats() drop the entire Redis provider from the cache stats screen.
+        try {
+            final RedisClient<String, Object> redisClient = this.getClient();
+            final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(redisClient)
+                    .wrapKey(this.cacheKey(group) + StringPool.STAR);
+            final String script = "return #redis.pcall('keys', '" + prefix + "')";
 
-        try (StatefulRedisConnection<String, Object> conn = LettuceAdapter.getStatefulRedisConnection(
-                this.getClient())) {
+            try (StatefulRedisConnection<String, Object> conn =
+                         LettuceAdapter.getStatefulRedisConnection(redisClient)) {
 
-            if (conn.isOpen()) {
+                // conn can be null when the pool fails to borrow a connection
+                if (null != conn && conn.isOpen()) {
 
-                keyCount = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
+                    final Object keyCount = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
+                    return keyCount instanceof Long ? (Long) keyCount : ZERO;
+                }
             }
+        } catch (final Exception e) {
+
+            Logger.warnAndDebug(RedisCache.class,
+                    "Unable to count Redis keys for group '" + group + "': " + e.getMessage(), e);
         }
 
-        return (Long) keyCount;
+        return ZERO;
     }
 
 
@@ -330,33 +329,17 @@ public class RedisCache extends CacheProvider {
 
         final CacheStats providerStats = new CacheStats();
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
-        String memoryStats = null;
-
-        try (StatefulRedisConnection<String, Object> conn =
-                     LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
-
-            if (!conn.isOpen()) {
-
-                return cacheProviderStats;
-            }
-
-            memoryStats = conn.sync().info();
-        }
-
-        // Read the total memory usage
-        final Map<String, String> redis = getRedisProperties(memoryStats);
-
-        for (final Map.Entry<String, String> entry : redis.entrySet()) {
-
-            final CacheStats stats = new CacheStats();
-            stats.addStat(CacheStats.REGION, "redis: " + entry.getKey());
-            stats.addStat(CacheStats.REGION_SIZE, entry.getValue());
-            // ret.addStatRecord(stats);
-        }
 
         final NumberFormat nf = DecimalFormat.getInstance();
-        // Getting the list of groups
-        final Set<String> currentGroups = getGroups();
+        // Getting the list of groups. Guard against a throw: CacheProviderAPIImpl.getStats() drops the whole
+        // provider from the cache stats screen if getStats() throws, so the Redis region would vanish entirely.
+        Set<String> currentGroups;
+        try {
+            currentGroups = getGroups();
+        } catch (final Exception e) {
+            Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
+            currentGroups = Collections.emptySet();
+        }
 
         for (final String group : currentGroups) {
 
@@ -364,6 +347,16 @@ public class RedisCache extends CacheProvider {
             stats.addStat(CacheStats.REGION, "dotCMS: " + group);
             stats.addStat(CacheStats.REGION_SIZE, nf.format(keyCount(group)));
 
+            cacheProviderStats.addStatRecord(stats);
+        }
+
+        // Always emit at least one record; otherwise the cache stats screen renders an empty/blank table
+        // (no columns, no rows) for this provider. Mirrors CaffineCache's empty-groups fallback.
+        if (currentGroups.isEmpty()) {
+
+            final CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, "n/a");
+            stats.addStat(CacheStats.REGION_SIZE, 0);
             cacheProviderStats.addStatRecord(stats);
         }
 
@@ -376,32 +369,5 @@ public class RedisCache extends CacheProvider {
         Logger.info(this.getClass(), "*** Shutdown [" + getName() + "] .");
 
     }
-
-    /**
-     * Reads and parses the string report generated for the INFO Redis command in order to return any specific required
-     * property.
-     *
-     * @param redisReport
-     * @return Map
-     */
-    private Map<String, String> getRedisProperties(final String redisReport) {
-
-        final Map<String, String> map = new LinkedHashMap<>();
-        final String[] readLines = redisReport.split("\r\n");
-
-        for (final String readLine : readLines) {
-
-            final String[] lineValues = readLine.split(":", 2);
-
-            // First check if it is a property or a header
-            if (lineValues.length > 1) {
-
-                map.put(lineValues[0], lineValues[1]);
-            }
-        }
-
-        return map;
-    }
-
 
 }
