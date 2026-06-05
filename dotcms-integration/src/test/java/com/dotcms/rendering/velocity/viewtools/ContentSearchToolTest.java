@@ -112,11 +112,25 @@ public class ContentSearchToolTest extends IntegrationTestBase {
      * (it is {@link Iterable} over its buckets) and call {@code key()} / {@code docCount()}.
      */
     private static final String NEUTRAL_VTL = """
-            #set($esQuery = '{"aggs":{"content_types":{"terms":{"field":"contentType","size":5}}},"size":0,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
             #set($results = $estool.search($esQuery))
+
             #foreach($group in $results.aggregations.content_types)
-            key: $!{group.key()}
-            docCount: $!{group.docCount()}
+                key: $!{group.key()}
+                docCount: $!{group.docCount()}
             #end
             """;
 
