@@ -78,6 +78,9 @@
             ],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
+            "@dotcms/portlets/dot-velocity-playground/portlet": [
+                "libs/portlets/dot-velocity-playground/src/index.ts"
+            ],
             "@dotcms/query-builder": [
                 "libs/sdk/client/src/lib/client/content/builders/query/query.ts"
             ],
