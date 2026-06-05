@@ -447,7 +447,15 @@ public class ContainerLoader implements DotLoader {
         try {
 
             final Host host = WebAPILocator.getHostWebAPI().getCurrentHost();
-            return UtilMethods.isSet(host) && ContentAnalyticsUtil.isContentTrackingEnabled(host);
+            if (!UtilMethods.isSet(host)) {
+                Logger.debug(this, () -> "Analytics tracking disabled: no current host resolved from request");
+                return false;
+            }
+            final boolean enabled = ContentAnalyticsUtil.isContentTrackingEnabled(host);
+            Logger.debug(this, () -> String.format(
+                    "Analytics tracking for host '%s' (id '%s'): enabled=%s",
+                    host.getHostname(), host.getIdentifier(), enabled));
+            return enabled;
         } catch (final DotDataException | DotSecurityException e) {
             Logger.warn(this, "Could not check Content Analytics app for current host: " + e.getMessage());
             return false;
