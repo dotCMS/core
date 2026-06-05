@@ -1161,6 +1161,9 @@
                 <executions>
                     <execution>
                         <id>enforce-java-version</id>
+                        <!-- Explicit phase (matches the enforcer default) to make the validate-phase
+                             ordering dependency on derive-sdkmanrc-java-major visible -->
+                        <phase>validate</phase>
                         <goals>
                             <goal>enforce</goal>
                         </goals>
