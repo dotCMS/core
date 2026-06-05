@@ -18,20 +18,20 @@ The legacy engine is untouched and remains the default. This engine is selected
 
 libvips keeps a global cache of operation *results*. dotCMS already caches finished
 renditions on disk (`dotGenerated`) and serves mostly unique transforms, so the
-in-process cache rarely hits — the libvips defaults are kept unless you override one
-of these (applied once at engine init). This is **not** a per-operation memory cap;
-a single op's buffers are bounded by the image and freed when its arena closes.
+in-process cache rarely hits and mainly pins memory — therefore it is **disabled by
+default**. Re-enable it (and tune it) with these, applied once at engine init. This is
+**not** a per-operation memory cap; a single op's buffers are bounded by the image and
+freed when its arena closes.
 
 | Property | Default | Effect |
 |----------|---------|--------|
-| `IMAGE_LIBVIPS_CACHE_DISABLED` | `false` | Turn the operation cache off entirely (lowest, most predictable memory). |
-| `IMAGE_LIBVIPS_CACHE_MAX_MEM` | libvips default (~100 MB) | Max cache memory in **bytes** (e.g. `268435456` = 256 MB). |
+| `IMAGE_LIBVIPS_CACHE_DISABLED` | `true` | Operation cache off (lowest, most predictable memory). Set `false` to re-enable libvips' default cache. |
+| `IMAGE_LIBVIPS_CACHE_MAX_MEM` | libvips default (~100 MB) | Max cache memory in **bytes** (e.g. `268435456` = 256 MB). Only applies when not disabled. |
 | `IMAGE_LIBVIPS_CACHE_MAX` | libvips default | Max number of cached operations. |
 | `IMAGE_LIBVIPS_CACHE_MAX_FILES` | libvips default | Max cached open files. |
 
-> Raising the cache rarely helps this workload (low hit rate) and uses more RAM;
-> for a busy image server, `IMAGE_LIBVIPS_CACHE_DISABLED=true` is often the better
-> knob. Remember the `DOT_` env prefix: `DOT_IMAGE_LIBVIPS_CACHE_MAX_MEM`, etc.
+> Remember the `DOT_` env prefix: `DOT_IMAGE_LIBVIPS_CACHE_DISABLED=false`,
+> `DOT_IMAGE_LIBVIPS_CACHE_MAX_MEM=268435456`, etc.
 
 The engine only activates when the flag is on **and** native libvips is loadable
 (`VipsManager.isEnabled()`); otherwise the legacy engine is used transparently.

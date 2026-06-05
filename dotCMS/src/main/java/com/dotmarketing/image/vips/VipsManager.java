@@ -85,10 +85,13 @@ public final class VipsManager {
      * are bounded by the image, not by this cache, and are freed when its arena closes.</p>
      */
     private static void configureCache() {
-        if (Config.getBooleanProperty("IMAGE_LIBVIPS_CACHE_DISABLED", false)) {
+        // Disabled by default: dotCMS serves mostly unique transforms and keeps its own on-disk
+        // rendition cache, so the in-process op-result cache rarely hits and mainly pins memory.
+        // Set IMAGE_LIBVIPS_CACHE_DISABLED=false to re-enable libvips' default cache.
+        if (Config.getBooleanProperty("IMAGE_LIBVIPS_CACHE_DISABLED", true)) {
             Try.run(Vips::disableOperationCache)
                     .onFailure(e -> Logger.warn(VipsManager.class, "unable to disable libvips op cache: " + e.getMessage()));
-            Logger.info(VipsManager.class, "libvips operation cache disabled by config");
+            Logger.info(VipsManager.class, "libvips operation cache disabled (default)");
             return;
         }
         final long maxMem = Config.getLongProperty("IMAGE_LIBVIPS_CACHE_MAX_MEM", -1L);
