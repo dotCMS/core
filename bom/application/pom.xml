@@ -17,6 +17,7 @@
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
+        <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
@@ -1101,6 +1102,12 @@
                 <groupId>com.github.gotson</groupId>
                 <artifactId>webp-imageio</artifactId>
                 <version>0.2.2</version>
+            </dependency>
+            <!-- libvips bindings (FFM, JDK 23+) — alternative image engine, requires native libvips on host -->
+            <dependency>
+                <groupId>app.photofox.vips-ffm</groupId>
+                <artifactId>vips-ffm-core</artifactId>
+                <version>${vips-ffm.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
