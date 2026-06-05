@@ -86,7 +86,24 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             $response.setContentType("text/plain")
             $response.setHeader("Cache-Control", "no-cache")
 
-            #set($esQuery = '{"aggs":{"content_types":{"terms":{"field":"contentType","size":5},"aggs":{"top_content":{"top_hits":{"size":3}}}}},"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 },
+                        "aggs": {
+                            "top_content": {
+                                "top_hits": { "size": 3 }
+                            }
+                        }
+                    }
+                },
+                "size": 5,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
 
             ## --- search() ---
             #set($results = $estool.search($esQuery))
