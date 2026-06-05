@@ -27,8 +27,14 @@
         environments/dev/user-dev.properties -->
         <!--suppress UnresolvedMavenProperty -->
         <!-- Core modules compiler release - can be overridden via -Ddotcms.core.compiler.release
-             Defaults to 25; override (e.g. -Ddotcms.core.compiler.release=11) for older bytecode compatibility -->
-        <dotcms.core.compiler.release>25</dotcms.core.compiler.release>
+             (e.g. -Ddotcms.core.compiler.release=11 for older bytecode compatibility).
+             The default is kept as a literal because IDEs derive the project language level from
+             the static model and cannot evaluate plugin-derived properties. It is enforced to
+             match the .sdkmanrc java major version (see the derive-sdkmanrc-java-major and
+             enforce-java-version executions below), so bumping the default Java version means
+             updating .sdkmanrc plus this one number - the build fails fast if they drift. -->
+        <dotcms.core.compiler.release.default>25</dotcms.core.compiler.release.default>
+        <dotcms.core.compiler.release>${dotcms.core.compiler.release.default}</dotcms.core.compiler.release>
         <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
@@ -104,7 +110,10 @@
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
 
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
-        <jdk.min.version>25</jdk.min.version>
+        <!-- Minimum JDK required to build: floor follows the effective compiler release, so it
+             tracks dotcms.core.compiler.release.default on a version bump and any
+             -Ddotcms.core.compiler.release override automatically -->
+        <jdk.min.version>${dotcms.core.compiler.release}</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
@@ -1117,6 +1126,36 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- Derives the major version (e.g. 25) from the .sdkmanrc java entry
+                             (loaded into ext.java by the properties-maven-plugin above) so the
+                             enforcer below can verify dotcms.core.compiler.release.default matches
+                             it. Deliberately derived from ext.java rather than sdkman.java.version:
+                             CI variant builds override -Dsdkman.java.version to change the
+                             build/runtime JDK without touching the committed default, and this
+                             check must keep tracking the committed default. Declaration order
+                             matters - this must run after the properties load and before the
+                             enforcer within the validate phase. -->
+                        <id>derive-sdkmanrc-java-major</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <configuration>
+                            <name>sdkmanrc.java.major</name>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <value>${ext.java}</value>
+                            <regex>^(\d+)(?:[.+-].*)?$</regex>
+                            <replacement>$1</replacement>
+                            <failIfNoMatch>true</failIfNoMatch>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
@@ -1143,6 +1182,18 @@
                                     <version>${jdk.min.version}</version>
                                     <message>Building this project requires JDK version ${jdk.min.version} or higher. It is recommended to use SDKMAN to manage JDK versions. Run "sdk env install" to install and activate the correct JDK version specified in the .sdkmanrc file.</message>
                                 </requireJavaVersion>
+                                <!-- Keeps .sdkmanrc as the single source of truth for the default
+                                     Java version: the committed compiler release default must match
+                                     the .sdkmanrc java major. Checks the .default property (not the
+                                     effective dotcms.core.compiler.release) so deliberate
+                                     -Ddotcms.core.compiler.release overrides still work. -->
+                                <requireProperty>
+                                    <property>sdkmanrc.java.major</property>
+                                    <regex>^${dotcms.core.compiler.release.default}$</regex>
+                                    <message>Property sdkmanrc.java.major was not derived from .sdkmanrc - the derive-sdkmanrc-java-major execution did not run before the enforcer.</message>
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <regexMessage>Default Java version drift detected: .sdkmanrc declares java major ${sdkmanrc.java.major} but dotcms.core.compiler.release.default in parent/pom.xml is ${dotcms.core.compiler.release.default}. When changing the default Java version, update BOTH .sdkmanrc and dotcms.core.compiler.release.default together.</regexMessage>
+                                </requireProperty>
                             </rules>
                         </configuration>
                     </execution>

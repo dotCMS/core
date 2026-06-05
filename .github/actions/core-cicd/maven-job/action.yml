@@ -284,6 +284,14 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
+        # When building a Java variant, the Docker image produced by the Maven build must embed
+        # the variant JDK, not the committed .sdkmanrc default. The pom resolves the image's JDK
+        # from sdkman.java.version (.sdkmanrc via ext.java), so override it explicitly here.
+        if [[ -n "${{ inputs.java-version }}" ]]; then
+          COMPILER_ARGS="$COMPILER_ARGS -Dsdkman.java.version=${{ inputs.java-version }}"
+          echo "Overriding sdkman.java.version=${{ inputs.java-version }} for Docker image base JDK"
+        fi
+
         FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
