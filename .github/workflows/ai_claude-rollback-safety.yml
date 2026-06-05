@@ -1,0 +1,276 @@
+name: Claude AI Rollback Safety Check + Doc Object Generation
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  # Security gate: Check if user is dotCMS organization member
+  #
+  # REQUIREMENTS FOR CLAUDE ACCESS:
+  # 1. Must be a member of the dotCMS organization
+  # 2. Membership must be set to PUBLIC visibility
+  #
+  # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
+  # and ensure your membership is public (click "Make public" if needed)
+  security-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      authorized: ${{ steps.membership-check.outputs.is_member }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check organization membership
+        id: membership-check
+        uses: ./.github/actions/security/org-membership-check
+        with:
+          username: ${{ github.event.pull_request.user.login || github.actor }}
+
+      - name: Log security decision
+        run: |
+          if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
+            echo "✅ Access granted: User is a dotCMS organization member"
+          else
+            echo "❌ Access denied: User failed dotCMS organization membership check"
+            echo ""
+            echo "📋 TROUBLESHOOTING: If you are a dotCMS team member:"
+            echo "   1. Visit https://github.com/orgs/dotCMS/people"
+            echo "   2. Ensure your membership is set to 'Public'"
+            echo "   3. If you're not listed, contact an organization owner"
+            echo ""
+            echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.pull_request.user.login || github.actor }}"
+          fi
+
+  # Preflight: clear stale AI rollback labels so each push is re-evaluated from scratch,
+  # and skip the whole AI evaluation when the PR author has already classified the change
+  # via a "Human: ..." label (skip cascades to claude-rollback-safety-check via needs/success()).
+  # Only runs pre-merge (opened/synchronize) — not on PR close.
+  preflight-clear-stale-labels:
+    name: Clear stale AI rollback labels
+    needs: security-check
+    if: |
+      github.event.action != 'closed' &&
+      needs.security-check.outputs.authorized == 'true' &&
+      !contains(github.event.pull_request.labels.*.name, 'Human: Safe To Rollback') &&
+      !contains(github.event.pull_request.labels.*.name, 'Human: Not Safe To Rollback')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Remove stale AI rollback labels so this push is re-evaluated
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # `gh pr edit --remove-label` returns non-zero if the label is not on the PR.
+          # Swallow that so we don't need a pre-check fetch; any other failure is cosmetic.
+          for label in "AI: Not Safe To Rollback" "AI: Safe To Rollback"; do
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$label" || true
+          done
+
+  # Combined analysis — runs on every PR push (pre-merge only).
+  # Single diff comprehension pass produces two outputs:
+  #   1. Doc-object draft  →  posted as a collapsible PR comment (extracted post-merge)
+  #   2. Rollback safety   →  label + optional comment (immediate)
+  #
+  # Doc object is generated first (factual summary before evaluative judgment).
+  claude-rollback-safety-check:
+    needs: [security-check, preflight-clear-stale-labels]
+    concurrency:
+      group: claude-rollback-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    if: |
+      github.event.action != 'closed' &&
+      needs.security-check.outputs.authorized == 'true'
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.1.0
+    with:
+      trigger_mode: automatic
+      prompt: |
+        You are a dotCMS diff analyst. A PR has been pushed. Using a single read of the diff,
+        you will produce two outputs: first a documentation object (factual summary), then a
+        rollback-safety assessment (evaluative judgment). Collect all inputs before writing either output.
+
+        STEP 1 — Read the doc-object generation schema and instructions:
+          cat prompts/doc_object_generation.md
+
+        STEP 2 — Read the rollback-unsafe categories reference:
+          cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md
+
+        STEP 3 — Fetch PR metadata:
+          gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --json number,title,body,labels,mergedAt,headRefName
+
+        STEP 4 — Get the full PR diff:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+        STEP 5 — Fetch any linked issues. Parse "closes #N" / "fixes #N" / "resolves #N" patterns
+          from the PR body, then for each issue number N:
+          gh issue view N --repo ${{ github.repository }} --json number,title,body
+
+        ── OUTPUT A: DOC OBJECT ──────────────────────────────────────────────────────────
+
+        STEP 6 — Generate the doc object following the schema in the "## System Prompt" section
+          of prompts/doc_object_generation.md. For the commit SHA fields, use these exact placeholders
+          (the post-merge attach job will substitute the real values):
+            commit: PLACEHOLDER_SHORT_SHA
+            source_diff_sha: PLACEHOLDER_FULL_SHA
+
+          Write the doc object to /tmp/doc-object.md:
+          python3 -c "
+          content = '''<your generated doc object here>'''
+          open('/tmp/doc-object.md', 'w').write(content)
+          "
+
+        STEP 7 — Post the doc object as a collapsible PR comment so the post-merge job can
+          retrieve and attach it to the merge commit. Write the comment body to a temp file first
+          to avoid shell quoting issues, then post it:
+
+          python3 -c "
+          doc = open('/tmp/doc-object.md').read()
+          comment = f'''<!-- doc-object-draft-start -->
+        <details>
+        <summary>📄 Doc Object Draft (attached to merge commit post-merge)</summary>
+
+        {doc}
+        </details>
+        <!-- doc-object-draft-end -->'''
+          open('/tmp/doc-object-comment.md', 'w').write(comment)
+          "
+
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/doc-object-comment.md
+
+        ── OUTPUT B: ROLLBACK SAFETY ─────────────────────────────────────────────────────
+
+        STEP 8 — Analyze the diff against EVERY category in the ROLLBACK_UNSAFE_CATEGORIES.md
+          reference you read in Step 2. Focus on: database migrations (runonce tasks),
+          Elasticsearch mapping changes, data model changes, API contract changes, and any
+          structural storage changes. Ignore pure UI, test-only, or documentation changes
+          unless they touch an unsafe category.
+
+        STEP 9a — If the changes match one or more unsafe categories, post this comment:
+          gh pr comment ${{ github.event.pull_request.number }} --body "..."
+
+          Format:
+          Pull Request Unsafe to Rollback!!!
+          - Category: <category ID and name, e.g. "C-1 — Structural Data Model Change">
+          - Risk Level: <🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW>
+          - Why it's unsafe: <specific explanation tied to the actual code changed>
+          - Code that makes it unsafe: <file path(s) and the specific lines or block>
+          - Alternative (if possible): <the safer alternative from the reference, adapted to this change>
+
+          If multiple categories match, repeat the block for each one.
+
+          Then add the label:
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Not Safe To Rollback"
+
+        STEP 9b — If the changes do NOT match any unsafe category:
+          Only add the label:
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Safe To Rollback"
+          No comment needed.
+
+        Be specific throughout: quote actual file names and code lines, not generic descriptions.
+      claude_args: >-
+        --allowedTools
+        "Bash(cat prompts/doc_object_generation.md),
+        Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),
+        Bash(git diff*),
+        Bash(git log*),
+        Bash(gh pr view*),
+        Bash(gh pr comment*),
+        Bash(gh pr edit*),
+        Bash(gh issue view*),
+        Bash(python3*)"
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Post-merge: attach the doc-object draft to the squash commit via git notes.
+  # No LLM call — pure shell. Reads the draft comment posted pre-merge, substitutes
+  # the real merge SHA, and writes to refs/notes/doc-objects.
+  doc-object-attach:
+    name: Attach doc object to merge commit
+    needs: security-check
+    if: |
+      github.event.action == 'closed' &&
+      github.event.pull_request.merged == true &&
+      needs.security-check.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch existing doc-objects notes ref
+        run: |
+          git fetch origin refs/notes/doc-objects:refs/notes/doc-objects 2>/dev/null || true
+
+      - name: Extract doc object draft from PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          python3 - << 'PYEOF'
+          import subprocess, sys, re, os
+
+          pr_number = os.environ['PR_NUMBER']
+          repo = os.environ['REPO']
+          merge_sha = os.environ['MERGE_SHA']
+          short_sha = merge_sha[:7]
+
+          # Fetch all PR comment bodies
+          result = subprocess.run(
+              ['gh', 'pr', 'view', pr_number, '--repo', repo,
+               '--json', 'comments', '--jq', '.comments[].body'],
+              capture_output=True, text=True, check=True
+          )
+
+          # Find the doc-object-draft block
+          text = result.stdout
+          match = re.search(
+              r'<!-- doc-object-draft-start -->(.*?)<!-- doc-object-draft-end -->',
+              text, re.DOTALL
+          )
+          if not match:
+              print('ERROR: No doc-object-draft comment found on this PR.', file=sys.stderr)
+              print('This likely means the pre-merge Claude analysis did not complete.', file=sys.stderr)
+              sys.exit(1)
+
+          # Strip the <details> wrapper — extract just the raw doc object
+          block = match.group(1)
+          inner = re.search(r'</summary>\s*\n(.*?)\n</details>', block, re.DOTALL)
+          draft = inner.group(1).strip() if inner else block.strip()
+
+          # Substitute the SHA placeholders
+          draft = draft.replace('PLACEHOLDER_SHORT_SHA', short_sha)
+          draft = draft.replace('PLACEHOLDER_FULL_SHA', merge_sha)
+
+          with open('/tmp/doc-object.md', 'w') as f:
+              f.write(draft)
+
+          print(f'Extracted doc object ({len(draft)} chars) for commit {short_sha}')
+          PYEOF
+
+      - name: Attach doc object to merge commit via git notes
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          git notes --ref=refs/notes/doc-objects add -F /tmp/doc-object.md "$MERGE_SHA"
+          git push origin refs/notes/doc-objects
+          echo "✅ Doc object attached to $MERGE_SHA and pushed to refs/notes/doc-objects"
