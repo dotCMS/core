@@ -16,10 +16,7 @@
         data-testId="sidebar-tabs">
         <p-tablist
             class="min-h-[53px] border-b border-(--p-inputtext-border-color) [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
-            <p-tab
-                [value]="0"
-                [pTooltip]="'edit.content.sidebar.tab.actions' | dm"
-                tooltipPosition="bottom">
+            <p-tab [value]="0" [pTooltip]="'Actions' | dm" tooltipPosition="bottom">
                 <i class="pi pi-bolt"></i>
             </p-tab>
             <p-tab
@@ -55,7 +52,9 @@
                                 type="button"
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
-                                [label]="$store.lockSwitchLabel() | dm"
+                                [label]="
+                                    ($store.isContentLocked() ? 'Unlock' : 'Make-Editable') | dm
+                                "
                                 [icon]="$store.isContentLocked() ? 'pi pi-unlock' : 'pi pi-lock'"
                                 [outlined]="true"
                                 [severity]="$store.isContentLocked() ? undefined : 'secondary'"
@@ -109,7 +108,7 @@
                     <!-- Content details section -->
                     <dot-edit-content-sidebar-section
                         key="actions.details"
-                        [title]="'edit.content.sidebar.details.title' | dm"
+                        [title]="'details' | dm"
                         class="[&_.dot-section]:border-b-0">
                         <dot-edit-content-sidebar-information
                             [data]="{

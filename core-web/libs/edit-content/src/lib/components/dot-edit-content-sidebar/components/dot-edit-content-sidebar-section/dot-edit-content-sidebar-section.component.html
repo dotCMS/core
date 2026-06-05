@@ -1,6 +1,4 @@
-<section
-    class="dot-section flex flex-col border-b border-gray-300 pt-0 pb-3"
-    data-testid="dot-section">
+<section class="dot-section flex flex-col border-b border-gray-300 py-3" data-testid="dot-section">
     @if ($title()) {
         <div
             class="sticky top-0 z-10 flex min-h-12 shrink-0 cursor-pointer items-center justify-between rounded-md px-2 py-1 transition-colors hover:bg-surface-50"
@@ -12,7 +10,7 @@
             (keydown.enter)="toggle()"
             (keydown.space)="$event.preventDefault(); toggle()">
             <h2
-                class="m-0 text-[11px] font-bold tracking-[0.08em] text-gray-500 uppercase"
+                class="m-0 text-[11px] leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
                 data-testid="dot-section-title">
                 {{ $title() }}
             </h2>
