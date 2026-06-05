@@ -129,10 +129,16 @@ jobs:
         ── OUTPUT A: DOC OBJECT ──────────────────────────────────────────────────────────
 
         STEP 6 — Generate the doc object following the schema in the "## System Prompt" section
-          of prompts/doc_object_generation.md. For the commit SHA fields, use these exact placeholders
-          (the post-merge attach job will substitute the real values):
-            commit: PLACEHOLDER_SHORT_SHA
+          of prompts/doc_object_generation.md. For the provenance block, copy these exact values
+          verbatim — do not infer or reformat any of them:
+            generator: doc-object-skill
+            model: claude-opus-4-8-20251001
+            prompt_version: v0.1
+            generated_at: <current UTC time in ISO 8601 format, e.g. 2026-06-05T11:36:00Z>
+            source_pr: <PR number from Step 3>
             source_diff_sha: PLACEHOLDER_FULL_SHA
+          For the commit short SHA field, use this exact placeholder:
+            commit: PLACEHOLDER_SHORT_SHA
 
           Write the doc object to /tmp/doc-object.md:
           python3 -c "
