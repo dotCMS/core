@@ -1652,8 +1652,8 @@
                         "description": "Sort direction: choose between ascending or descending.",
                         "schema": {
                             "type": "string",
-                            "default": "ASC",
-                            "enum": ["ASC", "DESC"]
+                            "enum": ["ASC", "DESC"],
+                            "default": "ASC"
                         }
                     },
                     {
@@ -10027,7 +10027,7 @@
             "get": {
                 "tags": ["Workflow"],
                 "summary": "Find workflow schemes for multiple content types",
-                "description": "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) grouped by content type for a list of content type identifiers. Each entry in the response maps a resolved content type to its associated schemes. Unknown or invalid IDs are silently skipped — only successfully resolved content types appear in the result (note: the single-content-type endpoint returns 404 for an unknown ID; this batch endpoint omits it instead). Maximum 100 tokens per request (checked before deduplication).",
+                "description": "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) grouped by content type for a list of content type identifiers. Each entry in the response maps a resolved content type to its associated schemes. Unknown or unresolvable identifiers are reported in the `errors` array of the response body (field `fieldName` contains the original input token; `errorCode` is `CONTENT_TYPE_NOT_FOUND`). At least one non-blank identifier is required; an empty or missing `contentTypeIds` parameter returns 400. Maximum 100 tokens per request (checked before deduplication).",
                 "operationId": "getWorkflowSchemesByContentTypeList",
                 "parameters": [
                     {
@@ -10050,7 +10050,7 @@
                         }
                     },
                     "400": {
-                        "description": "More than 100 content type IDs supplied"
+                        "description": "contentTypeIds is empty or all tokens are blank; or more than 100 tokens supplied"
                     },
                     "401": {
                         "description": "User does not have permission"
@@ -10089,8 +10089,8 @@
                         "description": "*Optional.* Case-insensitive parameter indicating how results are to be displayed.\n\nIn listing mode, all associated actions are returned; in editing mode (the default), it returns only the actions accessible to the contentlet's current workflow step.",
                         "schema": {
                             "type": "string",
-                            "default": "EDITING",
-                            "enum": ["EDITING", "LISTING"]
+                            "enum": ["EDITING", "LISTING"],
+                            "default": "EDITING"
                         }
                     }
                 ],
@@ -12585,13 +12585,13 @@
                                                         "actionlet": {
                                                             "type": "object",
                                                             "properties": {
+                                                                "localizedHowto": {
+                                                                    "type": "string"
+                                                                },
                                                                 "howTo": {
                                                                     "type": "string"
                                                                 },
                                                                 "actionClass": {
-                                                                    "type": "string"
-                                                                },
-                                                                "localizedHowto": {
                                                                     "type": "string"
                                                                 },
                                                                 "localizedName": {
@@ -12858,10 +12858,10 @@
                                                 "type": {
                                                     "type": "string"
                                                 },
-                                                "individualPermission": {
+                                                "bitPermission": {
                                                     "type": "boolean"
                                                 },
-                                                "bitPermission": {
+                                                "individualPermission": {
                                                     "type": "boolean"
                                                 },
                                                 "roleId": {
@@ -14116,8 +14116,8 @@
                         "description": "Export format",
                         "schema": {
                             "type": "string",
-                            "default": "csv",
-                            "enum": ["csv", "json"]
+                            "enum": ["csv", "json"],
+                            "default": "csv"
                         },
                         "example": "csv"
                     },
