@@ -4,7 +4,7 @@
     (collapsedChange)="$isCollapsed.set($event)"
     [pt]="$panelPT()">
     <ng-template pTemplate="header">
-        <div class="flex items-center gap-2 flex-1 min-w-0">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
             <p-button
                 [icon]="$isCollapsed() ? 'pi pi-chevron-right' : 'pi pi-chevron-down'"
                 [text]="true"
@@ -15,7 +15,7 @@
                 [ngModel]="$title()"
                 (ngModelChange)="setTitle($event)"
                 [placeholder]="'style.editor.form.builder.section.title.placeholder' | dm"
-                class="text-sm font-semibold text-gray-800 bg-transparent! border-none! outline-none p-0 flex-1 min-w-0 ring-0! shadow-none!" />
+                class="min-w-0 flex-1 border-none! bg-transparent! p-0 text-sm font-semibold text-gray-800 shadow-none! ring-0! outline-none" />
         </div>
     </ng-template>
 
@@ -28,7 +28,7 @@
             size="small"
             [title]="'style.editor.form.builder.section.delete.title' | dm"
             (onClick)="delete.emit()" />
-        <span class="inline-block w-px h-4 bg-gray-300 mx-0.5 self-center"></span>
+        <span class="mx-0.5 inline-block h-4 w-px self-center bg-gray-300"></span>
         <p-button
             data-testid="move-section-up-btn"
             icon="pi pi-chevron-up"
@@ -49,11 +49,11 @@
 
     <div class="flex flex-col gap-3">
         @if ($section().fields.length === 0) {
-            <div class="text-center py-6 text-sm text-gray-400">
+            <div class="py-6 text-center text-sm text-gray-400">
                 {{ 'style.editor.form.builder.section.empty' | dm }}
             </div>
             @if ($emptyError()) {
-                <small class="text-red-500 text-xs text-center block -mt-3">
+                <small class="-mt-3 block text-center text-xs text-red-500">
                     {{ $emptyError() }}
                 </small>
             }
