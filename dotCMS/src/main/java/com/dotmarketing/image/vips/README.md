@@ -17,6 +17,14 @@ The legacy engine is untouched and remains the default. This engine is selected
 The engine only activates when the flag is on **and** native libvips is loadable
 (`VipsManager.isEnabled()`); otherwise the legacy engine is used transparently.
 
+> **Setting the flag via environment variable:** dotCMS `Config` only reads env
+> overrides with the `DOT_` prefix (and `.`/`-` become `_`). So the flag is
+> **`DOT_IMAGE_API_USE_LIBVIPS=true`**, not `IMAGE_API_USE_LIBVIPS=true`. A
+> plain (unprefixed) env var is silently ignored and the engine stays on legacy —
+> in which case the libvips-only filters (`avif`, `smartcrop`) no-op while the
+> shared filters still work, which is the tell-tale symptom. The fallback override
+> is `DOT_IMAGE_API_LIBVIPS_FALLBACK`.
+
 ## Native dependency
 
 Unlike the legacy stack (pure-JVM: TwelveMonkeys, PDFBox, Batik, webp-imageio),
