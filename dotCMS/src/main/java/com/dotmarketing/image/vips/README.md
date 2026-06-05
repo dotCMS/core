@@ -99,6 +99,57 @@ renditions regenerate once when the flag flips.
 | gif | `VipsGifImageFilter` | `gifsave` (animated, `n=-1`) |
 | pdf | `VipsPdfImageFilter` | `pdfload` (page + dpi) |
 | **smartcrop** | `VipsSmartCropImageFilter` | `smartcrop` — **new, no legacy equivalent** |
+| **avif** | `VipsAvifImageFilter` | `heifsave` (AV1) — **new, no legacy equivalent** |
+
+## New libvips-only filters — usage
+
+These two have **no legacy equivalent**, so they only work when the engine is enabled
+(`DOT_IMAGE_API_USE_LIBVIPS=true`); on the legacy engine the filter key is unknown and
+silently dropped.
+
+### smartcrop — content-aware crop
+
+Crops to an exact box centred on the most salient region (not the geometric centre).
+
+| Param | Type | Default | Meaning |
+|-------|------|---------|---------|
+| `smartcrop_w` | int | source width | Target width (clamped to source) |
+| `smartcrop_h` | int | source height | Target height (clamped to source) |
+| `smartcrop_mode` | enum | `attention` | `attention` (saliency) \| `entropy` (busiest region) \| `centre` |
+
+```
+# explicit filter syntax
+/contentAsset/image/<id>/asset/filter/smartcrop/smartcrop_w/400/smartcrop_h/400/smartcrop_mode/attention
+
+# ShortyServlet shorthand: crop tokens + /smart
+/dA/<id>/400cw/400ch/smart
+```
+
+Requesting a box larger than the source returns the largest valid crop (no error).
+
+### avif — AVIF (AV1) output
+
+| Param | Type | Default | Meaning |
+|-------|------|---------|---------|
+| `avif_q` | int (0-100) | 50 | Quality |
+| `avif_lossless` | present | off | Lossless encode |
+| `avif_effort` | int (0-9) | 4 | Encoder effort/speed tradeoff |
+
+```
+# explicit filter syntax
+/contentAsset/image/<id>/asset/filter/avif/avif_q/50
+
+# ShortyServlet shorthand (mirrors /webp, /jpeg); honours an explicit /(\d+)q
+/dA/<id>/1024w/avif
+/dA/<id>/1024w/50q/avif
+
+# chain: resize then AVIF
+/contentAsset/image/<id>/asset/filter/resize,avif/resize_w/1024/avif_q/50
+```
+
+> AVIF `Q` is **not** comparable to WebP/JPEG `Q` — at low Q it is much smaller than WebP,
+> at high Q it can be larger. Around Q≈40–50 it is a clear win. Requires the libheif AV1
+> encoder (`libheif-plugin-aomenc`) in the host libvips build.
 
 ## Architecture
 
