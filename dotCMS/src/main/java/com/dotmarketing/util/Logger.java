@@ -108,6 +108,24 @@ public class Logger {
         
     }
 
+    /**
+     * Logs a lazily-evaluated debug message under the given class' logger.
+     *
+     * <p>Without this overload, {@code Logger.debug(MyClass.class, () -> "...")} binds to
+     * {@link #debug(Object, Supplier)} — where {@code ob} is the {@link Class} instance itself, so
+     * {@code ob.getClass()} resolves to {@code java.lang.Class} and the message is emitted under the
+     * wrong logger name. This overload keeps the intended class' logger and skips building the
+     * message entirely when DEBUG is disabled.
+     *
+     * @param clazz   the class whose logger should be used
+     * @param message supplier invoked only when DEBUG is enabled for {@code clazz}
+     */
+    public static void debug(final Class clazz, final Supplier<String> message) {
+        if (loadLogger(clazz).isDebugEnabled()) {
+            debug(clazz, message.get());
+        }
+    }
+
     public static void debug(final String className, final Supplier<String> message) {
         debug(className, message.get());
         

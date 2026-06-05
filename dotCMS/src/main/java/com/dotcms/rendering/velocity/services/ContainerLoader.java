@@ -334,7 +334,10 @@ public class ContainerLoader implements DotLoader {
                 final boolean trackingWrapperEnabled =
                         mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled());
 
+                Logger.debug(this,"PageMode: " + mode + " Tracking wrapper enabled: " + trackingWrapperEnabled);
+
                 if (trackingWrapperEnabled) {
+                    Logger.debug(this, "Tracking wrapper enabled");
                     velocityCodeBuilder.append("<div")
                         .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
