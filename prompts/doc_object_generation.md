@@ -67,6 +67,10 @@ related_prs: [<N>, ...]                          # PRs in the same fix family; o
 customer_reports:
   - source: <freshdesk | github | jira | zendesk>
     id: "<ticket id as a string>"
+epic:
+  source: dotcms-aios                            # omit entire block if no epic match found
+  file: "work/epics/<q{N}-{kebab-topic}.md>"     # full path within the dotcms-aios repo
+  title: "<epic title as read from the file>"
 
 release_notes:
   audience: <customer | internal | both | skip>
@@ -176,6 +180,9 @@ Choose sections from this menu based on what the change actually warrants.
 
 - `## Risk / watch` — non-obvious downstream effects, bundle composition changes, cluster
   behavior notes, callouts for the support team.
+
+- `## Epic context` — if an epic was matched: one sentence linking this change to the broader
+  initiative, drawn from the epic file. Do not pad; omit this section if no epic was matched.
 
 **Do not include:**
 

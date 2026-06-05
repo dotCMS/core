@@ -116,6 +116,16 @@ jobs:
           from the PR body, then for each issue number N:
           gh issue view N --repo ${{ github.repository }} --json number,title,body
 
+        STEP 5b — Find the most relevant epic from the dotcms-aios repo.
+          First list available epics (names only, no content yet):
+          gh api repos/dotCMS/dotcms-aios/contents/work/epics --jq '.[].name'
+
+          Based on the PR title, module, and keywords, identify the 1-2 most likely matches
+          from the kebab-case topic names (format: q{N}-{topic}.md). Then fetch only those:
+          gh api repos/dotCMS/dotcms-aios/contents/work/epics/<matched-file> --jq '.content' | base64 -d
+
+          If nothing is a clear match, skip the epic field entirely — do not guess.
+
         ── OUTPUT A: DOC OBJECT ──────────────────────────────────────────────────────────
 
         STEP 6 — Generate the doc object following the schema in the "## System Prompt" section
@@ -188,6 +198,7 @@ jobs:
         Bash(gh pr comment*),
         Bash(gh pr edit*),
         Bash(gh issue view*),
+        Bash(gh api repos/dotCMS/dotcms-aios*),
         Bash(python3*)"
       timeout_minutes: 15
       runner: ubuntu-latest
