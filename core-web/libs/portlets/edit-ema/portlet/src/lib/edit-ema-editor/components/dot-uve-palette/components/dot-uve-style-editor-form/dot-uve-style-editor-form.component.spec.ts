@@ -823,4 +823,136 @@ describe('DotUveStyleEditorFormComponent', () => {
             );
         }));
     });
+
+    describe('cross-contentlet safety (selection changes while a commit is pending)', () => {
+        // Headless page editing contentlet A. Each test then moves the selection
+        // to contentlet B (rebuilding the form) while a commit from A is pending,
+        // and asserts the save can only ever target A.
+        beforeEach(fakeAsync(() => {
+            mockUveStore.pageType.set(PageType.HEADLESS);
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'test-id',
+                        inode: 'test-inode',
+                        title: 'Test',
+                        contentType: 'test-content-type',
+                        dotStyleProperties: {
+                            'font-size': 16,
+                            'font-family': 'Arial',
+                            'text-decoration': { underline: false, overline: false },
+                            alignment: 'left'
+                        }
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'test-container',
+                        maxContentlets: 1,
+                        uuid: 'test-uuid'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'test-page'
+                })
+            );
+            mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
+
+            spectator = createTestComponent();
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            mockUveStore.saveStyleEditor.mockClear();
+        }));
+
+        /** Moves the selection to contentlet B and lets the form rebuild run. */
+        const selectContentletB = () => {
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'contentlet-b-id',
+                        inode: 'contentlet-b-inode',
+                        title: 'Contentlet B',
+                        contentType: 'test-content-type'
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'container-b',
+                        maxContentlets: 1,
+                        uuid: 'uuid-b'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'test-page'
+                })
+            );
+            spectator.detectChanges();
+            flushMicrotasks(); // #buildForm sets the new form in a microtask
+            spectator.detectChanges();
+        };
+
+        it('should target the contentlet captured at change time when the idle commit fires after a selection change', fakeAsync(() => {
+            const formA = spectator.component.$form();
+
+            // Type on contentlet A (no blur — idle timer pending, context frozen = A)
+            formA?.patchValue({ 'font-size': 20 });
+
+            // Selection moves to B before the idle window elapses; the form rebuilds
+            selectContentletB();
+            expect(spectator.component.$form()).not.toBe(formA);
+
+            // The pending idle commit fires — it must save against A, never B
+            tick(STYLE_EDITOR_INPUT_IDLE_SAVE_TIME + STYLE_EDITOR_SAVE_DEBOUNCE_TIME);
+            spectator.detectChanges();
+            flush();
+
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentletIdentifier: 'test-id',
+                    containerIdentifier: 'test-container',
+                    styleProperties: expect.objectContaining({ 'font-size': 20 })
+                })
+            );
+        }));
+
+        it('should ignore a blur on the new form in the stale (pre-rebuild) form stream', fakeAsync(() => {
+            const formA = spectator.component.$form();
+
+            // Type on contentlet A (no blur), then move the selection to B
+            formA?.patchValue({ 'font-size': 20 });
+            selectContentletB();
+
+            // Blur arrives on B's (unchanged) form. The stale A stream must not
+            // react to it: no save fires within the coalescing window.
+            spectator.component.onInputCommit();
+            tick(STYLE_EDITOR_SAVE_DEBOUNCE_TIME + 1);
+            spectator.detectChanges();
+
+            expect(mockUveStore.saveStyleEditor).not.toHaveBeenCalled();
+
+            // A's pending idle commit still completes — against A, with A's values
+            tick(STYLE_EDITOR_INPUT_IDLE_SAVE_TIME + STYLE_EDITOR_SAVE_DEBOUNCE_TIME);
+            spectator.detectChanges();
+            flush();
+
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentletIdentifier: 'test-id',
+                    styleProperties: expect.objectContaining({ 'font-size': 20 })
+                })
+            );
+        }));
+
+        it('should not save on blur when the form has no changes', fakeAsync(() => {
+            // Tabbing through a field without typing must not hit the API
+            spectator.component.onInputCommit();
+            tick(STYLE_EDITOR_SAVE_DEBOUNCE_TIME + 1);
+            spectator.detectChanges();
+            flush();
+
+            expect(mockUveStore.saveStyleEditor).not.toHaveBeenCalled();
+        }));
+    });
 });
