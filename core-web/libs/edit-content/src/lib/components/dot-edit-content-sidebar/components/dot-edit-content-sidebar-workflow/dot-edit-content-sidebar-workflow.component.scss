@@ -13,8 +13,10 @@ $skeleton-height: 14px;
     margin: 0;
 
     dt {
-        font-weight: fonts.$font-weight-medium-bold;
-        color: colors.$black;
+        // Match the Details card: muted, normal-weight labels (not bold/black) so the
+        // key column reads the same in both sidebar cards.
+        font-weight: var(--font-weight-normal);
+        color: var(--color-gray-600);
 
         min-height: 2.286rem;
         display: flex;
@@ -24,8 +26,8 @@ $skeleton-height: 14px;
 
     dd {
         margin: 0;
-        color: colors.$color-palette-gray-800;
-        font-weight: fonts.$font-weight-regular-bold;
+        color: var(--color-gray-800);
+        font-weight: var(--font-weight-normal);
     }
 }
 .workflow-column__description {
