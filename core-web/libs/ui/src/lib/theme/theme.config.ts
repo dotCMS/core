@@ -60,13 +60,18 @@ export const CustomLaraPreset = definePreset(Lara, {
             // Status tags follow the dotCMS design spec globally (not per-instance, so a
             // forgotten class can never make one look different): a fully-rounded pill with
             // a tinted background + dark text instead of Lara's default small-radius solid
-            // fill + white text. Shape/typography live in `root`; the soft per-severity
-            // colors live in `colorScheme`. {green.100}/{green.700} map 1:1 to the design.
-            root: {
-                borderRadius: '9999px',
-                padding: '4px 12px',
-                fontWeight: '600'
-            },
+            // fill + white text. Soft per-severity colors use PrimeNG palette tokens
+            // ({green.100}/{green.700} map 1:1 to the design); shape/typography are expressed
+            // with Tailwind theme variables — same mechanism as `chip` — so there are no magic
+            // numbers. `calc(infinity * 1px)` is exactly what Tailwind's `rounded-full` emits;
+            // there is no --radius-full token.
+            css: `
+                .p-tag {
+                    border-radius: calc(infinity * 1px);
+                    padding: var(--spacing) calc(var(--spacing) * 3); /* 0.25rem 0.75rem */
+                    font-weight: var(--font-weight-semibold); /* 600 */
+                }
+            `,
             colorScheme: {
                 light: {
                     success: {
