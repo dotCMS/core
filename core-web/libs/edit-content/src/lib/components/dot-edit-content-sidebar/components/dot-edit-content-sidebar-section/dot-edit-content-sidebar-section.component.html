@@ -1,5 +1,5 @@
 <section
-    class="dot-section flex flex-col gap-2 border-b border-surface-200 py-3"
+    class="dot-section flex flex-col border-b border-surface-200 py-3"
     data-testid="dot-section">
     @if ($title()) {
         <div
@@ -33,9 +33,16 @@
             </div>
         </div>
     }
-    @if (!$collapsed()) {
-        <div data-testid="dot-section-content">
-            <ng-content />
+    <!-- Collapsible body: real slide down/up by animating the actual height via a
+         grid-template-rows transition (0fr <-> 1fr). Pure CSS, eased, works for any
+         content height. The inner pt-2 is the header/content gap and collapses too. -->
+    <div
+        class="grid transition-[grid-template-rows] duration-200 ease-in-out"
+        [style.grid-template-rows]="$collapsed() ? '0fr' : '1fr'">
+        <div class="min-h-0 overflow-hidden">
+            <div class="pt-2" data-testid="dot-section-content">
+                <ng-content />
+            </div>
         </div>
-    }
+    </div>
 </section>

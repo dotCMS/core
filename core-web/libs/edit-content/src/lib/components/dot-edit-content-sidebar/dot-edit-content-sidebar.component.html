@@ -45,7 +45,7 @@
                         !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
                     ) {
                         <div
-                            class="border-b border-surface-200 pb-3"
+                            class="border-b border-surface-200 pb-4"
                             data-testId="sidebar-lock-section">
                             <button
                                 pButton
@@ -69,7 +69,7 @@
                          separated from the first collapsible section by a divider. -->
                     @if ($store.showWorkflowActions()) {
                         <dot-workflow-actions
-                            class="border-b border-surface-200 py-3"
+                            class="border-b border-surface-200 py-4"
                             data-testId="sidebar-workflow-actions"
                             [actions]="$store.getActions()"
                             [stacked]="true"

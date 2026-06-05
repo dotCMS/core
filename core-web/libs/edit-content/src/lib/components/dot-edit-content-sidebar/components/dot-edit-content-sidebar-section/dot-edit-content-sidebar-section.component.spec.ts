@@ -114,11 +114,11 @@ describe('DotEditContentSidebarSectionComponent', () => {
 
         it('should collapse in-memory but not persist on toggle', () => {
             // Starts expanded
-            expect(spectator.query(byTestId('dot-section-content'))).toBeTruthy();
+            expect(spectator.component.$collapsed()).toBe(false);
 
             // Collapses in-memory...
             spectator.click(byTestId('dot-section-toggle'));
-            expect(spectator.query(byTestId('dot-section-content'))).toBeFalsy();
+            expect(spectator.component.$collapsed()).toBe(true);
 
             // ...but never writes to storage
             expect(localStorageService.setItem).not.toHaveBeenCalled();
@@ -136,20 +136,20 @@ describe('DotEditContentSidebarSectionComponent', () => {
             localStorageService = spectator.inject(DotLocalstorageService);
         });
 
-        it('should toggle content visibility on header click', () => {
+        it('should toggle the collapsed state on header click', () => {
             localStorageService.getItem.mockReturnValue(false);
             spectator.detectChanges();
 
             // Starts expanded
-            expect(spectator.query(byTestId('dot-section-content'))).toBeTruthy();
+            expect(spectator.component.$collapsed()).toBe(false);
 
             // Collapse
             spectator.click(byTestId('dot-section-toggle'));
-            expect(spectator.query(byTestId('dot-section-content'))).toBeFalsy();
+            expect(spectator.component.$collapsed()).toBe(true);
 
             // Expand again
             spectator.click(byTestId('dot-section-toggle'));
-            expect(spectator.query(byTestId('dot-section-content'))).toBeTruthy();
+            expect(spectator.component.$collapsed()).toBe(false);
         });
 
         it('should toggle on Enter key', () => {
@@ -160,7 +160,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
             header.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dot-section-content'))).toBeFalsy();
+            expect(spectator.component.$collapsed()).toBe(true);
         });
 
         it('should persist the collapsed state on toggle', () => {
@@ -177,7 +177,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
             spectator.detectChanges();
 
             expect(localStorageService.getItem).toHaveBeenCalledWith(STORAGE_KEY);
-            expect(spectator.query(byTestId('dot-section-content'))).toBeFalsy();
+            expect(spectator.component.$collapsed()).toBe(true);
         });
 
         it('should rotate the chevron up when expanded (collapsed has it pointing down)', () => {
@@ -202,7 +202,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
 
             spectator.click(byTestId('dot-section-action'));
 
-            expect(spectator.query(byTestId('dot-section-content'))).toBeTruthy();
+            expect(spectator.component.$collapsed()).toBe(false);
             expect(localStorageService.setItem).not.toHaveBeenCalled();
         });
     });
