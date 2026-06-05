@@ -70,3 +70,4 @@ done
 
 printf '<!-- Bundle summary: included=%d  filtered=%d  missing=%d -->\n' \
   "$INCLUDED" "$SKIPPED" "$MISSING"
+
