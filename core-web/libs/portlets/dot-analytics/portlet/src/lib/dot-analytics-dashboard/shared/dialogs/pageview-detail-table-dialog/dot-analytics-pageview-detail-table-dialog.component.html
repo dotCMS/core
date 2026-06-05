@@ -10,24 +10,25 @@
         [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
         [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
         [dataKey]="DETAIL_TABLE.DATA_KEY"
-        [showCurrentPageReport]="true"
-        [currentPageReportTemplate]="PAGE_REPORT_KEY | dm"
+        [showFirstLastIcon]="false"
+        [showCurrentPageReport]="false"
+        [showJumpToPageDropdown]="false"
         paginatorDropdownAppendTo="body"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
             <tr>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ $dimensionHeaderKey() | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap min-w-32 max-w-48 w-48"
+                    class="w-48 max-w-48 min-w-32 border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_RATE_KEY | dm }}
                 </th>
                 <th
-                    class="text-end font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-end font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_VIEWS_KEY | dm }}
                 </th>
@@ -35,14 +36,14 @@
         </ng-template>
         <ng-template pTemplate="body" let-row>
             <tr data-testid="analytics-pageview-detail-table-row">
-                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle">
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle">
                     {{ row.dimensionLabel }}
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-32 max-w-48 w-48">
-                    <span class="inline-flex items-center gap-2 w-full min-w-0">
+                    class="w-48 max-w-48 min-w-32 border-b border-surface py-2.5 pr-3 pl-0 align-middle">
+                    <span class="inline-flex w-full min-w-0 items-center gap-2">
                         <span
-                            class="flex h-2 flex-1 min-w-0 overflow-hidden rounded-full bg-gray-200"
+                            class="flex h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-200"
                             role="progressbar"
                             [attr.aria-valuenow]="row.percentage"
                             aria-valuemin="0"
@@ -53,20 +54,18 @@
                                 data-testid="analytics-pageview-detail-bar-fill"
                                 [style.width.%]="row.percentage"></span>
                         </span>
-                        <span class="shrink-0 tabular-nums text-color">{{ row.percentage }}%</span>
+                        <span class="shrink-0 text-color tabular-nums">{{ row.percentage }}%</span>
                     </span>
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-end text-color tabular-nums">
-                    {{ formatCount(row.totalViews) }}
+                    class="border-b border-surface py-2.5 pr-3 pl-0 text-end align-middle text-color tabular-nums">
+                    {{ row.totalViews | dotAnalyticsCount: 'full' }}
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle"
-                    colspan="3">
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle" colspan="3">
                     {{ EMPTY_TABLE_KEY | dm }}
                 </td>
             </tr>

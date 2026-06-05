@@ -3,7 +3,7 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational "}
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational --enable-preview "}
 
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 
@@ -99,7 +99,7 @@ export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE:-"true"}
 
 # Remote IP Valve settings
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}
-export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|169\\.254\\.\\d{1,3}\\.\\d{1,3}|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|0:0:0:0:0:0:0:1"}
+export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"(10|127)\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1"}
 # Cookie settings
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 

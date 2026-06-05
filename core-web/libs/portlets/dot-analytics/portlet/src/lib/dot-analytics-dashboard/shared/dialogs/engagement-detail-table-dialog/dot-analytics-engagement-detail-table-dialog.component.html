@@ -10,34 +10,35 @@
         [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
         [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
         [dataKey]="DETAIL_TABLE.DATA_KEY"
-        [showCurrentPageReport]="true"
-        [currentPageReportTemplate]="PAGE_REPORT_KEY | dm"
+        [showFirstLastIcon]="false"
+        [showCurrentPageReport]="false"
+        [showJumpToPageDropdown]="false"
         paginatorDropdownAppendTo="body"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
             <tr>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ $dimensionHeaderKey() | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap min-w-32 max-w-48 w-48"
+                    class="w-48 max-w-48 min-w-32 border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_SESSIONS_BAR_KEY | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_TOTAL_SESSIONS_KEY | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_ENGAGEMENT_RATE_KEY | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="border-b border-surface pt-2 pr-3 pb-3 pl-0 text-start font-semibold whitespace-nowrap text-muted-color"
                     scope="col">
                     {{ COLUMN_TIME_KEY | dm }}
                 </th>
@@ -45,11 +46,11 @@
         </ng-template>
         <ng-template pTemplate="body" let-row>
             <tr data-testid="analytics-engagement-detail-table-row">
-                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle">
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle">
                     {{ row.dimensionLabel }}
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-32 max-w-48 w-48">
+                    class="w-48 max-w-48 min-w-32 border-b border-surface py-2.5 pr-3 pl-0 align-middle">
                     <dot-analytics-stacked-bar
                         [engagedSessions]="row.engagedSessions"
                         [notEngagedSessions]="row.totalSessions - row.engagedSessions"
@@ -57,24 +58,22 @@
                         height="0.75rem" />
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-color tabular-nums">
-                    {{ formatCount(row.totalSessions) }}
+                    class="border-b border-surface py-2.5 pr-3 pl-0 align-middle text-color tabular-nums">
+                    {{ row.totalSessions | dotAnalyticsCount: 'full' }}
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color">
+                    class="border-b border-surface py-2.5 pr-3 pl-0 align-middle text-color tabular-nums">
                     {{ row.percentage }}%
                 </td>
                 <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color whitespace-nowrap">
+                    class="border-b border-surface py-2.5 pr-3 pl-0 align-middle whitespace-nowrap text-color tabular-nums">
                     {{ row.timeLabel }}
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td
-                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle"
-                    colspan="5">
+                <td class="border-b border-surface py-2.5 pr-3 pl-0 align-middle" colspan="5">
                     {{ EMPTY_TABLE_KEY | dm }}
                 </td>
             </tr>

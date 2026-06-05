@@ -63,7 +63,7 @@ All frontend code lives in **`core-web/`**. It is an Nx monorepo with TypeScript
 
 - **Apps**: `dotcms-ui`, `content-drive-ui`, `edit-ema-ui`, `edit-content`, portlets (`portlets-*`), and other apps.
 - **SDK**: `sdk-angular`, `sdk-react`, `sdk-client`, `sdk-types`, etc.
-- **Stack**: Angular (standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush), PrimeNG and PrimeFlex for UI.
+- **Stack**: Angular (standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush), PrimeNG and Tailwind CSS for UI.
 
 ### Nx commands (run from repo root or from `core-web/`)
 
@@ -140,7 +140,7 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### Styling
 
-- **Priority: PrimeFlex & PrimeNG first.** Prefer PrimeFlex utility classes for layout, spacing, typography, and colors; avoid custom SCSS when a utility exists (e.g. `p-flex`, `p-m-3`, `p-text-primary`). Use PrimeNG components instead of building custom UI from scratch (e.g. `p-button`, `p-inputText`, `p-card`, `p-dialog`). Custom styles should be the exception, not the default.
+- **Priority: Tailwind CSS & PrimeNG first.** Prefer Tailwind utility classes for layout, spacing, typography, and colors; avoid custom SCSS when a Tailwind class exists. Use PrimeNG components instead of building custom UI from scratch (e.g. `p-button`, `p-inputText`, `p-card`, `p-dialog`). Custom styles should be the exception, not the default.
 - When custom styles are needed, follow BEM; avoid hardcoded colors and spacing—use design tokens, CSS variables, or theme variables when available.
 - Do not hardcode hex/rgb colors or pixel values for spacing in components when shared variables exist.
 

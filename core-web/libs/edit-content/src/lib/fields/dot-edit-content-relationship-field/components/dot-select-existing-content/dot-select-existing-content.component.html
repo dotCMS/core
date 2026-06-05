@@ -3,11 +3,10 @@
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
 
-<div
-    class="w-full h-full border border-solid border-gray-200 rounded-lg overflow-hidden flex flex-col">
+<div class="flex size-full flex-col overflow-hidden rounded-lg border border-solid border-gray-200">
     @if (store.errorMessage()) {
         <div
-            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base"
+            class="flex justify-center rounded-border border border-solid border-gray-400 p-12 text-base"
             data-testid="error-message">
             <p>{{ store.errorMessage() | dm }}</p>
         </div>
@@ -31,16 +30,16 @@
             [showPageLinks]="false"
             [showFirstLastIcon]="false"
             scrollHeight="flex"
-            class="dotTable p-datatable-existing-content w-full flex-1 flex flex-col [&>.p-datatable-header]:!border-0 [&>.p-datatable-header]:bg-gray-50 [&>.p-datatable-header]:!pt-4 [&_thead]:bg-gray-50 [&>.p-datatable-table-container]:flex-1 [&>.p-datatable-paginator-bottom]:mt-auto">
+            class="dotTable p-datatable-existing-content flex w-full flex-1 flex-col [&_thead]:bg-gray-50 [&>.p-datatable-header]:border-0! [&>.p-datatable-header]:bg-gray-50 [&>.p-datatable-header]:pt-4! [&>.p-datatable-paginator-bottom]:mt-auto [&>.p-datatable-table-container]:flex-1">
             <ng-template pTemplate="caption">
-                <div class="flex justify-between items-center gap-4">
-                    <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="min-w-0 flex-1">
                         <dot-search
                             (onSearch)="store.search($event)"
                             [isLoading]="store.isLoading()"
                             [initialFilters]="store.initialFilters()" />
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
+                    <div class="flex shrink-0 items-center gap-2">
                         <p-toggleswitch
                             [attr.aria-label]="
                                 'dot.file.relationship.dialog.show.selected.items' | dm
@@ -50,7 +49,7 @@
                             (onChange)="store.changeViewMode($event)"
                             data-testid="show-selected-switch" />
                         <label
-                            class="text-primary-500 cursor-pointer text-sm"
+                            class="cursor-pointer text-sm text-primary-500"
                             for="show-selected-switch">
                             {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
                         </label>
@@ -109,7 +108,7 @@
                 <tr>
                     <td [colSpan]="columns.length + $staticColumns()" class="border-0">
                         <div
-                            class="flex justify-center p-12 text-base gap-2"
+                            class="flex justify-center gap-2 p-12 text-base"
                             data-testid="relationship-dialog-empty">
                             <i class="pi pi-folder-open"></i>
                             <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
@@ -145,7 +144,7 @@
                     </td>
                     <td colspan="2">
                         <div class="flex items-center gap-3">
-                            <div class="w-20 h-14 shrink-0 rounded-md overflow-hidden bg-gray-100">
+                            <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'24px'"
                                     [contentlet]="item"
@@ -165,7 +164,7 @@
                     </td>
                     <td class="w-24 min-w-24">
                         @let status = item | contentletStatus;
-                        <p-chip [class]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                        <p-chip [class]="status.classes" [label]="status.label" />
                     </td>
                     <td class="w-44 min-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>

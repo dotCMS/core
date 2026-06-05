@@ -878,6 +878,19 @@ describe('EditEmaEditorComponent', () => {
                     }
                 };
 
+                it('should return false when view mode is not EDIT', () => {
+                    patchState(store, {
+                        pageParams: {
+                            ...(store.pageParams() ?? {}),
+                            mode: UVE_MODE.PREVIEW
+                        },
+                        flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: false },
+                        pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                    });
+
+                    expect(spectator.component.$showLockOverlay()).toBe(false);
+                });
+
                 describe('with feature flag enabled', () => {
                     beforeEach(() => {
                         patchState(store, { flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true } });

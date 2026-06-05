@@ -2,17 +2,17 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
 
 import { DOCUMENT } from '@angular/common';
 import {
+    booleanAttribute,
     ChangeDetectionStrategy,
     Component,
-    Injector,
-    OnDestroy,
-    booleanAttribute,
     computed,
     effect,
     forwardRef,
     inject,
+    Injector,
     input,
     numberAttribute,
+    OnDestroy,
     output,
     signal
 } from '@angular/core';
@@ -34,7 +34,9 @@ import { ImagePropertiesPopoverComponent } from './components/image-popover/imag
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
+import { TableHandlePopoverComponent } from './components/table-popover/table-handle-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
+import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
@@ -135,12 +137,7 @@ function normalizeEditorContent(
         EditorModalService,
         EditorToolbarStore,
         ContentletEditUrlService,
-        // Component-scoped DialogService so each editor instance has its own PrimeNG
-        // dynamic-dialog factory; prevents the AI image prompt opened from one editor
-        // from accidentally being closed by another editor on the same page.
         DialogService,
-        // Component-scoped ConfirmationService pairs 1:1 with the local <p-confirmdialog>
-        // below — keeps two editors on the same page from sharing confirmation state.
         ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
@@ -153,6 +150,8 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TablePopoverComponent,
+        TableHandlePopoverComponent,
+        TablePropertiesPopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
         AssetByUrlPopoverComponent,
@@ -170,7 +169,7 @@ function normalizeEditorContent(
                         (fullscreenToggle)="toggleFullscreen()"
                         (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        class="relative overflow-y-auto overscroll-contain editor-scroll-container"
+                        class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="
                             isFullscreen()
@@ -219,6 +218,8 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-popover [editor]="ed" />
+                    <dot-table-handle-popover [editor]="ed" />
+                    <dot-table-properties-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
                     <dot-asset-by-url-popover [editor]="ed" />
@@ -467,7 +468,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] max-w-7xl h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
+            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
             : 'relative rounded-lg border border-gray-200'
     );
 

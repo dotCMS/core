@@ -2370,7 +2370,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\"\n}",
+              "raw": "{\n    \"identifier\": \"{{identifier}}\",\n    \"fieldVar\": \"seo\",\n    \"language\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3812,9 +3812,7 @@
       "script": {
         "type": "text/javascript",
         "packages": {},
-        "exec": [
-          ""
-        ]
+        "exec": [        ]
       }
     },
     {

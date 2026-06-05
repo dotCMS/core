@@ -7,11 +7,13 @@ import {
     input
 } from '@angular/core';
 
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-uve-palette-contentlet',
-    imports: [NgClass],
+    imports: [NgClass, TooltipModule],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-uve-palette-contentlet.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,7 +42,7 @@ export class DotUvePaletteContentletComponent {
     readonly $hostClass =
         'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
         'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
-        'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm';
+        'hover:border-primary-500 hover:bg-primary-100 hover:shadow-sm';
 
     readonly $dataItem = computed(() => {
         const contentlet = this.$contentlet();

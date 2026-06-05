@@ -5,8 +5,19 @@
 <p-card
     class="bar-engagement-chart-card"
     [dt]="{ body: { padding: '1.5rem' } }"
-    [header]="$resolvedCardHeader()"
     data-testid="analytics-bar-engagement-chart">
+    <ng-template #title>
+        @if ($resolvedCardHeader(); as cardTitle) {
+            <span data-testid="analytics-bar-engagement-chart-title">{{ cardTitle }}</span>
+        }
+    </ng-template>
+    <ng-template #subtitle>
+        @if (!isError && !isLoading && !isEmpty) {
+            <span data-testid="analytics-bar-engagement-chart-subtitle">
+                {{ 'analytics.engagement.charts.subtitle' | dm }}
+            </span>
+        }
+    </ng-template>
     @if (isError) {
         <div
             class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col items-center justify-center">
@@ -18,12 +29,8 @@
         <div
             class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col gap-3 py-2"
             data-testid="analytics-bar-engagement-chart-skeleton">
-            <div class="flex gap-5">
-                <p-skeleton height="0.75rem" width="6rem" />
-                <p-skeleton height="0.75rem" width="6rem" />
-            </div>
             <div
-                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[5.5rem_minmax(0,1fr)_auto]">
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[minmax(8rem,max-content)_minmax(0,1fr)_auto]">
                 @for (i of [1, 2, 3, 4, 5]; track i) {
                     <div class="contents">
                         <p-skeleton height="0.75rem" width="4rem" />
@@ -37,32 +44,18 @@
         <dot-analytics-empty-state class="bar-engagement-chart__pane min-h-48 w-full flex-1" />
     } @else {
         <div
-            class="bar-engagement-chart__pane flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4"
+            class="bar-engagement-chart__pane flex min-h-0 w-full min-w-0 flex-1 flex-col gap-3"
             data-testid="analytics-bar-engagement-chart-body">
             <div
-                class="flex flex-wrap items-center gap-4 text-sm text-color-secondary"
-                data-testid="analytics-bar-engagement-legend">
-                <span class="inline-flex items-center gap-2">
-                    <span class="inline-block size-[0.65rem] rounded-xs bg-primary"></span>
-                    {{ 'analytics.engagement.charts.legend.engaged' | dm }}
-                </span>
-                <span class="inline-flex items-center gap-2">
-                    <span
-                        class="inline-block size-[0.65rem] rounded-xs bg-(--bar-engagement-not-engaged)"></span>
-                    {{ 'analytics.engagement.charts.legend.not-engaged' | dm }}
-                </span>
-            </div>
-
-            <div
-                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[5.5rem_minmax(0,1fr)_auto]"
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[minmax(8rem,max-content)_minmax(0,1fr)_auto]"
                 data-testid="analytics-bar-engagement-list">
-                @for (row of $displayRows(); track $index) {
+                @for (row of $displayRows(); track row.name) {
                     <div
                         class="contents"
                         data-testid="analytics-bar-engagement-row"
-                        [attr.aria-label]="rowAriaLabel(row)">
+                        [attr.aria-label]="row.ariaLabel">
                         <span
-                            class="min-w-0 truncate text-sm text-color"
+                            class="whitespace-nowrap text-sm text-color"
                             data-testid="analytics-bar-engagement-row-label">
                             {{ row.name }}
                         </span>
@@ -73,25 +66,12 @@
                                 [totalSessions]="row.totalSessions"
                                 height="1rem" />
                         </div>
-                        <div
-                            class="justify-self-start text-left min-w-0 text-xs tabular-nums text-color-secondary sm:text-sm"
+                        <span
+                            class="text-sm tabular-nums text-color"
                             data-testid="analytics-bar-engagement-sessions-total"
-                            [attr.title]="sessionsTotalsTitle(row.totalSessions)">
-                            <div class="inline-flex flex-row flex-nowrap items-center gap-1">
-                                <span class="whitespace-nowrap">
-                                    {{ formatSessionsCount(row.totalSessions) }}
-                                </span>
-                                @if (row.totalSessions === 1) {
-                                    <span class="shrink-0 whitespace-nowrap">
-                                        {{ 'analytics.engagement.charts.session-label' | dm }}
-                                    </span>
-                                } @else {
-                                    <span class="shrink-0 whitespace-nowrap">
-                                        {{ 'analytics.engagement.charts.sessions-label' | dm }}
-                                    </span>
-                                }
-                            </div>
-                        </div>
+                            [attr.title]="row.sessionsTotalsTitle">
+                            {{ row.totalSessions | dotAnalyticsCount }}
+                        </span>
                     </div>
                 }
             </div>

@@ -26,7 +26,7 @@ import {
     PageContainer,
     SaveStylePropertiesPayload
 } from '../../../shared/models';
-import { getIframeAccessMode, isForwardOrPage } from '../../../utils';
+import { compareUrlPaths, getIframeAccessMode, isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageSnapshot } from '../page/withPage';
 
@@ -60,6 +60,8 @@ export interface WithPageApiDeps {
     resetClientConfiguration: () => void;
     /** Reset readiness + history but keep current pageAssetResponse. */
     markPageLoading: () => void;
+    /** Drop the stored client GraphQL request (belongs to the page being left). */
+    resetRequestMetadata: () => void;
 
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
@@ -153,6 +155,31 @@ export function withPageApi(deps: WithPageApiDeps) {
                             };
                         }),
                         tap((pageParams) => {
+                            // The stored client GraphQL request (sent by the headless
+                            // app's CLIENT_READY) is page-scoped: its variables carry
+                            // the URL it was captured for. Keep it only when it belongs
+                            // to the page being loaded — same-page param changes
+                            // (language/persona/mode) or a client-side navigation whose
+                            // CLIENT_READY already refreshed it. Otherwise drop it so
+                            // this page loads through the standard Page API (same as a
+                            // first load) until its own CLIENT_READY installs fresh
+                            // metadata. Reusing another page's request (stale variables
+                            // like publishDate or custom vars) can resolve to NOT_FOUND
+                            // and strand the editor on the previous page.
+                            // Requests without a url variable are assumed to belong to
+                            // the page currently loaded in the editor.
+                            const metadataUrl =
+                                deps.requestMetadata()?.variables?.['url'] ??
+                                store.pageParams()?.url;
+                            const belongsToTargetPage =
+                                !!metadataUrl &&
+                                !!pageParams.url &&
+                                compareUrlPaths(metadataUrl, pageParams.url);
+
+                            if (!belongsToTargetPage) {
+                                deps.resetRequestMetadata();
+                            }
+
                             // Don't fully reset — that would null
                             // `pageAssetResponse` and unmount the editor
                             // chrome (toolbars, sidebars, navigation,
@@ -247,9 +274,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                     ? { pageAsset, content: graphQLContent }
                                                     : { pageAsset };
 
-                                            deps.setPageAsset(payload);
-                                            deps.addHistory(payload);
-
+                                            // Both writes land in the same synchronous tap.
+                                            // Angular batches them before flushing effects, so
+                                            // $translatePageEffect always sees a consistent state.
                                             // uveCurrentUser is synced reactively from GlobalStore in withUve onInit effect
                                             patchState(store, {
                                                 pageExperiment: experiment,
@@ -263,6 +290,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                 ),
                                                 uveStatus: UVE_STATUS.LOADED
                                             });
+                                            deps.setPageAsset(payload);
+                                            deps.addHistory(payload);
                                         })
                                     );
                                 })
@@ -287,35 +316,49 @@ export function withPageApi(deps: WithPageApiDeps) {
                             }
                         }),
                         switchMap(() => {
-                            const isGraphQL = !!deps.requestMetadata();
-                            const pageRequest = !isGraphQL
-                                ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
-                                      tap((response) =>
-                                          deps.setPageAsset({
-                                              pageAsset: response.pageAsset,
-                                              content: response.content
-                                          })
-                                      ),
-                                      map((response) => response.pageAsset)
-                                  );
+                            // Thread content through the stream value so the payload shape
+                            // naturally encodes whether this is a GraphQL reload:
+                            // - non-GraphQL emits { pageAsset }         → 'content' NOT in payload
+                            // - GraphQL emits     { pageAsset, content } → 'content' IN payload
+                            // setPageAsset in withPage.ts uses 'content' in payload to decide
+                            // whether to clear the existing content, so this preserves original semantics.
+                            const pageRequest = !deps.requestMetadata()
+                                ? dotPageApiService
+                                      .get(store.pageParams())
+                                      .pipe(map((pageAsset) => ({ pageAsset })))
+                                : dotPageApiService
+                                      .getGraphQLPage(deps.$requestWithParams())
+                                      .pipe(
+                                          map(({ pageAsset, content }) => ({ pageAsset, content }))
+                                      );
 
                             return pageRequest.pipe(
-                                tap((pageAsset) => {
-                                    if (!isGraphQL) {
-                                        deps.setPageAsset({ pageAsset });
-                                    }
-                                }),
-                                switchMap((pageAsset) => {
-                                    return dotLanguagesService.getLanguagesUsedPage(
-                                        pageAsset.page.identifier
-                                    );
-                                }),
-                                tap((languages) => {
-                                    patchState(store, {
-                                        pageLanguages: languages,
-                                        uveStatus: UVE_STATUS.LOADED
-                                    });
+                                switchMap((pageResult) => {
+                                    return dotLanguagesService
+                                        .getLanguagesUsedPage(pageResult.pageAsset.page.identifier)
+                                        .pipe(
+                                            tap((languages) => {
+                                                // Both writes land in the same synchronous tap.
+                                                // Angular batches them before flushing effects, so
+                                                // $translatePageEffect always sees a consistent state.
+                                                patchState(store, {
+                                                    pageLanguages: languages,
+                                                    uveStatus: UVE_STATUS.LOADED
+                                                });
+                                                deps.setPageAsset(pageResult);
+                                            }),
+                                            catchError(() => {
+                                                // Languages fetch failed: still apply the fresh
+                                                // page asset with the current (stale) languages so
+                                                // the user sees the page rather than an error screen.
+                                                patchState(store, {
+                                                    uveStatus: UVE_STATUS.LOADED
+                                                });
+                                                deps.setPageAsset(pageResult);
+
+                                                return EMPTY;
+                                            })
+                                        );
                                 }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;

@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
+import { DotAnalyticsCountPipe } from '../../pipes/dot-analytics-count/dot-analytics-count.pipe';
+
 @Component({
     selector: 'dot-analytics-stacked-bar',
+    imports: [DotAnalyticsCountPipe],
     templateUrl: './dot-analytics-stacked-bar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full min-w-0' }
@@ -24,21 +27,4 @@ export class DotAnalyticsStackedBarComponent {
         const total = this.$totalSessions();
         return total > 0 ? (Math.max(0, this.$notEngagedSessions()) / total) * 100 : 0;
     });
-
-    protected formatSegment(value: number): string {
-        if (!Number.isFinite(value) || value <= 0) return '';
-        if (value < 1000) return String(Math.round(value));
-        try {
-            return new Intl.NumberFormat(undefined, {
-                notation: 'compact',
-                compactDisplay: 'short',
-                maximumFractionDigits: 1
-            }).format(Math.round(value));
-        } catch {
-            const rounded = Math.round(value);
-            if (rounded >= 1_000_000) return `${(rounded / 1_000_000).toFixed(1)}M`;
-            if (rounded >= 1_000) return `${(rounded / 1_000).toFixed(1)}K`;
-            return String(rounded);
-        }
-    }
 }

@@ -28,6 +28,8 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.liferay.portal.model.User;
 
+// ES-DECOMMISSION: Velocity ViewTool exposes SearchResponse and ESSearchResults in deprecated
+// bridge methods. Already delegates to neutral SearchAPI — remove esSearch, esSearchRaw at R7 cutover.
 public class ESContentTool implements ViewTool {
 
 	private HttpServletRequest req;

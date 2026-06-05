@@ -31,18 +31,22 @@
         <div
             class="bar-chart__list flex flex-1 flex-col gap-3"
             data-testid="analytics-bar-chart-list">
-            @for (item of $topItems(); track item.name) {
-                <div data-testid="analytics-bar-row">
+            @for (row of $displayRows(); track row.name; let i = $index) {
+                <div
+                    data-testid="analytics-bar-row"
+                    [attr.aria-label]="row.ariaLabel"
+                    (mouseenter)="onRowMouseEnter(i, row)"
+                    (mouseleave)="onRowMouseLeave(i)">
                     <div class="flex items-center justify-between mb-1">
                         <span
                             class="text-sm text-color truncate"
                             data-testid="analytics-bar-row-label">
-                            {{ item.name }}
+                            {{ row.name }}
                         </span>
                         <span
                             class="text-sm font-semibold text-color shrink-0 ml-2"
                             data-testid="analytics-bar-row-value">
-                            {{ item.percentage }}%
+                            {{ row.percentage }}%
                         </span>
                     </div>
                     <div
@@ -51,7 +55,10 @@
                         <div
                             class="h-full rounded-full bg-primary transition-[width] duration-300 ease-in-out min-w-1"
                             data-testid="analytics-bar-row-fill"
-                            [style.width.%]="item.percentage"></div>
+                            tooltipPosition="top"
+                            [pTooltip]="row.viewsTooltip"
+                            [tooltipDisabled]="!row.viewsTooltip"
+                            [style.width.%]="row.percentage"></div>
                     </div>
                 </div>
             }

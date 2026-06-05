@@ -16,13 +16,16 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
@@ -44,11 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.google.common.util.concurrent.UncheckedExecutionException;
 
 /**
  * {@link AIClient} implementation backed by LangChain4J.
@@ -73,16 +73,20 @@ public class LangChain4jAIClient implements AIClient {
     private static final long MODEL_CACHE_TTL_HOURS = 1;
     private static final long STREAMING_TIMEOUT_SECONDS = 300;
 
-    private final Cache<String, ChatModel> chatModelCache = CacheBuilder.newBuilder()
+    private final Cache<String, ChatModel> chatModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
-    private final Cache<String, StreamingChatModel> streamingChatModelCache = CacheBuilder.newBuilder()
+    private final Cache<String, StreamingChatModel> streamingChatModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
-    private final Cache<String, EmbeddingModel> embeddingModelCache = CacheBuilder.newBuilder()
+    private final Cache<String, EmbeddingModel> embeddingModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
-    private final Cache<String, ImageModel> imageModelCache = CacheBuilder.newBuilder()
+    private final Cache<String, ImageModel> imageModelCache = Caffeine.newBuilder()
+            .maximumSize(128)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
 
@@ -196,13 +200,12 @@ public class LangChain4jAIClient implements AIClient {
                 final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
                 return streamingChatModelCache.get(
                         cacheKeyPrefix + ":chat:streaming:" + modelName,
-                        () -> LangChain4jModelFactory.buildStreamingChatModel(modelConfig));
-            } catch (ExecutionException | UncheckedExecutionException e) {
-                final Throwable cause = e.getCause() != null ? e.getCause() : e;
+                        k -> LangChain4jModelFactory.buildStreamingChatModel(modelConfig));
+            } catch (RuntimeException e) {
                 lastException = new IllegalArgumentException(
-                        "Failed to initialize streaming model '" + modelName + "': " + cause.getMessage(), cause);
+                        "Failed to initialize streaming model '" + modelName + "': " + e.getMessage(), e);
                 Logger.warn(LangChain4jAIClient.class,
-                        "Streaming model '" + modelName + "' init failed: " + cause.getMessage()
+                        "Streaming model '" + modelName + "' init failed: " + e.getMessage()
                         + (models.size() > 1 ? " — trying next model" : ""));
             }
         }
@@ -342,24 +345,27 @@ public class LangChain4jAIClient implements AIClient {
         // all configured fallback models have been attempted.
         RuntimeException lastException = null;
         for (final String modelName : models) {
+            final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
+            final M model;
             try {
-                final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
-                final M model = modelCache.get(
+                model = modelCache.get(
                         cacheKeyPrefix + ":" + section + ":" + modelName,
-                        () -> modelBuilder.apply(modelConfig));
+                        k -> modelBuilder.apply(modelConfig));
+            } catch (RuntimeException e) {
+                lastException = new IllegalArgumentException(
+                        "Failed to initialize " + section + " model '" + modelName + "': " + e.getMessage(), e);
+                Logger.warn(LangChain4jAIClient.class,
+                        section + " model '" + modelName + "' init failed: " + e.getMessage()
+                        + (models.size() > 1 ? " — trying next model" : ""));
+                continue;
+            }
+            try {
                 final long start = System.currentTimeMillis();
                 final String result = executor.apply(model);
                 Logger.info(LangChain4jAIClient.class,
                         section + " model '" + modelName + "' responded in "
                         + (System.currentTimeMillis() - start) + "ms");
                 return result;
-            } catch (ExecutionException | UncheckedExecutionException e) {
-                final Throwable cause = e.getCause() != null ? e.getCause() : e;
-                lastException = new IllegalArgumentException(
-                        "Failed to initialize " + section + " model '" + modelName + "': " + cause.getMessage(), cause);
-                Logger.warn(LangChain4jAIClient.class,
-                        section + " model '" + modelName + "' init failed: " + cause.getMessage()
-                        + (models.size() > 1 ? " — trying next model" : ""));
             } catch (RuntimeException e) {
                 lastException = e;
                 Logger.warn(LangChain4jAIClient.class,
@@ -379,16 +385,42 @@ public class LangChain4jAIClient implements AIClient {
         for (int i = 0; i < messagesArray.length(); i++) {
             final JSONObject msg = messagesArray.getJSONObject(i);
             final String role = msg.optString(AiKeys.ROLE, AiKeys.USER).toLowerCase();
-            final String content = msg.optString(AiKeys.CONTENT, "");
+            final Object contentRaw = msg.opt(AiKeys.CONTENT);
             if ("system".equals(role)) {
-                messages.add(new SystemMessage(content));
+                messages.add(new SystemMessage(contentRaw != null ? contentRaw.toString() : ""));
             } else if ("assistant".equals(role)) {
-                messages.add(new AiMessage(content));
+                messages.add(new AiMessage(contentRaw != null ? contentRaw.toString() : ""));
+            } else if (contentRaw instanceof JSONArray) {
+                messages.add(toMultimodalUserMessage((JSONArray) contentRaw));
             } else {
-                messages.add(new UserMessage(content));
+                messages.add(new UserMessage(contentRaw != null ? contentRaw.toString() : ""));
             }
         }
         return messages;
+    }
+
+    static UserMessage toMultimodalUserMessage(final JSONArray contentParts) {
+        final List<Content> parts = new ArrayList<>();
+        for (int i = 0; i < contentParts.length(); i++) {
+            final JSONObject part = contentParts.getJSONObject(i);
+            parts.add("image_url".equals(part.optString("type", "text"))
+                    ? toImageContent(part)
+                    : TextContent.from(part.optString("text", "")));
+        }
+        return UserMessage.from(parts);
+    }
+
+    private static Content toImageContent(final JSONObject part) {
+        final JSONObject imageUrlObj = part.optJSONObject("image_url");
+        final String url = imageUrlObj != null ? imageUrlObj.optString("url", "") : part.optString("image_url", "");
+        if (url.startsWith("data:")) {
+            final int semicolon = url.indexOf(';');
+            final int comma = url.indexOf(',');
+            if (semicolon > 0 && comma > semicolon) {
+                return ImageContent.from(url.substring(comma + 1), url.substring(5, semicolon));
+            }
+        }
+        return ImageContent.from(url);
     }
 
     static String toChatResponseJson(final ChatResponse response) {

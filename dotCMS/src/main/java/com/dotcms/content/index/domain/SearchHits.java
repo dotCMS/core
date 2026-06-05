@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.elasticsearch.common.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 import org.jetbrains.annotations.NotNull;

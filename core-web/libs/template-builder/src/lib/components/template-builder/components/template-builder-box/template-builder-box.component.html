@@ -19,7 +19,7 @@
 <!-- Large -->
 <ng-template #largeTemplate>
     <p-card
-        class="border border-primary-200 rounded-md h-full w-full bg-white overflow-hidden"
+        class="size-full overflow-hidden rounded-md border border-primary-200 bg-white"
         [class.template-builder-box--medium]="boxVariant === templateBuilderSizes.medium"
         [class.template-builder-box--large]="boxVariant === templateBuilderSizes.large"
         [dt]="{
@@ -30,7 +30,7 @@
         data-testId="template-builder-box">
         <ng-template pTemplate="header">
             <div
-                class="flex justify-between items-center p-2 bg-primary-50 border-b border-primary-200">
+                class="flex items-center justify-between border-b border-primary-200 bg-primary-50 p-2">
                 @if (actions.includes('add')) {
                     <p-select
                         (onChange)="onContainerSelect($event)"
@@ -82,7 +82,7 @@
         <p-scrollpanel [style]="{ width: '100%', height: '183px' }">
             @for (item of items; track $index) {
                 <div
-                    class="flex items-center justify-between h-10 pr-2 pl-4 mx-4 my-2 first:mt-3 last:mb-4">
+                    class="mx-4 my-2 flex h-10 items-center justify-between pr-2 pl-4 first:mt-3 last:mb-4">
                     <p class="truncate" data-testId="container-title">
                         @let identifier = item.identifier;
                         {{ containerMap?.[identifier]?.title || identifier }}
@@ -99,7 +99,7 @@
 <!-- Small -->
 <ng-template #smallTemplate>
     <div
-        class="template-builder-box--small border bg-white py-4 border-primary-200 rounded-md flex flex-col items-center justify-between h-full"
+        class="template-builder-box--small flex h-full flex-col items-center justify-between rounded-md border border-primary-200 bg-white py-4"
         data-testId="template-builder-box-small">
         @if (actions.includes('add')) {
             <p-button

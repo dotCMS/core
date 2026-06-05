@@ -80,8 +80,10 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.1.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: interactive
       claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
       timeout_minutes: 15
@@ -108,8 +110,10 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.1.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
     with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: |
         Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
