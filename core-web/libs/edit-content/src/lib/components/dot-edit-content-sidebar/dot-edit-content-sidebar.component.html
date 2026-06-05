@@ -15,7 +15,7 @@
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <p-tablist
-            class="min-h-[53px] border-b border-(--p-inputtext-border-color) [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
+            class="min-h-[53px] border-b border-surface-200 [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
             <p-tab [value]="0" [pTooltip]="'Actions' | dm" tooltipPosition="bottom">
                 <i class="pi pi-bolt"></i>
             </p-tab>
@@ -45,19 +45,18 @@
                         !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
                     ) {
                         <div
-                            class="mb-4 border-b border-surface-200 pb-4"
+                            class="border-b border-surface-200 pb-3"
                             data-testId="sidebar-lock-section">
                             <button
                                 pButton
                                 type="button"
+                                [outlined]="true"
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="
                                     ($store.isContentLocked() ? 'Unlock' : 'Make-Editable') | dm
                                 "
                                 [icon]="$store.isContentLocked() ? 'pi pi-unlock' : 'pi pi-lock'"
-                                [outlined]="true"
-                                [severity]="$store.isContentLocked() ? undefined : 'secondary'"
                                 (click)="
                                     $store.isContentLocked()
                                         ? $store.unlockContent()
@@ -66,10 +65,11 @@
                         </div>
                     }
 
-                    <!-- Workflow actions: full-width, stacked one above another -->
+                    <!-- Workflow actions: full-width, stacked one above another;
+                         separated from the first collapsible section by a divider. -->
                     @if ($store.showWorkflowActions()) {
                         <dot-workflow-actions
-                            class="mb-4"
+                            class="border-b border-surface-200 py-3"
                             data-testId="sidebar-workflow-actions"
                             [actions]="$store.getActions()"
                             [stacked]="true"

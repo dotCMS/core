@@ -60,7 +60,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[360px] h-full flex-col items-start border-l border-[var(--gray-400)] relative min-w-0 overflow-x-hidden'
+        class: 'flex w-[360px] h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden'
     }
 })
 export class DotEditContentSidebarComponent {

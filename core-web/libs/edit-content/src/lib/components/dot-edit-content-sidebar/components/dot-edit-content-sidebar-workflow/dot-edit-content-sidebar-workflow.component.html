@@ -3,18 +3,16 @@
 @let workflowSelection = $workflowSelection();
 
 <div class="rounded-lg bg-surface-50 p-3">
-    <dl class="workflow-list">
-        <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
-        <dd
-            class="workflow-column__description"
-            aria-labelledby="workflow-title"
-            data-testId="workflow-name">
+    <!-- Same grid as the Details card so both sidebar cards read identically -->
+    <div class="grid grid-cols-[110px_1fr] items-center gap-x-3 gap-y-2.5 text-sm">
+        <span class="text-gray-600">{{ 'Workflow' | dm }}</span>
+        <span class="flex items-center gap-1 text-gray-800" data-testId="workflow-name">
             @if (isLoading) {
                 <p-skeleton />
             } @else if (workflowSelection.isWorkflowSelected) {
                 <a
                     href="#"
-                    class="select-workflow-link"
+                    class="select-workflow-link text-primary-500"
                     data-testId="select-workflow-link"
                     (click)="$event.preventDefault(); showDialog()"
                     tabindex="0">
@@ -39,38 +37,30 @@
                         icon="pi pi-replay" />
                 }
             }
-        </dd>
+        </span>
 
         @if (!workflowSelection.isWorkflowSelected) {
-            <dt class="workflow-column__title" id="step-title">
-                {{ 'Step' | dm }}
-            </dt>
-            <dd
-                class="workflow-column__description"
-                aria-labelledby="step-title"
-                data-testId="workflow-step">
+            <span class="text-gray-600">{{ 'Step' | dm }}</span>
+            <span class="text-gray-800" data-testId="workflow-step">
                 @if (isLoading) {
                     <p-skeleton />
                 } @else {
                     {{ workflow.step?.name }}
                 }
-            </dd>
+            </span>
 
             @if (workflow.task) {
-                <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
-                <dd
-                    class="workflow-column__description"
-                    aria-labelledby="assignee-title"
-                    data-testId="workflow-assigned">
+                <span class="text-gray-600">{{ 'Assignee' | dm }}</span>
+                <span class="text-gray-800" data-testId="workflow-assigned">
                     @if (isLoading) {
                         <p-skeleton />
                     } @else {
                         {{ workflow.task.assignedTo }}
                     }
-                </dd>
+                </span>
             }
         }
-    </dl>
+    </div>
 </div>
 
 <!-- Dialog to select workflow -->

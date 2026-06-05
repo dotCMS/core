@@ -1,40 +1,7 @@
 @use "variables" as *;
 @use "mixins";
-@use "../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../../dotcms-scss/shared/spacing";
 
 $skeleton-height: 14px;
-
-.workflow-list {
-    display: grid;
-    grid-template-columns: 96px 1fr;
-
-    margin: 0;
-
-    dt {
-        // Match the Details card: muted, normal-weight labels (not bold/black) so the
-        // key column reads the same in both sidebar cards.
-        font-weight: var(--font-weight-normal);
-        color: var(--color-gray-600);
-
-        min-height: 2.286rem;
-        display: flex;
-        align-content: center;
-        flex-wrap: wrap;
-    }
-
-    dd {
-        margin: 0;
-        color: var(--color-gray-800);
-        font-weight: var(--font-weight-normal);
-    }
-}
-.workflow-column__description {
-    display: flex;
-    align-items: center;
-    gap: spacing.$spacing-0;
-}
 
 .select-workflow-link {
     cursor: pointer;
