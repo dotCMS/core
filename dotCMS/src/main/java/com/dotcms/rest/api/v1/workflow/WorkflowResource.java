@@ -227,6 +227,12 @@ public class WorkflowResource {
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
 
+    private static final String BLOCK_EDITOR_FIELD_NOTE =
+            "\n\n**Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — " +
+            "do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and " +
+            "converted to the Block Editor structure when the contentlet is opened in the editor. " +
+            "Example: `\"body\": \"<h2>Intro</h2><p>Hello <strong>world</strong>.</p>\"`.";
+
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
             "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
@@ -2704,7 +2710,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -2849,7 +2855,7 @@ public class WorkflowResource {
                             "specified by name, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                             "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                             "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                            INDEX_POLICY_CHAINING_NOTE,
+                            INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3234,7 +3240,7 @@ public class WorkflowResource {
                     "their actions later will fail with 'Workflow Action is not available in the Workflow Step the content " +
                     "is currently in.' To exercise actions in those other schemes, fire by action ID via " +
                     "`PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4229,7 +4235,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4378,7 +4384,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4583,7 +4589,7 @@ public class WorkflowResource {
                     "follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in " +
                     "`SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) " +
                     "are silently ignored. Fire the Move action afterwards to relocate.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
