@@ -63,3 +63,4 @@ entries automatically, without re-reading any diffs.
 Every doc object includes a `provenance:` block stamped with the model ID, prompt version,
 and generation timestamp. This makes prompt-version upgrades auditable: regenerate with a
 newer prompt version and the `provenance` block marks the difference.
+
