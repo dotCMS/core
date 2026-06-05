@@ -43,6 +43,11 @@ Tips:
 - Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
 - For file uploads use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
+Block Editor (Story Block) fields:
+- A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. dotCMS stores it as-is and converts it to the Block Editor structure when the contentlet is opened in the editor.
+- Example: \`{ "contentType": "Blog", "title": "My Post", "body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>" }\` — where \`body\` is the Story Block field.
+- Identify Story Block fields from the content type (\`fields[].clazz\` is \`...ImmutableStoryBlockField\`).
+
 Workflow fires and Elasticsearch (indexPolicy):
 - All \`/fire\` and \`/firemultipart\` endpoints (e.g. \`/api/v1/workflow/actions/default/fire/PUBLISH\`)
   accept an \`indexPolicy\` query parameter controlling when Elasticsearch reflects the change:
