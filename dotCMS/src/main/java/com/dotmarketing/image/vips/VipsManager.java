@@ -3,6 +3,7 @@ package com.dotmarketing.image.vips;
 import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.Vips;
 import app.photofox.vipsffm.VipsError;
+import app.photofox.vipsffm.VipsHelper;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -48,7 +49,7 @@ public final class VipsManager {
                 local = available;
                 if (local == null) {
                     local = Try.of(() -> {
-                        Vips.run(arena -> {});
+                        Vips.run(arena -> configureCache());
                         return Boolean.TRUE;
                     }).onFailure(e -> Logger.warn(VipsManager.class,
                             "libvips not available, falling back to pure-JVM image engine: " + e.getMessage()))
@@ -65,6 +66,47 @@ public final class VipsManager {
      */
     public static boolean isEnabled() {
         return Config.getBooleanProperty(USE_LIBVIPS, false) && isAvailable();
+    }
+
+    /**
+     * Applies optional libvips operation-cache tuning, once, when the engine first initializes.
+     *
+     * <p>The operation cache memoizes operation <i>results</i> across calls. For dotCMS — which serves
+     * mostly unique transforms and keeps its own on-disk rendition cache ({@code dotGenerated}) — the
+     * in-process cache rarely hits, so the libvips defaults are kept unless explicitly overridden.
+     * Every knob defaults to "leave libvips' default"; set one to change it:</p>
+     * <ul>
+     *   <li>{@code IMAGE_LIBVIPS_CACHE_DISABLED=true} — turn the operation cache off entirely.</li>
+     *   <li>{@code IMAGE_LIBVIPS_CACHE_MAX_MEM} — max cache memory in <b>bytes</b> (e.g. 268435456 = 256MB).</li>
+     *   <li>{@code IMAGE_LIBVIPS_CACHE_MAX} — max number of cached operations.</li>
+     *   <li>{@code IMAGE_LIBVIPS_CACHE_MAX_FILES} — max cached open files.</li>
+     * </ul>
+     * <p>Note: this is <b>not</b> a per-operation memory cap — a single operation's working buffers
+     * are bounded by the image, not by this cache, and are freed when its arena closes.</p>
+     */
+    private static void configureCache() {
+        if (Config.getBooleanProperty("IMAGE_LIBVIPS_CACHE_DISABLED", false)) {
+            Try.run(Vips::disableOperationCache)
+                    .onFailure(e -> Logger.warn(VipsManager.class, "unable to disable libvips op cache: " + e.getMessage()));
+            Logger.info(VipsManager.class, "libvips operation cache disabled by config");
+            return;
+        }
+        final long maxMem = Config.getLongProperty("IMAGE_LIBVIPS_CACHE_MAX_MEM", -1L);
+        if (maxMem >= 0) {
+            Try.run(() -> VipsHelper.cache_set_max_mem(maxMem))
+                    .onFailure(e -> Logger.warn(VipsManager.class, "unable to set libvips cache max mem: " + e.getMessage()));
+            Logger.info(VipsManager.class, "libvips operation cache max mem set to " + maxMem + " bytes");
+        }
+        final int maxOps = Config.getIntProperty("IMAGE_LIBVIPS_CACHE_MAX", -1);
+        if (maxOps >= 0) {
+            Try.run(() -> VipsHelper.cache_set_max(maxOps))
+                    .onFailure(e -> Logger.warn(VipsManager.class, "unable to set libvips cache max ops: " + e.getMessage()));
+        }
+        final int maxFiles = Config.getIntProperty("IMAGE_LIBVIPS_CACHE_MAX_FILES", -1);
+        if (maxFiles >= 0) {
+            Try.run(() -> VipsHelper.cache_set_max_files(maxFiles))
+                    .onFailure(e -> Logger.warn(VipsManager.class, "unable to set libvips cache max files: " + e.getMessage()));
+        }
     }
 
     /**

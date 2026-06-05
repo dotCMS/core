@@ -14,6 +14,25 @@ The legacy engine is untouched and remains the default. This engine is selected
 | `IMAGE_API_USE_LIBVIPS` | `false` | Turn the libvips engine on for the image exporter chain. |
 | `IMAGE_API_LIBVIPS_FALLBACK` | `true` | If a libvips op fails (corrupt image, missing delegate), run the legacy filter instead of erroring. |
 
+### Operation-cache tuning (optional)
+
+libvips keeps a global cache of operation *results*. dotCMS already caches finished
+renditions on disk (`dotGenerated`) and serves mostly unique transforms, so the
+in-process cache rarely hits — the libvips defaults are kept unless you override one
+of these (applied once at engine init). This is **not** a per-operation memory cap;
+a single op's buffers are bounded by the image and freed when its arena closes.
+
+| Property | Default | Effect |
+|----------|---------|--------|
+| `IMAGE_LIBVIPS_CACHE_DISABLED` | `false` | Turn the operation cache off entirely (lowest, most predictable memory). |
+| `IMAGE_LIBVIPS_CACHE_MAX_MEM` | libvips default (~100 MB) | Max cache memory in **bytes** (e.g. `268435456` = 256 MB). |
+| `IMAGE_LIBVIPS_CACHE_MAX` | libvips default | Max number of cached operations. |
+| `IMAGE_LIBVIPS_CACHE_MAX_FILES` | libvips default | Max cached open files. |
+
+> Raising the cache rarely helps this workload (low hit rate) and uses more RAM;
+> for a busy image server, `IMAGE_LIBVIPS_CACHE_DISABLED=true` is often the better
+> knob. Remember the `DOT_` env prefix: `DOT_IMAGE_LIBVIPS_CACHE_MAX_MEM`, etc.
+
 The engine only activates when the flag is on **and** native libvips is loadable
 (`VipsManager.isEnabled()`); otherwise the legacy engine is used transparently.
 
