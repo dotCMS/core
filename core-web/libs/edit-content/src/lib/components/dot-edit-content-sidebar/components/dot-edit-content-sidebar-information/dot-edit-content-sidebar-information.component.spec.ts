@@ -91,19 +91,23 @@ describe('DotEditContentSidebarInformationComponent', () => {
             expect(contentTypeLink.textContent).toContain('Blog');
         });
 
-        it('should show created information', () => {
-            const createdDate = spectator.query(byTestId('created-date'));
-            expect(createdDate).toBeTruthy();
-        });
-
         it('should show modified information', () => {
             const modifiedDate = spectator.query(byTestId('modified-date'));
             expect(modifiedDate).toBeTruthy();
         });
 
-        it('should show published information', () => {
-            const publishedDate = spectator.query(byTestId('published-date'));
-            expect(publishedDate).toBeTruthy();
+        it('should show the modified-by row with an initials avatar', () => {
+            const modifiedBy = spectator.query(byTestId('modified-by'));
+            expect(modifiedBy).toBeTruthy();
+            expect(modifiedBy.textContent).toContain('E');
+        });
+
+        it('should show the copy identifier button in the footer', () => {
+            expect(spectator.query(byTestId('copy-id-button'))).toBeTruthy();
+        });
+
+        it('should show the view-as-json link in the footer', () => {
+            expect(spectator.query(byTestId('json-link'))).toBeTruthy();
         });
 
         it('should NOT show a references card', () => {

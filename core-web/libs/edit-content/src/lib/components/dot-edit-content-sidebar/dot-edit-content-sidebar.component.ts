@@ -18,7 +18,7 @@ import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSBaseTypesContentTypes, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
@@ -49,7 +49,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         TabsModule,
         TooltipModule,
         DotEditContentSidebarSectionComponent,
-        DotCopyButtonComponent,
         ConfirmDialogModule,
         DialogModule,
         SelectModule,
@@ -61,7 +60,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[21.875rem] h-full flex-col items-start border-l border-[var(--gray-400)] [&:not([inert])]:shadow-[-4px_0_12px_rgba(0,0,0,0.08)] relative min-w-0 overflow-x-hidden'
+        class: 'flex w-[360px] h-full flex-col items-start border-l border-[var(--gray-400)] relative min-w-0 overflow-x-hidden'
     }
 })
 export class DotEditContentSidebarComponent {

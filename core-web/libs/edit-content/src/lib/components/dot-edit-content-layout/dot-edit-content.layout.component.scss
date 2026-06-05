@@ -25,6 +25,6 @@
     transition: grid-template-columns 150ms ease-in-out;
 
     &.edit-content--with-sidebar {
-        grid-template-columns: minmax(0, 1fr) 21.875rem;
+        grid-template-columns: minmax(0, 1fr) 360px;
     }
 }

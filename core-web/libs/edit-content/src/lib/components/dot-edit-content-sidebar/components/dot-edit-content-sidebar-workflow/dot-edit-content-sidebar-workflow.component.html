@@ -2,74 +2,76 @@
 @let isLoading = $isLoading();
 @let workflowSelection = $workflowSelection();
 
-<dl class="workflow-list">
-    <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
-    <dd
-        class="workflow-column__description"
-        aria-labelledby="workflow-title"
-        data-testId="workflow-name">
-        @if (isLoading) {
-            <p-skeleton />
-        } @else if (workflowSelection.isWorkflowSelected) {
-            <a
-                href="#"
-                class="select-workflow-link"
-                data-testId="select-workflow-link"
-                (click)="$event.preventDefault(); showDialog()"
-                tabindex="0">
-                {{ 'edit.content.sidebar.workflow.select.workflow' | dm }}
-            </a>
-        } @else {
-            {{ workflow.scheme?.name }}
-
-            @if ($showWorkflowSelection()) {
-                <p-button
-                    data-testId="edit-workflow-button"
-                    (click)="showDialog()"
-                    styleClass="p-button-link"
-                    icon="pi pi-pencil" />
-            }
-
-            @if (workflow.resetAction) {
-                <p-button
-                    (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
-                    styleClass="p-button-link"
-                    data-testId="reset-workflow-button"
-                    icon="pi pi-replay" />
-            }
-        }
-    </dd>
-
-    @if (!workflowSelection.isWorkflowSelected) {
-        <dt class="workflow-column__title" id="step-title">
-            {{ 'Step' | dm }}
-        </dt>
+<div class="rounded-lg bg-surface-50 p-3">
+    <dl class="workflow-list">
+        <dt class="workflow-column__title" id="workflow-title">{{ 'Workflow' | dm }}</dt>
         <dd
             class="workflow-column__description"
-            aria-labelledby="step-title"
-            data-testId="workflow-step">
+            aria-labelledby="workflow-title"
+            data-testId="workflow-name">
             @if (isLoading) {
                 <p-skeleton />
+            } @else if (workflowSelection.isWorkflowSelected) {
+                <a
+                    href="#"
+                    class="select-workflow-link"
+                    data-testId="select-workflow-link"
+                    (click)="$event.preventDefault(); showDialog()"
+                    tabindex="0">
+                    {{ 'edit.content.sidebar.workflow.select.workflow' | dm }}
+                </a>
             } @else {
-                {{ workflow.step?.name }}
+                {{ workflow.scheme?.name }}
+
+                @if ($showWorkflowSelection()) {
+                    <p-button
+                        data-testId="edit-workflow-button"
+                        (click)="showDialog()"
+                        styleClass="p-button-link"
+                        icon="pi pi-pencil" />
+                }
+
+                @if (workflow.resetAction) {
+                    <p-button
+                        (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
+                        styleClass="p-button-link"
+                        data-testId="reset-workflow-button"
+                        icon="pi pi-replay" />
+                }
             }
         </dd>
 
-        @if (workflow.task) {
-            <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+        @if (!workflowSelection.isWorkflowSelected) {
+            <dt class="workflow-column__title" id="step-title">
+                {{ 'Step' | dm }}
+            </dt>
             <dd
                 class="workflow-column__description"
-                aria-labelledby="assignee-title"
-                data-testId="workflow-assigned">
+                aria-labelledby="step-title"
+                data-testId="workflow-step">
                 @if (isLoading) {
                     <p-skeleton />
                 } @else {
-                    {{ workflow.task.assignedTo }}
+                    {{ workflow.step?.name }}
                 }
             </dd>
+
+            @if (workflow.task) {
+                <dt class="workflow-column__title" id="assignee-title">{{ 'Assignee' | dm }}</dt>
+                <dd
+                    class="workflow-column__description"
+                    aria-labelledby="assignee-title"
+                    data-testId="workflow-assigned">
+                    @if (isLoading) {
+                        <p-skeleton />
+                    } @else {
+                        {{ workflow.task.assignedTo }}
+                    }
+                </dd>
+            }
         }
-    }
-</dl>
+    </dl>
+</div>
 
 <!-- Dialog to select workflow -->
 @defer (when $showDialog()) {

@@ -3,7 +3,7 @@
     data-testid="dot-section">
     @if ($title()) {
         <div
-            class="sticky top-0 z-10 flex min-h-12 shrink-0 cursor-pointer items-center justify-between py-1"
+            class="sticky top-0 z-10 flex min-h-12 shrink-0 cursor-pointer items-center justify-between rounded-md px-2 py-1 transition-colors hover:bg-surface-50"
             role="button"
             tabindex="0"
             [attr.aria-expanded]="!$collapsed()"
@@ -11,26 +11,26 @@
             (click)="toggle()"
             (keydown.enter)="toggle()"
             (keydown.space)="$event.preventDefault(); toggle()">
+            <h2
+                class="m-0 text-[11px] font-bold tracking-[0.08em] text-gray-500 uppercase"
+                data-testid="dot-section-title">
+                {{ $title() }}
+            </h2>
             <div class="flex items-center gap-2">
+                @if (actionTemplate) {
+                    <div
+                        class="text-sm text-primary-500"
+                        data-testid="dot-section-action"
+                        (click)="$event.stopPropagation()"
+                        (keydown)="$event.stopPropagation()">
+                        <ng-container *ngTemplateOutlet="actionTemplate" />
+                    </div>
+                }
                 <i
                     class="pi pi-chevron-down text-xs text-gray-500 transition-transform"
-                    [class.rotate-180]="$collapsed()"
+                    [class.rotate-180]="!$collapsed()"
                     data-testid="dot-section-chevron"></i>
-                <h2
-                    class="m-0 text-[11px] font-bold tracking-[0.08em] text-gray-500 uppercase"
-                    data-testid="dot-section-title">
-                    {{ $title() }}
-                </h2>
             </div>
-            @if (actionTemplate) {
-                <div
-                    class="text-sm text-primary-500"
-                    data-testid="dot-section-action"
-                    (click)="$event.stopPropagation()"
-                    (keydown)="$event.stopPropagation()">
-                    <ng-container *ngTemplateOutlet="actionTemplate" />
-                </div>
-            }
         </div>
     }
     @if (!$collapsed()) {

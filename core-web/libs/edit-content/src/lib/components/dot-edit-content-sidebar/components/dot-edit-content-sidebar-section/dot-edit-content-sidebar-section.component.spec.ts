@@ -180,12 +180,20 @@ describe('DotEditContentSidebarSectionComponent', () => {
             expect(spectator.query(byTestId('dot-section-content'))).toBeFalsy();
         });
 
-        it('should rotate the chevron when collapsed', () => {
-            localStorageService.getItem.mockReturnValue(true);
+        it('should rotate the chevron up when expanded (collapsed has it pointing down)', () => {
+            localStorageService.getItem.mockReturnValue(false);
             spectator.detectChanges();
 
             const chevron = spectator.query(byTestId('dot-section-chevron'));
             expect(chevron).toHaveClass('rotate-180');
+        });
+
+        it('should not rotate the chevron when collapsed', () => {
+            localStorageService.getItem.mockReturnValue(true);
+            spectator.detectChanges();
+
+            const chevron = spectator.query(byTestId('dot-section-chevron'));
+            expect(chevron).not.toHaveClass('rotate-180');
         });
 
         it('should not collapse when clicking the action slot', () => {

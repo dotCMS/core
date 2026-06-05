@@ -81,6 +81,24 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             }
         },
+        tabs: {
+            // Underline-style tabs per the design: the active indicator sits on the BOTTOM
+            // border (Lara defaults to a 2px TOP border) and tabs have no static background
+            // (Lara fills inactive tabs with surface-50). The active state still reads via the
+            // primary bottom border + primary text (tab.activeBorderColor / activeColor).
+            tab: {
+                borderWidth: '0 0 2px 0'
+            },
+            colorScheme: {
+                light: {
+                    tab: {
+                        background: 'transparent',
+                        hoverBackground: 'transparent',
+                        activeBackground: 'transparent'
+                    }
+                }
+            }
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
