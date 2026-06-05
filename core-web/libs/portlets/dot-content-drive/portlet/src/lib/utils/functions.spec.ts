@@ -15,7 +15,10 @@ import {
     decodeByFilterKey,
     getFolderHierarchyByPath,
     getFolderNodesByPath,
-    isFolder
+    isFolder,
+    parseWorkflowToken,
+    workflowEntryToToken,
+    parseWorkflowFilter
 } from './functions';
 
 import { DotContentDriveFilters } from '../shared/models';
@@ -244,6 +247,68 @@ describe('Utility Functions', () => {
             // Each token is `schemeId` or `schemeId:stepId`; only commas separate tokens.
             const result = decodeByFilterKey.workflow('schemeA:stepX,schemeB,schemeC:stepY');
             expect(result).toEqual(['schemeA:stepX', 'schemeB', 'schemeC:stepY']);
+        });
+    });
+
+    describe('workflow token (de)serialization', () => {
+        describe('parseWorkflowToken', () => {
+            it('should parse a scheme-only token', () => {
+                expect(parseWorkflowToken('schemeA')).toEqual({ scheme: 'schemeA' });
+            });
+
+            it('should parse a scheme:step token', () => {
+                expect(parseWorkflowToken('schemeA:stepX')).toEqual({
+                    scheme: 'schemeA',
+                    step: 'stepX'
+                });
+            });
+
+            it('should split on the FIRST colon only, preserving colons inside the step id', () => {
+                expect(parseWorkflowToken('scheme:step:with:colons')).toEqual({
+                    scheme: 'scheme',
+                    step: 'step:with:colons'
+                });
+            });
+
+            it('should treat an empty token as an empty scheme with no step', () => {
+                expect(parseWorkflowToken('')).toEqual({ scheme: '' });
+            });
+
+            it('should treat a leading separator as an empty scheme with a step', () => {
+                expect(parseWorkflowToken(':stepX')).toEqual({ scheme: '', step: 'stepX' });
+            });
+        });
+
+        describe('workflowEntryToToken', () => {
+            it('should serialize a scheme-only entry to the bare scheme id', () => {
+                expect(workflowEntryToToken({ scheme: 'schemeA' })).toBe('schemeA');
+            });
+
+            it('should serialize a scheme+step entry as scheme:step', () => {
+                expect(workflowEntryToToken({ scheme: 'schemeA', step: 'stepX' })).toBe(
+                    'schemeA:stepX'
+                );
+            });
+
+            it('should be the inverse of parseWorkflowToken (round-trip)', () => {
+                ['schemeA', 'schemeA:stepX', 'scheme:step:with:colons'].forEach((token) => {
+                    expect(workflowEntryToToken(parseWorkflowToken(token))).toBe(token);
+                });
+            });
+        });
+
+        describe('parseWorkflowFilter', () => {
+            it('should map a list of tokens to entries', () => {
+                expect(parseWorkflowFilter(['schemeA:stepX', 'schemeB'])).toEqual([
+                    { scheme: 'schemeA', step: 'stepX' },
+                    { scheme: 'schemeB' }
+                ]);
+            });
+
+            it('should default to an empty array when called with no tokens', () => {
+                expect(parseWorkflowFilter()).toEqual([]);
+                expect(parseWorkflowFilter([])).toEqual([]);
+            });
         });
     });
 
