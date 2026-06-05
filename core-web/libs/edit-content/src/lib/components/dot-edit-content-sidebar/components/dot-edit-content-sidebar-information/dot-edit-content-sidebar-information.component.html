@@ -1,13 +1,10 @@
 @let data = $data();
 @let contentlet = data.contentlet;
 @let contentType = data.contentType;
-@let referencesPageCount = data.referencesPageCount;
-@let loading = data.loading;
 
 <div class="flex w-full flex-col gap-2">
-    <div class="flex w-full items-center justify-between">
-        <dot-contentlet-status-chip [state]="contentlet" />
-        @if (contentlet?.inode) {
+    @if (contentlet?.inode) {
+        <div class="flex w-full items-center justify-end">
             <a
                 data-testid="json-link"
                 class="text-sm text-gray-700"
@@ -16,8 +13,8 @@
                 rel="noopener">
                 json
             </a>
-        }
-    </div>
+        </div>
+    }
     <div class="flex w-full flex-col gap-2">
         @if (contentType) {
             <a
@@ -114,41 +111,3 @@
         </div>
     </div>
 </div>
-
-@if ($hasReferences()) {
-    <div
-        data-testid="references-card"
-        role="button"
-        tabindex="0"
-        class="group flex min-h-[60px] w-full cursor-pointer flex-col gap-0 rounded-lg bg-white p-2"
-        (click)="openReferencesDialog()"
-        (keydown.enter)="openReferencesDialog()"
-        (keydown.space)="$event.preventDefault(); openReferencesDialog()">
-        <span class="text-sm leading-relaxed font-bold text-gray-900">
-            {{ 'References' | dm }}
-        </span>
-        @if (loading) {
-            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
-        } @else {
-            <span class="text-sm leading-relaxed text-gray-800" data-testid="references-count">
-                {{
-                    'edit.content.sidebar.information.references-with.pages.tooltip'
-                        | dm: [referencesPageCount]
-                }}
-            </span>
-        }
-    </div>
-} @else {
-    <div class="flex min-h-[60px] w-full flex-col gap-0 rounded-lg bg-white p-2">
-        <span class="text-sm leading-relaxed font-bold text-gray-900">
-            {{ 'References' | dm }}
-        </span>
-        @if (loading) {
-            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
-        } @else {
-            <span class="text-sm leading-relaxed text-gray-800" data-testid="references-count">
-                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
-            </span>
-        }
-    </div>
-}

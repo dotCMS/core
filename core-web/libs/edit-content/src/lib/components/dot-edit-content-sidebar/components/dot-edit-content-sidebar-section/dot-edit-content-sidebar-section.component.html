@@ -3,19 +3,39 @@
     data-testid="dot-section">
     @if ($title()) {
         <div
-            class="sticky top-0 z-10 flex min-h-12 shrink-0 items-center justify-between py-1"
-            data-testid="dot-section-header">
-            <h2 class="m-0 text-base font-bold text-gray-900" data-testid="dot-section-title">
-                {{ $title() }}
-            </h2>
+            class="sticky top-0 z-10 flex min-h-12 shrink-0 cursor-pointer items-center justify-between py-1"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="!$collapsed()"
+            data-testid="dot-section-toggle"
+            (click)="toggle()"
+            (keydown.enter)="toggle()"
+            (keydown.space)="$event.preventDefault(); toggle()">
+            <div class="flex items-center gap-2">
+                <i
+                    class="pi pi-chevron-down text-xs text-gray-500 transition-transform"
+                    [class.rotate-180]="$collapsed()"
+                    data-testid="dot-section-chevron"></i>
+                <h2
+                    class="m-0 text-[11px] font-bold tracking-[0.08em] text-gray-500 uppercase"
+                    data-testid="dot-section-title">
+                    {{ $title() }}
+                </h2>
+            </div>
             @if (actionTemplate) {
-                <div class="text-sm text-primary-500" data-testid="dot-section-action">
+                <div
+                    class="text-sm text-primary-500"
+                    data-testid="dot-section-action"
+                    (click)="$event.stopPropagation()"
+                    (keydown)="$event.stopPropagation()">
                     <ng-container *ngTemplateOutlet="actionTemplate" />
                 </div>
             }
         </div>
     }
-    <div data-testid="dot-section-content">
-        <ng-content />
-    </div>
+    @if (!$collapsed()) {
+        <div data-testid="dot-section-content">
+            <ng-content />
+        </div>
+    }
 </section>

@@ -21,7 +21,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
-    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
     Validators
@@ -31,7 +30,7 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
-import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
+import { Tag, TagModule } from 'primeng/tag';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -41,14 +40,16 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotContentletStatusPipe, DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
@@ -59,6 +60,7 @@ import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
+    generatePageEditUrl,
     generatePreviewUrl,
     getFinalCastedValue,
     isFilteredType,
@@ -80,7 +82,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  * - Custom field type handling (calendar fields, flattened fields)
  * - Workflow action integration with push publish support
  * - Form validation (required fields, regex patterns)
- * - Content locking mechanism
+ * - Command bar with status, preview and overflow actions
  * - Preview functionality for content types
  * - Tab-based field organization
  *
@@ -92,16 +94,17 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
+    styleUrl: './dot-edit-content-form.component.scss',
     imports: [
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
         TabsModule,
-        DotWorkflowActionsComponent,
+        TagModule,
         TabViewInsertDirective,
         DotMessagePipe,
-        ToggleSwitchModule,
-        FormsModule,
+        DotContentletStatusPipe,
+        DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet
     ],
@@ -155,12 +158,38 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Computed property that determines if the preview link should be shown.
      *
+     * Shown for existing content that is either an HTML page or has a URL map.
+     *
      * @memberof DotEditContentFormComponent
      */
     $showPreviewLink = computed(() => {
         const contentlet = this.$store.contentlet();
 
-        return contentlet?.baseType === 'CONTENT' && !!contentlet.URL_MAP_FOR_CONTENT;
+        return (
+            !this.$store.isNew() &&
+            (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
+                !!contentlet?.URL_MAP_FOR_CONTENT)
+        );
+    });
+
+    /**
+     * Computed property that returns true when the current content type is an HTML Page.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $isPage = computed(
+        () => this.$store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+    );
+
+    /**
+     * Computed property that returns true when the contentlet has at least one page reference.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $hasReferences = computed(() => {
+        const relatedContent = this.$store.information.relatedContent();
+
+        return !!relatedContent && relatedContent !== '0';
     });
 
     /**
@@ -215,19 +244,15 @@ export class DotEditContentFormComponent implements OnInit {
         return {
             $store: this.$store,
             showSidebar: this.$store.isSidebarOpen(),
-            canLock: this.$store.canLock(),
-            isContentLocked: this.$store.isContentLocked(),
-            lockSwitchLabel: this.$store.lockSwitchLabel(),
-            actions: this.$store.getActions(),
             $showPreviewLink: this.$showPreviewLink,
-            showWorkflowActions: this.$store.showWorkflowActions(),
+            $isPage: this.$isPage,
+            $hasReferences: this.$hasReferences,
             contentlet: this.$store.contentlet(),
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
             currentIdentifier: this.$store.currentIdentifier(),
-            onContentLockChange: (e: ToggleSwitchChangeEvent) => this.onContentLockChange(e),
-            showPreview: () => this.showPreview(),
-            fireWorkflowAction: (e: DotWorkflowActionParams) => this.fireWorkflowAction(e)
+            statusSeverity: (status: string) => this.statusSeverity(status),
+            showPreview: () => this.showPreview()
         };
     }
 
@@ -717,14 +742,18 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Opens the content preview in a new browser tab.
      *
-     * Generates a preview URL based on the current contentlet's URL_MAP_FOR_CONTENT
-     * and opens it in a new tab. Logs a warning if the URL cannot be generated.
+     * For HTML pages the edit-page URL is generated from the contentlet's `url`,
+     * otherwise the preview URL is generated from `URL_MAP_FOR_CONTENT`.
+     * Opens the resulting URL in a new tab. Logs a warning if the URL cannot be generated.
      *
      * @memberof DotEditContentFormComponent
      */
     showPreview(): void {
         const contentlet = this.$store.contentlet();
-        const realUrl = generatePreviewUrl(contentlet);
+        const realUrl =
+            contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+                ? generatePageEditUrl(contentlet)
+                : generatePreviewUrl(contentlet);
 
         if (!realUrl) {
             console.warn(
@@ -735,6 +764,26 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         window.open(realUrl, '_blank');
+    }
+
+    /**
+     * Maps a contentlet status string to a PrimeNG Tag severity.
+     *
+     * @param {string} status - The contentlet status label
+     * @returns {Tag['severity']} The matching PrimeNG Tag severity
+     * @memberof DotEditContentFormComponent
+     */
+    statusSeverity(status: string): Tag['severity'] {
+        switch (status) {
+            case 'Published':
+                return 'success';
+            case 'Archived':
+                return 'danger';
+            case 'Revision':
+                return 'info';
+            default:
+                return 'warn';
+        }
     }
 
     /**
@@ -752,19 +801,6 @@ export class DotEditContentFormComponent implements OnInit {
             return;
         }
         this.$store.setActiveTab(numberValue);
-    }
-
-    /**
-     * Handles the content lock toggle.
-     *
-     * This method is triggered when the user toggles the content lock switch.
-     * It updates the content lock state in the store based on the switch value.
-     *
-     * @param {ToggleSwitchChangeEvent} event - The switch change event containing the new checked state
-     * @memberof DotEditContentFormComponent
-     */
-    onContentLockChange(event: ToggleSwitchChangeEvent) {
-        event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }
 
     /**

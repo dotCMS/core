@@ -5,6 +5,7 @@ import {
     effect,
     inject,
     model,
+    output,
     untracked
 } from '@angular/core';
 
@@ -16,15 +17,13 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotCMSBaseTypesContentTypes, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCopyButtonComponent, DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
-import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
-import { DotEditContentSidebarRulesComponent } from './components/dot-edit-content-sidebar-rules/dot-edit-content-sidebar-rules.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
@@ -58,8 +57,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent,
-        DotEditContentSidebarPermissionsComponent,
-        DotEditContentSidebarRulesComponent
+        DotWorkflowActionsComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -120,6 +118,12 @@ export class DotEditContentSidebarComponent {
     readonly $showDialog = model<boolean>(false, {
         alias: 'showDialog'
     });
+
+    /**
+     * Emits the selected workflow action when the user fires one from the Actions tab,
+     * so the parent layout can run it against the edit-content form.
+     */
+    readonly workflowActionFired = output<DotCMSWorkflowAction>();
 
     /**
      * Effect that loads sidebar data (reference pages and activities) when the

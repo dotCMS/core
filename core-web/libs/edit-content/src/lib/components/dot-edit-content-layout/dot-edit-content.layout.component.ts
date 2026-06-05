@@ -31,7 +31,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -354,6 +354,26 @@ export class DotEditContentLayoutComponent {
      */
     selectWorkflow() {
         this.$showDialog.set(true);
+    }
+
+    /**
+     * Handles a workflow action fired from the sidebar by delegating to the form.
+     *
+     * Builds the workflow action params from the current store state and forwards
+     * them to the embedded form via the `$editContentForm` viewChild. The optional
+     * chaining guards the compare view, where the form is not rendered.
+     *
+     * @param workflow - The workflow action to execute
+     */
+    onWorkflowActionFired(workflow: DotCMSWorkflowAction): void {
+        const currentLocale = this.$store.currentLocale();
+        this.$editContentForm()?.fireWorkflowAction({
+            workflow,
+            inode: this.$store.contentlet()?.inode,
+            contentType: this.$store.contentType().variable,
+            languageId: currentLocale ? currentLocale.id.toString() : '',
+            identifier: this.$store.currentIdentifier()
+        });
     }
 
     /**

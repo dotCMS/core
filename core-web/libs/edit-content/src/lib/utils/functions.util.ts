@@ -383,6 +383,30 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
+ * Generates an edit-page URL for a given page contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated edit-page URL.
+ */
+export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
+    if (!contentlet.url || !contentlet.host || contentlet.languageId === undefined) {
+        console.warn('Missing required contentlet attributes to generate edit page URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.url}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {

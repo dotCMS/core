@@ -16,6 +16,7 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
+    generatePageEditUrl,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
@@ -1359,6 +1360,33 @@ describe('Utils Functions', () => {
             });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+    });
+
+    describe('generatePageEditUrl', () => {
+        it('should generate the correct edit page URL when all attributes are present', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: '/blog/index',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Findex%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
+
+            expect(generatePageEditUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string when required attributes are missing', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            expect(generatePageEditUrl(contentlet)).toBe('');
         });
     });
 

@@ -23,9 +23,9 @@
                 data-testId="edit-content-layout__beta-message">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-1">
-                        <i class="pi pi-info-circle shrink-0 size-4"></i>
+                        <i class="pi pi-info-circle size-4 shrink-0"></i>
                         <div
-                            class="flex items-center mr-auto gap-1"
+                            class="mr-auto flex items-center gap-1"
                             data-testId="edit-content-layout__beta-message-content">
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
@@ -59,9 +59,9 @@
             <p-message severity="warn" data-testId="edit-content-layout__lock-warning">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-1">
-                        <i class="pi pi-exclamation-triangle shrink-0 size-4"></i>
+                        <i class="pi pi-exclamation-triangle size-4 shrink-0"></i>
                         <div
-                            class="flex items-center mr-auto gap-1"
+                            class="mr-auto flex items-center gap-1"
                             data-testId="edit-content-layout__lock-warning-content"
                             [innerHTML]="lockWarningMessage"></div>
                     </div>
@@ -76,8 +76,8 @@
                 data-testId="edit-content-layout__select-workflow-warning">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-1">
-                        <i class="pi pi-info-circle shrink-0 size-4"></i>
-                        <div class="flex items-center mr-auto gap-1">
+                        <i class="pi pi-info-circle size-4 shrink-0"></i>
+                        <div class="mr-auto flex items-center gap-1">
                             <span
                                 [innerHTML]="
                                     ('edit.content.layout.select.workflow.warning' | dm) + ' '
@@ -103,9 +103,9 @@
             <p-message severity="error" data-testId="edit-content-layout__lock-warning">
                 <ng-template #container>
                     <div class="flex w-full items-center gap-1">
-                        <i class="pi pi-times-circle shrink-0 size-4"></i>
+                        <i class="pi pi-times-circle size-4 shrink-0"></i>
                         <div
-                            class="flex items-center mr-auto gap-1"
+                            class="mr-auto flex items-center gap-1"
                             data-testId="edit-content-layout__lock-warning-content">
                             {{ 'edit.content.layout.invalid.message' | dm }}
                         </div>
@@ -129,6 +129,7 @@
         [(showDialog)]="$showDialog"
         [attr.inert]="!showSidebar ? '' : null"
         [attr.aria-hidden]="!showSidebar"
+        (workflowActionFired)="onWorkflowActionFired($event)"
         data-testId="edit-content-layout__sidebar"
         class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
 }

@@ -18,9 +18,9 @@
             class="min-h-[53px] border-b border-(--p-inputtext-border-color) [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
             <p-tab
                 [value]="0"
-                [pTooltip]="'edit.content.sidebar.tab.information' | dm"
+                [pTooltip]="'edit.content.sidebar.tab.actions' | dm"
                 tooltipPosition="bottom">
-                <i class="pi pi-info-circle"></i>
+                <i class="pi pi-bolt"></i>
             </p-tab>
             <p-tab
                 [value]="1"
@@ -34,24 +34,83 @@
                 tooltipPosition="bottom">
                 <i class="pi pi-comment"></i>
             </p-tab>
-            @if (!isNew) {
-                <p-tab
-                    [value]="3"
-                    [pTooltip]="'edit.content.sidebar.tab.settings' | dm"
-                    tooltipPosition="bottom">
-                    <i class="pi pi-cog"></i>
-                </p-tab>
-            }
         </p-tablist>
         <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
         <p-tabpanels
             class="flex h-full min-h-0 flex-1 flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
             <p-tabpanel [value]="0" class="flex h-full min-h-0 flex-col">
-                <!-- Information tab content — padding lives on this first inner wrapper -->
+                <!-- Actions tab content — padding lives on this first inner wrapper -->
                 <div class="flex h-full min-h-0 flex-col px-4 pt-3">
-                    <!-- Information section -->
+                    <!-- Lock / unlock button — kept visually distinct from the workflow actions
+                         (outlined + lock icon) and separated by a divider, so it never merges with
+                         the solid primary first action below. -->
+                    @if (
+                        !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
+                    ) {
+                        <div
+                            class="mb-4 border-b border-surface-200 pb-4"
+                            data-testId="sidebar-lock-section">
+                            <button
+                                pButton
+                                type="button"
+                                class="h-11 w-full justify-center"
+                                data-testId="sidebar-lock-button"
+                                [label]="$store.lockSwitchLabel() | dm"
+                                [icon]="$store.isContentLocked() ? 'pi pi-unlock' : 'pi pi-lock'"
+                                [outlined]="true"
+                                [severity]="$store.isContentLocked() ? undefined : 'secondary'"
+                                (click)="
+                                    $store.isContentLocked()
+                                        ? $store.unlockContent()
+                                        : $store.lockContent()
+                                "></button>
+                        </div>
+                    }
+
+                    <!-- Workflow actions: full-width, stacked one above another -->
+                    @if ($store.showWorkflowActions()) {
+                        <dot-workflow-actions
+                            class="mb-4"
+                            data-testId="sidebar-workflow-actions"
+                            [actions]="$store.getActions()"
+                            [stacked]="true"
+                            [loading]="$store.isSaving()"
+                            [disabled]="$store.isSaving()"
+                            (actionFired)="workflowActionFired.emit($event)" />
+                    }
+
                     <dot-edit-content-sidebar-section
-                        [title]="'edit.content.sidebar.general.title' | dm">
+                        key="actions.locales"
+                        [title]="'edit.content.sidebar.locales' | dm">
+                        <dot-edit-content-sidebar-locales
+                            [locales]="$store.locales()"
+                            [defaultLocale]="$store.systemDefaultLocale()"
+                            [currentLocale]="$store.currentLocale()"
+                            [isLoading]="$store.isLoadingLocales()"
+                            (switchLocale)="$store.switchLocale($event)"
+                            data-testId="locales" />
+                    </dot-edit-content-sidebar-section>
+
+                    <!-- Workflow section -->
+                    <dot-edit-content-sidebar-section
+                        key="actions.workflow"
+                        [title]="'edit.content.sidebar.workflow.title' | dm">
+                        <dot-edit-content-sidebar-workflow
+                            [workflowSelection]="$workflowSelection()"
+                            [(showDialog)]="$showDialog"
+                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                            (onResetWorkflow)="fireWorkflowAction($event)"
+                            [workflow]="$workflow()"
+                            [isLoading]="$store.isLoadingWorkflow()"
+                            data-testId="workflow" />
+                    </dot-edit-content-sidebar-section>
+
+                    <!-- Content details section -->
+                    <dot-edit-content-sidebar-section
+                        key="actions.details"
+                        [title]="'edit.content.sidebar.general.title' | dm"
+                        class="[&_.dot-section]:border-b-0">
                         <ng-template #sectionAction>
                             @if (!$store.isNew() && !$store.isCopyingLocale()) {
                                 <dot-copy-button
@@ -70,31 +129,6 @@
                                 referencesPageCount: referencePagesCount
                             }"
                             data-testId="information" />
-                    </dot-edit-content-sidebar-section>
-
-                    <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
-                        <dot-edit-content-sidebar-locales
-                            [locales]="$store.locales()"
-                            [defaultLocale]="$store.systemDefaultLocale()"
-                            [currentLocale]="$store.currentLocale()"
-                            [isLoading]="$store.isLoadingLocales()"
-                            (switchLocale)="$store.switchLocale($event)"
-                            data-testId="locales" />
-                    </dot-edit-content-sidebar-section>
-
-                    <!-- Workflow section -->
-                    <dot-edit-content-sidebar-section
-                        [title]="'edit.content.sidebar.workflow.title' | dm"
-                        class="[&_.dot-section]:border-b-0">
-                        <dot-edit-content-sidebar-workflow
-                            [workflowSelection]="$workflowSelection()"
-                            [(showDialog)]="$showDialog"
-                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
-                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                            (onResetWorkflow)="fireWorkflowAction($event)"
-                            [workflow]="$workflow()"
-                            [isLoading]="$store.isLoadingWorkflow()"
-                            data-testId="workflow" />
                     </dot-edit-content-sidebar-section>
                 </div>
             </p-tabpanel>
@@ -124,24 +158,6 @@
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </p-tabpanel>
-            @if (!isNew) {
-                <p-tabpanel [value]="3" class="flex h-full min-h-0 flex-col">
-                    <!-- Settings tab content — padding lives on this first inner wrapper -->
-                    <div class="flex h-full min-h-0 flex-col px-4 pt-3">
-                        <!-- Permissions section -->
-                        <dot-edit-content-sidebar-permissions
-                            [identifier]="$identifier() ?? ''"
-                            [languageId]="$contentlet()?.languageId ?? 0"
-                            data-testId="permissions" />
-                        <!-- Rules section (Page content type only) -->
-                        @if ($isPage()) {
-                            <dot-edit-content-sidebar-rules
-                                [identifier]="$identifier() ?? ''"
-                                data-testId="rules" />
-                        }
-                    </div>
-                </p-tabpanel>
-            }
         </p-tabpanels>
     </p-tabs>
 </aside>
