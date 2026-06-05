@@ -29,17 +29,90 @@ function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
     );
 }
 
+// Max size (bytes) for a remote file fetched via a `url` descriptor — guards
+// against memory exhaustion from an attacker-controlled endpoint.
+const MAX_REMOTE_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+// Timeout (ms) for the remote fetch, so a slow/hanging URL cannot stall the host.
+const REMOTE_FILE_FETCH_TIMEOUT_MS = 15000;
+
+/**
+ * Validates a user-supplied file URL before fetching it, to mitigate SSRF.
+ * Sandbox code can put any string in `desc.url`, and the fetch runs on the
+ * host with host network access — so we restrict it to public http(s) targets
+ * and reject loopback, link-local, and private (RFC 1918 / unique-local) hosts.
+ */
+function assertSafeRemoteUrl(rawUrl: string): URL {
+    let parsed: URL;
+    try {
+        parsed = new URL(rawUrl);
+    } catch {
+        throw new Error(`Invalid file URL: "${rawUrl}"`);
+    }
+
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        throw new Error(`File URL must use http(s); got "${parsed.protocol}"`);
+    }
+
+    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+
+    // Block obvious metadata / loopback hostnames.
+    if (host === 'localhost' || host.endsWith('.localhost') || host === 'metadata.google.internal') {
+        throw new Error(`File URL host "${host}" is not allowed`);
+    }
+
+    // IPv4 private / loopback / link-local / unspecified ranges.
+    const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipv4) {
+        const [a, b] = ipv4.slice(1).map(Number);
+        const isPrivate =
+            a === 0 || // 0.0.0.0/8 (unspecified)
+            a === 10 || // 10.0.0.0/8
+            a === 127 || // 127.0.0.0/8 (loopback)
+            (a === 169 && b === 254) || // 169.254.0.0/16 (link-local, incl. cloud metadata)
+            (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+            (a === 192 && b === 168); // 192.168.0.0/16
+        if (isPrivate) {
+            throw new Error(`File URL resolves to a private/loopback address: "${host}"`);
+        }
+    }
+
+    // IPv6 loopback (::1), unspecified (::) and unique-local (fc00::/7) / link-local (fe80::/10).
+    if (host.includes(':')) {
+        if (host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host)) {
+            throw new Error(`File URL resolves to a private/loopback IPv6 address: "${host}"`);
+        }
+    }
+
+    return parsed;
+}
+
 async function resolveFileDescriptor(desc: FileFieldDescriptor): Promise<Blob> {
     if (desc.data) {
         const binary = Buffer.from(desc.data, 'base64');
         return new Blob([new Uint8Array(binary)], { type: desc.type });
     }
     if (desc.url) {
-        const response = await fetch(desc.url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch file from "${desc.url}": ${response.status}`);
+        const safeUrl = assertSafeRemoteUrl(desc.url);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), REMOTE_FILE_FETCH_TIMEOUT_MS);
+        try {
+            const response = await fetch(safeUrl.toString(), {
+                signal: controller.signal,
+                redirect: 'error' // a redirect could escape the SSRF guard
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch file from "${desc.url}": ${response.status}`);
+            }
+            const buffer = await response.arrayBuffer();
+            if (buffer.byteLength > MAX_REMOTE_FILE_BYTES) {
+                throw new Error(
+                    `Remote file "${desc.url}" exceeds the ${MAX_REMOTE_FILE_BYTES}-byte limit`
+                );
+            }
+            return new Blob([buffer], { type: desc.type });
+        } finally {
+            clearTimeout(timer);
         }
-        return new Blob([await response.arrayBuffer()], { type: desc.type });
     }
     throw new Error(`File descriptor "${desc.name}" must have either "data" (base64) or "url"`);
 }
