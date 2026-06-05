@@ -181,13 +181,23 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
     @Override
     public BufferedImage subsampleImage(final File image, final int width, final int height) {
         final AtomicReference<BufferedImage> ref = new AtomicReference<>();
-        VipsManager.run(arena -> {
-            final VImage thumb = width > 0 && height > 0
-                    ? VImage.thumbnail(arena, image.getAbsolutePath(), width, VipsOption.Int("height", height))
-                    : VImage.thumbnail(arena, image.getAbsolutePath(), Math.max(width, height));
-            ref.set(toBufferedImage(thumb));
-        });
-        return ref.get();
+        try {
+            VipsManager.run(arena -> {
+                final VImage thumb = width > 0 && height > 0
+                        ? VImage.thumbnail(arena, image.getAbsolutePath(), width, VipsOption.Int("height", height))
+                        : VImage.thumbnail(arena, image.getAbsolutePath(), Math.max(width, height));
+                ref.set(toBufferedImage(thumb));
+            });
+            return ref.get();
+        } catch (Exception e) {
+            // Consistent with getWidthHeight()/resizeImage(): degrade to the legacy engine.
+            if (Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true)) {
+                Logger.warnAndDebug(this.getClass(), "libvips subsampleImage failed for " + image.getName()
+                        + "; falling back to legacy engine: " + e.getMessage(), e);
+                return ImageFilterAPI.apiInstance.apply().subsampleImage(image, width, height);
+            }
+            throw e;
+        }
     }
 
     @Override

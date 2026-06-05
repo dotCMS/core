@@ -30,4 +30,14 @@ public class VipsPdfImageFilter extends VipsImageFilter {
             src.writeToFile(out.getAbsolutePath());
         });
     }
+
+    /**
+     * PDF pages render to PNG (matching the legacy {@link com.dotmarketing.image.filter.PDFImageFilter},
+     * which relies on the base {@code FILE_EXT}). Declared explicitly so the output format is obvious
+     * and never accidentally inferred from the {@code .pdf} source extension.
+     */
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters, "png");
+    }
 }

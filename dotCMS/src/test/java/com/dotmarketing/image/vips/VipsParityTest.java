@@ -186,6 +186,64 @@ public class VipsParityTest {
         }
     }
 
+    @Test
+    public void hsb_handles_rgba_input_without_crashing() throws Exception {
+        // Build a genuine RGBA (alpha) PNG so the HSV band-split path is exercised.
+        final File dir = java.nio.file.Files.createTempDirectory("vips-rgba").toFile();
+        final File in = new File(dir, "rgba.png");
+        final BufferedImage argb = new BufferedImage(40, 30, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < 30; y++) {
+            for (int x = 0; x < 40; x++) {
+                argb.setRGB(x, y, ((x * 6) << 24) | (0x3366cc));
+            }
+        }
+        ImageIO.write(argb, "png", in);
+
+        final File out = tempOut("png");
+        new VipsHsbImageFilter().transform(in, out, params("hsb_h", "0.1", "hsb_s", "0.3", "hsb_b", "0.1"));
+        final BufferedImage result = ImageIO.read(out);
+        assertTrue("rgba hsb output decodes", result != null);
+        assertEquals(40, result.getWidth());
+        assertEquals(30, result.getHeight());
+        assertTrue("alpha preserved", result.getColorModel().hasAlpha());
+    }
+
+    @Test
+    public void pdf_renders_page_to_png() throws Exception {
+        Assume.assumeTrue("host libvips lacks the PDF (poppler) delegate", pdfSupported());
+        // Write a minimal one-page PDF directly (no fixture needed).
+        final File dir = java.nio.file.Files.createTempDirectory("vips-pdf").toFile();
+        final File in = new File(dir, "dotGenerated_doc.pdf");
+        java.nio.file.Files.write(in.toPath(), MINI_PDF.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+
+        // runFilter must produce a .png (not .pdf) result, like the legacy PDF filter.
+        final File result = new VipsPdfImageFilter().runFilter(in, params("pdf_dpi", "100"));
+        assertTrue("pdf result is png, not pdf: " + result.getName(), result.getName().endsWith(".png"));
+        final BufferedImage img = ImageIO.read(result);
+        assertTrue("pdf render decodes", img != null && img.getWidth() > 0 && img.getHeight() > 0);
+    }
+
+    private boolean pdfSupported() {
+        try {
+            final File dir = java.nio.file.Files.createTempDirectory("vips-pdfprobe").toFile();
+            final File in = new File(dir, "probe.pdf");
+            java.nio.file.Files.write(in.toPath(), MINI_PDF.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
+            final File out = tempOut("png");
+            new VipsPdfImageFilter().transform(in, out, params());
+            return out.exists() && out.length() > 50;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static final String MINI_PDF =
+            "%PDF-1.1\n"
+            + "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+            + "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+            + "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 100]/Contents 4 0 R>>endobj\n"
+            + "4 0 obj<</Length 44>>stream\nBT /F1 24 Tf 20 40 Td (Hi PDF) Tj ET\nendstream endobj\n"
+            + "trailer<</Root 1 0 R>>\n%%EOF\n";
+
     // ---- Format encoders -------------------------------------------------------------------------
 
     @Test

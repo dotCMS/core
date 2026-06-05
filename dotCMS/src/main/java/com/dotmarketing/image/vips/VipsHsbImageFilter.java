@@ -1,6 +1,7 @@
 package com.dotmarketing.image.vips;
 
 import app.photofox.vipsffm.VImage;
+import app.photofox.vipsffm.VipsOption;
 import app.photofox.vipsffm.enums.VipsInterpretation;
 import java.io.File;
 import java.util.List;
@@ -34,12 +35,22 @@ public class VipsHsbImageFilter extends VipsImageFilter {
         final double b = clamp(doubleParam(parameters, "b", 0d));
         VipsManager.run(arena -> {
             final VImage src = VipsManager.load(arena, in).colourspace(VipsInterpretation.INTERPRETATION_sRGB);
-            final VImage hsv = src.sRGB2HSV();
+            // sRGB2HSV expects a 3-band image, so split off any alpha and re-attach it afterwards
+            // (passing 3-element linear() coefficients to a 4-band image would otherwise throw).
+            final boolean hasAlpha = src.hasAlpha();
+            final int bands = VipsManager.metaInt(src, "bands", hasAlpha ? 4 : 3);
+            final VImage colour = hasAlpha
+                    ? src.extractBand(0, VipsOption.Int("n", bands - 1))
+                    : src;
+            final VImage alpha = hasAlpha ? src.extractBand(bands - 1) : null;
+
+            final VImage hsv = colour.sRGB2HSV();
             // HSV bands are 0-255: shift H additively, scale S and V multiplicatively.
             final VImage adjusted = hsv.linear(
                     List.of(1.0, 1.0 + s, 1.0 + b),
                     List.of(h * 255.0, 0.0, 0.0));
-            final VImage result = adjusted.HSV2sRGB();
+            final VImage rgb = adjusted.HSV2sRGB();
+            final VImage result = hasAlpha ? VImage.bandjoin(arena, List.of(rgb, alpha)) : rgb;
             result.writeToFile(out.getAbsolutePath());
         });
     }
