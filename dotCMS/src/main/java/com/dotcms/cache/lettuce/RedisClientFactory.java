@@ -24,6 +24,16 @@ public class RedisClientFactory {
         return getOrCreate(name, MasterReplicaLettuceClient::new);
     }
 
+    /**
+     * Returns the named client, creating it with the given codec on first use.
+     * <p><b>Note:</b> the {@code codec} is only applied when this is the first call for {@code name} AND no
+     * {@code LETTUCE_CLIENT_CLASS} override is configured. Clients are cached per name, so a later call with a
+     * different codec for an already-created name returns the existing client and the codec is ignored.
+     *
+     * @param name  the client name (cache key)
+     * @param codec the codec to use when the client is created for the first time
+     * @return the (possibly already-cached) client for {@code name}
+     */
     public static RedisClient<String, Object> getClient(final String name, final RedisCodec<String, Object> codec) {
 
         return getOrCreate(name, () -> new MasterReplicaLettuceClient<>(codec,

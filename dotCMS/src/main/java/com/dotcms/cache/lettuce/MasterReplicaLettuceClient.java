@@ -861,7 +861,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
             if (successUnSubscription) {
                 channelUUIDList.remove(subscriberId);
-                if (channelUUIDList.size() == 0) {
+                if (channelUUIDList.isEmpty()) {
 
                     this.channelReferenceMap.remove(channel);
                 }
@@ -950,7 +950,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 // default read routing before the connection goes back to the pool.
                 final boolean masterReplica = conn instanceof StatefulRedisMasterReplicaConnection;
                 if (masterReplica) {
-                    ((StatefulRedisMasterReplicaConnection) conn).setReadFrom(ReadFrom.UPSTREAM);
+                    ((StatefulRedisMasterReplicaConnection<String, V>) conn).setReadFrom(ReadFrom.UPSTREAM);
                 }
 
                 try {
@@ -974,7 +974,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     } while (!scanCursor.isFinished());
                 } finally {
                     if (masterReplica) {
-                        ((StatefulRedisMasterReplicaConnection) conn).setReadFrom(ReadFrom.REPLICA_PREFERRED);
+                        ((StatefulRedisMasterReplicaConnection<String, V>) conn).setReadFrom(ReadFrom.REPLICA_PREFERRED);
                     }
                 }
             }
