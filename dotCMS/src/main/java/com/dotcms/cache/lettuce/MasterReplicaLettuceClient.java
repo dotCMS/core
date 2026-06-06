@@ -933,6 +933,8 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
     @Override
     public void deleteFromPattern(final String pattern) {
 
+        // Cache invalidation must not throw into callers (matches the other CacheProviders); a mid-scan
+        // connection failure is logged and swallowed rather than propagated through remove()/removeAll().
         try (StatefulRedisConnection<String, V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
@@ -954,6 +956,9 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                     }
                 } while (!scanCursor.isFinished());
             }
+        } catch (final Exception e) {
+            Logger.warnAndDebug(MasterReplicaLettuceClient.class,
+                    "Unable to delete Redis keys for pattern '" + pattern + "': " + e.getMessage(), e);
         }
     }
 

@@ -10,8 +10,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
-import io.lettuce.core.ScriptOutputType;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -46,8 +44,6 @@ import java.util.stream.Collectors;
 public class RedisCache extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
-
-    private static final Long ZERO = 0L;
 
     protected final String REDIS_GROUP_KEY;
     protected final String REDIS_PREFIX_KEY;
@@ -206,8 +202,7 @@ public class RedisCache extends CacheProvider {
     }
 
     private Object extractObject(final Object o) {
-        return o != null && o instanceof DotCloneable ?
-                this.extractObject(DotCloneable.class.cast(o)) : o;
+        return o instanceof DotCloneable cloneable ? this.extractObject(cloneable) : o;
     }
 
     private Object extractObject(final DotCloneable o) {
@@ -291,29 +286,20 @@ public class RedisCache extends CacheProvider {
 
         // Never throw: getStats() aggregates per-provider and a thrown exception here makes
         // CacheProviderAPIImpl.getStats() drop the entire Redis provider from the cache stats screen.
+        // Use the cluster-scoped, non-blocking SCAN (via scanKeys) rather than a blocking Lua KEYS eval;
+        // this also avoids the MasterReplicaLettuceClient downcast and any Lua string injection.
+        final long[] count = {0};
         try {
-            final RedisClient<String, Object> redisClient = this.getClient();
-            final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(redisClient)
-                    .wrapKey(this.cacheKey(group) + StringPool.STAR);
-            final String script = "return #redis.pcall('keys', '" + prefix + "')";
-
-            try (StatefulRedisConnection<String, Object> conn =
-                         LettuceAdapter.getStatefulRedisConnection(redisClient)) {
-
-                // conn can be null when the pool fails to borrow a connection
-                if (null != conn && conn.isOpen()) {
-
-                    final Object keyCount = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
-                    return keyCount instanceof Long ? (Long) keyCount : ZERO;
-                }
-            }
+            final String matchesPattern = this.cacheKey(group) + StringPool.STAR;
+            this.getClient().scanKeys(matchesPattern, this.keyBatchingSize,
+                    keys -> count[0] += keys.size());
         } catch (final Exception e) {
 
             Logger.warnAndDebug(RedisCache.class,
                     "Unable to count Redis keys for group '" + group + "': " + e.getMessage(), e);
         }
 
-        return ZERO;
+        return count[0];
     }
 
 

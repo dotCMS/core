@@ -42,6 +42,9 @@ public class RedisClientFactory {
 
                 if (null == redisClient) {
 
+                    // NOTE: when LETTUCE_CLIENT_CLASS is set, the client is built via its no-arg constructor and
+                    // the defaultClientSupplier (including any custom codec) is NOT used. Clients are also cached
+                    // per name, so the first getClient(name, ...) call wins for that name regardless of codec.
                     final String clazz = Config.getStringProperty("LETTUCE_CLIENT_CLASS",
                             MasterReplicaLettuceClient.class.getCanonicalName());
 
