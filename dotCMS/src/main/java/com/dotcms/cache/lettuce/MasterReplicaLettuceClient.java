@@ -913,12 +913,16 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         if (this.channelReferenceMap.containsKey(channel)) {
 
-            final List<String> channelUUIDList = channelReferenceMap.get(channel);
+            final List<String> channelUUIDList =
+                    channelReferenceMap.getOrDefault(channel, Collections.emptyList());
             for (final String channelUUID : channelUUIDList) {
                 final Tuple2<DotPubSubListener, StatefulRedisPubSubConnection<String, V>> channelRedisPubSubAsyncCommandsTuple =
                         channelStatefulRedisPubSubConnectionMap.get(channelUUID);
 
-                subscribers.add(channelRedisPubSubAsyncCommandsTuple._1());
+                // can be null if a concurrent unsubscribe removed the entry between the list snapshot and lookup
+                if (null != channelRedisPubSubAsyncCommandsTuple) {
+                    subscribers.add(channelRedisPubSubAsyncCommandsTuple._1());
+                }
             }
         }
 
@@ -935,32 +939,44 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         // Cache invalidation must not throw into callers (matches the other CacheProviders); a mid-scan
         // connection failure is logged and swallowed rather than propagated through remove()/removeAll().
-        //
-        // NOTE: a single pooled connection is held for the whole SCAN+UNLINK iteration. For a very large
-        // match (e.g. removeAll() over millions of keys) this occupies one pool slot for the duration. We
-        // deliberately do NOT release/reborrow between batches: under master-replica a SCAN cursor is bound
-        // to the node it started on and is not portable across connections/nodes. removeAll() is a rare
-        // full-flush operation and the default pool leaves other slots free for concurrent get/put/stats.
         try (StatefulRedisConnection<String, V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
 
-                // SCAN + UNLINK instead of a Lua KEYS+DEL: cluster-scoped (keyPrefix), non-blocking on the
-                // server, immune to the empty-match `del()` error, and not vulnerable to Lua string injection
-                final RedisCommands<String, V> syncCommand = conn.sync();
-                final ScanArgs scanArgs = ScanArgs.Builder
-                        .matches(this.keyPrefix() + pattern).limit(DELETE_SCAN_BATCH_SIZE);
-                KeyScanCursor<String> scanCursor = null;
-                do {
-                    scanCursor = scanCursor == null
-                            ? syncCommand.scan(scanArgs)
-                            : syncCommand.scan(scanCursor, scanArgs);
+                // SCAN is a read command. Under master-replica with REPLICA_PREFERRED it would run against a
+                // replica while UNLINK (a write) runs against the master, so keys on the master that have not
+                // yet replicated would be missed and survive the delete. Pin reads to the upstream (master) for
+                // this borrowed connection so SCAN and UNLINK target the same node, then restore the pool's
+                // default read routing before the connection goes back to the pool.
+                final boolean masterReplica = conn instanceof StatefulRedisMasterReplicaConnection;
+                if (masterReplica) {
+                    ((StatefulRedisMasterReplicaConnection) conn).setReadFrom(ReadFrom.UPSTREAM);
+                }
 
-                    final List<String> keys = scanCursor.getKeys();
-                    if (!keys.isEmpty()) {
-                        syncCommand.unlink(keys.toArray(new String[0]));
+                try {
+                    // SCAN + UNLINK instead of a Lua KEYS+DEL: cluster-scoped (keyPrefix), non-blocking on the
+                    // server, immune to the empty-match `del()` error, and not vulnerable to Lua string injection.
+                    // A single pooled connection is held for the whole iteration; removeAll() is a rare full
+                    // flush and the default pool leaves other slots free for concurrent get/put/stats.
+                    final RedisCommands<String, V> syncCommand = conn.sync();
+                    final ScanArgs scanArgs = ScanArgs.Builder
+                            .matches(this.keyPrefix() + pattern).limit(DELETE_SCAN_BATCH_SIZE);
+                    KeyScanCursor<String> scanCursor = null;
+                    do {
+                        scanCursor = scanCursor == null
+                                ? syncCommand.scan(scanArgs)
+                                : syncCommand.scan(scanCursor, scanArgs);
+
+                        final List<String> keys = scanCursor.getKeys();
+                        if (!keys.isEmpty()) {
+                            syncCommand.unlink(keys.toArray(new String[0]));
+                        }
+                    } while (!scanCursor.isFinished());
+                } finally {
+                    if (masterReplica) {
+                        ((StatefulRedisMasterReplicaConnection) conn).setReadFrom(ReadFrom.REPLICA_PREFERRED);
                     }
-                } while (!scanCursor.isFinished());
+                }
             }
         } catch (final Exception e) {
             Logger.warnAndDebug(MasterReplicaLettuceClient.class,
