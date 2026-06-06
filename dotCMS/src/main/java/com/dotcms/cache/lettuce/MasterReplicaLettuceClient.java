@@ -939,6 +939,9 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         // Cache invalidation must not throw into callers (matches the other CacheProviders); a mid-scan
         // connection failure is logged and swallowed rather than propagated through remove()/removeAll().
+        // Track keys removed so a partial flush (e.g. a per-batch RedisCommandTimeoutException mid-iteration)
+        // is visible in the log instead of looking like a clean completion.
+        long deleted = 0;
         try (StatefulRedisConnection<String, V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {
@@ -970,6 +973,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                         final List<String> keys = scanCursor.getKeys();
                         if (!keys.isEmpty()) {
                             syncCommand.unlink(keys.toArray(new String[0]));
+                            deleted += keys.size();
                         }
                     } while (!scanCursor.isFinished());
                 } finally {
@@ -980,7 +984,8 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             }
         } catch (final Exception e) {
             Logger.warnAndDebug(MasterReplicaLettuceClient.class,
-                    "Unable to delete Redis keys for pattern '" + pattern + "': " + e.getMessage(), e);
+                    "Partial Redis delete for pattern '" + pattern + "' (" + deleted
+                            + " keys removed before failure): " + e.getMessage(), e);
         }
     }
 
@@ -1063,7 +1068,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                                             codec,
                                             redisUris);
 
-                    ((StatefulRedisMasterReplicaConnection) connection).setReadFrom(ReadFrom.REPLICA_PREFERRED);
+                    ((StatefulRedisMasterReplicaConnection<String, V>) connection).setReadFrom(ReadFrom.REPLICA_PREFERRED);
                     if (timeout > 0) {
                         connection.setTimeout(Duration.ofMillis(timeout));
                     }
