@@ -935,6 +935,12 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
 
         // Cache invalidation must not throw into callers (matches the other CacheProviders); a mid-scan
         // connection failure is logged and swallowed rather than propagated through remove()/removeAll().
+        //
+        // NOTE: a single pooled connection is held for the whole SCAN+UNLINK iteration. For a very large
+        // match (e.g. removeAll() over millions of keys) this occupies one pool slot for the duration. We
+        // deliberately do NOT release/reborrow between batches: under master-replica a SCAN cursor is bound
+        // to the node it started on and is not portable across connections/nodes. removeAll() is a rare
+        // full-flush operation and the default pool leaves other slots free for concurrent get/put/stats.
         try (StatefulRedisConnection<String, V> conn = this.getConn()) {
 
             if (this.isOpen(conn)) {

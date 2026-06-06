@@ -19,6 +19,7 @@ import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -307,7 +308,8 @@ public class RedisCache extends CacheProvider {
     public Set<String> getGroups() {
 
         return this.getClient().getMembers(REDIS_GROUP_KEY).stream()
-                .map(k -> k.toString()).collect(Collectors.toSet());
+                .filter(Objects::nonNull)
+                .map(Object::toString).collect(Collectors.toSet());
     }
 
     @Override
