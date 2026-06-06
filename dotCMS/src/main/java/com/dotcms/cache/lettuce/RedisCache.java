@@ -250,6 +250,9 @@ public class RedisCache extends CacheProvider {
         // cluster-scoped by deleteFromPattern (keyPrefix); no leading "*" so we never touch other clusters' keys
         final String pattern = this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
         this.getClient().deleteFromPattern(pattern);
+        // also clear the group registry SET; otherwise getGroups() (and getStats()) keep returning every group
+        // ever used after a full flush, growing unbounded and making stats do O(groups) pooled SCANs
+        this.getClient().deleteNonBlocking(REDIS_GROUP_KEY);
     }
 
     @Override
