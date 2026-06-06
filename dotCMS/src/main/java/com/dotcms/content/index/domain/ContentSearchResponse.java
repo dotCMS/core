@@ -70,9 +70,15 @@ public interface ContentSearchResponse {
     }
 
     /**
-     * Derives the flat first-level terms map from an aggregation tree: every aggregation that has
-     * buckets contributes its bucket list under its name. Mirrors the legacy behaviour where only
-     * {@code terms} aggregations were mapped and other types were silently skipped.
+     * Derives the flat first-level terms map from an aggregation tree: every bucket aggregation
+     * (e.g. {@code terms}) contributes its bucket list under its name — <b>including when the bucket
+     * list is empty</b>, so callers can rely on the key being present for a declared aggregation.
+     * Metric aggregations such as {@code top_hits} (which carry hits, not buckets) are skipped,
+     * mirroring the legacy behaviour where only {@code terms} aggregations were mapped.
+     *
+     * <p>The discriminator is {@link Aggregation#getHits()}: bucket aggregations leave it
+     * {@code null}; {@code top_hits} sets it (possibly empty). Filtering on {@code getHits() == null}
+     * — not on whether buckets are empty — keeps empty-result terms aggregations in the map.</p>
      */
     static Map<String, List<AggregationBucket>> flatten(final Map<String, Aggregation> tree) {
         if (tree == null || tree.isEmpty()) {
@@ -80,7 +86,7 @@ public interface ContentSearchResponse {
         }
         final Map<String, List<AggregationBucket>> map = new LinkedHashMap<>();
         for (final Aggregation aggregation : tree.values()) {
-            if (!aggregation.getBuckets().isEmpty()) {
+            if (aggregation.getHits() == null) {
                 map.put(aggregation.getName(), aggregation.getBuckets());
             }
         }

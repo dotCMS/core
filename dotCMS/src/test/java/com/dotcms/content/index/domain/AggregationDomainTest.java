@@ -98,6 +98,27 @@ public class AggregationDomainTest {
         assertNotNull(response.aggregationTree().get("top_content").getHits());
     }
 
+    /**
+     * A {@code terms} aggregation with an empty result must still appear in the flat map (with an
+     * empty bucket list) — callers rely on the declared aggregation key being present even when no
+     * documents matched. Regression guard for #36026 (the flat map must not drop empty-bucket terms).
+     */
+    @Test
+    public void contentSearchResponse_flatMap_keepsEmptyTermsAggregation() {
+        final Aggregation emptyTerms = Aggregation.builder()
+                .name("entries").type("sterms").build(); // no buckets, no hits
+
+        final Map<String, Aggregation> tree = new LinkedHashMap<>();
+        tree.put("entries", emptyTerms);
+
+        final ContentSearchResponse response = ContentSearchResponse.builder()
+                .hits(SearchHits.empty()).tookMillis(0).aggregationTree(tree).build();
+
+        assertTrue("empty terms aggregation key must be present",
+                response.aggregations().containsKey("entries"));
+        assertTrue("its bucket list must be empty", response.aggregations().get("entries").isEmpty());
+    }
+
     /** Nested sub-aggregations survive on a bucket and are reachable via getAggregations(). */
     @Test
     public void aggregationBucket_nestedSubAggregations_areReachable() {
