@@ -364,8 +364,12 @@ public interface RedisClient<K, V> {
     }
 
     /**
-     * Deletes all entries that matches the pattern
-     * @param pattern String
+     * Deletes all entries whose key matches the given glob pattern.
+     * <p><b>Precondition:</b> {@code pattern} must NOT include the cluster key prefix — implementations
+     * prepend it internally (so callers pass a pattern relative to the prefix only). Passing an
+     * already-prefixed pattern would double-prefix and match nothing; omitting the prefix entirely could
+     * match other clusters' keys in a shared Redis space.
+     * @param pattern String glob pattern, relative to (without) the cluster key prefix
      */
     void deleteFromPattern(String pattern);
 }

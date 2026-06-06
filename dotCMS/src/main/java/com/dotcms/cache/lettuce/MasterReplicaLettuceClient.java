@@ -976,6 +976,10 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                             deleted += keys.size();
                         }
                     } while (!scanCursor.isFinished());
+
+                    final long removed = deleted;
+                    Logger.debug(MasterReplicaLettuceClient.class,
+                            () -> "deleteFromPattern '" + pattern + "' removed " + removed + " keys");
                 } finally {
                     if (masterReplica) {
                         ((StatefulRedisMasterReplicaConnection<String, V>) conn).setReadFrom(ReadFrom.REPLICA_PREFERRED);
@@ -1112,7 +1116,13 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
                 return defaultValue;
             }
         }
-        return Integer.parseInt(value);
+        final String numeric = value;
+        // tolerate a misconfigured (non-numeric) value instead of throwing NumberFormatException at startup
+        return Try.of(() -> Integer.parseInt(numeric.trim()))
+                .onFailure(e -> Logger.warn(MasterReplicaLettuceClient.class,
+                        "Non-numeric value '" + numeric + "' for '" + key + "'/'" + defaultKey
+                                + "', using default " + defaultValue))
+                .getOrElse(defaultValue);
     }
 
 }
