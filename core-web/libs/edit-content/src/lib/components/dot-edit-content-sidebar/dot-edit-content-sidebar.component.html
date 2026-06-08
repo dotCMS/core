@@ -66,16 +66,17 @@
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="
-                                    ($store.isContentLocked() ? 'Unlock' : 'Make-Editable') | dm
+                                    ($store.isLockedByAnotherUser()
+                                        ? 'Release-Lock'
+                                        : $store.isContentLocked()
+                                          ? 'Unlock'
+                                          : 'Make-Editable'
+                                    ) | dm
                                 "
                                 [icon]="$store.isContentLocked() ? 'pi pi-lock-open' : 'pi pi-lock'"
                                 [loading]="$store.isLocking()"
                                 [disabled]="$store.isLocking()"
-                                (click)="
-                                    $store.isContentLocked()
-                                        ? $store.unlockContent()
-                                        : $store.lockContent()
-                                "></button>
+                                (click)="onLockAction()"></button>
                         </div>
                     }
 

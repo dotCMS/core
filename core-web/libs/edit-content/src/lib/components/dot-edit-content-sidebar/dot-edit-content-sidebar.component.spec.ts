@@ -371,6 +371,25 @@ describe('DotEditContentSidebarComponent', () => {
 
                 expect(store.isLocking()).toBe(true);
             });
+
+            it('should confirm before releasing a lock held by another user', () => {
+                const confirmationService = spectator.inject(ConfirmationService, true);
+                const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+                const unlockSpy = jest.spyOn(store, 'unlockContent').mockImplementation();
+                jest.spyOn(store, 'isLockedByAnotherUser').mockReturnValue(true);
+                jest.spyOn(store, 'lockedByName').mockReturnValue('Anna García');
+                spectator.detectChanges();
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                // A confirmation is requested and the lock is NOT released yet.
+                expect(confirmSpy).toHaveBeenCalled();
+                expect(unlockSpy).not.toHaveBeenCalled();
+
+                // Accepting the confirmation releases (steals) the lock.
+                confirmSpy.mock.calls[0][0].accept?.();
+                expect(unlockSpy).toHaveBeenCalled();
+            });
         });
 
         describe('workflow actions', () => {

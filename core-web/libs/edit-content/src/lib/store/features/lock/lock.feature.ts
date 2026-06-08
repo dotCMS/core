@@ -103,6 +103,67 @@ export function withLock() {
                 }
 
                 return dotMessageService.get('edit.content.locked.by.user', boldName);
+            }),
+
+            /**
+             * Display name of the user who locked the content, when it is locked by someone
+             * other than the current user. Used in the release-lock confirmation dialog.
+             *
+             * @returns string | null - The locker's display name, or null when not applicable.
+             */
+            lockedByName: computed((): string | null => {
+                const currentUser = store.currentUser();
+                const contentlet = store.contentlet();
+
+                if (!contentlet) {
+                    return null;
+                }
+
+                const { lockedBy, lockedByName } = contentlet;
+
+                if (!lockedBy) {
+                    return null;
+                }
+
+                const isLockedByString = typeof lockedBy === 'string';
+                const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
+
+                if (currentUser?.userId === lockerUserId) {
+                    return null;
+                }
+
+                const userDisplay = (
+                    isLockedByString
+                        ? (lockedByName ?? '')
+                        : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+                ).trim();
+
+                return userDisplay || null;
+            }),
+
+            /**
+             * Determines whether the content is locked by a user other than the current one.
+             * Drives the "Release Lock" affordance (vs a plain "Unlock" of the user's own lock).
+             *
+             * @returns boolean - True when the content is locked by a different user.
+             */
+            isLockedByAnotherUser: computed(() => {
+                const contentlet = store.contentlet();
+                const currentUser = store.currentUser();
+
+                if (!contentlet?.locked) {
+                    return false;
+                }
+
+                const { lockedBy } = contentlet;
+
+                if (!lockedBy) {
+                    return false;
+                }
+
+                const lockerUserId = typeof lockedBy === 'string' ? lockedBy : lockedBy.userId;
+
+                return !!currentUser && currentUser.userId !== lockerUserId;
             })
         })),
 

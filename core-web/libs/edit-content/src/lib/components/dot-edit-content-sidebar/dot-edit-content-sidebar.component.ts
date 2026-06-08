@@ -17,6 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
@@ -65,6 +66,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;
@@ -157,6 +160,42 @@ export class DotEditContentSidebarComponent {
                 }
             }
         });
+    }
+
+    /**
+     * Handles a click on the lock button.
+     *
+     * - Locked by another user (current user has release permission, since the button is only
+     *   rendered when `canLock` is true): ask for confirmation before stealing the lock.
+     * - Locked by the current user: unlock directly.
+     * - Unlocked: lock it for editing.
+     */
+    onLockAction(): void {
+        if (this.$store.isLockedByAnotherUser()) {
+            const lockedBy = this.$store.lockedByName();
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get(
+                    'edit.content.release.lock.confirmation.header'
+                ),
+                message: this.#dotMessageService.get(
+                    'edit.content.release.lock.confirmation.message',
+                    lockedBy ? ` (${lockedBy})` : ''
+                ),
+                acceptLabel: this.#dotMessageService.get('Release-Lock'),
+                rejectLabel: this.#dotMessageService.get('Cancel'),
+                accept: () => this.$store.unlockContent()
+            });
+
+            return;
+        }
+
+        if (this.$store.isContentLocked()) {
+            this.$store.unlockContent();
+
+            return;
+        }
+
+        this.$store.lockContent();
     }
 
     /**

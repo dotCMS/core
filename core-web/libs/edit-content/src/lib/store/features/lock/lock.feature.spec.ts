@@ -256,6 +256,57 @@ describe('LockFeature', () => {
             store.updateContent({ locked: false });
             expect(store.lockWarningMessage()).toBe(null);
         });
+
+        describe('isLockedByAnotherUser', () => {
+            it('should be true when locked by a different user', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.isLockedByAnotherUser()).toBe(true);
+            });
+
+            it('should be false when locked by the current user', () => {
+                store.updateCurrentUser({ userId: '123' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.isLockedByAnotherUser()).toBe(false);
+            });
+
+            it('should be false when content is not locked', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({ locked: false });
+
+                expect(store.isLockedByAnotherUser()).toBe(false);
+            });
+        });
+
+        describe('lockedByName', () => {
+            it('should return the locker name when locked by another user', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.lockedByName()).toBe('Anna García');
+            });
+
+            it('should return null when locked by the current user', () => {
+                store.updateCurrentUser({ userId: '123' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.lockedByName()).toBeNull();
+            });
+        });
     });
 
     describe('methods', () => {
