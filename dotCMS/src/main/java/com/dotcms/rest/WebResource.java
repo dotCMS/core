@@ -710,7 +710,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = decodeBase64Credentials(authentication).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -718,6 +718,20 @@ public  class WebResource {
             result = Optional.of(new UsernamePassword(values[0], values[1]));
         }
         return result;
+    }
+
+    /**
+     * Base64-decodes a credential header value, converting any exception thrown for malformed
+     * input into a {@link SecurityException} so callers only have to handle a single (security)
+     * exception type for a bad header.
+     */
+    private static String decodeBase64Credentials(final String encoded) throws SecurityException {
+        try {
+            return Base64.decodeAsString(encoded);
+        } catch (Exception e) {
+            throw new SecurityException("Invalid Base64 encoding for username and password",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     @VisibleForTesting
@@ -729,7 +743,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = decodeBase64Credentials(authentication).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
