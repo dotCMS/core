@@ -20,6 +20,9 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     private editorElement: HTMLElement;
 
+    /** Stable reference so {@link ngOnDestroy} can actually remove the listener it registered. */
+    private readonly hideOnEditorMousedown = () => this.hide();
+
     private readonly PROPER_MODIFIERS = {
         modifiers: [
             {
@@ -57,12 +60,12 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             ...this.tippyOptions()
         }) as Instance;
 
-        editorElement.addEventListener('mousedown', () => this.hide());
+        editorElement.addEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     ngOnDestroy(): void {
         this.tippy?.destroy();
-        this.editorElement.removeEventListener('mousedown', () => this.hide());
+        this.editorElement?.removeEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     show() {
@@ -85,13 +88,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         if (isNodeSelection(state.selection)) {
             const node = this.getNodeElement(view, from);
             if (node) {
-                // Anchor to THIS editor's bubble menu. The directive lives inside the owning
-                // `<dot-bubble-menu>` (alongside the `[tiptapbubblemenu]` element), so scope the
-                // lookup to that host instead of the whole document.
-                //
-                // A global `document.querySelector('[tiptapbubblemenu]')` returns the FIRST bubble
-                // menu on the page, so when a content type has multiple Block Editor fields the
-                // image/link popover anchored to the wrong editor instance (#35908).
+                // Scope to THIS editor's bubble menu — a global query returns the first instance (#35908).
                 const bubbleMenu = this.elRef.nativeElement
                     .closest('dot-bubble-menu')
                     ?.querySelector('[tiptapbubblemenu]');
