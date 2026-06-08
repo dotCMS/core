@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Vendor-neutral representation of a raw search response.
@@ -18,55 +17,50 @@ import org.immutables.value.Value;
  *   <li>{@link #aggregations()} — a flat {@code Map<String, List<AggregationBucket>>} of the
  *       first-level {@code terms} aggregations. This is the convenient shape for Java callers that
  *       only need bucket keys and counts (e.g. {@code ContentTypeAPIImpl}, {@code WorkflowHelper}).</li>
- *   <li>{@link #aggregationTree()} — the full {@link Aggregations} tree, preserving nested
+ *   <li>{@link #aggregationTree()} — the full neutral aggregation tree, preserving nested
  *       sub-aggregations and the {@code top_hits} metric aggregation. This is what
  *       {@code ContentSearchResults#getAggregations()} exposes to Velocity so legacy templates that
  *       walk {@code .buckets} / {@code getKeyAsNumber()} / {@code getAggregations()} keep working.</li>
  * </ul>
  *
- * <p>The flat map is always derived from the tree (see {@link #flatten(Aggregations)}) so the two
+ * <p>The flat map is always derived from the tree (see {@link #flatten(Map)}) so the two
  * views can never disagree.</p>
  *
  * <p>Factory methods ({@code from(ES)}, {@code from(OS)}) map vendor types to this
  * neutral DTO; they are the only places where vendor imports are allowed in this file.</p>
+ *
+ * @param hits           neutral search hits (already vendor-independent)
+ * @param scrollId       scroll ID returned by the cluster, or {@code null} when not a scroll request
+ *                       (ES: {@code SearchResponse.getScrollId()} / OS: {@code SearchResponse.scrollId()})
+ * @param tookMillis     time the cluster took to execute the query, in milliseconds
+ * @param aggregationTree full neutral aggregation tree, keyed by aggregation name (nested
+ *                        sub-aggregations and {@code top_hits} preserved); Velocity resolves
+ *                        {@code $results.aggregations.<name>} through this map
  */
-@Value.Immutable
-public interface ContentSearchResponse {
-
-    /** Neutral search hits (already vendor-independent). */
-    SearchHits hits();
-
-    /**
-     * Scroll ID returned by the cluster, or {@code null} when not a scroll request.
-     * ES: {@code SearchResponse.getScrollId()} / OS: {@code SearchResponse.scrollId()}
-     */
-    @Nullable
-    String scrollId();
-
-    /** Time the cluster took to execute the query, in milliseconds. */
-    long tookMillis();
+public record ContentSearchResponse(
+        SearchHits hits,
+        @Nullable String scrollId,
+        long tookMillis,
+        Map<String, Aggregation> aggregationTree) {
 
     /**
-     * Full neutral aggregation tree, keyed by aggregation name (nested sub-aggregations and
-     * {@code top_hits} preserved). Velocity resolves {@code $results.aggregations.<name>} through
-     * this map.
+     * Canonical constructor. {@code aggregationTree} defaults to an empty map when {@code null}
+     * (mirrors the previous Immutables collection default).
      */
-    @Value.Default
-    default Map<String, Aggregation> aggregationTree() {
-        return Collections.emptyMap();
+    public ContentSearchResponse {
+        aggregationTree = aggregationTree == null ? Collections.emptyMap() : aggregationTree;
     }
 
     /**
      * First-level terms aggregations, keyed by aggregation name.
      * Derived from {@link #aggregationTree()}; only aggregations that have buckets are included.
      */
-    @Value.Derived
-    default Map<String, List<AggregationBucket>> aggregations() {
+    public Map<String, List<AggregationBucket>> aggregations() {
         return flatten(aggregationTree());
     }
 
-    static ImmutableContentSearchResponse.Builder builder() {
-        return ImmutableContentSearchResponse.builder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -97,7 +91,7 @@ public interface ContentSearchResponse {
     // ES factory
     // -------------------------------------------------------------------------
 
-    static ContentSearchResponse from(
+    public static ContentSearchResponse from(
             final org.elasticsearch.action.search.SearchResponse esResponse) {
 
         return builder()
@@ -114,7 +108,7 @@ public interface ContentSearchResponse {
     // OS factory
     // -------------------------------------------------------------------------
 
-    static ContentSearchResponse from(
+    public static ContentSearchResponse from(
             final org.opensearch.client.opensearch.core.SearchResponse<Object> osResponse) {
 
         return builder()
@@ -125,5 +119,42 @@ public interface ContentSearchResponse {
                 .tookMillis(osResponse.took())
                 .aggregationTree(Aggregation.fromOS(osResponse.aggregations()))
                 .build();
+    }
+
+    /**
+     * Fluent builder for {@link ContentSearchResponse}. An unset {@code aggregationTree} defaults to
+     * an empty map and an unset {@code scrollId} to {@code null}, preserving the lenient behaviour of
+     * the former Immutables builder.
+     */
+    public static final class Builder {
+
+        private SearchHits hits;
+        private String scrollId;
+        private long tookMillis;
+        private Map<String, Aggregation> aggregationTree = Collections.emptyMap();
+
+        public Builder hits(final SearchHits hits) {
+            this.hits = hits;
+            return this;
+        }
+
+        public Builder scrollId(final String scrollId) {
+            this.scrollId = scrollId;
+            return this;
+        }
+
+        public Builder tookMillis(final long tookMillis) {
+            this.tookMillis = tookMillis;
+            return this;
+        }
+
+        public Builder aggregationTree(final Map<String, Aggregation> aggregationTree) {
+            this.aggregationTree = aggregationTree;
+            return this;
+        }
+
+        public ContentSearchResponse build() {
+            return new ContentSearchResponse(hits, scrollId, tookMillis, aggregationTree);
+        }
     }
 }

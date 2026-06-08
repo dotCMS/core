@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Vendor-neutral representation of a single named aggregation result.
@@ -23,40 +22,42 @@ import org.immutables.value.Value;
  * type required — there is no separate container class. Use {@link #from(org.elasticsearch.search.aggregations.Aggregations)}
  * / {@link #fromOS(Map)} to build that map from a vendor response.</p>
  *
+ * <p>The components are named {@code getName} / {@code getType} / {@code getBuckets} / {@code getHits}
+ * so the canonical record accessors are bean-style; this keeps {@code $results.aggregations.<name>.buckets}
+ * (property access, resolved via {@code getBuckets()}) working from Velocity.</p>
+ *
  * <p>Factory methods are the only places where vendor imports are allowed in this file.</p>
  *
+ * @param getName    the aggregation name as declared in the query (e.g. {@code content_types})
+ * @param getType    the vendor-reported aggregation type (e.g. {@code sterms}, {@code lterms},
+ *                   {@code top_hits}); defaults to {@code unknown}
+ * @param getBuckets buckets for multi-bucket ({@code terms}) aggregations; empty for metric aggregations
+ * @param getHits    hits for the {@code top_hits} metric aggregation; {@code null} for other types
  * @see AggregationBucket
  */
-@Value.Immutable
-public interface Aggregation extends Iterable<AggregationBucket> {
+public record Aggregation(
+        String getName,
+        String getType,
+        List<AggregationBucket> getBuckets,
+        @Nullable SearchHits getHits) implements Iterable<AggregationBucket> {
 
-    /** The aggregation name as declared in the query (e.g. {@code content_types}). */
-    String getName();
-
-    /** The vendor-reported aggregation type (e.g. {@code sterms}, {@code lterms}, {@code top_hits}). */
-    @Value.Default
-    default String getType() {
-        return "unknown";
+    /**
+     * Canonical constructor. {@code getType} defaults to {@code "unknown"} and {@code getBuckets}
+     * to an empty list when {@code null} (mirrors the previous Immutables defaults).
+     */
+    public Aggregation {
+        getType = getType == null ? "unknown" : getType;
+        getBuckets = getBuckets == null ? Collections.emptyList() : getBuckets;
     }
-
-    /** Buckets for multi-bucket ({@code terms}) aggregations; empty for metric aggregations. */
-    @Value.Default
-    default List<AggregationBucket> getBuckets() {
-        return Collections.emptyList();
-    }
-
-    /** Hits for the {@code top_hits} metric aggregation; {@code null} for other aggregation types. */
-    @Nullable
-    SearchHits getHits();
 
     /** Iterate the buckets directly: {@code #foreach($bucket in $agg)}. */
     @Override
-    default Iterator<AggregationBucket> iterator() {
+    public Iterator<AggregationBucket> iterator() {
         return getBuckets().iterator();
     }
 
-    static ImmutableAggregation.Builder builder() {
-        return ImmutableAggregation.builder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     // -------------------------------------------------------------------------
@@ -64,7 +65,7 @@ public interface Aggregation extends Iterable<AggregationBucket> {
     // -------------------------------------------------------------------------
 
     /** Maps the full set of Elasticsearch aggregations to a {@code name -> Aggregation} map. */
-    static Map<String, Aggregation> from(
+    public static Map<String, Aggregation> from(
             final org.elasticsearch.search.aggregations.Aggregations esAggs) {
         if (esAggs == null) {
             return Collections.emptyMap();
@@ -77,7 +78,7 @@ public interface Aggregation extends Iterable<AggregationBucket> {
     }
 
     private static Aggregation fromSingle(final org.elasticsearch.search.aggregations.Aggregation esAgg) {
-        final ImmutableAggregation.Builder builder = builder()
+        final Builder builder = builder()
                 .name(esAgg.getName())
                 .type(esAgg.getType());
 
@@ -101,7 +102,7 @@ public interface Aggregation extends Iterable<AggregationBucket> {
     // -------------------------------------------------------------------------
 
     /** Maps the full set of OpenSearch aggregations to a {@code name -> Aggregation} map. */
-    static Map<String, Aggregation> fromOS(
+    public static Map<String, Aggregation> fromOS(
             final Map<String, org.opensearch.client.opensearch._types.aggregations.Aggregate> osAggs) {
         if (osAggs == null || osAggs.isEmpty()) {
             return Collections.emptyMap();
@@ -121,7 +122,7 @@ public interface Aggregation extends Iterable<AggregationBucket> {
     private static Aggregation fromSingleOS(final String name,
             final org.opensearch.client.opensearch._types.aggregations.Aggregate agg) {
 
-        final ImmutableAggregation.Builder builder = builder().name(name);
+        final Builder builder = builder().name(name);
 
         if (agg.isSterms()) {
             return builder.type("sterms")
@@ -148,5 +149,42 @@ public interface Aggregation extends Iterable<AggregationBucket> {
         }
 
         return null;
+    }
+
+    /**
+     * Fluent builder for {@link Aggregation}. An unset {@code type} defaults to {@code "unknown"},
+     * unset {@code buckets} to an empty list and {@code hits} to {@code null}, preserving the
+     * lenient behaviour of the former Immutables builder.
+     */
+    public static final class Builder {
+
+        private String name;
+        private String type;
+        private List<AggregationBucket> buckets = Collections.emptyList();
+        private SearchHits hits;
+
+        public Builder name(final String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder type(final String type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder buckets(final List<AggregationBucket> buckets) {
+            this.buckets = buckets;
+            return this;
+        }
+
+        public Builder hits(final SearchHits hits) {
+            this.hits = hits;
+            return this;
+        }
+
+        public Aggregation build() {
+            return new Aggregation(name, type, buckets, hits);
+        }
     }
 }

@@ -3,7 +3,6 @@ package com.dotcms.content.index.domain;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Vendor-neutral representation of a single bucket in a terms aggregation.
@@ -17,34 +16,34 @@ import org.immutables.value.Value;
  * {@link #getKeyAsNumber()}, {@link #getDocCount()}) and the nested {@link #getAggregations()} so
  * that Velocity templates written against the old Elasticsearch {@code Terms.Bucket} API keep
  * working unchanged after the OpenSearch migration.</p>
+ *
+ * @param key            bucket key as a String (numeric keys are converted via {@code toString()})
+ * @param docCount       number of documents in this bucket
+ * @param subAggregations sub-aggregations nested under this bucket (e.g. a {@code top_hits} or a
+ *                        nested {@code terms}); empty when the bucket has no sub-aggregations
  */
-@Value.Immutable
-public interface AggregationBucket {
-
-    /** Bucket key as a String (numeric keys are converted via {@code toString()}). */
-    String key();
-
-    /** Number of documents in this bucket. */
-    long docCount();
+public record AggregationBucket(
+        String key,
+        long docCount,
+        Map<String, Aggregation> subAggregations) {
 
     /**
-     * Sub-aggregations nested under this bucket (e.g. a {@code top_hits} or a nested {@code terms}).
-     * Empty when the bucket has no sub-aggregations.
+     * Canonical constructor. {@code subAggregations} defaults to an empty map when {@code null}
+     * (mirrors the previous Immutables collection default).
      */
-    @Value.Default
-    default Map<String, Aggregation> subAggregations() {
-        return Collections.emptyMap();
+    public AggregationBucket {
+        subAggregations = subAggregations == null ? Collections.emptyMap() : subAggregations;
     }
 
     // -------------------------------------------------------------------------
     // Legacy / Velocity-friendly getters (mirror the ES Terms.Bucket API shape)
     // -------------------------------------------------------------------------
 
-    default String getKey() {
+    public String getKey() {
         return key();
     }
 
-    default String getKeyAsString() {
+    public String getKeyAsString() {
         return key();
     }
 
@@ -54,7 +53,7 @@ public interface AggregationBucket {
      * renders empty rather than throwing).
      */
     @Nullable
-    default Number getKeyAsNumber() {
+    public Number getKeyAsNumber() {
         try {
             return Long.valueOf(key());
         } catch (final NumberFormatException longMiss) {
@@ -66,17 +65,17 @@ public interface AggregationBucket {
         }
     }
 
-    default long getDocCount() {
+    public long getDocCount() {
         return docCount();
     }
 
     /** Nested sub-aggregations, mirroring {@code Terms.Bucket#getAggregations()}. */
-    default Map<String, Aggregation> getAggregations() {
+    public Map<String, Aggregation> getAggregations() {
         return subAggregations();
     }
 
-    static ImmutableAggregationBucket.Builder builder() {
-        return ImmutableAggregationBucket.builder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     // -------------------------------------------------------------------------
@@ -84,7 +83,7 @@ public interface AggregationBucket {
     // -------------------------------------------------------------------------
 
     /** Creates a bucket from an Elasticsearch terms bucket, including its sub-aggregations. */
-    static AggregationBucket from(
+    public static AggregationBucket from(
             final org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket esBucket) {
         return builder()
                 .key(esBucket.getKeyAsString())
@@ -98,7 +97,7 @@ public interface AggregationBucket {
     // -------------------------------------------------------------------------
 
     /** Creates a bucket from an OpenSearch string-terms bucket, including its sub-aggregations. */
-    static AggregationBucket fromOS(
+    public static AggregationBucket fromOS(
             final org.opensearch.client.opensearch._types.aggregations.StringTermsBucket osBucket) {
         return builder()
                 .key(osBucket.key())
@@ -108,7 +107,7 @@ public interface AggregationBucket {
     }
 
     /** Creates a bucket from an OpenSearch long-terms bucket, including its sub-aggregations. */
-    static AggregationBucket fromOS(
+    public static AggregationBucket fromOS(
             final org.opensearch.client.opensearch._types.aggregations.LongTermsBucket osBucket) {
         return builder()
                 .key(String.valueOf(osBucket.key()))
@@ -118,12 +117,42 @@ public interface AggregationBucket {
     }
 
     /** Creates a bucket from an OpenSearch double-terms bucket, including its sub-aggregations. */
-    static AggregationBucket fromOS(
+    public static AggregationBucket fromOS(
             final org.opensearch.client.opensearch._types.aggregations.DoubleTermsBucket osBucket) {
         return builder()
                 .key(String.valueOf(osBucket.key()))
                 .docCount(osBucket.docCount())
                 .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
                 .build();
+    }
+
+    /**
+     * Fluent builder for {@link AggregationBucket}. An unset {@code subAggregations} defaults to an
+     * empty map, preserving the lenient behaviour of the former Immutables builder.
+     */
+    public static final class Builder {
+
+        private String key;
+        private long docCount;
+        private Map<String, Aggregation> subAggregations = Collections.emptyMap();
+
+        public Builder key(final String key) {
+            this.key = key;
+            return this;
+        }
+
+        public Builder docCount(final long docCount) {
+            this.docCount = docCount;
+            return this;
+        }
+
+        public Builder subAggregations(final Map<String, Aggregation> subAggregations) {
+            this.subAggregations = subAggregations;
+            return this;
+        }
+
+        public AggregationBucket build() {
+            return new AggregationBucket(key, docCount, subAggregations);
+        }
     }
 }

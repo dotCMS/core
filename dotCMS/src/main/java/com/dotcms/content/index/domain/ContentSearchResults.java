@@ -1,5 +1,7 @@
 package com.dotcms.content.index.domain;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,8 +23,9 @@ import java.util.Map;
  * @param <T> the type of elements in this list — typically {@code Contentlet} when produced
  *            by {@code SearchAPI}, or {@code ContentMap} when produced by {@code ESContentTool}
  */
-public class ContentSearchResults<T> implements List<T> {
+public class ContentSearchResults<T> implements List<T>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final ContentSearchResponse response;
