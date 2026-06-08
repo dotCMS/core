@@ -231,7 +231,7 @@ public class StaticPublisher extends Publisher {
                         + endpoint.getAddress() + ".  Error: " + e.getMessage();
                 detail.setInfo(error);
                 hasEnvironmentFailed = true;
-                endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
+                endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
                 allFailureDetails.add(endpointFailureDetail);
 
                 Logger.error(this.getClass(), error, e);
@@ -267,28 +267,6 @@ public class StaticPublisher extends Publisher {
 
         return hasEnvironmentFailed;
     } //handleEnvironment.
-
-    private EndpointFailureDetail buildFailureDetail(
-            final Environment environment,
-            final PublishingEndPoint endpoint,
-            final EndpointDetail detail,
-            final FailureCategory category,
-            final Throwable throwable) {
-        final PublishAuditStatus.Status auditStatus =
-                PublishAuditStatus.getStatusObjectByCode(detail.getStatus());
-        return EndpointFailureDetail.builder()
-                .endpointId(endpoint.getId())
-                .endpointName(endpoint.getServerName() != null ? endpoint.getServerName().toString() : null)
-                .address(endpoint.getAddress())
-                .environmentId(environment.getId())
-                .environmentName(environment.getName())
-                .failureCategory(category)
-                .auditStatus(auditStatus)
-                .httpStatusCode(null)
-                .message(detail.getInfo())
-                .exceptionClass(throwable != null ? throwable.getClass().getName() : null)
-                .build();
-    }
 
     /**
      * Retrieves endpoint properties and build the publish-to folder path with that information.

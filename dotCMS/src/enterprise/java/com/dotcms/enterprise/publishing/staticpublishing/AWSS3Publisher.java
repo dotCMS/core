@@ -329,7 +329,7 @@ public class AWSS3Publisher extends Publisher {
                         String error = updateStatusFailedToSend(currentStatusHistory, environment, endpoint, detail);
                         failedEnvironment |= true;
                         Logger.error(this.getClass(), error);
-                        endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.CONNECTION_ERROR, e);
+                        endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.CONNECTION_ERROR, e);
                     }
 
                     try {
@@ -394,7 +394,7 @@ public class AWSS3Publisher extends Publisher {
                                             failedEnvironment |= true;
                                             Logger.error(this.getClass(), error, e);
                                             if (endpointFailureDetail == null) {
-                                                endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
+                                                endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
                                             }
                                         }
                                     }
@@ -420,7 +420,7 @@ public class AWSS3Publisher extends Publisher {
                         detail.setInfo(error);
                         failedEnvironment |= true;
                         if (endpointFailureDetail == null) {
-                            endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, e);
+                            endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, e);
                         }
 
                         Logger.error(this.getClass(), error, e);
@@ -445,7 +445,7 @@ public class AWSS3Publisher extends Publisher {
                         localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointSuccessEvent(config, endpoint));
                     } else {
                         if (endpointFailureDetail == null) {
-                            endpointFailureDetail = buildFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, null);
+                            endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.UNKNOWN, null);
                         }
                         failureDetails.add(endpointFailureDetail);
                         localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointFailureEvent(
@@ -486,28 +486,6 @@ public class AWSS3Publisher extends Publisher {
 
         return config;
     } // process.
-
-    private EndpointFailureDetail buildFailureDetail(
-            final Environment environment,
-            final PublishingEndPoint endpoint,
-            final EndpointDetail detail,
-            final FailureCategory category,
-            final Throwable throwable) {
-        final PublishAuditStatus.Status auditStatus =
-                PublishAuditStatus.getStatusObjectByCode(detail.getStatus());
-        return EndpointFailureDetail.builder()
-                .endpointId(endpoint.getId())
-                .endpointName(endpoint.getServerName() != null ? endpoint.getServerName().toString() : null)
-                .address(endpoint.getAddress())
-                .environmentId(environment.getId())
-                .environmentName(environment.getName())
-                .failureCategory(category)
-                .auditStatus(auditStatus)
-                .httpStatusCode(null)
-                .message(detail.getInfo())
-                .exceptionClass(throwable != null ? throwable.getClass().getName() : null)
-                .build();
-    }
 
     @NotNull
     private String updateStatusFailedToSend(PublishAuditHistory currentStatusHistory, Environment environment, PublishingEndPoint endpoint, EndpointDetail detail) throws DotDataException {
