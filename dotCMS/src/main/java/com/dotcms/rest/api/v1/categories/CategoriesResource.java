@@ -791,6 +791,13 @@ public class CategoriesResource {
         updatedCategory.setCategoryName(categoryForm.getCategoryName());
         updatedCategory.setKey(categoryForm.getKey());
         updatedCategory.setKeywords(categoryForm.getKeywords());
+
+        // Apply the active flag only when it is present in the payload, so an omitted field
+        // keeps the existing value instead of silently flipping it (issue #35501).
+        if (categoryForm.activeProvided() != null) {
+            updatedCategory.setActive(categoryForm.activeProvided());
+        }
+
         updatedCategory.setModDate(new Date());
 
         Logger.debug(this,
