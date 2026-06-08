@@ -39,5 +39,10 @@
 
     ::ng-deep .p-message-content {
         padding: 0.75rem 1.75rem !important;
+        // Match the compact banner type scale across all top-bar messages so the info and
+        // lock banners end up the same height (otherwise the info text stays at 1rem / 52px
+        // while the lock banner is 13.5px / 39px).
+        font-size: 0.84375rem; // 13.5px
+        line-height: 1.35;
     }
 }
