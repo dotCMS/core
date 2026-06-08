@@ -21,6 +21,11 @@ const DotTable = Table.extend({
      * We override them with prosemirror-tables' deprecated variants, which operate on the row /
      * column of the *currently selected* cell (the popover places the selection in the target
      * cell before running the command). See issue #35980 (bug 3).
+     *
+     * TODO: `toggleHeaderRow` / `toggleHeaderColumn` are prosemirror-tables' deprecated
+     * single-argument forms — `@tiptap/pm/tables` re-exports prosemirror-tables, so an upstream
+     * bump could drop these stubs without a TS compile-time break. Replace with a selection-scoped
+     * `toggleHeader()` once prosemirror-tables exposes one (or inline the cell-rect logic here).
      */
     addCommands() {
         return {

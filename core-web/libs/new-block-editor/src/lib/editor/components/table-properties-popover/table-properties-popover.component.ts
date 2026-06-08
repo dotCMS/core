@@ -26,8 +26,11 @@ const EMPTY_VALUES = {
 /**
  * Toolbar-anchored a11y popover for the active table. Edits:
  *
- *   - **Caption** — sets the table's `caption` attribute (rendered as a `<caption>` child).
- *     Always editable; a non-empty value adds the caption, an empty value removes it.
+ *   - **Caption** — sets the table's `caption` attribute. Always editable; a non-empty value
+ *     stores the caption, an empty value clears it. NOTE: the value is persisted on the table
+ *     node but is not yet rendered as a visible `<caption>` element in the editor (the table uses
+ *     prosemirror's resizable `TableView`, which would need to emit the caption). Tracked
+ *     separately — see issue #35980 follow-up.
  *   - **aria-label** — accessible name for the `<table>`.
  *   - **aria-labelledby** — references an `id` of an external label.
  *
@@ -81,7 +84,8 @@ const EMPTY_VALUES = {
                             formControlName="ariaLabel"
                             data-testid="tbl-aria-label"
                             [placeholder]="
-                                'dot.block.editor.dialog.table-properties.aria-label.placeholder' | dm
+                                'dot.block.editor.dialog.table-properties.aria-label.placeholder'
+                                    | dm
                             "
                             class="w-full" />
                     </div>
@@ -154,7 +158,7 @@ export class TablePropertiesPopoverComponent {
         const { caption, ariaLabel, ariaLabelledby } = this.form.getRawValue();
 
         // All three a11y fields are stored as table attributes — set them in one shot.
-        // A non-empty caption adds the `<caption>`; an empty value clears it.
+        // A non-empty caption stores the `caption` attribute; an empty value clears it.
         this.editor()
             .chain()
             .focus()

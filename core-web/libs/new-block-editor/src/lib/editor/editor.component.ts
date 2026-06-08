@@ -71,6 +71,11 @@ function editorDocumentJsonText(editor: Editor): string {
  * reveal the caret, then return `true` so ProseMirror treats scrolling as handled and leaves the
  * page scroll alone. Returns `false` (defer to default behaviour) if the container or caret
  * coordinates can't be resolved.
+ *
+ * CONTRACT: the `.editor-scroll-container` element (rendered by this component's template) is the
+ * required scroll boundary. If the editor is ever embedded without that wrapper, this returns
+ * `false` and ProseMirror's default page-level scroll-into-view takes over — i.e. the bug-2 jump
+ * comes back. Keep the class on the scroll wrapper whenever this editor is reused.
  */
 function scrollCaretIntoEditorContainer(view: EditorView): boolean {
     const container = view.dom.closest<HTMLElement>('.editor-scroll-container');
