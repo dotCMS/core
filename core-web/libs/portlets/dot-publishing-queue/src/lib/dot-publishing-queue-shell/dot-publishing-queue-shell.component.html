@@ -1,0 +1,26 @@
+<dot-publishing-queue-toolbar (uploadClick)="openUpload()" />
+
+<p-tabs
+    [value]="store.activeTab()"
+    (valueChange)="onTabChange($event)"
+    class="flex min-h-0 flex-1 flex-col"
+    styleClass="h-full flex flex-col"
+    data-testid="pq-tabs">
+    <p-tablist>
+        <p-tab value="queue" data-testid="pq-tab-queue">
+            {{ 'publishing-queue.tab.queue' | dm }}
+        </p-tab>
+        <p-tab value="history" data-testid="pq-tab-history">
+            {{ 'publishing-queue.tab.history' | dm }}
+        </p-tab>
+    </p-tablist>
+
+    <p-tabpanels class="flex min-h-0 flex-1 flex-col">
+        <p-tabpanel value="queue" class="flex min-h-0 flex-1 flex-col">
+            <dot-publishing-queue-page />
+        </p-tabpanel>
+        <p-tabpanel value="history" class="flex min-h-0 flex-1 flex-col">
+            <dot-publishing-queue-history />
+        </p-tabpanel>
+    </p-tabpanels>
+</p-tabs>

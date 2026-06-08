@@ -59,14 +59,37 @@ describe('DotPublishingQueueListComponent', () => {
     it('renders the Send button in ready mode (disabled)', () => {
         const sendBtn = spectator.query(byTestId('pq-row-send-btn'))?.querySelector('button');
         expect(sendBtn).toBeTruthy();
-        expect(sendBtn?.disabled).toBe(true);
+        expect(sendBtn?.disabled).toBe(false);
+        expect(spectator.query(byTestId('pq-row-kebab-btn'))).toBeTruthy();
     });
 
-    it('hides the Send button in progress mode', () => {
+    it('emits sendClick when Send is clicked', () => {
+        let emitted: PublishingJobView | undefined;
+        spectator.output('sendClick').subscribe((j) => (emitted = j as PublishingJobView));
+        const sendBtn = spectator.query(byTestId('pq-row-send-btn'))?.querySelector('button');
+        spectator.click(sendBtn as HTMLButtonElement);
+        expect(emitted?.bundleId).toBe('bundle-1');
+    });
+
+    it('hides Send + kebab in progress mode', () => {
         spectator.setInput('mode', 'progress');
         spectator.setInput('rows', [job({ status: PublishAuditStatus.BUNDLING })]);
         spectator.detectChanges();
         expect(spectator.query(byTestId('pq-row-send-btn'))).toBeFalsy();
+        expect(spectator.query(byTestId('pq-row-kebab-btn'))).toBeFalsy();
+    });
+
+    it('shows Retry button on failed progress rows + emits retryClick', () => {
+        spectator.setInput('mode', 'progress');
+        spectator.setInput('rows', [job({ status: PublishAuditStatus.FAILED_TO_PUBLISH })]);
+        spectator.detectChanges();
+        const retry = spectator.query(byTestId('pq-row-retry-btn'));
+        expect(retry).toBeTruthy();
+
+        let emitted: PublishingJobView | undefined;
+        spectator.output('retryClick').subscribe((j) => (emitted = j as PublishingJobView));
+        spectator.click(retry?.querySelector('button') as HTMLButtonElement);
+        expect(emitted?.bundleId).toBe('bundle-1');
     });
 
     it('shows skeletons while loading and no rows yet', () => {

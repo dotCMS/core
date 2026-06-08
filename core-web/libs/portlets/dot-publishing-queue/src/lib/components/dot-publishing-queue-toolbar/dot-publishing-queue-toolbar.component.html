@@ -23,18 +23,19 @@
             <p-button
                 [label]="'publishing-queue.upload-bundle' | dm"
                 icon="pi pi-upload"
-                [disabled]="true"
-                [pTooltip]="'publishing-queue.upload-bundle.coming-soon' | dm"
-                tooltipPosition="bottom"
+                (onClick)="uploadClick.emit()"
                 data-testid="pq-upload-btn" />
             <p-select
-                [disabled]="true"
+                dotSiteSelector
+                optionLabel="hostname"
+                [showClear]="true"
+                [filter]="true"
+                filterBy="hostname"
                 [placeholder]="'publishing-queue.site-selector.placeholder' | dm"
-                [pTooltip]="'publishing-queue.site-selector.coming-soon' | dm"
-                tooltipPosition="bottom"
+                (onChange)="onSiteChange($event)"
                 [attr.aria-label]="'publishing-queue.site-selector.placeholder' | dm"
                 data-testid="pq-site-selector"
-                class="w-48" />
+                class="w-56" />
         </div>
     </div>
 </p-toolbar>

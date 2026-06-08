@@ -1,0 +1,44 @@
+<div class="flex h-full flex-col gap-4" data-testid="pq-upload-dialog">
+    <p-message
+        severity="info"
+        [text]="'publishing-queue.upload.hint' | dm"
+        data-testid="pq-upload-hint" />
+
+    <p-fileUpload
+        mode="basic"
+        chooseLabel="{{ 'publishing-queue.upload.choose' | dm }}"
+        accept=".tar.gz,.tgz,application/gzip,application/x-tar"
+        [maxFileSize]="1073741824"
+        [auto]="false"
+        [customUpload]="true"
+        (onSelect)="onSelect($event)"
+        (onClear)="onClear()"
+        data-testid="pq-upload-input" />
+
+    @if (selectedFile(); as file) {
+        <div class="rounded-md border border-surface-200 p-3 text-sm" data-testid="pq-upload-file">
+            <strong>{{ file.name }}</strong>
+            <span class="text-color-secondary ml-2">
+                {{ (file.size / 1024 / 1024).toFixed(2) }} MB
+            </span>
+        </div>
+    }
+
+    @if (store.uploadInFlight()) {
+        <p-progressBar mode="indeterminate" styleClass="h-1" data-testid="pq-upload-progress" />
+    }
+
+    <div class="mt-auto flex justify-end gap-2 pt-2">
+        <p-button
+            [label]="'publishing-queue.cancel' | dm"
+            [text]="true"
+            (onClick)="onCancel()"
+            data-testid="pq-upload-cancel" />
+        <p-button
+            [label]="'publishing-queue.upload.submit' | dm"
+            [disabled]="!selectedFile() || store.uploadInFlight()"
+            [loading]="store.uploadInFlight()"
+            (onClick)="onSubmit()"
+            data-testid="pq-upload-submit" />
+    </div>
+</div>

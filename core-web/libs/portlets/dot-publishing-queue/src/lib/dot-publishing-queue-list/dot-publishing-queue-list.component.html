@@ -52,9 +52,30 @@
                         <p-button
                             [label]="'publishing-queue.send' | dm"
                             size="small"
-                            [disabled]="true"
-                            (click)="$event.stopPropagation()"
+                            (click)="$event.stopPropagation(); sendClick.emit(job)"
                             data-testid="pq-row-send-btn" />
+                        <p-menu
+                            #kebab
+                            [model]="kebabFor(job)"
+                            [popup]="true"
+                            appendTo="body"
+                            data-testid="pq-row-kebab-menu" />
+                        <button
+                            type="button"
+                            class="p-button p-button-text p-button-rounded"
+                            (click)="$event.stopPropagation(); kebab.toggle($event)"
+                            [attr.aria-label]="'publishing-queue.row.actions' | dm"
+                            data-testid="pq-row-kebab-btn">
+                            <i class="pi pi-ellipsis-v"></i>
+                        </button>
+                    } @else if (isRetryable(job.status)) {
+                        <p-button
+                            [label]="'publishing-queue.retry' | dm"
+                            size="small"
+                            severity="danger"
+                            [text]="true"
+                            (click)="$event.stopPropagation(); retryClick.emit(job)"
+                            data-testid="pq-row-retry-btn" />
                     }
                 </div>
             }

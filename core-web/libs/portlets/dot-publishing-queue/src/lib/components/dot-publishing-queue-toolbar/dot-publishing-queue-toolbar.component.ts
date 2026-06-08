@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -8,13 +8,13 @@ import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { ToolbarModule } from 'primeng/toolbar';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotSite } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
 
@@ -29,7 +29,7 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
         InputTextModule,
         SelectModule,
         ToolbarModule,
-        TooltipModule,
+        DotSiteSelectorDirective,
         DotMessagePipe
     ],
     templateUrl: './dot-publishing-queue-toolbar.component.html',
@@ -37,6 +37,7 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
 })
 export class DotPublishingQueueToolbarComponent {
     readonly store = inject(DotPublishingQueueStore);
+    readonly uploadClick = output<void>();
 
     private readonly destroyRef = inject(DestroyRef);
     private searchSubject = new Subject<string>();
@@ -49,5 +50,10 @@ export class DotPublishingQueueToolbarComponent {
 
     onSearch(value: string): void {
         this.searchSubject.next(value);
+    }
+
+    onSiteChange(event: SelectChangeEvent): void {
+        const site = event.value as DotSite | null;
+        this.store.setSiteId(site?.identifier ?? null);
     }
 }

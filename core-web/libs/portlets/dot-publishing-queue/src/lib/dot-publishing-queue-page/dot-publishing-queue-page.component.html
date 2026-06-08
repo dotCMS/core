@@ -6,9 +6,11 @@
         [total]="store.readyTotal()"
         [page]="store.readyPage()"
         [rowsPerPage]="store.rowsPerPage()"
+        [kebabBuilder]="readyKebabFor.bind(this)"
         headerKey="publishing-queue.ready.title"
         emptyKey="publishing-queue.empty.ready"
-        (rowClick)="store.openAssetList($event.bundleId)"
+        (rowClick)="onRowClick($event, 'ready')"
+        (sendClick)="onSend($event)"
         (pageChange)="store.setReadyPage($event)"
         data-testid="pq-ready-list" />
     <dot-publishing-queue-list
@@ -20,7 +22,9 @@
         [rowsPerPage]="store.rowsPerPage()"
         headerKey="publishing-queue.in-progress.title"
         emptyKey="publishing-queue.empty.in-progress"
-        (rowClick)="store.openAssetList($event.bundleId)"
+        (rowClick)="onRowClick($event, 'progress')"
+        (retryClick)="onRetry($event)"
         (pageChange)="store.setProgressPage($event)"
         data-testid="pq-progress-list" />
 </div>
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

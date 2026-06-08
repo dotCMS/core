@@ -1,0 +1,127 @@
+<div class="flex flex-col gap-4" data-testid="pq-detail-dialog">
+    @if (store.detailStatus() === 'loading') {
+        <p-skeleton height="2rem" width="60%" />
+        <p-skeleton height="1.5rem" width="40%" />
+        <p-skeleton height="6rem" width="100%" />
+    } @else if (store.detail(); as detail) {
+        <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm" data-testid="pq-detail-meta">
+            <div>
+                <dt class="text-color-secondary">{{ 'publishing-queue.detail.title' | dm }}</dt>
+                <dd class="font-medium text-color">{{ detail.bundleName || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">{{ 'publishing-queue.detail.status' | dm }}</dt>
+                <dd>
+                    <p-tag
+                        [value]="statusLabelKey(detail.status) | dm"
+                        [severity]="statusSeverity(detail.status)" />
+                </dd>
+            </div>
+            <div class="col-span-2">
+                <dt class="text-color-secondary">{{ 'publishing-queue.detail.bundle-id' | dm }}</dt>
+                <dd class="font-mono text-xs break-all text-color">{{ detail.bundleId }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">
+                    {{ 'publishing-queue.detail.bundle-start' | dm }}
+                </dt>
+                <dd>{{ (detail.timestamps.bundleStart | date: 'medium') || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">
+                    {{ 'publishing-queue.detail.bundle-end' | dm }}
+                </dt>
+                <dd>{{ (detail.timestamps.bundleEnd | date: 'medium') || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">
+                    {{ 'publishing-queue.detail.publish-start' | dm }}
+                </dt>
+                <dd>{{ (detail.timestamps.publishStart | date: 'medium') || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">
+                    {{ 'publishing-queue.detail.publish-end' | dm }}
+                </dt>
+                <dd>{{ (detail.timestamps.publishEnd | date: 'medium') || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">{{ 'publishing-queue.detail.filter' | dm }}</dt>
+                <dd>{{ detail.filterName || detail.filterKey || '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-color-secondary">{{ 'publishing-queue.detail.assets' | dm }}</dt>
+                <dd>{{ detail.assetCount }}</dd>
+            </div>
+        </dl>
+
+        <section class="flex flex-col gap-2" data-testid="pq-detail-endpoints">
+            <h4 class="m-0 text-sm font-semibold text-color uppercase">
+                {{ 'publishing-queue.detail.endpoints' | dm }}
+            </h4>
+            @if (detail.environments.length === 0) {
+                <p class="text-color-secondary text-sm" data-testid="pq-detail-endpoints-empty">
+                    {{ 'publishing-queue.detail.no-endpoints' | dm }}
+                </p>
+            } @else {
+                @for (env of detail.environments; track env.id) {
+                    <div class="rounded-md border border-surface-200">
+                        <div
+                            class="border-b border-surface-200 bg-surface-50 px-3 py-2 text-sm font-medium text-color">
+                            {{ env.name }}
+                        </div>
+                        <p-table [value]="env.endpoints" data-testid="pq-detail-endpoint-table">
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th>{{ 'publishing-queue.detail.endpoint' | dm }}</th>
+                                    <th>{{ 'publishing-queue.detail.address' | dm }}</th>
+                                    <th>{{ 'publishing-queue.detail.status' | dm }}</th>
+                                    <th>{{ 'publishing-queue.detail.message' | dm }}</th>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-endpoint>
+                                <tr data-testid="pq-detail-endpoint-row">
+                                    <td>{{ endpoint.serverName }}</td>
+                                    <td class="text-xs">
+                                        {{ endpoint.protocol }}://{{ endpoint.address }}:{{
+                                            endpoint.port
+                                        }}
+                                    </td>
+                                    <td>
+                                        @if (endpoint.status) {
+                                            <p-tag
+                                                [value]="statusLabelKey(endpoint.status) | dm"
+                                                [severity]="statusSeverity(endpoint.status)" />
+                                        } @else {
+                                            <span class="text-color-secondary">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-color-secondary text-xs">
+                                        {{ endpoint.statusMessage || '—' }}
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </div>
+                }
+            }
+        </section>
+
+        @if (canDownload()) {
+            <div class="flex justify-end pt-2">
+                <a
+                    [href]="downloadHref(detail.bundleId)"
+                    [download]="detail.bundleName || detail.bundleId"
+                    class="p-button p-button-outlined"
+                    data-testid="pq-detail-download-btn">
+                    <i class="pi pi-download mr-2"></i>
+                    {{ 'publishing-queue.detail.download' | dm }}
+                </a>
+            </div>
+        }
+    } @else if (store.detailStatus() === 'error') {
+        <div class="text-color-secondary p-4 text-center" data-testid="pq-detail-error">
+            {{ 'publishing-queue.detail.load-error' | dm }}
+        </div>
+    }
+</div>

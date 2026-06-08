@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
@@ -38,7 +40,7 @@ const READY_STATUSES_SET = new Set<PublishAuditStatus>([
 @Component({
     selector: 'dot-publishing-queue-list',
     standalone: true,
-    imports: [ButtonModule, PaginatorModule, SkeletonModule, TagModule, DotMessagePipe],
+    imports: [ButtonModule, MenuModule, PaginatorModule, SkeletonModule, TagModule, DotMessagePipe],
     templateUrl: './dot-publishing-queue-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col min-h-0 h-full' }
@@ -52,8 +54,12 @@ export class DotPublishingQueueListComponent {
     readonly rowsPerPage = input.required<number>();
     readonly headerKey = input.required<string>();
     readonly emptyKey = input.required<string>();
+    /** Builder for the per-row kebab menu items. Only used in ready mode. */
+    readonly kebabBuilder = input<(job: PublishingJobView) => MenuItem[] | null>(() => null);
 
     readonly rowClick = output<PublishingJobView>();
+    readonly sendClick = output<PublishingJobView>();
+    readonly retryClick = output<PublishingJobView>();
     readonly pageChange = output<number>();
 
     readonly first = computed(() => (this.page() - 1) * this.rowsPerPage());
@@ -75,6 +81,14 @@ export class DotPublishingQueueListComponent {
 
     statusLabelKey(status: PublishAuditStatus): string {
         return `publishing-queue.status.${status}`;
+    }
+
+    isRetryable(status: PublishAuditStatus): boolean {
+        return FAILURE_STATUSES.has(status);
+    }
+
+    kebabFor(job: PublishingJobView): MenuItem[] {
+        return this.kebabBuilder()(job) ?? [];
     }
 
     onRowKeyDown(event: KeyboardEvent, job: PublishingJobView): void {

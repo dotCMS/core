@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotSiteService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueToolbarComponent } from './dot-publishing-queue-toolbar.component';
@@ -21,15 +22,17 @@ describe('DotPublishingQueueToolbarComponent', () => {
             })
         ],
         providers: [
+            mockProvider(DotEventsService, { listen: jest.fn().mockReturnValue(of({})) }),
+            mockProvider(DotSiteService, {
+                getSites: jest.fn().mockReturnValue(of({ sites: [], total: 0 }))
+            }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'publishing-queue.search.placeholder': 'Search bundles',
                     'publishing-queue.refresh': 'Refresh',
                     'publishing-queue.upload-bundle': 'Upload Bundle',
-                    'publishing-queue.upload-bundle.coming-soon': 'Coming soon',
-                    'publishing-queue.site-selector.placeholder': 'Site',
-                    'publishing-queue.site-selector.coming-soon': 'Coming soon'
+                    'publishing-queue.site-selector.placeholder': 'Site'
                 })
             }
         ]
@@ -54,9 +57,12 @@ describe('DotPublishingQueueToolbarComponent', () => {
             expect(spectator.query(byTestId('pq-site-selector'))).toBeTruthy();
         });
 
-        it('upload button is disabled', () => {
+        it('upload button click emits uploadClick', () => {
+            const emit = jest.fn();
+            spectator.component.uploadClick.subscribe(emit);
             const uploadBtn = spectator.query(byTestId('pq-upload-btn'))?.querySelector('button');
-            expect(uploadBtn?.disabled).toBe(true);
+            spectator.click(uploadBtn as HTMLButtonElement);
+            expect(emit).toHaveBeenCalled();
         });
     });
 

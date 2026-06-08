@@ -62,6 +62,7 @@ export * from './lib/dot-personalize.model';
 export * from './lib/dot-push-publish-data.model';
 export * from './lib/dot-push-publish-dialog-data.model';
 export * from './lib/publishing-job.model';
+export * from './lib/publishing-job-detail.model';
 export * from './lib/publishing-status.model';
 export * from './lib/bundle-asset-view.model';
 export * from './lib/dot-rendered-page-state.model';
