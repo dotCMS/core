@@ -21,6 +21,8 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rest.PATCH;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -2095,6 +2097,8 @@ public class ContentTypeResource implements Serializable {
                 return Response.ok(new ResponseEntityContentTypeDetailView(responseMap)).build();
             }
 
+            normalizeStyleEditorSchemaToString(metadataPatch);
+
             // Merge: start from current metadata, apply incoming patch (null values remove the key)
             final Map<String, Object> merged = new HashMap<>(
                     existing.metadata() != null ? existing.metadata() : Map.of()
@@ -2125,6 +2129,36 @@ public class ContentTypeResource implements Serializable {
         } catch (final Exception e) {
             Logger.error(this, String.format("Error updating metadata for Content Type '%s'", idOrVar), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Normalizes the {@code DOT_STYLE_EDITOR_SCHEMA} entry in the given metadata patch map so that
+     * its value is always stored as a JSON string rather than a raw JSON object.
+     * <p>
+     * This method serializes any non-String, non-null value back to a compact JSON string and
+     * writes it in-place into {@code metadataPatch}.
+     * <p>
+     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key (which
+     * signals "remove the key"), are left untouched.
+     *
+     * @param metadataPatch the mutable metadata patch map supplied by the caller; modified in place
+     *                      when the schema value needs normalization
+     */
+    private static void normalizeStyleEditorSchemaToString(final Map<String, Object> metadataPatch) {
+        final Object rawSchema = metadataPatch.get("DOT_STYLE_EDITOR_SCHEMA");
+        if (rawSchema == null || rawSchema instanceof String) {
+            return;
+        }
+
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final String schemaStr = Try.of(() -> mapper.writeValueAsString(rawSchema))
+                .onFailure(e -> Logger.warn(ContentTypeResource.class,
+                        "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage()))
+                .getOrNull();
+
+        if (schemaStr != null) {
+            metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
         }
     }
 
