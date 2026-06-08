@@ -172,6 +172,10 @@ export class DotEditContentCommandBarActionsComponent {
     openReferencesDialog(): void {
         if (this.#referencesDialogRef) return;
 
+        // The menu item is disabled when there are no references; guard the public method too
+        // so a direct/keyboard invocation can't open an empty dialog.
+        if (!this.hasReferences()) return;
+
         const identifier = this.identifier();
         if (!identifier) return;
 

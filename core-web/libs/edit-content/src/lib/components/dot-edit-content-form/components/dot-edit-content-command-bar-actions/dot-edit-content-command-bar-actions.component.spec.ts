@@ -223,6 +223,11 @@ describe('DotEditContentCommandBarActionsComponent', () => {
     });
 
     describe('openReferencesDialog', () => {
+        beforeEach(() => {
+            // The action (and method) requires references to exist.
+            spectator.setInput('hasReferences', true);
+        });
+
         it('should open the references dialog with DotEditContentSidebarReferencesDialogComponent', () => {
             spectator.setInput('identifier', 'ref-1');
             spectator.setInput('title', 'My Content');
@@ -271,6 +276,16 @@ describe('DotEditContentCommandBarActionsComponent', () => {
 
         it('should NOT open the dialog when identifier is empty', () => {
             spectator.setInput('identifier', '');
+            spectator.detectChanges();
+
+            spectator.component.openReferencesDialog();
+
+            expect(dialogOpenSpy).not.toHaveBeenCalled();
+        });
+
+        it('should NOT open the dialog when there are no references', () => {
+            spectator.setInput('hasReferences', false);
+            spectator.setInput('identifier', 'ref-1');
             spectator.detectChanges();
 
             spectator.component.openReferencesDialog();

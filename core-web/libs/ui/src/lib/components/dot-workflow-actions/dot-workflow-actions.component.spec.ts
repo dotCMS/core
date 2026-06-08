@@ -119,7 +119,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(1);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
         });
 
         it('should render primary and outlined buttons for 2 actions', () => {
@@ -129,7 +129,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(2);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
             expect(buttons[1].variant).toBe('outlined');
         });
 
@@ -140,7 +140,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(3);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
             expect(buttons[1].variant).toBe('outlined');
             expect(buttons[2].variant).toBe('outlined');
         });
@@ -393,7 +393,7 @@ describe('DotWorkflowActionsComponent', () => {
 
             const buttons = spectator.queryAll(Button);
 
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
             expect(buttons[1].variant).toBe('outlined');
             expect(buttons[2].variant).toBe('outlined');
         });

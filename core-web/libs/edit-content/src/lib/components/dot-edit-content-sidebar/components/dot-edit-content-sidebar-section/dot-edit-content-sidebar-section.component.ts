@@ -53,6 +53,11 @@ export class DotEditContentSidebarSectionComponent {
      * Initialised reactively once the `key` input is bound: when a key is present
      * it seeds from localstorage (default expanded when absent), otherwise it
      * stays expanded in-memory.
+     *
+     * NOTE: the only reactive dependency is `key()`. `getItem` is a plain synchronous read,
+     * so the stored value is re-seeded only when the key changes — not on every parent
+     * change-detection cycle. If DotLocalstorageService ever becomes signal-backed, this would
+     * snap back to the stored state on each read and the user's in-session toggle would be lost.
      */
     $collapsed = linkedSignal<boolean>(() => {
         const key = this.key();

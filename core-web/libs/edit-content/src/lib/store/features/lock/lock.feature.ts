@@ -22,6 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
+import { escapeHtml, resolveLocker } from '../../../utils/functions.util';
 import { EditContentState } from '../../edit-content.store';
 
 export function withLock() {
@@ -56,53 +57,32 @@ export function withLock() {
             lockWarningMessage: computed((): string | null => {
                 const userCanLock = store.canLock();
                 const currentUser = store.currentUser();
-                const contentlet = store.contentlet();
+                const locker = resolveLocker(store.contentlet());
 
-                if (!contentlet) {
+                if (!locker || currentUser?.userId === locker.userId) {
                     return null;
                 }
 
-                const { lockedBy, lockedByName } = contentlet;
-
-                if (!lockedBy) {
-                    return null;
-                }
-
-                // The `lockedBy` field has two shapes depending on the API endpoint:
-                // a plain string (userId) when `lockedByName` carries the display name,
-                // or a { userId, firstName, lastName } object.
-                // TODO: remove this branching once the backend normalizes the shape across content types.
-                const isLockedByString = typeof lockedBy === 'string';
-                const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
-                const userDisplay = (
-                    isLockedByString
-                        ? (lockedByName ?? '')
-                        : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
-                ).trim();
-
-                if (currentUser?.userId === lockerUserId) {
-                    return null;
-                }
-
-                // The banner renders via [innerHTML], so wrap the locker name in <b> to bold it.
-                const boldName = userDisplay ? `<b>${userDisplay}</b>` : '';
+                // The message keys already bold {0} (`<b>{0}.</b>`) and the banner renders via
+                // [innerHTML], so escape the API-provided name before interpolating it.
+                const safeName = escapeHtml(locker.displayName);
 
                 // If user doesn't have permission to lock, use the no permission message.
                 // Fall back to the name-less key when the locker's display name is unavailable.
                 if (!userCanLock) {
-                    return userDisplay
-                        ? dotMessageService.get('edit.content.locked.no.permission.user', boldName)
+                    return safeName
+                        ? dotMessageService.get('edit.content.locked.no.permission.user', safeName)
                         : dotMessageService.get('edit.content.locked.no.permission');
                 }
 
                 // Without a display name, the "Content locked by <b>{name}.</b>" template would
                 // render as "Content locked by ." — suppress the banner instead. The lock switch
                 // UI still indicates the locked state.
-                if (!userDisplay) {
+                if (!safeName) {
                     return null;
                 }
 
-                return dotMessageService.get('edit.content.locked.by.user', boldName);
+                return dotMessageService.get('edit.content.locked.by.user', safeName);
             }),
 
             /**
@@ -113,32 +93,13 @@ export function withLock() {
              */
             lockedByName: computed((): string | null => {
                 const currentUser = store.currentUser();
-                const contentlet = store.contentlet();
+                const locker = resolveLocker(store.contentlet());
 
-                if (!contentlet) {
+                if (!locker || currentUser?.userId === locker.userId) {
                     return null;
                 }
 
-                const { lockedBy, lockedByName } = contentlet;
-
-                if (!lockedBy) {
-                    return null;
-                }
-
-                const isLockedByString = typeof lockedBy === 'string';
-                const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
-
-                if (currentUser?.userId === lockerUserId) {
-                    return null;
-                }
-
-                const userDisplay = (
-                    isLockedByString
-                        ? (lockedByName ?? '')
-                        : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
-                ).trim();
-
-                return userDisplay || null;
+                return locker.displayName || null;
             }),
 
             /**
@@ -150,20 +111,13 @@ export function withLock() {
             isLockedByAnotherUser: computed(() => {
                 const contentlet = store.contentlet();
                 const currentUser = store.currentUser();
+                const locker = resolveLocker(contentlet);
 
-                if (!contentlet?.locked) {
+                if (!contentlet?.locked || !locker) {
                     return false;
                 }
 
-                const { lockedBy } = contentlet;
-
-                if (!lockedBy) {
-                    return false;
-                }
-
-                const lockerUserId = typeof lockedBy === 'string' ? lockedBy : lockedBy.userId;
-
-                return !!currentUser && currentUser.userId !== lockerUserId;
+                return !!currentUser && currentUser.userId !== locker.userId;
             })
         })),
 

@@ -113,7 +113,7 @@ describe('LockFeature', () => {
             });
 
             expect(store.lockWarningMessage()).toEqual(
-                "Content is locked by <b>John Doe</b>. You don't have permissions to unlock this content."
+                "Content is locked by John Doe. You don't have permissions to unlock this content."
             );
         });
 
@@ -129,7 +129,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by <b>John Doe</b>');
+            expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
         });
 
         it('should suppress the banner when firstName and lastName are both missing', () => {
@@ -154,7 +154,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: 'John', lastName: null }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by <b>John</b>');
+            expect(store.lockWarningMessage()).toBe('Content is locked by John');
         });
 
         it('should handle missing firstName gracefully', () => {
@@ -166,7 +166,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: null, lastName: 'Doe' }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by <b>Doe</b>');
+            expect(store.lockWarningMessage()).toBe('Content is locked by Doe');
         });
 
         it('should use lockedByName when lockedBy is a string (Page content type)', () => {
@@ -179,7 +179,7 @@ describe('LockFeature', () => {
                 lockedByName: 'Adrian Marquez'
             } as unknown as DotCMSContentlet);
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by <b>Adrian Marquez</b>');
+            expect(store.lockWarningMessage()).toBe('Content is locked by Adrian Marquez');
         });
 
         it('should return null when lockedBy is a string matching the current user (Page locked by self)', () => {
@@ -233,7 +233,7 @@ describe('LockFeature', () => {
             } as unknown as DotCMSContentlet);
 
             expect(store.lockWarningMessage()).toBe(
-                "Content is locked by <b>Adrian Marquez</b>. You don't have permissions to unlock this content."
+                "Content is locked by Adrian Marquez. You don't have permissions to unlock this content."
             );
         });
 

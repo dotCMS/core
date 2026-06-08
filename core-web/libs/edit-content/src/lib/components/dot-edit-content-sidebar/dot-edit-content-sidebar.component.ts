@@ -33,6 +33,7 @@ import {
     DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
+import { escapeHtml } from '../../utils/functions.util';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.
@@ -178,7 +179,8 @@ export class DotEditContentSidebarComponent {
                 ),
                 message: this.#dotMessageService.get(
                     'edit.content.release.lock.confirmation.message',
-                    lockedBy ? ` (${lockedBy})` : ''
+                    // PrimeNG renders the confirm message via [innerHTML]; escape the API name.
+                    lockedBy ? ` (${escapeHtml(lockedBy)})` : ''
                 ),
                 acceptLabel: this.#dotMessageService.get('Release-Lock'),
                 rejectLabel: this.#dotMessageService.get('Cancel'),

@@ -16,12 +16,14 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
+    escapeHtml,
     generatePageEditUrl,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
     isFilteredType,
     isValidJson,
+    resolveLocker,
     sortLocalesTranslatedFirst,
     stringToJson,
     transformFormDataFn
@@ -1837,6 +1839,40 @@ describe('Utils Functions', () => {
                     expect(processFieldValue(value, field)).toBe(value);
                 });
             });
+        });
+    });
+
+    describe('escapeHtml', () => {
+        it('should escape HTML special characters', () => {
+            expect(escapeHtml('<script>alert("x")</script>')).toBe(
+                '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+            );
+            expect(escapeHtml("Tom & Jerry's <b>")).toBe('Tom &amp; Jerry&#39;s &lt;b&gt;');
+        });
+
+        it('should leave a plain name untouched', () => {
+            expect(escapeHtml('Anna García')).toBe('Anna García');
+        });
+    });
+
+    describe('resolveLocker', () => {
+        it('should resolve from a lockedBy object', () => {
+            expect(
+                resolveLocker({
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should resolve from a lockedBy string + lockedByName', () => {
+            expect(
+                resolveLocker({ lockedBy: '123', lockedByName: 'Anna García' } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should return null when there is no lock', () => {
+            expect(resolveLocker({} as never)).toBeNull();
+            expect(resolveLocker(null)).toBeNull();
         });
     });
 });
