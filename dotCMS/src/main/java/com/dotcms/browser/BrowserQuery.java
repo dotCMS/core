@@ -309,6 +309,8 @@ public class BrowserQuery {
             this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
             this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
             this.excludedContentTypes = new LinkedHashSet<>(browserQuery.excludedContentTypeIds);
+            this.workflowSchemeIds = new LinkedHashSet<>(browserQuery.workflowSchemeIds);
+            this.workflowStepIds = new LinkedHashSet<>(browserQuery.workflowStepIds);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;

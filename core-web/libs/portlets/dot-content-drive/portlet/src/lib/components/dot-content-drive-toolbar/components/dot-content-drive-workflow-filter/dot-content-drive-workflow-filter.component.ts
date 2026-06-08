@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -326,7 +326,13 @@ export class DotContentDriveWorkflowFilterComponent {
                 take(1),
                 catchError((error) => {
                     this.#httpErrorManager.handle(error);
-                    return of([] as WorkflowStep[]);
+                    // Don't cache [] on error — leave the scheme uncached so
+                    // re-focusing it retries the load instead of showing a
+                    // permanently-empty column for the rest of the session.
+                    if (this.$focusedScheme() === schemeId) {
+                        patchState(this.$state, { loadingSteps: false });
+                    }
+                    return EMPTY;
                 }),
                 takeUntilDestroyed(this.#destroyRef)
             )
@@ -351,7 +357,8 @@ export class DotContentDriveWorkflowFilterComponent {
                         take(1),
                         catchError((error) => {
                             this.#httpErrorManager.handle(error);
-                            return of([] as WorkflowStep[]);
+                            // Don't cache [] on error so a later focus retries.
+                            return EMPTY;
                         }),
                         takeUntilDestroyed(this.#destroyRef)
                     )

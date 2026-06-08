@@ -264,6 +264,26 @@ describe('DotContentDriveWorkflowFilterComponent', () => {
             expect(spectator.component.$state().loadingSteps).toBe(false);
         });
 
+        it('should not cache an errored step load — re-focusing the scheme retries', () => {
+            // Only the first getSteps call fails; the scheme must NOT be cached as
+            // empty, so returning to it triggers a fresh (successful) load.
+            (workflowService.getSteps as jest.Mock).mockReturnValueOnce(
+                throwError(() => new Error('boom'))
+            );
+            spectator.detectChanges();
+            openPanel();
+
+            focusScheme('a'); // errors → not cached
+            focusScheme('b'); // move away
+            focusScheme('a'); // back → retries instead of serving empty from cache
+
+            const aCalls = (workflowService.getSteps as jest.Mock).mock.calls.filter(
+                ([id]) => id === 'a'
+            ).length;
+            expect(aCalls).toBe(2);
+            expect(spectator.component.$state().steps).toEqual(STEPS_A);
+        });
+
         it('should pin a step (and select its scheme) when a step is chosen', () => {
             spectator.detectChanges();
             openPanel();

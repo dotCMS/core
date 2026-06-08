@@ -1809,6 +1809,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (hasSteps) {
             final String placeholders = workflowStepIds.stream()
                     .map(id -> "?").collect(Collectors.joining(","));
+            // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
+            // not a step name — so workflowStepIds are matched against it directly.
             orClauses.add(" exists (select 1 from workflow_task wt "
                     + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
                     + " and wt.status in (" + placeholders + ")) ");
