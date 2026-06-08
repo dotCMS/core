@@ -1,8 +1,11 @@
 package com.dotcms.content.index;
 
+import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
+
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.content.index.domain.IndexStats;
@@ -275,7 +278,40 @@ public interface IndexAPI {
      * @param name Index name or alias with the cluster id prefix
      * @return Index name or alias without the cluster id prefix
      */
-    String removeClusterIdFromName(String name);
+    default String removeClusterIdFromName(final String name) {
+        if (name == null) {
+            return "";
+        }
+        // Strip the exact prefix (not a regex on its shape): correct even when the
+        // cluster id itself contains dots, e.g. testing.cluster-names. This is the
+        // exact inverse of getNameWithClusterIDPrefix.
+        final String prefix = getClusterPrefix();
+        return name.startsWith(prefix) ? name.substring(prefix.length()) : name;
+    }
+
+    /**
+     * The cluster-id prefix every dotCMS index name carries, in the form
+     * {@code cluster_<id>.}. It is a JVM/cluster-wide value, identical for the
+     * Elasticsearch and OpenSearch backends, so it is defined once here and the
+     * add/strip/check helpers ({@link #getNameWithClusterIDPrefix},
+     * {@link #removeClusterIdFromName}, {@link #hasClusterPrefix}) all derive from it.
+     *
+     * <p>Override this single method (e.g. in tests) to supply a deterministic
+     * prefix without a running cluster; never re-implement the affix logic.</p>
+     *
+     * @return the cluster prefix, e.g. {@code cluster_08abc3.}
+     */
+    default String getClusterPrefix() {
+        return CLUSTER_PREFIX + ClusterFactory.getClusterId() + ".";
+    }
+
+    /**
+     * @return {@code true} when {@code name} already carries {@link #getClusterPrefix()};
+     *         {@code null} returns {@code false}.
+     */
+    default boolean hasClusterPrefix(final String name) {
+        return name != null && name.startsWith(getClusterPrefix());
+    }
 
     /**
      * Gets a list of closed indices.
@@ -294,12 +330,15 @@ public interface IndexAPI {
     Status getIndexStatus(String indexName) throws DotDataException;
 
     /**
-     * Adds cluster ID prefix to an index or alias name.
+     * Adds cluster ID prefix to an index or alias name. Idempotent: a name that
+     * already carries the prefix is returned unchanged.
      *
      * @param name index name or alias
      * @return name with cluster ID prefix
      */
-    String getNameWithClusterIDPrefix(String name);
+    default String getNameWithClusterIDPrefix(final String name) {
+        return hasClusterPrefix(name) ? name : getClusterPrefix() + name;
+    }
 
     /**
      * Waits until the index/cluster is ready for operations.

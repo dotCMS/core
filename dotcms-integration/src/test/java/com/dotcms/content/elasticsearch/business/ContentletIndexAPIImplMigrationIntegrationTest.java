@@ -57,14 +57,14 @@ import org.junit.runner.RunWith;
  *   ./mvnw verify -pl :dotcms-integration \
  *       -Dcoreit.test.skip=false \
  *       -Dopensearch.upgrade.test=true \
- *       -Dit.test=ContentletIndexAPIImplMigrationIT
+ *       -Dit.test=ContentletIndexAPIImplMigrationIntegrationTest
  * </pre>
  *
  * @author Fabrizzio Araya
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
-public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
+public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationTestBase {
 
     // ── Unique suffix prevents cross-run index name collisions ────────────────
     private static final String RUN_ID =

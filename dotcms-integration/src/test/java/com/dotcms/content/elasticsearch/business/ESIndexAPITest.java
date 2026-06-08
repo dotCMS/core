@@ -19,7 +19,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -235,7 +234,12 @@ public class ESIndexAPITest {
 
         for (final String clusterName : testClusterNames) {
 
-            final ESIndexAPI indexAPI = new ESIndexAPI(Lazy.of(() -> CLUSTER_PREFIX + clusterName + "."));
+            final ESIndexAPI indexAPI = new ESIndexAPI() {
+                @Override
+                public String getClusterPrefix() {
+                    return CLUSTER_PREFIX + clusterName + ".";
+                }
+            };
 
             final String testIndexName = indexAPI.getNameWithClusterIDPrefix(indexName);
 

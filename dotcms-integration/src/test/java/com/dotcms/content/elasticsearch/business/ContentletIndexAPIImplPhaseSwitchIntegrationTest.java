@@ -65,7 +65,7 @@ import org.junit.runner.RunWith;
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
-public class ContentletIndexAPIImplPhaseSwitchIT extends IntegrationTestBase {
+public class ContentletIndexAPIImplPhaseSwitchIntegrationTest extends IntegrationTestBase {
 
     // ── Unique run suffix prevents cross-run index name collisions ─────────────
     private static final String RUN_ID =

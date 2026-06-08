@@ -45,7 +45,7 @@ import org.junit.Test;
  *
  * <p>These tests document the <em>current, observable</em> behavior of each API method
  * across migration phases without requiring a running Elasticsearch or OpenSearch cluster.
- * All infrastructure is replaced by in-memory fakes injected via the package-private
+ * All infrastructures are replaced by in-memory fakes injected via the package-private
  * testing constructor.</p>
  */
 public class ContentletIndexAPIImplPhaseTest {
@@ -490,15 +490,13 @@ public class ContentletIndexAPIImplPhaseTest {
             return List.of();
         }
 
+        // Supplies the only thing a fake must provide; getNameWithClusterIDPrefix,
+        // removeClusterIdFromName and hasClusterPrefix are inherited from IndexAPI defaults.
+        // A deterministic value is required because the real getClusterPrefix() reads the
+        // cluster id from the DB, which is unavailable in this unit test.
         @Override
-        public String getNameWithClusterIDPrefix(final String name) {
-            return name.startsWith(CLUSTER_PREFIX) ? name : CLUSTER_PREFIX + name;
-        }
-
-        @Override
-        public String removeClusterIdFromName(final String name) {
-            if (name == null) return "";
-            return name.startsWith(CLUSTER_PREFIX) ? name.substring(CLUSTER_PREFIX.length()) : name;
+        public String getClusterPrefix() {
+            return CLUSTER_PREFIX;
         }
 
         // ── unneeded methods ─────────────────────────────────────────────────

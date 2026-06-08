@@ -185,15 +185,9 @@ public class IndexAPIImpl implements IndexAPI {
         }
     }
 
-    @Override
-    public String getNameWithClusterIDPrefix(final String name) {
-        return router.read(impl -> impl.getNameWithClusterIDPrefix(name));
-    }
-
-    @Override
-    public String removeClusterIdFromName(final String name) {
-        return router.read(impl -> impl.removeClusterIdFromName(name));
-    }
+    // getNameWithClusterIDPrefix / removeClusterIdFromName / getClusterPrefix / hasClusterPrefix
+    // are inherited from IndexAPI defaults: the cluster prefix is a JVM-wide value identical for
+    // both backends, so computing it directly is equivalent to routing and needs no override here.
 
     @Override
     public boolean waitUtilIndexReady() {

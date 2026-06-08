@@ -18,7 +18,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -388,9 +387,12 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
 
         for (final String clusterName : clusterNames) {
             final OSIndexAPIImpl api = new OSIndexAPIImpl(
-                    CDIUtils.getBeanThrows(OSClientProvider.class),
-                    Lazy.of(() -> CLUSTER_PREFIX + clusterName + ".")
-            );
+                    CDIUtils.getBeanThrows(OSClientProvider.class)) {
+                @Override
+                public String getClusterPrefix() {
+                    return CLUSTER_PREFIX + clusterName + ".";
+                }
+            };
 
             final String withPrefix = api.getNameWithClusterIDPrefix(indexName);
             assertTrue("'" + clusterName + "': prefixed name must carry cluster prefix",

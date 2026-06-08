@@ -1,7 +1,5 @@
 package com.dotcms.content.index.opensearch;
 
-import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
-
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
@@ -15,7 +13,6 @@ import org.apache.commons.lang.StringUtils;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -89,9 +86,6 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Inject
     private OSClientProvider clientProvider;
 
-    private Lazy<String> clusterPrefix =
-            Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + ".");
-
     /**
      * No-arg constructor required by CDI for proxy creation.
      * The {@code clientProvider} dependency is injected via field injection after construction.
@@ -103,9 +97,8 @@ public class OSIndexAPIImpl implements IndexAPI {
     /**
      * Package-private constructor for testing.
      */
-    OSIndexAPIImpl(OSClientProvider clientProvider, Lazy<String> clusterPrefix) {
+    OSIndexAPIImpl(OSClientProvider clientProvider) {
         this.clientProvider = clientProvider;
-        this.clusterPrefix = clusterPrefix;
     }
 
     // =========================================================================
@@ -306,7 +299,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public Set<String> listIndices() {
         try {
             final GetIndexRequest request = GetIndexRequest.of(b ->
-                b.index(clusterPrefix.get() + "*")
+                b.index(getClusterPrefix() + "*")
             );
             final GetIndexResponse response = clientProvider.getClient().indices().get(request);
             return response.result().keySet().stream()
@@ -360,7 +353,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     public List<String> getClosedIndexes() {
         try {
             final GetIndexRequest request = GetIndexRequest.of(b ->
-                b.index(clusterPrefix.get() + "*")
+                b.index(getClusterPrefix() + "*")
                  .expandWildcards(ExpandWildcard.Closed)
                  .allowNoIndices(true)
             );
@@ -407,7 +400,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         try {
             final org.opensearch.client.opensearch.indices.IndicesStatsResponse response =
                     clientProvider.getClient().indices()
-                            .stats(r -> r.index(clusterPrefix.get() + "*")
+                            .stats(r -> r.index(getClusterPrefix() + "*")
                                         .expandWildcards(ExpandWildcard.Open));
             final Map<String, com.dotcms.content.index.domain.IndexStats> result = new HashMap<>();
             for (final Map.Entry<String, org.opensearch.client.opensearch.indices.stats.IndicesStats> entry
@@ -440,7 +433,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         try {
             final org.opensearch.client.opensearch.cluster.HealthResponse response =
                     clientProvider.getClient().cluster()
-                            .health(r -> r.index(clusterPrefix.get() + "*")
+                            .health(r -> r.index(getClusterPrefix() + "*")
                                          .level(org.opensearch.client.opensearch.cluster.health.ClusterHealthLevel.Indices));
             final Map<String, ClusterIndexHealth> result = new HashMap<>();
             for (final Map.Entry<String, org.opensearch.client.opensearch.cluster.health.IndexHealthStats> entry
@@ -790,26 +783,4 @@ public class OSIndexAPIImpl implements IndexAPI {
         return settings;
     }
 
-    @Override
-    public String getNameWithClusterIDPrefix(final String name) {
-        return hasClusterPrefix(name) ? name : clusterPrefix.get() + name;
-    }
-
-    /**
-     * Inverse of {@link #getNameWithClusterIDPrefix(String)}: strips the instance's exact
-     * cluster prefix when present. Safe for cluster IDs that contain dots.
-     */
-    @Override
-    public String removeClusterIdFromName(final String name) {
-        if (name == null) return "";
-        final String prefix = clusterPrefix.get();
-        return name.startsWith(prefix) ? name.substring(prefix.length()) : name;
-    }
-
-    /**
-     * Checks if the given index name has the cluster prefix.
-     */
-    boolean hasClusterPrefix(final String indexName) {
-        return indexName != null && indexName.startsWith(clusterPrefix.get());
-    }
 }
