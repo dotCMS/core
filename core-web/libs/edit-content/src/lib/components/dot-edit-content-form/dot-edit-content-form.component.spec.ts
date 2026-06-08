@@ -810,7 +810,7 @@ describe('DotFormComponent', () => {
                 expect(contentStatusSeverity('Archived')).toBe('danger');
                 expect(contentStatusSeverity('Revision')).toBe('info');
                 expect(contentStatusSeverity('Draft')).toBe('warn');
-                expect(contentStatusSeverity('New')).toBe('warn');
+                expect(contentStatusSeverity('New')).toBe('secondary');
             });
         });
     });
