@@ -40,12 +40,13 @@
     // Fixed banner height + vertical centering (instead of vertical padding) so every top-bar
     // message is the same height regardless of its content. The info banner carries a close
     // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
-    // Font size is left at the default (the message's own scale) — the fixed height handles
-    // alignment, so the text doesn't need to be shrunk.
+    // Font is set in px (not rem) because the app root is 14px, so a rem value would not land
+    // on the intended 13.5px.
     ::ng-deep .p-message-content {
         display: flex;
         align-items: center;
         min-height: 54px;
         padding: 0 1.75rem !important;
+        font-size: 13.5px;
     }
 }
