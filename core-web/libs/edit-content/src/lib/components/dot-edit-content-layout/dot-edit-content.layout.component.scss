@@ -37,11 +37,14 @@
         padding: 0 !important;
     }
 
+    // Fixed banner height + vertical centering (instead of vertical padding) so every top-bar
+    // message is the same height regardless of its content. The info banner carries a close
+    // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
     ::ng-deep .p-message-content {
-        padding: 0.75rem 1.75rem !important;
-        // Match the compact banner type scale across all top-bar messages so the info and
-        // lock banners end up the same height (otherwise the info text stays at 1rem / 52px
-        // while the lock banner is 13.5px / 39px).
+        display: flex;
+        align-items: center;
+        min-height: 2.75rem;
+        padding: 0 1.75rem !important;
         font-size: 0.84375rem; // 13.5px
         line-height: 1.35;
     }
