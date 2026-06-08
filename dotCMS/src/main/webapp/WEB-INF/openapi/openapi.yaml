@@ -8148,6 +8148,59 @@ paths:
       summary: Updates a content type
       tags:
       - Content Type
+  /v1/contenttype/id/{idOrVar}/metadata:
+    patch:
+      description: |-
+        Merges the provided key/value pairs into the Content Type's `metadata` map without touching fields, workflows, or any other structural property. Keys present in the body are added or overwritten; keys absent from the body are left unchanged. To remove a key, set its value explicitly to `null`.
+
+        Known metadata keys:
+        - `CONTENT_EDITOR2_ENABLED` *(boolean)* — enables the new content editor
+        - `DOT_STYLE_EDITOR_SCHEMA` *(JSON string)* — Style Editor schema definition
+      operationId: updateContentTypeMetadata
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the Content Type to update.
+
+          Example value: `htmlpageasset` (Default page content type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            example:
+              DOT_STYLE_EDITOR_SCHEMA: "{\"contentType\":\"htmlpageasset\",\"sections\"\
+                :[{\"title\":\"New Section\",\"fields\":[{\"type\":\"dropdown\",\"\
+                label\":\"Color\",\"id\":\"color\",\"config\":{\"options\":[{\"label\"\
+                :\"Red\",\"value\":\"red\"}]}}]}]}"
+            schema:
+              type: object
+              description: Metadata key/value pairs to merge
+        description: A flat JSON object whose keys are merged into the Content Type's
+          existing metadata. Set a key's value to `null` to remove it.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeDetailView"
+          description: Metadata updated successfully
+        "400":
+          description: Bad request — invalid JSON body
+        "401":
+          description: User not authenticated
+        "403":
+          description: User does not have permission to edit this Content Type
+        "404":
+          description: Content Type not found
+        "500":
+          description: Internal server error
+      summary: Updates the metadata of a Content Type
+      tags:
+      - Content Type
   /v1/contenttype/page:
     get:
       description: Returns a list of content type objects based on the filtering criteria.

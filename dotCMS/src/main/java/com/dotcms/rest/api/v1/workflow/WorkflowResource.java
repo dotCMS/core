@@ -618,7 +618,7 @@ public class WorkflowResource {
                     .map(String::trim)
                     .filter(UtilMethods::isSet)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (ids.isEmpty()) {
                 throw new IllegalArgumentException("contentTypeIds must not be empty");
@@ -658,7 +658,7 @@ public class WorkflowResource {
 
             if (!errors.isEmpty()) {
                 Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
-                        errors.stream().map(ErrorEntity::getFieldName).collect(Collectors.toList()));
+                        errors.stream().map(ErrorEntity::getFieldName).toList());
             }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
