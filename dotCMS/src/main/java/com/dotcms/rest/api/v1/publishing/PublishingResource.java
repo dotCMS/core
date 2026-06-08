@@ -450,6 +450,7 @@ public class PublishingResource {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
+                .requiredPortlet("publishing-queue")
                 .init();
 
         final User user = initData.getUser();
@@ -914,6 +915,7 @@ public class PublishingResource {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
+                .requiredPortlet("publishing-queue")
                 .init();
 
         final User user = initData.getUser();
