@@ -1,0 +1,26 @@
+<div class="grid min-h-0 flex-1 grid-cols-2 gap-4 p-3" data-testid="pq-page-grid">
+    <dot-publishing-queue-list
+        mode="ready"
+        [rows]="store.readyRows()"
+        [status]="store.readyStatus()"
+        [total]="store.readyTotal()"
+        [page]="store.readyPage()"
+        [rowsPerPage]="store.rowsPerPage()"
+        headerKey="publishing-queue.ready.title"
+        emptyKey="publishing-queue.empty.ready"
+        (rowClick)="store.openAssetList($event.bundleId)"
+        (pageChange)="store.setReadyPage($event)"
+        data-testid="pq-ready-list" />
+    <dot-publishing-queue-list
+        mode="progress"
+        [rows]="store.progressRows()"
+        [status]="store.progressStatus()"
+        [total]="store.progressTotal()"
+        [page]="store.progressPage()"
+        [rowsPerPage]="store.rowsPerPage()"
+        headerKey="publishing-queue.in-progress.title"
+        emptyKey="publishing-queue.empty.in-progress"
+        (rowClick)="store.openAssetList($event.bundleId)"
+        (pageChange)="store.setProgressPage($event)"
+        data-testid="pq-progress-list" />
+</div>

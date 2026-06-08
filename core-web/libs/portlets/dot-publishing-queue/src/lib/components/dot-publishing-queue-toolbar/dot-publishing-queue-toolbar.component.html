@@ -1,0 +1,40 @@
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.search()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'publishing-queue.search.placeholder' | dm"
+                [attr.aria-label]="'publishing-queue.search.placeholder' | dm"
+                data-testid="pq-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <div class="ml-auto flex items-center gap-2">
+            <p-button
+                [label]="'publishing-queue.refresh' | dm"
+                icon="pi pi-refresh"
+                [outlined]="true"
+                (onClick)="store.refresh()"
+                data-testid="pq-refresh-btn" />
+            <p-button
+                [label]="'publishing-queue.upload-bundle' | dm"
+                icon="pi pi-upload"
+                [disabled]="true"
+                [pTooltip]="'publishing-queue.upload-bundle.coming-soon' | dm"
+                tooltipPosition="bottom"
+                data-testid="pq-upload-btn" />
+            <p-select
+                [disabled]="true"
+                [placeholder]="'publishing-queue.site-selector.placeholder' | dm"
+                [pTooltip]="'publishing-queue.site-selector.coming-soon' | dm"
+                tooltipPosition="bottom"
+                [attr.aria-label]="'publishing-queue.site-selector.placeholder' | dm"
+                data-testid="pq-site-selector"
+                class="w-48" />
+        </div>
+    </div>
+</p-toolbar>

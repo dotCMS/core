@@ -1,0 +1,72 @@
+<section
+    class="flex h-full min-h-0 flex-col rounded-md border border-surface-200 bg-white"
+    [attr.data-testid]="'pq-list-' + mode()">
+    <header
+        class="flex items-center justify-between border-b border-surface-200 px-4 py-3"
+        data-testid="pq-list-header">
+        <h3 class="m-0 text-sm font-semibold text-color uppercase">
+            {{ headerKey() | dm }}
+            <span class="text-color-secondary ml-1">({{ total() }})</span>
+        </h3>
+    </header>
+
+    <div class="flex min-h-0 flex-1 flex-col overflow-auto" data-testid="pq-list-body">
+        @if (status() === 'loading' && rows().length === 0) {
+            @for (_ of skeletonRows; track $index) {
+                <div class="border-b border-surface-100 px-4 py-3" data-testid="pq-list-skeleton">
+                    <p-skeleton height="1.25rem" width="60%" styleClass="mb-2" />
+                    <p-skeleton height="0.875rem" width="40%" />
+                </div>
+            }
+        } @else if (rows().length === 0) {
+            <div
+                class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center"
+                data-testid="pq-list-empty">
+                <i class="pi pi-inbox text-color-secondary text-5xl!" aria-hidden="true"></i>
+                <p class="text-color-secondary m-0 text-sm">{{ emptyKey() | dm }}</p>
+            </div>
+        } @else {
+            @for (job of rows(); track job.bundleId) {
+                <div
+                    role="button"
+                    tabindex="0"
+                    class="flex cursor-pointer items-center justify-between gap-3 border-b border-surface-100 px-4 py-3 hover:bg-surface-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                    (click)="rowClick.emit(job)"
+                    (keydown)="onRowKeyDown($event, job)"
+                    data-testid="pq-list-row">
+                    <div class="flex min-w-0 flex-1 flex-col">
+                        <span
+                            class="truncate text-sm font-medium text-color"
+                            data-testid="pq-row-name">
+                            {{ job.bundleName || job.bundleId }}
+                        </span>
+                        <span class="text-color-secondary text-xs" data-testid="pq-row-meta">
+                            {{ job.assetCount }} assets · {{ job.environmentCount }} env
+                        </span>
+                    </div>
+                    <p-tag
+                        [value]="statusLabelKey(job.status) | dm"
+                        [severity]="statusSeverity(job.status)"
+                        data-testid="pq-row-status" />
+                    @if (mode() === 'ready') {
+                        <p-button
+                            [label]="'publishing-queue.send' | dm"
+                            size="small"
+                            [disabled]="true"
+                            (click)="$event.stopPropagation()"
+                            data-testid="pq-row-send-btn" />
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @if (total() > rowsPerPage()) {
+        <p-paginator
+            [rows]="rowsPerPage()"
+            [totalRecords]="total()"
+            [first]="first()"
+            (onPageChange)="onPaginate($event)"
+            data-testid="pq-list-paginator" />
+    }
+</section>

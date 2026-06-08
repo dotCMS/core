@@ -45,6 +45,7 @@ export * from './lib/dot-page-workflows-actions/dot-page-workflows-actions.servi
 export * from './lib/dot-personalize/dot-personalize.service';
 export * from './lib/dot-personas/dot-personas.service';
 export * from './lib/dot-properties/dot-properties.service';
+export * from './lib/dot-publishing-queue/dot-publishing-queue.service';
 export * from './lib/dot-push-publish-filters/dot-push-publish-filters.service';
 export * from './lib/dot-resource-links/dot-resource-links.service';
 export * from './lib/dot-roles/dot-roles.service';

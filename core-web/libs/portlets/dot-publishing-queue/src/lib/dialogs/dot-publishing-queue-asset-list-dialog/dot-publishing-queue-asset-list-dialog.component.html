@@ -1,0 +1,30 @@
+<div class="flex flex-col gap-3" data-testid="pq-asset-list-dialog">
+    @if (store.assetListStatus() === 'loading') {
+        <div class="flex flex-col gap-2" data-testid="pq-asset-list-loading">
+            <p-skeleton height="2rem" width="100%" />
+            <p-skeleton height="2rem" width="100%" />
+            <p-skeleton height="2rem" width="100%" />
+        </div>
+    } @else if (store.selectedAssets().length === 0) {
+        <div class="text-color-secondary p-6 text-center" data-testid="pq-asset-list-empty">
+            {{ 'publishing-queue.asset-list.empty' | dm }}
+        </div>
+    } @else {
+        <p-table [value]="store.selectedAssets()" data-testid="pq-asset-list-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'publishing-queue.column.name' | dm }}</th>
+                    <th>{{ 'publishing-queue.column.type' | dm }}</th>
+                    <th>{{ 'publishing-queue.column.state' | dm }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-asset>
+                <tr data-testid="pq-asset-list-row">
+                    <td data-testid="pq-asset-name">{{ asset.title }}</td>
+                    <td data-testid="pq-asset-type">{{ asset.type }}</td>
+                    <td data-testid="pq-asset-state">{{ asset.state || '—' }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</div>

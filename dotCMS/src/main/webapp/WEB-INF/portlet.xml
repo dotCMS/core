@@ -210,8 +210,8 @@
     <!-- JSP Portlets -->
 
     <portlet>
-        <portlet-name>publishing-queue</portlet-name>
-        <display-name>Content Publishing Tools</display-name>
+        <portlet-name>publishing-queue-legacy</portlet-name>
+        <display-name>Content Publishing Tools (Legacy)</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
@@ -515,6 +515,12 @@
         <display-name>Categories</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
         <portlet-url>/categories</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>publishing-queue</portlet-name>
+        <display-name>Content Publishing Tools</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
 </portlet-app>
