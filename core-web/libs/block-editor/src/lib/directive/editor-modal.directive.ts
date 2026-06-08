@@ -85,8 +85,16 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         if (isNodeSelection(state.selection)) {
             const node = this.getNodeElement(view, from);
             if (node) {
-                // If the node has a bubble menu, return its bounding client rect
-                const bubbleMenu = document.querySelector('[tiptapbubblemenu]');
+                // Anchor to THIS editor's bubble menu. The directive lives inside the owning
+                // `<dot-bubble-menu>` (alongside the `[tiptapbubblemenu]` element), so scope the
+                // lookup to that host instead of the whole document.
+                //
+                // A global `document.querySelector('[tiptapbubblemenu]')` returns the FIRST bubble
+                // menu on the page, so when a content type has multiple Block Editor fields the
+                // image/link popover anchored to the wrong editor instance (#35908).
+                const bubbleMenu = this.elRef.nativeElement
+                    .closest('dot-bubble-menu')
+                    ?.querySelector('[tiptapbubblemenu]');
 
                 if (bubbleMenu) {
                     return bubbleMenu.getBoundingClientRect();
