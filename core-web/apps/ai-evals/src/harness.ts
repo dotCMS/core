@@ -170,6 +170,7 @@ async function executeRun(index: number, options: RunTaskOptions): Promise<RunRe
 
     try {
         const tools = makeTools(dotcmsUrl, authToken);
+        // nosemgrep: detect-vercelai -- internal LLM eval harness (ai-evals), not shipped runtime code; Vercel AI SDK usage is intentional
         const { text, steps, finishReason, usage } = await generateText({
             model,
             prompt: task.prompt,
