@@ -1,86 +1,66 @@
 package com.dotcms.content.index.domain;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Immutable domain representation of search results from any search engine.
  *
- * <p>This interface provides a unified abstraction layer for collections of search results,
+ * <p>This record provides a unified abstraction layer for collections of search results,
  * allowing the application to work with search hits without depending on specific
  * search engine libraries (Elasticsearch, OpenSearch, etc.).</p>
  *
  * <p>Accessors are bean-style ({@code getHits()}, {@code getTotalHits()}) so the type works
- * directly from Velocity templates (e.g. {@code $topHits.getHits()}) without extra alias methods.</p>
+ * directly from Velocity templates (e.g. {@code $topHits.getHits()}) without extra alias methods;
+ * the record components are named accordingly and the {@link JsonProperty} annotations keep the
+ * JSON contract clean ({@code hits}, {@code totalHits}, {@code hasError}).</p>
  *
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
- * // Create from Elasticsearch results
  * SearchHits results = SearchHits.from(elasticsearchHits);
- *
- * // Iterate through results
  * for (SearchHit hit : results) {
  *     String docId = hit.getId();
- *     Map&lt;String, Object&gt; content = hit.getSourceAsMap();
  * }
- *
- * // Access metadata
  * long totalCount = results.getTotalHits().value();
- *
- * // Handle errors
- * if (results.hasError()) {
- *     // Handle search failure gracefully
- * }
+ * if (results.hasError()) { ... }
  * </pre>
  *
+ * @param hasError     {@code true} if this represents an error state, {@code false} for a
+ *                     successful search
+ * @param getHits      the list of search hits
+ * @param getTotalHits the total hits information
  * @author Fabrizio Araya
  * @see SearchHit
  * @see TotalHits
  * @see com.dotcms.content.index.ContentFactoryIndexOperations
  */
-@Value.Immutable
-@JsonSerialize(as = ImmutableSearchHits.class)
-@JsonDeserialize(as = ImmutableSearchHits.class)
-public interface SearchHits extends Iterable<SearchHit>{
+public record SearchHits(
+        @JsonProperty("hasError") boolean hasError,
+        @JsonProperty("hits") List<SearchHit> getHits,
+        @JsonProperty("totalHits") TotalHits getTotalHits) implements Iterable<SearchHit> {
 
     /**
-     * Indicates whether this SearchHits instance represents an error state.
-     * When true, the search operation failed and the hits should be considered invalid.
-     *
-     * @return true if this represents an error state, false for successful searches
+     * Canonical constructor. {@code getHits} defaults to an empty list and {@code getTotalHits} to
+     * {@link TotalHits#empty()} when {@code null}, so the accessors never return {@code null}
+     * (mirrors the previous Immutables defaults).
      */
-    @Default
-    default boolean hasError(){ return false;}
+    public SearchHits {
+        getHits = getHits == null ? List.of() : getHits;
+        getTotalHits = getTotalHits == null ? TotalHits.empty() : getTotalHits;
+    }
 
     /**
-     * Returns the list of search hits.
-     *
-     * @return the list of search hits
-     */
-    List<SearchHit> getHits();
-
-    /**
-     * Returns the total hits information.
-     *
-     * @return the total hits
-     */
-    TotalHits getTotalHits();
-
-    /**
-     * Returns an iterator over the search hits.
-     * Implements the Iterable interface.
+     * Returns an iterator over the search hits (implements {@link Iterable}).
      *
      * @return an iterator for the search hits
      */
     @Override
-    default @NotNull Iterator<SearchHit> iterator() {
+    public @NotNull Iterator<SearchHit> iterator() {
         return getHits().iterator();
     }
 
@@ -89,8 +69,8 @@ public interface SearchHits extends Iterable<SearchHit>{
      *
      * @return a new builder instance
      */
-    static ImmutableSearchHits.Builder builder() {
-        return ImmutableSearchHits.builder();
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -98,7 +78,7 @@ public interface SearchHits extends Iterable<SearchHit>{
      *
      * @return an empty SearchHits
      */
-    static SearchHits empty() {
+    public static SearchHits empty() {
         return builder()
                 .totalHits(TotalHits.empty())
                 .build();
@@ -106,11 +86,10 @@ public interface SearchHits extends Iterable<SearchHit>{
 
     /**
      * Creates an error SearchHits instance to represent search errors.
-     * This replaces the old ERROR_HIT constant that used Elasticsearch classes directly.
      *
      * @return a SearchHits instance representing an error state
      */
-    static SearchHits errorHit() {
+    public static SearchHits errorHit() {
         return builder()
                 .hasError(true)
                 .totalHits(TotalHits.empty())
@@ -123,7 +102,7 @@ public interface SearchHits extends Iterable<SearchHit>{
      * @param esSearchHits the Elasticsearch SearchHits to wrap
      * @return a new SearchHits instance
      */
-    static SearchHits from(org.elasticsearch.search.SearchHits esSearchHits) {
+    public static SearchHits from(org.elasticsearch.search.SearchHits esSearchHits) {
         if (esSearchHits == null) {
             return empty();
         }
@@ -144,7 +123,7 @@ public interface SearchHits extends Iterable<SearchHit>{
      * @param osHitsMetadata the OpenSearch HitsMetadata to wrap
      * @return a new SearchHits instance
      */
-    static SearchHits from(org.opensearch.client.opensearch.core.search.HitsMetadata<?> osHitsMetadata) {
+    public static SearchHits from(org.opensearch.client.opensearch.core.search.HitsMetadata<?> osHitsMetadata) {
         if (osHitsMetadata == null) {
             return empty();
         }
@@ -161,21 +140,62 @@ public interface SearchHits extends Iterable<SearchHit>{
 
     /**
      * Creates a list of SearchHits from a list of Elasticsearch SearchHits.
-     * Utility method for batch conversion of multiple search result sets.
      *
      * @param hits list of Elasticsearch SearchHits to convert
      * @return list of converted SearchHits instances
      */
-    static List<SearchHits> from(List<org.elasticsearch.search.SearchHits> hits) {
+    public static List<SearchHits> from(List<org.elasticsearch.search.SearchHits> hits) {
         return hits.stream().map(SearchHits::from).collect(Collectors.toList());
     }
 
     /**
      * Creates a list of SearchHits from a list of OpenSearch HitsMetadata.
+     *
      * @param hitsMetadata list of OpenSearch HitsMetadata
      * @return list of SearchHits
      */
-    static List<SearchHits> fromOpenSearch(List<org.opensearch.client.opensearch.core.search.HitsMetadata<?>> hitsMetadata) {
+    public static List<SearchHits> fromOpenSearch(List<org.opensearch.client.opensearch.core.search.HitsMetadata<?>> hitsMetadata) {
         return hitsMetadata.stream().map(SearchHits::from).collect(Collectors.toList());
+    }
+
+    /**
+     * Fluent builder for {@link SearchHits}. Unset attributes default to a non-error state, an empty
+     * hit list and {@link TotalHits#empty()}, preserving the lenient behaviour of the former
+     * Immutables builder.
+     */
+    public static final class Builder {
+
+        private boolean hasError;
+        private List<SearchHit> hits = new ArrayList<>();
+        private TotalHits totalHits = TotalHits.empty();
+
+        public Builder hasError(final boolean hasError) {
+            this.hasError = hasError;
+            return this;
+        }
+
+        public Builder hits(final List<SearchHit> hits) {
+            this.hits = new ArrayList<>(hits);
+            return this;
+        }
+
+        public Builder addHits(final SearchHit hit) {
+            this.hits.add(hit);
+            return this;
+        }
+
+        public Builder addAllHits(final Iterable<? extends SearchHit> hits) {
+            hits.forEach(this.hits::add);
+            return this;
+        }
+
+        public Builder totalHits(final TotalHits totalHits) {
+            this.totalHits = totalHits;
+            return this;
+        }
+
+        public SearchHits build() {
+            return new SearchHits(hasError, hits, totalHits);
+        }
     }
 }
