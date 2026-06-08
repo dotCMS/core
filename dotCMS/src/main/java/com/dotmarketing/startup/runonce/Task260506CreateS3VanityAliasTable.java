@@ -10,7 +10,7 @@ import java.sql.SQLException;
 /**
  * Creates the operational table that stores vanity aliases published on S3.
  */
-public class Task260408CreateS3VanityAliasTable extends AbstractJDBCStartupTask {
+public class Task260506CreateS3VanityAliasTable extends AbstractJDBCStartupTask {
 
     private static final String TABLE_NAME = "static_s3_vanity_mapping";
 
