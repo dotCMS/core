@@ -144,6 +144,11 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void tearDown() {
         cleanupTestOsIndices();
         cleanupVersionedRows();
+        // Drop the cached pointer to the now-deleted test indices. setUp() registers these indices
+        // as the default versioned indices and clears the cache; tearDown must clear it again, or the
+        // stale cache (pointing at deleted `*_search_*` indices) leaks into the next suite member and
+        // breaks its index resolution. Mirrors the clearCache() in setUp.
+        versionedIndicesAPI.clearCache();
     }
 
     // =======================================================================
