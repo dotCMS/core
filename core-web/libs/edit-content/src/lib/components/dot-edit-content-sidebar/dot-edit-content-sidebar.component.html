@@ -62,7 +62,7 @@
                                 [style.border-color]="
                                     $store.isContentLocked() ? null : 'var(--p-surface-200)'
                                 "
-                                [severity]="$store.isContentLocked() ? null : 'secondary'"
+                                [severity]="$store.isContentLocked() ? undefined : 'secondary'"
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="
@@ -116,7 +116,7 @@
                             [(showDialog)]="$showDialog"
                             (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
                             [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                            (onResetWorkflow)="fireWorkflowAction($event)"
+                            (onResetWorkflow)="fireResetWorkflowAction($event)"
                             [workflow]="$workflow()"
                             [isLoading]="$store.isLoadingWorkflow()"
                             data-testId="workflow" />

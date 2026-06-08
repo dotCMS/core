@@ -139,17 +139,16 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
-     * Fires a workflow action.
+     * Fires the reset-workflow action directly against the store.
      *
-     * NOTE: this fires the action straight against the store, intentionally bypassing the
-     * form's `fireWorkflowAction` (validation, scroll-to-error, push-publish environment
-     * checks, wizard flow). It is currently only used for the sidebar reset-workflow action,
-     * which doesn't need form validation.
-     * TODO(#35892): align with the form's flow if non-reset actions are ever fired from here.
+     * This deliberately bypasses the form's workflow flow (validation, scroll-to-error,
+     * push-publish environment checks, wizard) because the reset action doesn't need them.
+     * Every OTHER workflow action must go through the `workflowActionFired` output so the form
+     * validates it — do NOT route non-reset actions here, or validation is silently skipped.
      *
-     * @param actionId - The ID of the action to fire.
+     * @param actionId - The ID of the reset workflow action to fire.
      */
-    fireWorkflowAction(actionId: string): void {
+    fireResetWorkflowAction(actionId: string): void {
         this.$store.fireWorkflowAction({
             actionId,
             inode: this.$contentlet().inode,

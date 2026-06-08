@@ -636,10 +636,10 @@ describe('DotEditContentSidebarComponent', () => {
                 });
             }));
 
-            it('should call store.fireWorkflowAction when fireWorkflowAction (reset path) is invoked', fakeAsync(() => {
+            it('should call store.fireWorkflowAction when fireResetWorkflowAction (reset path) is invoked', fakeAsync(() => {
                 const storeSpy = jest.spyOn(store, 'fireWorkflowAction').mockImplementation();
 
-                spectator.component.fireWorkflowAction('reset-action-id');
+                spectator.component.fireResetWorkflowAction('reset-action-id');
 
                 expect(storeSpy).toHaveBeenCalledWith(
                     expect.objectContaining({ actionId: 'reset-action-id' })

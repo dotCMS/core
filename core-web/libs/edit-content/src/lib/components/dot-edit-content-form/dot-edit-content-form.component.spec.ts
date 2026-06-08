@@ -41,9 +41,11 @@ import {
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
-    DotContentletDepths
+    DotContentletDepths,
+    DotContentState
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { DotContentletStatusPipe } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
@@ -811,6 +813,26 @@ describe('DotFormComponent', () => {
                 expect(contentStatusSeverity('Revision')).toBe('info');
                 expect(contentStatusSeverity('Draft')).toBe('warn');
                 expect(contentStatusSeverity('New')).toBe('secondary');
+            });
+
+            // Guards the coupling between DotContentletStatusPipe's output strings and the
+            // severity switch: if the pipe ever changes a label, this fails instead of silently
+            // falling back to 'warn'.
+            it('should map every DotContentletStatusPipe output to its intended severity', () => {
+                const pipe = new DotContentletStatusPipe();
+                const cases: { state: DotContentState; severity: string }[] = [
+                    {
+                        state: { live: true, working: true, hasLiveVersion: true },
+                        severity: 'success'
+                    },
+                    { state: { archived: true }, severity: 'danger' },
+                    { state: { live: false, hasLiveVersion: true }, severity: 'info' },
+                    { state: { working: true }, severity: 'warn' }
+                ] as { state: DotContentState; severity: string }[];
+
+                cases.forEach(({ state, severity }) => {
+                    expect(contentStatusSeverity(pipe.transform(state))).toBe(severity);
+                });
             });
         });
     });

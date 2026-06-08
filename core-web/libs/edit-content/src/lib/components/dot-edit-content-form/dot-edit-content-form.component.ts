@@ -788,8 +788,14 @@ export class DotEditContentFormComponent implements OnInit {
      */
     showPreview(): void {
         const contentlet = this.$store.contentlet();
+        // Guard against a contentlet cleared by a concurrent state change between the button
+        // rendering and the click — the URL generators dereference the contentlet directly.
+        if (!contentlet) {
+            return;
+        }
+
         const realUrl =
-            contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
                 ? generatePageEditUrl(contentlet)
                 : generatePreviewUrl(contentlet);
 
