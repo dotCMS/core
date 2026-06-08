@@ -99,6 +99,7 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/34786 : Disable exposed /api/application.wadl endpoint #34786
 94. https://github.com/dotCMS/core/issues/35235 : fix(security): Upgrade vulnerable dependencies flagged by OWASP Dependency Check #35235
 95. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
+96. https://github.com/dotCMS/core/issues/35793 : deps: bump Apache Tomcat 9.0.113 → 9.0.118 (resolves 6 published CVEs) #35793
 
 
 
