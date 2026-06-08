@@ -90,7 +90,7 @@ Feature: Create a Content Type
             "searchable":false,
             "sortOrder":2,
             "unique":false,
-            "variable":"host"
+            "variable":"hostFolder"
           },
           {
             "clazz":"com.dotcms.contenttype.model.field.ImmutableTextField",
