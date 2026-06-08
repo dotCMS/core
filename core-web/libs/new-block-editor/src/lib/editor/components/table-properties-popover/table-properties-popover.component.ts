@@ -109,14 +109,14 @@ const EMPTY_VALUES = {
                             type="button"
                             data-testid="tbl-cancel"
                             (mousedown)="$event.preventDefault(); manager.close()"
-                            class="rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
+                            class="cursor-pointer rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
                             {{ 'dot.common.cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             data-testid="tbl-apply"
                             (mousedown)="$event.preventDefault(); onApply()"
-                            class="rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
+                            class="cursor-pointer rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none">
                             {{ 'dot.common.apply' | dm }}
                         </button>
                     </div>
