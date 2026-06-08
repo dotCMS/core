@@ -122,10 +122,9 @@ export class DotEditContentCommandBarActionsComponent {
             data: {
                 url: this.#buildPermissionsUrl(id, langId)
             } satisfies DotPermissionsIframeDialogData,
-            transitionOptions: null,
             modal: true,
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
             closable: true,
             draggable: false,
             resizable: false,
@@ -156,7 +155,7 @@ export class DotEditContentCommandBarActionsComponent {
             data: { identifier: id },
             modal: true,
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
             closable: true,
             draggable: false,
             keepInViewport: false,
@@ -196,14 +195,11 @@ export class DotEditContentCommandBarActionsComponent {
             }
         );
 
-        this.#referencesDialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe({
-            next: () => {
+        this.#referencesDialogRef.onClose
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
                 this.#referencesDialogRef = undefined;
-            },
-            error: () => {
-                this.#referencesDialogRef = undefined;
-            }
-        });
+            });
     }
 
     #buildPermissionsUrl(identifier: string, languageId: number): string {

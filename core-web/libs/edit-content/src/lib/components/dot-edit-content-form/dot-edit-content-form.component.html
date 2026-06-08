@@ -19,7 +19,7 @@
             <ng-template
                 dotTabViewInsert
                 [dotTabViewAppend]="appendContent"
-                [dotTabViewAppendContext]="$appendContext" />
+                [dotTabViewAppendContext]="$appendContext()" />
 
             <p-tablist
                 class="min-h-[53px] border-b border-surface-200 px-8 [&_.p-tab]:h-full [&_.p-tablist-tab-list]:h-full">
@@ -124,7 +124,7 @@
                     [contentlet]="$store.contentlet()"
                     [identifier]="$store.currentIdentifier() ?? ''"
                     [languageId]="$store.contentlet()?.languageId ?? 0"
-                    [isPage]="$isPage()"
+                    [isPage]="$store.isPage()"
                     [hasReferences]="$hasReferences()"
                     [title]="$store.contentlet()?.title ?? ''"
                     data-testId="command-bar-actions" />

@@ -17,7 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCMSBaseTypesContentTypes, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
@@ -86,13 +86,6 @@ export class DotEditContentSidebarComponent {
     );
 
     /**
-     * Computed property that returns true when the current content type is an HTML Page.
-     */
-    readonly $isPage = computed(
-        () => this.$store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
-    );
-
-    /**
      * Computed property that returns the workflow state of the content.
      */
     readonly $workflow = computed<DotWorkflowState>(() => ({
@@ -144,6 +137,13 @@ export class DotEditContentSidebarComponent {
 
     /**
      * Fires a workflow action.
+     *
+     * NOTE: this fires the action straight against the store, intentionally bypassing the
+     * form's `fireWorkflowAction` (validation, scroll-to-error, push-publish environment
+     * checks, wizard flow). It is currently only used for the sidebar reset-workflow action,
+     * which doesn't need form validation.
+     * TODO(#35892): align with the form's flow if non-reset actions are ever fired from here.
+     *
      * @param actionId - The ID of the action to fire.
      */
     fireWorkflowAction(actionId: string): void {

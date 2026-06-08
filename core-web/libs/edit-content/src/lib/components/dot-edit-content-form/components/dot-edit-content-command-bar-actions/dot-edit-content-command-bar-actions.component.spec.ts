@@ -145,7 +145,7 @@ describe('DotEditContentCommandBarActionsComponent', () => {
                     contentStyle: { overflow: 'hidden' },
                     modal: true,
                     appendTo: 'body',
-                    closeOnEscape: false,
+                    closeOnEscape: true,
                     closable: true
                 })
             );

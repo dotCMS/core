@@ -193,15 +193,6 @@ export class DotEditContentFormComponent implements OnInit {
     });
 
     /**
-     * Computed property that returns true when the current content type is an HTML Page.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $isPage = computed(
-        () => this.$store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
-    );
-
-    /**
      * Computed property that returns true when the contentlet has at least one page reference.
      *
      * @memberof DotEditContentFormComponent
@@ -275,15 +266,19 @@ export class DotEditContentFormComponent implements OnInit {
 
     /**
      * Context for the append template passed to TabViewInsertDirective.
-     * Required for embedded view to access component variables.
+     * Required for embedded view to access component variables. A computed (not a getter) so
+     * the object reference is memoized and only changes when its signal dependencies change —
+     * otherwise every change-detection cycle would produce a new object and re-render the
+     * embedded view.
      */
-    get $appendContext() {
+    $appendContext = computed(() => {
         const currentLocale = this.$store.currentLocale();
+
         return {
             $store: this.$store,
             showSidebar: this.$store.isSidebarOpen(),
             $showPreviewLink: this.$showPreviewLink,
-            $isPage: this.$isPage,
+            $isPage: this.$store.isPage,
             $hasReferences: this.$hasReferences,
             contentlet: this.$store.contentlet(),
             contentType: this.$store.contentType(),
@@ -293,7 +288,7 @@ export class DotEditContentFormComponent implements OnInit {
             $statusSeverity: this.$statusSeverity,
             showPreview: () => this.showPreview()
         };
-    }
+    });
 
     changeDetectorRef = inject(ChangeDetectorRef);
 
