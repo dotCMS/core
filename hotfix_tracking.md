@@ -39,3 +39,4 @@ Release-25.07.10 LTS
 33. https://github.com/dotCMS/core/issues/35235 : fix(security): Upgrade vulnerable dependencies flagged by OWASP Dependency Check #35235
 34. https://github.com/dotCMS/core/issues/35568 : fix(lang-var-migration): unique_fields duplicate key cascades and aborts entire migration transaction #35568
 35. https://github.com/dotCMS/core/issues/35793 : deps: bump Apache Tomcat 9.0.113 → 9.0.118 (resolves 6 published CVEs) #35793
+36. https://github.com/dotCMS/core/issues/35536 : Basic Auth plugin issue: SpeedyAssetServlet rejects anonymously-readable assets when an unrelated Basic Authorization header is present #35536

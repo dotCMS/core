@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.liferay.util.StringPool.BLANK;
 
@@ -57,6 +58,11 @@ import static com.liferay.util.StringPool.BLANK;
 public  class WebResource {
 
     public static final String BASIC  = "Basic ";
+
+    // Credential-source labels (used for audit logging and to scope the anonymous fallback).
+    private static final String CRED_SOURCE_REQUEST_PARAMETER = "request-parameter";
+    private static final String CRED_SOURCE_DOTAUTH = "DOTAUTH";
+    private static final String CRED_SOURCE_BASIC = "BASIC Authorization";
 
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
@@ -450,10 +456,30 @@ public  class WebResource {
                                final AnonymousAccess access,
                                final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
+        return getCurrentUser(request, response, paramsMap, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}
+     * that can fall through to the anonymous user when a header-based credential fails to
+     * authenticate. {@code fallbackToAnonymousOnAuthFailure} must only be {@code true} for the
+     * static/binary asset servlets (it is set exclusively by
+     * {@link com.dotmarketing.servlets.ServletUtils}); JAX-RS callers must use the overload without
+     * the flag so credential failures keep returning {@code 401}.
+     */
+    public User getCurrentUser(final HttpServletRequest  request,
+                               final HttpServletResponse response,
+                               final Map<String, String> paramsMap,
+                               final AnonymousAccess access,
+                               final boolean fallbackToAnonymousOnAuthFailure,
+                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
         User user = PortalUtil.getUser(request);
 
         if(user==null) {
-            user = authenticate(request, response, paramsMap, access, authCheckOptions);
+            user = authenticate(request, response, paramsMap, access,
+                    fallbackToAnonymousOnAuthFailure, authCheckOptions);
         }
         return user;
     }
@@ -510,6 +536,27 @@ public  class WebResource {
                              final Map<String, String> params, final AnonymousAccess access,
                              final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
+        return authenticate(request, response, params, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}.
+     * When {@code fallbackToAnonymousOnAuthFailure} is {@code true}, a header-based credential
+     * (BASIC/DOTAUTH) that is malformed or fails authentication does NOT abort with a {@code 401};
+     * instead authentication falls through to the anonymous user, letting the downstream resource
+     * permission check decide. This is used only by the static/binary asset servlets (via
+     * {@link com.dotmarketing.servlets.ServletUtils}) so that an upstream Basic-Auth gating layer
+     * (whose credentials the browser replays on sub-resource requests, per RFC 7617) does not break
+     * anonymously-readable assets. JAX-RS endpoints must pass {@code false} (or use the overload
+     * without the flag) to keep strict credential rejection. An explicit request-parameter login is
+     * never downgraded, regardless of this flag.
+     */
+    public User authenticate(final HttpServletRequest request, final HttpServletResponse response,
+                             final Map<String, String> params, final AnonymousAccess access,
+                             final boolean fallbackToAnonymousOnAuthFailure,
+                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
         if (Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_FORCE_SSL::equals)) {
             ServletPreconditions.checkSslIsEnabledIfRequired(request);
         }
@@ -517,17 +564,46 @@ public  class WebResource {
         User user = null;
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
+        // Track which source supplied the credential so the audit log names it and so the anonymous
+        // fallback can be scoped to header-based auth only (never to explicit request-parameter logins).
+        String credentialSource = userPass.isPresent() ? CRED_SOURCE_REQUEST_PARAMETER : null;
 
+        // Both header parsers (DOTAUTH and BASIC) can throw on a malformed header; route them through
+        // the same tolerant policy so the fallback option's guarantee holds for every credential header.
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromHeaderAuth(request);
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromHeaderAuth(request),
+                    CRED_SOURCE_DOTAUTH, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_DOTAUTH : null;
         }
 
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromBasicAuth(request);
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromBasicAuth(request),
+                    CRED_SOURCE_BASIC, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_BASIC : null;
         }
 
         if(userPass.isPresent()) {
-            user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            final String source = credentialSource;
+            final String attemptedUsername = userPass.get().username;
+            try {
+                user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            } catch (SecurityException e) {
+                // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
+                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // never silently downgraded to anonymous. REST callers (option off) also fail hard.
+                if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
+                    throw e;
+                }
+                Logger.debug(this, () -> source + " credentials are not a valid dotCMS user; "
+                        + "falling through to anonymous.");
+                // A correctly-formatted credential that fails authentication is a real auth failure
+                // (potential credential-stuffing against the fallback path), so log at WARN and
+                // include the attempted username (never the password) for forensic correlation.
+                SecurityLogger.logWarn(WebResource.class, () -> source
+                        + " credential failure for user [" + attemptedUsername + "] on asset request "
+                        + "absorbed; proceeding as anonymous.");
+                user = null;
+            }
         }
 
         if(null == user) {
@@ -548,7 +624,7 @@ public  class WebResource {
         if(user == null) {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
-        
+
         if(user==null) {
           user = this.getAnonymousUser();
         }
@@ -557,13 +633,44 @@ public  class WebResource {
         if(Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS::equals)
                 && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
-        } 
+        }
 
         request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
         PrincipalThreadLocal.setName(user.getUserId());
 
         return user;
+    }
+
+    /**
+     * Runs a credential-parsing step under the servlet anonymous-fallback policy. When
+     * {@code fallbackToAnonymous} is active and the parser throws a {@link SecurityException}
+     * (e.g. a malformed credential header), the exception is absorbed and an empty result is
+     * returned so authentication can continue as anonymous; otherwise the exception is rethrown
+     * (strict behavior for REST callers). Only {@link SecurityException} is caught: an unexpected
+     * exception (e.g. an NPE from a code defect) still surfaces so the bug can be found.
+     *
+     * @param parser the credential-parsing step (may throw {@link SecurityException})
+     * @param headerLabel human-readable header name, used only for logging
+     * @param fallbackToAnonymous whether the fallback policy is active for this request
+     * @return the parsed credentials, or empty when absent or when a malformed header was tolerated
+     */
+    private Optional<UsernamePassword> parseCredentialsTolerantly(
+            final Supplier<Optional<UsernamePassword>> parser,
+            final String headerLabel,
+            final boolean fallbackToAnonymous) {
+        try {
+            return parser.get();
+        } catch (SecurityException e) {
+            if (!fallbackToAnonymous) {
+                throw e;
+            }
+            Logger.debug(this, () -> "Ignoring malformed " + headerLabel
+                    + " header; falling through to anonymous.");
+            SecurityLogger.logInfo(WebResource.class, () -> "Malformed " + headerLabel
+                    + " header on asset request absorbed; proceeding as anonymous.");
+            return Optional.empty();
+        }
     }
 
     /**
@@ -603,7 +710,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = decodeBase64Credentials(authentication).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -622,13 +729,27 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = decodeBase64Credentials(authentication).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
             result = Optional.of(new UsernamePassword(values[0], values[1]));
         }
         return result;
+    }
+
+    /**
+     * Base64-decodes a credential header value, converting any exception thrown for malformed
+     * input into a {@link SecurityException} so callers only have to handle a single (security)
+     * exception type for a bad header.
+     */
+    private static String decodeBase64Credentials(final String encoded) throws SecurityException {
+        try {
+            return Base64.decodeAsString(encoded);
+        } catch (Exception e) {
+            throw new SecurityException("Invalid Base64 encoding for username and password",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
