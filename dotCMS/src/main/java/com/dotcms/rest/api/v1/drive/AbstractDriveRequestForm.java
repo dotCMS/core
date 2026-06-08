@@ -177,6 +177,23 @@ public interface AbstractDriveRequestForm {
     List<String> baseTypes();
 
     /**
+     * Workflow filter entries. Each entry is one workflow scheme, optionally pinned to a
+     * single step:
+     * <ul>
+     *   <li><code>{ "scheme": "&lt;schemeId&gt;" }</code> — content governed by that scheme
+     *   (matched by content-type assignment, so never-actioned content still appears).</li>
+     *   <li><code>{ "scheme": "&lt;schemeId&gt;", "step": "&lt;stepId&gt;" }</code> — content
+     *   whose current workflow task is at that step.</li>
+     * </ul>
+     * Entries combine with OR. Null/empty means no workflow filtering.
+     *
+     * @return list of workflow filter entries, null means no filtering by workflow
+     */
+    @Nullable
+    @JsonProperty("workflow")
+    List<WorkflowFilterForm> workflow();
+
+    /**
      * List of MIME types to filter file assets.
      * <p>
      * When specified, only file assets with matching MIME types will be returned.

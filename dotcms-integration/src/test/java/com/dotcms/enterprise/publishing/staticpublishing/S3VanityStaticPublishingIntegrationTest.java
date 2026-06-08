@@ -32,7 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.startup.runonce.Task260408CreateS3VanityAliasTable;
+import com.dotmarketing.startup.runonce.Task260506CreateS3VanityAliasTable;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,7 +62,7 @@ public class S3VanityStaticPublishingIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        new Task260408CreateS3VanityAliasTable().executeUpgrade();
+        new Task260506CreateS3VanityAliasTable().executeUpgrade();
     }
 
     @Before
