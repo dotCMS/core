@@ -183,6 +183,8 @@ export class DotEditContentSidebarComponent {
                 ),
                 acceptLabel: this.#dotMessageService.get('Release-Lock'),
                 rejectLabel: this.#dotMessageService.get('Cancel'),
+                acceptButtonStyleClass: 'p-button-sm',
+                rejectButtonStyleClass: 'p-button-sm p-button-outlined p-button-secondary',
                 accept: () => this.$store.unlockContent()
             });
 

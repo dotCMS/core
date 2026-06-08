@@ -168,5 +168,6 @@
     </p-tabs>
 </aside>
 
-<!-- Confirmation dialog for delete actions -->
-<p-confirmDialog />
+<!-- Shared confirmation dialog (e.g. release-lock). Width is constrained so a long message
+     wraps instead of stretching the dialog across the viewport. -->
+<p-confirmDialog [style]="{ width: '32rem' }" />
