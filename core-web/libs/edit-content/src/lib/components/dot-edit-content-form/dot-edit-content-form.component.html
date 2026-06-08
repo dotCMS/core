@@ -21,7 +21,8 @@
                 [dotTabViewAppend]="appendContent"
                 [dotTabViewAppendContext]="$appendContext" />
 
-            <p-tablist class="border-b border-surface-200 px-8">
+            <p-tablist
+                class="min-h-[53px] border-b border-surface-200 px-8 [&_.p-tab]:h-full [&_.p-tablist-tab-list]:h-full">
                 <!--
                 WARNING: TABS MUST NOT BE LAZY!
                 Custom fields need to execute code that doesn't depend on whether the tab is active or not.
