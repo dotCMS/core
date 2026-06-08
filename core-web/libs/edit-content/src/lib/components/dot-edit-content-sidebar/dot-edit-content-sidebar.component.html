@@ -47,16 +47,30 @@
                         <div
                             class="border-b border-surface-200 pb-4"
                             data-testId="sidebar-lock-section">
+                            <!-- The pButton directive does not remove a stale `p-button-outlined`
+                                 class when an `[outlined]` input flips at runtime (it is not in the
+                                 directive's managed class list), so cycling lock→unlock left the gray
+                                 button stuck with an outline. We instead toggle that class reactively
+                                 via Angular `[class.p-button-outlined]`, and use `severity` (which the
+                                 directive re-applies on change) for the gray fill. Per the design:
+                                 - Unlocked → gray (secondary) filled "Lock for Editing"
+                                 - Locked   → outlined "Unlock" -->
                             <button
                                 pButton
                                 type="button"
-                                [outlined]="true"
+                                [class.p-button-outlined]="$store.isContentLocked()"
+                                [style.border-color]="
+                                    $store.isContentLocked() ? null : 'var(--p-surface-200)'
+                                "
+                                [severity]="$store.isContentLocked() ? null : 'secondary'"
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="
                                     ($store.isContentLocked() ? 'Unlock' : 'Make-Editable') | dm
                                 "
-                                [icon]="$store.isContentLocked() ? 'pi pi-lock' : 'pi pi-lock-open'"
+                                [icon]="$store.isContentLocked() ? 'pi pi-lock-open' : 'pi pi-lock'"
+                                [loading]="$store.isLocking()"
+                                [disabled]="$store.isLocking()"
                                 (click)="
                                     $store.isContentLocked()
                                         ? $store.unlockContent()
@@ -74,7 +88,9 @@
                             [actions]="$store.getActions()"
                             [stacked]="true"
                             [loading]="$store.isSaving()"
-                            [disabled]="$store.isSaving()"
+                            [disabled]="
+                                $store.isSaving() || $store.isLocking() || $store.isLoadingActions()
+                            "
                             (actionFired)="workflowActionFired.emit($event)" />
                     }
 

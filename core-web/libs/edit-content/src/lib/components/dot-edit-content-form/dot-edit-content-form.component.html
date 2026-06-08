@@ -33,7 +33,9 @@
                     </p-tab>
                 }
             </p-tablist>
-            <p-tabpanels>
+            <!-- Zero the tabpanel's own padding; the inner content div (p-4) is the single
+                 source of content padding, so the panel doesn't double-pad. -->
+            <p-tabpanels class="[&_.p-tabpanel]:p-0!">
                 @for (tab of tabs; track tab; let i = $index) {
                     <p-tabpanel [value]="i">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />

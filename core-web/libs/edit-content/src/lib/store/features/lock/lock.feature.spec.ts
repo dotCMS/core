@@ -11,7 +11,12 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotContentletCanLock, DotCurrentUser } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotContentletCanLock,
+    DotCurrentUser
+} from '@dotcms/dotcms-models';
 
 import { withLock } from './lock.feature';
 
@@ -108,7 +113,7 @@ describe('LockFeature', () => {
             });
 
             expect(store.lockWarningMessage()).toEqual(
-                "Content is locked by John Doe. You don't have permissions to unlock this content."
+                "Content is locked by <b>John Doe</b>. You don't have permissions to unlock this content."
             );
         });
 
@@ -124,7 +129,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
+            expect(store.lockWarningMessage()).toBe('Content is locked by <b>John Doe</b>');
         });
 
         it('should suppress the banner when firstName and lastName are both missing', () => {
@@ -149,7 +154,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: 'John', lastName: null }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by John');
+            expect(store.lockWarningMessage()).toBe('Content is locked by <b>John</b>');
         });
 
         it('should handle missing firstName gracefully', () => {
@@ -161,7 +166,7 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: null, lastName: 'Doe' }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by Doe');
+            expect(store.lockWarningMessage()).toBe('Content is locked by <b>Doe</b>');
         });
 
         it('should use lockedByName when lockedBy is a string (Page content type)', () => {
@@ -174,7 +179,7 @@ describe('LockFeature', () => {
                 lockedByName: 'Adrian Marquez'
             } as unknown as DotCMSContentlet);
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by Adrian Marquez');
+            expect(store.lockWarningMessage()).toBe('Content is locked by <b>Adrian Marquez</b>');
         });
 
         it('should return null when lockedBy is a string matching the current user (Page locked by self)', () => {
@@ -228,7 +233,7 @@ describe('LockFeature', () => {
             } as unknown as DotCMSContentlet);
 
             expect(store.lockWarningMessage()).toBe(
-                "Content is locked by Adrian Marquez. You don't have permissions to unlock this content."
+                "Content is locked by <b>Adrian Marquez</b>. You don't have permissions to unlock this content."
             );
         });
 
@@ -280,6 +285,8 @@ describe('LockFeature', () => {
                 expect(dotContentletService.lockContent).toHaveBeenCalledWith('123');
                 expect(store.contentlet()).toEqual(lockedContentlet);
                 expect(store.lockError()).toBeNull();
+                expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
+                expect(store.isLocking()).toBe(false);
             }));
 
             it('should handle error when locking content', fakeAsync(() => {
@@ -304,6 +311,8 @@ describe('LockFeature', () => {
                 tick();
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+                expect(store.lockStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.isLocking()).toBe(false);
                 //expect(store.lockError()).toBe(mockError.error.message);
             }));
         });
@@ -335,6 +344,8 @@ describe('LockFeature', () => {
                 expect(dotContentletService.unlockContent).toHaveBeenCalledWith('123');
                 expect(store.contentlet()).toEqual(unlockedContentlet);
                 expect(store.lockError()).toBeNull();
+                expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
+                expect(store.isLocking()).toBe(false);
             }));
 
             it('should handle error when unlocking content', fakeAsync(() => {
@@ -356,6 +367,8 @@ describe('LockFeature', () => {
                 tick();
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+                expect(store.lockStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.isLocking()).toBe(false);
                 //expect(store.lockError()).toBe(mockError.message);
             }));
         });

@@ -20,7 +20,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
 import { EditContentState } from '../../edit-content.store';
 
@@ -40,6 +40,13 @@ export function withLock() {
 
                 return contentlet?.locked && !isCopyingLocale;
             }),
+
+            /**
+             * Determines if a lock/unlock request is currently in flight
+             *
+             * @returns boolean - True while the lock or unlock API call is pending
+             */
+            isLocking: computed(() => store.lockStatus() === ComponentStatus.LOADING),
 
             /**
              * Generates a user-friendly message about who has locked the content
@@ -77,14 +84,14 @@ export function withLock() {
                     return null;
                 }
 
+                // The banner renders via [innerHTML], so wrap the locker name in <b> to bold it.
+                const boldName = userDisplay ? `<b>${userDisplay}</b>` : '';
+
                 // If user doesn't have permission to lock, use the no permission message.
                 // Fall back to the name-less key when the locker's display name is unavailable.
                 if (!userCanLock) {
                     return userDisplay
-                        ? dotMessageService.get(
-                              'edit.content.locked.no.permission.user',
-                              userDisplay
-                          )
+                        ? dotMessageService.get('edit.content.locked.no.permission.user', boldName)
                         : dotMessageService.get('edit.content.locked.no.permission');
                 }
 
@@ -95,7 +102,7 @@ export function withLock() {
                     return null;
                 }
 
-                return dotMessageService.get('edit.content.locked.by.user', userDisplay);
+                return dotMessageService.get('edit.content.locked.by.user', boldName);
             })
         })),
 
@@ -115,7 +122,8 @@ export function withLock() {
                     pipe(
                         tap(() =>
                             patchState(store, {
-                                lockError: null
+                                lockError: null,
+                                lockStatus: ComponentStatus.LOADING
                             })
                         ),
                         switchMap(() =>
@@ -124,9 +132,14 @@ export function withLock() {
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
                                         if (!current) {
+                                            patchState(store, {
+                                                lockStatus: ComponentStatus.LOADED
+                                            });
+
                                             return;
                                         }
                                         patchState(store, {
+                                            lockStatus: ComponentStatus.LOADED,
                                             contentlet: {
                                                 ...current,
                                                 locked: updated.locked,
@@ -139,7 +152,8 @@ export function withLock() {
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
-                                            lockError: error.message
+                                            lockError: error.message,
+                                            lockStatus: ComponentStatus.ERROR
                                         });
                                     }
                                 })
@@ -158,7 +172,8 @@ export function withLock() {
                     pipe(
                         tap(() =>
                             patchState(store, {
-                                lockError: null
+                                lockError: null,
+                                lockStatus: ComponentStatus.LOADING
                             })
                         ),
                         switchMap(() =>
@@ -167,9 +182,14 @@ export function withLock() {
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
                                         if (!current) {
+                                            patchState(store, {
+                                                lockStatus: ComponentStatus.LOADED
+                                            });
+
                                             return;
                                         }
                                         patchState(store, {
+                                            lockStatus: ComponentStatus.LOADED,
                                             contentlet: {
                                                 ...current,
                                                 locked: updated.locked,
@@ -182,7 +202,8 @@ export function withLock() {
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
-                                            lockError: error.message
+                                            lockError: error.message,
+                                            lockStatus: ComponentStatus.ERROR
                                         });
                                     }
                                 })

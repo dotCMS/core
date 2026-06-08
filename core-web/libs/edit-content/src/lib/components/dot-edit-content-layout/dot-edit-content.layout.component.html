@@ -56,12 +56,20 @@
         }
 
         @if (lockWarningMessage) {
-            <p-message severity="warn" data-testId="edit-content-layout__lock-warning">
+            <!-- Lock banner styled per the design: amber top/bottom rules (the warn border is
+                 transparent by default), square corners, compact 13.5px text and a bold amber
+                 name. Orange tokens from the design map to the warn palette's yellow primitives
+                 (orange is not in the preset). -->
+            <p-message
+                severity="warn"
+                styleClass="rounded-none! border-x-0! border-y-(--p-yellow-200)!"
+                data-testId="edit-content-layout__lock-warning">
                 <ng-template #container>
-                    <div class="flex w-full items-center gap-1">
-                        <i class="pi pi-exclamation-triangle size-4 shrink-0"></i>
+                    <div
+                        class="flex w-full items-center gap-3 text-[13.5px] leading-[1.35] text-(--p-yellow-800) [&_b]:font-semibold [&_b]:text-(--p-yellow-900)">
+                        <i class="pi pi-lock shrink-0 text-[18px] text-(--p-yellow-700)"></i>
                         <div
-                            class="mr-auto flex items-center gap-1"
+                            class="mr-auto"
                             data-testId="edit-content-layout__lock-warning-content"
                             [innerHTML]="lockWarningMessage"></div>
                     </div>

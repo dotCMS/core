@@ -28,3 +28,16 @@
         grid-template-columns: minmax(0, 1fr) 360px;
     }
 }
+
+// Normalize every p-message banner in the top bar to the same compact banner padding
+// (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
+// each other. Done here once instead of per-instance styleClass so they can't drift apart.
+.edit-content-layout__topBar {
+    ::ng-deep .p-message-content-wrapper {
+        padding: 0 !important;
+    }
+
+    ::ng-deep .p-message-content {
+        padding: 0.75rem 1.75rem !important;
+    }
+}

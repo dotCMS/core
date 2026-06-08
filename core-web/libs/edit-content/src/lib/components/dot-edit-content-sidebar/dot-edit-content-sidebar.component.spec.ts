@@ -6,7 +6,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of, Subject } from 'rxjs';
+import { NEVER, of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -356,6 +356,20 @@ describe('DotEditContentSidebarComponent', () => {
                 spectator.click(byTestId('sidebar-lock-button'));
 
                 expect(unlockSpy).toHaveBeenCalled();
+            });
+
+            it('should put the store in a loading state when the lock button is clicked', () => {
+                // Use a request that never resolves so the store stays in the loading
+                // state after the click; let the real lockContent method run (no spy).
+                jest.spyOn(store, 'isContentLocked').mockReturnValue(false);
+                dotContentletService.lockContent.mockReturnValue(NEVER);
+                spectator.detectChanges();
+
+                expect(store.isLocking()).toBe(false);
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                expect(store.isLocking()).toBe(true);
             });
         });
 
