@@ -50,6 +50,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentMapTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentToolTest.class,
+        com.dotcms.rendering.velocity.viewtools.ContentSearchToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WebsiteToolTest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
