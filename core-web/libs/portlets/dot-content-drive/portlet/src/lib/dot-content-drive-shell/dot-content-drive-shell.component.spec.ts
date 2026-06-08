@@ -16,6 +16,7 @@ import {
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotHttpErrorManagerService,
     DotSiteService,
     DotSystemConfigService,
     DotWorkflowActionsFireService,
@@ -117,7 +118,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({}))
-            })
+            }),
+            mockProvider(DotHttpErrorManagerService)
         ],
         componentProviders: [DotContentDriveStore],
         detectChanges: false
