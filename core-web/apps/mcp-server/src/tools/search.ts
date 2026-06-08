@@ -60,6 +60,10 @@ export default async function handler(
     const executor = createExecutor();
     const spec = getSpec();
 
+    if (!spec || typeof spec !== 'object' || Object.keys(spec).length === 0) {
+        return 'Error: OpenAPI spec is not available. The server may not have been built with a generated spec (run the generate-spec step), so the search tool cannot run.';
+    }
+
     const apiAdapter = createApiAdapter({
         dotcmsUrl: process.env.DOTCMS_URL ?? '',
         authToken: process.env.AUTH_TOKEN ?? ''

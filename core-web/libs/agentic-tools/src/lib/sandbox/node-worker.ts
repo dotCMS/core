@@ -66,6 +66,19 @@ export class NodeWorkerSandbox implements ISandbox {
                     worker.postMessage({ type: 'execute', data: { code } });
                 } else if (type === 'adapter_call') {
                     const { adapter, method, args, id } = data;
+                    // Posting to a worker that was already terminated (e.g. by a
+                    // timeout while this adapter call was in flight) throws and
+                    // would escape as an unhandled rejection, crashing the host.
+                    const postResult = (payload: Record<string, unknown>) => {
+                        if (resolved) {
+                            return;
+                        }
+                        try {
+                            worker.postMessage({ type: 'adapter_result', data: payload });
+                        } catch {
+                            /* worker gone — nothing to deliver the result to */
+                        }
+                    };
                     try {
                         const adapterObj = context.adapters[adapter];
                         if (!adapterObj || !adapterObj[method]) {
@@ -74,10 +87,10 @@ export class NodeWorkerSandbox implements ISandbox {
                         const result = await (adapterObj[method] as (...a: unknown[]) => unknown)(
                             ...args
                         );
-                        worker.postMessage({ type: 'adapter_result', data: { id, result } });
+                        postResult({ id, result });
                     } catch (err) {
                         const error = err instanceof Error ? err.message : String(err);
-                        worker.postMessage({ type: 'adapter_result', data: { id, error } });
+                        postResult({ id, error });
                     }
                 } else if (type === 'result') {
                     clearTimeout(timeoutId);
