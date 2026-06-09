@@ -4592,38 +4592,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
 
-        List<Relationship> rels = APILocator.getRelationshipAPI()
+        final List<Relationship> relationshipsFromContent = APILocator.getRelationshipAPI()
                 .byContentType(contentlet.getContentType());
-        if (!rels.contains(relationship)) {
+        if (!relationshipsFromContent.contains(relationship)) {
             throw new DotContentletStateException(
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
                             ? contentlet.getInode() : "Unknown"));
         }
 
-        List<Contentlet> cons = relationshipAPI
+        List<Contentlet> relatedContents = relationshipAPI
                 .dbRelatedContent(relationship, contentlet, hasParent);
-        cons = permissionAPI
-                .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        relatedContents = permissionAPI
+                .filterCollection(relatedContents, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
 
-        for (final Contentlet relatedContent : cons) {
-            if (hasParent) {
-                TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
-                        relatedContent.getIdentifier(), relationship.getRelationTypeValue());
-            } else {
-                TreeFactory.deleteTreesByParentAndChildAndRelationType(
-                        relatedContent.getIdentifier(),
-                        contentlet.getIdentifier(), relationship.getRelationTypeValue());
-            }
+        if (hasParent) {
+            TreeFactory.deleteTreesByParentAndRelationType(contentlet.getIdentifier(),
+                    relationship.getRelationTypeValue());
+        } else {
+            TreeFactory.deleteTreesByChildAndRelationType(contentlet.getIdentifier(),
+                    relationship.getRelationTypeValue());
         }
 
         final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
-                Contentlet::getIdentifier).collect(Collectors.toList());
+                Contentlet::getIdentifier).toList();
 
         // We need to refresh related parents, because currently the system does not
-        // update the contentlets that lost the relationship (when the user remove a relationship).
-        if (cons != null) {
-            for (final Contentlet relatedContentlet : cons) {
-                //Only deleted parents will be reindexed
+        // update the contentlets that lost the relationship (when the user removes a relationship).
+        if (relatedContents != null) {
+            for (final Contentlet relatedContentlet : relatedContents) {
+                //Only deleted parents will be re-indexed
                 if (!hasParent && !identifiersToBeRelated
                         .contains(relatedContentlet.getIdentifier())) {
                     relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
@@ -4977,45 +4974,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     respectFrontendRoles, related.getRecords());
 
             Tree newTree;
-            Set<Tree> uniqueRelationshipSet = new HashSet<>();
+            final Set<Tree> uniqueRelationshipSet = new HashSet<>();
 
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet, relationship,
-                    related.isHasParent(), user, respectFrontendRoles);
+            final String countSQL = related.isHasParent()
+                    ? "SELECT COUNT(*) as count FROM tree WHERE parent = ? AND relation_type = ?"
+                    : "SELECT COUNT(*) as count FROM tree WHERE child = ? AND relation_type = ?";
+            final List<Map<String, Object>> countResult = new DotConnect().setSQL(countSQL)
+                    .addParam(contentlet.getIdentifier())
+                    .addParam(relationship.getRelationTypeValue())
+                    .loadObjectResults();
+            final int existingCount = countResult.isEmpty()
+                    ? 0
+                    : Integer.parseInt(null != countResult.getFirst()
+                                            ? countResult.getFirst().get("count").toString()
+                                            : "0");
 
-            int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1;
+            int treePosition = existingCount > 0 ? existingCount : 1;
             int positionInParent = 1;
-
-            for (Contentlet c : related.getRecords()) {
+            final List<Tree> treesToInsert = new ArrayList<>();
+            for (final Contentlet relatedContent : related.getRecords()) {
                 if (child) {
-                    for (Tree currentTree : contentParents) {
+                    for (final Tree currentTree : contentParents) {
                         if (currentTree.getRelationType()
-                                .equals(relationship.getRelationTypeValue()) && c.getIdentifier()
+                                .equals(relationship.getRelationTypeValue()) && relatedContent.getIdentifier()
                                 .equals(currentTree.getParent())) {
                             positionInParent = currentTree.getTreeOrder();
                         }
                     }
 
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(),
+                    newTree = new Tree(relatedContent.getIdentifier(), contentlet.getIdentifier(),
                             relationship.getRelationTypeValue(), positionInParent);
                 } else {
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(),
+                    newTree = new Tree(contentlet.getIdentifier(), relatedContent.getIdentifier(),
                             relationship.getRelationTypeValue(), treePosition);
                 }
                 positionInParent = positionInParent + 1;
 
                 if (uniqueRelationshipSet.add(newTree)) {
-                    final int newTreePosition = newTree.getTreeOrder();
-                    final Tree treeToUpdate = TreeFactory.getTree(newTree);
-                    treeToUpdate.setTreeOrder(newTreePosition);
-
-                    TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(
-                            treeToUpdate.getRelationType()) ? treeToUpdate : newTree);
-
+                    treesToInsert.add(newTree);
                     treePosition++;
                 }
-                invalidateRelatedContentCache(c, relationship, !related.isHasParent());
+                invalidateRelatedContentCache(relatedContent, relationship, !related.isHasParent());
             }
-
+            TreeFactory.insertTrees(treesToInsert);
             //If relationship field, related content cache must be invalidated
             invalidateRelatedContentCache(contentlet, relationship, related.isHasParent());
 

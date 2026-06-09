@@ -52,6 +52,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotCorruptedDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1245,7 +1246,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
 
-		if(relatedContentlets.size()>0) {
+		if(!relatedContentlets.isEmpty()) {
 
 			final List<Relationship> relationships = relationshipAPI
 					.byContentType(contentlet.getContentType());
@@ -1256,13 +1257,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
 
-                oldDocs = contentletAPI.getRelatedContent(contentlet, relationship,
-                        userAPI.getSystemUser(), false);
-
-                if(oldDocs.size() > 0) {
-					for(Contentlet oldDoc : oldDocs) {
-						oldRelatedIds.add(oldDoc.getIdentifier());
-					}
+				final List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
+						"+" + relationship.getRelationTypeValue()
+								+ ":" + contentlet.getIdentifier(),
+						-1, 0, null, userAPI.getSystemUser(), false);
+				for (final ContentletSearch result : oldSearchResults) {
+					oldRelatedIds.add(result.getIdentifier());
 				}
 
 				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
