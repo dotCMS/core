@@ -69,7 +69,7 @@ export const CustomLaraPreset = definePreset(Lara, {
                 .p-tag {
                     border-radius: calc(infinity * 1px);
                     padding: var(--spacing) calc(var(--spacing) * 3); /* 0.25rem 0.75rem */
-                    font-weight: var(--font-weight-semibold); /* 600 */
+                    font-weight: var(--font-weight-medium); /* 500 */
                 }
             `,
             // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
