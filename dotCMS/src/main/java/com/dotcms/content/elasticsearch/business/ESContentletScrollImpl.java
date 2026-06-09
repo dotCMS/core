@@ -98,11 +98,11 @@ class ESContentletScrollImpl implements IndexContentletScroll {
 
             // Convert to domain SearchHits
             final SearchHits searchHits = SearchHits.from(esSearchHits);
-            this.totalHits = Objects.requireNonNull(searchHits.totalHits()).value();
+            this.totalHits = Objects.requireNonNull(searchHits.getTotalHits()).value();
 
             // Convert hits to ContentletSearch
             final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
-            this.hasMoreResults = (searchHits.hits() != null && !searchHits.hits().isEmpty());
+            this.hasMoreResults = (searchHits.getHits() != null && !searchHits.getHits().isEmpty());
 
             Logger.debug(this.getClass(),
                     () -> String.format("Scroll initialized: scrollId=%s, totalHits=%d, firstBatchSize=%d",
@@ -144,7 +144,7 @@ class ESContentletScrollImpl implements IndexContentletScroll {
             // Convert to domain SearchHits
             final SearchHits searchHits = SearchHits.from(esSearchHits);
             final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
-            this.hasMoreResults = (searchHits.hits() != null && !searchHits.hits().isEmpty());
+            this.hasMoreResults = (searchHits.getHits() != null && !searchHits.getHits().isEmpty());
 
             Logger.debug(this.getClass(),
                     () -> String.format("Scroll next batch: batchSize=%d, hasMore=%b",
@@ -192,17 +192,17 @@ class ESContentletScrollImpl implements IndexContentletScroll {
 
     private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
         PaginatedArrayList<ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(searchHits.totalHits().value());
+        list.setTotalResults(searchHits.getTotalHits().value());
 
-        for (SearchHit sh : searchHits.hits()) {
+        for (SearchHit sh : searchHits.getHits()) {
             try{
-                Map<String, Object> sourceMap = sh.sourceAsMap();
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
                 list.add(ImmutableContentletSearch.builder()
-                        .id(sh.id())
-                        .index(sh.index())
+                        .id(sh.getId())
+                        .index(sh.getIndex())
                         .identifier(sourceMap.get("identifier").toString())
                         .inode(sourceMap.get("inode").toString())
-                        .score(sh.score())
+                        .score(sh.getScore())
                         .build());
             }
             catch(Exception e){
