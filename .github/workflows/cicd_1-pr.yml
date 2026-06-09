@@ -82,6 +82,10 @@ jobs:
       postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
+      # Run CLI tests only when the CLI sources or a REST endpoint the CLI consumes
+      # change (cli_test filter). A deep backend/service-layer change that alters CLI
+      # behavior without touching a watched endpoint is covered by the trunk CLI run
+      # (cicd_3-trunk.yml gates CLI tests on the broad `backend` filter post-merge).
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli_test == 'true' }}
       e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
     secrets:

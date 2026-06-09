@@ -337,7 +337,11 @@ jobs:
   publish-npm-package:
     name: "Publish NPM Package"
     if: ${{ !cancelled() && !failure() && needs.precheck.result == 'success' }}
-    needs: [ precheck, build, build-cli, release ]
+    # reuse-release is included so that on the unchanged path (CLI_CHANGED=false),
+    # a failed GitHub-release/Artifactory reuse blocks the npm publish (via !failure()),
+    # avoiding an npm-published-but-no-release inconsistent state. On the changed path
+    # reuse-release is skipped (not failed), so this job still runs.
+    needs: [ precheck, build, build-cli, release, reuse-release ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Checkout code'
