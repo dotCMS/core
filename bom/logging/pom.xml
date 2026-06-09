@@ -78,6 +78,13 @@
                 <scope>runtime</scope>
             </dependency>
             <dependency>
+                <!-- Bridge java.util.logging (Tomcat JULI) into Log4j2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-jul</artifactId>
+                <version>${log4j.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
                 <!-- Async support for Log4J 2.x -->
                 <groupId>com.lmax</groupId>
                 <artifactId>disruptor</artifactId>
