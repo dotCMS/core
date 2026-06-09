@@ -55,6 +55,7 @@ cli_endpoints: &cli_endpoints
   # package above) delegates into these asset-specific business APIs.
   - 'dotCMS/src/main/java/com/dotmarketing/portlets/fileassets/business/**' # FileAssetAPI
   - 'dotCMS/src/main/java/com/dotcms/browser/**'                            # BrowserAPI
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/temp/**'                   # TempFileAPI (CLI file uploads on the push path)
 
 # CLI test trigger: run the CLI integration tests when the CLI sources change OR
 # when any server endpoint the CLI consumes changes. Distinct from `cli` (which
