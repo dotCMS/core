@@ -287,7 +287,9 @@ export interface AnalyticsConfigResult {
  * Always returns a config (with defaults if needed).
  *
  * - If no data-analytics-server attribute is found, uses the current domain as the server endpoint
- * - Both debug and autoPageView default to false (must be explicitly set to "true")
+ * - debug defaults to false (opt-in: must be explicitly set to "true")
+ * - autoPageView defaults to true (opt-out: only the literal string "false" disables it via
+ *   `data-analytics-auto-page-view="false"`)
  *
  * @returns The analytics configuration object
  */
@@ -335,7 +337,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
             // 1. Default fallback values
             server: window.location.origin,
             debug: false,
-            autoPageView: false,
+            autoPageView: true,
             siteAuth: '',
 
             // 2. Advanced config (JSON)
@@ -344,7 +346,9 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
             // 3. Explicit attributes (highest priority)
             ...(serverAttr && { server: serverAttr }),
             ...(debugAttr && { debug: debugAttr === 'true' }),
-            ...(autoPageViewAttr && { autoPageView: autoPageViewAttr === 'true' }),
+            // autoPageView is opt-out: presence of the attribute overrides JSON config; only the
+            // literal string "false" disables it (any other value, including "", enables it)
+            ...(autoPageViewAttr !== null && { autoPageView: autoPageViewAttr !== 'false' }),
             ...(siteAuthAttr && { siteAuth: siteAuthAttr }),
             ...(impressionsAttr && { impressions: impressionsAttr === 'true' }),
             ...(clicksAttr && { clicks: clicksAttr === 'true' })
@@ -357,7 +361,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
     return {
         server: window.location.origin,
         debug: false,
-        autoPageView: false,
+        autoPageView: true,
         siteAuth: ''
     };
 };
