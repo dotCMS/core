@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.contenttype;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -249,8 +248,8 @@ public class ContentTypeResourceUpdateMetadataTest {
                     getHttpRequest(), new EmptyHttpResponse(), ct.id(), patch);
 
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-            assertNull("DOT_STYLE_EDITOR_SCHEMA should have been removed",
-                    getMetadata(response).get("DOT_STYLE_EDITOR_SCHEMA"));
+            assertFalse("DOT_STYLE_EDITOR_SCHEMA should have been removed",
+                    getMetadata(response).containsKey("DOT_STYLE_EDITOR_SCHEMA"));
         } finally {
             ContentTypeDataGen.remove(ct);
         }

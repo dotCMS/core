@@ -2087,10 +2087,10 @@ public class ContentTypeResource implements Serializable {
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
         try {
-            final ContentType existing = contentTypeAPI.find(idOrVar);
-            if (existing == null) {
+            if (!UtilMethods.isSet(idOrVar)) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
+            final ContentType existing = contentTypeAPI.find(idOrVar);
 
             if (metadataPatch == null || metadataPatch.isEmpty()) {
                 Logger.warn(this, "No metadata patch found for " + idOrVar);
