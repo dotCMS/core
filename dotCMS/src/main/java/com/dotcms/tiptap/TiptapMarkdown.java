@@ -457,8 +457,6 @@ public final class TiptapMarkdown {
 
         private final StringBuilder out = new StringBuilder();
         private int listDepth = 0;
-        /** Stack of list contexts: each entry is {kind: "bullet"|"ordered", index, start}. */
-        private final Deque<ListCtx> listStack = new ArrayDeque<>();
         private final Deque<String> blockPrefix = new ArrayDeque<>();
         /** Unknown node/mark types we've already logged this conversion — log once each. */
         private final Set<String> loggedUnknown = new HashSet<>();
@@ -1061,11 +1059,5 @@ public final class TiptapMarkdown {
             return s + repeat(' ', width - s.length());
         }
 
-        // ----- list context ---------------------------------------------
-
-        private static final class ListCtx {
-            final String kind; int idx; final int start;
-            ListCtx(final String kind, final int start) { this.kind = kind; this.start = start; this.idx = start; }
-        }
     }
 }
