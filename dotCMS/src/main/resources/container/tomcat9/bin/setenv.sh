@@ -24,7 +24,7 @@ if [ -z "${JAVA_OPTS_DIRECT+set}" ]; then
     JAVA_OPTS_DIRECT=""
   else
     _pct=${DOT_DIRECT_MEM_PCT:-20}
-    _min=${DOT_DIRECT_MEM_MIN_MB:-512}
+    _min=${DOT_DIRECT_MEM_MIN_MB:-128}
     _max=${DOT_DIRECT_MEM_MAX_MB:-4096}
     _mb=$(( _cg_limit / 1048576 * _pct / 100 ))
     [ "$_mb" -lt "$_min" ] && _mb=$_min
