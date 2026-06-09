@@ -47,6 +47,31 @@ export class DotContentDriveNavigationService {
     }
 
     /**
+     * Navigates to the content editor to CREATE a new content of the given type.
+     * Mirrors the edit flow ({@link editContent}): the new content editor is only used when it
+     * is enabled for the selected content type (CONTENT_EDITOR2 flag); otherwise it falls back
+     * to the legacy create editor.
+     *
+     * @param contentTypeVariable - The variable name of the content type to create
+     */
+    createContent(contentTypeVariable: string) {
+        this.#dotContentTypeService
+            .getContentType(contentTypeVariable)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                const shouldRedirectToOldContentEditor =
+                    !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+
+                if (shouldRedirectToOldContentEditor) {
+                    this.#router.navigate([`c/content/new/${contentTypeVariable}`]);
+                    return;
+                }
+
+                this.#router.navigate([`content/new/${contentTypeVariable}`]);
+            });
+    }
+
+    /**
      * Navigates to the contentlet editor.
      * Determines whether to use the new or legacy content editor based on
      * the content type's feature flag settings.

@@ -7,11 +7,10 @@ import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
-import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import { DotUVEPaletteListTypes } from './models';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
@@ -101,6 +100,8 @@ export class DotUvePaletteComponent {
     readonly $pagePath = computed(() => this.uveStore.pageURI());
     readonly $languageId = computed(() => this.uveStore.pageLanguageId());
     readonly $variantId = computed(() => this.uveStore.pageVariantId());
+    /** Content types allowed on the current page — passed to the palette list for favorites filtering. */
+    readonly $allowedContentTypes = computed(() => this.uveStore.$allowedContentTypes());
 
     /**
      * Standard templates use the dotCMS Template Builder and expose a row/column

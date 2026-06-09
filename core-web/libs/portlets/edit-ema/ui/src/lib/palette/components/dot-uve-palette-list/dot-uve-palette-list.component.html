@@ -47,7 +47,8 @@
         <div
             class="grid h-full auto-rows-max gap-2 pr-4"
             [class]="{
-                'grid-cols-2': !listStyle,
+                'grid-cols-4': !listStyle && $selectionMode(),
+                'grid-cols-2': !listStyle && !$selectionMode(),
                 'auto-rows-[7.5rem]!': !listStyle,
                 'grid-cols-1': listStyle,
                 'overflow-auto': !$isLoading()
@@ -101,8 +102,10 @@
                 <dot-uve-palette-contenttype
                     [contentType]="contentType"
                     [view]="$layoutMode()"
+                    [selectable]="$selectionMode()"
+                    [selected]="contentType.variable === $selectedVariable()"
                     (onSelectContentType)="onSelectContentType($event)"
-                    (contextMenu)="onContextMenu(contentType); cm.show($event)" />
+                    (contextMenu)="onCardContextMenu(contentType, $event)" />
             }
         }
     }
@@ -139,4 +142,7 @@
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
 
-<dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />
+<!-- Favorites are not used in selection mode (e.g. Content Drive); avoid its init fetch. -->
+@if (!$selectionMode()) {
+    <dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />
+}

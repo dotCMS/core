@@ -10,12 +10,23 @@ import {
  * Each type determines which content types are displayed and how they're filtered.
  */
 export enum DotUVEPaletteListTypes {
-    /** Content types: CONTENT, FILEASSET, DOTASSET */
+    /** Content types: CONTENT, FILEASSET, DOTASSET — page-scoped (UVE) */
     CONTENT = DotCMSBaseTypesContentTypes.CONTENT,
-    /** Widget content types only */
+    /** Widget content types only — page-scoped (UVE) */
     WIDGET = DotCMSBaseTypesContentTypes.WIDGET,
     /** User's favorite content types from all categories */
-    FAVORITES = 'FAVORITES'
+    FAVORITES = 'FAVORITES',
+    // Page-agnostic list types (global fetch). One per Content Drive "New" menu option.
+    /** Every base type except FORM */
+    ALL_CONTENT_TYPES = 'ALL_CONTENT_TYPES',
+    ALL_CONTENT = 'ALL_CONTENT',
+    ALL_WIDGET = 'ALL_WIDGET',
+    ALL_FILEASSET = 'ALL_FILEASSET',
+    ALL_DOTASSET = 'ALL_DOTASSET',
+    ALL_PERSONA = 'ALL_PERSONA',
+    ALL_VANITY_URL = 'ALL_VANITY_URL',
+    ALL_KEY_VALUE = 'ALL_KEY_VALUE',
+    ALL_HTMLPAGE = 'ALL_HTMLPAGE'
 }
 
 /** @deprecated Use DotUVEPaletteListTypes instead */
@@ -103,6 +114,12 @@ export interface DotPaletteSearchParams {
     page: number;
     /** Search filter text for content types/contentlets */
     filter: string;
+    /**
+     * Map of content-type variables allowed on the current page (favorites filtering).
+     * Passed in as data by the consumer (UVE) instead of injecting UVEStore, so the
+     * palette is reusable outside the editor. Undefined → no favorites filtering.
+     */
+    allowedContentTypes?: Record<string, true>;
 }
 
 /**
@@ -170,6 +187,39 @@ export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
  * All base content types that can be added to favorites.
  */
 export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];
+
+/**
+ * Every base type except FORM (forms are deprecated). Used by the Content Drive
+ * "New" menu's "All Content Types" option.
+ */
+export const BASE_TYPES_FOR_CONTENT_DRIVE = [
+    DotCMSBaseTypesContentTypes.CONTENT,
+    DotCMSBaseTypesContentTypes.WIDGET,
+    DotCMSBaseTypesContentTypes.FILEASSET,
+    DotCMSBaseTypesContentTypes.DOTASSET,
+    DotCMSBaseTypesContentTypes.PERSONA,
+    DotCMSBaseTypesContentTypes.VANITY_URL,
+    DotCMSBaseTypesContentTypes.KEY_VALUE,
+    DotCMSBaseTypesContentTypes.HTMLPAGE
+];
+
+/**
+ * Base-type filter for each page-agnostic list type (Content Drive "New" menu).
+ * The store routes any list type present here to the global content-type endpoint.
+ */
+export const LIST_TYPE_BASE_TYPES: Partial<
+    Record<DotUVEPaletteListTypes, DotCMSBaseTypesContentTypes[]>
+> = {
+    [DotUVEPaletteListTypes.ALL_CONTENT_TYPES]: BASE_TYPES_FOR_CONTENT_DRIVE,
+    [DotUVEPaletteListTypes.ALL_CONTENT]: [DotCMSBaseTypesContentTypes.CONTENT],
+    [DotUVEPaletteListTypes.ALL_WIDGET]: [DotCMSBaseTypesContentTypes.WIDGET],
+    [DotUVEPaletteListTypes.ALL_FILEASSET]: [DotCMSBaseTypesContentTypes.FILEASSET],
+    [DotUVEPaletteListTypes.ALL_DOTASSET]: [DotCMSBaseTypesContentTypes.DOTASSET],
+    [DotUVEPaletteListTypes.ALL_PERSONA]: [DotCMSBaseTypesContentTypes.PERSONA],
+    [DotUVEPaletteListTypes.ALL_VANITY_URL]: [DotCMSBaseTypesContentTypes.VANITY_URL],
+    [DotUVEPaletteListTypes.ALL_KEY_VALUE]: [DotCMSBaseTypesContentTypes.KEY_VALUE],
+    [DotUVEPaletteListTypes.ALL_HTMLPAGE]: [DotCMSBaseTypesContentTypes.HTMLPAGE]
+};
 
 /**
  * Content type for the palette.

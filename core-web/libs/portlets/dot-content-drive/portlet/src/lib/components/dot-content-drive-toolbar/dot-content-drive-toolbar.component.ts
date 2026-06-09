@@ -15,6 +15,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
@@ -30,6 +31,58 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
+
+/**
+ * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
+ * Each maps to a precise palette list type and a Material Symbols icon (rendered via the
+ * menu's custom item template, following the design's icon pattern).
+ */
+const BASE_TYPE_MENU_OPTIONS: {
+    labelKey: string;
+    icon: string;
+    listType: DotUVEPaletteListTypes;
+}[] = [
+    {
+        labelKey: 'content-drive.base-type.content',
+        icon: 'description',
+        listType: DotUVEPaletteListTypes.ALL_CONTENT
+    },
+    {
+        labelKey: 'content-drive.base-type.widget',
+        icon: 'widgets',
+        listType: DotUVEPaletteListTypes.ALL_WIDGET
+    },
+    {
+        labelKey: 'content-drive.base-type.fileasset',
+        icon: 'draft',
+        listType: DotUVEPaletteListTypes.ALL_FILEASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.dotasset',
+        icon: 'deployed_code',
+        listType: DotUVEPaletteListTypes.ALL_DOTASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.persona',
+        icon: 'person',
+        listType: DotUVEPaletteListTypes.ALL_PERSONA
+    },
+    {
+        labelKey: 'content-drive.base-type.vanity_url',
+        icon: 'link',
+        listType: DotUVEPaletteListTypes.ALL_VANITY_URL
+    },
+    {
+        labelKey: 'content-drive.base-type.key_value',
+        icon: 'key',
+        listType: DotUVEPaletteListTypes.ALL_KEY_VALUE
+    },
+    {
+        labelKey: 'content-drive.base-type.htmlpage',
+        icon: 'article',
+        listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+    }
+];
 
 /**
  * Interface for managing animation states of toolbar elements
@@ -86,21 +139,41 @@ export class DotContentDriveToolbarComponent {
 
     readonly $items = signal<MenuItem[]>([
         {
+            label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
+            icon: 'grid_view',
+            command: () => this.#openContentTypeSelector(DotUVEPaletteListTypes.ALL_CONTENT_TYPES)
+        },
+        { separator: true },
+        ...BASE_TYPE_MENU_OPTIONS.map((option) => ({
+            label: this.#dotMessageService.get(option.labelKey),
+            icon: option.icon,
+            command: () => this.#openContentTypeSelector(option.listType)
+        })),
+        { separator: true },
+        {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
+            icon: 'folder',
             command: () => {
                 this.#store.setDialog({
                     type: DIALOG_TYPE.FOLDER,
                     header: this.#dotMessageService.get('content-drive.dialog.folder.header')
                 });
             }
-        },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.asset'),
-            command: () => {
-                this.$addNewDotAsset.emit();
-            }
         }
     ]);
+
+    /**
+     * Opens the content-type selector dialog for the given palette list type.
+     */
+    #openContentTypeSelector(listType: DotUVEPaletteListTypes): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+            header: this.#dotMessageService.get(
+                'content-drive.dialog.content-type-selector.header'
+            ),
+            payload: { listType }
+        });
+    }
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);

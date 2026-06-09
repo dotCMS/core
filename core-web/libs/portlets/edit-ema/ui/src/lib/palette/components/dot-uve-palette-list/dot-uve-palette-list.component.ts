@@ -10,6 +10,7 @@ import {
     inject,
     input,
     OnInit,
+    output,
     signal,
     untracked,
     ViewChild
@@ -35,6 +36,7 @@ import {
     DotFavoriteContentTypeService,
     DotMessageService
 } from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -112,6 +114,7 @@ const DEBOUNCE_TIME = 300;
 })
 export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: Menu;
+    @ViewChild('cm') contextMenu?: ContextMenu;
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
     /**
@@ -119,9 +122,26 @@ export class DotUvePaletteListComponent implements OnInit {
      * Container pattern: parent reads from store, child receives via props.
      */
     $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
-    $languageId = input.required<number>({ alias: 'languageId' });
-    $pagePath = input.required<string>({ alias: 'pagePath' });
-    $variantId = input.required<string>({ alias: 'variantId' });
+    // Optional context — only used by the page-scoped list types (UVE). Page-agnostic
+    // list types (e.g. Content Drive) ignore these, so they default to safe values.
+    $languageId = input<number>(1, { alias: 'languageId' });
+    $pagePath = input<string>('', { alias: 'pagePath' });
+    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
+    /**
+     * Selection mode: cards are clickable (not draggable), favorites/context-menu and the
+     * grid/list toggle are hidden, and the list emits `selectContentType` instead of
+     * drilling into contentlets. Used outside UVE (e.g. the Content Drive "New" dialog).
+     */
+    $selectionMode = input<boolean>(false, { alias: 'selectionMode' });
+    /** Allowed content-type map for favorites filtering, passed down by the consumer (UVE). */
+    $allowedContentTypes = input<Record<string, true> | undefined>(undefined, {
+        alias: 'allowedContentTypes'
+    });
+    /** Emits the selected content type variable (selection mode). */
+    readonly selectContentType = output<string>();
+
+    /** Currently highlighted content type variable (selection mode, single-select). */
+    protected readonly $selectedVariable = signal<string | null>(null);
 
     readonly #globalStore = inject(GlobalStore);
     readonly #paletteListStore = inject(DotPaletteListStore);
@@ -145,8 +165,13 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $currentView = this.#paletteListStore.currentView;
     protected readonly $isLoading = this.#paletteListStore.$isLoading;
     protected readonly $isEmpty = this.#paletteListStore.$isEmpty;
-    protected readonly $layoutMode = this.#paletteListStore.layoutMode;
-    protected readonly $showListLayout = this.#paletteListStore.$showListLayout;
+    // Selection mode shows cards only — force grid layout and never the list layout.
+    protected readonly $layoutMode = computed<DotPaletteViewMode>(() =>
+        this.$selectionMode() ? 'grid' : this.#paletteListStore.layoutMode()
+    );
+    protected readonly $showListLayout = computed(() =>
+        this.$selectionMode() ? false : this.#paletteListStore.$showListLayout()
+    );
     protected readonly $isContentletsView = this.#paletteListStore.$isContentletsView;
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
@@ -193,7 +218,17 @@ export class DotUvePaletteListComponent implements OnInit {
         const onSortSelect = (sortOption: DotPaletteSortOption) => this.onSortSelect(sortOption);
         const onViewSelect = (viewOption: DotPaletteViewMode) => this.onViewSelect(viewOption);
 
-        return buildPaletteMenuItems({ viewMode, currentSort, onSortSelect, onViewSelect });
+        const menuItems = buildPaletteMenuItems({
+            viewMode,
+            currentSort,
+            onSortSelect,
+            onViewSelect
+        });
+
+        // Cards-only in selection mode: drop the grid/list view-mode section.
+        return this.$selectionMode()
+            ? menuItems.filter((item) => item.label !== 'uve.palette.menu.view.title')
+            : menuItems;
     });
 
     /**
@@ -209,7 +244,8 @@ export class DotUvePaletteListComponent implements OnInit {
             return EMPTY_MESSAGE_CONTENTLETS;
         }
 
-        return EMPTY_MESSAGES[this.$type()];
+        // Page-agnostic list types (Content Drive) reuse the generic content-types message.
+        return EMPTY_MESSAGES[this.$type()] ?? EMPTY_MESSAGES[DotUVEPaletteListTypes.CONTENT];
     });
 
     /**
@@ -230,7 +266,8 @@ export class DotUvePaletteListComponent implements OnInit {
                 language: this.$languageId(),
                 variantId: this.$variantId(),
                 listType: this.$type(),
-                host: this.$siteId()
+                host: this.$siteId(),
+                allowedContentTypes: this.$allowedContentTypes()
             };
 
             // Use untracked to prevent writes during effect
@@ -294,9 +331,16 @@ export class DotUvePaletteListComponent implements OnInit {
      * Handles the selection of a content type to view its contentlets.
      * Store handles query building, filter reset, and page reset automatically.
      *
-     * @param selectedContentType - The name of the content type to drill into
+     * @param selectedContentType - The content type variable (selection mode) or name (drill-down)
      */
     protected onSelectContentType(selectedContentType: string) {
+        // Selection mode: highlight the picked card and emit; do not drill into contentlets.
+        if (this.$selectionMode()) {
+            this.$selectedVariable.set(selectedContentType);
+            this.selectContentType.emit(selectedContentType);
+            return;
+        }
+
         this.#paletteListStore.getContentlets({ ...EMPTY_SEARCH_PARAMS, selectedContentType });
         this.#resetSearch();
     }
@@ -308,6 +352,17 @@ export class DotUvePaletteListComponent implements OnInit {
     protected onBackToContentTypes() {
         this.#paletteListStore.getContentTypes(EMPTY_SEARCH_PARAMS);
         this.#resetSearch();
+    }
+
+    /**
+     * Card right-click handler. Suppressed in selection mode (no favorites context menu there).
+     */
+    protected onCardContextMenu(contentType: DotCMSPaletteContentType, event: MouseEvent) {
+        if (this.$selectionMode()) {
+            return;
+        }
+        this.onContextMenu(contentType);
+        this.contextMenu?.show(event);
     }
 
     protected onContextMenu(contentType: DotCMSPaletteContentType) {

@@ -32,6 +32,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
@@ -41,8 +42,10 @@ import {
     DotFolderTreeNodeData,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
@@ -57,7 +60,11 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveContentTypeSelectorPayload,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters, isFolder } from '../utils/functions';
@@ -73,6 +80,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         ToastModule,
         DialogModule,
         DotContentDriveDialogFolderComponent,
+        DotContentDriveDialogContentTypeSelectorComponent,
         MessageModule,
         ButtonModule,
         DotMessagePipe,
@@ -109,6 +117,23 @@ export class DotContentDriveShellComponent {
     readonly $dialog = this.#store.dialog;
 
     readonly DIALOG_TYPE = DIALOG_TYPE;
+
+    /** Folder payload for the folder dialog (narrowed from the dialog payload union). */
+    readonly $folderPayload = computed(
+        () => this.#store.dialog()?.payload as DotContentDriveFolder | undefined
+    );
+
+    /** List type for the content-type selector dialog (encodes which base types to show). */
+    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes>(
+        () => (this.#store.dialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
+    );
+
+    /** Content-type selector needs more room than the default dialog (4-column card grid). */
+    readonly $dialogContentClass = computed(() =>
+        this.#store.dialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+            ? 'w-[min(92vw,60rem)] pt-0 p-4'
+            : 'w-[43.75rem] pt-0 p-4'
+    );
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
         equal: (a, b) => a === b

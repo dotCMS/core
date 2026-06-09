@@ -22,7 +22,6 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms
 
 import { DotPaletteListStore } from './store';
 
-import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
     DotCMSPaletteContentType,
     DotPaletteListStatus,
@@ -77,7 +76,6 @@ describe('DotPaletteListStore', () => {
     let dotESContentService: jest.Mocked<DotESContentService>;
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
-    let uveStore: { $allowedContentTypes: jest.Mock };
 
     // ===== Test Helper Functions =====
 
@@ -152,13 +150,6 @@ describe('DotPaletteListStore', () => {
         providers: [
             DotPaletteListStore,
             {
-                provide: UVEStore,
-                useValue: {
-                    // Default to empty map so favorites are marked as disabled unless tests override.
-                    $allowedContentTypes: jest.fn().mockReturnValue({})
-                }
-            },
-            {
                 provide: DotLocalstorageService,
                 useValue: {
                     getItem: jest.fn().mockReturnValue(null),
@@ -177,7 +168,6 @@ describe('DotPaletteListStore', () => {
         dotESContentService = spectator.inject(DotESContentService);
         dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
         dotLocalstorageService = spectator.inject(DotLocalstorageService);
-        uveStore = spectator.inject(UVEStore) as unknown as { $allowedContentTypes: jest.Mock };
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -504,10 +494,12 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should pass allowedContentTypes to buildPaletteFavorite when refreshing favorites state', () => {
-                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+                store.getContentTypes({
+                    listType: DotUVEPaletteListTypes.FAVORITES,
+                    allowedContentTypes: { blog: true, banner: true }
+                });
 
                 (buildPaletteFavorite as unknown as jest.Mock).mockClear();
-                uveStore.$allowedContentTypes.mockReturnValueOnce({ blog: true, banner: true });
 
                 store.setContentTypesFromFavorite(mockContentTypes);
 

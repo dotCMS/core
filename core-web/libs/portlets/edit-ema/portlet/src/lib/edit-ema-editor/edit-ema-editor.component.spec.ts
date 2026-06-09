@@ -54,8 +54,8 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
@@ -83,7 +83,6 @@ import {
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
-import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
@@ -883,7 +882,7 @@ describe('EditEmaEditorComponent', () => {
                         pageParams: {
                             ...(store.pageParams() ?? {}),
                             mode: UVE_MODE.PREVIEW
-                        },
+                        } as DotPageApiParams,
                         flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: false },
                         pageAssetResponse: { pageAsset: lockedByAnotherUser }
                     });

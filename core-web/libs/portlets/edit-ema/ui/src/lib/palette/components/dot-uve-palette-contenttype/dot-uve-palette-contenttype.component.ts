@@ -30,14 +30,23 @@ import { DotCMSPaletteContentType, DotPaletteViewMode } from '../../models';
 export class DotUVEPaletteContenttypeComponent {
     $view = input<DotPaletteViewMode>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSPaletteContentType>({ alias: 'contentType' });
+    /**
+     * Selection mode: the whole card is clickable to pick a content type, the drag
+     * handle and chevron are hidden, and the card is not draggable. Used outside UVE
+     * (e.g. the Content Drive "New" dialog). Defaults to false to keep UVE behavior.
+     */
+    $selectable = input<boolean>(false, { alias: 'selectable' });
+    /** Highlights the card when it is the current selection (selection mode). */
+    $selected = input<boolean>(false, { alias: 'selected' });
     readonly onSelectContentType = output<string>();
     readonly contextMenu = output<MouseEvent>();
 
     readonly $isListView = computed(() => this.$view() === 'list');
     readonly $hostClass = computed(() => {
         const isDisabled = this.$isDisabled();
+        const selectable = this.$selectable();
         const base =
-            'group flex w-full min-w-0 items-center border border-gray-200 bg-white text-gray-900 h-auto' +
+            'group flex w-full min-w-0 items-center border bg-white text-gray-900 h-auto' +
             'hover:border-primary-500 hover:bg-primary-100 hover:shadow-sm ' +
             'rounded-md';
 
@@ -46,12 +55,17 @@ export class DotUVEPaletteContenttypeComponent {
         const list = 'h-16 px-2 justify-between gap-2';
 
         const disabled = isDisabled ? 'cursor-not-allowed opacity-60 pointer-events-none' : '';
+        const selectableClass = selectable && !isDisabled ? 'cursor-pointer' : '';
+        const selectedClass =
+            selectable && this.$selected()
+                ? 'border-primary-500 bg-primary-100 shadow-sm'
+                : 'border-gray-200';
 
-        return `${base} ${this.$isListView() ? list : grid} ${disabled}`;
+        return `${base} ${this.$isListView() ? list : grid} ${disabled} ${selectableClass} ${selectedClass}`;
     });
 
     readonly $isDisabled = computed(() => this.$contentType().disabled);
-    readonly $draggable = computed(() => !this.$isDisabled());
+    readonly $draggable = computed(() => !this.$isDisabled() && !this.$selectable());
     readonly $dataItem = computed(() => {
         const contentType = this.$contentType();
 
@@ -70,6 +84,14 @@ export class DotUVEPaletteContenttypeComponent {
             return;
         }
         this.onSelectContentType.emit(contentType.variable);
+    }
+
+    @HostListener('click')
+    protected onHostClick() {
+        if (!this.$selectable() || this.$isDisabled()) {
+            return;
+        }
+        this.onSelectContentType.emit(this.$contentType().variable);
     }
 
     @HostListener('contextmenu', ['$event'])
