@@ -7,8 +7,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
-
 interface ContentSidebarInformation {
     contentlet: DotCMSContentlet | null;
     contentType: DotCMSContentType;
@@ -26,7 +24,6 @@ interface ContentSidebarInformation {
         TooltipModule,
         DotRelativeDatePipe,
         DotMessagePipe,
-        DotNameFormatPipe,
         DotCopyButtonComponent,
         DatePipe
     ],

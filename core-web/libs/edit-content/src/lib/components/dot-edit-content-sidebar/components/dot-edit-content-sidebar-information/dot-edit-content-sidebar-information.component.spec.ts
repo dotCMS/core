@@ -11,8 +11,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
-import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
-
 const messageServiceMock = new MockDotMessageService({
     New: 'New',
     Published: 'Published'
@@ -47,7 +45,6 @@ describe('DotEditContentSidebarInformationComponent', () => {
             RouterTestingModule,
             SkeletonModule,
             TooltipModule,
-            DotNameFormatPipe,
             DotRelativeDatePipe,
             DotMessagePipe
         ],

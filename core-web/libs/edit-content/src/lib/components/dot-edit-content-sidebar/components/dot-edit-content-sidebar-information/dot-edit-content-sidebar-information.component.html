@@ -19,7 +19,7 @@
         }
 
         <span class="text-gray-600">{{ 'Modified-By' | dm }}</span>
-        <span class="flex items-center gap-2 text-gray-800" data-testid="modified-by">
+        <span class="flex min-w-0 items-center gap-2 text-gray-800" data-testid="modified-by">
             @if (contentlet?.modDate) {
                 <span
                     class="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-surface-200 text-[10px] font-semibold text-gray-700"
@@ -27,7 +27,12 @@
                     tooltipPosition="bottom">
                     {{ $modifiedByInitials() }}
                 </span>
-                {{ contentlet?.modUserName | dotNameFormat }}
+                <span
+                    class="truncate"
+                    [pTooltip]="contentlet?.modUserName"
+                    tooltipPosition="bottom">
+                    {{ contentlet?.modUserName }}
+                </span>
             } @else {
                 -
             }
