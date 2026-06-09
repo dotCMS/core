@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { PagesListPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { createPage, actionsPageWorkflow, Page } from '@requests/pages';
+import { actionsPageWorkflow, createPage, Page } from '@requests/pages';
 
-let pageContentlet: Page | null = null;
+let pageContentlet: Page;
 
 test.beforeEach(async ({ request }) => {
     const title = faker.lorem.words(3);
@@ -34,6 +34,6 @@ test('unpublish the page @critical', async ({ page }) => {
 
     await pagesListPage.doActionOnPage(rowLocator, 'Unpublish');
 
-    const statusIcon = pagesListPage.getStatusIcon(rowLocator);
-    await expect(statusIcon).toHaveAttribute('aria-label', 'Draft');
+    const statusIcon = await pagesListPage.getStatusChipText(rowLocator);
+    expect(statusIcon).toContain('Draft');
 });

@@ -109,6 +109,8 @@
                 <p-button
                     (onClick)="handleOpenMenu($event, page)"
                     id="pageActionButton-{{ rowIndex }}"
+                    data-testid="row-action-button"
+                    aria-label="More actions"
                     icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text" />
             </td>

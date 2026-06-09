@@ -1,9 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { PagesListPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { createPage, actionsPageWorkflow, Page } from '@requests/pages';
+import { actionsPageWorkflow, createPage, Page } from '@requests/pages';
 
-let pageContentlet: Page | null = null;
+let pageContentlet: Page;
 
 test.beforeEach(async ({ request }) => {
     const title = faker.lorem.words(3);
@@ -35,8 +35,8 @@ test('archive the page @critical', async ({ page }) => {
     const rowLocator = pagesListPage.getRowByTitle(pageContentlet.title);
     await expect(rowLocator).toBeVisible();
 
-    const statusIcon = pagesListPage.getStatusIcon(rowLocator);
-    await expect(statusIcon).toHaveAttribute('aria-label', 'Draft');
+    const statusIcon = await pagesListPage.getStatusChipText(rowLocator);
+    expect(statusIcon).toContain('Draft');
 
     await pagesListPage.doActionOnPage(rowLocator, 'Archive');
     await pagesListPage.activeArchivedFilter();
