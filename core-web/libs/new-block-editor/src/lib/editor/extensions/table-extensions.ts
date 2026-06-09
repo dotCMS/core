@@ -1,7 +1,7 @@
 import { NodeViewRenderer } from '@tiptap/core';
 import { Table, TableCell, TableHeader, TableKit } from '@tiptap/extension-table';
 import { Node as PMNode } from '@tiptap/pm/model';
-import { toggleHeaderColumn, toggleHeaderRow } from '@tiptap/pm/tables';
+import { toggleHeader } from '@tiptap/pm/tables';
 
 import { TableScopeAutoAssign } from './table-scope-auto-assign.plugin';
 
@@ -18,14 +18,15 @@ const DotTable = Table.extend({
      * per-row / per-column header toggle through the cell handle popovers, so the default
      * commands make every toggle land on the first row/column only.
      *
-     * We override them with prosemirror-tables' deprecated variants, which operate on the row /
-     * column of the *currently selected* cell (the popover places the selection in the target
-     * cell before running the command). See issue #35980 (bug 3).
+     * We override them to call `toggleHeader(type, { useDeprecatedLogic: true })`, whose logic
+     * operates on the row / column of the *currently selected* cell (the popover places the
+     * selection in the target cell before running the command). See issue #35980 (bug 3).
      *
-     * TODO: `toggleHeaderRow` / `toggleHeaderColumn` are prosemirror-tables' deprecated
-     * single-argument forms — `@tiptap/pm/tables` re-exports prosemirror-tables, so an upstream
-     * bump could drop these stubs without a TS compile-time break. Replace with a selection-scoped
-     * `toggleHeader()` once prosemirror-tables exposes one (or inline the cell-rect logic here).
+     * `useDeprecatedLogic` is a documented option on the `@public` `toggleHeader` signature, so
+     * this is the explicit, supported way to get per-selection toggling — preferred over the
+     * `toggleHeaderRow` / `toggleHeaderColumn` constant exports, which are just thin wrappers
+     * around the same option. If a future prosemirror-tables major drops the flag, replace this
+     * with an inlined cell-rect toggle built on the still-public `selectedRect` + `tableNodeTypes`.
      */
     addCommands() {
         return {
@@ -33,11 +34,11 @@ const DotTable = Table.extend({
             toggleHeaderRow:
                 () =>
                 ({ state, dispatch }) =>
-                    toggleHeaderRow(state, dispatch),
+                    toggleHeader('row', { useDeprecatedLogic: true })(state, dispatch),
             toggleHeaderColumn:
                 () =>
                 ({ state, dispatch }) =>
-                    toggleHeaderColumn(state, dispatch)
+                    toggleHeader('column', { useDeprecatedLogic: true })(state, dispatch)
         };
     },
     addAttributes() {
