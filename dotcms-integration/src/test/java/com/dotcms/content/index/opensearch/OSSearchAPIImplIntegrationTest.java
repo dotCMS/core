@@ -227,7 +227,11 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_searchRaw_nestedTopHits_shouldBePreservedOnBuckets() throws Exception {
-        final String fullLive = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        // Index into the live index's physical (.os-tagged) name registered in setUp(); this is
+        // the exact name searchRaw(live=true) resolves through VersionedIndices. Using the plain
+        // cluster-prefixed name would write to a different index than the one searched, so the
+        // terms aggregation would return zero buckets.
+        final String fullLive = physicalLive;
 
         // Two live docs sharing the same contenttype -> one terms bucket with docCount 2.
         indexDocument(fullLive, "nested-a-" + RUN_ID,
