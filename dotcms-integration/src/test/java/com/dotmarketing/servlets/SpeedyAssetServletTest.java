@@ -30,16 +30,33 @@ public class SpeedyAssetServletTest {
     }
 
     /**
-     * Method to test: {@link SpeedyAssetServlet#serve(HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: A request to the servlet with an authenticated user
-     * Expected Result: The request should be forwarded for an authenticated user,
-     * For a non-authenticated user, the status code should be 401
+     * Method to test: {@link SpeedyAssetServlet#service(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A request to the servlet carrying an invalid and then a valid dotCMS credential
+     * Expected Result: Neither is rejected with a 401 at the servlet; both are forwarded, with
+     * permission enforcement delegated downstream (see dotCMS/core#35536).
      */
     @Test
     public void speedyAssetWithAuthenticatedUser() throws Exception {
 
         final HttpServlet servlet = new SpeedyAssetServlet();
         ServletTestUtils.testServletWithAuthenticatedUser(servlet,
+                assetId -> "/dotAsset/" + assetId);
+
+    }
+
+    /**
+     * Method to test: {@link SpeedyAssetServlet#service(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A request for a publicly-readable (anonymous READ) asset carries a foreign
+     * BASIC Authorization header whose credentials are not a valid dotCMS user (as a browser would
+     * replay from an upstream Basic-Auth gating layer per RFC 7617).
+     * Expected Result: The servlet falls through to anonymous and serves (forwards) the asset
+     * instead of returning a 401. Regression test for dotCMS/core#35536.
+     */
+    @Test
+    public void speedyAssetPublicServedWithForeignBasicAuth() throws Exception {
+
+        final HttpServlet servlet = new SpeedyAssetServlet();
+        ServletTestUtils.testPublicAssetServedWithForeignBasicAuth(servlet,
                 assetId -> "/dotAsset/" + assetId);
 
     }

@@ -319,4 +319,55 @@ describe('UveStyleEditorFieldInputComponent', () => {
             expect(input.value).toBe('test');
         });
     });
+
+    describe('commit output (blur / Enter)', () => {
+        const setup = () => {
+            const field = createMockField('test-field', 'Font Size');
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-uve-style-editor-field-input [field]="field" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({ [field.id]: new FormControl('16') }),
+                        field
+                    }
+                }
+            );
+            spectator.detectChanges();
+
+            return spectator.query('input') as HTMLInputElement;
+        };
+
+        it('should emit commit on blur', () => {
+            const input = setup();
+            const emitSpy = jest.fn();
+            spectator.component.commit.subscribe(emitSpy);
+
+            spectator.dispatchFakeEvent(input, 'blur');
+
+            expect(emitSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should emit commit when Enter is pressed', () => {
+            const input = setup();
+            const emitSpy = jest.fn();
+            spectator.component.commit.subscribe(emitSpy);
+
+            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
+
+            expect(emitSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should NOT emit commit on other keystrokes', () => {
+            const input = setup();
+            const emitSpy = jest.fn();
+            spectator.component.commit.subscribe(emitSpy);
+
+            spectator.dispatchKeyboardEvent(input, 'keydown', 'a');
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+    });
 });

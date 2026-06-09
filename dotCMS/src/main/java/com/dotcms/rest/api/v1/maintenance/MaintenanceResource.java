@@ -26,6 +26,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
@@ -43,6 +44,9 @@ import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -89,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1482,6 +1487,194 @@ public class MaintenanceResource implements Serializable {
             }
         }
         return false;
+    }
+
+    /**
+     * Lists all Quartz scheduler jobs across every job group, with trigger details
+     * including next fire time, misfire policy, and current running status.
+     * <p>
+     * Jobs whose detail or trigger cannot be loaded (e.g. {@code ClassNotFoundException}
+     * after an upgrade removed the job class) are still surfaced with an {@code error}
+     * field so they can be deleted via {@link #deleteSystemJob}. Jobs with no trigger
+     * are skipped, mirroring the legacy {@code system_jobs.jsp} behavior.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return List of Quartz job descriptors.
+     */
+    @Operation(
+            summary = "List Quartz scheduler jobs",
+            description = "Returns every Quartz scheduler job across all job groups, with "
+                    + "trigger details (next fire time, misfire instruction) and current "
+                    + "running status. Errored jobs (e.g. class not found after upgrade) "
+                    + "are returned with an 'error' field so admins can clean them up. "
+                    + "Note: these are Quartz scheduler jobs, NOT the JobQueueManager "
+                    + "jobs exposed at /api/v1/jobs — those are a separate system."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "List of Quartz scheduler jobs",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySystemJobListView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_systemJobs")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySystemJobListView listSystemJobs(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final List<Map<String, Object>> jobs = new ArrayList<>();
+        final org.quartz.Scheduler scheduler = QuartzUtils.getScheduler();
+        final SimpleDateFormat fireTimeFormat = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+        final String[] groups;
+        try {
+            groups = scheduler.getJobGroupNames();
+        } catch (Exception e) {
+            Logger.error(this, "Unable to read Quartz job group names: " + e.getMessage(), e);
+            throw new DotRuntimeException("Unable to read Quartz scheduler groups", e);
+        }
+
+        for (final String group : groups) {
+            final String[] taskNames;
+            try {
+                taskNames = scheduler.getJobNames(group);
+            } catch (Exception e) {
+                Logger.warn(this, "Unable to read job names for group '" + group + "': " + e.getMessage());
+                continue;
+            }
+
+            for (final String taskName : taskNames) {
+                try {
+                    final JobDetail detail = scheduler.getJobDetail(taskName, group);
+                    final Trigger[] triggers = scheduler.getTriggersOfJob(taskName, group);
+                    final Trigger trigger = (triggers != null && triggers.length > 0) ? triggers[0] : null;
+                    if (trigger == null) {
+                        continue;
+                    }
+
+                    final Map<String, Object> job = new LinkedHashMap<>();
+                    job.put("name", taskName);
+                    job.put("className", detail.getJobClass().getSimpleName());
+                    job.put("group", group);
+                    job.put("durable", detail.isDurable());
+                    job.put("stateful", detail.isStateful());
+                    job.put("volatile", detail.isVolatile());
+                    job.put("running", QuartzUtils.isJobRunning(detail.getName(), detail.getGroup()));
+
+                    if (trigger.getNextFireTime() != null) {
+                        job.put("nextFireTime", trigger.getNextFireTime().getTime());
+                        job.put("nextFireTimeFormatted",
+                                fireTimeFormat.format(trigger.getNextFireTime()));
+                    }
+
+                    if (trigger instanceof CronTrigger) {
+                        final int misfire = trigger.getMisfireInstruction();
+                        if (misfire == CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING) {
+                            job.put("misfireInstruction", "DO_NOTHING");
+                        } else if (misfire == CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW) {
+                            job.put("misfireInstruction", "FIRE_ONCE_NOW");
+                        } else {
+                            job.put("misfireInstruction", "UNKNOWN");
+                        }
+                    }
+
+                    jobs.add(job);
+                } catch (Exception e) {
+                    final Map<String, Object> errorJob = new LinkedHashMap<>();
+                    errorJob.put("name", taskName);
+                    errorJob.put("group", group);
+                    errorJob.put("error", e.getMessage());
+                    jobs.add(errorJob);
+                }
+            }
+        }
+
+        return new ResponseEntitySystemJobListView(jobs);
+    }
+
+    /**
+     * Deletes a Quartz scheduler job by its group and name. Primarily used to remove
+     * errored jobs that can no longer execute (e.g., class not found after an upgrade).
+     * Returns 404 if the job does not exist in the scheduler.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param group    Quartz job group name
+     * @param name     Quartz job name
+     * @return Confirmation containing the deleted job's name and group.
+     */
+    @Operation(
+            summary = "Delete a Quartz scheduler job",
+            description = "Removes a Quartz scheduler job (and all associated triggers) "
+                    + "from the scheduler by its group and name. Used to clean up errored "
+                    + "or orphaned jobs after upgrades. Returns 404 if no matching job "
+                    + "exists in the scheduler."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Job deleted",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySystemJobDeleteView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No job matches the supplied group and name",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_systemJobs/{group}/{name}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySystemJobDeleteView deleteSystemJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "Quartz job group name", required = true)
+            @PathParam("group") final String group,
+            @Parameter(description = "Quartz job name", required = true)
+            @PathParam("name") final String name) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        Logger.info(this, "Deleting Quartz job with name=" + name + " and group=" + group);
+        SecurityLogger.logInfo(this.getClass(), String.format(
+                "User '%s' (ip=%s) is deleting Quartz job name='%s' group='%s'",
+                user.getUserId(), request.getRemoteAddr(), name, group));
+
+        final boolean removed;
+        try {
+            removed = QuartzUtils.removeJob(name, group);
+        } catch (Exception e) {
+            Logger.error(this, "Failed to delete Quartz job name=" + name + " group=" + group
+                    + ": " + e.getMessage(), e);
+            throw new DotRuntimeException("Failed to delete Quartz job: " + e.getMessage(), e);
+        }
+
+        if (!removed) {
+            throw new NotFoundException(String.format(
+                    "No Quartz job found with name='%s' and group='%s'", name, group));
+        }
+
+        Logger.info(this, "Quartz job with name=" + name + " and group=" + group + " deleted");
+
+        final Map<String, Object> result = new LinkedHashMap<>();
+        result.put("deleted", true);
+        result.put("name", name);
+        result.put("group", group);
+        return new ResponseEntitySystemJobDeleteView(result);
     }
 
     /**
