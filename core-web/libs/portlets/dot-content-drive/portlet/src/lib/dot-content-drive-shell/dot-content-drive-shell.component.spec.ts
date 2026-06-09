@@ -353,6 +353,18 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should configure the dialog as closable and closeOnEscape', () => {
+            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.closable).toBe(true);
+            expect(dialogComponent.closeOnEscape).toBe(true);
+        });
+
         it('should show dialog-folder component when folder dialog type is set', () => {
             store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
             spectator.detectChanges();

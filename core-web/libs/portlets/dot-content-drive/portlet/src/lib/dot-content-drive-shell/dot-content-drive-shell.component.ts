@@ -124,7 +124,7 @@ export class DotContentDriveShellComponent {
     );
 
     /** List type for the content-type selector dialog (encodes which base types to show). */
-    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes>(
+    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(
         () => (this.#store.dialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
     );
 
