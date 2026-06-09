@@ -88,7 +88,7 @@ jobs:
 
       # Checkout the repository
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Setup git configuration
       - name: 'Setup git config'
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Check out repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
       - name: 'Create artifacts directory'
@@ -192,14 +192,14 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Checkout code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.precheck.outputs.HEAD }}
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
 
       - name: 'Set up Node.js'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -357,7 +357,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.precheck.outputs.HEAD }}
 

@@ -73,13 +73,13 @@ jobs:
     steps:
       # Checkout code based on whether a specific ref is provided
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         if: inputs.ref == ''
         with:
           fetch-depth: 0
       - name: Checkout code with ref ${{ inputs.ref }}
         if: inputs.ref != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0

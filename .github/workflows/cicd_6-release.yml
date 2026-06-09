@@ -205,7 +205,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
 
@@ -226,7 +226,7 @@ jobs:
           && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
           && startsWith(needs.release-prepare.outputs.release_tag, 'v')
         continue-on-error: true
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 

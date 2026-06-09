@@ -36,7 +36,7 @@ This GitHub composite action deploys Javadoc artifacts to the GitHub Packages re
 
 ## Steps
 
-1. **Checkout**: Uses the `actions/checkout@v4` action to check out the specified branch.
+1. **Checkout**: Uses the `actions/checkout@v5` action to check out the specified branch.
 2. **Maven Clean Build**: Runs a Maven clean install to build the project (skipping tests), only if `artifact-run-id` is not provided.
 3. **Deploy Javadoc**: Runs Maven to generate Javadocs and restores classes from the specified artifact run ID if provided.
 4. **Configure AWS Credentials**: Configures AWS credentials using the `aws-actions/configure-aws-credentials@v1` action.

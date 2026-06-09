@@ -48,7 +48,7 @@ jobs:
       has_results: ${{ steps.find.outputs.has_results }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           sparse-checkout: |
             .github/scripts/qa-stuck-check
@@ -57,7 +57,7 @@ jobs:
 
       - name: Find stuck issues
         id: find
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           PROJECT_OWNER: ${{ env.PROJECT_OWNER }}
           PROJECT_NUMBER: ${{ env.PROJECT_NUMBER }}
@@ -95,7 +95,7 @@ jobs:
     steps:
       - name: Build Slack message
         id: build
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           GROUP_JSON: ${{ toJSON(matrix.group) }}
         with:
