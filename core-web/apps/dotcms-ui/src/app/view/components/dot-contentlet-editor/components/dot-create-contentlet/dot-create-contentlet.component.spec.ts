@@ -132,6 +132,21 @@ describe('DotCreateContentletComponent', () => {
         expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
+    it('should emit shutdown and redirect to Content Drive with un-prefixed params when coming from Content Drive', () => {
+        jest.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/c/content/new/');
+        jest.spyOn(routerService, 'currentPortlet', 'get').mockReturnValue({
+            url: 'c/content/new/blog?CD_path=/foo&CD_filters=bar',
+            id: 'content'
+        } as any);
+        spectator.detectChanges();
+        spectator.component.onClose({});
+        expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
+        expect(routerService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
+            queryParams: { path: '/foo', filters: 'bar' }
+        });
+        expect(routerService.goToContent).not.toHaveBeenCalled();
+    });
+
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {
         jest.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/pages/new/');
         spectator.detectChanges();

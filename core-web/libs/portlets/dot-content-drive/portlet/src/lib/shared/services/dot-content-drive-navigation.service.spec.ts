@@ -199,6 +199,67 @@ describe('DotContentDriveNavigationService', () => {
         });
     });
 
+    describe('createContent', () => {
+        it('should navigate to new content editor (no query params) when feature flag is enabled', () => {
+            const mockContentType = createFakeContentType({
+                id: 'blog',
+                name: 'Blog',
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+            });
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.createContent('blog');
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/blog']);
+        });
+
+        it('should navigate to legacy content editor with mapped CD_ params when feature flag is disabled', () => {
+            const mockContentType = createFakeContentType({
+                id: 'news',
+                name: 'News',
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
+            });
+
+            location.path.mockReturnValue('/content-drive?path=/foo&filters=bar');
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.createContent('news');
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('news');
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/new/news'], {
+                queryParams: {
+                    CD_path: '/foo',
+                    CD_filters: 'bar'
+                }
+            });
+        });
+
+        it('should navigate to legacy content editor with mapped CD_ params when feature flag is missing', () => {
+            const mockContentType = createFakeContentType({
+                id: 'product',
+                name: 'Product',
+                metadata: {}
+            });
+
+            location.path.mockReturnValue('/content-drive?path=/foo&filters=bar');
+
+            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+
+            service.createContent('product');
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('product');
+            expect(router.navigate).toHaveBeenCalledWith(['c/content/new/product'], {
+                queryParams: {
+                    CD_path: '/foo',
+                    CD_filters: 'bar'
+                }
+            });
+        });
+    });
+
     describe('editPage', () => {
         it('should navigate to edit page with urlMap when available', () => {
             const mockContentlet = createFakeContentlet({

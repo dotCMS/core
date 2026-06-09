@@ -23,10 +23,12 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms
 import { DotPaletteListStore } from './store';
 
 import {
+    BASE_TYPES_FOR_CONTENT_DRIVE,
     DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotUVEPaletteListTypes,
-    DotUVEPaletteListView
+    DotUVEPaletteListView,
+    LIST_TYPE_BASE_TYPES
 } from '../../../models';
 import { buildPaletteFavorite, EMPTY_PAGINATION } from '../../../utils';
 
@@ -670,6 +672,135 @@ describe('DotPaletteListStore', () => {
                         per_page: 30
                     })
                 );
+            });
+
+            describe('page-agnostic list types', () => {
+                // Every page-agnostic list type routes to the global endpoint
+                // (getAllContentTypes) with its mapped base-type filter, NOT the
+                // page-scoped get() endpoint.
+                const pageAgnosticCases: Array<{
+                    listType: DotUVEPaletteListTypes;
+                    types: string[];
+                }> = [
+                    {
+                        listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES,
+                        types: BASE_TYPES_FOR_CONTENT_DRIVE
+                    },
+                    { listType: DotUVEPaletteListTypes.ALL_CONTENT, types: ['CONTENT'] },
+                    { listType: DotUVEPaletteListTypes.ALL_WIDGET, types: ['WIDGET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_FILEASSET, types: ['FILEASSET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_DOTASSET, types: ['DOTASSET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_PERSONA, types: ['PERSONA'] },
+                    { listType: DotUVEPaletteListTypes.ALL_VANITY_URL, types: ['VANITY_URL'] },
+                    { listType: DotUVEPaletteListTypes.ALL_KEY_VALUE, types: ['KEY_VALUE'] },
+                    { listType: DotUVEPaletteListTypes.ALL_HTMLPAGE, types: ['HTMLPAGE'] }
+                ];
+
+                it.each(pageAgnosticCases)(
+                    'should fetch via getAllContentTypes with mapped base types for $listType',
+                    ({ listType, types }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                types,
+                                per_page: 30
+                            })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should use LIST_TYPE_BASE_TYPES mapping for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                types: LIST_TYPE_BASE_TYPES[listType]
+                            })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should NOT call the page endpoint get() for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should update store with content types for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(store.contenttypes()).toEqual(mockContentTypes);
+                        expectContentTypesView();
+                        expectLoadedState();
+                    }
+                );
+
+                it('should pass ALL base types except FORM for ALL_CONTENT_TYPES', () => {
+                    store.getContentTypes({
+                        listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES
+                    });
+
+                    expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            types: [
+                                'CONTENT',
+                                'WIDGET',
+                                'FILEASSET',
+                                'DOTASSET',
+                                'PERSONA',
+                                'VANITY_URL',
+                                'KEY_VALUE',
+                                'HTMLPAGE'
+                            ]
+                        })
+                    );
+                    expect(pageContentTypeService.getAllContentTypes).not.toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            types: expect.arrayContaining(['FORM'])
+                        })
+                    );
+                });
+
+                it('should pass host parameter through to getAllContentTypes for page-agnostic types', () => {
+                    store.getContentTypes({
+                        host: 'demo.dotcms.com',
+                        listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+                    });
+
+                    expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            host: 'demo.dotcms.com',
+                            types: ['HTMLPAGE'],
+                            per_page: 30
+                        })
+                    );
+                    expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                });
+            });
+
+            it('should pass allowedContentTypes to buildPaletteFavorite for FAVORITES list type', () => {
+                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+
+                store.getContentTypes({
+                    listType: DotUVEPaletteListTypes.FAVORITES,
+                    allowedContentTypes: { blog: true, banner: true }
+                });
+
+                expect(buildPaletteFavorite).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        allowedContentTypes: { blog: true, banner: true }
+                    })
+                );
+                expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                expect(pageContentTypeService.getAllContentTypes).not.toHaveBeenCalled();
             });
         });
 
