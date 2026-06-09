@@ -140,23 +140,7 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
 
 # Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
-# jaz can auto-tune heap sizing and GC from the container's cgroup limits, BUT only when
-# it detects NO user-supplied tuning flags; ANY -X/-XX flag (except diagnostics like
-# -Xlog/-XX:ErrorFile/-XX:*HeapDump*/-XX:*OnOutOfMemoryError) makes jaz tune nothing and
-# just launch java with the user's flags.
-#
-# We deliberately tune manually here: we want -XX:+UseCompactObjectHeaders (JEP 519, ~5-15%
-# heap savings) which jaz does NOT set, and jaz bundled in this image flags JDK 25 as
-# "not certified" so it applies only generic tuning anyway (verified via JAZ_DRY_RUN: G1 +
-# computed -Xmx + heap-free ratios, no compact headers). So the -XX flags above intentionally
-# put jaz in hands-off mode; jaz still provides crash-dump capture and graceful signal
-# forwarding. Heap is therefore sized explicitly via -XX:MaxRAMPercentage above.
-# (--enable-preview and -D/--add-opens are NOT tuning flags and never affect jaz.)
-# Inspect what jaz would inject: JAZ_DRY_RUN=1.  Force jaz to override user flags:
-# JAZ_IGNORE_USER_TUNING=1 (note: that drops our compact-headers flag).
-# Docs: https://learn.microsoft.com/java/jaz/faq
-# Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
-# Set _RUNJAVA=/java/bin/java to bypass jaz.
+# Set JAZ_IGNORE_USER_TUNING=1 to use jaz.
 if [ -z "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
   export _RUNJAVA="$(command -v jaz)"
 fi
