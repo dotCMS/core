@@ -95,6 +95,12 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+      # Post-merge safety net for the CLI. The PR/merge-queue pipelines gate CLI
+      # tests on the narrow `cli_test` filter (CLI sources + the REST endpoints the
+      # CLI consumes), so a deeper business-layer change can slip through untested.
+      # On trunk we run the CLI tests for any backend change to catch that on main
+      # before it reaches a release. (Skipped on java-version overrides, like build-cli.)
+      cli: ${{ !github.event.inputs.java-version && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:

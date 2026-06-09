@@ -34,6 +34,35 @@ frontend: &frontend
 cli: &cli
   - 'tools/dotcms-cli/**'
 
+# Server-side REST endpoints the dotCMS CLI consumes at runtime. The CLI's
+# integration tests (tools/dotcms-cli, @QuarkusTest + testcontainers) exercise a
+# live dotCMS, so a change to one of these endpoints can break the CLI even when
+# tools/dotcms-cli/** is untouched.
+#
+# Keep in sync with the @Path REST-client interfaces in
+# tools/dotcms-cli/api-data-model/src/main/java/com/dotcms/api/*API.java
+cli_endpoints: &cli_endpoints
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/asset/**'           # AssetAPI          -> /v1/assets
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/folder/**'          # FolderAPI         -> /v1/folder
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/site/**'            # SiteAPI           -> /v1/site
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/contenttype/**'     # ContentTypeAPI    -> /v1/contenttype
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v2/languages/**'       # LanguageAPI       -> /v2/languages
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/workflow/**'        # WorkflowAPI       -> /v1/workflow
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/authentication/**'  # AuthenticationAPI -> /v1/authentication
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/user/**'            # UserAPI           -> /v1/users
+  - 'dotCMS/src/main/java/com/dotcms/rest/api/v1/analytics/event/**' # AnalyticsAPI      -> /v1/analytics/content/event
+  # Asset push/pull is the CLI's heaviest workflow; WebAssetHelper (in the asset
+  # package above) delegates into these asset-specific business APIs.
+  - 'dotCMS/src/main/java/com/dotmarketing/portlets/fileassets/business/**' # FileAssetAPI
+  - 'dotCMS/src/main/java/com/dotcms/browser/**'                            # BrowserAPI
+
+# CLI test trigger: run the CLI integration tests when the CLI sources change OR
+# when any server endpoint the CLI consumes changes. Distinct from `cli` (which
+# gates the GraalVM native build) so endpoint-only changes don't force a rebuild.
+cli_test: &cli_test
+  - *cli
+  - *cli_endpoints
+
 sdk_libs:
   - 'core-web/libs/sdk/**'
 
