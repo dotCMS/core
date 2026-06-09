@@ -74,6 +74,13 @@ public class OSMappingAPIImplIntegrationTest extends IntegrationTestBase {
     @Inject
     private OSIndexAPIImpl osIndexAPI;
 
+    // Used to resolve the physical (cluster-prefixed, tagged) index name.
+    @Inject
+    private ContentletIndexOperationsOS opsOS;
+
+    /** Cluster-prefixed (and tag-suffixed) physical name; resolved once per test in {@link #setUp()}. */
+    private String physicalName;
+
     // =========================================================================
     // Lifecycle
     // =========================================================================
@@ -85,9 +92,10 @@ public class OSMappingAPIImplIntegrationTest extends IntegrationTestBase {
 
     @Before
     public void setUp() throws Exception {
+        physicalName = opsOS.toPhysicalName(IDX_MAPPING);
         cleanupTestOsIndices();
-        osIndexAPI.createIndex(IDX_MAPPING, 1);
-        Logger.info(this, "setUp: created OS index '" + IDX_MAPPING + "'");
+        osIndexAPI.createIndex(physicalName, 1);
+        Logger.info(this, "setUp: created OS index '" + physicalName + "'");
     }
 
     @After
@@ -268,7 +276,7 @@ public class OSMappingAPIImplIntegrationTest extends IntegrationTestBase {
      * Skipping absent indices avoids noisy error logs between tests.
      */
     private synchronized void cleanupTestOsIndices() {
-        for (final String idx : List.of(IDX_MAPPING)) {
+        for (final String idx : List.of(physicalName)) {
             try {
                 if (osIndexAPI.indexExists(idx)) {
                     osIndexAPI.delete(idx);
