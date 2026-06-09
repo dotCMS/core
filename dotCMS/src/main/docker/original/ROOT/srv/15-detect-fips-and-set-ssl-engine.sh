@@ -2,25 +2,27 @@
 
 # FIPS Mode Detection and APR SSL Engine Configuration
 # =====================================================
-# This script automatically detects FIPS-enabled environments and disables the
-# Tomcat Native APR SSL Engine to prevent JVM crashes with OpenSSL 3.x.
+# This script automatically detects FIPS-enabled environments and prevents
+# libtcnative-1 from loading to avoid JVM crashes with OpenSSL 3.x in FIPS mode.
 #
-# The Tomcat Native APR library (libtcnative-1) version 1.2.35 is incompatible
-# with OpenSSL 3.x when running in FIPS mode, causing segmentation faults.
-# Setting SSLEngine=off alone is insufficient: libtcnative-1 still loads
-# libcrypto.so.3 and calls OpenSSL for non-SSL operations (e.g. random number
-# generation), which triggers the same FIPS provider crash.
+# Root cause: libtcnative-1 links against libcrypto.so.3. On a FIPS-enabled kernel,
+# OpenSSL 3.x requires the FIPS provider (fips.so) to be present before allowing
+# any crypto operation. Ubuntu 24.04 does not ship fips.so, so the first OpenSSL
+# crypto call (e.g. EVP_MD_get0_provider for random number generation) segfaults.
+# This happens regardless of SSLEngine or AprLifecycleListener configuration because
+# setenv.sh sets java.library.path to /usr/lib/<arch>-linux-gnu/ and Tomcat auto-
+# detects and loads libtcnative-1 from there even without an AprLifecycleListener.
 #
-# When FIPS mode is detected, the AprLifecycleListener is removed from
-# server.xml at runtime (before Tomcat starts) so that libtcnative-1 is never
-# loaded by Tomcat at all. server.xml lives under /srv/dotserver/tomcat/conf/
-# which is owned by the dotcms user, so no root privileges are needed.
+# Fix: The Dockerfile moves libtcnative-1.so.0* to /srv/native-libs/ (owned by the
+# dotcms user) and leaves symlinks in /usr/lib. When FIPS is detected, this script
+# removes the files in /srv/native-libs/, making the symlinks dangling. dlopen() then
+# fails to load the library regardless of java.library.path or server.xml config.
 #
 # Configuration Options:
 # ----------------------
 # 1. Automatic FIPS Detection (default behavior):
 #    - The script checks /proc/sys/crypto/fips_enabled
-#    - If FIPS is enabled, CMS_SSL_ENGINE is automatically set to 'off'
+#    - If FIPS is enabled, libtcnative-1 is removed and CMS_SSL_ENGINE is set to 'off'
 #
 # 2. Manual Override with CMS_DISABLE_APR_SSL:
 #    - Set CMS_DISABLE_APR_SSL=true to disable APR SSL Engine
@@ -61,20 +63,15 @@ elif [[ "${FIPS_ENABLED}" == "true" ]]; then
     echo "[FIPS Detection] Automatically disabling APR SSL Engine due to FIPS mode"
     echo "[FIPS Detection] This prevents JVM crashes with OpenSSL 3.x in FIPS environments"
     echo "[FIPS Detection] Tomcat will use Java JSSE for SSL/TLS instead"
-    # SSLEngine=off alone does not prevent libtcnative-1 from loading libcrypto.so.3
-    # and calling OpenSSL for non-SSL operations. Remove the AprLifecycleListener
-    # from server.xml so Tomcat never loads the native library at all.
-    # server.xml is under /srv (owned by dotcms user) so no root access is needed.
-    TOMCAT_SERVER_XML="${TOMCAT_HOME:-/srv/dotserver/tomcat}/conf/server.xml"
-    if [[ -f "${TOMCAT_SERVER_XML}" ]]; then
-        sed -i '/AprLifecycleListener/d' "${TOMCAT_SERVER_XML}"
-        if ! grep -q 'AprLifecycleListener' "${TOMCAT_SERVER_XML}"; then
-            echo "[FIPS Detection] AprLifecycleListener removed from server.xml — libtcnative-1 will not be loaded"
-        else
-            echo "[FIPS Detection] WARNING: Failed to remove AprLifecycleListener from ${TOMCAT_SERVER_XML} — JVM may still crash"
-        fi
+    # Remove libtcnative-1 from /srv/native-libs (writable by dotcms user).
+    # The Dockerfile placed the library there and left symlinks in /usr/lib.
+    # Removing the target makes the symlinks dangling so dlopen() cannot load
+    # the library regardless of java.library.path or server.xml configuration.
+    if rm -f /srv/native-libs/libtcnative-1.so.0* && \
+       ! ls /srv/native-libs/libtcnative-1.so.0* >/dev/null 2>&1; then
+        echo "[FIPS Detection] libtcnative-1 removed from /srv/native-libs — library cannot be loaded"
     else
-        echo "[FIPS Detection] WARNING: server.xml not found at ${TOMCAT_SERVER_XML} — libtcnative-1 may still load"
+        echo "[FIPS Detection] WARNING: Failed to remove libtcnative-1 from /srv/native-libs — JVM may still crash"
     fi
     export CMS_SSL_ENGINE="off"
 else

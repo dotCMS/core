@@ -92,6 +92,19 @@ COPY --from=container-base /java /java
 COPY --from=container-base /srv /srv
 COPY --from=container-base /data /data
 
+# Move libtcnative-1 to /srv/native-libs (owned by dotcms user) and leave symlinks
+# in /usr/lib. This lets the FIPS detection script remove the library at runtime
+# without root access — making the symlinks dangling so dlopen() fails to load it.
+RUN set -e; \
+    ARCH=$(uname -m); \
+    mkdir -p /srv/native-libs; \
+    for f in /usr/lib/${ARCH}-linux-gnu/libtcnative-1.so.0*; do \
+        [ -e "$f" ] || continue; \
+        mv "$f" /srv/native-libs/; \
+        ln -sf "/srv/native-libs/$(basename "$f")" "$f"; \
+    done; \
+    chown -R dotcms:dotcms /srv/native-libs
+
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
