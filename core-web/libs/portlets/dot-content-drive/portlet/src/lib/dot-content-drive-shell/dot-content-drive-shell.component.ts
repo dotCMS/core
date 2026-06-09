@@ -128,10 +128,13 @@ export class DotContentDriveShellComponent {
         () => (this.#store.dialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
     );
 
-    /** Content-type selector needs more room than the default dialog (4-column card grid). */
+    /**
+     * Content-type selector: sized to fit ~4 UVE-width cards per row. No horizontal padding so
+     * the paginator/footer separators span edge-to-edge; the list and footer add their own inset.
+     */
     readonly $dialogContentClass = computed(() =>
         this.#store.dialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
-            ? 'w-[min(92vw,60rem)] pt-0 p-4'
+            ? 'w-[min(92vw,38rem)] px-0! pt-0 pb-4'
             : 'w-[43.75rem] pt-0 p-4'
     );
 

@@ -55,6 +55,9 @@ export class DotContentDriveNavigationService {
      * @param contentTypeVariable - The variable name of the content type to create
      */
     createContent(contentTypeVariable: string) {
+        const currentPath = this.#location.path(true);
+        const currentQueryParams = new URL(currentPath, window.location.origin).searchParams;
+
         this.#dotContentTypeService
             .getContentType(contentTypeVariable)
             .pipe(take(1))
@@ -63,7 +66,13 @@ export class DotContentDriveNavigationService {
                     !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
 
                 if (shouldRedirectToOldContentEditor) {
-                    this.#router.navigate([`c/content/new/${contentTypeVariable}`]);
+                    // Carry the current Content Drive params (filters/path) as CD_-prefixed query
+                    // params so closing the legacy editor returns the user to Content Drive with
+                    // their filters preserved — same mechanism as #editContentlet.
+                    const mappedQueryParams = mapQueryParamsToCDParams(currentQueryParams);
+                    this.#router.navigate([`c/content/new/${contentTypeVariable}`], {
+                        queryParams: mappedQueryParams
+                    });
                     return;
                 }
 

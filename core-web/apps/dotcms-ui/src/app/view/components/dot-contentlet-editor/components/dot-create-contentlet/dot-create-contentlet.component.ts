@@ -7,6 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
+import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -53,7 +54,22 @@ export class DotCreateContentletComponent implements OnInit {
      */
     onClose(event: unknown): void {
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
-            this.dotRouterService.goToContent();
+            // If opened from Content Drive, the URL carries CD_-prefixed params (filters/path).
+            // Return there with the filters preserved — same behavior as editing a contentlet
+            // (DotContentletWrapperComponent.onClose). Otherwise fall back to the content listing.
+            const searchParams = new URL(
+                this.dotRouterService.currentPortlet.url,
+                window.location.origin
+            ).searchParams;
+            const contentDriveParams = mapParamsFromEditContentlet(searchParams);
+
+            if (Object.keys(contentDriveParams).length) {
+                this.dotRouterService.gotoPortlet('content-drive', {
+                    queryParams: contentDriveParams
+                });
+            } else {
+                this.dotRouterService.goToContent();
+            }
         }
 
         if (this.dotRouterService.currentSavedURL.includes('/pages/new/')) {

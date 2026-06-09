@@ -46,23 +46,6 @@ import {
     EMPTY_PAGINATION
 } from '../../../utils';
 
-/**
- * Favorite Page content type variables (current + legacy). It's a single system content type
- * with the CONTENT base type, so it leaks into the Content / All Content Types lists and the
- * global endpoint can't exclude it. We drop it from the visible page and adjust the total by one.
- */
-const FAVORITE_PAGE_VARIABLES = new Set(['dotfavoritepage', 'favoritepage']);
-
-function isFavoritePageContentType(variable: string | undefined): boolean {
-    return !!variable && FAVORITE_PAGE_VARIABLES.has(variable.toLowerCase());
-}
-
-/** List types whose base types include CONTENT, where the Favorite Page type can appear. */
-const LIST_TYPES_WITH_FAVORITE_PAGE = new Set<DotUVEPaletteListTypes>([
-    DotUVEPaletteListTypes.ALL_CONTENT_TYPES,
-    DotUVEPaletteListTypes.ALL_CONTENT
-]);
-
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
     contentlets: [],
@@ -122,35 +105,15 @@ export const DotPaletteListStore = signalStore(
 
             // Page-agnostic list types (e.g. Content Drive "New" menu): fetch content types of
             // the mapped base types from the global endpoint (no page context), with server-side
-            // pagination so it scales on large instances.
+            // pagination so it scales on large instances. System types (e.g. Favorite Page) are
+            // excluded server-side — see backend issue #36072.
             const baseTypes = LIST_TYPE_BASE_TYPES[listType];
             if (baseTypes) {
-                const request = pageContentTypeService.getAllContentTypes({
+                return pageContentTypeService.getAllContentTypes({
                     ...params,
                     types: baseTypes,
                     per_page: DEFAULT_PER_PAGE
                 });
-
-                // Favorite Page (system, CONTENT base type) leaks into the Content / All lists and
-                // can't be excluded server-side. Drop it from the visible page; when browsing (no
-                // filter) it's guaranteed present, so adjust the total by one to keep counts right.
-                if (!LIST_TYPES_WITH_FAVORITE_PAGE.has(listType)) {
-                    return request;
-                }
-
-                return request.pipe(
-                    map(({ contenttypes, pagination }) => ({
-                        contenttypes: contenttypes.filter(
-                            (contentType) => !isFavoritePageContentType(contentType.variable)
-                        ),
-                        pagination: params.filter
-                            ? pagination
-                            : {
-                                  ...pagination,
-                                  totalEntries: Math.max(0, pagination.totalEntries - 1)
-                              }
-                    }))
-                );
             }
 
             switch (listType) {

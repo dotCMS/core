@@ -27,6 +27,10 @@
         </i>
     </div>
     <div
+        data-testid="content-type-name"
+        [pTooltip]="contentType.name"
+        tooltipPosition="top"
+        [tooltipDisabled]="!!contentType.disabled"
         class="text-sm leading-tight font-semibold text-gray-600 group-hover:text-(--color-palette-primary-700)"
         [ngClass]="
             $isListView() ? 'min-w-0 flex-1 truncate text-left' : 'line-clamp-2 text-center'
