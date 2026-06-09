@@ -366,17 +366,13 @@ export class DotEditContentLayoutComponent {
      * @param workflow - The workflow action to execute
      */
     onWorkflowActionFired(workflow: DotCMSWorkflowAction): void {
-        const inode = this.$store.contentlet()?.inode;
-        // Don't fire with a missing inode — the params type requires a string and the API
-        // would otherwise receive a malformed request.
-        if (!inode) {
-            return;
-        }
-
         const currentLocale = this.$store.currentLocale();
+        // NOTE: inode is intentionally optional — new (unsaved) content has no inode yet and
+        // the create flow relies on that. Do NOT add an `if (!inode) return` guard here: it
+        // silently blocks saving brand-new content (the workflow action never fires).
         this.$editContentForm()?.fireWorkflowAction({
             workflow,
-            inode,
+            inode: this.$store.contentlet()?.inode,
             contentType: this.$store.contentType().variable,
             languageId: currentLocale ? currentLocale.id.toString() : '',
             identifier: this.$store.currentIdentifier()
