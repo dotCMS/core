@@ -2088,6 +2088,9 @@ public class ContentTypeResource implements Serializable {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
         try {
             final ContentType existing = contentTypeAPI.find(idOrVar);
+            if (existing == null) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
 
             if (metadataPatch == null || metadataPatch.isEmpty()) {
                 Logger.warn(this, "No metadata patch found for " + idOrVar);
@@ -2136,14 +2139,18 @@ public class ContentTypeResource implements Serializable {
      * Normalizes the {@code DOT_STYLE_EDITOR_SCHEMA} entry in the given metadata patch map so that
      * its value is always stored as a JSON string rather than a raw JSON object.
      * <p>
-     * This method serializes any non-String, non-null value back to a compact JSON string and
-     * writes it in-place into {@code metadataPatch}.
+     * When a client sends the schema as a JSON object (e.g. a deserialized {@link java.util.Map}),
+     * Jackson binds it as a {@code LinkedHashMap}. Page-rendering code downstream casts the stored
+     * value directly to {@code String}, so tolerating a non-String value would cause a
+     * {@link ClassCastException} at render time. This method serializes any non-String, non-null
+     * value back to a compact JSON string and writes it in-place into {@code metadataPatch}.
      * <p>
-     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key (which
-     * signals "remove the key"), are left untouched.
+     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key
+     * (which signals "remove the key"), are left untouched.
      *
      * @param metadataPatch the mutable metadata patch map supplied by the caller; modified in place
      *                      when the schema value needs normalization
+     * @throws BadRequestException if the value cannot be serialized to a JSON string
      */
     private static void normalizeStyleEditorSchemaToString(final Map<String, Object> metadataPatch) {
         final Object rawSchema = metadataPatch.get("DOT_STYLE_EDITOR_SCHEMA");
@@ -2152,14 +2159,16 @@ public class ContentTypeResource implements Serializable {
         }
 
         final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-        final String schemaStr = Try.of(() -> mapper.writeValueAsString(rawSchema))
-                .onFailure(e -> Logger.warn(ContentTypeResource.class,
-                        "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage()))
-                .getOrNull();
-
-        if (schemaStr != null) {
-            metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
+        final String schemaStr;
+        try {
+            schemaStr = mapper.writeValueAsString(rawSchema);
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeResource.class,
+                    "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage());
+            throw new BadRequestException(
+                    "DOT_STYLE_EDITOR_SCHEMA must be a serializable JSON value");
         }
+        metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
     }
 
 	private static long getLanguageId(final String language) {

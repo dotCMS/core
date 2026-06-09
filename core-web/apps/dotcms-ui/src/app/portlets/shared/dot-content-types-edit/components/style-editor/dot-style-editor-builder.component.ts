@@ -241,8 +241,11 @@ export class DotStyleEditorBuilderComponent {
      */
     #loadFromMetadata(contentType: DotCMSContentType): void {
         const raw = contentType.metadata?.[STYLE_EDITOR_SCHEMA_KEY];
-        if (!raw || typeof raw !== 'string') {
-            console.warn('[StyleEditorBuilder] Invalid schema in metadata');
+        if (!raw) {
+            return;
+        }
+        if (typeof raw !== 'string') {
+            console.warn('[StyleEditorBuilder] DOT_STYLE_EDITOR_SCHEMA is not a string; ignoring');
             return;
         }
 
