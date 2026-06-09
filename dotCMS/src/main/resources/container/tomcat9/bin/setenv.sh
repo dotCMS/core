@@ -5,8 +5,8 @@ export LANG=${LANG:-"C.UTF-8"}
 
 export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-# This is what MS jaz always runs 
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:+UseG1GC -XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -XX:NativeMemoryTracking=summary -Djdk.nio.maxCachedBufferSize=262144"}
+# This is what MS jaz always runs. G1GC is now java default
+export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -XX:NativeMemoryTracking=summary -Djdk.nio.maxCachedBufferSize=262144"}
 
 # Calculate direct (off-heap) buffer memory based on container memory to prevent unbound growth 
 # can't use a percentage here so we have to calc it ourselves
