@@ -12,9 +12,6 @@ export const SYSTEM_HOST: DotSite = {
     identifier: 'SYSTEM_HOST'
 };
 
-// We want to exclude forms and Hosts, and only show contentlets that are not deleted
-export const BASE_QUERY = '+systemType:false -contentType:forms -contentType:Host +deleted:false';
-
 // Default pagination
 export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     limit: 20,

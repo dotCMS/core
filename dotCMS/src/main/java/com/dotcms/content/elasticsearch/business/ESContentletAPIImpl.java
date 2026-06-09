@@ -1683,17 +1683,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final com.dotcms.content.index.domain.SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
-            list.setTotalResults(searchHits.totalHits().value());
+            list.setTotalResults(searchHits.getTotalHits().value());
 
-            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
+            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.getHits()) {
                 try {
-                    final Map<String, Object> sourceMap = searchHit.sourceAsMap();
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
                     list.add(ImmutableContentletSearch.builder()
-                            .id(searchHit.id())
-                            .index(searchHit.index())
+                            .id(searchHit.getId())
+                            .index(searchHit.getIndex())
                             .identifier(sourceMap.get("identifier").toString())
                             .inode(sourceMap.get("inode").toString())
-                            .score(searchHit.score())
+                            .score(searchHit.getScore())
                             .build());
                 } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
@@ -2400,12 +2400,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.hits().hits().isEmpty()) {
+            if (response.hits().getHits().isEmpty()) {
                 return result;
             }
 
             for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
-                final Map<String, Object> sourceMap = sh.sourceAsMap();
+                final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(
                             relationshipName));
@@ -2493,9 +2493,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (!response.hits().hits().isEmpty()) {
+            if (!response.hits().getHits().isEmpty()) {
                 for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
-                    final Map<String, Object> sourceMap = sh.sourceAsMap();
+                    final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
                         final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(
