@@ -72,17 +72,27 @@ export const CustomLaraPreset = definePreset(Lara, {
                     font-weight: var(--font-weight-semibold); /* 600 */
                 }
             `,
+            // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
+            // {x.700}) instead of Lara's solid fills, so status tags read consistently and match
+            // the version-history chips (which use bg-{color}-100 / text-{color}-700) 1:1.
+            // `secondary` is omitted — Lara already maps it to surface.100/surface.600 (soft gray).
             colorScheme: {
                 light: {
                     success: {
                         background: '{green.100}',
                         color: '{green.700}'
                     },
-                    // Soft yellow (not Lara's solid orange) so the "Draft" status pill matches the
-                    // version-history chips (bg-yellow-100/text-yellow-700) 1:1.
+                    info: {
+                        background: '{blue.100}',
+                        color: '{blue.700}'
+                    },
                     warn: {
                         background: '{yellow.100}',
                         color: '{yellow.700}'
+                    },
+                    danger: {
+                        background: '{red.100}',
+                        color: '{red.700}'
                     }
                 }
             }
