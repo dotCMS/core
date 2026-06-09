@@ -1157,8 +1157,9 @@ public class SiteResource implements Serializable {
             site.setDefault(siteForm.isDefault());
         }
 
-        final long languageId = 0 == siteForm.getLanguageId()?
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
+        final long languageId = 0 == siteForm.getLanguageId()
+                ? APILocator.getLanguageAPI().getDefaultLanguage().getId()
+                : siteForm.getLanguageId();
 
         site.setLanguageId(languageId);
     }

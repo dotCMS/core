@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.image.ImageEngine;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
@@ -30,8 +31,18 @@ import io.vavr.control.Try;
 public class ImageFilterExporter implements BinaryContentExporter {
     
     private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
-    
+
     private final Semaphore semaphore  = new Semaphore(allowedRequests);
+
+    /**
+     * Selects the image engine per the {@code IMAGE_API_USE_LIBVIPS} feature flag. The choice only
+     * affects which {@link ImageFilter} subclasses {@code resolveFilters} returns — the URL parameter
+     * contract is identical for both engines.
+     */
+    // package-visible for tests that pin the feature-flag selection behaviour
+    ImageFilterAPI imageFilterAPI() {
+        return ImageEngine.resolve();
+    }
 
     /*
      * (non-Javadoc)
@@ -52,7 +63,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
         Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<? extends ImageFilter>> filters = ImageFilterAPI.apiInstance.apply().resolveFilters(parameters);
+            final Map<String,Class<? extends ImageFilter>> filters = imageFilterAPI().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[0]));
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             

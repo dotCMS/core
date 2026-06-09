@@ -36,7 +36,9 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -47,6 +49,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +65,11 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.StatefulJob;
+import org.quartz.Trigger;
 
 /**
  * Integration tests for the maintenance tools REST endpoints in {@link MaintenanceResource}.
@@ -819,6 +827,121 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.killSession(createRequestForUser(nonAdminUser), mockResponse, "tok");
     }
 
+    // ==================== GET /_systemJobs ====================
+
+    /**
+     * Given scenario: a custom Quartz job is scheduled with a known misfire instruction
+     *                 ({@link CronTrigger#MISFIRE_INSTRUCTION_DO_NOTHING}), then admin
+     *                 calls listSystemJobs
+     * Expected result: the scheduled job appears with the EXACT field values produced by
+     *                  the scheduler: className equals the test class name, durable=true
+     *                  (set on the JobDetail), stateful=true (TestNoOpJob implements
+     *                  StatefulJob), volatile=false, running=false (just scheduled),
+     *                  nextFireTime is a future epoch ms, nextFireTimeFormatted matches
+     *                  the documented "yyyy-MM-dd 'at' HH:mm:ss z" pattern, and
+     *                  misfireInstruction is the mapped enum string "DO_NOTHING".
+     */
+    @Test
+    public void test_listSystemJobs_asAdmin_returnsScheduledJob() throws Exception {
+        final String jobName = "test-list-job-" + UUIDGenerator.generateUuid();
+        final String jobGroup = "test-jobs-group";
+        final long beforeSchedule = System.currentTimeMillis();
+        scheduleTestJob(jobName, jobGroup, CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+        try {
+            final ResponseEntitySystemJobListView result =
+                    resource.listSystemJobs(createAdminRequest(), mockResponse);
+
+            assertNotNull(result);
+            final List<Map<String, Object>> jobs = result.getEntity();
+            assertNotNull(jobs);
+
+            Map<String, Object> mine = null;
+            for (final Map<String, Object> job : jobs) {
+                if (jobName.equals(job.get("name")) && jobGroup.equals(job.get("group"))) {
+                    mine = job;
+                    break;
+                }
+            }
+            assertNotNull("The freshly scheduled test job must appear in the response", mine);
+
+            // Class & flags — exact value assertions, not just "field exists"
+            assertEquals(TestNoOpJob.class.getSimpleName(), mine.get("className"));
+            assertEquals("durable was set to true on the JobDetail",
+                    Boolean.TRUE, mine.get("durable"));
+            assertEquals("TestNoOpJob implements StatefulJob, so detail.isStateful() must be true",
+                    Boolean.TRUE, mine.get("stateful"));
+            assertEquals(Boolean.FALSE, mine.get("volatile"));
+            assertEquals("Job was just scheduled, not currently executing",
+                    Boolean.FALSE, mine.get("running"));
+
+            // nextFireTime must be a future Long
+            final Object nextFireRaw = mine.get("nextFireTime");
+            assertTrue("nextFireTime must be a Long epoch ms, was " + nextFireRaw,
+                    nextFireRaw instanceof Long);
+            assertTrue("nextFireTime must be in the future for a 5-minute cron",
+                    ((Long) nextFireRaw) > beforeSchedule);
+
+            // Formatted timestamp must match the documented pattern
+            final Object formatted = mine.get("nextFireTimeFormatted");
+            assertTrue("nextFireTimeFormatted must match \"yyyy-MM-dd 'at' HH:mm:ss z\", was "
+                            + formatted,
+                    formatted instanceof String
+                            && ((String) formatted).matches(
+                                    "\\d{4}-\\d{2}-\\d{2} at \\d{2}:\\d{2}:\\d{2} \\S+"));
+
+            // Misfire instruction must be the DO_NOTHING branch we explicitly scheduled with
+            assertEquals("Scheduled with MISFIRE_INSTRUCTION_DO_NOTHING — resource must map it",
+                    "DO_NOTHING", mine.get("misfireInstruction"));
+        } finally {
+            QuartzUtils.removeJob(jobName, jobGroup);
+        }
+    }
+
+    /**
+     * Given scenario: a non-admin user calls listSystemJobs
+     * Expected result: SecurityException — the maintenance portlet requires admin
+     */
+    @Test(expected = SecurityException.class)
+    public void test_listSystemJobs_asNonAdmin_throwsSecurity() {
+        resource.listSystemJobs(createRequestForUser(nonAdminUser), mockResponse);
+    }
+
+    // ==================== DELETE /_systemJobs/{group}/{name} ====================
+
+    /**
+     * Given scenario: a test job is scheduled, then admin DELETEs it via the resource
+     * Expected result: response indicates deleted=true with the matching name/group, and
+     *                  the job is gone from the scheduler
+     */
+    @Test
+    public void test_deleteSystemJob_asAdmin_removesScheduledJob() throws Exception {
+        final String jobName = "test-delete-job-" + UUIDGenerator.generateUuid();
+        final String jobGroup = "test-jobs-group";
+        scheduleTestJob(jobName, jobGroup);
+
+        final ResponseEntitySystemJobDeleteView result =
+                resource.deleteSystemJob(createAdminRequest(), mockResponse, jobGroup, jobName);
+
+        assertNotNull(result);
+        final Map<String, Object> entity = result.getEntity();
+        assertEquals(Boolean.TRUE, entity.get("deleted"));
+        assertEquals(jobName, entity.get("name"));
+        assertEquals(jobGroup, entity.get("group"));
+        assertNull("Job must be removed from the scheduler",
+                QuartzUtils.getScheduler().getJobDetail(jobName, jobGroup));
+    }
+
+    /**
+     * Given scenario: admin DELETEs a job that does not exist
+     * Expected result: NotFoundException — the resource must not silently succeed
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_deleteSystemJob_nonExistent_throwsNotFound() {
+        resource.deleteSystemJob(createAdminRequest(), mockResponse,
+                "no-such-group-" + UUIDGenerator.generateUuid(),
+                "no-such-job-" + UUIDGenerator.generateUuid());
+    }
+
     // ==================== DELETE /_sessions ====================
 
     /**
@@ -990,5 +1113,43 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         final Field field = SessionMonitor.class.getDeclaredField("userSessions");
         field.setAccessible(true);
         return (com.dotcms.cache.DynamicTTLCache<String, HttpSession>) field.get(null);
+    }
+
+    /** Schedules a {@link TestNoOpJob} with the scheduler's default misfire policy. */
+    private static void scheduleTestJob(final String jobName, final String jobGroup)
+            throws Exception {
+        scheduleTestJob(jobName, jobGroup, Trigger.MISFIRE_INSTRUCTION_SMART_POLICY);
+    }
+
+    /**
+     * Schedules a {@link TestNoOpJob} directly on the Quartz scheduler with an explicit
+     * misfire instruction. Mirrors the {@code QuartzUtilsTest#test_schedule_delete_job}
+     * pattern: raw {@link JobDetail} + {@link CronTrigger} so the {@code Class<?>} reference
+     * is used directly and no {@link Class#forName(String)} lookup is needed (which would
+     * fail for inner classes). The 5-minute cron is harmless because {@link TestNoOpJob#execute}
+     * is a no-op.
+     */
+    private static void scheduleTestJob(final String jobName, final String jobGroup,
+            final int misfireInstruction) throws Exception {
+        final JobDetail detail = new JobDetail(jobName, jobGroup, TestNoOpJob.class);
+        detail.setDurability(true);
+        final CronTrigger trigger = new CronTrigger(jobName + "_trigger", jobGroup,
+                jobName, jobGroup, new Date(), null,
+                DotInitScheduler.CRON_EXPRESSION_EVERY_5_MINUTES);
+        trigger.setMisfireInstruction(misfireInstruction);
+        QuartzUtils.getScheduler().addJob(detail, true);
+        QuartzUtils.getScheduler().scheduleJob(trigger);
+    }
+
+    /**
+     * Inert Quartz {@link StatefulJob} used by the {@code _systemJobs} tests. Mirrors the
+     * inner-class pattern in {@code QuartzUtilsTest.TestJob}: never fires (we only need
+     * scheduler-side visibility), so {@link #execute} is a no-op.
+     */
+    public static class TestNoOpJob implements StatefulJob {
+        @Override
+        public void execute(final JobExecutionContext context) {
+            // intentional no-op
+        }
     }
 }
