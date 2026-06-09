@@ -36,7 +36,7 @@ jobs:
       # Download build reports from previous steps
       - name: Download build reports
         id: download-artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: /tmp/build-step-reports
           pattern: build-reports-*
@@ -227,7 +227,7 @@ jobs:
           echo "aggregate_status=${AGGREGATE_STATUS}" >> $GITHUB_OUTPUT
       # Upload the final workflow data report as an artifact
       - name: Upload workflow data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: workflow-data
           path: ./workflow-data.json

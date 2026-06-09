@@ -219,7 +219,7 @@ runs:
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
       if: ${{ inputs.artifacts-from != '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
@@ -229,7 +229,7 @@ runs:
     - id: restore-artifact-docker-image
       name: Restore Docker Image
       if: ${{ inputs.needs-docker-image == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/docker-image
@@ -242,7 +242,7 @@ runs:
     - id: restore-artifact-classes
       name: Restore Classes
       if: ${{ inputs.restore-classes == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
@@ -300,7 +300,7 @@ runs:
     - id: persist-maven-repo
       name: Persist Maven Repo
       if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
@@ -308,7 +308,7 @@ runs:
     - id: persist-docker-build-context
       name: Persist Docker Build Context
       if: ${{ inputs.generate-docker == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
         path: dotCMS/target/docker-build.tar
@@ -354,7 +354,7 @@ runs:
 
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: ${{ inputs.generate-docker == 'true' }}
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
@@ -363,7 +363,7 @@ runs:
     - id: persist-build-classes
       name: Persist Build Classes
       if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
         path: |
@@ -413,7 +413,7 @@ runs:
     # ---------------------------- Generate Reports Artifacts ----------------------------
     - id: generate-build-reports-artifact
       name: Generate Build Reports Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always()
       with:
         name: "build-reports-${{ inputs.stage-name }}"
@@ -424,7 +424,7 @@ runs:
 
     - id: create-test-reports-artifact
       name: Create Test Reports Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       if: always() && inputs.generates-test-results == 'true'
       with:
         name: "build-reports-test-${{ inputs.stage-name }}"

@@ -47,7 +47,7 @@ jobs:
       - name: Create Zip File
         run: find . -type f -name 'maven_dep_tree.txt' -exec zip -r dependency-tree.zip {} +
       - name: Upload Dependency Zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dependency-tree
           path: dependency-tree.zip
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download artifact from the previous job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: dependency-tree
       - name: Semgrep Scan

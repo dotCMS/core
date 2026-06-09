@@ -55,7 +55,7 @@ runs:
 
     - name: 'Download all cli build artifacts.'
       id: download-cli-artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         pattern: cli-artifacts-*
         path: ${{ github.workspace }}/artifacts

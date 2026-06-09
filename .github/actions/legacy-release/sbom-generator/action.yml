@@ -49,7 +49,7 @@ runs:
         mv core/sbom-cyclonedx.json core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
 
     - name: Upload SBOM to GitHub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: sbom-dotcms-${{ env.DOTCMS_VERSION }}
         path: core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
