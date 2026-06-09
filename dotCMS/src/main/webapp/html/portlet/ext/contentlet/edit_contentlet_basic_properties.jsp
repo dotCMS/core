@@ -104,6 +104,24 @@
 	if(structure.getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
 		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
+	// Include relationship params in editURL so changeLanguage() preserves them across
+	// language switches. Without this, switching language on a new child form loses the
+	// context needed by EditContentletAction to auto-link the content to its parent.
+	if (request.getParameter("relwith") != null) {
+		params.put("relwith", new String[] { request.getParameter("relwith") });
+		if (request.getParameter("relisparent") != null) {
+			params.put("relisparent", new String[] { request.getParameter("relisparent") });
+		}
+		if (request.getParameter("reltype") != null) {
+			params.put("reltype", new String[] { request.getParameter("reltype") });
+		}
+		if (request.getParameter("relname") != null) {
+			params.put("relname", new String[] { request.getParameter("relname") });
+		}
+		if (request.getParameter("relname_inodes") != null) {
+			params.put("relname_inodes", new String[] { request.getParameter("relname_inodes") });
+		}
+	}
 	String editURL = com.dotmarketing.util.PortletURLUtil.getActionURL(request, WindowState.MAXIMIZED.toString(), params);
 	WorkflowScheme scheme = null;
 	WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
@@ -411,14 +429,14 @@ function showRelationshipReturn(){
 
     document.write(backButtonTmpl)
     var button = document.getElementById("relationshipReturnValueButton");
-	localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 
     button.addEventListener("click", function(e) {
+		localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 		if (backInode.blockEditorBackUrl) {
 			window.parent.location.href = backInode.blockEditorBackUrl;
 		}
     	window.location.href = "<%=request.getParameter("referer")%>";
-        
+
     });
 }
 
