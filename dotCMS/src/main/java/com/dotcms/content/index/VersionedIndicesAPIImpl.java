@@ -48,28 +48,27 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     /**
      * {@inheritDoc}
      *
-     * <p>Names are returned with the {@code os::} vendor tag stripped. The tag is a DB-only
-     * storage artifact used for uniqueness; all consumers receive clean cluster-prefixed names
-     * (e.g. {@code cluster_xxx.working_ts}) ready for direct OS client or routing use.</p>
+     * <p>Names are returned in their canonical physical form — cluster-prefixed and tag-suffixed
+     * (e.g. {@code cluster_xxx.working_ts.os}). The {@code .os} tag is part of the canonical OS
+     * name at every layer (DB row, cluster index, and any caller that has resolved through
+     * {@code toPhysicalName}); it is NOT a DB-only artifact and is NOT stripped here. Callers can
+     * pass the returned name directly to any OS-side operation.</p>
      */
     @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
         Logger.debug(this, "Loading indices for version: " + version);
 
-        // Try cache first (cache stores stripped names)
+        // Cache holds the canonical tagged form — same as what the DB returns.
         VersionedIndices cached = cache.get(version);
         if (cached != null) {
             return Optional.of(cached);
         }
 
-        // Load from database, strip the os:: tag before exposing to consumers
-        Optional<VersionedIndices> stripped = indicesFactory.loadIndices(version)
-                .map(VersionedIndicesAPIImpl::stripTags);
-
-        stripped.ifPresent(cache::put);
-
-        return stripped;
+        // Load from DB and cache as-is — no transformation; the name carries .os end-to-end.
+        Optional<VersionedIndices> loaded = indicesFactory.loadIndices(version);
+        loaded.ifPresent(cache::put);
+        return loaded;
     }
 
     /**
@@ -86,12 +85,8 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return cached;
         }
 
-        // Load from database, strip os:: tags before exposing to consumers
-        List<VersionedIndices> loaded = indicesFactory.loadAllIndices().stream()
-                .map(VersionedIndicesAPIImpl::stripTags)
-                .collect(Collectors.toList());
-
-        // Cache the result
+        // Load from DB and cache as-is — names retain the canonical .os tag end-to-end.
+        List<VersionedIndices> loaded = indicesFactory.loadAllIndices();
         cache.putAllVersions(loaded);
 
         return loaded;
@@ -100,22 +95,27 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     /**
      * {@inheritDoc}
      *
-     * <p>Callers may pass stripped (no {@code os::}) or already-tagged names —
-     * this method always ensures the {@code os::} tag is present before writing to the
-     * database (for uniqueness), and caches the stripped form for subsequent loads.</p>
+     * <p>Callers may pass any accepted form (logical, cluster-prefixed, with or without the
+     * {@code .os} tag). This method calls {@link #tagOS} to ensure the tag is present before
+     * INSERT — idempotent on already-tagged names — and caches whatever the caller passed in.
+     * In the normal production flow the names arrive already tagged via {@code toPhysicalName},
+     * so {@code tagOS} is a belt-and-suspenders guard.</p>
      */
     @WrapInTransaction
     @Override
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
-        // Ensure os:: tag is present in DB (idempotent — tag() never double-tags)
-        indicesFactory.saveIndices(tagOS(indicesInfo));
+        // Apply the .os tag idempotently before INSERT (DB row uses the canonical tagged form).
+        final VersionedIndices tagged = tagOS(indicesInfo);
+        indicesFactory.saveIndices(tagged);
 
-        // Cache the stripped form so loadIndices cache hits return clean names
-        cache.put(stripTags(indicesInfo));
+        // Cache the same canonical tagged form persisted to the DB so a cache hit and a
+        // post-eviction DB reload return identical names. tagOS is idempotent, so callers that
+        // already pass tagged names (the normal toPhysicalName flow) are unaffected.
+        cache.put(tagged);
 
-        // Invalidate all versions cache since it's now stale
+        // Invalidate the all-versions cache since it's now stale.
         cache.invalidateAllVersionsCache();
     }
 
@@ -166,12 +166,15 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
         try {
             // Extract the timestamp from the pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
-            final int lastUnderscoreIndex = indexName.lastIndexOf("_");
-            if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == indexName.length() - 1) {
+            // The .os tag is part of the name identity but not parseable as a timestamp — strip it
+            // locally first (see "deriving the embedded timestamp" in OPENSEARCH_MIGRATION.md).
+            final String base = IndexTag.strip(indexName);
+            final int lastUnderscoreIndex = base.lastIndexOf("_");
+            if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == base.length() - 1) {
                 throw new DotDataException("Index name does not follow expected pattern: " + indexName);
             }
 
-            final String timestampStr = indexName.substring(lastUnderscoreIndex + 1);
+            final String timestampStr = base.substring(lastUnderscoreIndex + 1);
             final LocalDateTime ldt = LocalDateTime.parse(timestampStr, TIMESTAMP_FORMATTER);
             return ldt.atZone(ZoneId.systemDefault()).toInstant();
         } catch (Exception e) {
@@ -207,10 +210,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return Optional.of(cached);
         }
 
-        // Load from database, strip os:: tags before exposing to consumers
-        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices()
-                .map(VersionedIndicesAPIImpl::stripTags);
-
+        // Load from DB and cache as-is. Legacy rows have no .os tag to begin with — the tag
+        // belongs to the new index set only; nothing to strip here.
+        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices();
         loaded.ifPresent(cache::putLegacyIndices);
 
         return loaded;
@@ -234,30 +236,10 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         Logger.info(this, "VersionedIndicesAPI cache cleared");
     }
 
-    // =========================================================================
-    // Tag helpers — encapsulate os:: as a DB-only artifact
-    // =========================================================================
-
     /**
-     * Returns a copy of {@code indices} with all name fields stripped of any vendor tag
-     * (e.g. {@code os::cluster_xxx.name} → {@code cluster_xxx.name}).
-     * This is the form exposed to all consumers of {@link VersionedIndicesAPI}.
-     */
-    private static VersionedIndices stripTags(final VersionedIndices indices) {
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
-        builder.version(indices.version());
-        indices.live()          .map(IndexTag::strip).ifPresent(builder::live);
-        indices.working()       .map(IndexTag::strip).ifPresent(builder::working);
-        indices.reindexLive()   .map(IndexTag::strip).ifPresent(builder::reindexLive);
-        indices.reindexWorking().map(IndexTag::strip).ifPresent(builder::reindexWorking);
-        indices.siteSearch()    .map(IndexTag::strip).ifPresent(builder::siteSearch);
-        return builder.build();
-    }
-
-    /**
-     * Returns a copy of {@code indices} with all name fields tagged with {@code os::}
-     * (idempotent — already-tagged names are unchanged).
-     * This is the form written to the database for uniqueness.
+     * Returns a copy of {@code indices} with all name fields tagged with the {@code .os} suffix
+     * (idempotent — already-tagged names are unchanged). This is the canonical OS physical form
+     * — written to both the {@code indices} DB table and the OS cluster index itself.
      */
     private static VersionedIndices tagOS(final VersionedIndices indices) {
         final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();

@@ -118,25 +118,172 @@ cluster_08abc3567e.live_20260305193221
 cluster_08abc3567e.working_20260305193221
 ```
 
-Both ES and OS follow the same logical name pattern. The difference is only at the DB storage layer:
+Both index sets follow the same logical name pattern. The new index set (the one being introduced
+by this migration) carries an explicit distinction tag — present at every layer, including the
+service / API surface. The legacy index set has no tag. **Today the tag value is `.os`**, chosen
+because the migration target happens to be OpenSearch; the value is centralized in `IndexTag` and
+can change in the future without touching the rest of the architecture.
 
-| Layer                         | ES name                             | OS name                                    |
-|-------------------------------|-------------------------------------|--------------------------------------------|
-| Stored in DB                  | `cluster_08abc3.working_20230101`   | `os::cluster_08abc3.working_20260406`      |
-| Everywhere else (all callers) | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406`          |
+**Two distinct name layers** — keep them separate:
 
-#### `os::` tag ownership rule
+- **Service / API layer (logical name)**: the form callers pass around in business code. It carries
+  the tag if it belongs to the new index set, no tag if it belongs to the legacy set. **No cluster
+  prefix.** Examples: `working_20230101` (legacy) · `working_20260406.os` (new).
+- **Persistence layer (physical name)**: the form actually sent to a cluster or written to the
+  `indicies` DB table. **Adds the `cluster_<id>.` prefix** on top of the logical name. Examples:
+  `cluster_08abc3.working_20230101` (legacy) · `cluster_08abc3.working_20260406.os` (new).
 
-The `os::` tag is a **DB uniqueness artifact** — it prevents name collisions between ES and OS rows
-in the shared `indicies` table. It is **exclusively managed by `VersionedIndicesAPIImpl`**:
+The cluster prefix is an infrastructure detail added at the persistence boundary by
+`getNameWithClusterIDPrefix` (called from inside `toPhysicalName`). Service-layer code can — and
+should — work with logical names; the prefix appears only when a name is about to hit a cluster
+or a DB write.
 
-- **`saveIndices`** always adds `os::` before writing (idempotent via `IndexTag.OS.tag()`).
-- **All load methods** (`loadIndices`, `loadAllIndices`, `loadNonVersionedIndices`) always strip
-  `os::` before returning — the cache also stores stripped names.
+| Layer                                | Legacy name                         | Tagged name (today `.os`)                       |
+|--------------------------------------|-------------------------------------|-------------------------------------------------|
+| Service / API (logical name)         | `working_20230101`                  | `working_20260406.os`                           |
+| Row in the `indicies` DB table       | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406.os`            |
+| Physical index in the cluster        | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406.os`            |
 
-**No other class in the codebase adds or removes the `os::` tag.**
-Callers of `VersionedIndicesAPI` always receive clean, client-ready names.
-`toPhysicalName` on both ES and OS providers produces `cluster_{id}.name` — no tag involved.
+The DB row and the cluster index are the **same string** (both physical names). `VersionedIndicesAPI`
+load methods return the canonical physical form (with tag, with cluster prefix) — they do not
+strip — so a name resolved from the store can be passed directly to any `OSIndexAPIImpl`,
+`MappingOperationsOS`, or search call without further transformation.
+
+#### Distinction tag as the canonical marker
+
+The tag is the **explicit-distinction marker** on every physical name in the new index set. The
+choice to make the distinction explicit (rather than relying on cluster separation alone) buys two
+things:
+
+1. **DB PK uniqueness** in the shared `indicies` table (`index_name` is the PK) — without an
+   explicit marker, the legacy row and the new row for the same logical name would collide.
+2. **Cluster name distinction** in single-cluster test profiles where `DOT_ES_ENDPOINTS ==
+   OS_ENDPOINTS` (e.g. the `opensearch-upgrade` Maven profile). Without the tag, a Phase 1
+   fan-out that writes the same logical name to both providers would hit `resource_already_exists`
+   on the second write. With the tag, the new index coexists with the legacy index in the shared
+   cluster.
+
+**Tag value**: stored as a single constant in `IndexTag` (`IndexTag.OS.tag(name)` /
+`IndexTag.OS.isTagged(name)` / `IndexTag.OS.strip(name)`). Changing the literal — for example
+swapping `.os` for something else later — is a one-line change in the enum; no caller hardcodes
+the suffix.
+
+**Who applies the tag**:
+
+- **`ContentletIndexOperationsOS.toPhysicalName(name)`** is the canonical entry point. It calls
+  `getNameWithClusterIDPrefix` then `IndexTag.OS.tag()`. Idempotent via `IndexTag.OS.isTagged`.
+- **`MappingOperationsOS.physicalName(index)`** applies the same transformation internally so
+  that mapping operations resolve to the tagged name even when callers pass a logical name.
+- **`VersionedIndicesAPIImpl.saveIndices`** applies `IndexTag.OS.tag()` idempotently before
+  INSERT as a belt-and-suspenders guard — by the time `saveIndices` is reached, names are already
+  tagged in the normal production flow.
+
+**Who does NOT strip the tag**:
+
+- `VersionedIndicesAPI` load methods (`loadIndices`, `loadDefaultVersionedIndices`, `loadAllIndices`,
+  `loadNonVersionedIndices`) return the canonical tagged form. The cache holds the same.
+- `OSIndexAPIImpl.getIndicesStats`, `listIndices`, `getClusterHealth` strip the `cluster_X.`
+  prefix but **preserve the tag** in the returned keys. Callers comparing keys to logical names
+  must apply `IndexTag.OS.tag()` to the comparand or strip the tag from the keys explicitly via
+  `IndexTag.OS.strip()`.
+
+**Idempotency contract**: every public method on the new-index-set layer accepts any of:
+
+- Logical name without tag (`working_20240101`) — at the service layer, means "no specific provider,
+  let the dispatch decide".
+- Logical name with tag (`working_20240101.os`) — at the service layer, means "this belongs to the
+  new index set".
+- Physical name with cluster prefix, no tag (`cluster_X.working_20240101`) — already half-resolved.
+- Canonical physical with both prefix and tag (`cluster_X.working_20240101.os`) — fully resolved.
+
+All four flow to the cluster as the same canonical physical string after passing through
+`toPhysicalName` / `physicalName`. Idempotency is guaranteed by the `isTagged` and `hasClusterPrefix`
+guards inside those methods.
+
+**Why suffix, not prefix**: the logical name (`cluster_{id}.{type}_{timestamp}`) is fully readable
+without any leading marker. Stripping is `name.substring(0, len - tag.length())` and detection is
+`name.endsWith(tag)`. Collision-free guarantee for the current `.os` value: logical names always
+end in `_YYYYMMDDHHMMSS` (numeric) — they can never naturally end in `.os`. A future tag value
+must preserve this property (no overlap with the logical-name grammar).
+
+#### The tag is part of the name identity — never strip it on return
+
+A tagged name like `working_20240101.os` **is** the canonical identity of that index — not a
+decorated form of `working_20240101`. They are two different indices on two different providers,
+and the base name (everything before the tag) matches the ES counterpart by construction, so the
+tag is the *only* thing that distinguishes them. Any method that **returns or accepts an index
+name** MUST preserve the tag end-to-end:
+
+- **Read getters** — `ContentletIndexAPIImpl.getCurrentIndex()`, `getNewIndex()`, and
+  `getActiveIndexName()` return the tagged name verbatim in Phases 2/3 (they strip only the
+  `cluster_X.` prefix). A caller that receives `working_20240101.os` knows unambiguously it is
+  the OS index; one that receives `working_20240101` is talking to ES. Stripping the tag here
+  would erase the only discriminator and reintroduce the ES/OS collision in any `Set<String>` or
+  `Map<String, ?>` keyed by index name.
+- The same applies to provider methods (`getIndicesStats`, `listIndices`, `getClusterHealth`):
+  returned keys keep the tag (as documented above).
+
+**The one legitimate strip — deriving the embedded timestamp.** Some methods extract the
+`_YYYYMMDDHHMMSS` value out of a name (`elapsedSinceIndexCreated`,
+`VersionedIndicesAPIImpl.extractTimestamp`, the `indexSuffixOS` computation in `initOSCatchup`).
+The timestamp parser cannot consume a trailing `.os`, so these MUST strip the tag **locally,
+before parsing**: `IndexTag.strip(name).substring(name.lastIndexOf('_') + 1)`. This is *not* a
+contradiction of the rule above — the strip is applied to a throwaway local used to parse a
+number; the name that is returned or stored keeps its tag. Rule of thumb: **strip to parse a
+value out of a name, never to hand a name back.**
+
+#### Tag manipulation is the sole responsibility of `IndexTag`
+
+All read/write of the vendor marker on an index name MUST go through the `IndexTag` enum.
+`IndexTag` is the only place that knows the literal value (`.os`), whether it is a prefix or a
+suffix, and the idempotency rules around it. Any code outside `IndexTag` that handles the marker
+directly — even a thin wrapper or a one-liner — is a bug.
+
+| Operation             | ✅ Correct                                                | ❌ Incorrect                                                       |
+|-----------------------|----------------------------------------------------------|--------------------------------------------------------------------|
+| Apply the marker      | `IndexTag.OS.tag(name)`                                  | `name + ".os"`                                                     |
+| Strip the marker      | `IndexTag.OS.untag(name)` / `IndexTag.strip(name)`       | `name.substring(0, name.length() - 3)` / `name.replace(".os","")` |
+| Detect the marker     | `IndexTag.OS.isTagged(name)`                             | `name.endsWith(".os")`                                             |
+| Identify the vendor   | `IndexTag.resolve(name)` / `IndexTag.vendorOf(name)`     | `name.contains(".os") ? OS : ES`                                   |
+
+This rule applies at every layer — providers, routers, mapping helpers, factories, integration
+tests, and debug utilities. A helper method in another class that re-implements `tag()` / `strip()`
+/ `isTagged()` (even faithfully) is still a violation: the moment the literal or the
+prefix/suffix position changes in `IndexTag`, that helper becomes silently wrong. There are no
+"performance shortcuts" or "convenience wrappers" worth the divergence risk.
+
+**Why this is strict, not advisory**: the tag is a load-bearing migration artifact. The codebase
+will eventually want to either change its value (e.g. swap `.os` for something neutral) or remove
+it entirely (see "Future: tag retirement after ES decommission" below). Both are one-line edits
+inside `IndexTag` — but only if no other class has taken on the responsibility. Every direct
+string operation on the marker outside `IndexTag` is a hidden coupling that turns a one-line
+change into a codebase-wide search-and-replace.
+
+#### Future: tag retirement after ES decommission
+
+The tag exists to solve concrete problems that only apply while both index sets coexist (PK
+uniqueness in the shared `indicies` table, cluster name distinction in single-cluster test
+profiles, routing between two providers). Once ES is decommissioned (Phase 3 complete, no
+rollback window) these problems disappear and the tag becomes purely cosmetic.
+
+Retiring the tag is **not free** — there are three viable strategies, none zero-cost:
+
+1. **Leave it in place.** Treat `.os` as a historical marker on all existing index names. Zero
+   ongoing cost; mildly confusing for readers without context.
+2. **One-time rename migration.** For each OS index, reindex into a non-tagged name (OpenSearch
+   has no direct rename — the standard path is reindex + alias swap + delete). Update the
+   corresponding `indicies` rows. Comparable in scope and cost to a full OS reindex.
+3. **Configure the tag to `""` in `IndexTag.OS`.** New writes stop adding the tag; existing
+   indices keep theirs. The codebase must tolerate both forms indefinitely or until strategy 2
+   is executed — usually the worst of both worlds.
+
+The architecture is set up so that strategy 1 requires no action and strategy 3 is a one-line
+change in `IndexTag`. Strategy 2 is a planned future migration tracked separately when the ES
+decommission plan is finalized.
+
+**Implication for present-day work**: do not hardcode the literal `.os` anywhere except in
+`IndexTag.OS`. Comparisons must go through `IndexTag.OS.isTagged()` and `IndexTag.OS.strip()`,
+so a future change of the literal — or its removal — does not require touching call sites.
 
 ### What lives in the index
 | Content                    | Live | Working |
@@ -225,9 +372,10 @@ There must be **one and only one** routing point per functional area. Never dupl
 
 ## Index Operation Dispatch Model
 
-Two semantically distinct operation types govern how index names determine routing.
-Getting this wrong is the root cause of the class of bugs where `os::` prefixed names
-reach `ESIndexAPI` and produce malformed index names like `cluster_<id>.os::cluster_<id>.working_...`.
+Two semantically distinct operation types govern how index names determine routing. The dispatch
+type determines whether the migration phase or a per-call vendor selector decides which provider
+handles the operation — getting this wrong leads to writes landing in the wrong provider or
+failing entirely.
 
 ### Phase-dispatched operations ("broadcast")
 
@@ -238,51 +386,106 @@ Used for coordinated schema and data operations that must keep all active provid
 - `addContentlet`, `removeContentlet` — content writes/deletes
 - `createContentIndex` — index creation during bootstrap or reindex
 
-**Rule**: pass a **plain logical name** (`working_20240101`) or a **cluster-prefixed physical name**
-(`cluster_<id>.working_20240101`). Never pass an `os::`-tagged name.
+**Rule**: pass an **untagged name** — logical (`working_20240101`) or cluster-prefixed
+(`cluster_X.working_20240101`). Do **not** pass a tagged name (`working_20240101.os` or
+`cluster_X.working_20240101.os`) into a fan-out — the presence of the tag is the signal that the
+caller already knows which provider owns the name; route via tag-dispatch instead. See "Why
+tagged names don't fan out" below.
 
-`PhaseRouter.write()` / `router.writeChecked()` fan-out to all write providers for the current phase.
-Each provider's `getNameWithClusterIDPrefix()` handles its own physical name construction.
+`PhaseRouter.write()` / `router.writeChecked()` fan out to all write providers for the current
+phase. The router class (`ContentletIndexAPIImpl`, `IndexAPIImpl`, …) calls
+`provider.toPhysicalName(name)` on each provider before dispatch, so:
+
+- Legacy provider receives `cluster_X.working_20240101` (no tag — its `toPhysicalName` only adds
+  the cluster prefix).
+- Tagged provider receives `cluster_X.working_20240101.os` (cluster prefix + tag, applied by
+  `ContentletIndexOperationsOS.toPhysicalName`).
+
+The name passed BY the caller is a payload — same string for both providers — and each provider's
+own `toPhysicalName` localises it to the form that provider's cluster actually holds.
 
 ```java
-// Correct — plain name, phase decides who gets it
-router.write(impl -> impl.putMapping(physicalName(indexName), mapping));
+// Correct — name is a payload; each provider's toPhysicalName builds its own form
+router.write(impl -> impl.putMapping(impl.toPhysicalName(indexName), mapping));
 ```
+
+#### Why tagged names don't fan out
+
+A tagged service-layer name (`working_20240101.os` or its cluster-prefixed form) carries semantic
+intent: the caller is referring to **a specific index in the new index set**. That index has no
+automatic equivalent in the legacy index set because:
+
+- In **fresh install**, both sets share the same logical name minus the tag — so the equivalence
+  exists, but stripping the tag to fan out is only a coincidence of that scenario.
+- In **migration catchup** (the majority of production customers), the legacy and new sets hold
+  indices with **different timestamps** entirely — `working_20230101` (legacy) and
+  `working_20260406.os` (new). There is no string transformation that maps one to the other;
+  the legacy name has to be resolved from the legacy store directly.
+
+So treating "strip the tag to fan out" as a general rule is incorrect — it breaks the catchup case.
+The mapping between tagged and untagged names is a **store lookup**, not a string operation.
+
+Mechanically, what happens today if you pass a tagged name to a fan-out call:
+
+- **Tagged provider**: `toPhysicalName` is idempotent on the tag → name stays unchanged → operation
+  hits the correct index. ✅
+- **Legacy provider**: its `toPhysicalName` only adds the cluster prefix; it does **not** strip the
+  tag (and shouldn't — see above). The tagged string passes through unchanged → operation hits
+  `cluster_X.working_20240101.os` in the legacy cluster → that index does not exist → 404 /
+  `index_not_found_exception`. ❌
+
+A tagged name implies the caller already knows which provider owns it. That's the **tag-dispatched**
+case, not fan-out — route it explicitly via `IndexTag` and skip the fan-out entirely (see next
+section). Tagged names resolved from `versionedIndicesAPI.loadDefaultVersionedIndices()` must go
+through tag-dispatched calls, not phase-dispatched fan-out.
 
 ### Tag-dispatched operations ("targeted")
 
-> **The vendor tag on the index name decides which provider handles the call. The phase is irrelevant.**
+> **The tag on the index name decides which provider handles the call. The phase is irrelevant.**
 
 Used for direct operations against a specific provider's index: diagnostics, catchup creation,
-provider-specific reads, or any operation where the caller already knows which backend owns the index.
+provider-specific reads, or any operation where the caller already knows which index set owns the
+name. A tagged name resolved from `versionedIndicesAPI.loadDefaultVersionedIndices()` is the
+prototypical case.
 
-**Rule**: keep the `os::` tag on the name. Use `IndexTag.resolve(name)` to select the provider,
-then strip the tag **inside the call** (not before routing).
+**Rule**: use `IndexTag.resolve(name)` to select the provider, then pass the name through to the
+provider as-is (or via `provider.toPhysicalName(name)` for cluster-prefix idempotency). Do **not**
+strip the tag — the new index in the cluster carries the tag in its actual name; stripping would
+point the request at a non-existent index.
 
 ```java
-// Correct — tag decides provider, strip happens inside
-final IndexTag vendor  = IndexTag.resolve(indexName);   // OS or ES
-final T         target = (vendor == IndexTag.OS) ? osImpl : esImpl;
-target.someOperation(IndexTag.strip(indexName));
+// Correct — tag decides provider; name flows through unchanged (the cluster index has .os in its name)
+final IndexTag       owner  = IndexTag.resolve(indexName);   // legacy or new
+final ContentletIndexOperations target =
+        (owner == IndexTag.OS) ? osImpl : esImpl;
+target.someOperation(target.toPhysicalName(indexName));      // toPhysicalName is idempotent on tag
 ```
 
-Tag-dispatch is implemented inline in each router class using `IndexTag.resolve()` + direct provider selection. `PhaseRouter` does not have dedicated tagged-routing methods — the routing decision is explicit at the call site.
+Tag-dispatch is implemented inline in each router class using `IndexTag.resolve()` + direct
+provider selection. `PhaseRouter` does not have dedicated tagged-routing methods — the routing
+decision is explicit at the call site.
 
 ### IndexTag-parameter overload pattern
 
 A lighter alternative to tag-dispatch when the **caller already holds an `IndexTag` value** (not a
-tagged string). Instead of embedding the vendor in the index name, pass it as an explicit parameter.
+tagged string in the index name itself). Instead of relying on the name to carry the routing
+signal, pass it as an explicit enum parameter.
 
 **When to use**: targeted catchup operations — e.g. creating or refreshing the mapping on only one
-provider without affecting the other.
+provider without affecting the other — where the caller has an untagged or logical name and
+already knows which index set it should land on.
 
 **Rules**:
 - `IndexTag` must be the **last parameter** in any public method signature.
 - The method resolves the provider from the enum value directly (`tag == IndexTag.OS ? osImpl : esImpl`).
-  Do **not** use `IndexTag` to tag or parse the index name strings — they stay plain throughout.
+- Inside the overload, do **not** manually call `IndexTag.OS.tag()` or `.strip()` on the index name
+  strings. Let the selected provider's `toPhysicalName` (or `physicalName` for mapping ops) do the
+  canonicalization — that is where tag application lives, and it is idempotent regardless of which
+  form the caller passed in.
 - The no-`IndexTag` overload must keep its original phase-dispatch behavior unchanged.
-- `IndexTag` must not propagate below the routing layer (e.g. must not reach `ESIndexAPI` or
-  `IndexMappingRestOperationsOS`).
+- The `IndexTag` enum value itself must not propagate below the routing layer (it must not reach
+  `ESIndexAPI` or `IndexMappingRestOperationsOS`). The tag in the **name string**, on the other
+  hand, is allowed to reach those layers — it is part of the canonical OS physical name.
 
 ```java
 // Correct — IndexTag selects the provider; index names stay plain
@@ -324,18 +527,35 @@ private void putContentTypeMapping(ContentType ct, Map<String,JSONObject> fields
 
 | Name format | How to route | Routing key |
 |---|---|---|
-| `working_20240101` (plain logical) | `router.write(…)` | Migration phase |
-| `cluster_<id>.working_…` (physical, no tag) | `router.write(…)` | Migration phase |
-| `os::cluster_<id>.working_…` (vendor-tagged) | `IndexTag.resolve(name)` → select provider directly | Vendor tag |
+| `working_20240101` (logical, no tag) | `router.write(…)` | Migration phase |
+| `cluster_<id>.working_20240101` (physical, no tag) | `router.write(…)` | Migration phase |
+| `working_20240101.os` (logical, tagged) | `IndexTag.resolve(name)` → select provider directly | Tag in the name |
+| `cluster_<id>.working_20240101.os` (physical, tagged) | `IndexTag.resolve(name)` → select provider directly | Tag in the name |
 
-### Why the tag is not a routing key
+The cluster prefix (`cluster_<id>.`) is orthogonal to the routing decision — it is just an
+infrastructure detail of the persistence form. The tag is what determines the dispatch.
 
-Under the current design `os::` never appears outside of `VersionedIndicesAPIImpl`.
-All routing decisions use an **explicit `IndexTag` parameter** passed by the caller — never the
-presence or absence of `os::` in an index name string.
+If the caller holds the routing intent as an `IndexTag` enum value (not in the name string), use
+the **IndexTag-parameter overload** described above instead of any of the four rows in the table.
 
-The tag-dispatch pattern (reading `os::` from a name via `IndexTag.resolve()`) remains valid for
-hypothetical future use cases, but no production code path currently relies on it.
+### Why both routing keys coexist
+
+The two routing keys — migration phase and tag in the name — are not in tension; they cover
+different caller situations:
+
+- **Phase as routing key** is for callers that operate on a logical name with no knowledge of which
+  index set should own the operation. Bulk content writes, schema updates, the user-triggered
+  `createContentIndex` flow — these all express "synchronize the active providers for this name".
+  The migration phase is the right signal because it encodes what "active providers" means today.
+- **Tag in the name as routing key** is for callers that already hold a name resolved from a
+  specific store (most commonly `versionedIndicesAPI.loadDefaultVersionedIndices()`). The tag in
+  the name string IS the proof that the caller already knows which index set owns it — there is
+  nothing for the migration phase to decide.
+
+Treating the tag as a routing key would be a category error only if the tag were merely a DB
+artifact invisible to service code. In this codebase the tag is **part of the canonical name at
+every layer** (see "Distinction tag as the canonical marker"), so a tagged name in a caller's
+hand carries genuine semantic intent — and routing by tag is the natural expression of that intent.
 
 ---
 
@@ -349,32 +569,36 @@ hypothetical future use cases, but no production code path currently relies on i
 ### Index name divergence between providers
 
 **Fresh install** (Phases 1–3 from day zero): ES and OS indices are created in the same bootstrap
-call sharing the same timestamp. Their logical names are identical, so fan-out operations that pass
-the same name to both providers work correctly.
+call. The base timestamps match; the OS name carries the `.os` tag on top — e.g.
+`working_20260406` (ES) and `working_20260406.os` (OS). Divergence is limited to the tag.
 
 **Migration catchup** (most production customers): An ES index already exists with its own
-timestamp (e.g. `working_20230101`). When the OS shadow index is created later it gets a different
-timestamp (e.g. `working_20260406`). **The two providers now hold indices with different logical
-names.** Any operation that:
+timestamp (e.g. `working_20230101`). When the OS shadow index is created later it gets a fresh
+timestamp and the tag (e.g. `working_20260406.os`). **The two providers now hold indices whose
+names differ in both the timestamp AND the tag.** No string transformation can convert one into
+the other — the timestamps were generated independently.
 
-1. Resolves the active index name from the default (ES) provider, and
-2. Passes that name unchanged to a fan-out or to the OS provider
+This is why a name resolved from one provider cannot be passed unchanged to the other:
 
-will fail on OS with a 404 or exception because the index name from ES does not exist in OS.
+1. A name resolved from `legacyIndiciesAPI.loadIndicies()` (ES) — e.g. `working_20230101` — does
+   not exist in OS, regardless of any tag manipulation.
+2. A name resolved from `versionedIndicesAPI.loadDefaultVersionedIndices()` (OS) — e.g.
+   `working_20260406.os` — does not exist in ES, even if the tag is stripped.
 
 **Rule**: every public method on a class annotated with `@IndexRouter` that accepts an index name
-must have an `IndexTag`-overloaded version so callers can target the correct provider when names
-diverge. The no-tag overload retains its original phase-dispatch behavior and should be used only
-when the caller is certain both providers share the same index name (e.g. fresh install,
-coordinated reindex).
+must have an `IndexTag`-aware path so callers can target the correct provider when names diverge.
+The plain (no-tag) overload retains its **phase-dispatched** behavior and is only safe when the
+caller is passing a logical untagged name that is meant to apply to whichever providers the
+current phase considers active (fresh install, coordinated reindex, or a freshly minted name the
+caller has not yet resolved through a single-provider store).
 
 ```java
-// Fan-out — safe only when both providers share the same index name
+// Phase-dispatched — pass an untagged logical name; each provider applies its own toPhysicalName.
 void someOperation(String indexName) {
     router.write(impl -> impl.someOperation(impl.toPhysicalName(indexName)));
 }
 
-// Targeted — use when index names may differ between providers
+// Tag-dispatched — caller already holds a tagged or provider-resolved name; route by tag.
 void someOperation(String indexName, IndexTag tag) {
     final ContentletIndexOperations ops =
             tag == IndexTag.OS ? router.osImpl() : router.esImpl();
@@ -382,9 +606,14 @@ void someOperation(String indexName, IndexTag tag) {
 }
 ```
 
-**How to get the correct name per provider**: load the active index from the store that owns that
-provider — `legacyIndiciesAPI.loadIndicies()` for ES, `versionedIndicesAPI.loadDefaultVersionedIndices()`
-for OS — then pass the resolved name together with the matching `IndexTag` to the targeted overload.
+**How to get the correct name per provider:**
+
+- **ES**: `legacyIndiciesAPI.loadIndicies()` returns untagged names like `working_20230101`. Pair
+  with `IndexTag.ES` (or call the ES provider directly).
+- **OS**: `versionedIndicesAPI.loadDefaultVersionedIndices()` returns canonical tagged names like
+  `working_20260406.os`. The tag is already part of the string, so `IndexTag.resolve(name)`
+  recovers it without a separate parameter — see "Tag-dispatched routing" above for the call
+  shape.
 
 ### Rollback risk during dual-write phases
 
