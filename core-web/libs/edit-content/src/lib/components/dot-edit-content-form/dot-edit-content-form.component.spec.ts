@@ -812,7 +812,7 @@ describe('DotFormComponent', () => {
                 expect(contentStatusSeverity('Archived')).toBe('danger');
                 expect(contentStatusSeverity('Revision')).toBe('info');
                 expect(contentStatusSeverity('Draft')).toBe('warn');
-                expect(contentStatusSeverity('New')).toBe('secondary');
+                expect(contentStatusSeverity('New')).toBe('info');
             });
 
             // Guards the coupling between DotContentletStatusPipe's output strings and the

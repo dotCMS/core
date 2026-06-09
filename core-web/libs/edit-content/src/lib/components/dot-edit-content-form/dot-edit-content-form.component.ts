@@ -82,10 +82,10 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
         case 'Archived':
             return 'danger';
         case 'Revision':
-            return 'info';
         case 'New':
-            // Brand-new, unsaved content has no real status yet — a neutral gray pill.
-            return 'secondary';
+            // Both render as a soft blue pill, matching the shared dot-contentlet-status-chip
+            // (Content Drive) where Revision and brand-new content are blue.
+            return 'info';
         default:
             // Draft (and any unknown status) → `warn`, themed as soft yellow (see tag preset)
             // to match the version-history "Draft" chip.
