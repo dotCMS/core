@@ -527,7 +527,10 @@ jobs:
   # Clean up temporary branches
   clean-up:
     name: "Clean Up"
-    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
+    # always(): the temporary version-update branch must be deleted even when an
+    # upstream job fails (otherwise it leaks). AUXILIARY_BRANCH is only set when
+    # precheck succeeded, so this still no-ops when there is nothing to clean up.
+    if: ${{ always() && needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
     needs: [ precheck, build, build-cli, release, reuse-release, publish-npm-package ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
