@@ -13,7 +13,6 @@
 # - Performs pre-checks and version management
 # - Builds and packages the CLI tool
 # - Publishes the CLI as an NPM package
-# - Sends Slack notifications upon successful release
 # - Cleans up temporary branches after release
 
 name: Release - CLI
@@ -66,6 +65,14 @@ jobs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
       AUXILIARY_BRANCH: ${{ steps.version.outputs.AUXILIARY_BRANCH }}
+      # 'true'  -> CLI sources changed since the previous release: do a full native build.
+      # 'false' -> unchanged: skip the native build/JReleaser and republish the previously
+      #            published binaries under the new version (npm: publish-npm-package;
+      #            GitHub release + Artifactory: reuse-release).
+      CLI_CHANGED: ${{ steps.cli-changes.outputs.CLI_CHANGED }}
+      # Maven/JReleaser version of the previous release (tag without the leading 'v'), used by the
+      # reuse path to locate the prior release's artifacts. Empty when there is no previous tag.
+      PREV_RELEASE_VERSION: ${{ steps.cli-changes.outputs.PREV_RELEASE_VERSION }}
     steps:
       # Log GitHub context for debugging
       - name: 'Log GitHub context'
@@ -87,14 +94,64 @@ jobs:
           echo "::endgroup::"
 
       # Checkout the repository
+      # fetch-depth: 0 brings full history + all tags so we can diff this release
+      # against the previous release tag to decide whether the CLI actually changed.
       - name: 'Checkout'
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Setup git configuration
       - name: 'Setup git config'
         run: |
           git config user.name "${{ secrets.CI_MACHINE_USER }}"
           git config user.email "dotCMS-Machine-User@dotcms.com"
+
+      # Determine whether the CLI sources changed since the previous release.
+      # The CLI is self-contained under tools/dotcms-cli/** (its only com.dotcms
+      # dependency, dotcms-api-data-model, lives in that same subtree), so a path
+      # diff against the previous release tag is a correct change-key.
+      #
+      # Fail safe: any time we cannot confidently prove "unchanged" (manual dispatch,
+      # no previous tag, shallow history) we set CLI_CHANGED=true and do a full build.
+      # A false "unchanged" would silently ship stale binaries under a new version.
+      - name: 'Detect CLI source changes'
+        id: cli-changes
+        run: |
+          set -euo pipefail
+          CURRENT_TAG="${{ github.event.release.tag_name }}"
+
+          if [[ -z "${CURRENT_TAG}" ]]; then
+            echo "::notice::No release tag in context (manual dispatch) - building CLI unconditionally"
+            echo "CLI_CHANGED=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch --tags --quiet || true
+
+          # Previous non-LTS v* tag by creation order, excluding the current one.
+          PREV_TAG=$(git tag --sort=-creatordate --list 'v*' \
+            | grep -viE 'lts' \
+            | grep -vxF "${CURRENT_TAG}" \
+            | head -n1 || true)
+
+          if [[ -z "${PREV_TAG}" ]]; then
+            echo "::notice::No previous release tag found - building CLI"
+            echo "CLI_CHANGED=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Expose the previous release version (without leading 'v') for the reuse path.
+          echo "PREV_RELEASE_VERSION=${PREV_TAG#v}" >> "$GITHUB_OUTPUT"
+
+          echo "::notice::Comparing tools/dotcms-cli between ${PREV_TAG} and ${CURRENT_TAG}"
+          if git diff --quiet "${PREV_TAG}" "${CURRENT_TAG}" -- tools/dotcms-cli/; then
+            echo "::notice::No CLI source changes since ${PREV_TAG} - will reuse previously published binaries"
+            echo "CLI_CHANGED=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::CLI source changed since ${PREV_TAG} - full native build"
+            echo "CLI_CHANGED=true" >> "$GITHUB_OUTPUT"
+          fi
 
       # Set release version and create auxiliary branch
       - name: 'Set release version'
@@ -123,10 +180,13 @@ jobs:
           echo "AUXILIARY_BRANCH=$AUXILIARY_BRANCH" >> "$GITHUB_OUTPUT"
 
   # Build the release
+  # Skipped when the CLI is unchanged: the only downstream consumer in that case is the
+  # publish-npm-package reuse path, which pulls the previously published binaries and needs
+  # neither the core .m2 nor freshly built artifacts.
   build:
     name: Release Build
     needs: [ initialize, precheck ]
-    if: needs.initialize.outputs.found_artifacts == 'false'
+    if: needs.initialize.outputs.found_artifacts == 'false' && needs.precheck.outputs.CLI_CHANGED == 'true'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -138,11 +198,12 @@ jobs:
       contents: read
       packages: write
 
-  # Build CLI artifacts
+  # Build CLI artifacts (the expensive 3-OS GraalVM native matrix, incl. two macOS runners).
+  # Skipped when the CLI is unchanged since the previous release - we reuse the prior binaries.
   build-cli:
     name: Release CLI Build
     needs: [ initialize, precheck, build ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && needs.precheck.outputs.CLI_CHANGED == 'true'
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
@@ -150,9 +211,11 @@ jobs:
       version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
       branch: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
 
-  # Perform the release
+  # Perform the release (JReleaser: native binaries -> GitHub release assets + Artifactory).
+  # Skipped when the CLI is unchanged; the previously published artifacts already cover this.
   release:
     needs: [ precheck, build-cli ]
+    if: always() && !failure() && !cancelled() && needs.precheck.outputs.CLI_CHANGED == 'true'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Check out repository'
@@ -184,10 +247,87 @@ jobs:
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
 
+  # Reuse path (GitHub release + Artifactory parity).
+  # When the CLI is unchanged we skip the JReleaser `release` job above and instead republish the
+  # previous release's native artifacts under the new version, mirroring the two channels that
+  # JReleaser feeds (see tools/dotcms-cli/jreleaser.yml - keep this job in sync with it):
+  #   1. GitHub release  -> tag `dotcms-cli-<version>` with the native zips + runner jar attached
+  #   2. Artifactory     -> libs-release-local/com/dotcms/dotcms-cli/<version>/<artifact>
+  # The binaries are byte-identical to the prior release; only the version in the filename and
+  # coordinates advances. npm is handled separately in publish-npm-package.
+  # Note: JReleaser-generated checksums/signatures are NOT reproduced here - only the binary
+  # artifacts (.zip / .jar) are re-published.
+  reuse-release:
+    name: Reuse CLI Release
+    needs: [ precheck ]
+    if: needs.precheck.outputs.CLI_CHANGED == 'false'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: write
+    env:
+      NEW_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+      PREV_VERSION: ${{ needs.precheck.outputs.PREV_RELEASE_VERSION }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Download previous CLI release assets'
+        run: |
+          set -euo pipefail
+          mkdir -p prev new
+          echo "::notice::Reusing dotcms-cli-${PREV_VERSION} artifacts for new version ${NEW_VERSION}"
+          gh release download "dotcms-cli-${PREV_VERSION}" \
+            --repo "${{ github.repository }}" \
+            --dir prev
+          ls -l prev
+
+      - name: 'Re-stamp artifacts to new version'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          artifacts=( prev/dotcms-cli-${PREV_VERSION}*.zip prev/dotcms-cli-${PREV_VERSION}*.jar )
+          if [ ${#artifacts[@]} -eq 0 ]; then
+            echo "::error::No reusable .zip/.jar artifacts found in release dotcms-cli-${PREV_VERSION}"
+            exit 1
+          fi
+          for f in "${artifacts[@]}"; do
+            base=$(basename "$f")
+            newname="${base/dotcms-cli-${PREV_VERSION}/dotcms-cli-${NEW_VERSION}}"
+            cp "$f" "new/${newname}"
+          done
+          echo "Re-stamped artifacts:"
+          ls -l new
+
+      - name: 'Create GitHub release for new version'
+        run: |
+          set -euo pipefail
+          gh release create "dotcms-cli-${NEW_VERSION}" new/* \
+            --repo "${{ github.repository }}" \
+            --title "dotcms-cli - ${NEW_VERSION}" \
+            --notes "Reused binaries from dotcms-cli-${PREV_VERSION} (CLI sources unchanged since the previous release)."
+
+      - name: 'Upload artifacts to Artifactory'
+        env:
+          ARTIFACTORY_USER: ${{ secrets.EE_REPO_USERNAME }}
+          ARTIFACTORY_PASS: ${{ secrets.EE_REPO_PASSWORD }}
+        run: |
+          set -euo pipefail
+          BASE_URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${NEW_VERSION}"
+          for f in new/*; do
+            base=$(basename "$f")
+            echo "::notice::Uploading ${base} -> ${BASE_URL}/${base}"
+            curl -fsSL --user "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -T "$f" "${BASE_URL}/${base}"
+          done
+
   # Publish NPM package
+  # Runs in both paths: the changed path consumes freshly built cli-artifacts-*, the unchanged
+  # path repackages the previously published binaries. Uses !failure() (not success()) so the
+  # intentionally-skipped build/build-cli/release jobs of the unchanged path don't block it,
+  # while still bailing if any job that DID run failed.
   publish-npm-package:
     name: "Publish NPM Package"
-    if: success()  # Run only if explicitly indicated and successful
+    if: ${{ !cancelled() && !failure() && needs.precheck.result == 'success' }}
     needs: [ precheck, build, build-cli, release ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
@@ -207,13 +347,15 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Download all build artifacts'
+        if: needs.precheck.outputs.CLI_CHANGED == 'true'
         uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
           merge-multiple: true
 
-      # Determines the NPM package version and tag
+      # Determines the NPM package version and tag (runs in both paths - depends only on
+      # RELEASE_VERSION, not on build artifacts).
       # Distinguishes between snapshots and releases
       - name: 'Dynamic configuration of NPM package Version and Tag'
         env:
@@ -302,6 +444,7 @@ jobs:
       # Adds the postinstall.js script
       # Generates the package.json file with Jinja2
       - name: 'NPM Package setup'
+        if: needs.precheck.outputs.CLI_CHANGED == 'true'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
           MVN_PACKAGE_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
@@ -326,9 +469,11 @@ jobs:
           echo "::endgroup::"
 
       - name: 'NPM Package tree'
+        if: needs.precheck.outputs.CLI_CHANGED == 'true'
         run: ls -R ${{ github.workspace }}/tools/dotcms-cli/npm/
 
       - name: 'Publish to NPM registry'
+        if: needs.precheck.outputs.CLI_CHANGED == 'true'
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
@@ -336,24 +481,37 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
           npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
 
-      - name: Slack Notification
-        continue-on-error: true
-        uses: rtCamp/action-slack-notify@v2
+      # Reuse path: CLI sources are unchanged since the previous release. Instead of the native
+      # rebuild, pull the currently published 'latest' tarball (which bundles the native binaries
+      # plus the postinstall wrapper), bump only its version field, and republish. The binaries
+      # stay byte-identical; only the version number advances to track the dotCMS release.
+      # We read the source version from npm ('latest') rather than reconstructing it from the git
+      # tag, sidestepping the leading-zero normalization applied to release versions above.
+      - name: 'Reuse previous CLI release and publish'
+        if: needs.precheck.outputs.CLI_CHANGED == 'false'
+        working-directory: ${{ runner.temp }}
         env:
-          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
-          SLACK_TITLE: "Important news!"
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of *dotCLI* `${{ needs.precheck.outputs.RELEASE_VERSION }}` :package: is available on the `NPM` registry!"
-          SLACK_USERNAME: dotBot
-          SLACK_MSG_AUTHOR: " "
-          MSG_MINIMAL: true
-          SLACK_FOOTER: ""
-          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+          NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+        run: |
+          set -euo pipefail
+          PACKAGE_FULL_NAME="${NPM_PACKAGE_SCOPE}/${NPM_PACKAGE_NAME}"
+          echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
+
+          PREV_NPM_VERSION=$(npm view "${PACKAGE_FULL_NAME}" version)
+          echo "::notice::CLI unchanged - repackaging ${PACKAGE_FULL_NAME}@${PREV_NPM_VERSION} as ${NPM_PACKAGE_VERSION} (tag: ${NPM_PACKAGE_VERSION_TAG})"
+
+          npm pack "${PACKAGE_FULL_NAME}@${PREV_NPM_VERSION}"
+          tar -xzf ./*.tgz   # extracts to ./package
+          cd package
+          # Bump only the version; binaries and scripts remain byte-identical to the prior release.
+          npm version "${NPM_PACKAGE_VERSION}" --no-git-tag-version --allow-same-version
+          npm publish --access public --tag "${NPM_PACKAGE_VERSION_TAG}"
 
   # Clean up temporary branches
   clean-up:
     name: "Clean Up"
     if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
-    needs: [ precheck, build, build-cli, release, publish-npm-package ]
+    needs: [ precheck, build, build-cli, release, reuse-release, publish-npm-package ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout Repository
