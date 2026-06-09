@@ -84,11 +84,11 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
         case 'Revision':
             return 'info';
         case 'New':
-        case 'Draft':
-            // Unpublished, in-progress states (no live version yet) read as neutral gray pills
-            // rather than warning-orange. `warn` stays as the fallback for unknown statuses.
+            // Brand-new, unsaved content has no real status yet — a neutral gray pill.
             return 'secondary';
         default:
+            // Draft (and any unknown status) → `warn`, themed as soft yellow (see tag preset)
+            // to match the version-history "Draft" chip.
             return 'warn';
     }
 }

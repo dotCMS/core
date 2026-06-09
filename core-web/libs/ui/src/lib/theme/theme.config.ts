@@ -77,6 +77,12 @@ export const CustomLaraPreset = definePreset(Lara, {
                     success: {
                         background: '{green.100}',
                         color: '{green.700}'
+                    },
+                    // Soft yellow (not Lara's solid orange) so the "Draft" status pill matches the
+                    // version-history chips (bg-yellow-100/text-yellow-700) 1:1.
+                    warn: {
+                        background: '{yellow.100}',
+                        color: '{yellow.700}'
                     }
                 }
             }

@@ -811,7 +811,7 @@ describe('DotFormComponent', () => {
                 expect(contentStatusSeverity('Published')).toBe('success');
                 expect(contentStatusSeverity('Archived')).toBe('danger');
                 expect(contentStatusSeverity('Revision')).toBe('info');
-                expect(contentStatusSeverity('Draft')).toBe('secondary');
+                expect(contentStatusSeverity('Draft')).toBe('warn');
                 expect(contentStatusSeverity('New')).toBe('secondary');
             });
 
@@ -827,7 +827,7 @@ describe('DotFormComponent', () => {
                     },
                     { state: { archived: true }, severity: 'danger' },
                     { state: { live: false, hasLiveVersion: true }, severity: 'info' },
-                    { state: { working: true }, severity: 'secondary' }
+                    { state: { working: true }, severity: 'warn' }
                 ] as { state: DotContentState; severity: string }[];
 
                 cases.forEach(({ state, severity }) => {
