@@ -164,7 +164,7 @@
                     </td>
                     <td class="w-24 min-w-24">
                         @let status = item | contentletStatus;
-                        <p-chip [class]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                        <p-chip [class]="status.classes" [label]="status.label" />
                     </td>
                     <td class="w-44 min-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>

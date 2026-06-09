@@ -169,7 +169,7 @@ function normalizeEditorContent(
                         (fullscreenToggle)="toggleFullscreen()"
                         (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        class="relative overflow-y-auto overscroll-contain editor-scroll-container"
+                        class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="
                             isFullscreen()

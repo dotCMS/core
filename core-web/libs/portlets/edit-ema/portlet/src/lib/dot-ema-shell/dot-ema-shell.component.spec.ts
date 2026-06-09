@@ -75,7 +75,8 @@ import {
     MOCK_RESPONSE_HEADLESS,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
     PAGE_RESPONSE_URL_CONTENT_MAP,
-    PAYLOAD_MOCK
+    PAYLOAD_MOCK,
+    URL_CONTENT_MAP_MOCK
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -1010,6 +1011,24 @@ describe('DotEmaShellComponent', () => {
                 expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
+            it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
+                spectator.detectChanges();
+                const spyReload = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {}
+                    })
+                );
+
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'pageReload');
@@ -1036,6 +1055,22 @@ describe('DotEmaShellComponent', () => {
                 const reloadSpy = jest.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+
+            it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                        payload: { htmlPageReferer: '/index?com.dotmarketing.htmlpage.language=2' }
+                    })
+                );
+                spectator.detectChanges();
 
                 expect(reloadSpy).toHaveBeenCalled();
             });
@@ -1084,7 +1119,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        label: expect.any(String),
+                        label: 'hello world',
                         id: '123',
                         url: expect.stringContaining('url=index')
                     })
@@ -1196,6 +1231,66 @@ describe('DotEmaShellComponent', () => {
                         label: 'Page B',
                         id: '456',
                         url: expect.stringContaining('url=%2Fpage-b')
+                    })
+                );
+            });
+
+            it('should use urlContentMap title and identifier when present', async () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            title: 'Page Title',
+                            identifier: 'page-id'
+                        },
+                        urlContentMap: {
+                            ...URL_CONTENT_MAP_MOCK,
+                            title: 'Content Map Title',
+                            identifier: 'content-map-id'
+                        }
+                    })
+                );
+
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                store.pageLoad(INITIAL_PAGE_PARAMS);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Content Map Title',
+                        id: 'content-map-id',
+                        url: expect.stringContaining('url=index')
+                    })
+                );
+            });
+
+            it('should fall back to page title and identifier when urlContentMap is absent', async () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            title: 'Page Title',
+                            identifier: 'page-id'
+                        },
+                        urlContentMap: null
+                    })
+                );
+
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                store.pageLoad(INITIAL_PAGE_PARAMS);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Page Title',
+                        id: 'page-id',
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });

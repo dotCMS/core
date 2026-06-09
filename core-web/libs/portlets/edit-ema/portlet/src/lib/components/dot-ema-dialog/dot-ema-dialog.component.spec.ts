@@ -28,7 +28,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
 import {
@@ -238,6 +238,20 @@ describe('DotEmaDialogComponent', () => {
             expect(handleWorkflowEventSpy).toHaveBeenCalledWith({});
         });
 
+        it('should emit reloadFromDialog after a successful workflow action', () => {
+            const reloadFromDialogSpy = jest.spyOn(component.reloadFromDialog, 'emit');
+
+            component.addContentlet(PAYLOAD_MOCK);
+            spectator.detectChanges();
+
+            // dialog appends to body so @ViewChild('iframe') is not populated; stub it out
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            component.iframe = { nativeElement: { contentWindow: null } } as any;
+            component.handleWorkflowEvent({} as DotCMSWorkflowActionEvent);
+
+            expect(reloadFromDialogSpy).toHaveBeenCalled();
+        });
+
         it("should trigger setDirty in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is not a translation", () => {
             const setDirtySpy = jest.spyOn(storeSpy, 'setDirty');
 
@@ -273,6 +287,26 @@ describe('DotEmaDialogComponent', () => {
             });
 
             expect(setSavedSpy).toHaveBeenCalled();
+        });
+
+        it("should NOT emit reloadFromDialog when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
+            const reloadFromDialogSpy = jest.spyOn(component.reloadFromDialog, 'emit');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            });
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(reloadFromDialogSpy).not.toHaveBeenCalled();
         });
 
         it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated', is a translation and payload is move action", () => {

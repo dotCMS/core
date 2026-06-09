@@ -50,6 +50,8 @@ class MockEditor {
     };
 
     insertContent = jest.fn();
+
+    focus = jest.fn();
 }
 
 const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
@@ -128,6 +130,9 @@ describe('DotWysiwygPluginService', () => {
                 width: '800px',
                 height: '500px',
                 contentStyle: { padding: 0 },
+                closable: true,
+                closeOnEscape: true,
+                dismissableMask: true,
                 data: {
                     assetType: 'image'
                 }
@@ -140,6 +145,29 @@ describe('DotWysiwygPluginService', () => {
             expect(spyEditorInserContent).toHaveBeenCalledWith(
                 formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
+            // Focus returns to the editor after inserting an image
+            expect(editor.focus).toHaveBeenCalled();
+        });
+
+        it('should NOT insert content when the dialog is closed without selecting an image', () => {
+            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined)
+            } as DynamicDialogRef);
+
+            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+
+            spectator.service.initializePlugins(editor);
+
+            const button = editor.ui.registry.getAll().buttons['dotAddImage'];
+
+            // Simulate the button click that opens the dialog
+            button.onAction();
+
+            expect(spyDialog).toHaveBeenCalled();
+            expect(spyEditorInserContent).not.toHaveBeenCalled();
+            // AC5: focus still returns to the editor when the dialog is dismissed
+            // without selecting an image (X, Esc or overlay mask)
+            expect(editor.focus).toHaveBeenCalled();
         });
 
         it('should upload the image when dropped', () => {
