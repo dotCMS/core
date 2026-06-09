@@ -37,6 +37,11 @@ concurrency:
   # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
   cancel-in-progress: true
 
+env:
+  # TEMP smoke-test (Node 24 migration): force all JS actions onto Node 24 ahead of the
+  # 2026-06-16 default switch, to surface incompatibilities. DO NOT MERGE.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # Initialize the PR check process
   initialize:

@@ -59,6 +59,11 @@ on:
         type: string
         default: ''
 
+env:
+  # TEMP smoke-test (Node 24 migration): force all JS actions onto Node 24 ahead of the
+  # 2026-06-16 default switch, to surface incompatibilities. DO NOT MERGE.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # Initial JDK Build
   # This job performs a basic build and install with Maven without running tests.

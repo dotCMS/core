@@ -70,6 +70,9 @@ on:
         required: true
 
 env:
+  # TEMP smoke-test (Node 24 migration): force all JS actions onto Node 24 ahead of the
+  # 2026-06-16 default switch, to surface incompatibilities. DO NOT MERGE.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
 
 jobs:

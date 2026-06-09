@@ -51,6 +51,11 @@ on:
       changes:
         value: ${{ jobs.changes.outputs.changes }}
 
+env:
+  # TEMP smoke-test (Node 24 migration): force all JS actions onto Node 24 ahead of the
+  # 2026-06-16 default switch, to surface incompatibilities. DO NOT MERGE.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # This job is used as a required check to indicate that the workflow has started and is running
   initialize:
