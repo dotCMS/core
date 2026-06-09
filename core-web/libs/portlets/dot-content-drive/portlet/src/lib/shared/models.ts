@@ -129,6 +129,8 @@ export type DotKnownContentDriveFilters = {
     contentType: string[];
     title: string;
     languageId: string[];
+    // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
+    workflow: string[];
 };
 
 /**

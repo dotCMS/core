@@ -3045,11 +3045,29 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			successCount.updateAndGet(value -> value - list.size());
 		});
 
+		final String skipReason = skipsCount > 0 ? buildSchemeMismatchSkipReason(action) : null;
+
 		return new BulkActionsResultView(
 				successCount.get(),
 				skipsCount,
-				ImmutableList.copyOf(fails)
+				ImmutableList.copyOf(fails),
+				skipReason
 		);
+	}
+
+	/**
+	 * Builds the human-readable reason returned with {@link BulkActionsResultView#getSkipReason()}
+	 * when the bulk fire ran with input contentlets that are not associated with the workflow
+	 * scheme that owns the supplied action. Today this is the only path that increments
+	 * {@code skippedCount}; revisit if other skip reasons are introduced.
+	 */
+	private String buildSchemeMismatchSkipReason(final WorkflowAction action) {
+		return String.format(
+				"Workflow action '%s' (%s) does not own the workflow steps that the skipped "
+						+ "contentlets are currently in. Use PUT /api/v1/workflow/actions/{actionId}/fire "
+						+ "to bypass scheme checks (e.g. for System Workflow actions like Move on content "
+						+ "from a non-system scheme).",
+				action.getName(), action.getId());
 	}
 
 	/**
