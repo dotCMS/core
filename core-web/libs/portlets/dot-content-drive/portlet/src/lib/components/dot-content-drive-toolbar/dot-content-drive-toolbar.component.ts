@@ -22,6 +22,7 @@ import { DotContentDriveLanguageFieldComponent } from './components/dot-content-
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
+import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
@@ -50,7 +51,8 @@ interface ToolbarAnimationState {
         DotContentDriveContentTypeFilterComponent,
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
-        DotContentDriveWorkflowActionsComponent
+        DotContentDriveWorkflowActionsComponent,
+        DotContentDriveWorkflowFilterComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

@@ -21,8 +21,25 @@ export const IFRAME_SCROLL_ZONE = 100;
 
 export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
-export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
-export const STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME = 500;
+/**
+ * Coalescing window (ms) for persisting style-editor changes.
+ *
+ * This is intentionally small: it only batches a rapid burst of commits (e.g.
+ * several quick radio clicks, or a blur landing right after a change) into a
+ * single save. It is NOT used to "wait for typing to finish" — that is handled
+ * by blur/Enter and by STYLE_EDITOR_INPUT_IDLE_SAVE_TIME.
+ */
+export const STYLE_EDITOR_SAVE_DEBOUNCE_TIME = 250;
+
+/**
+ * Idle window (ms) after the last keystroke before a continuous field
+ * (text/number input) auto-commits without requiring blur/Enter.
+ *
+ * Deliberately much longer than any inter-keystroke gap, so even a slow typist
+ * never triggers a save (or a traditional page reload) mid-word. Blur/Enter
+ * still commits immediately — this is the "user stopped typing" fallback.
+ */
+export const STYLE_EDITOR_INPUT_IDLE_SAVE_TIME = 2000;
 
 export const DEFAULT_IFRAME_HEIGHT = 1080;
 
