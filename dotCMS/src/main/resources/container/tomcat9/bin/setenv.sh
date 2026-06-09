@@ -141,7 +141,7 @@ export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"
 
 # Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
 # Set JAZ_IGNORE_USER_TUNING=1 to use jaz.
-if [ -z "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
+if [ -n "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
   export _RUNJAVA="$(command -v jaz)"
 fi
 
