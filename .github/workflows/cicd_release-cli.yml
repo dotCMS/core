@@ -130,7 +130,7 @@ jobs:
           git fetch --tags --quiet || true
 
           # Previous non-LTS v* tag by creation order, excluding the current one.
-          PREV_TAG=$(git tag --sort=-creatordate --list 'v*' \
+          PREV_TAG=$(git tag --sort=-version:refname --list 'v*' \
             | grep -viE 'lts' \
             | grep -vxF "${CURRENT_TAG}" \
             | head -n1 || true)
