@@ -28,7 +28,7 @@ on:
         default: '1.0.0-SNAPSHOT'
         required: false
       dry-run:
-        description: 'Dry run'
+        description: 'Dry run - skip ALL publishing (npm, GitHub release, Artifactory) and JReleaser uploads'
         default: 'false'
         required: false
 
@@ -268,6 +268,7 @@ jobs:
       NEW_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
       PREV_VERSION: ${{ needs.precheck.outputs.PREV_RELEASE_VERSION }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
@@ -302,6 +303,10 @@ jobs:
       - name: 'Create GitHub release for new version'
         run: |
           set -euo pipefail
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "::notice::[dry-run] would create release dotcms-cli-${NEW_VERSION} with assets: $(cd new && echo *)"
+            exit 0
+          fi
           gh release create "dotcms-cli-${NEW_VERSION}" new/* \
             --repo "${{ github.repository }}" \
             --title "dotcms-cli - ${NEW_VERSION}" \
@@ -316,6 +321,10 @@ jobs:
           BASE_URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${NEW_VERSION}"
           for f in new/*; do
             base=$(basename "$f")
+            if [ "${DRY_RUN}" = "true" ]; then
+              echo "::notice::[dry-run] would upload ${base} -> ${BASE_URL}/${base}"
+              continue
+            fi
             echo "::notice::Uploading ${base} -> ${BASE_URL}/${base}"
             curl -fsSL --user "${ARTIFACTORY_USER}:${ARTIFACTORY_PASS}" -T "$f" "${BASE_URL}/${base}"
           done
@@ -477,9 +486,11 @@ jobs:
         working-directory: ${{ github.workspace }}/tools/dotcms-cli/npm/
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         run: |
           echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
-          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG}
+          [ "${DRY_RUN}" = "true" ] && DRY_RUN_FLAG="--dry-run" || DRY_RUN_FLAG=""
+          npm publish --access public --tag ${NPM_PACKAGE_VERSION_TAG} ${DRY_RUN_FLAG}
 
       # Reuse path: CLI sources are unchanged since the previous release. Instead of the native
       # rebuild, pull the currently published 'latest' tarball (which bundles the native binaries
@@ -492,6 +503,7 @@ jobs:
         working-directory: ${{ runner.temp }}
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         run: |
           set -euo pipefail
           PACKAGE_FULL_NAME="${NPM_PACKAGE_SCOPE}/${NPM_PACKAGE_NAME}"
@@ -505,7 +517,8 @@ jobs:
           cd package
           # Bump only the version; binaries and scripts remain byte-identical to the prior release.
           npm version "${NPM_PACKAGE_VERSION}" --no-git-tag-version --allow-same-version
-          npm publish --access public --tag "${NPM_PACKAGE_VERSION_TAG}"
+          [ "${DRY_RUN}" = "true" ] && DRY_RUN_FLAG="--dry-run" || DRY_RUN_FLAG=""
+          npm publish --access public --tag "${NPM_PACKAGE_VERSION_TAG}" ${DRY_RUN_FLAG}
 
   # Clean up temporary branches
   clean-up:
