@@ -2435,21 +2435,40 @@
       "name": "Traditional Style Editor",
       "item": [
         {
-          "name": "Build Content Type Schema",
+          "name": "Save Content Type Schema",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "const entity = pm.response.json().entity;",
-                  "pm.expect(entity).to.not.be.null;",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
                   "",
                   "const SCHEMA = {",
-                  "    \"contentType\": entity.name,",
+                  "    \"contentType\": contentTypeName,",
                   "    \"sections\": [",
                   "        {",
                   "            \"title\": \"Layout\",",
@@ -2475,11 +2494,7 @@
                   "    ]",
                   "};",
                   "",
-                  "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": JSON.stringify(SCHEMA) } };",
-                  "    pm.expect(contentTypeInfo.metadata.DOT_STYLE_EDITOR_SCHEMA).to.exist;",
-                  "    pm.collectionVariables.set(\"contentTypeInfo\", JSON.stringify(contentTypeInfo));",
-                  "});"
+                  "pm.collectionVariables.set(\"styleSchema\", JSON.stringify(SCHEMA));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -2488,65 +2503,7 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "contenttype",
-                "id",
-                "{{contentTypeId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Save Content Type Schema",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                  "",
-                  "const entity = pm.response.json().entity;",
-                  "",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Accept",
@@ -2615,7 +2572,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{{contentTypeInfo}}",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2623,7 +2580,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}/metadata",
               "host": [
                 "{{serverURL}}"
               ],
@@ -2632,7 +2589,8 @@
                 "v1",
                 "contenttype",
                 "id",
-                "{{contentTypeId}}"
+                "{{contentTypeId}}",
+                "metadata"
               ]
             }
           },
@@ -3040,21 +2998,40 @@
           "response": []
         },
         {
-          "name": "Build Content Type Schema 2",
+          "name": "Save Content Type Schema 2",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "const entity = pm.response.json().entity;",
-                  "pm.expect(entity).to.not.be.null;",
+                  "pm.test(\"Should have the correct content type schema\", function () {",
+                  "    const schemaStr = entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+                  "    pm.expect(schemaStr).to.exist;",
+                  "    const schema = JSON.parse(schemaStr);",
+                  "    pm.expect(schema.contentType).eq(contentTypeName);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
                   "",
                   "const SCHEMA = {",
-                  "    \"contentType\": entity.name,",
+                  "    \"contentType\": contentTypeName,",
                   "    \"sections\": [",
                   "        {",
                   "            \"title\": \"Typography\",",
@@ -3081,11 +3058,7 @@
                   "    ]",
                   "};",
                   "",
-                  "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": JSON.stringify(SCHEMA) } };",
-                  "    pm.expect(contentTypeInfo.metadata.DOT_STYLE_EDITOR_SCHEMA).to.exist;",
-                  "    pm.collectionVariables.set(\"contentTypeInfo_2\", JSON.stringify(contentTypeInfo));",
-                  "});"
+                  "pm.collectionVariables.set(\"styleSchema_2\", JSON.stringify(SCHEMA));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -3094,65 +3067,7 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "contenttype",
-                "id",
-                "{{contentTypeId_2}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Save Content Type Schema 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo_2\");",
-                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName_2\");",
-                  "",
-                  "const entity = pm.response.json().entity;",
-                  "",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Accept",
@@ -3221,7 +3136,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{{contentTypeInfo_2}}",
+              "raw": "{\n    \"DOT_STYLE_EDITOR_SCHEMA\": {{styleSchema_2}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3229,7 +3144,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}",
+              "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId_2}}/metadata",
               "host": [
                 "{{serverURL}}"
               ],
@@ -3238,7 +3153,8 @@
                 "v1",
                 "contenttype",
                 "id",
-                "{{contentTypeId_2}}"
+                "{{contentTypeId_2}}",
+                "metadata"
               ]
             }
           },
@@ -3400,16 +3316,16 @@
                   "    pm.expect(schemaScript).to.include(\"dotUVE.registerStyleEditorSchemas\");",
                   "});",
                   "",
-                  "// We have 2 contentlets rendered in the page, but both have the same Content Type so we expect only one SCHEMA",
-                  "pm.test(\"Validate SCHEMA is not duplicated in registerStyleEditorSchemas\", function () {",
-                  "    // Regular expression to find the script that contains 'initDotUVE'",
+                  "// We have 2 contentlets of different Content Types in the page, so we expect 2 distinct SCHEMAs",
+                  "pm.test(\"Validate 2 distinct schemas are present in registerStyleEditorSchemas\", function () {",
+                  "    // Regular expression to find all contentType entries in the registerStyleEditorSchemas call",
                   "    const contentTypeRegex = /\"contentType\":\"(.*?)\"/g;",
                   "",
-                  "    // Gets all schemas pased to the registerStyleEditorSchemas",
+                  "    // Gets all schemas passed to the registerStyleEditorSchemas",
                   "    const schemas = pageRendered.match(contentTypeRegex);",
                   "    ",
                   "    pm.expect(schemas).to.exist;",
-                  "    pm.expect(schemas.length).to.equal(2, `Expected 2 schema but found ${schemas.length}`);",
+                  "    pm.expect(schemas.length).to.equal(2, `Expected 2 schemas but found ${schemas.length}`);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3641,19 +3557,11 @@
       "value": ""
     },
     {
-      "key": "contentTypeInfo",
-      "value": ""
-    },
-    {
       "key": "contentTypeId_2",
       "value": ""
     },
     {
       "key": "contentTypeVarName_2",
-      "value": ""
-    },
-    {
-      "key": "contentTypeInfo_2",
       "value": ""
     },
     {
@@ -3666,6 +3574,14 @@
     },
     {
       "key": "contentTypeName_2",
+      "value": ""
+    },
+    {
+      "key": "styleSchema",
+      "value": ""
+    },
+    {
+      "key": "styleSchema_2",
       "value": ""
     }
   ]
