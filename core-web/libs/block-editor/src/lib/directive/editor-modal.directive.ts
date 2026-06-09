@@ -56,6 +56,9 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             placement: 'bottom-start',
             popperOptions: this.PROPER_MODIFIERS,
             hideOnClick: 'toggle',
+            // Append to body so the popover escapes the editor's `overflow-auto` scroll
+            // container (and the surrounding field card), which otherwise clips it (#35908).
+            appendTo: () => document.body,
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
         }) as Instance;
