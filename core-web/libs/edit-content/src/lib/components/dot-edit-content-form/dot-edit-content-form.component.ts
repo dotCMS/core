@@ -84,8 +84,9 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
         case 'Revision':
             return 'info';
         case 'New':
-            // Brand-new, unsaved content has no real status yet — a neutral gray pill reads as
-            // informational instead of the warning-orange the other unsaved states use.
+        case 'Draft':
+            // Unpublished, in-progress states (no live version yet) read as neutral gray pills
+            // rather than warning-orange. `warn` stays as the fallback for unknown statuses.
             return 'secondary';
         default:
             return 'warn';
