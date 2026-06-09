@@ -339,6 +339,19 @@ runs:
         fi
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
 
+    # Self-heal the JDK base image the dotCMS Dockerfile builds FROM. Same resolved
+    # SDKMAN_JAVA_VERSION as below, so the base tag and the FROM build-arg stay in lockstep.
+    # No-op on the common path (base already published); builds it when missing — pushed
+    # multi-arch when Docker Hub creds are present, otherwise loaded locally for this build.
+    - id: ensure-java-base
+      name: Ensure Java Base Image
+      if: ${{ inputs.generate-docker == 'true' }}
+      uses: ./.github/actions/core-cicd/ensure-java-base
+      with:
+        sdkman-java-version: ${{ env.SDKMAN_JAVA_VERSION }}
+        docker-io-username: ${{ inputs.docker-io-username }}
+        docker-io-token: ${{ inputs.docker-io-token }}
+
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
       if: ${{ inputs.generate-docker == 'true' }}

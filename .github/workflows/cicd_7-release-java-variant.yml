@@ -27,7 +27,13 @@
 # There are NO repository-variable defaults. The default Java version lives in ONE
 # place: the release branch's .sdkmanrc (built by the primary release workflow).
 # Building a variant requires deliberately dispatching with a java_version that
-# differs from that default; the workflow fails fast otherwise.
+# differs from that default; the guard below fails fast on an empty or same-as-default
+# request (a redundant duplicate of the primary release image).
+#
+# Base image: the variant's JDK base (dotcms/java-base:${java_version}) does NOT need to be
+# pre-built. The shared maven-job's ensure-java-base step self-heals it — if the tag is missing
+# it is built and pushed (multi-arch) before the dotCMS image build, using the DOCKER_* secrets
+# passed to the build phase below.
 #
 
 name: '-7 Release Java Variant'
@@ -136,6 +142,14 @@ jobs:
           echo "Default Java on ${branch} (.sdkmanrc): ${default_java}"
           echo "Requested variant Java version:        ${JAVA_VERSION}"
 
+          # Fail loudly if the default couldn't be read — a wrong branch name or a missing/malformed
+          # .sdkmanrc otherwise leaves default_java empty, which the equality check below would pass
+          # silently (non-empty JAVA_VERSION never equals ""), letting a misconfigured dispatch through.
+          if [[ -z "${default_java}" ]]; then
+            echo "Error: could not read java= from .sdkmanrc on ${branch} — the branch may not exist or .sdkmanrc is missing/malformed."
+            exit 1
+          fi
+
           if [[ "${JAVA_VERSION}" == "${default_java}" ]]; then
             echo "Error: requested java_version (${JAVA_VERSION}) equals the ${branch} default — the primary release image already covers it. Nothing to build."
             exit 1
@@ -177,6 +191,11 @@ jobs:
       generate-docker: true
       java-version: ${{ inputs.java_version }}
       artifact-suffix: ${{ needs.extract-version.outputs.artifact_suffix }}
+    secrets:
+      # Self-heals the variant's java-base image: if dotcms/java-base:${java_version} is missing,
+      # ensure-java-base builds and pushes it (multi-arch) before the dotCMS image build.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write

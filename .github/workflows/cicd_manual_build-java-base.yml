@@ -1,5 +1,9 @@
 name: Build SDKMan Base Java Image
 run-name: Base Image for ${{ inputs.sdkman_java_version }} by @${{ github.actor }}
+# Manual entry point for building/publishing the dotcms/java-base:${version} JDK base image.
+# The build logic lives in the ensure-java-base composite action, which is also invoked
+# automatically during normal builds (see .github/actions/core-cicd/maven-job) so a missing base
+# self-heals. This workflow forces a (re)build regardless of whether the tag already exists.
 on:
   workflow_dispatch:
     inputs:
@@ -26,35 +30,14 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v4
-      - name: Set Common Vars
-        run: |
-          PLATFORMS='linux/amd64'
-          [[ "${{ github.event.inputs.multi_arch }}" == 'true' ]] && PLATFORMS='linux/amd64,linux/arm64'
-
-          echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
+      - name: Ensure Java Base Image
+        uses: ./.github/actions/core-cicd/ensure-java-base
         with:
-          platforms: amd64,arm64
-        if: github.event.inputs.multi_arch == 'true'
-      - id: docker-setup-buildx
-        name: Docker Setup Buildx
-        uses: docker/setup-buildx-action@v3.10.0
-        with:
-          version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases
-          platforms: ${{ env.PLATFORMS }}
-        if: github.event.inputs.multi_arch == 'true'
-      - name: Docker Hub login
-        uses: docker/login-action@v3.0.0
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v6.15.0
-        with:
-          context: ./docker/java-base
-          push: ${{ github.event.inputs.push }}
-          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}${{ github.event.inputs.image_suffix }}
-          platforms: ${{ env.PLATFORMS }}
-          build-args:
-            SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}
+          sdkman-java-version: ${{ inputs.sdkman_java_version }}
+          image-suffix: ${{ inputs.image_suffix }}
+          multi-arch: ${{ inputs.multi_arch }}
+          # Manual runs always (re)build; push is an explicit true/false here (not auto).
+          force: 'true'
+          push: ${{ inputs.push }}
+          docker-io-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-io-token: ${{ secrets.DOCKER_TOKEN }}

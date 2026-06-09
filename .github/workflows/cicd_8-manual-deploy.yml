@@ -261,6 +261,10 @@ jobs:
       generate-docker: true
       java-version: ${{ inputs.java_version }}
       artifact-suffix: ${{ needs.safety-check.outputs.effective_artifact_suffix }}
+    secrets:
+      # Lets ensure-java-base publish a missing java-base image (multi-arch) for this deploy.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write
