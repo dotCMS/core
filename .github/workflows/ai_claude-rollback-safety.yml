@@ -146,23 +146,25 @@ jobs:
           open('/tmp/doc-object.md', 'w').write(content)
           "
 
-        STEP 7 — Post the doc object as a collapsible PR comment so the post-merge job can
-          retrieve and attach it to the merge commit. Write the comment body to a temp file first
-          to avoid shell quoting issues, then post it:
+        STEP 7 — Include the doc object in your PR comment, wrapped in the exact HTML comment
+          markers below. These markers are CI extraction machinery — the post-merge job searches
+          for them character-for-character to locate the doc object and attach it as a git note.
+          They are REQUIRED and must appear exactly as written, whether you post the doc object
+          as a standalone comment or embed it within the rollback safety comment.
 
+          Write the wrapped block to a temp file:
           python3 -c "
           doc = open('/tmp/doc-object.md').read()
-          comment = f'''<!-- doc-object-draft-start -->
-        <details>
-        <summary>📄 Doc Object Draft (attached to merge commit post-merge)</summary>
-
-        {doc}
-        </details>
-        <!-- doc-object-draft-end -->'''
-          open('/tmp/doc-object-comment.md', 'w').write(comment)
+          block = '<!-- doc-object-draft-start -->\n<details>\n<summary>📄 Doc Object Draft (attached to merge commit post-merge)</summary>\n\n' + doc + '\n</details>\n<!-- doc-object-draft-end -->'
+          open('/tmp/doc-object-block.md', 'w').write(block)
           "
 
-          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/doc-object-comment.md
+          If you are posting a standalone comment:
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/doc-object-block.md
+
+          If you are constrained to a single comment and must embed the doc object within the
+          rollback safety comment, include the full contents of /tmp/doc-object-block.md verbatim
+          as a section of that comment. Do not paraphrase or reformat the markers.
 
         ── OUTPUT B: ROLLBACK SAFETY ─────────────────────────────────────────────────────
 
@@ -260,19 +262,33 @@ jobs:
 
           # Find the doc-object-draft block
           text = result.stdout
+
+          # Primary: look for the required HTML comment markers
           match = re.search(
               r'<!-- doc-object-draft-start -->(.*?)<!-- doc-object-draft-end -->',
               text, re.DOTALL
           )
-          if not match:
-              print('ERROR: No doc-object-draft comment found on this PR.', file=sys.stderr)
-              print('This likely means the pre-merge Claude analysis did not complete.', file=sys.stderr)
-              sys.exit(1)
 
-          # Strip the <details> wrapper — extract just the raw doc object
-          block = match.group(1)
-          inner = re.search(r'</summary>\s*\n(.*?)\n</details>', block, re.DOTALL)
-          draft = inner.group(1).strip() if inner else block.strip()
+          if match:
+              block = match.group(1)
+              inner = re.search(r'</summary>\s*\n(.*?)\n</details>', block, re.DOTALL)
+              draft = inner.group(1).strip() if inner else block.strip()
+          else:
+              # Fallback: model embedded doc object without outer markers (orchestrator
+              # single-comment constraint). Find the <details> block by its summary text.
+              details_match = re.search(
+                  r'<details>\s*<summary>[^<]*Doc Object Draft[^<]*</summary>(.*?)</details>',
+                  text, re.DOTALL
+              )
+              if not details_match:
+                  print('ERROR: No doc-object-draft comment found on this PR.', file=sys.stderr)
+                  print('Checked for both <!-- doc-object-draft-start --> markers and', file=sys.stderr)
+                  print('<details> summary containing "Doc Object Draft".', file=sys.stderr)
+                  sys.exit(1)
+              inner_content = details_match.group(1).strip()
+              # Strip code fences if the model wrapped the YAML in ```yaml...```
+              code_fence = re.search(r'```(?:yaml)?\s*\n(.*?)\n```', inner_content, re.DOTALL)
+              draft = code_fence.group(1).strip() if code_fence else inner_content
 
           # Substitute the SHA placeholders
           draft = draft.replace('PLACEHOLDER_SHORT_SHA', short_sha)
