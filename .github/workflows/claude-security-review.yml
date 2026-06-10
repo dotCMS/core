@@ -1,7 +1,6 @@
 name: Claude Security Review
 
-# Runs an AI-assisted security review on every PR that touches a
-# security-sensitive path. Behavior:
+# Runs an AI-assisted security review on every PR. Behavior:
 #   - If Semgrep has already reviewed this PR (any check run, PR comment,
 #     review, or review-comment authored by a Semgrep app/bot), the Claude
 #     review is SKIPPED and the check passes — we trust Semgrep's coverage.
@@ -25,42 +24,13 @@ name: Claude Security Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      # REST / API surface
-      - 'dotCMS/src/main/java/com/dotcms/rest/**'
-      - 'dotCMS/src/main/java/com/dotcms/api/**'
-      # Servlets, filters, login
-      - 'dotCMS/src/main/java/com/dotcms/servlets/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/servlets/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/filters/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/cms/login/**'
-      # Auth / security / role
-      - 'dotCMS/src/main/java/com/dotcms/auth/**'
-      - 'dotCMS/src/main/java/com/dotcms/security/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/business/Role*'
-      - 'dotCMS/src/main/java/com/dotmarketing/business/web/User*'
-      # DB-touching business impls
-      - 'dotCMS/src/main/java/com/dotcms/**/business/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/business/**'
-      # Publishing (push publish — SI-75 area)
-      - 'dotCMS/src/main/java/com/dotcms/publisher/**'
-      - 'dotCMS/src/main/java/com/dotcms/publishing/**'
-      - 'dotCMS/src/main/java/com/dotcms/enterprise/publishing/**'
-      # Workflow actionlets (user-supplied scripts)
-      - 'dotCMS/src/main/java/com/dotmarketing/portlets/workflows/actionlet/**'
-      # OSGi / dynamic plugin loading
-      - 'dotCMS/src/main/java/com/dotcms/osgi/**'
-      - 'dotCMS/src/main/java/com/dotmarketing/osgi/**'
-      # Web app entry points & static
-      - 'dotCMS/src/main/webapp/**'
-      # SQL / build / containers / workflows
-      - '**/*.sql'
-      - '**/pom.xml'
-      - '**/build.gradle*'
-      - '**/Dockerfile*'
-      - 'docker/**'
-      - '.github/workflows/**'
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -151,31 +121,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Run the /security-review skill against the diff between
-            base ${{ github.event.pull_request.base.sha }} and
-            head ${{ github.event.pull_request.head.sha }}
-            (PR #${{ github.event.pull_request.number }}).
-
-            Follow the three-phase methodology (identify → parallel
-            false-positive filter → keep only confidence >= 8).
-
-            After producing the markdown report, ALSO write a
-            machine-readable summary to $GITHUB_WORKSPACE/security-findings.json
-            with this schema:
-
-            {
-              "findings_count": <int, total kept findings>,
-              "high_count": <int>,
-              "medium_count": <int>,
-              "report_markdown": "<full markdown report>"
-            }
-
-            If no findings clear the bar, write:
-            {"findings_count": 0, "high_count": 0, "medium_count": 0, "report_markdown": ""}
-
-            DO NOT post any PR comment yourself. Downstream steps handle
-            disclosure routing.
+          prompt_file: .github/claude-security-review-prompt.md
           claude_args: |
             --allowed-tools Read,Bash,Grep,Glob,Agent
             --model claude-opus-4-7
