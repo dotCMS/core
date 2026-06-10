@@ -91,8 +91,6 @@ tags:
   name: Variants
 - description: Template design and management
   name: Templates
-- description: Read and write dotCMS file assets by path or identifier
-  name: File Assets
 - description: Content type field definitions and configuration
   name: Content Type Field
 - description: Content tagging and labeling
@@ -114,6 +112,8 @@ tags:
   name: Environment
 - description: A/B testing and experimentation management
   name: Experiments
+- description: File asset management and download operations
+  name: File Assets
 - description: Language management and localization
   name: Internationalization
 - description: License management and validation
@@ -21367,20 +21367,11 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              properties:
-                file:
-                  $ref: "#/components/schemas/FormDataContentDisposition"
-                language:
-                  type: string
-                  description: Language tag (e.g. en-US). Defaults to site default
-                    language.
-                path:
-                  type: string
-                  description: "Host-qualified asset path including filename, e.g.\
-                    \ //demo.dotcms.com/application/foo.vtl"
-              required:
-              - file
-              - path
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
       responses:
         "200":
           content:
@@ -21420,20 +21411,11 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              properties:
-                file:
-                  $ref: "#/components/schemas/FormDataContentDisposition"
-                language:
-                  type: string
-                  description: Language tag (e.g. en-US). Defaults to site default
-                    language.
-                path:
-                  type: string
-                  description: "Host-qualified asset path including filename, e.g.\
-                    \ //demo.dotcms.com/application/foo.vtl"
-              required:
-              - file
-              - path
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
       responses:
         "200":
           content:

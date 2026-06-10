@@ -79,7 +79,7 @@ import java.util.Optional;
  */
 @SwaggerCompliant(value = "File Assets v2", batch = 3)
 @Path("/v2/assets")
-@Tag(name = "File Assets", description = "Read and write dotCMS file assets by path or identifier")
+@Tag(name = "File Assets")
 public class WebAssetResourceV2 {
 
     private final WebResource webResource;
@@ -338,7 +338,16 @@ public class WebAssetResourceV2 {
             description = "Creates or updates a file asset at the given host-qualified path. " +
                           "Only the working version is affected — the live version is NOT changed. " +
                           "Submit via multipart/form-data with fields: file (binary), " +
-                          "path (//host/folder/file.ext), language (optional)."
+                          "path (//host/folder/file.ext), language (optional).",
+            requestBody = @RequestBody(
+                    description = "Multipart form with fields: file (binary content, required), " +
+                                  "path (host-qualified asset path including filename, required), " +
+                                  "language (language tag, optional — defaults to site default)",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(type = "object",
+                                             description = "Flat multipart form: file, path, language")))
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
@@ -421,7 +430,16 @@ public class WebAssetResourceV2 {
             description = "Creates or updates a file asset at the given host-qualified path and " +
                           "immediately publishes it (promotes to live). " +
                           "Submit via multipart/form-data with fields: file (binary), " +
-                          "path (//host/folder/file.ext), language (optional)."
+                          "path (//host/folder/file.ext), language (optional).",
+            requestBody = @RequestBody(
+                    description = "Multipart form with fields: file (binary content, required), " +
+                                  "path (host-qualified asset path including filename, required), " +
+                                  "language (language tag, optional — defaults to site default)",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(type = "object",
+                                             description = "Flat multipart form: file, path, language")))
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
