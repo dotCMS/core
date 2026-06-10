@@ -59,11 +59,11 @@
 
 <p-menu [model]="$items()" #menu data-testId="actionsMenu" [popup]="true" appendTo="body">
     <ng-template #item let-item>
-        <a class="p-menu-item-link flex cursor-pointer items-center gap-3 px-3 py-2">
+        <span class="p-menu-item-link flex cursor-pointer items-center gap-3 px-3 py-2">
             <i class="material-symbols-outlined text-[1.25rem]! leading-none text-gray-500">
                 {{ item.icon }}
             </i>
             <span class="text-gray-800">{{ item.label }}</span>
-        </a>
+        </span>
     </ng-template>
 </p-menu>

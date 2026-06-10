@@ -61,10 +61,10 @@ export class DotCreateContentletComponent implements OnInit {
             // If opened from Content Drive, the URL carries CD_-prefixed params (filters/path).
             // Return there with the filters preserved — same behavior as editing a contentlet
             // (DotContentletWrapperComponent.onClose). Otherwise fall back to the content listing.
-            const searchParams = new URL(
-                this.dotRouterService.currentPortlet.url,
-                window.location.origin
-            ).searchParams;
+            // Parse the query string directly — avoids depending on window.location (SSR/tests).
+            const searchParams = new URLSearchParams(
+                this.dotRouterService.currentPortlet.url?.split('?')[1] ?? ''
+            );
             const contentDriveParams = mapParamsFromEditContentlet(searchParams);
 
             if (Object.keys(contentDriveParams).length) {

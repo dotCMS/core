@@ -10,6 +10,9 @@ import {
  * Each type determines which content types are displayed and how they're filtered.
  */
 export enum DotUVEPaletteListTypes {
+    // CONTENT/WIDGET intentionally reuse the base-type string values and are intentionally
+    // ABSENT from LIST_TYPE_BASE_TYPES: they take the page-scoped (UVE) fetch branch in the
+    // store. Do NOT add them to that map — that would reroute UVE to the global endpoint.
     /** Content types: CONTENT, FILEASSET, DOTASSET — page-scoped (UVE) */
     CONTENT = DotCMSBaseTypesContentTypes.CONTENT,
     /** Widget content types only — page-scoped (UVE) */

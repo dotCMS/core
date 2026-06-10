@@ -128,15 +128,23 @@ export class DotContentDriveShellComponent implements OnInit {
      */
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
-    /** Folder payload for the folder dialog (narrowed from the dialog payload union). */
-    readonly $folderPayload = computed(
-        () => this.$activeDialog()?.payload as DotContentDriveFolder | undefined
-    );
+    /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
+    readonly $folderPayload = computed(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.FOLDER
+            ? (dialog.payload as DotContentDriveFolder)
+            : undefined;
+    });
 
     /** List type for the content-type selector dialog (encodes which base types to show). */
-    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(
-        () => (this.$activeDialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
-    );
+    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+            ? (dialog.payload as DotContentDriveContentTypeSelectorPayload).listType
+            : undefined;
+    });
 
     /**
      * Content-type selector: sized to fit ~4 UVE-width cards per row. No horizontal padding so

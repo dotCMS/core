@@ -64,7 +64,8 @@ export class DotContentDriveNavigationService {
      */
     createContent(contentTypeVariable: string) {
         const currentPath = this.#location.path(true);
-        const currentQueryParams = new URL(currentPath, window.location.origin).searchParams;
+        // Parse the query string directly — avoids depending on window.location (SSR/tests).
+        const currentQueryParams = new URLSearchParams(currentPath?.split('?')[1] ?? '');
 
         this.#dotContentTypeService
             .getContentType(contentTypeVariable)
@@ -107,7 +108,8 @@ export class DotContentDriveNavigationService {
      */
     #editContentlet(contentlet: DotCMSContentlet) {
         const currentPath = this.#location.path(true);
-        const currentQueryParams = new URL(currentPath, window.location.origin).searchParams;
+        // Parse the query string directly — avoids depending on window.location (SSR/tests).
+        const currentQueryParams = new URLSearchParams(currentPath?.split('?')[1] ?? '');
 
         this.#dotContentTypeService
             .getContentType(contentlet.contentType)
