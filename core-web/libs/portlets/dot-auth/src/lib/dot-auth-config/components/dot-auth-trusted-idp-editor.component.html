@@ -5,7 +5,7 @@
             <div class="text-sm font-semibold">
                 {{ idp().name || ('dotauth.idp.unnamed' | dm) }}
             </div>
-            <div class="font-mono text-xs text-[var(--text-color-tertiary)] truncate">
+            <div class="truncate font-mono text-xs text-(--text-color-tertiary)">
                 {{ idp().issuer || ('dotauth.idp.noIssuer' | dm) }}
             </div>
         </div>
@@ -36,7 +36,7 @@
                 <div class="idp-sub-label">
                     {{ 'dotauth.idp.discovery.label' | dm }}
                     <span
-                        class="font-normal normal-case tracking-normal text-[var(--text-color-tertiary)]">
+                        class="font-normal tracking-normal text-(--text-color-tertiary) normal-case">
                         — {{ 'dotauth.field.optional.lower' | dm }}
                     </span>
                 </div>
