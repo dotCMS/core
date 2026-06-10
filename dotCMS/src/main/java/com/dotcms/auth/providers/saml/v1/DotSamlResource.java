@@ -270,6 +270,7 @@ public class DotSamlResource implements Serializable {
 
 					String queryString = (String) session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
 
+					boolean loginIntentUnknown = false;
 					String loginPath = httpServletRequest.getParameter("RelayState");
 					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
 					if (!UtilMethods.isSet(loginPath)) {
@@ -288,6 +289,7 @@ public class DotSamlResource implements Serializable {
 								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
 								// session attribute.
 								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+								loginIntentUnknown = true;
 							}
 						} else {
 
@@ -303,6 +305,16 @@ public class DotSamlResource implements Serializable {
 						}
 					}
 					final User authorizedUser = reloadUser(user);
+					// IdP-initiated logins carry no RelayState, so the path defaulted to
+					// /dotAdmin/ above without expressing any real intent. Route those by what
+					// the user may actually do: users without back-end access get a front-end
+					// session at "/" when front-end SSO is enabled, instead of a 403 from a
+					// back-end destination they never asked for.
+					if (loginIntentUnknown
+							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)
+							&& SAMLHelper.isFrontEndEnabled(identityProviderConfiguration)) {
+						loginPath = "/";
+					}
 					// Only the back-end is gated here: a front-end SAML login must never be denied,
 					// since its post-login redirect is a content URL rather than a back-end path.
 					if (isBackEndLogin(loginPath)

@@ -70,14 +70,25 @@ class OIDCProviderClaimValidationTest {
     }
 
     @Test
-    void audContainsClientIdAmongMultiple_passes() {
-        // aud is per spec either a single string or an array. Multi-aud must still pass
-        // as long as our client_id is in the list.
+    void audContainsClientIdAmongMultipleWithMatchingAzp_passes() {
+        // OIDC Core §3.1.3.7: with multiple audiences the azp claim must be present and
+        // match our client_id. Multi-aud passes only with that proof of intended party.
         final JWTClaimsSet claims = validBuilder()
                 .audience(List.of("other-client", CLIENT_ID, "third-client"))
+                .claim("azp", CLIENT_ID)
                 .build();
         assertDoesNotThrow(() ->
                 OIDCProvider.verifyIdTokenClaims(claims, ISSUER, CLIENT_ID, NONCE));
+    }
+
+    @Test
+    void audContainsClientIdAmongMultipleWithoutAzp_throws() {
+        final JWTClaimsSet claims = validBuilder()
+                .audience(List.of("other-client", CLIENT_ID, "third-client"))
+                .build();
+        final DotRuntimeException ex = assertThrows(DotRuntimeException.class, () ->
+                OIDCProvider.verifyIdTokenClaims(claims, ISSUER, CLIENT_ID, NONCE));
+        assertTrue(ex.getMessage().contains("azp"), ex.getMessage());
     }
 
     @Test

@@ -128,8 +128,9 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
         final com.liferay.portal.model.User existingUser = PortalUtil.getUser(request);
         if (existingUser != null) {
-            final boolean hasRequiredRole = (isBackEndLogin && existingUser.isBackendUser())
-                    || (isFrontEndLogin && existingUser.isFrontendUser());
+            final boolean hasRequiredRole =
+                    (isBackEndLogin && AuthAccessDeniedUtil.hasRequiredRole(existingUser, false))
+                    || (isFrontEndLogin && AuthAccessDeniedUtil.hasRequiredRole(existingUser, true));
             if (hasRequiredRole) {
                 return Result.NEXT;
             }
@@ -329,6 +330,17 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
         final String accessToken = (String) session.getAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
         final String idToken = (String) session.getAttribute(OAuthConstants.SESSION_ID_TOKEN);
+
+        // Only take over logout for sessions that were actually created via OAuth (OAuthHelper.login
+        // stamps the access token and provider type). Native (?native=true), basic-credential and
+        // SAML sessions must keep the standard logout contract (LogoutResource JSON /
+        // LogoutWebInterceptor show-logout.jsp) and must never be bounced to the IdP.
+        if (!UtilMethods.isSet(accessToken)
+                && !UtilMethods.isSet(idToken)
+                && session.getAttribute(OAuthConstants.SESSION_PROVIDER_TYPE) == null) {
+            return Result.NEXT;
+        }
+
         String providerLogoutUrl = null;
 
         try {
