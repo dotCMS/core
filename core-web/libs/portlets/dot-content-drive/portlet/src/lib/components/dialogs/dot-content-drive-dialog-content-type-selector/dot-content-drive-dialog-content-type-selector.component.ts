@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotESContentService } from '@dotcms/data-access';
 import {
+    DOT_PALETTE_PERSIST_PREFERENCES,
     DotPaletteListStore,
     DotUvePaletteListComponent,
     DotUVEPaletteListTypes
@@ -25,7 +26,13 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
     imports: [DotUvePaletteListComponent, ButtonModule, DotMessagePipe],
     // DotPaletteListStore injects DotESContentService (not providedIn root); provide it here
     // since the store is created in this injector. In UVE it comes from the route providers.
-    providers: [DotPaletteListStore, DotESContentService],
+    // Persistence off: this transient picker must not read/overwrite the UVE palette's saved
+    // view-mode/sort preferences (it's cards-only with ephemeral sort).
+    providers: [
+        DotPaletteListStore,
+        DotESContentService,
+        { provide: DOT_PALETTE_PERSIST_PREFERENCES, useValue: false }
+    ],
     templateUrl: './dot-content-drive-dialog-content-type-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-[min(80vh,46rem)]' }

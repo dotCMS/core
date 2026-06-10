@@ -8,7 +8,7 @@ import {
 } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { computed, effect, inject } from '@angular/core';
+import { computed, effect, inject, InjectionToken } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -45,6 +45,17 @@ import {
     getPaletteState,
     EMPTY_PAGINATION
 } from '../../../utils';
+
+/**
+ * Whether the palette persists view-mode/sort preferences to localStorage. Defaults to `true`
+ * (UVE behavior). Consumers that share the store for a transient, cards-only experience — e.g.
+ * the Content Drive "New" dialog — should provide `false` so they neither read nor overwrite the
+ * UVE palette's saved preferences.
+ */
+export const DOT_PALETTE_PERSIST_PREFERENCES = new InjectionToken<boolean>(
+    'DOT_PALETTE_PERSIST_PREFERENCES',
+    { factory: () => true }
+);
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
@@ -272,9 +283,16 @@ export const DotPaletteListStore = signalStore(
     }),
     withHooks((store) => {
         const dotLocalstorageService = inject(DotLocalstorageService);
+        const persistPreferences = inject(DOT_PALETTE_PERSIST_PREFERENCES);
 
         return {
             onInit() {
+                // Transient consumers (e.g. Content Drive "New" dialog) opt out so they neither
+                // read nor overwrite the UVE palette's saved view-mode/sort preferences.
+                if (!persistPreferences) {
+                    return;
+                }
+
                 const layoutMode =
                     dotLocalstorageService.getItem<DotPaletteViewMode>(
                         DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY

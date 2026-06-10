@@ -9,7 +9,11 @@ import {
 import { MockComponent } from 'ng-mocks';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DOT_PALETTE_PERSIST_PREFERENCES,
+    DotUvePaletteListComponent,
+    DotUVEPaletteListTypes
+} from '@dotcms/portlets/dot-ema/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogContentTypeSelectorComponent } from './dot-content-drive-dialog-content-type-selector.component';
@@ -64,6 +68,12 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe('palette preferences', () => {
+        it('should disable palette preference persistence so it never touches the UVE keys', () => {
+            expect(spectator.inject(DOT_PALETTE_PERSIST_PREFERENCES, true)).toBe(false);
+        });
     });
 
     describe('palette list rendering', () => {

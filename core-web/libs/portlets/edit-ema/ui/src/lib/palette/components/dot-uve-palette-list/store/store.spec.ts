@@ -20,7 +20,7 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotPaletteListStore } from './store';
+import { DOT_PALETTE_PERSIST_PREFERENCES, DotPaletteListStore } from './store';
 
 import {
     BASE_TYPES_FOR_CONTENT_DRIVE,
@@ -1090,5 +1090,47 @@ describe('DotPaletteListStore', () => {
                 expect(store.$showListLayout()).toBe(true);
             });
         });
+    });
+});
+
+// Separate suite (own TestBed) so the persistence-off token can be provided at module setup —
+// it can't be overridden after the default suite has already instantiated the store.
+describe('DotPaletteListStore — persistence disabled (transient consumers, e.g. Content Drive)', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
+    let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+
+    const createService = createServiceFactory({
+        service: DotPaletteListStore,
+        providers: [
+            DotPaletteListStore,
+            { provide: DOT_PALETTE_PERSIST_PREFERENCES, useValue: false },
+            {
+                provide: DotLocalstorageService,
+                useValue: {
+                    getItem: jest.fn().mockReturnValue(null),
+                    setItem: jest.fn().mockReturnValue(undefined)
+                }
+            }
+        ],
+        mocks: [DotPageContentTypeService, DotESContentService, DotFavoriteContentTypeService]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        dotLocalstorageService = spectator.inject(DotLocalstorageService);
+    });
+
+    it('should not read view-mode/sort preferences from localStorage on init', () => {
+        expect(dotLocalstorageService.getItem).not.toHaveBeenCalled();
+        // Falls back to the in-code defaults (cards-only grid, name ASC).
+        expect(spectator.service.layoutMode()).toBe('grid');
+        expect(spectator.service.searchParams().orderby).toBe('name');
+    });
+
+    it('should not write preferences when the layout changes', () => {
+        spectator.service.setLayoutMode('list');
+        spectator.flushEffects();
+
+        expect(dotLocalstorageService.setItem).not.toHaveBeenCalled();
     });
 });
