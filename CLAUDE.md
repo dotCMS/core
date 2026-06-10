@@ -21,7 +21,7 @@ core/
 ## Environment Prerequisites
 
 ```bash
-sdk env install   # Java 21 via SDKMAN (.sdkmanrc) — build fails with wrong version
+sdk env install   # Java 25 via SDKMAN (.sdkmanrc) — build fails with wrong version
 nvm use           # Node 22.15+ via nvm (.nvmrc) — frontend build fails with wrong version
 ```
 
@@ -63,7 +63,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
 - **Maven versions**: Add to `bom/application/pom.xml` ONLY, never `dotCMS/pom.xml`
-- **Java syntax**: Java 11 compatible in core modules (Java 21 runtime, CLI exception)
+- **Java version**: Core modules compile to Java 25 by default (`dotcms.core.compiler.release`; override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode). Java 25 runtime. CLI may target lower for portability.
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
@@ -86,7 +86,7 @@ When editing ANY code, improve incrementally:
 
 ## Tech Stack
 
-- **Backend**: Java 21 runtime, Java 11 syntax (core), Maven, Spring/CDI
+- **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
 - **Frontend**: Angular 19+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 

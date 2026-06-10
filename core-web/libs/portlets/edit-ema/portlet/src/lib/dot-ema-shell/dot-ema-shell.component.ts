@@ -211,6 +211,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
         const page = this.uveStore.pageAsset()?.page;
+
         const status = this.uveStore.uveStatus();
 
         return page && status === UVE_STATUS.LOADED ? page : null;
@@ -223,11 +224,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
         const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
 
         this.#globalStore.addNewBreadcrumb({
-            label: page.title,
+            label,
             url: `/dotAdmin/#${urlTree.toString()}`,
-            id: `${page.identifier}`
+            id: `${identifier}`
         });
     });
 
@@ -281,6 +285,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 this.handleSavePageEvent(event);
                 break;
             }
+
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
+                // Fired by the edit content portlet when a page is saved in a new language
+                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
+                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
+                // dropdown reflects the newly created version.
+                this.uveStore.pageReload();
+                break;
+            }
         }
     }
 
@@ -292,6 +305,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+
+        if (!htmlPageReferer) {
+            this.uveStore.pageReload();
+
+            return;
+        }
+
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
 

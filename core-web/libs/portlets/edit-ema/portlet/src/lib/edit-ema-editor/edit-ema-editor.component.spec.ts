@@ -53,7 +53,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -68,7 +68,6 @@ import {
     DotLanguagesServiceMock,
     DotPersonalizeServiceMock,
     DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotHttpErrorManagerService,
     MockDotMessageService,
@@ -350,10 +349,6 @@ const createRouting = () =>
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,

@@ -17,10 +17,11 @@
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
+        <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.70</bouncy-castle.version>
+        <bouncy-castle.version>1.84</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
@@ -1102,6 +1103,12 @@
                 <artifactId>webp-imageio</artifactId>
                 <version>0.2.2</version>
             </dependency>
+            <!-- libvips bindings (FFM, JDK 23+) — alternative image engine, requires native libvips on host -->
+            <dependency>
+                <groupId>app.photofox.vips-ffm</groupId>
+                <artifactId>vips-ffm-core</artifactId>
+                <version>${vips-ffm.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
                 <artifactId>imageio-batik</artifactId>
@@ -1221,12 +1228,12 @@
 
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
 

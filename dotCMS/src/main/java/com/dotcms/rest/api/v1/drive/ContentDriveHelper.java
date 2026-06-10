@@ -170,6 +170,27 @@ public class ContentDriveHelper {
                  .withFilter(requestForm.filters().text());
         }
 
+        // Workflow filter — split entries into scheme-only (match by content-type assignment,
+        // so never-actioned content still appears) and step-pinned (match the current task).
+        if (UtilMethods.isSet(requestForm.workflow())) {
+            final Set<String> workflowSchemeIds = requestForm.workflow().stream()
+                    .filter(entry -> !UtilMethods.isSet(entry.step()))
+                    .map(WorkflowFilterForm::scheme)
+                    .filter(UtilMethods::isSet)
+                    .collect(Collectors.toSet());
+            final Set<String> workflowStepIds = requestForm.workflow().stream()
+                    .filter(entry -> UtilMethods.isSet(entry.step()))
+                    .map(WorkflowFilterForm::step)
+                    .collect(Collectors.toSet());
+
+            if (!workflowSchemeIds.isEmpty() || !workflowStepIds.isEmpty()) {
+                builder.withWorkflowSchemeIds(workflowSchemeIds)
+                        .withWorkflowStepIds(workflowStepIds)
+                        // Folders carry no workflow state — drop them when filtering by workflow.
+                        .showFolders(false);
+            }
+        }
+
         Logger.debug(this, String.format(
                 "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s, MIME Types: %s",
                 user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters(),
