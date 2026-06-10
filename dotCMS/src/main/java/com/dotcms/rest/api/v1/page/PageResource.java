@@ -888,6 +888,9 @@ public class PageResource {
                     pageId);
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (DotDataException e) {
+            Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
+            return ExceptionMapperUtil.createResponse(e, Response.Status.CONFLICT);
         }
     }
 

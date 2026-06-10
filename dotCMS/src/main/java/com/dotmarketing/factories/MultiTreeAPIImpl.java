@@ -719,8 +719,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         if (multiTrees.isEmpty()) {
-            final Set<String> existing = this.getOriginalContentlets(
-                    pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
+            final Set<String> existing = languageIdOpt.isPresent()
+                    ? this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId, languageIdOpt.get())
+                    : this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
             if (!existing.isEmpty()) {
                 Logger.warn(MultiTreeAPIImpl.class, String.format(
                         "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
