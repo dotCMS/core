@@ -718,7 +718,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
-        if (multiTrees.isEmpty()) {
+        if (multiTrees.isEmpty() && Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
             final Set<String> existing = this.getOriginalContentlets(
                     pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
             if (!existing.isEmpty()) {
