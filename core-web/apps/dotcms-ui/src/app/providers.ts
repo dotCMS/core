@@ -1,4 +1,10 @@
-import { InjectionToken, Provider } from '@angular/core';
+import {
+    EnvironmentProviders,
+    inject,
+    InjectionToken,
+    Provider,
+    provideAppInitializer
+} from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -37,9 +43,6 @@ import {
     ApiRoot,
     BrowserUtil,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -49,6 +52,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 
 import { DotAccountService } from './api/services/dot-account-service';
+import { DotAppLifecycleEffect } from './api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
 import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { DotParseHtmlService } from './api/services/dot-parse-html/dot-parse-html.service';
@@ -73,14 +77,7 @@ import { DotLoginPageStateService } from './view/components/login/shared/service
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
-
-const PROVIDERS: Provider[] = [
+const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,
     DotAccountService,
@@ -129,11 +126,8 @@ const PROVIDERS: Provider[] = [
     DotEventsService,
     DotNavigationService,
     DotcmsConfigService,
-    DotcmsEventsService,
     LoggerService,
     LoginService,
-    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-    DotEventsSocket,
     StringUtils,
     UserModel,
     // Data-access services
@@ -151,7 +145,9 @@ const PROVIDERS: Provider[] = [
         useClass: DotTitleStrategy
     },
     GlobalStore,
-    DotSystemConfigService
+    DotSystemConfigService,
+    DotAppLifecycleEffect,
+    provideAppInitializer(() => void inject(DotAppLifecycleEffect))
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];
