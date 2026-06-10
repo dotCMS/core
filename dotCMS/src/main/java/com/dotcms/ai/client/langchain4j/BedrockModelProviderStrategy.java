@@ -34,9 +34,9 @@ import java.util.Optional;
  *   <li>{@code model} – Bedrock model ID or inference-profile ID (required)</li>
  *   <li>{@code accessKeyId} / {@code secretAccessKey} – static credentials (optional)</li>
  *   <li>{@code temperature} / {@code maxTokens} – chat request parameters (optional)</li>
- *   <li>{@code timeout} – request timeout in seconds, applied as {@code apiCallTimeout} (optional)</li>
+ *   <li>{@code timeout} – per-attempt request timeout in seconds, applied as {@code apiCallAttemptTimeout} (optional)</li>
  *   <li>{@code maxRetries} – retry attempts, applied to the SDK retry strategy as
- *       {@code maxAttempts = maxRetries + 1} (optional)</li>
+ *       {@code maxAttempts = max(1, maxRetries + 1)} (optional; not applied to embedding models)</li>
  *   <li>{@code embeddingInputType} – Cohere embeddings only (optional)</li>
  * </ul>
  *
@@ -73,6 +73,8 @@ import java.util.Optional;
  * ({@link BedrockCohereEmbeddingModel}, honoring {@code embeddingInputType}) and
  * {@code amazon.titan-*} ({@link BedrockTitanEmbeddingModel}); family matching is case-insensitive.
  * Any other family throws an {@link IllegalArgumentException}.
+ * Note: {@code timeout} and {@code maxRetries} are not applied to embedding models — langchain4j
+ * constructs the underlying Bedrock client internally and does not expose override configuration.
  *
  * <p><b>Images.</b> Image generation is not supported for Bedrock via this integration;
  * {@link #buildImageModel(ProviderConfig, String)} throws {@link UnsupportedOperationException}.
