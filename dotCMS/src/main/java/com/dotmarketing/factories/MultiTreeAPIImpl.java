@@ -724,8 +724,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             if (!existing.isEmpty()) {
                 Logger.warn(MultiTreeAPIImpl.class, String.format(
                         "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
-                        "(personalization='%s', variantId='%s'). This may indicate a stale edit session.",
-                        existing.size(), pageId, personalization, variantId));
+                        "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
+                        existing.size(), pageId, personalization, variantId,
+                        languageIdOpt.orElse(-1L)));
                 if (Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
                     throw new DotDataException(String.format(
                             "Save rejected: empty payload would delete %d existing contentlet(s) from page '%s'. " +

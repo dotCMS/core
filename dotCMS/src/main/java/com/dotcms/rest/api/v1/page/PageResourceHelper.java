@@ -166,6 +166,14 @@ public class PageResourceHelper implements Serializable {
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         final List<ContentView> responseViews = new ArrayList<>();
 
+        final int totalContentlets = containerEntries.stream()
+                .mapToInt(e -> UtilMethods.isSet(e.getContentIds()) ? e.getContentIds().size() : 0).sum();
+        Logger.debug(PageResourceHelper.class, () -> String.format(
+                "Page content save: pageId='%s' user='%s' containerEntries=%d totalContentlets=%d " +
+                "variant='%s' language=%d",
+                pageId, user.getEmailAddress(), containerEntries.size(), totalContentlets,
+                variantName, language.getId()));
+
         for (final ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final List<String> contentIds = containerEntry.getContentIds();
@@ -206,8 +214,16 @@ public class PageResourceHelper implements Serializable {
             }
         }
         for (final String personalization : multiTreesMap.keySet()) {
+            final List<MultiTree> multiTrees = multiTreesMap.get(personalization);
+            if (multiTrees.isEmpty()) {
+                Logger.warn(PageResourceHelper.class, String.format(
+                        "Empty contentlet payload for page '%s', personalization='%s', variant='%s', " +
+                        "language=%d submitted by user '%s'. Existing content in this slot will be wiped " +
+                        "unless MULTITREE_EMPTY_SAVE_GUARD_ENABLED is set.",
+                        pageId, personalization, variantName, language.getId(), user.getEmailAddress()));
+            }
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.of(language.getId()),
+                    multiTrees, Optional.of(language.getId()),
                     variantName);
         }
 
