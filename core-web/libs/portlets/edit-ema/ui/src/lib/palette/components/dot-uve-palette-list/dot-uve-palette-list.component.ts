@@ -31,11 +31,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged, filter, skipWhile, take } from 'rxjs/operators';
 
-import {
-    DotESContentService,
-    DotFavoriteContentTypeService,
-    DotMessageService
-} from '@dotcms/data-access';
+import { DotFavoriteContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -56,7 +52,8 @@ import {
     EMPTY_MESSAGE_CONTENTLETS,
     EMPTY_MESSAGE_SEARCH,
     EMPTY_MESSAGES,
-    LOADING_ROWS_MOCK
+    LOADING_ROWS_MOCK,
+    PALETTE_MENU_VIEW_SECTION_ID
 } from '../../utils';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 import { DotUvePaletteContentletComponent } from '../dot-uve-palette-contentlet/dot-uve-palette-contentlet.component';
@@ -105,7 +102,6 @@ const DEBOUNCE_TIME = 300;
         DotMessagePipe,
         ContextMenu
     ],
-    providers: [DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -227,7 +223,7 @@ export class DotUvePaletteListComponent implements OnInit {
 
         // Cards-only in selection mode: drop the grid/list view-mode section.
         return this.$selectionMode()
-            ? menuItems.filter((item) => item.label !== 'uve.palette.menu.view.title')
+            ? menuItems.filter((item) => item.id !== PALETTE_MENU_VIEW_SECTION_ID)
             : menuItems;
     });
 

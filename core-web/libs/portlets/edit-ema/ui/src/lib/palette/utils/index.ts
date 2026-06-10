@@ -18,6 +18,12 @@ import {
 } from '../models';
 
 /**
+ * Stable id for the grid/list view-mode section of the palette menu. Used to filter
+ * the section out (e.g. selection mode is cards-only) without matching on the i18n label.
+ */
+export const PALETTE_MENU_VIEW_SECTION_ID = 'view-section';
+
+/**
  * Mock array for loading skeleton rows.
  * Used to display placeholder content while data is loading.
  * Generates an array of indices based on the default items per page.
@@ -131,6 +137,7 @@ export function buildPaletteMenuItems({
             ]
         },
         {
+            id: PALETTE_MENU_VIEW_SECTION_ID,
             label: 'uve.palette.menu.view.title',
             items: [
                 {

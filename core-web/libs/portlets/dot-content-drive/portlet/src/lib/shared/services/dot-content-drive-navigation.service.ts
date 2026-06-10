@@ -91,6 +91,9 @@ export class DotContentDriveNavigationService {
                     return;
                 }
 
+                // The new content editor owns its own close/back navigation, so — like the edit
+                // flow (#editContentlet) — it does not need the CD_-prefixed return params that
+                // only the legacy editor's onClose consumes.
                 this.#router.navigate([`content/new/${contentTypeVariable}`]);
             });
     }

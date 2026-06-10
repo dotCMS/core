@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     inject,
     output,
@@ -216,6 +217,10 @@ export class DotContentDriveToolbarComponent {
             const shouldShowActions = this.$showWorkflowActions();
             untracked(() => this.#handleAnimationSequence(shouldShowActions));
         });
+
+        // Cancel a pending transition timer if the toolbar is destroyed mid-animation,
+        // so the callback can't mutate a signal on a torn-down component.
+        inject(DestroyRef).onDestroy(() => clearTimeout(this.#animationTimeout));
     }
 
     /**
