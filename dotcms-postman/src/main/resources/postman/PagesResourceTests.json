@@ -7342,6 +7342,41 @@
     },
     {
       "name": "_render-sources [api/v1/page/_render-sources]",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{renderSourcesJwt}}", "type": "string" }]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// A sibling folder logs out right before this one, invalidating the shared session,",
+              "// and the collection's {{jwt}} is minted by an un-awaited pm.sendRequest. Both make",
+              "// the inherited bearer empty here (401 with 'JWT ... Found: 0 period characters').",
+              "// Mint a dedicated, self-contained token synchronously and use it as this folder's",
+              "// bearer for every request below. pm.sendRequest in a pre-request IS awaited by Newman.",
+              "const serverURL = pm.environment.get('serverURL');",
+              "const user = pm.environment.get('user');",
+              "const password = pm.environment.get('password');",
+              "const basicAuth = Buffer.from(`${user}:${password}`).toString('base64');",
+              "pm.sendRequest({",
+              "    url: `${serverURL}/api/v1/apitoken`,",
+              "    method: 'POST',",
+              "    header: { 'accept': '*/*', 'content-type': 'application/json', 'Authorization': `Basic ${basicAuth}` },",
+              "    body: { mode: 'raw', raw: JSON.stringify({ expirationSeconds: 7200, userId: 'dotcms.org.1', network: '0.0.0.0/0', claims: { label: 'postman-render-sources' } }) }",
+              "}, function (err, res) {",
+              "    if (!err && res && res.code === 200) {",
+              "        pm.collectionVariables.set('renderSourcesJwt', res.json().entity.jwt);",
+              "    } else {",
+              "        console.log('render-sources token mint failed:', err || (res && res.code));",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
       "item": [
         {
           "name": "Setup: Resolve default site for render-sources",
@@ -7350,10 +7385,8 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// Resolve the default site id WITHOUT depending on the collection bearer jwt",
-                  "// (which is minted asynchronously and is occasionally empty when this folder runs).",
-                  "// Reuse defaultSiteId if a prior folder already set it; otherwise mint a token",
-                  "// synchronously here and look it up.",
+                  "// Resolve the default site id using this folder's dedicated token (set in the",
+                  "// folder pre-request). Reuse defaultSiteId if an earlier folder already set it.",
                   "const existing = pm.collectionVariables.get('defaultSiteId') || pm.environment.get('defaultSiteId');",
                   "if (existing) {",
                   "    pm.collectionVariables.set('renderSourcesHostId', existing);",
@@ -7770,6 +7803,10 @@
     },
     {
       "key": "renderSourcesHostId",
+      "value": ""
+    },
+    {
+      "key": "renderSourcesJwt",
       "value": ""
     }
   ]
