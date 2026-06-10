@@ -67,8 +67,9 @@ export const CustomLaraPreset = definePreset(Lara, {
             // there is no --radius-full token.
             css: `
                 .p-tag {
+                    height: calc(var(--spacing) * 7); /* 1.75rem — same fixed height as chip */
                     border-radius: calc(infinity * 1px);
-                    padding: var(--spacing) calc(var(--spacing) * 3); /* 0.25rem 0.75rem */
+                    padding: 0 calc(var(--spacing) * 3); /* 0 0.75rem — vertical centering via inline-flex */
                     font-weight: var(--font-weight-medium); /* 500 */
                 }
             `,
