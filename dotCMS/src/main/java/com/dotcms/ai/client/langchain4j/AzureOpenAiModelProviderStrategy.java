@@ -63,6 +63,24 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         return builder.build();
     }
 
+    /**
+     * Builds an image model using the official OpenAI Java SDK, automatically selecting the
+     * correct routing based on the configured endpoint.
+     *
+     * <ul>
+     *   <li><b>Azure AI Foundry</b> ({@code services.ai.azure.com}): uses a plain OpenAI-style
+     *       client — no deployment-path routing, no {@code api-version} header. Compatible with
+     *       models like {@code gpt-image-2} deployed via the Foundry catalog.</li>
+     *   <li><b>Classic Azure OpenAI</b> ({@code openai.azure.com}): uses
+     *       {@code isMicrosoftFoundry(true)}, which appends
+     *       {@code /openai/deployments/{deploymentName}} to the base URL and injects the
+     *       {@code api-version} query parameter. Supports models like {@code gpt-image-1}.</li>
+     * </ul>
+     *
+     * <p>The legacy {@code AzureOpenAiImageModel} only supported dall-e-3, which was deprecated
+     * by Azure in June 2025. Both paths here use {@code OpenAiOfficialImageModel} from the
+     * official OpenAI Java SDK.
+     */
     @Override
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
