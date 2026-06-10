@@ -37,11 +37,11 @@
             </div>
             <div class="field">
                 <label>{{ 'dotauth.field.signRequests' | dm }}</label>
-                <div class="flex items-center gap-2.5 toggle-row">
+                <div class="toggle-row flex items-center gap-2.5">
                     <p-toggleswitch
                         [ngModel]="saml().signRequests"
                         (ngModelChange)="onChange('signRequests', $event)" />
-                    <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                    <span class="text-[0.8125rem] text-(--text-color-secondary)">
                         {{ 'dotauth.field.signRequests.detail' | dm }}
                     </span>
                 </div>
@@ -86,7 +86,7 @@
         </div>
         <details class="key-overrides" data-testid="metadata-manual" #metadataDetails>
             <summary class="advanced-toggle">
-                <i class="pi pi-chevron-right text-xs key-overrides-chevron"></i>
+                <i class="pi pi-chevron-right key-overrides-chevron text-xs"></i>
                 {{ 'dotauth.config.saml.metadataManual.title' | dm }}
             </summary>
             <div class="key-overrides-hint">
@@ -143,7 +143,7 @@
                         [pTooltip]="'dotauth.tooltip.saml.wantAssertionsSigned' | dm"
                         tooltipPosition="top"></i>
                 </label>
-                <div class="flex items-center gap-2.5 toggle-row">
+                <div class="toggle-row flex items-center gap-2.5">
                     <p-toggleswitch
                         [ngModel]="saml().wantAssertionsSigned"
                         (ngModelChange)="onChange('wantAssertionsSigned', $event)" />
@@ -157,7 +157,7 @@
                         [pTooltip]="'dotauth.tooltip.saml.wantResponseSigned' | dm"
                         tooltipPosition="top"></i>
                 </label>
-                <div class="flex items-center gap-2.5 toggle-row">
+                <div class="toggle-row flex items-center gap-2.5">
                     <p-toggleswitch
                         [ngModel]="saml().wantResponseSigned"
                         (ngModelChange)="onChange('wantResponseSigned', $event)" />
@@ -166,7 +166,7 @@
         </div>
         <details class="key-overrides" data-testid="key-overrides">
             <summary class="advanced-toggle">
-                <i class="pi pi-chevron-right text-xs key-overrides-chevron"></i>
+                <i class="pi pi-chevron-right key-overrides-chevron text-xs"></i>
                 {{ 'dotauth.config.saml.keyOverrides.title' | dm }}
             </summary>
             <div class="key-overrides-hint">
@@ -262,16 +262,16 @@
         @if ((saml().extraProperties ?? []).length === 0) {
             <div class="empty-placeholder">{{ 'dotauth.empty.extraProps' | dm }}</div>
         } @else {
-            <div class="mt-2 rounded-md border border-[var(--surface-border)]">
+            <div class="mt-2 rounded-md border border-(--surface-border)">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-[var(--surface-border)]">
+                        <tr class="border-b border-(--surface-border)">
                             <th
-                                class="p-2.5 text-left text-xs font-semibold text-[var(--text-color-secondary)]">
+                                class="p-2.5 text-left text-xs font-semibold text-(--text-color-secondary)">
                                 {{ 'dotauth.field.propertyKey' | dm }}
                             </th>
                             <th
-                                class="p-2.5 text-left text-xs font-semibold text-[var(--text-color-secondary)]">
+                                class="p-2.5 text-left text-xs font-semibold text-(--text-color-secondary)">
                                 {{ 'dotauth.field.propertyValue' | dm }}
                             </th>
                             <th class="w-px"></th>
@@ -279,7 +279,7 @@
                     </thead>
                     <tbody>
                         @for (prop of saml().extraProperties; track $index; let i = $index) {
-                            <tr class="border-b border-[var(--surface-border)] last:border-b-0">
+                            <tr class="border-b border-(--surface-border) last:border-b-0">
                                 <td class="p-2">
                                     <input
                                         pInputText
