@@ -561,9 +561,8 @@ describe('DotContentDriveShellComponent', () => {
             spectator.flushEffects();
             spectator.detectComponentChanges();
 
-            const dialogComponent = spectator.debugElement.query(
-                By.css('[data-testid="dialog"]')
-            )?.componentInstance as Dialog;
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
             dialogComponent.visibleChange.emit(false);
             spectator.detectComponentChanges();
 
@@ -575,9 +574,8 @@ describe('DotContentDriveShellComponent', () => {
             spectator.flushEffects();
             spectator.detectComponentChanges();
 
-            const dialogComponent = spectator.debugElement.query(
-                By.css('[data-testid="dialog"]')
-            )?.componentInstance as Dialog;
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
             dialogComponent.visibleChange.emit(true);
             spectator.detectComponentChanges();
 
