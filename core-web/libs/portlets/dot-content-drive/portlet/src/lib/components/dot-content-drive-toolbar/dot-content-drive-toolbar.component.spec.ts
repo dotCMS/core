@@ -5,7 +5,11 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotLanguagesService
+} from '@dotcms/data-access';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -52,6 +56,7 @@ describe('DotContentDriveToolbarComponent', () => {
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
             }),
+            mockProvider(DotHttpErrorManagerService),
             provideHttpClient()
         ],
         detectChanges: false

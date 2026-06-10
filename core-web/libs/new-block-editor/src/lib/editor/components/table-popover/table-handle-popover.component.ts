@@ -68,7 +68,7 @@ interface ActionEntry {
             <div
                 role="menu"
                 [attr.aria-label]="activeAriaLabel() | dm"
-                class="w-56 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg py-1">
+                class="w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                 @for (key of currentActions(); track key) {
                     @let action = ACTIONS[key];
                     <button

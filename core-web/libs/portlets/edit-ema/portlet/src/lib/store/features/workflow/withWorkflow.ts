@@ -196,33 +196,46 @@ export function withWorkflow() {
 
                         return pageRequest.pipe(
                             switchMap((response) => {
-                                const pageResponse =
-                                    'pageAsset' in response ? response : { pageAsset: response };
-
+                                // Both request branches emit { pageAsset } or { pageAsset, content }.
+                                // The 'content' key is only present on the GraphQL path — setPageAsset
+                                // uses 'content' in payload to decide whether to clear previous content,
+                                // so preserving the key's presence/absence is the correct behavior.
                                 const content =
-                                    'content' in pageResponse
-                                        ? (
-                                              pageResponse as {
-                                                  content?: Record<string, unknown>;
-                                              }
-                                          ).content
+                                    'content' in response
+                                        ? (response.content as Record<string, unknown>)
                                         : undefined;
-
-                                pageStore.setPageAsset({
-                                    pageAsset: pageResponse.pageAsset,
+                                const pageAssetPayload = {
+                                    pageAsset: response.pageAsset,
                                     ...(content !== undefined && { content })
-                                });
+                                };
 
-                                return dotLanguagesService.getLanguagesUsedPage(
-                                    pageResponse.pageAsset.page.identifier
-                                );
-                            }),
-                            tap((languages) => {
-                                patchState(store, {
-                                    pageLanguages: languages,
-                                    uveStatus: UVE_STATUS.LOADED,
-                                    workflowLockIsLoading: false
-                                });
+                                return dotLanguagesService
+                                    .getLanguagesUsedPage(response.pageAsset.page.identifier)
+                                    .pipe(
+                                        tap((languages) => {
+                                            // Both writes land in the same synchronous tap.
+                                            // Angular batches them before flushing effects, so
+                                            // $translatePageEffect always sees a consistent state.
+                                            patchState(store, {
+                                                pageLanguages: languages,
+                                                uveStatus: UVE_STATUS.LOADED,
+                                                workflowLockIsLoading: false
+                                            });
+                                            pageStore.setPageAsset(pageAssetPayload);
+                                        }),
+                                        catchError(() => {
+                                            // Languages fetch failed: still apply the fresh
+                                            // page asset with the current (stale) languages so
+                                            // the user sees the page rather than an error screen.
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.LOADED,
+                                                workflowLockIsLoading: false
+                                            });
+                                            pageStore.setPageAsset(pageAssetPayload);
+
+                                            return EMPTY;
+                                        })
+                                    );
                             }),
                             catchError(({ status: errorStatus }: HttpErrorResponse) => {
                                 patchState(store, {

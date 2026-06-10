@@ -11833,6 +11833,76 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_systemJobs:
+    get:
+      description: "Returns every Quartz scheduler job across all job groups, with\
+        \ trigger details (next fire time, misfire instruction) and current running\
+        \ status. Errored jobs (e.g. class not found after upgrade) are returned with\
+        \ an 'error' field so admins can clean them up. Note: these are Quartz scheduler\
+        \ jobs, NOT the JobQueueManager jobs exposed at /api/v1/jobs — those are a\
+        \ separate system."
+      operationId: listSystemJobs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemJobListView"
+          description: List of Quartz scheduler jobs
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+      summary: List Quartz scheduler jobs
+      tags:
+      - Maintenance
+  /v1/maintenance/_systemJobs/{group}/{name}:
+    delete:
+      description: Removes a Quartz scheduler job (and all associated triggers) from
+        the scheduler by its group and name. Used to clean up errored or orphaned
+        jobs after upgrades. Returns 404 if no matching job exists in the scheduler.
+      operationId: deleteSystemJob
+      parameters:
+      - description: Quartz job group name
+        in: path
+        name: group
+        required: true
+        schema:
+          type: string
+      - description: Quartz job name
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemJobDeleteView"
+          description: Job deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+        "404":
+          content:
+            application/json: {}
+          description: No job matches the supplied group and name
+      summary: Delete a Quartz scheduler job
+      tags:
+      - Maintenance
   /v1/maintenance/_threads:
     get:
       description: "Returns a full JVM thread dump as structured JSON, including state,\
@@ -12769,12 +12839,15 @@ paths:
       - Page
   /v1/page/{pageId}/content:
     post:
-      description: "Updates all the contents in an HTML Page. Used to add or remove\
-        \ Contentlets from Containers. Takes a JSON array of container entries, each\
-        \ specifying a container ID, a unique UUID, and the list of contentlet identifiers.\
-        \ Duplicate container entries are merged automatically. Note: 'sortOrder'\
-        \ is required for each container entry but may not be present in the auto-generated\
-        \ schema."
+      description: "Replaces all container-to-contentlet assignments for the page\
+        \ (DEFAULT variant, or a named variant when 'variantName' is provided). This\
+        \ is a full replacement, not a patch: omitting a container slot removes its\
+        \ content. The body is a bare JSON array of container entries; each entry\
+        \ maps one container instance to its ordered list of contentlets. Duplicate\
+        \ entries are merged automatically. To build the payload, fetch GET /api/v1/page/json/{uri}\
+        \ first (faster than /render — no Velocity execution): use 'page.containers'\
+        \ for the path-based identifier and 'page.layout.body.rows[].columns[].containers[]'\
+        \ for the uuid of each slot."
       operationId: addContentToPage
       parameters:
       - description: Identifier of the HTML Page to update
@@ -12791,9 +12864,17 @@ paths:
       requestBody:
         content:
           application/json:
+            example:
+            - identifier: //demo.dotcms.com/application/containers/default/
+              uuid: "10"
+              contentletsId:
+              - 7b33f0b474ba3b82c3a908b81dce5e2c
             schema:
-              $ref: "#/components/schemas/PageContainerForm"
-        description: Container entries with contentlet identifiers
+              type: array
+              items:
+                $ref: "#/components/schemas/PageContainerEntryView"
+        description: "Array of container entries. Full replacement: omitting a slot\
+          \ removes its content from the page."
         required: true
       responses:
         "200":
@@ -12815,7 +12896,7 @@ paths:
           description: Contentlets saved successfully
         "400":
           description: Bad request or data exception
-      summary: Add or update content in page containers
+      summary: Replace the content mapping of a page
       tags:
       - Page
   /v1/page/{pageId}/content/tree:
@@ -18464,6 +18545,8 @@ paths:
         ⚠️ **Multi-scheme content types:** When a content type has multiple workflow schemes attached, firing a system action only initializes the contentlet into the scheme whose `systemActionMappings` entry resolved the fire. Other attached schemes will not have a task for that contentlet, and firing their actions later will fail with 'Workflow Action is not available in the Workflow Step the content is currently in.' To exercise actions in those other schemes, fire by action ID via `PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -18600,6 +18683,8 @@ paths:
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -18690,6 +18775,8 @@ paths:
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -18787,6 +18874,8 @@ paths:
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -19218,6 +19307,8 @@ paths:
         **Copy action** — clones a contentlet. Fire with `?identifier=<source-id>` and an empty body (or `{"contentlet": {"identifier": "<source-id>"}}`). The Copy action id on the default System Workflow scheme is `963f6a04-5320-42e7-ab74-6d876d199946`; retrieve it for other environments via `GET /api/v1/workflow/schemes/{schemeId}/actions`. ⚠️ The response `entity` returns the **source** contentlet, not the newly-created copy — locate the copy via a follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in `SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) are silently ignored. Fire the Move action afterwards to relocate.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -19322,6 +19413,8 @@ paths:
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
+
+        **Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and converted to the Block Editor structure when the contentlet is opened in the editor. Example: `"body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>"`.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-
@@ -19499,7 +19592,9 @@ paths:
   /v1/workflow/contentlet/actions/bulk/fire:
     put:
       description: |-
-        This operation allows you to specify a multiple content items (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) to perform on them, and additional parameters as needed by the selected action.
+        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) on multiple contentlets identified either by a Lucene 'query' or an explicit 'contentletIds' list. If both are supplied, 'query' wins and 'contentletIds' is ignored.
+
+        **Scheme association is enforced.** Contentlets whose workflow scheme does not own the supplied 'workflowActionId' are skipped — they are not processed and are counted in 'skippedCount' on the response, with a 'skipReason' explaining the mismatch. When *every* input contentlet is skipped, the endpoint returns 422. To bypass scheme association checks (e.g. for System Workflow actions like Move on content from a custom scheme), use PUT /api/v1/workflow/actions/{actionId}/fire instead.
 
         ⚠️ **Important contract notes:**
 
@@ -19514,17 +19609,12 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/FireBulkActionsForm"
-        description: |-
-          Body consists of a JSON object with the following possible properties:
-
-          | Property | Type | Description |
-          |-|-|-|
-          | `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |
-          | `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); uses all matching contentlets. |
-          | `workflowActionId` | String | The identifier of the workflow action to be performed on the selected content. |
-          | `additionalParams` | Object | Further parameters and properties are conveyed here, depending on the particulars of the selected action.<br><br>For a complete list of possible parameters, refer to the various keys listed in `GET /workflow/actionlets`. |
-
-          If both `contentletIds` and `query` properties are present, the operation will use the query and disregard the identifier list.
+        description: "See FireBulkActionsForm for full field-level docs. Either 'query'\
+          \ OR 'contentletIds' is required (not both); 'contentletIds' is a list of\
+          \ contentlet **inodes** (not identifiers, despite the property name). 'workflowActionId'\
+          \ must be a workflow action UUID — discover via GET /api/v1/workflow/schemes/{schemeId}/actions\
+          \ or GET /api/v1/workflow/contentlet/{inode}/actions. To pass a target path\
+          \ to a Move actionlet, set 'additionalParams.additionalParamsMap._path_to_move'."
         required: true
       responses:
         "200":
@@ -19532,7 +19622,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBulkActionsResultView"
-          description: Success
+          description: Success — at least one contentlet processed.
         "400":
           description: Bad request
         "401":
@@ -19543,6 +19633,9 @@ paths:
           description: Not Acceptable
         "415":
           description: Unsupported Media Type
+        "422":
+          description: Whole batch skipped — none of the input contentlets are on
+            a workflow scheme that owns the supplied 'workflowActionId'.
         "500":
           description: Internal Server Error
       summary: Perform workflow actions on bulk content
@@ -19603,10 +19696,11 @@ paths:
       description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
         \ grouped by content type for a list of content type identifiers. Each entry\
         \ in the response maps a resolved content type to its associated schemes.\
-        \ Unknown or invalid IDs are silently skipped — only successfully resolved\
-        \ content types appear in the result (note: the single-content-type endpoint\
-        \ returns 404 for an unknown ID; this batch endpoint omits it instead). Maximum\
-        \ 100 tokens per request (checked before deduplication)."
+        \ Unknown or unresolvable identifiers are reported in the `errors` array of\
+        \ the response body (field `fieldName` contains the original input token;\
+        \ `errorCode` is `CONTENT_TYPE_NOT_FOUND`). At least one non-blank identifier\
+        \ is required; an empty or missing `contentTypeIds` parameter returns 400.\
+        \ Maximum 100 tokens per request (checked before deduplication)."
       operationId: getWorkflowSchemesByContentTypeList
       parameters:
       - description: "Content type identifiers. Repeat the parameter (?contentTypeIds=a&contentTypeIds=b)\
@@ -19626,7 +19720,8 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
           description: Schemes returned successfully
         "400":
-          description: More than 100 content type IDs supplied
+          description: contentTypeIds is empty or all tokens are blank; or more than
+            100 tokens supplied
         "401":
           description: User does not have permission
         "403":
@@ -23273,11 +23368,26 @@ components:
           type: string
     AdditionalParamsBean:
       type: object
+      description: "Action-specific parameters for bulk fire. Wraps push-publish settings,\
+        \ assign-and-comment metadata, and a free-form map for actionlet-specific\
+        \ keys."
       properties:
         additionalParamsMap:
           type: object
           additionalProperties:
             type: object
+            description: "Free-form map for actionlet-specific keys. Well-known keys:\
+              \ '_path_to_move' (String) — full target path including host, e.g. '//hostname/folder/path/'.\
+              \ Used by the Move actionlet when the resolved bulk action wires it.\
+              \ Silently ignored if no Move actionlet is in the resolved action."
+            example:
+              _path_to_move: //demo.dotcms.com/destination/folder/
+          description: "Free-form map for actionlet-specific keys. Well-known keys:\
+            \ '_path_to_move' (String) — full target path including host, e.g. '//hostname/folder/path/'.\
+            \ Used by the Move actionlet when the resolved bulk action wires it. Silently\
+            \ ignored if no Move actionlet is in the resolved action."
+          example:
+            _path_to_move: //demo.dotcms.com/destination/folder/
         assignComment:
           $ref: "#/components/schemas/AssignCommentBean"
         assignCommentBean:
@@ -23471,11 +23581,16 @@ components:
       - assetPath
     AssignCommentBean:
       type: object
+      description: Assignee and comment to attach to the workflow task created when
+        an action is fired.
       properties:
         assign:
           type: string
+          description: Identifier of the user or role to next receive the workflow
+            task. Empty string keeps the existing assignee.
         comment:
           type: string
+          description: Free-form comment recorded against the workflow task.
     AuthenticationForm:
       type: object
       properties:
@@ -23721,6 +23836,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ActionFail"
+        skipReason:
+          type: string
         skippedCount:
           type: integer
           format: int64
@@ -24920,8 +25037,11 @@ components:
       properties:
         contentTypeId:
           type: string
-          description: Identifier of the content type
-        contentTypeSchemes:
+          description: UUID of the content type
+        contentTypeVariable:
+          type: string
+          description: Variable name of the content type
+        schemes:
           type: array
           description: Workflow schemes associated with the content type
           items:
@@ -24935,7 +25055,8 @@ components:
               $ref: "#/components/schemas/WorkflowScheme"
       required:
       - contentTypeId
-      - contentTypeSchemes
+      - contentTypeVariable
+      - schemes
     ContentView:
       type: object
       properties:
@@ -26454,19 +26575,39 @@ components:
           type: string
     FireBulkActionsForm:
       type: object
+      description: "Request body for PUT /api/v1/workflow/contentlet/actions/bulk/fire.\
+        \ Either 'query' OR 'contentletIds' must be supplied (not both). 'workflowActionId'\
+        \ is required and must belong to the workflow scheme that owns the input contentlets\
+        \ — otherwise the contentlets are skipped and the response returns a non-empty\
+        \ 'skippedCount' with a 'skipReason'. To bypass scheme checks (e.g. for System\
+        \ Workflow actions like Move on content from a non-system scheme), use PUT\
+        \ /api/v1/workflow/actions/{actionId}/fire instead."
       properties:
         additionalParams:
           $ref: "#/components/schemas/AdditionalParamsBean"
         contentletIds:
           type: array
+          description: Explicit list of contentlet identifiers to act on. Mutually
+            exclusive with 'query'.
           items:
             type: string
+            description: Explicit list of contentlet identifiers to act on. Mutually
+              exclusive with 'query'.
         popupParamsBean:
           $ref: "#/components/schemas/AdditionalParamsBean"
         query:
           type: string
+          description: Lucene query that selects the contentlets to act on. Mutually
+            exclusive with 'contentletIds'.
+          example: +contentType:webPageContent +languageId:1
         workflowActionId:
           type: string
+          description: "The workflow action identifier (UUID) to fire. Discover via\
+            \ GET /api/v1/workflow/schemes/{schemeId}/actions or GET /api/v1/workflow/contentlet/{inode}/actions.\
+            \ Not the system action enum value (NEW, EDIT, PUBLISH, …)."
+          example: ceca4ee9-1b7b-4f21-a5f4-5d8e9b8b8a1d
+      required:
+      - workflowActionId
     FireMultipleActionForm:
       type: object
       properties:
@@ -28914,6 +29055,40 @@ components:
           - PUBLISH
           - EDIT_PERMISSIONS
           - CAN_ADD_CHILDREN
+    PageContainerEntryView:
+      type: object
+      description: Single container slot assignment for a page.
+      properties:
+        contentletsId:
+          type: array
+          description: "Ordered contentlet identifiers placed in this slot. An empty\
+            \ array clears the slot. This is a full replacement: omitted slots are\
+            \ removed from the page."
+          items:
+            type: string
+            description: "Ordered contentlet identifiers placed in this slot. An empty\
+              \ array clears the slot. This is a full replacement: omitted slots are\
+              \ removed from the page."
+        identifier:
+          type: string
+          description: "Container's path-based key, e.g. '//demo.dotcms.com/application/containers/default/'.\
+            \ Matches the keys in 'page.containers' returned by GET /api/v1/page/json/{uri}\
+            \ (or /render/{uri}). Not the database UUID."
+          example: //demo.dotcms.com/application/containers/default/
+        personaTag:
+          type: string
+          description: Optional persona tag for personalized content variants.
+          nullable: true
+        uuid:
+          type: string
+          description: "Slot instance identifier. Matches the 'uuid' in page.layout.body.rows[].columns[].containers[].\
+            \ The same container can appear multiple times on a page with different\
+            \ UUIDs."
+          example: "10"
+      required:
+      - contentletsId
+      - identifier
+      - uuid
     PageContainerForm:
       type: object
       properties:
@@ -29803,13 +29978,19 @@ components:
       - operation
     PushPublishBean:
       type: object
+      description: Push-publish settings applied when the resolved workflow action
+        wires the Push Publish actionlet.
       properties:
         expireDate:
           type: string
+          description: Expire date (yyyy-MM-dd). Ignored when 'neverExpire' is true.
         expireTime:
           type: string
+          description: Expire time (HH:mm). Ignored when 'neverExpire' is true.
         filterKey:
           type: string
+          description: Push-publish filter key (defines what gets bundled with the
+            content).
         iWantTo:
           type: string
           writeOnly: true
@@ -29817,14 +29998,21 @@ components:
           type: string
         neverExpire:
           type: string
+          description: "If 'true', the content does not expire. Overrides expireDate/expireTime."
         publishDate:
           type: string
+          description: Publish date (yyyy-MM-dd).
         publishTime:
           type: string
+          description: Publish time (HH:mm).
         timezoneId:
           type: string
+          description: Timezone identifier (e.g. 'America/New_York') for publish/expire
+            dates.
         whereToSend:
           type: string
+          description: Push-publish environment identifier or name to receive the
+            content.
     QuantilePair:
       type: object
       properties:
@@ -32511,6 +32699,58 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SystemActionWorkflowActionMapping"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySystemJobDeleteView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySystemJobListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
         errors:
           type: array
           items:

@@ -797,6 +797,56 @@ public class URLMapAPIImplTest {
 
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Content type is registered on siteA with a URL pattern; the configured detail
+     * page lives on a different host (globalHost). Content item is on siteA (same host as request).
+     * ExpectedResult: processURLMap resolves and returns the detail page from its configured host.
+     *
+     * @see <a href="https://github.com/dotCMS/core/issues/35268">#35268</a>
+     */
+    @Test
+    public void processURLMap_detailPageOnDifferentHost_shouldResolveWithConfiguredDetailPage()
+            throws DotDataException, DotSecurityException {
+
+        final Host siteA = new SiteDataGen().nextPersisted();
+        final Host globalHost = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder detailFolder = new FolderDataGen()
+                .name("detail-pages-" + System.currentTimeMillis())
+                .site(globalHost)
+                .nextPersisted();
+        final HTMLPageAsset globalDetailPage = new HTMLPageDataGen(detailFolder, template)
+                .pageURL("museum-detail")
+                .title("museum-detail")
+                .nextPersisted();
+
+        final String urlPattern = "/museum-" + System.currentTimeMillis() + "/{urlTitle}";
+
+        final ContentType museumType = getNewsLikeContentType(
+                "Museum" + System.currentTimeMillis(),
+                siteA,
+                globalDetailPage.getIdentifier(),
+                urlPattern);
+
+        final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Contentlet contentOnSiteA = ContentletDataGen.publish(
+                TestDataUtils.getNewsContent(true, langId, museumType.id(), siteA, new Date(), null));
+
+        final UrlMapContext context = getUrlMapContext(systemUser, siteA,
+                urlPattern.replace("{urlTitle}", contentOnSiteA.getStringProperty("urlTitle")),
+                PageMode.LIVE);
+
+        final Optional<URLMapInfo> result = urlMapAPI.processURLMap(context);
+
+        assertTrue("processURLMap should resolve when detail page is on a different host",
+                result.isPresent());
+        assertEquals(contentOnSiteA.getStringProperty("title"),
+                result.get().getContentlet().getName());
+        assertEquals(globalDetailPage.getURI(), result.get().getIdentifier().getURI());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists but the field to Map is a
      * {@link com.dotcms.contenttype.model.field.DataTypes#FLOAT}
      * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page

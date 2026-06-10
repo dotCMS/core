@@ -536,3 +536,99 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
         expect(setStyleSchemas).toHaveBeenCalledWith(mockSchemas);
     });
 });
+
+describe('DotUveActionsHandlerService – CLIENT_READY', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            {
+                provide: UVEStore,
+                useValue: buildMockStore()
+            }
+        ]
+    });
+
+    const buildClientReadyStore = (isClientReady: boolean) => ({
+        ...buildMockStore(),
+        isClientReady: jest.fn().mockReturnValue(isClientReady),
+        setCustomClient: jest.fn(),
+        setIsClientReady: jest.fn()
+    });
+
+    const CLIENT_READY_PAYLOAD = {
+        graphql: {
+            query: '{ page { url } }',
+            variables: { url: '/page-two', depth: '1' }
+        }
+    };
+
+    const buildDeps = (mockStore: ReturnType<typeof buildClientReadyStore>) => ({
+        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+        dialog: null,
+        inlineEditingService: null,
+        contentWindow: null,
+        host: 'http://localhost',
+        onCopyContent: jest.fn()
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    it('should install the client request and reload when the client is not ready', () => {
+        const mockStore = buildClientReadyStore(false);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CLIENT_READY, payload: CLIENT_READY_PAYLOAD },
+            buildDeps(mockStore)
+        );
+
+        expect(mockStore.setCustomClient).toHaveBeenCalledWith({
+            query: CLIENT_READY_PAYLOAD.graphql.query,
+            variables: CLIENT_READY_PAYLOAD.graphql.variables
+        });
+        expect(mockStore.pageReload).toHaveBeenCalled();
+        expect(mockStore.setIsClientReady).toHaveBeenCalledWith(true);
+    });
+
+    it('should refresh the stored client request without reloading when already ready', () => {
+        // Client-side navigation: the new page's CLIENT_READY arrives while the
+        // editor is still initialized for the previous page. The config must be
+        // refreshed (so the upcoming NAVIGATION_UPDATE pageLoad uses the new
+        // page's query/variables) but no reload should fire.
+        const mockStore = buildClientReadyStore(true);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CLIENT_READY, payload: CLIENT_READY_PAYLOAD },
+            buildDeps(mockStore)
+        );
+
+        expect(mockStore.setCustomClient).toHaveBeenCalledWith({
+            query: CLIENT_READY_PAYLOAD.graphql.query,
+            variables: CLIENT_READY_PAYLOAD.graphql.variables
+        });
+        expect(mockStore.pageReload).not.toHaveBeenCalled();
+        expect(mockStore.setIsClientReady).not.toHaveBeenCalled();
+    });
+
+    it('should not install a client request when the payload has no graphql query', () => {
+        const mockStore = buildClientReadyStore(true);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CLIENT_READY, payload: {} },
+            buildDeps(mockStore)
+        );
+
+        expect(mockStore.setCustomClient).not.toHaveBeenCalled();
+        expect(mockStore.pageReload).not.toHaveBeenCalled();
+    });
+});

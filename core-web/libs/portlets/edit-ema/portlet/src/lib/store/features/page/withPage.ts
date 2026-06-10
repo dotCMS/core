@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, Signal, untracked } from '@angular/core';
+import { computed, Signal } from '@angular/core';
 
 import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
@@ -83,6 +83,14 @@ export interface WithPageMethods extends PageComputed {
         query: string;
         variables: Record<string, string>;
     }) => void;
+    /**
+     * Drops the stored client GraphQL request (CLIENT_READY config).
+     * Called on cross-page navigation: the stored query/variables belong
+     * to the page being left, so the next page must be fetched through
+     * the standard Page API until its own CLIENT_READY installs fresh
+     * request metadata.
+     */
+    resetRequestMetadata: () => void;
     /** Updates page asset (and optionally content). Omit content to merge; include content to replace. */
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
@@ -150,6 +158,9 @@ export function withPage() {
                             variables
                         }
                     });
+                },
+                resetRequestMetadata: () => {
+                    patchState(store, { requestMetadata: null });
                 },
                 setPageAsset: (payload) => {
                     const current = store.pageAssetResponse();
@@ -272,8 +283,12 @@ export function withPage() {
                 const pageDataValue = pageAsset()?.page as DotCMSPage;
                 const viewAsData = pageAsset()?.viewAs;
                 const languageId = viewAsData?.language?.id;
-                const translatedLanguages = untracked(() => store.pageLanguages());
-                const currentLanguage = translatedLanguages.find((lang) => lang.id === languageId);
+                // Reactive on both pageAsset and pageLanguages. Angular batches synchronous
+                // signal writes before flushing effects, so updating both in the same tap
+                // callback results in a single effect execution with consistent state.
+                const currentLanguage = store
+                    .pageLanguages()
+                    .find((lang) => lang.id === languageId);
 
                 return {
                     page: pageDataValue,

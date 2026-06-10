@@ -9,15 +9,15 @@
             [formControl]="promptControl"
             rows="3"
             [placeholder]="'dot.block.editor.dialog.ai-content.field.prompt.placeholder' | dm"
-            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            class="w-full rounded-sm border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
             (keydown.enter)="onEnterKey($event)"></textarea>
     </div>
 
     <!-- Preview area -->
-    <div class="min-h-32 rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
+    <div class="min-h-32 rounded-sm border border-gray-200 bg-gray-50 p-3 text-sm text-gray-800">
         @switch (status()) {
             @case ('idle') {
-                <p class="m-0 italic text-gray-400">
+                <p class="m-0 text-gray-400 italic">
                     {{ 'dot.block.editor.dialog.ai-content.empty-state' | dm }}
                 </p>
             }

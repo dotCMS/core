@@ -1,9 +1,9 @@
 <form
     (ngSubmit)="onSubmit()"
     [formGroup]="form"
-    class="h-full flex flex-col justify-center items-start">
+    class="flex h-full flex-col items-start justify-center">
     @if (store.allowFileNameEdit()) {
-        <div class="w-full flex flex-col gap-2">
+        <div class="flex w-full flex-col gap-2">
             <label class="p-label-input-required" data-testid="editor-label" for="file-name">
                 {{ 'dot.file.field.action.create.new.file.label' | dm }}
             </label>
@@ -15,7 +15,7 @@
                 placeholder="Ex. template.html"
                 type="text"
                 data-testid="editor-file-name" />
-            <div class="min-h-6 flex justify-start">
+            <div class="flex min-h-6 justify-start">
                 @let error = store.error();
                 @if (error) {
                     <small class="p-invalid" data-testid="error-msg">
@@ -30,9 +30,9 @@
             </div>
         </div>
     }
-    <div class="flex flex-col flex-1 w-full gap-2">
+    <div class="flex w-full flex-1 flex-col gap-2">
         <ngx-monaco-editor
-            class="block flex-grow w-full min-h-[30rem] border border-gray-400 rounded-md overflow-auto relative"
+            class="relative block min-h-120 w-full grow overflow-auto rounded-md border border-gray-400"
             [class.bg-gray-200]="form.disabled"
             [class.opacity-50]="form.disabled"
             [class.code-editor-disabled]="form.disabled"
@@ -43,13 +43,13 @@
 
         @let file = store.file();
         <div
-            class="flex items-center gap-2 text-gray-700 text-sm"
+            class="flex items-center gap-2 text-sm text-gray-700"
             [class.invisible]="!file.mimeType">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ file.mimeType }}</small>
         </div>
     </div>
-    <div class="w-full flex gap-2 items-center justify-end">
+    <div class="flex w-full items-center justify-end gap-2">
         <p-button
             (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"

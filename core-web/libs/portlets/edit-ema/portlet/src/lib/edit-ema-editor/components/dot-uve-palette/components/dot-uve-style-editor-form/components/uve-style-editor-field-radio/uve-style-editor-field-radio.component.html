@@ -3,7 +3,7 @@
 
     @if ($hasRadioImage()) {
         <div
-            class="grid gap-3 mb-4 group-data-[p-active=false]/uve-section:invisible"
+            class="mb-4 grid gap-3 group-data-[p-active=false]/uve-section:invisible"
             [style.grid-template-columns]="'repeat(' + $columns() + ', 1fr)'">
             @for (option of $options(); track option.value) {
                 <div class="relative">
@@ -13,18 +13,18 @@
                         [name]="$field().id"
                         [formControlName]="$field().id"
                         [value]="option.value"
-                        class="peer absolute opacity-0 cursor-pointer" />
+                        class="peer absolute cursor-pointer opacity-0" />
                     <label
                         [for]="$field().id + '-' + option.value"
-                        class="flex flex-col items-start gap-1 cursor-pointer peer-checked:[&>div]:border-primary-500 peer-checked:[&>div]:bg-primary-100 peer-checked:[&>div]:shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                        class="flex cursor-pointer flex-col items-start gap-1 peer-checked:[&>div]:border-primary-500 peer-checked:[&>div]:bg-primary-100 peer-checked:[&>div]:shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                         <div
-                            class="w-full h-[5.75rem] block rounded border border-gray-300 bg-white p-1 transition-all duration-150 hover:border-primary-500 hover:shadow-md">
+                            class="block h-23 w-full rounded-sm border border-gray-300 bg-white p-1 transition-all duration-150 hover:border-primary-500 hover:shadow-md">
                             <img
                                 [src]="option.imageURL"
                                 [alt]="option.label"
-                                class="w-full h-full object-contain rounded-[calc(0.25rem-2px)]" />
+                                class="size-full rounded-[calc(0.25rem-2px)] object-contain" />
                         </div>
-                        <span class="text-sm text-gray-900 w-full">{{ option.label }}</span>
+                        <span class="w-full text-sm text-gray-900">{{ option.label }}</span>
                     </label>
                 </div>
             }

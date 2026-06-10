@@ -35,7 +35,7 @@ import java.util.Set;
 public class ProviderConfigMerger {
 
     public static final String MASKED = "*****";
-    public static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
+    public static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId", "credentialsJson");
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
 
     private ProviderConfigMerger() {}

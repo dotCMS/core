@@ -1,5 +1,5 @@
 import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
-import { EMPTY, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -9,7 +9,7 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     DotMessageDisplayServiceMock,
@@ -47,11 +47,7 @@ describe('DotAddPersonaDialogComponent', () => {
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: SiteService, useValue: new SiteServiceMock() },
-            mockProvider(GlobalStore, { currentSiteId: jest.fn().mockReturnValue('demo') }),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            }
+            mockProvider(GlobalStore, { currentSiteId: jest.fn().mockReturnValue('demo') })
         ]
     });
 

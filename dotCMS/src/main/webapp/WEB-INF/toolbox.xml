@@ -208,7 +208,7 @@
 		<class>com.dotcms.rendering.velocity.viewtools.XssWebAPI</class>
 	</tool>
 	<tool>
-		<key>encode</key>
+		<key>owasp</key>
 		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.OwaspEncoderTool</class>
 	</tool>
