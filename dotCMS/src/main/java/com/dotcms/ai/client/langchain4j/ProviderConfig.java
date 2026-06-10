@@ -44,8 +44,8 @@ import java.util.List;
  *   <li>{@code secretAccessKey}</li>
  *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
  *   <li>{@code timeout} and {@code maxRetries} (common fields above) apply to the Bedrock runtime
- *       clients: {@code timeout} as the per-request {@code apiCallTimeout};
- *       {@code maxRetries} as the SDK retry-strategy {@code maxAttempts} (= {@code maxRetries + 1})</li>
+ *       clients: {@code timeout} as the per-attempt {@code apiCallAttemptTimeout};
+ *       {@code maxRetries} as the SDK retry-strategy {@code maxAttempts} (= {@code max(1, maxRetries + 1)})</li>
  * </ul>
  *
  * <p>Bedrock {@code model} ID forms: use an inference-profile prefix ({@code us.}, {@code eu.},
