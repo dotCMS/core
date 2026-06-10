@@ -2,6 +2,8 @@ import { type APIRequestContext, test as base, expect, type Page } from '@playwr
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
+import { createFakeRelationshipField, createFakeTextField } from '@dotcms/utils-testing';
+
 import {
     type ContentType,
     type CreateContentTypePayload,
@@ -168,39 +170,36 @@ async function enableNewEditor(
 // Defaults (clazz, host, folder, workflow, metadata) are provided by createFakeContentType.
 
 function authorContentTypePayload(suffix: string): CreateContentTypePayload {
+    const titleField = createFakeTextField({
+        name: 'Title',
+        variable: 'title',
+        sortOrder: 1
+    });
+    const bioField = createFakeTextField({
+        name: 'Bio',
+        variable: 'bio',
+        sortOrder: 2
+    });
+
     return {
         name: `E2E_Author_${suffix}`,
         variable: `E2EAuthor${suffix}`,
-        fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                name: 'Title',
-                variable: 'title',
-                sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                name: 'Bio',
-                variable: 'bio',
-                sortOrder: 2
-            }
-        ]
+        fields: [titleField, bioField]
     };
 }
 
 function tagContentTypePayload(suffix: string): CreateContentTypePayload {
+    const nameField = createFakeTextField({
+        name: 'Name',
+        variable: 'name',
+        sortOrder: 1
+    });
+
     return {
         name: `E2E_Tag_${suffix}`,
         variable: `E2ETag${suffix}`,
         metadata: {},
-        fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                name: 'Name',
-                variable: 'name',
-                sortOrder: 1
-            }
-        ]
+        fields: [nameField]
     };
 }
 
@@ -212,29 +211,27 @@ function blogContentTypePayload(
     relationshipFieldVariable: string,
     cardinality: number
 ): CreateContentTypePayload {
+    const titleField = createFakeTextField({
+        name: 'Title',
+        variable: 'title',
+        sortOrder: 1
+    });
+    const relationshipField = createFakeRelationshipField({
+        name:
+            relationshipFieldVariable.charAt(0).toUpperCase() + relationshipFieldVariable.slice(1),
+        variable: relationshipFieldVariable,
+        sortOrder: 2,
+        relationships: {
+            velocityVar: relatedContentTypeVariable,
+            cardinality,
+            isParentField: true
+        }
+    });
+
     return {
         name: `${name}_${suffix}`,
         variable: `${variable}${suffix}`,
-        fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                name: 'Title',
-                variable: 'title',
-                sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                name:
-                    relationshipFieldVariable.charAt(0).toUpperCase() +
-                    relationshipFieldVariable.slice(1),
-                variable: relationshipFieldVariable,
-                sortOrder: 2,
-                relationships: {
-                    velocityVar: relatedContentTypeVariable,
-                    cardinality
-                }
-            }
-        ]
+        fields: [titleField, relationshipField]
     };
 }
 

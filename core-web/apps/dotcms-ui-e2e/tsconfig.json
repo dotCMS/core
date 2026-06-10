@@ -3,7 +3,6 @@
     "compilerOptions": {
         "allowJs": true,
         "outDir": "../../dist/out-tsc",
-        "module": "commonjs",
         "sourceMap": false,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
@@ -19,7 +18,10 @@
             "@data/*": ["./src/data/*"],
             "@models/*": ["./src/models/*"],
             "@requests/*": ["./src/requests/*"],
-            "@components/*": ["./src/components/*"]
+            "@components/*": ["./src/components/*"],
+            "@dotcms/dotcms-models": ["../../libs/dotcms-models/src/index.ts"],
+            "@dotcms/utils": ["../../libs/utils/src"],
+            "@dotcms/utils-testing": ["../../libs/utils-testing/src/index.ts"]
         }
     },
     "include": [
