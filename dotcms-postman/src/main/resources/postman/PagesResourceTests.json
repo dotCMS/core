@@ -7363,6 +7363,13 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{user}}", "type": "string" },
+                { "key": "password", "value": "{{password}}", "type": "string" }
+              ]
+            },
             "method": "GET",
             "header": [],
             "url": {
