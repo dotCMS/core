@@ -12,7 +12,7 @@
                 {{ 'dotauth.empty.identity.title' | dm }}
             </h3>
             <p
-                class="m-0 max-w-[440px] text-center text-[0.875rem] leading-relaxed text-[var(--text-color-secondary)]">
+                class="m-0 max-w-[440px] text-center text-sm/relaxed text-(--text-color-secondary)">
                 {{ 'dotauth.empty.identity.description' | dm }}
             </p>
             <div class="flex gap-2">
@@ -35,7 +35,7 @@
             <div class="flex min-w-0 flex-1 flex-col">
                 <div>
                     <div class="flex items-center gap-2">
-                        <i class="pi pi-shield text-[var(--primary-500)]" aria-hidden="true"></i>
+                        <i class="pi pi-shield text-(--primary-500)" aria-hidden="true"></i>
                         <h2 class="m-0 text-base font-semibold">
                             {{ 'dotauth.system.hero.title' | dm }}
                         </h2>
@@ -49,7 +49,7 @@
                                 severity="info" />
                         }
                     </div>
-                    <p class="m-0 mt-1 text-[0.8125rem] text-[var(--text-color-secondary)]">
+                    <p class="m-0 mt-1 text-[0.8125rem] text-(--text-color-secondary)">
                         {{ 'dotauth.system.hero.subtitle' | dm }}
                     </p>
                 </div>
@@ -58,7 +58,7 @@
             <div class="hero-actions">
                 <span class="protocol-pill">
                     <span
-                        class="inline-block h-2 w-2 rounded-full"
+                        class="inline-block size-2 rounded-full"
                         [style.background]="protocolColor(store.system().protocol)"></span>
                     @if (protocolLabelKey(store.system().protocol); as protocolKey) {
                         <span data-testid="dotauth-system-protocol">{{ protocolKey | dm }}</span>
@@ -179,7 +179,7 @@
                                         {{ row.hostName }}
                                     </div>
                                     <div
-                                        class="font-mono text-xs text-[var(--text-color-tertiary)]">
+                                        class="font-mono text-xs text-(--text-color-tertiary)">
                                         {{ row.hostId }}
                                     </div>
                                 </div>
@@ -197,7 +197,7 @@
                                         {{ protocolKey | dm }}
                                     </span>
                                 } @else {
-                                    <span class="text-[var(--text-color-secondary)]">&mdash;</span>
+                                    <span class="text-(--text-color-secondary)">&mdash;</span>
                                 }
                             } @else {
                                 <span class="inherit-chip">
@@ -248,7 +248,7 @@
                 <tr class="hover:bg-transparent!">
                     <td
                         colspan="5"
-                        class="p-8 text-center text-sm text-[var(--text-color-secondary)]">
+                        class="p-8 text-center text-sm text-(--text-color-secondary)">
                         {{ 'dotauth.empty.state.description' | dm }}
                     </td>
                 </tr>
@@ -303,7 +303,7 @@
                 [ngModel]="exportPassword()"
                 (ngModelChange)="exportPassword.set($event)"
                 autocomplete="new-password" />
-            <small class="text-[var(--text-color-secondary)]">
+            <small class="text-(--text-color-secondary)">
                 {{ 'dotauth.export.password.help' | dm }}
             </small>
         </div>
@@ -339,7 +339,7 @@
                 [ngModel]="importPassword()"
                 (ngModelChange)="importPassword.set($event)"
                 autocomplete="new-password" />
-            <small class="text-[var(--text-color-secondary)]">
+            <small class="text-(--text-color-secondary)">
                 {{ 'dotauth.import.password.help' | dm }}
             </small>
         </div>

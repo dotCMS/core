@@ -35,13 +35,13 @@
                         {{ 'dotauth.config.sso.title' | dm }}
                     </h2>
                     <p
-                        class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-[var(--text-color-secondary)]">
+                        class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-(--text-color-secondary)">
                         {{ 'dotauth.config.sso.subtitle' | dm }}
                     </p>
                 </div>
                 <div class="flex-1"></div>
                 <div class="flex items-center gap-2.5">
-                    <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                    <span class="text-[0.8125rem] text-(--text-color-secondary)">
                         {{ 'dotauth.field.ssoEnabled' | dm }}
                     </span>
                     <p-toggleswitch
@@ -151,7 +151,7 @@
                                             [pTooltip]="'dotauth.tooltip.enableBackend' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
-                                    <div class="flex items-center gap-2.5 toggle-row">
+                                    <div class="toggle-row flex items-center gap-2.5">
                                         <p-toggleswitch
                                             [ngModel]="store.draft().enableBackend"
                                             (ngModelChange)="
@@ -167,7 +167,7 @@
                                             [pTooltip]="'dotauth.tooltip.enableFrontend' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
-                                    <div class="flex items-center gap-2.5 toggle-row">
+                                    <div class="toggle-row flex items-center gap-2.5">
                                         <p-toggleswitch
                                             [ngModel]="store.draft().enableFrontend"
                                             (ngModelChange)="
@@ -183,7 +183,7 @@
                                             [pTooltip]="'dotauth.tooltip.hashUserId' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
-                                    <div class="flex items-center gap-2.5 toggle-row">
+                                    <div class="toggle-row flex items-center gap-2.5">
                                         <p-toggleswitch
                                             [ngModel]="store.draft().hashUserId"
                                             (ngModelChange)="store.update('hashUserId', $event)" />
@@ -283,7 +283,6 @@
                                 (fieldChange)="onProvisioningChange('saml', $event)" />
                         </div>
                     </div>
-
                 }
             </div>
         </div>
@@ -299,7 +298,7 @@
                 {{ 'dotauth.config.unsaved' | dm }}
             </span>
         } @else {
-            <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+            <span class="text-[0.8125rem] text-(--text-color-secondary)">
                 {{ 'dotauth.config.saved' | dm }}
             </span>
         }
@@ -343,7 +342,7 @@
     [draggable]="false"
     [style]="{ width: '480px' }">
     <div class="flex flex-col gap-3">
-        <p class="m-0 text-[0.875rem] text-[var(--text-color-secondary)]">
+        <p class="m-0 text-[0.875rem] text-(--text-color-secondary)">
             @if (store.isSystem()) {
                 {{ 'dotauth.confirm.clear.message.system' | dm }}
             } @else {
