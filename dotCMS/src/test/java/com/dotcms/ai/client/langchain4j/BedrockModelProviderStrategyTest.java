@@ -169,6 +169,42 @@ public class BedrockModelProviderStrategyTest {
         assertNotNull(strategy.buildChatModel(bedrockConfig("us.deepseek.r1-v1:0"), MODEL_TYPE));
     }
 
+    /**
+     * Given a Bedrock config with only an accessKeyId (secretAccessKey absent),
+     * When buildStreamingChatModel is called,
+     * Then an IllegalArgumentException is thrown with the both-or-neither message.
+     */
+    @Test
+    public void test_buildStreamingChatModel_onlyKeyId_throwsBothOrNeither() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("us.deepseek.r1-v1:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .build();
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> strategy.buildStreamingChatModel(config, MODEL_TYPE));
+        assertTrue(ex.getMessage().contains("both be set or both be absent"));
+    }
+
+    /**
+     * Given a Bedrock config with only a secretAccessKey (accessKeyId absent),
+     * When buildStreamingChatModel is called,
+     * Then an IllegalArgumentException is thrown with the both-or-neither message.
+     */
+    @Test
+    public void test_buildStreamingChatModel_onlySecret_throwsBothOrNeither() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("us.deepseek.r1-v1:0")
+                .region("us-east-1")
+                .secretAccessKey("test-secret-key")
+                .build();
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> strategy.buildStreamingChatModel(config, MODEL_TYPE));
+        assertTrue(ex.getMessage().contains("both be set or both be absent"));
+    }
+
     // ── buildStreamingChatModel ──────────────────────────────────────────────
 
     /**
@@ -273,6 +309,44 @@ public class BedrockModelProviderStrategyTest {
         final EmbeddingModel model = strategy.buildEmbeddingModel(config, "embeddings");
         assertNotNull(model);
         assertTrue(model instanceof BedrockCohereEmbeddingModel);
+    }
+
+    /**
+     * Given a Bedrock config without a region,
+     * When buildEmbeddingModel is called,
+     * Then an IllegalArgumentException is thrown naming the region field and modelType.
+     */
+    @Test
+    public void test_buildEmbeddingModel_missingRegion_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("cohere.embed-english-v3")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> strategy.buildEmbeddingModel(config, "embeddings"));
+        assertTrue(ex.getMessage().contains("region"));
+        assertTrue(ex.getMessage().contains("embeddings"));
+    }
+
+    /**
+     * Given a Bedrock config without a model,
+     * When buildEmbeddingModel is called,
+     * Then an IllegalArgumentException is thrown naming the model field and modelType.
+     */
+    @Test
+    public void test_buildEmbeddingModel_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> strategy.buildEmbeddingModel(config, "embeddings"));
+        assertTrue(ex.getMessage().contains("model"));
+        assertTrue(ex.getMessage().contains("embeddings"));
     }
 
     /**
