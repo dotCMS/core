@@ -112,4 +112,7 @@ public interface ProviderConfig {
      */
     @Value.Redacted @Nullable String credentialsJson();
 
+    @Value.Default
+    default boolean foundry() { return false; }
+
 }
