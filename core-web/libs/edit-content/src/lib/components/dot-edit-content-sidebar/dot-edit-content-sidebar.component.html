@@ -39,7 +39,7 @@
                 <!-- Actions tab content — padding lives on this first inner wrapper -->
                 <div class="flex h-full min-h-0 flex-col px-[18px] pt-[18px]">
                     <!-- Lock / unlock button — kept visually distinct from the workflow actions
-                         (outlined + lock icon) and separated by a divider, so it never merges with
+                         (secondary + lock icon) and separated by a divider, so it never merges with
                          the solid primary first action below. -->
                     @if (
                         !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
@@ -47,22 +47,12 @@
                         <div
                             class="border-b border-surface-200 pb-4"
                             data-testId="sidebar-lock-section">
-                            <!-- The pButton directive does not remove a stale `p-button-outlined`
-                                 class when an `[outlined]` input flips at runtime (it is not in the
-                                 directive's managed class list), so cycling lock→unlock left the gray
-                                 button stuck with an outline. We instead toggle that class reactively
-                                 via Angular `[class.p-button-outlined]`, and use `severity` (which the
-                                 directive re-applies on change) for the gray fill. Per the design:
-                                 - Unlocked → gray (secondary) filled "Lock for Editing"
-                                 - Locked   → outlined "Unlock" -->
+                            <!-- Secondary (gray) button for both states; the lock icon and label
+                                 switch between "Lock for Editing" and "Unlock". -->
                             <button
                                 pButton
                                 type="button"
-                                [class.p-button-outlined]="$store.isContentLocked()"
-                                [style.border-color]="
-                                    $store.isContentLocked() ? null : 'var(--p-surface-200)'
-                                "
-                                [severity]="$store.isContentLocked() ? undefined : 'secondary'"
+                                severity="secondary"
                                 [fluid]="true"
                                 data-testId="sidebar-lock-button"
                                 [label]="
