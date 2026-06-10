@@ -718,6 +718,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
+        if (multiTrees.isEmpty()) {
+            final Set<String> existing = this.getOriginalContentlets(
+                    pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
+            if (!existing.isEmpty()) {
+                throw new DotDataException(String.format(
+                        "Save rejected: empty payload would delete %d existing contentlet(s) from page '%s'. " +
+                        "The page may have been modified by another user — please refresh and try again.",
+                        existing.size(), pageId));
+            }
+        }
+
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
         Set<String> originalContentletIds;
         final DotConnect db = new DotConnect();
