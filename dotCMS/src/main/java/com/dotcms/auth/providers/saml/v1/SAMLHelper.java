@@ -472,12 +472,9 @@ public class SAMLHelper {
         Logger.debug(this, ()->"Default SAML User role has been assigned");
 
         // System access roles based on enableBackend/enableFrontend config flags.
-        // Defaults to backend=true when the flag is absent (backwards compat).
         // addRole dedupes against DOTCMS_SAML_OPTIONAL_USER_ROLE entries.
-        final boolean enableBackend = !identityProviderConfiguration.containsOptionalProperty("enableBackend")
-                || BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
-        final boolean enableFrontend = identityProviderConfiguration.containsOptionalProperty("enableFrontend")
-                && BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableFrontend")));
+        final boolean enableBackend = isBackEndEnabled(identityProviderConfiguration);
+        final boolean enableFrontend = isFrontEndEnabled(identityProviderConfiguration);
         if (enableBackend) {
             UserHelper.getInstance().addRole(user, Role.DOTCMS_BACK_END_USER, false, false);
         }
@@ -506,6 +503,25 @@ public class SAMLHelper {
 
             Logger.info(this, "The build roles strategy is 'idp'. No saml_user_role has been added");
         }
+    }
+
+    /**
+     * Whether back-end (dotAdmin) SSO is enabled for this IdP configuration.
+     * Defaults to {@code true} when the flag is absent — historical SAML behavior
+     * was back-end SSO, so pre-existing configs keep working after upgrade.
+     */
+    public static boolean isBackEndEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
+        return !identityProviderConfiguration.containsOptionalProperty("enableBackend")
+                || BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
+    }
+
+    /**
+     * Whether front-end (site visitor) SSO is enabled for this IdP configuration.
+     * Defaults to {@code false} when the flag is absent.
+     */
+    public static boolean isFrontEndEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
+        return identityProviderConfiguration.containsOptionalProperty("enableFrontend")
+                && BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableFrontend")));
     }
 
     private boolean isValidRole(final String role, final String... rolePatterns) {
