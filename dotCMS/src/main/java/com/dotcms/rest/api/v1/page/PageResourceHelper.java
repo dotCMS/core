@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -79,6 +80,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -98,6 +100,7 @@ import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -974,41 +977,17 @@ public class PageResourceHelper implements Serializable {
         // ---- 2. Resolve language -------------------------------------------
         final Language language = resolveLanguageForRenderSources(languageId);
 
-        // ---- 3. Resolve URI (strip host qualifier if present) --------------
-        final String uri = extractUriFromPath(path);
+        // ---- 3. Resolve URI ------------------------------------------------
+        final String uri = UtilMethods.isSet(path) ? path : "/";
 
         // ---- 4. Resolve PageMode -------------------------------------------
         final PageMode mode = UtilMethods.isSet(pageMode)
                 ? PageMode.get(pageMode)
                 : PageMode.PREVIEW_MODE;
 
-        // ---- 5. Build mock request — needed for both page resolution and getPageMetadata ----
-        // Host resolution inside renderedAPI.getHtmlPageAsset goes through
-        // HostWebAPIImpl.getCurrentHostFromRequest which checks, in priority order:
-        //   1. getParameter("host_id") when user.isBackendUser()  → most reliable
-        //   2. getParameter/getAttribute(Host.HOST_VELOCITY_VAR_NAME)
-        //   3. getAttribute(WebKeys.CURRENT_HOST)
-        //   4. resolveHostName(request.getServerName())           → fragile fallback
-        //
-        // FakeHttpRequest parses query params from the URI string, so embedding
-        // "?host_id=<identifier>" guarantees option-1 fires for backend users and
-        // completely prevents the fragile serverName fallback (option-4) from choosing
-        // the wrong site when processing URL-mapped pages.
-        // Options 2 and 3 are set as belt-and-suspenders for non-backend (frontend) users
-        // who skip the host_id branch (line 151 HostWebAPIImpl: requires isBackendUser()).
-        final String uriWithHostParam = uri + "?host_id=" + host.getIdentifier();
+        // ---- 5. Build mock request — needed for page resolution -------------
         final javax.servlet.http.HttpServletRequest mockReq =
-                new MockHeaderRequest(
-                        new MockSessionRequest(
-                                new MockAttributeRequest(
-                                        new FakeHttpRequest(host.getHostname(),
-                                                uriWithHostParam).request())));
-        final javax.servlet.http.HttpServletResponse mockResp = new MockHttpResponse();
-        // Belt-and-suspenders: attribute fallbacks for non-backend users (options 2 & 3)
-        mockReq.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
-        mockReq.setAttribute(Host.HOST_VELOCITY_VAR_NAME, host.getIdentifier());
-        mockReq.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
-                String.valueOf(language.getId()));
+                buildSourceLookupRequest(uri, host, language);
 
         // ---- 6. Resolve page via renderedAPI.getHtmlPageAsset ---------------
         // This mirrors the render endpoint exactly: it handles both direct page paths
@@ -1041,19 +1020,9 @@ public class PageResourceHelper implements Serializable {
         // Use the detail page URI for rendering (for URL-mapped pages this is the
         // configured detail page URI, not the original mapped URI).
         final String pageUri = page.getURI();
-        // Same host-determinism strategy as mockReq: embed host_id as query param so
-        // HostWebAPIImpl.getCurrentHostFromRequest option-1 fires for backend users.
-        final String pageUriWithHostParam = pageUri + "?host_id=" + host.getIdentifier();
         final javax.servlet.http.HttpServletRequest metaReq =
-                new MockHeaderRequest(
-                        new MockSessionRequest(
-                                new MockAttributeRequest(
-                                        new FakeHttpRequest(host.getHostname(),
-                                                pageUriWithHostParam).request())));
-        metaReq.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
-        metaReq.setAttribute(Host.HOST_VELOCITY_VAR_NAME, host.getIdentifier());
-        metaReq.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
-                String.valueOf(language.getId()));
+                buildSourceLookupRequest(pageUri, host, language);
+        final javax.servlet.http.HttpServletResponse mockResp = new MockHttpResponse();
 
         final PageView pageView = renderedAPI.getPageMetadata(
                 PageContextBuilder.builder()
@@ -1073,8 +1042,18 @@ public class PageResourceHelper implements Serializable {
                 : VariantAPI.DEFAULT_VARIANT.name();
 
         // ---- 11. Build onPage lookup (containerId+contentTypeVar → true) ---
-        final Set<String> onPageKeys = buildOnPageKeys(
-                page.getIdentifier(), personalization, resolvedVariant, user);
+        // Fetch the page's placed-content tree once and share it with the widget pass below.
+        // A failure here would silently empty both the container content-type filter and the
+        // widget list, so it is logged at error level (with the page id) rather than swallowed —
+        // an empty tree is otherwise indistinguishable from a genuinely empty page.
+        final List<MultiTree> pageTrees = Try.of(() ->
+                        multiTreeAPI.getMultiTreesByPersonalizedPage(
+                                page.getIdentifier(), personalization, resolvedVariant))
+                .onFailure(e -> Logger.error(this,
+                        "Could not load MultiTrees for page '" + page.getIdentifier()
+                                + "'; container content-types and widgets will be empty", e))
+                .getOrElse(Collections.emptyList());
+        final Set<String> onPageKeys = buildOnPageKeys(pageTrees);
 
         // ---- 12. Theme -----------------------------------------------------
         final Template template = templateAPI.findWorkingTemplate(
@@ -1088,8 +1067,8 @@ public class PageResourceHelper implements Serializable {
 
         // ---- 14. Widgets ---------------------------------------------------
         final List<WidgetSourceView> widgetViews =
-                buildWidgetViews(page.getIdentifier(), personalization, resolvedVariant,
-                        language.getId(), mode.showLive, host, user);
+                buildWidgetViews(pageTrees, resolvedVariant, language.getId(),
+                        mode.showLive, host, user);
 
         // ---- 15. URL content map view (only for URL-mapped pages) ----------
         final UrlContentMapView urlContentMapView = urlMapInfo != null
@@ -1142,8 +1121,36 @@ public class PageResourceHelper implements Serializable {
         return languageAPI.getDefaultLanguage();
     }
 
-    private String extractUriFromPath(final String path) {
-        return UtilMethods.isSet(path) ? path : "/";
+    /**
+     * Builds a mock request used to drive page resolution and {@code getPageMetadata} for the
+     * render-sources lookup. Host resolution inside {@code renderedAPI} goes through
+     * {@code HostWebAPIImpl.getCurrentHostFromRequest}, which checks, in priority order:
+     * <ol>
+     *   <li>{@code getParameter("host_id")} when {@code user.isBackendUser()} → most reliable</li>
+     *   <li>{@code getParameter/getAttribute(Host.HOST_VELOCITY_VAR_NAME)}</li>
+     *   <li>{@code getAttribute(WebKeys.CURRENT_HOST)}</li>
+     *   <li>{@code resolveHostName(request.getServerName())} → fragile fallback</li>
+     * </ol>
+     * {@link FakeHttpRequest} parses query params from the URI string, so embedding
+     * {@code "?host_id=<identifier>"} guarantees option 1 fires for backend users and prevents the
+     * fragile serverName fallback (option 4) from choosing the wrong site when processing
+     * URL-mapped pages. Options 2 and 3 are set as belt-and-suspenders for non-backend (frontend)
+     * users who skip the host_id branch.
+     */
+    private javax.servlet.http.HttpServletRequest buildSourceLookupRequest(
+            final String uri, final Host host, final Language language) {
+        final String uriWithHostParam = uri + "?host_id=" + host.getIdentifier();
+        final javax.servlet.http.HttpServletRequest request =
+                new MockHeaderRequest(
+                        new MockSessionRequest(
+                                new MockAttributeRequest(
+                                        new FakeHttpRequest(host.getHostname(),
+                                                uriWithHostParam).request())));
+        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+        request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, host.getIdentifier());
+        request.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(language.getId()));
+        return request;
     }
 
     private String resolvePersonalization(final String personaId, final User user) {
@@ -1169,41 +1176,35 @@ public class PageResourceHelper implements Serializable {
     }
 
     /**
-     * Builds a set of {@code "containerId|contentTypeVar"} keys for contentlets that are currently
-     * placed on the page under the given personalization and variant.
+     * Builds a set of {@code "containerId|contentTypeVar"} keys for the contentlets placed on the
+     * page, from the page's pre-fetched personalized {@link MultiTree} list.
      */
-    private Set<String> buildOnPageKeys(final String pageId, final String personalization,
-            final String variant, final User user) {
+    private Set<String> buildOnPageKeys(final List<MultiTree> trees) {
         final Set<String> keys = new HashSet<>();
-        try {
-            final List<MultiTree> trees = multiTreeAPI.getMultiTreesByPersonalizedPage(
-                    pageId, personalization, variant);
-            for (final MultiTree mt : trees) {
-                final String contentletId = mt.getContentlet();
-                if (!UtilMethods.isSet(contentletId)) {
-                    continue;
-                }
-                final Contentlet c = Try.of(
-                        () -> contentletAPI.findContentletByIdentifierAnyLanguage(contentletId))
-                        .getOrNull();
-                if (c == null) {
-                    continue;
-                }
-                final ContentType ct = Try.of(c::getContentType).getOrNull();
-                if (ct == null) {
-                    continue;
-                }
-                // Normalize containerId: FILE containers store a path in MultiTree
-                String rawContainer = mt.getContainer();
-                if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(rawContainer)) {
-                    rawContainer = FileAssetContainerUtil.getInstance()
-                            .getContainerIdFromPath(rawContainer);
-                }
-                keys.add(rawContainer + "|" + ct.variable());
+        final FileAssetContainerUtil fileContainerUtil = FileAssetContainerUtil.getInstance();
+        for (final MultiTree mt : trees) {
+            final String contentletId = mt.getContentlet();
+            if (!UtilMethods.isSet(contentletId)) {
+                continue;
             }
-        } catch (final DotDataException e) {
-            Logger.warn(this, "Could not build onPage keys for page '" + pageId + "': "
-                    + e.getMessage());
+            final Contentlet c = Try.of(
+                    () -> contentletAPI.findContentletByIdentifierAnyLanguage(contentletId))
+                    .getOrNull();
+            if (c == null) {
+                continue;
+            }
+            final ContentType ct = Try.of(c::getContentType).getOrNull();
+            if (ct == null) {
+                continue;
+            }
+            // Normalize containerId: FILE containers store a path in MultiTree
+            final String rawContainer = mt.getContainer();
+            final String containerId =
+                    fileContainerUtil.isFolderAssetContainerId(rawContainer)
+                            ? Try.of(() -> fileContainerUtil.getContainerIdFromPath(rawContainer))
+                                    .getOrElse(rawContainer)
+                            : rawContainer;
+            keys.add(containerId + "|" + ct.variable());
         }
         return keys;
     }
@@ -1222,12 +1223,19 @@ public class PageResourceHelper implements Serializable {
             final String rawPath = theme.getPath();
             final String folderPath = buildHostQualifiedPath(rawPath, host);
 
-            final List<FileAsset> assets = APILocator.getFileAssetAPI()
-                    .findFileAssetsByFolder(theme, null, false, user, false);
+            // Themes organise VTLs into sub-folders (e.g. navigation/, header/), so walk the
+            // theme folder recursively rather than listing only the root level.
+            final List<Folder> folders = new ArrayList<>();
+            folders.add(theme);
+            folders.addAll(APILocator.getFolderAPI()
+                    .findSubFoldersRecursively(theme, user, false));
 
-            final List<VtlFileRefView> vtls = assets.stream()
+            final List<VtlFileRefView> vtls = folders.stream()
+                    .flatMap(folder -> Try.of(() -> APILocator.getFileAssetAPI()
+                                    .findFileAssetsByFolder(folder, null, false, user, false))
+                            .getOrElse(Collections.emptyList()).stream())
                     .filter(f -> UtilMethods.isSet(f.getFileName())
-                            && f.getFileName().endsWith(".vtl"))
+                            && f.getFileName().endsWith(Constants.VELOCITY_FILE_EXTENSION))
                     .map(f -> new VtlFileRefView(
                             buildHostQualifiedPath(f.getPath() + f.getFileName(), host),
                             f.getIdentifier()))
@@ -1313,9 +1321,11 @@ public class PageResourceHelper implements Serializable {
         final Map<String, FileAsset> vtlByVarLower = new HashMap<>();
         for (final FileAsset fa : fac.getContainerStructuresAssets()) {
             final String fileName = fa.getFileName();
-            if (UtilMethods.isSet(fileName) && fileName.endsWith(".vtl")) {
-                // strip .vtl → raw name from the file, then lowercase for lookup
-                final String rawVar = fileName.substring(0, fileName.length() - 4);
+            if (UtilMethods.isSet(fileName)
+                    && fileName.endsWith(Constants.VELOCITY_FILE_EXTENSION)) {
+                // strip the .vtl extension → raw name from the file, then lowercase for lookup
+                final String rawVar = fileName.substring(0,
+                        fileName.length() - Constants.VELOCITY_FILE_EXTENSION.length());
                 vtlByVarLower.put(rawVar.toLowerCase(), fa);
             }
         }
@@ -1359,75 +1369,75 @@ public class PageResourceHelper implements Serializable {
      * language) the call falls back to {@code findContentletByIdentifierAnyLanguage} so the widget
      * still appears in the response.</p>
      */
-    private List<WidgetSourceView> buildWidgetViews(final String pageId,
-            final String personalization, final String variant,
-            final long languageId, final boolean live,
+    private List<WidgetSourceView> buildWidgetViews(final List<MultiTree> trees,
+            final String variant, final long languageId, final boolean live,
             final Host host, final User user) {
         final List<WidgetSourceView> result = new ArrayList<>();
-        try {
-            final List<MultiTree> trees = multiTreeAPI.getMultiTreesByPersonalizedPage(
-                    pageId, personalization, variant);
-            final Set<String> seenContentlets = new HashSet<>();
-            for (final MultiTree mt : trees) {
-                final String contentletId = mt.getContentlet();
-                if (!UtilMethods.isSet(contentletId) || !seenContentlets.add(contentletId)) {
-                    continue;
-                }
-
-                // Attempt version-aware resolution first (language + variant specific inode).
-                Contentlet c = null;
-                try {
-                    c = contentletAPI.findContentletByIdentifier(
-                            contentletId, live, languageId, variant, user, false);
-                } catch (final Exception e) {
-                    Logger.debug(this, () -> "Version-aware lookup failed for widget contentlet '"
-                            + contentletId + "', falling back to any-language: " + e.getMessage());
-                }
-                // Fall back to any-language/any-variant if the specific version is absent.
-                if (c == null || !UtilMethods.isSet(c.getInode())) {
-                    c = Try.of(() -> contentletAPI
-                            .findContentletByIdentifierAnyLanguage(contentletId)).getOrNull();
-                }
-                if (c == null) {
-                    continue;
-                }
-
-                final ContentType ct = Try.of(c::getContentType).getOrNull();
-                if (ct == null || ct.baseType() != BaseContentType.WIDGET) {
-                    continue;
-                }
-
-                final String widgetContentletId   = c.getIdentifier();
-                final String widgetContentletInode = c.getInode();
-                final String[] fileRef = resolveWidgetFileRef(c, ct, host, user);
-
-                if (fileRef[0] != null) {
-                    // FILE-backed widget: path and VTL file identifier are known
-                    result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
-                            widgetContentletId, widgetContentletInode, fileRef[0], fileRef[1]));
-                } else {
-                    // CODE widget: Velocity lives in widgetCode / contentlet fields
-                    result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
-                            widgetContentletId, widgetContentletInode));
-                }
+        final Set<String> seenContentlets = new HashSet<>();
+        for (final MultiTree mt : trees) {
+            final String contentletId = mt.getContentlet();
+            if (!UtilMethods.isSet(contentletId) || !seenContentlets.add(contentletId)) {
+                continue;
             }
-        } catch (final DotDataException e) {
-            Logger.warn(this, "Could not build widget views for page '" + pageId + "': "
-                    + e.getMessage());
+
+            // Attempt version-aware resolution first (language + variant specific inode).
+            Contentlet c = null;
+            try {
+                c = contentletAPI.findContentletByIdentifier(
+                        contentletId, live, languageId, variant, user, false);
+            } catch (final Exception e) {
+                Logger.debug(this, () -> "Version-aware lookup failed for widget contentlet '"
+                        + contentletId + "', falling back to any-language: " + e.getMessage());
+            }
+            // Fall back to any-language/any-variant if the specific version is absent.
+            if (c == null || !UtilMethods.isSet(c.getInode())) {
+                c = Try.of(() -> contentletAPI
+                        .findContentletByIdentifierAnyLanguage(contentletId)).getOrNull();
+            }
+            if (c == null) {
+                continue;
+            }
+
+            final ContentType ct = Try.of(c::getContentType).getOrNull();
+            if (ct == null || ct.baseType() != BaseContentType.WIDGET) {
+                continue;
+            }
+
+            final String widgetContentletId   = c.getIdentifier();
+            final String widgetContentletInode = c.getInode();
+            final Optional<VtlFileRefView> fileRef = resolveWidgetFileRef(c, ct, host, user);
+
+            if (fileRef.isPresent()) {
+                // FILE-backed widget: path and VTL file identifier are known
+                result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
+                        widgetContentletId, widgetContentletInode,
+                        fileRef.get().getPath(), fileRef.get().getIdentifier()));
+            } else {
+                // CODE widget: Velocity lives in widgetCode / contentlet fields
+                result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
+                        widgetContentletId, widgetContentletInode));
+            }
         }
         return result;
     }
 
     /**
-     * Returns a two-element array: [path, identifier] for the first file-typed field in the
-     * contentlet, or [null, null] if none is found.
+     * Returns a {@link VtlFileRefView} (path + identifier) for the file backing a FILE-type widget,
+     * or {@link Optional#empty()} if the contentlet has no file-typed field resolving to a file
+     * asset.
+     *
+     * <p>A widget content type may declare more than one file field (e.g. a banner image alongside
+     * the Velocity template), so the field order is not a reliable signal. This prefers the first
+     * field whose file asset is a {@code .vtl}; only when no field resolves to a {@code .vtl} does
+     * it fall back to the first file asset found.</p>
      */
-    private String[] resolveWidgetFileRef(final Contentlet contentlet, final ContentType ct,
-            final Host host, final User user) {
+    private Optional<VtlFileRefView> resolveWidgetFileRef(final Contentlet contentlet,
+            final ContentType ct, final Host host, final User user) {
         // Try FileField first, then BinaryField
         final List<Field> fileFields = new ArrayList<>(ct.fields(FileField.class));
         fileFields.addAll(ct.fields(BinaryField.class));
 
+        FileAsset firstAsset = null;
         for (final Field field : fileFields) {
             try {
                 final Object val = contentlet.get(field.variable());
@@ -1444,9 +1454,13 @@ public class PageResourceHelper implements Serializable {
                         .getOrNull();
                 if (fileCon != null && APILocator.getFileAssetAPI().isFileAsset(fileCon)) {
                     final FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(fileCon);
-                    final String path = buildHostQualifiedPath(
-                            fa.getPath() + fa.getFileName(), host);
-                    return new String[]{path, fa.getIdentifier()};
+                    if (UtilMethods.isSet(fa.getFileName())
+                            && fa.getFileName().endsWith(Constants.VELOCITY_FILE_EXTENSION)) {
+                        return Optional.of(toVtlFileRef(fa, host));
+                    }
+                    if (firstAsset == null) {
+                        firstAsset = fa;
+                    }
                 }
             } catch (final Exception e) {
                 Logger.debug(this, "Could not resolve file field '" + field.variable()
@@ -1454,7 +1468,13 @@ public class PageResourceHelper implements Serializable {
                         + e.getMessage());
             }
         }
-        return new String[]{null, null};
+        return Optional.ofNullable(firstAsset).map(fa -> toVtlFileRef(fa, host));
+    }
+
+    private VtlFileRefView toVtlFileRef(final FileAsset fa, final Host host) {
+        return new VtlFileRefView(
+                buildHostQualifiedPath(fa.getPath() + fa.getFileName(), host),
+                fa.getIdentifier());
     }
 
     /**

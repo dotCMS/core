@@ -30,6 +30,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonInclude(Include.NON_NULL)
 public class WidgetSourceView {
 
+    /** Where a widget's Velocity code lives. Serialized as its {@code name()}. */
+    public enum Source { FILE, CODE }
+
     @Schema(description = "Velocity variable name of the Widget Content Type")
     private final String contentTypeVar;
 
@@ -70,7 +73,7 @@ public class WidgetSourceView {
         this.title           = title;
         this.contentletId    = contentletId;
         this.contentletInode = contentletInode;
-        this.source          = "FILE";
+        this.source          = Source.FILE.name();
         this.path            = path;
         this.identifier      = identifier;
     }
@@ -85,7 +88,7 @@ public class WidgetSourceView {
         this.title           = title;
         this.contentletId    = contentletId;
         this.contentletInode = contentletInode;
-        this.source          = "CODE";
+        this.source          = Source.CODE.name();
         this.path            = null;
         this.identifier      = null;
     }

@@ -12480,7 +12480,7 @@ paths:
       description: |-
         Returns references only (path + identifier, no file content, no container code) mapping a rendered page to its source files. The page is identified by a URI path segment, exactly like `GET /api/v1/page/render/{uri}`.
 
-        The URI may be a plain path (e.g. `index`, `about/team`) or a host-qualified path (e.g. `//demo.dotcms.com/index`) to address a specific site without supplying `host_id`.
+        The URI must be a plain path (e.g. `index`, `about/team`). To address a specific site, use the `host_id` query parameter.
 
         Includes the page reference, theme VTL files, all containers referenced by the template (only content types actually placed under the applied persona/variant are included), and widget contentlets placed on the page.
 

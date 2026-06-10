@@ -193,9 +193,9 @@ public class PageResource {
      * No file content, rendered HTML, or container code is included — only identifiers and paths.
      *
      * <p>The URI is a path segment, mirroring {@code /render/{uri}}: plain URIs such as
-     * {@code index} or {@code about/team} are accepted, and the host-qualified form
-     * {@code //hostname/path} is also supported when the caller wants to address a specific site
-     * without using {@code host_id}.
+     * {@code index} or {@code about/team} are accepted. To address a specific site, use the
+     * {@code host_id} query parameter — the host-qualified {@code //hostname/path} form is not
+     * supported because dotCMS's NormalizationFilter rejects URIs that contain {@code //}.
      *
      * <p>To retrieve individual asset content, use the following endpoints:
      * <ul>
@@ -207,8 +207,8 @@ public class PageResource {
      * @param request     The {@link HttpServletRequest} object.
      * @param response    The {@link HttpServletResponse} object.
      * @param uri         Required. Page URI path segment (e.g. {@code index} or {@code about/team}).
-     *                    The host-qualified form {@code //hostname/path} is also accepted.
-     * @param hostId      Optional. Explicit host identifier (overridden by qualified path hostname).
+     *                    Must be a plain path without an embedded host.
+     * @param hostId      Optional. Explicit host identifier; defaults to the default site.
      * @param languageId  Optional. Language identifier; defaults to the default language.
      * @param personaId   Optional. Persona contentlet identifier for personalization lookup.
      * @param variantName Optional. Variant name; defaults to {@code DEFAULT}.
@@ -223,9 +223,8 @@ public class PageResource {
             description = "Returns references only (path + identifier, no file content, no container code) "
                     + "mapping a rendered page to its source files. The page is identified by a URI "
                     + "path segment, exactly like `GET /api/v1/page/render/{uri}`.\n\n"
-                    + "The URI may be a plain path (e.g. `index`, `about/team`) or a host-qualified "
-                    + "path (e.g. `//demo.dotcms.com/index`) to address a specific site without "
-                    + "supplying `host_id`.\n\n"
+                    + "The URI must be a plain path (e.g. `index`, `about/team`). To address a "
+                    + "specific site, use the `host_id` query parameter.\n\n"
                     + "Includes the page reference, theme VTL files, all containers referenced by the "
                     + "template (only content types actually placed under the applied persona/variant "
                     + "are included), and widget contentlets placed on the page.\n\n"
@@ -280,9 +279,17 @@ public class PageResource {
         // Host resolution is via host_id query param or the default host — the //host/uri
         // form is not supported because dotCMS's NormalizationFilter rejects URIs that
         // contain "//" before they reach this resource.
-        final String path = (UtilMethods.isSet(uri) && !uri.startsWith("/"))
-                ? "/" + uri
-                : (UtilMethods.isSet(uri) ? uri : "/");
+        final String path = !UtilMethods.isSet(uri)
+                ? "/"
+                : (uri.startsWith("/") ? uri : "/" + uri);
+
+        // Reject an unknown mode explicitly: PageMode.get() silently falls back to PREVIEW_MODE,
+        // which would serve a page in a mode the caller never asked for with no indication.
+        if (UtilMethods.isSet(modeParam)
+                && Arrays.stream(PageMode.values()).noneMatch(m -> m.name().equalsIgnoreCase(modeParam))) {
+            throw new BadRequestException("Invalid mode '" + modeParam
+                    + "'. Valid values: EDIT_MODE, PREVIEW_MODE, LIVE");
+        }
 
         Logger.debug(this, () -> String.format(
                 "getRenderSources: uri=%s path=%s host_id=%s language_id=%s persona=%s variant=%s mode=%s",
