@@ -363,6 +363,63 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
     }
 
     // -----------------------------------------------------------------------
+    // Invalid version query param → 400 (only 'working' and 'live' accepted)
+    // -----------------------------------------------------------------------
+
+    /**
+     * A {@code version} value other than {@code working} or {@code live} must be rejected with
+     * 400 instead of silently selecting the working version.
+     */
+    @Test
+    public void testGetByPath_invalidVersion_returns400() throws Exception {
+        final File f = FileUtil.createTemporaryFile("version-test", ".txt",
+                RandomStringUtils.random(64));
+        new FileAssetDataGen(folder, f).languageId(defaultLanguage.getId()).nextPersisted();
+
+        final String path = assetPath(f.getName());
+        final WebAssetResourceV2 resource = createResource(APILocator.systemUser());
+
+        Exception thrown = null;
+        try {
+            resource.getByPath(mockRequest(), new MockHttpResponse(),
+                    path, null, "lvie");
+        } catch (BadRequestException e) {
+            thrown = e;
+        }
+
+        assertNotNull("Expected BadRequestException for invalid version value", thrown);
+        assertTrue(thrown.getMessage().contains("lvie"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Missing Content-Disposition on the file part → 400 (not NPE/500)
+    // -----------------------------------------------------------------------
+
+    /**
+     * A multipart where the {@code file} stream is present but the
+     * {@link org.glassfish.jersey.media.multipart.FormDataContentDisposition} is null (malformed
+     * multipart) must be rejected with 400 — never reach the helper and NPE into a 500.
+     */
+    @Test
+    public void testSave_missingContentDisposition_returns400() throws Exception {
+        final File f = FileUtil.createTemporaryFile("no-disposition", ".txt",
+                RandomStringUtils.random(64));
+        final String path = assetPath(f.getName());
+        final WebAssetResourceV2 resource = createResource(APILocator.systemUser());
+
+        Exception thrown = null;
+        try (final InputStream is = Files.newInputStream(f.toPath())) {
+            resource.save(mockRequest(), new MockHttpResponse(),
+                    is, null, path, null);
+        } catch (BadRequestException e) {
+            thrown = e;
+        }
+
+        assertNotNull("Expected BadRequestException for missing Content-Disposition", thrown);
+        assertTrue(thrown.getMessage().contains("Content-Disposition"));
+    }
+
+    // -----------------------------------------------------------------------
     // Blank language defaults to site default
     // -----------------------------------------------------------------------
 

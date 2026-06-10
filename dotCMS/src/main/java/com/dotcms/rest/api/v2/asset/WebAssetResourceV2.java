@@ -154,7 +154,8 @@ public class WebAssetResourceV2 {
                      description = "Raw file bytes streamed with resolved MIME type and Content-Disposition header",
                      content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)),
         @ApiResponse(responseCode = "400",
-                     description = "Bad Request — path is missing, ambiguous, or points at a folder",
+                     description = "Bad Request — path is missing, ambiguous, points at a folder, " +
+                                   "or unknown language/version value",
                      content = @Content(mediaType = MediaType.APPLICATION_JSON)),
         @ApiResponse(responseCode = "401",
                      description = "Unauthorized — authentication required",
@@ -201,7 +202,7 @@ public class WebAssetResourceV2 {
                 "User [%s] reading asset by path [%s] lang=[%s] version=[%s]",
                 user.getUserId(), path, language, version));
 
-        final boolean live = "live".equalsIgnoreCase(version);
+        final boolean live = resolveVersionParam(version);
         final String resolvedLang = resolveLanguageParam(language);
         final FileAsset fileAsset;
         try {
@@ -247,7 +248,7 @@ public class WebAssetResourceV2 {
                      description = "Raw file bytes streamed with resolved MIME type and Content-Disposition header",
                      content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)),
         @ApiResponse(responseCode = "400",
-                     description = "Bad Request — unknown language tag",
+                     description = "Bad Request — unknown language tag or version value",
                      content = @Content(mediaType = MediaType.APPLICATION_JSON)),
         @ApiResponse(responseCode = "401",
                      description = "Unauthorized — authentication required",
@@ -291,7 +292,7 @@ public class WebAssetResourceV2 {
                 "User [%s] reading asset by identifier [%s] lang=[%s] version=[%s]",
                 user.getUserId(), identifier, language, version));
 
-        final boolean live = "live".equalsIgnoreCase(version);
+        final boolean live = resolveVersionParam(version);
         final long languageId = resolveLanguageId(language);
 
         // Resolve the contentlet — throws NotFoundInDbException (→ 404) when absent.
@@ -525,6 +526,11 @@ public class WebAssetResourceV2 {
             throw new BadRequestException(
                     "Missing 'file' part — a multipart field named 'file' with binary content is required.");
         }
+        if (contentDisposition == null || !UtilMethods.isSet(contentDisposition.getFileName())) {
+            throw new BadRequestException(
+                    "Malformed 'file' part — the multipart field must carry a Content-Disposition "
+                            + "header with a filename.");
+        }
 
         // Zero-byte guard: wrap in a BufferedInputStream so we can peek without consuming.
         // mark(1) / read(1) / reset() tells us whether the stream has any bytes.
@@ -653,6 +659,23 @@ public class WebAssetResourceV2 {
     }
 
     /**
+     * Resolves the {@code version} query parameter. Blank or {@code working} selects the working
+     * version; {@code live} selects the published version; anything else is rejected with 400 so
+     * client typos (e.g. {@code version=lvie}) can't silently select the wrong version.
+     */
+    private boolean resolveVersionParam(final String version) {
+        if (!UtilMethods.isSet(version) || "working".equalsIgnoreCase(version)) {
+            return false;
+        }
+        if ("live".equalsIgnoreCase(version)) {
+            return true;
+        }
+        throw new BadRequestException(String.format(
+                "Unknown version [%s] — accepted values are 'working' (default) or 'live'.",
+                version));
+    }
+
+    /**
      * Looks up a contentlet by identifier, version, and language.
      * Throws {@link NotFoundInDbException} (→ 404) when not found.
      */
@@ -663,10 +686,10 @@ public class WebAssetResourceV2 {
             final User user) throws DotDataException, DotSecurityException {
 
         // Use system user for the lookup — permission check is explicit below.
-        Contentlet contentlet = Try.of(() ->
-                contentletAPI.findContentletByIdentifier(
-                        identifier, live, languageId, APILocator.systemUser(), false))
-                .getOrNull();
+        // Let DotDataException/DotSecurityException propagate to their mappers so real backend
+        // failures don't get masked as 404; only a null return means not-found.
+        final Contentlet contentlet = contentletAPI.findContentletByIdentifier(
+                identifier, live, languageId, APILocator.systemUser(), false);
 
         if (contentlet == null) {
             throw new NotFoundInDbException(
@@ -703,7 +726,8 @@ public class WebAssetResourceV2 {
         };
 
         return Response.ok(streamingOutput, mimeType)
-                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                .header("Content-Disposition",
+                        "attachment; filename=\"" + UtilMethods.encodeURL(file.getName()) + "\"")
                 .header("Content-Length", file.length())
                 .build();
     }

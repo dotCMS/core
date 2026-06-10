@@ -21340,7 +21340,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad Request — path is missing, ambiguous, or points at a folder"
+          description: "Bad Request — path is missing, ambiguous, points at a folder,\
+            \ or unknown language/version value"
         "401":
           content:
             application/json: {}
@@ -21483,7 +21484,7 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad Request — unknown language tag
+          description: Bad Request — unknown language tag or version value
         "401":
           content:
             application/json: {}
