@@ -25,6 +25,60 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilde
 import java.time.Duration;
 import java.util.Optional;
 
+/**
+ * {@link ModelProviderStrategy} for Amazon Bedrock, backed by LangChain4J's Bedrock modules.
+ *
+ * <p><b>Configuration fields</b> (from {@link ProviderConfig}):
+ * <ul>
+ *   <li>{@code region} – AWS region, e.g. {@code us-east-1} (required)</li>
+ *   <li>{@code model} – Bedrock model ID or inference-profile ID (required)</li>
+ *   <li>{@code accessKeyId} / {@code secretAccessKey} – static credentials (optional)</li>
+ *   <li>{@code temperature} / {@code maxTokens} – chat request parameters (optional)</li>
+ *   <li>{@code timeout} – per-attempt request timeout in seconds, applied as {@code apiCallAttemptTimeout} (optional)</li>
+ *   <li>{@code maxRetries} – retry attempts, applied to the SDK retry strategy as
+ *       {@code maxAttempts = max(1, maxRetries + 1)} (optional; not applied to embedding models)</li>
+ *   <li>{@code embeddingInputType} – Cohere embeddings only (optional)</li>
+ * </ul>
+ *
+ * <p><b>Credentials.</b> {@code accessKeyId} and {@code secretAccessKey} must be supplied together
+ * (both set) or both omitted — supplying only one fails fast with an {@link IllegalArgumentException}.
+ * When both are absent, the AWS {@code DefaultCredentialsProvider} chain is used, which covers
+ * environment variables, system properties, profile files, and the container/EKS IRSA web-identity
+ * provider — the recommended path for in-cluster deployments.
+ *
+ * <p><b>Model ID forms.</b> Bedrock accepts two distinct forms depending on the model:
+ * <ul>
+ *   <li><b>Inference-profile-prefixed</b> ({@code us.}, {@code eu.}, {@code apac.}) is
+ *       <em>required</em> for models offered only via cross-region inference profiles.
+ *       Example: {@code us.deepseek.r1-v1:0}. The bare ID {@code deepseek.r1-v1:0} is rejected.</li>
+ *   <li><b>Bare on-demand IDs</b> for models with on-demand throughput.
+ *       Examples: {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}.
+ *       These have no inference profile; do not add a region prefix.</li>
+ * </ul>
+ *
+ * <p><b>Common Bedrock errors and their meaning:</b>
+ * <ul>
+ *   <li>{@code ValidationException: ... on-demand throughput isn't supported} – the model is
+ *       inference-profile-only; use the profile-prefixed ID (e.g. {@code us.deepseek.r1-v1:0}).</li>
+ *   <li>{@code ValidationException: This model doesn't support the stopSequences field} – a
+ *       limitation of {@code langchain4j-bedrock} versions before 1.16.0, which unconditionally send
+ *       {@code stopSequences} in the Converse request. It affects the gpt-oss family
+ *       ({@code openai.gpt-oss-120b-1:0}, {@code openai.gpt-oss-20b-1:0}) for both chat and streaming,
+ *       independent of request parameters. Resolved by upgrading langchain4j-bedrock to 1.16.0+.</li>
+ *   <li>{@code AccessDeniedException} – model access has not been enabled for the account in the
+ *       Bedrock model-access console.</li>
+ * </ul>
+ *
+ * <p><b>Embeddings.</b> Supported families are {@code cohere.*}
+ * ({@link BedrockCohereEmbeddingModel}, honoring {@code embeddingInputType}) and
+ * {@code amazon.titan-*} ({@link BedrockTitanEmbeddingModel}); family matching is case-insensitive.
+ * Any other family throws an {@link IllegalArgumentException}.
+ * Note: {@code timeout} and {@code maxRetries} are not applied to embedding models — langchain4j
+ * constructs the underlying Bedrock client internally and does not expose override configuration.
+ *
+ * <p><b>Images.</b> Image generation is not supported for Bedrock via this integration;
+ * {@link #buildImageModel(ProviderConfig, String)} throws {@link UnsupportedOperationException}.
+ */
 class BedrockModelProviderStrategy implements ModelProviderStrategy {
 
     @Override
@@ -147,7 +201,7 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
      * matching the per-request semantics of other providers (OpenAI, Azure). Each attempt gets the
      * full timeout budget; {@code maxRetries} controls how many additional attempts are made.
      * {@code maxRetries} maps to the non-deprecated retry API
-     * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code maxRetries + 1}
+     * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code max(1, maxRetries + 1)}
      * (one initial call plus the configured number of retries), clamped to a minimum of 1.
      */
     private static Optional<ClientOverrideConfiguration> overrideConfiguration(final ProviderConfig config) {
