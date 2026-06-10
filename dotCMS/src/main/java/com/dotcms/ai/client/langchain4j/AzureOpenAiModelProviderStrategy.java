@@ -1,5 +1,6 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.dotmarketing.util.Logger;
 import com.openai.azure.AzureOpenAIServiceVersion;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
@@ -85,6 +86,10 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
         if (config.endpoint().contains("services.ai.azure.com")) {
+            if (config.apiVersion() != null) {
+                Logger.warn(AzureOpenAiModelProviderStrategy.class,
+                        "apiVersion is not used for Azure AI Foundry endpoints and will be ignored");
+            }
             final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
                     .baseUrl(config.endpoint())
                     .apiKey(config.apiKey())
