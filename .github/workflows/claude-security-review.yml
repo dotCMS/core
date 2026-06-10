@@ -62,6 +62,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // On the very first push of a new PR (opened), always run Claude
+            // regardless of Semgrep — there can't be meaningful Semgrep coverage yet.
+            if (context.payload.action === 'opened') {
+              core.info('PR just opened — bypassing Semgrep check, running Claude unconditionally.');
+              core.setOutput('found', 'false');
+              return;
+            }
+
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
             const headSha = pr.head.sha;
