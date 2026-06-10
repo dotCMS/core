@@ -6,9 +6,15 @@ import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
+import {
+    DotContentTypeService,
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
@@ -30,8 +36,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
-    siteService = inject(SiteService);
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    readonly #globalStore = inject(GlobalStore);
+    private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
     canAccessPortlet: boolean;
@@ -46,15 +52,14 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 this.reloadIframePortlet(portletId);
             }
         });
-        /**
-         *  skip first - to avoid subscription when page loads due login user subscription:
-         *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
-         */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            if (this.url.getValue() !== '') {
-                this.reloadIframePortlet();
-            }
-        });
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                if (this.url.getValue() !== '') {
+                    this.reloadIframePortlet();
+                }
+            });
 
         this.route.data
             .pipe(
@@ -168,8 +173,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         with the function refreshFakeJax defined in view_contentlets_js_inc.jsp.
      */
     private subscribeToAIGeneration(): void {
-        this.dotcmsEventsService
-            .subscribeTo('AI_CONTENT_PROMPT')
+        this.dotEventsSocket
+            .on<void>('AI_CONTENT_PROMPT')
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 this.dotIframeService.run({ name: 'refreshFakeJax' });
