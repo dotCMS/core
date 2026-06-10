@@ -718,14 +718,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
-        if (multiTrees.isEmpty() && Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
+        if (multiTrees.isEmpty()) {
             final Set<String> existing = this.getOriginalContentlets(
                     pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
             if (!existing.isEmpty()) {
-                throw new DotDataException(String.format(
-                        "Save rejected: empty payload would delete %d existing contentlet(s) from page '%s'. " +
-                        "The page may have been modified by another user — please refresh and try again.",
-                        existing.size(), pageId));
+                Logger.warn(MultiTreeAPIImpl.class, String.format(
+                        "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
+                        "(personalization='%s', variantId='%s'). This may indicate a stale edit session.",
+                        existing.size(), pageId, personalization, variantId));
+                if (Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
+                    throw new DotDataException(String.format(
+                            "Save rejected: empty payload would delete %d existing contentlet(s) from page '%s'. " +
+                            "The page may have been modified by another user — please refresh and try again.",
+                            existing.size(), pageId));
+                }
             }
         }
 
