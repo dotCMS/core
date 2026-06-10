@@ -4,10 +4,13 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,20 +58,40 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotmarketing.beans.Source;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
@@ -911,6 +934,577 @@ public class PageResourceHelper implements Serializable {
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    // -----------------------------------------------------------------------
+    // _render-sources support
+    // -----------------------------------------------------------------------
+
+    /**
+     * Builds a {@link PageRenderSourcesView} for the given page path. All parameters except
+     * {@code path} are optional; see individual parameter docs for resolution rules.
+     *
+     * @param path        Required. Qualified ({@code //host/uri}) or plain ({@code /uri}) page path.
+     * @param hostId      Optional. Explicit host identifier (ignored when {@code path} is qualified).
+     * @param languageId  Optional. Language identifier; defaults to the default language.
+     * @param personaId   Optional. Persona contentlet identifier whose key-tag is used for
+     *                    personalization lookup (maps to WebKeys.CMS_PERSONA_PARAMETER semantics).
+     * @param variantName Optional. Variant name; defaults to {@link VariantAPI#DEFAULT_VARIANT}.
+     * @param pageMode    Optional string that maps to a {@link PageMode}; defaults to PREVIEW_MODE.
+     * @param user        The user performing the request.
+     * @param renderedAPI The {@link HTMLPageAssetRenderedAPI} used to obtain the {@link PageView}.
+     * @return A fully-populated {@link PageRenderSourcesView}.
+     * @throws DotDataException     Data access error.
+     * @throws DotSecurityException User does not have READ permission on the page.
+     */
+    public PageRenderSourcesView getRenderSources(
+            final String path,
+            final String hostId,
+            final String languageId,
+            final String personaId,
+            final String variantName,
+            final String pageMode,
+            final User user,
+            final HTMLPageAssetRenderedAPI renderedAPI)
+            throws DotDataException, DotSecurityException {
+
+        // ---- 1. Resolve host -----------------------------------------------
+        final Host host = resolveHostForRenderSources(path, hostId, user);
+
+        // ---- 2. Resolve language -------------------------------------------
+        final Language language = resolveLanguageForRenderSources(languageId);
+
+        // ---- 3. Resolve URI (strip host qualifier if present) --------------
+        final String uri = extractUriFromPath(path);
+
+        // ---- 4. Resolve PageMode -------------------------------------------
+        final PageMode mode = UtilMethods.isSet(pageMode)
+                ? PageMode.get(pageMode)
+                : PageMode.PREVIEW_MODE;
+
+        // ---- 5. Build mock request — needed for both page resolution and getPageMetadata ----
+        // Host resolution inside renderedAPI.getHtmlPageAsset goes through
+        // HostWebAPIImpl.getCurrentHostFromRequest which checks, in priority order:
+        //   1. getParameter("host_id") when user.isBackendUser()  → most reliable
+        //   2. getParameter/getAttribute(Host.HOST_VELOCITY_VAR_NAME)
+        //   3. getAttribute(WebKeys.CURRENT_HOST)
+        //   4. resolveHostName(request.getServerName())           → fragile fallback
+        //
+        // FakeHttpRequest parses query params from the URI string, so embedding
+        // "?host_id=<identifier>" guarantees option-1 fires for backend users and
+        // completely prevents the fragile serverName fallback (option-4) from choosing
+        // the wrong site when processing URL-mapped pages.
+        // Options 2 and 3 are set as belt-and-suspenders for non-backend (frontend) users
+        // who skip the host_id branch (line 151 HostWebAPIImpl: requires isBackendUser()).
+        final String uriWithHostParam = uri + "?host_id=" + host.getIdentifier();
+        final javax.servlet.http.HttpServletRequest mockReq =
+                new MockHeaderRequest(
+                        new MockSessionRequest(
+                                new MockAttributeRequest(
+                                        new FakeHttpRequest(host.getHostname(),
+                                                uriWithHostParam).request())));
+        final javax.servlet.http.HttpServletResponse mockResp = new MockHttpResponse();
+        // Belt-and-suspenders: attribute fallbacks for non-backend users (options 2 & 3)
+        mockReq.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+        mockReq.setAttribute(Host.HOST_VELOCITY_VAR_NAME, host.getIdentifier());
+        mockReq.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(language.getId()));
+
+        // ---- 6. Resolve page via renderedAPI.getHtmlPageAsset ---------------
+        // This mirrors the render endpoint exactly: it handles both direct page paths
+        // AND URL-mapped paths (e.g. /blog/post/{urlTitle} → detail page) through
+        // the same HTMLPageAssetRenderedAPIImpl.findByURLMap code path.
+        // Calling processURLMap directly from the helper would not work because
+        // findByURLMap relies on request attributes (host, language) set on the
+        // mock request; routing through getHtmlPageAsset ensures the same resolution
+        // logic is applied with the properly initialised request context.
+        final HTMLPageAssetRenderedAPIImpl.HTMLPageUrl htmlPageUrl = renderedAPI.getHtmlPageAsset(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(uri)
+                        .setPageMode(mode)
+                        .build(),
+                mockReq);
+
+        final IHTMLPage page = htmlPageUrl.getHTMLPage();
+        final URLMapInfo urlMapInfo = htmlPageUrl.getUrlMapInfo();
+
+        // ---- 7. Check READ permission -------------------------------------
+        final boolean canRead = permissionAPI.doesUserHavePermission(
+                page, PermissionAPI.PERMISSION_READ, user, mode.respectAnonPerms);
+        if (!canRead) {
+            throw new DotSecurityException(
+                    "User " + user.getUserId() + " does not have READ permission on page: " + uri);
+        }
+
+        // ---- 8. Obtain PageView via getPageMetadata -----------------------
+        // Use the detail page URI for rendering (for URL-mapped pages this is the
+        // configured detail page URI, not the original mapped URI).
+        final String pageUri = page.getURI();
+        // Same host-determinism strategy as mockReq: embed host_id as query param so
+        // HostWebAPIImpl.getCurrentHostFromRequest option-1 fires for backend users.
+        final String pageUriWithHostParam = pageUri + "?host_id=" + host.getIdentifier();
+        final javax.servlet.http.HttpServletRequest metaReq =
+                new MockHeaderRequest(
+                        new MockSessionRequest(
+                                new MockAttributeRequest(
+                                        new FakeHttpRequest(host.getHostname(),
+                                                pageUriWithHostParam).request())));
+        metaReq.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+        metaReq.setAttribute(Host.HOST_VELOCITY_VAR_NAME, host.getIdentifier());
+        metaReq.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(language.getId()));
+
+        final PageView pageView = renderedAPI.getPageMetadata(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(pageUri)
+                        .setPageMode(mode)
+                        .setParseJSON(true)
+                        .build(),
+                metaReq, mockResp);
+
+        // ---- 9. Resolve personalization key --------------------------------
+        final String personalization = resolvePersonalization(personaId, user);
+
+        // ---- 10. Resolve variant -------------------------------------------
+        final String resolvedVariant = UtilMethods.isSet(variantName)
+                ? variantName
+                : VariantAPI.DEFAULT_VARIANT.name();
+
+        // ---- 11. Build onPage lookup (containerId+contentTypeVar → true) ---
+        final Set<String> onPageKeys = buildOnPageKeys(
+                page.getIdentifier(), personalization, resolvedVariant, user);
+
+        // ---- 12. Theme -----------------------------------------------------
+        final Template template = templateAPI.findWorkingTemplate(
+                page.getTemplateId(), user, false);
+        final ThemeSourceView themeView = buildThemeView(template, host, user);
+
+        // ---- 13. Containers ------------------------------------------------
+        final Collection<? extends ContainerRaw> containerRaws = pageView.getContainers();
+        final Map<String, ContainerSourceView> containerViews =
+                buildContainerViews(containerRaws, onPageKeys, host);
+
+        // ---- 14. Widgets ---------------------------------------------------
+        final List<WidgetSourceView> widgetViews =
+                buildWidgetViews(page.getIdentifier(), personalization, resolvedVariant,
+                        language.getId(), mode.showLive, host, user);
+
+        // ---- 15. URL content map view (only for URL-mapped pages) ----------
+        final UrlContentMapView urlContentMapView = urlMapInfo != null
+                ? buildUrlContentMapView(urlMapInfo, language.getId(), resolvedVariant,
+                        mode.showLive, user)
+                : null;
+
+        // ---- 16. Assemble --------------------------------------------------
+        // page.uri = the originally requested URI (host-qualified), not the detail page URI.
+        // When resolved via URL map, page.identifier is the detail page identifier.
+        final String responseUri = urlMapInfo != null
+                ? buildHostQualifiedPath(uri, host)
+                : buildHostQualifiedPath(page.getURI(), host);
+        final PageSourceRefView pageRef = new PageSourceRefView(
+                page.getIdentifier(),
+                responseUri,
+                language.getId());
+
+        return new PageRenderSourcesView(pageRef, themeView, containerViews, widgetViews,
+                urlContentMapView);
+    }
+
+    // -----------------------------------------------------------------------
+    // private helpers
+    // -----------------------------------------------------------------------
+
+    private Host resolveHostForRenderSources(final String path, final String hostId,
+            final User user) throws DotDataException, DotSecurityException {
+        // Host resolution: host_id query param → default host.
+        // The //hostname/path form is not supported — dotCMS's NormalizationFilter
+        // rejects any URI containing "//" before it reaches this code.
+        if (UtilMethods.isSet(hostId)) {
+            final Host h = hostAPI.find(hostId, user, false);
+            if (h == null || !UtilMethods.isSet(h.getIdentifier())) {
+                throw new com.dotmarketing.exception.DoesNotExistException(
+                        "Host not found for id: " + hostId);
+            }
+            return h;
+        }
+        return hostAPI.findDefaultHost(user, false);
+    }
+
+    private Language resolveLanguageForRenderSources(final String languageId) {
+        if (UtilMethods.isSet(languageId)) {
+            final Language lang = languageAPI.getLanguage(languageId);
+            if (lang != null && lang.getId() > 0) {
+                return lang;
+            }
+        }
+        return languageAPI.getDefaultLanguage();
+    }
+
+    private String extractUriFromPath(final String path) {
+        return UtilMethods.isSet(path) ? path : "/";
+    }
+
+    private String resolvePersonalization(final String personaId, final User user) {
+        if (!UtilMethods.isSet(personaId)) {
+            return MultiTree.DOT_PERSONALIZATION_DEFAULT;
+        }
+        try {
+            final Contentlet personaContentlet =
+                    contentletAPI.findContentletByIdentifierAnyLanguage(personaId);
+            if (personaContentlet != null) {
+                final Persona persona = APILocator.getPersonaAPI()
+                        .fromContentlet(personaContentlet);
+                if (persona != null && UtilMethods.isSet(persona.getKeyTag())) {
+                    return Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON
+                            + persona.getKeyTag();
+                }
+            }
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Could not resolve persona for id '" + personaId + "': "
+                    + e.getMessage());
+        }
+        return MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    }
+
+    /**
+     * Builds a set of {@code "containerId|contentTypeVar"} keys for contentlets that are currently
+     * placed on the page under the given personalization and variant.
+     */
+    private Set<String> buildOnPageKeys(final String pageId, final String personalization,
+            final String variant, final User user) {
+        final Set<String> keys = new HashSet<>();
+        try {
+            final List<MultiTree> trees = multiTreeAPI.getMultiTreesByPersonalizedPage(
+                    pageId, personalization, variant);
+            for (final MultiTree mt : trees) {
+                final String contentletId = mt.getContentlet();
+                if (!UtilMethods.isSet(contentletId)) {
+                    continue;
+                }
+                final Contentlet c = Try.of(
+                        () -> contentletAPI.findContentletByIdentifierAnyLanguage(contentletId))
+                        .getOrNull();
+                if (c == null) {
+                    continue;
+                }
+                final ContentType ct = Try.of(c::getContentType).getOrNull();
+                if (ct == null) {
+                    continue;
+                }
+                // Normalize containerId: FILE containers store a path in MultiTree
+                String rawContainer = mt.getContainer();
+                if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(rawContainer)) {
+                    rawContainer = FileAssetContainerUtil.getInstance()
+                            .getContainerIdFromPath(rawContainer);
+                }
+                keys.add(rawContainer + "|" + ct.variable());
+            }
+        } catch (final DotDataException e) {
+            Logger.warn(this, "Could not build onPage keys for page '" + pageId + "': "
+                    + e.getMessage());
+        }
+        return keys;
+    }
+
+    private ThemeSourceView buildThemeView(final Template template, final Host host,
+            final User user) {
+        if (template == null || !UtilMethods.isSet(template.getTheme())) {
+            return null;
+        }
+        try {
+            final Theme theme = APILocator.getThemeAPI()
+                    .findThemeById(template.getTheme(), user, false);
+            if (theme == null || !UtilMethods.isSet(theme.getIdentifier())) {
+                return null;
+            }
+            final String rawPath = theme.getPath();
+            final String folderPath = buildHostQualifiedPath(rawPath, host);
+
+            final List<FileAsset> assets = APILocator.getFileAssetAPI()
+                    .findFileAssetsByFolder(theme, null, false, user, false);
+
+            final List<VtlFileRefView> vtls = assets.stream()
+                    .filter(f -> UtilMethods.isSet(f.getFileName())
+                            && f.getFileName().endsWith(".vtl"))
+                    .map(f -> new VtlFileRefView(
+                            buildHostQualifiedPath(f.getPath() + f.getFileName(), host),
+                            f.getIdentifier()))
+                    .collect(Collectors.toList());
+
+            return new ThemeSourceView(theme.getIdentifier(), theme.getName(), folderPath, vtls);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not build theme view: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Returns a {@link LinkedHashMap} keyed by the container reference (UUID for DB containers,
+     * host-qualified path for FILE containers).  Each value is a {@link ContainerSourceView}
+     * whose {@code contentTypes} list contains only the types that are actually placed on the page
+     * under the resolved persona and variant — types that are allowed but not placed are omitted.
+     * Containers themselves always appear even if their filtered list is empty.
+     */
+    private Map<String, ContainerSourceView> buildContainerViews(
+            final Collection<? extends ContainerRaw> containerRaws,
+            final Set<String> onPageKeys,
+            final Host host) {
+        if (containerRaws == null) {
+            return Collections.emptyMap();
+        }
+        final Map<String, ContainerSourceView> result = new LinkedHashMap<>();
+        for (final ContainerRaw cr : containerRaws) {
+            final Container c = cr.getContainer();
+            if (c instanceof FileAssetContainer) {
+                final FileAssetContainer fac = (FileAssetContainer) c;
+                final String key = FileAssetContainerUtil.getInstance().getFullPath(fac);
+                result.put(key, buildFileContainerView(fac, cr, onPageKeys, host));
+            } else {
+                result.put(c.getIdentifier(), buildDbContainerView(c, cr, onPageKeys));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Builds a DB container value: only content types that appear in {@code onPageKeys} are
+     * included.
+     */
+    private ContainerSourceView buildDbContainerView(final Container c, final ContainerRaw cr,
+            final Set<String> onPageKeys) {
+        final String containerId = c.getIdentifier();
+        final List<ContentTypeEntryView> contentTypes = cr.getContainerStructures().stream()
+                .map(cs -> {
+                    final String var = cs.getContentTypeVar();
+                    if (!UtilMethods.isSet(var)) {
+                        return null;
+                    }
+                    // Include only if placed on page
+                    if (!onPageKeys.contains(containerId + "|" + var)) {
+                        return null;
+                    }
+                    return new ContentTypeEntryView(var);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new ContainerSourceView(Source.DB.name(), contentTypes);
+    }
+
+    /**
+     * Builds a FILE container value: only content types that appear in {@code onPageKeys} are
+     * included.
+     *
+     * <p>The canonical content type variable name comes from {@link ContainerRaw#getContainerStructures()}
+     * (which resolves the real {@code velocity_var_name} from the DB, regardless of VTL filename
+     * casing). The path and identifier of the backing VTL file are resolved by matching each
+     * content type variable case-insensitively against the file assets returned by
+     * {@link FileAssetContainer#getContainerStructuresAssets()}.</p>
+     */
+    private ContainerSourceView buildFileContainerView(final FileAssetContainer fac,
+            final ContainerRaw cr, final Set<String> onPageKeys, final Host host) {
+        final String containerId = fac.getIdentifier();
+
+        // Build a case-insensitive lookup: lowercase(contentTypeVar) → FileAsset
+        // The VTL filenames may differ in case from the content type's velocity_var_name
+        // (e.g. "activity.vtl" vs ContentType variable "Activity").
+        final Map<String, FileAsset> vtlByVarLower = new HashMap<>();
+        for (final FileAsset fa : fac.getContainerStructuresAssets()) {
+            final String fileName = fa.getFileName();
+            if (UtilMethods.isSet(fileName) && fileName.endsWith(".vtl")) {
+                // strip .vtl → raw name from the file, then lowercase for lookup
+                final String rawVar = fileName.substring(0, fileName.length() - 4);
+                vtlByVarLower.put(rawVar.toLowerCase(), fa);
+            }
+        }
+
+        // Iterate ContainerStructures to get canonical (properly-cased) variable names,
+        // then filter to only those placed on the page.
+        final List<ContentTypeEntryView> contentTypes = cr.getContainerStructures().stream()
+                .map(cs -> {
+                    final String contentTypeVar = cs.getContentTypeVar();
+                    if (!UtilMethods.isSet(contentTypeVar)) {
+                        return null;
+                    }
+                    // Include only if placed on page (key uses canonical variable name)
+                    if (!onPageKeys.contains(containerId + "|" + contentTypeVar)) {
+                        return null;
+                    }
+                    // Look up the backing VTL file by case-insensitive var name
+                    final FileAsset fa = vtlByVarLower.get(contentTypeVar.toLowerCase());
+                    if (fa == null) {
+                        // No dedicated VTL file — include the entry without path/identifier
+                        return new ContentTypeEntryView(contentTypeVar);
+                    }
+                    final String vtlPath = buildHostQualifiedPath(
+                            fa.getPath() + fa.getFileName(), host);
+                    return new ContentTypeEntryView(contentTypeVar, vtlPath, fa.getIdentifier());
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return new ContainerSourceView(Source.FILE.name(), contentTypes);
+    }
+
+    /**
+     * Builds widget view entries for every Widget contentlet placed on the page under the given
+     * personalization and variant.
+     *
+     * <p>Each contentlet is resolved version-aware: the overload
+     * {@code findContentletByIdentifier(id, live, languageId, variantId, user, false)} is tried
+     * first so that {@code contentletInode} reflects the exact language/variant version requested.
+     * When that version does not exist (e.g. the widget was not translated into the requested
+     * language) the call falls back to {@code findContentletByIdentifierAnyLanguage} so the widget
+     * still appears in the response.</p>
+     */
+    private List<WidgetSourceView> buildWidgetViews(final String pageId,
+            final String personalization, final String variant,
+            final long languageId, final boolean live,
+            final Host host, final User user) {
+        final List<WidgetSourceView> result = new ArrayList<>();
+        try {
+            final List<MultiTree> trees = multiTreeAPI.getMultiTreesByPersonalizedPage(
+                    pageId, personalization, variant);
+            final Set<String> seenContentlets = new HashSet<>();
+            for (final MultiTree mt : trees) {
+                final String contentletId = mt.getContentlet();
+                if (!UtilMethods.isSet(contentletId) || !seenContentlets.add(contentletId)) {
+                    continue;
+                }
+
+                // Attempt version-aware resolution first (language + variant specific inode).
+                Contentlet c = null;
+                try {
+                    c = contentletAPI.findContentletByIdentifier(
+                            contentletId, live, languageId, variant, user, false);
+                } catch (final Exception e) {
+                    Logger.debug(this, () -> "Version-aware lookup failed for widget contentlet '"
+                            + contentletId + "', falling back to any-language: " + e.getMessage());
+                }
+                // Fall back to any-language/any-variant if the specific version is absent.
+                if (c == null || !UtilMethods.isSet(c.getInode())) {
+                    c = Try.of(() -> contentletAPI
+                            .findContentletByIdentifierAnyLanguage(contentletId)).getOrNull();
+                }
+                if (c == null) {
+                    continue;
+                }
+
+                final ContentType ct = Try.of(c::getContentType).getOrNull();
+                if (ct == null || ct.baseType() != BaseContentType.WIDGET) {
+                    continue;
+                }
+
+                final String widgetContentletId   = c.getIdentifier();
+                final String widgetContentletInode = c.getInode();
+                final String[] fileRef = resolveWidgetFileRef(c, ct, host, user);
+
+                if (fileRef[0] != null) {
+                    // FILE-backed widget: path and VTL file identifier are known
+                    result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
+                            widgetContentletId, widgetContentletInode, fileRef[0], fileRef[1]));
+                } else {
+                    // CODE widget: Velocity lives in widgetCode / contentlet fields
+                    result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
+                            widgetContentletId, widgetContentletInode));
+                }
+            }
+        } catch (final DotDataException e) {
+            Logger.warn(this, "Could not build widget views for page '" + pageId + "': "
+                    + e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * Returns a two-element array: [path, identifier] for the first file-typed field in the
+     * contentlet, or [null, null] if none is found.
+     */
+    private String[] resolveWidgetFileRef(final Contentlet contentlet, final ContentType ct,
+            final Host host, final User user) {
+        // Try FileField first, then BinaryField
+        final List<Field> fileFields = new ArrayList<>(ct.fields(FileField.class));
+        fileFields.addAll(ct.fields(BinaryField.class));
+
+        for (final Field field : fileFields) {
+            try {
+                final Object val = contentlet.get(field.variable());
+                if (val == null) {
+                    continue;
+                }
+                // FileField stores a file identifier; BinaryField stores the actual file
+                final String fileIdentifier = val.toString();
+                if (!UtilMethods.isSet(fileIdentifier)) {
+                    continue;
+                }
+                final Contentlet fileCon = Try.of(
+                        () -> contentletAPI.findContentletByIdentifierAnyLanguage(fileIdentifier))
+                        .getOrNull();
+                if (fileCon != null && APILocator.getFileAssetAPI().isFileAsset(fileCon)) {
+                    final FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(fileCon);
+                    final String path = buildHostQualifiedPath(
+                            fa.getPath() + fa.getFileName(), host);
+                    return new String[]{path, fa.getIdentifier()};
+                }
+            } catch (final Exception e) {
+                Logger.debug(this, "Could not resolve file field '" + field.variable()
+                        + "' on contentlet '" + contentlet.getIdentifier() + "': "
+                        + e.getMessage());
+            }
+        }
+        return new String[]{null, null};
+    }
+
+    /**
+     * Builds a {@link UrlContentMapView} for the URL-mapped contentlet resolved by
+     * {@code urlMapInfo}. Resolves the contentlet version under the requested language and variant
+     * (falls back to any-language if no exact match), mirroring the widget version-resolution
+     * pattern.
+     */
+    private UrlContentMapView buildUrlContentMapView(final URLMapInfo urlMapInfo,
+            final long languageId, final String variantName, final boolean live, final User user) {
+        final Contentlet raw = urlMapInfo.getContentlet();
+        if (raw == null) {
+            return null;
+        }
+        final String contentletId = raw.getIdentifier();
+        final ContentType ct = Try.of(raw::getContentType).getOrNull();
+        final String contentTypeVar = ct != null ? ct.variable() : null;
+
+        // Resolve version-specific inode (language + variant aware)
+        Contentlet versioned = null;
+        try {
+            versioned = contentletAPI.findContentletByIdentifier(
+                    contentletId, live, languageId, variantName, user, false);
+        } catch (final Exception e) {
+            Logger.debug(this, "URL map contentlet version lookup failed for '" + contentletId
+                    + "': " + e.getMessage());
+        }
+        if (versioned == null || !UtilMethods.isSet(versioned.getInode())) {
+            versioned = Try.of(
+                    () -> contentletAPI.findContentletByIdentifierAnyLanguage(contentletId))
+                    .getOrNull();
+        }
+
+        final String inode = versioned != null ? versioned.getInode() : raw.getInode();
+        final String title = versioned != null ? versioned.getTitle() : raw.getTitle();
+        return new UrlContentMapView(contentTypeVar, title, contentletId, inode);
+    }
+
+    /**
+     * Prepends the host qualifier ({@code //hostname}) to a plain path if not already present.
+     */
+    private String buildHostQualifiedPath(final String rawPath, final Host host) {
+        if (UtilMethods.isSet(rawPath) && rawPath.startsWith("//")) {
+            return rawPath;
+        }
+        final String hostname = (host != null && UtilMethods.isSet(host.getHostname()))
+                ? host.getHostname()
+                : "localhost";
+        final String normalised = UtilMethods.isSet(rawPath) ? rawPath : "/";
+        return "//" + hostname + normalised;
     }
 
 }

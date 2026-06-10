@@ -60,6 +60,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -185,6 +186,123 @@ public class PageResource {
         this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
         this.esapi = esapi;
         this.hostWebAPI = hostWebAPI;
+    }
+
+    /**
+     * Returns the source-file references for all assets involved in rendering the specified page.
+     * No file content, rendered HTML, or container code is included — only identifiers and paths.
+     *
+     * <p>The URI is a path segment, mirroring {@code /render/{uri}}: plain URIs such as
+     * {@code index} or {@code about/team} are accepted, and the host-qualified form
+     * {@code //hostname/path} is also supported when the caller wants to address a specific site
+     * without using {@code host_id}.
+     *
+     * <p>To retrieve individual asset content, use the following endpoints:
+     * <ul>
+     *   <li>Theme folder file listing: {@code GET /api/v1/folder/sitename/{site}/uri/{uri}}</li>
+     *   <li>DB container code: {@code GET /api/v1/containers/working?containerId=<id>&includeContentType=true}</li>
+     *   <li>FILE container VTL content: {@code GET /api/v2/assets}</li>
+     * </ul>
+     *
+     * @param request     The {@link HttpServletRequest} object.
+     * @param response    The {@link HttpServletResponse} object.
+     * @param uri         Required. Page URI path segment (e.g. {@code index} or {@code about/team}).
+     *                    The host-qualified form {@code //hostname/path} is also accepted.
+     * @param hostId      Optional. Explicit host identifier (overridden by qualified path hostname).
+     * @param languageId  Optional. Language identifier; defaults to the default language.
+     * @param personaId   Optional. Persona contentlet identifier for personalization lookup.
+     * @param variantName Optional. Variant name; defaults to {@code DEFAULT}.
+     * @param modeParam   Optional. {@link PageMode} string; defaults to {@code PREVIEW_MODE}.
+     * @return A {@link ResponseEntityPageRenderSourcesView} with render-source references.
+     * @throws DotDataException     An error occurred when accessing information in the database.
+     * @throws DotSecurityException The user does not have READ permission on the page.
+     */
+    @Operation(
+            operationId = "getPageRenderSources",
+            summary = "Get render sources for a page",
+            description = "Returns references only (path + identifier, no file content, no container code) "
+                    + "mapping a rendered page to its source files. The page is identified by a URI "
+                    + "path segment, exactly like `GET /api/v1/page/render/{uri}`.\n\n"
+                    + "The URI may be a plain path (e.g. `index`, `about/team`) or a host-qualified "
+                    + "path (e.g. `//demo.dotcms.com/index`) to address a specific site without "
+                    + "supplying `host_id`.\n\n"
+                    + "Includes the page reference, theme VTL files, all containers referenced by the "
+                    + "template (only content types actually placed under the applied persona/variant "
+                    + "are included), and widget contentlets placed on the page.\n\n"
+                    + "**Widget source field:**\n"
+                    + "Each widget entry includes a `source` field:\n"
+                    + "- `FILE` — the widget's Velocity lives in a file asset; `path` and `identifier` "
+                    + "are populated. Retrieve the VTL content via `GET /api/v2/assets`.\n"
+                    + "- `CODE` — the widget's Velocity is inline (in the content type's `widgetCode` "
+                    + "field and/or the contentlet's own fields). No `path`/`identifier` are returned. "
+                    + "Retrieve the content type definition via "
+                    + "`GET /api/v1/contenttype/id/{contentTypeVar}` and the placed contentlet via "
+                    + "`GET /api/v1/content/id/{contentletId}`.\n\n"
+                    + "**Other source lookups:**\n"
+                    + "- Theme folder files: `GET /api/v1/folder/sitename/{site}/uri/{uri}`\n"
+                    + "- DB container code: "
+                    + "`GET /api/v1/containers/working?containerId=<id>&includeContentType=true`\n"
+                    + "- FILE container VTL content: `GET /api/v2/assets`",
+            tags = {"Page"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Render sources retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageRenderSourcesView.class))),
+            @ApiResponse(responseCode = "403", description = "User does not have READ permission on the page"),
+            @ApiResponse(responseCode = "404", description = "Page not found, wrong language, or unknown host")
+    })
+    @NoCache
+    @GET
+    @Path("/_render-sources/{uri: .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRenderSources(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Page URI path (e.g. 'index' or 'about/team'). "
+                    + "Must be a plain path without an embedded host; use host_id to target a specific site.",
+                    required = true)
+            @PathParam("uri") final String uri,
+            @Parameter(description = "Explicit host identifier; if omitted the default site is used")
+            @QueryParam("host_id") final String hostId,
+            @Parameter(description = "Language identifier; defaults to the default language")
+            @QueryParam("language_id") final String languageId,
+            @Parameter(description = "Persona contentlet identifier for personalization lookup")
+            @QueryParam("persona_id") final String personaId,
+            @Parameter(description = "Variant name; defaults to DEFAULT")
+            @QueryParam(VariantAPI.VARIANT_KEY) final String variantName,
+            @Parameter(description = "Page mode: EDIT_MODE, PREVIEW_MODE, LIVE; defaults to PREVIEW_MODE")
+            @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam)
+            throws DotDataException, DotSecurityException {
+
+        // Normalize the @PathParam value: JAX-RS strips the leading slash when binding
+        // {uri: .*}, so "index" arrives as "index" but the helper needs "/index".
+        // Host resolution is via host_id query param or the default host — the //host/uri
+        // form is not supported because dotCMS's NormalizationFilter rejects URIs that
+        // contain "//" before they reach this resource.
+        final String path = (UtilMethods.isSet(uri) && !uri.startsWith("/"))
+                ? "/" + uri
+                : (UtilMethods.isSet(uri) ? uri : "/");
+
+        Logger.debug(this, () -> String.format(
+                "getRenderSources: uri=%s path=%s host_id=%s language_id=%s persona=%s variant=%s mode=%s",
+                uri, path, hostId, languageId, personaId, variantName, modeParam));
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initData.getUser();
+
+        try {
+            final PageRenderSourcesView view = pageResourceHelper.getRenderSources(
+                    path, hostId, languageId, personaId, variantName, modeParam, user,
+                    htmlPageAssetRenderedAPI);
+            return Response.ok(new ResponseEntityPageRenderSourcesView(view)).build();
+        } catch (final com.dotmarketing.exception.DoesNotExistException e) {
+            // Covers HTMLPageAssetNotFoundException (subclass) and host-not-found cases
+            throw new NotFoundException(e.getMessage());
+        }
     }
 
     /**
