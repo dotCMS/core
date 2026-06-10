@@ -854,7 +854,7 @@ public class PageResource {
                                     + "  }\n"
                                     + "]")))
             final PageContainerForm pageContainerForm)
-            throws DotSecurityException, DotDataException {
+            throws DotSecurityException {
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
@@ -879,8 +879,16 @@ public class PageResource {
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
             // Save content and Get the saved contentlets
-            final List<ContentView> savedContent = pageResourceHelper.saveContent(
-                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            final List<ContentView> savedContent;
+            try {
+                savedContent = pageResourceHelper.saveContent(
+                        pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            } catch (DotDataException e) {
+                Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
+                return ExceptionMapperUtil.createResponse(
+                        new DotDataException("Page content may have been modified by another user — please refresh and try again."),
+                        Response.Status.CONFLICT);
+            }
 
             return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
@@ -888,9 +896,6 @@ public class PageResource {
                     pageId);
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (DotDataException e) {
-            Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
-            return ExceptionMapperUtil.createResponse(e, Response.Status.CONFLICT);
         }
     }
 

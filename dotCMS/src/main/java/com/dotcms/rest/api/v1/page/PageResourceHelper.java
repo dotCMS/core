@@ -171,7 +171,7 @@ public class PageResourceHelper implements Serializable {
         Logger.debug(PageResourceHelper.class, () -> String.format(
                 "Page content save: pageId='%s' user='%s' containerEntries=%d totalContentlets=%d " +
                 "variant='%s' language=%d",
-                pageId, user != null ? user.getEmailAddress() : "unknown",
+                pageId, user != null ? user.getUserId() : "unknown",
                 containerEntries.size(), totalContentlets,
                 variantName, language != null ? language.getId() : -1L));
 
@@ -223,7 +223,7 @@ public class PageResourceHelper implements Serializable {
                         "unless MULTITREE_EMPTY_SAVE_GUARD_ENABLED is set.",
                         pageId, personalization, variantName,
                         language != null ? language.getId() : -1L,
-                        user != null ? user.getEmailAddress() : "unknown"));
+                        user != null ? user.getUserId() : "unknown"));
             }
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
                     multiTrees, Optional.of(language.getId()),
