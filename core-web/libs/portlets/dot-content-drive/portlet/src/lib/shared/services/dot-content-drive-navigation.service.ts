@@ -1,10 +1,17 @@
+import { EMPTY } from 'rxjs';
+
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
-import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotRouterService
+} from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -20,6 +27,7 @@ export class DotContentDriveNavigationService {
     readonly #location = inject(Location);
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     /**
      * Navigates to the appropriate editor based on the content type.
      * Routes to the page editor for HTML pages, or the contentlet editor for other types.
@@ -60,7 +68,14 @@ export class DotContentDriveNavigationService {
 
         this.#dotContentTypeService
             .getContentType(contentTypeVariable)
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                catchError((error: HttpErrorResponse) => {
+                    this.#httpErrorManager.handle(error);
+
+                    return EMPTY;
+                })
+            )
             .subscribe((contentType) => {
                 const shouldRedirectToOldContentEditor =
                     !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
@@ -93,7 +108,14 @@ export class DotContentDriveNavigationService {
 
         this.#dotContentTypeService
             .getContentType(contentlet.contentType)
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                catchError((error: HttpErrorResponse) => {
+                    this.#httpErrorManager.handle(error);
+
+                    return EMPTY;
+                })
+            )
             .subscribe((contentType) => {
                 const shouldRedirectToOldContentEditor =
                     !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];

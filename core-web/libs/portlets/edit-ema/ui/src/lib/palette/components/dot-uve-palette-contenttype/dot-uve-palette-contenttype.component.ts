@@ -46,7 +46,7 @@ export class DotUVEPaletteContenttypeComponent {
         const isDisabled = this.$isDisabled();
         const selectable = this.$selectable();
         const base =
-            'group flex w-full min-w-0 items-center border bg-white text-gray-900 h-auto' +
+            'group flex w-full min-w-0 items-center border bg-white text-gray-900 h-auto ' +
             'hover:border-primary-500 hover:bg-primary-100 hover:shadow-sm ' +
             'rounded-md';
 

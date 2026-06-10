@@ -5,12 +5,17 @@ import {
     mockProvider,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 
-import { DotContentTypeService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotRouterService
+} from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -23,6 +28,7 @@ describe('DotContentDriveNavigationService', () => {
     let contentTypeService: jest.Mocked<DotContentTypeService>;
     let dotRouterService: jest.Mocked<DotRouterService>;
     let location: SpyObject<Location>;
+    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveNavigationService,
@@ -38,6 +44,9 @@ describe('DotContentDriveNavigationService', () => {
             }),
             mockProvider(Location, {
                 path: jest.fn()
+            }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -49,6 +58,7 @@ describe('DotContentDriveNavigationService', () => {
         contentTypeService = spectator.inject(DotContentTypeService);
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
+        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
     });
 
     afterEach(() => {
@@ -257,6 +267,18 @@ describe('DotContentDriveNavigationService', () => {
                     CD_filters: 'bar'
                 }
             });
+        });
+
+        it('should surface the error and not navigate when getContentType fails', () => {
+            const error = new HttpErrorResponse({ status: 500 });
+
+            location.path.mockReturnValue('/content-drive?path=/foo');
+            contentTypeService.getContentType.mockReturnValue(throwError(() => error));
+
+            service.createContent('blog');
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(router.navigate).not.toHaveBeenCalled();
         });
     });
 

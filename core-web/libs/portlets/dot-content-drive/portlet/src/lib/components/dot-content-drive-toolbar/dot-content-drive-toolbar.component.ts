@@ -207,6 +207,9 @@ export class DotContentDriveToolbarComponent {
         minWidth: this.$treeExpanded() ? '0' : undefined
     }));
 
+    /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
+    #animationTimeout: ReturnType<typeof setTimeout>;
+
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing
         effect(() => {
@@ -236,12 +239,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show workflow actions (triggers enter animation)
      */
     #transitionToWorkflowActions(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: false,
                 workflowActions: true
@@ -256,12 +260,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show button (triggers enter animation)
      */
     #transitionToAddNewButton(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: true,
                 workflowActions: false
