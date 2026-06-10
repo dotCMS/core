@@ -23,6 +23,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
+import { type EditorView } from '@tiptap/pm/view';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -55,6 +56,49 @@ import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-ext
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
     return JSON.stringify(editor.getJSON());
+}
+
+/**
+ * Keeps "scroll the caret into view" confined to the editor's own scroll container.
+ *
+ * ProseMirror's default scroll-into-view (fired by edits such as deleting an empty line, and by
+ * any command chained with `.scrollIntoView()`) walks up the DOM and scrolls **every** scrollable
+ * ancestor so the caret is visible — including the host page's main scroll. Inside dotCMS the
+ * editor lives in a taller scrollable page (new Edit Content, UVE), so that ancestor walk yanks the
+ * whole viewport even though the caret never left the editor. See issue #35980 (bug 2).
+ *
+ * We instead scroll only the editor's `.editor-scroll-container`, and only by the minimum needed to
+ * reveal the caret, then return `true` so ProseMirror treats scrolling as handled and leaves the
+ * page scroll alone. Returns `false` (defer to default behaviour) if the container or caret
+ * coordinates can't be resolved.
+ *
+ * CONTRACT: the `.editor-scroll-container` element (rendered by this component's template) is the
+ * required scroll boundary. If the editor is ever embedded without that wrapper, this returns
+ * `false` and ProseMirror's default page-level scroll-into-view takes over — i.e. the bug-2 jump
+ * comes back. Keep the class on the scroll wrapper whenever this editor is reused.
+ */
+function scrollCaretIntoEditorContainer(view: EditorView): boolean {
+    const container = view.dom.closest<HTMLElement>('.editor-scroll-container');
+    if (!container) return false;
+
+    let caretTop: number;
+    let caretBottom: number;
+    try {
+        const coords = view.coordsAtPos(view.state.selection.head);
+        caretTop = coords.top;
+        caretBottom = coords.bottom;
+    } catch {
+        return false;
+    }
+
+    const box = container.getBoundingClientRect();
+    const margin = 12;
+    if (caretTop < box.top + margin) {
+        container.scrollTop -= box.top + margin - caretTop;
+    } else if (caretBottom > box.bottom - margin) {
+        container.scrollTop += caretBottom - (box.bottom - margin);
+    }
+    return true;
 }
 
 /**
@@ -169,7 +213,7 @@ function normalizeEditorContent(
                         (fullscreenToggle)="toggleFullscreen()"
                         (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        class="relative overflow-y-auto overscroll-contain editor-scroll-container"
+                        class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="
                             isFullscreen()
@@ -387,7 +431,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
                         (file) => this.dotUpload.uploadVideo(file)
-                    )
+                    ),
+                handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
             extensions: createEditorExtensions(
                 this.menuService,

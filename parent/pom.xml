@@ -27,13 +27,17 @@
         environments/dev/user-dev.properties -->
         <!--suppress UnresolvedMavenProperty -->
         <!-- Core modules compiler release - can be overridden via -Ddotcms.core.compiler.release
-             Defaults to 11 to maintain current bytecode compatibility -->
-        <dotcms.core.compiler.release>11</dotcms.core.compiler.release>
+             Defaults to 25; override (e.g. -Ddotcms.core.compiler.release=11) for older bytecode compatibility -->
+        <dotcms.core.compiler.release>25</dotcms.core.compiler.release>
         <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
+        <!-- Enable JDK preview features (e.g. java.lang.StableValue, JEP 502) by default.
+             Requires release == build JDK feature version, so modules pinned to an older
+             release (Tika plugins, dotcms-cli) MUST set this to false. -->
+        <maven.compiler.enablePreview>true</maven.compiler.enablePreview>
         <java.module.args>
             --add-modules java.se,jdk.management.agent
             --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
@@ -65,6 +69,11 @@
             --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
             --add-opens java.base/jdk.internal.module=ALL-UNNAMED
         </java.module.args>
+
+        <!-- Empty by default: CI/Linux finds libvips on the standard library path.
+             On macOS (SIP strips DYLD_*), pass on the mvn command line, e.g.:
+             -Dvipsffm.libpath.args="-Dvipsffm.libpath.vips.override=/opt/homebrew/lib/libvips.42.dylib -Dvipsffm.libpath.glib.override=/opt/homebrew/lib/libglib-2.0.0.dylib -Dvipsffm.libpath.gobject.override=/opt/homebrew/lib/libgobject-2.0.0.dylib" -->
+        <vipsffm.libpath.args></vipsffm.libpath.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.118</tomcat.version>
@@ -100,7 +109,7 @@
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
 
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
-        <jdk.min.version>21</jdk.min.version>
+        <jdk.min.version>25</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
@@ -223,7 +232,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
-        <glowroot.version>0.14.4</glowroot.version>
+        <glowroot.version>0.14.5-beta.3-java25</glowroot.version>
         <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
@@ -752,6 +761,7 @@
                     <configuration>
                         <fork>true</fork>
                         <release>${maven.compiler.release}</release>
+                        <enablePreview>${maven.compiler.enablePreview}</enablePreview>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -792,6 +802,9 @@
                         -->
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            --enable-preview
+                            --enable-native-access=ALL-UNNAMED
+                            ${vipsffm.libpath.args}
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 
@@ -944,6 +957,9 @@
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            --enable-preview
+                            --enable-native-access=ALL-UNNAMED
+                            ${vipsffm.libpath.args}
                             -Dnet.bytebuddy.experimental=true
                         </argLine>
 

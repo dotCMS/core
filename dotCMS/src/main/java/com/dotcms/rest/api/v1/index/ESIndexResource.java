@@ -578,7 +578,8 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView<>(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityView<>(
+                IndexResourceHelper.getInstance().indexStatsList(init.getUser()))).build();
 
     }
     

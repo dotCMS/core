@@ -257,18 +257,26 @@ export class DotUveActionsHandlerService {
             }) => {
                 const isClientReady = uveStore.isClientReady();
 
-                if (isClientReady) {
-                    return;
-                }
-
                 const { graphql, params } = devConfig || {};
                 const { query, variables } = graphql || {};
 
+                // Always refresh the stored client request — it is page-scoped.
+                // When the app re-announces itself on a client-side route change,
+                // the new page's CLIENT_READY arrives right before its
+                // NAVIGATION_UPDATE; installing the config here lets the upcoming
+                // pageLoad fetch the new page with its own query/variables instead
+                // of the previous page's.
                 if (query) {
                     uveStore.setCustomClient({
                         query,
                         variables: (variables ?? {}) as Record<string, string>
                     });
+                }
+
+                if (isClientReady) {
+                    // Already initialized: don't reload. The navigation (if any)
+                    // drives the fetch; a duplicate CLIENT_READY is a no-op.
+                    return;
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);

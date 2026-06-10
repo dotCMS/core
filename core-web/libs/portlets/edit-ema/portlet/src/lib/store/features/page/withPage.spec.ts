@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { withPage } from './withPage';
@@ -15,6 +16,7 @@ import {
     DotPageApiService
 } from '../../../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
+import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
 import { withFlags } from '../flags/withFlags';
@@ -86,7 +88,8 @@ describe('withPage', () => {
         /**
          * resetClientConfiguration clears page asset and ready state but intentionally
          * preserves requestMetadata so headless/GraphQL clients keep their query across
-         * pageLoad cycles (see withPageApi / shell behavior).
+         * pageLoad cycles. Cross-page staleness is handled in withPageApi's pageLoad,
+         * which drops the stored request when it belongs to another page.
          */
         it('should reset page asset and ready state but preserve requestMetadata', () => {
             const graphql = {
@@ -114,6 +117,27 @@ describe('withPage', () => {
             expect(store.requestMetadata()).toEqual(graphql);
             expect(store.isClientReady()).toBe(false);
             expect(store.pageAssetResponse()).toBeNull();
+        });
+
+        it('should drop only the stored client request via resetRequestMetadata', () => {
+            const graphql = {
+                query: 'test',
+                variables: {}
+            };
+            store.setCustomClient(graphql);
+            store.setIsClientReady(true);
+            store.setPageAsset({
+                pageAsset: { page: { identifier: 'p1' } } as Parameters<
+                    typeof store.setPageAsset
+                >[0]['pageAsset']
+            });
+
+            store.resetRequestMetadata();
+
+            expect(store.requestMetadata()).toBeNull();
+            // Everything else stays untouched
+            expect(store.isClientReady()).toBe(true);
+            expect(store.pageAssetResponse()).not.toBeNull();
         });
     });
 
@@ -208,6 +232,44 @@ describe('withPage', () => {
                     personaId: 'persona-id-123'
                 }
             });
+        });
+    });
+
+    describe('pageTranslateProps', () => {
+        it('should return undefined currentLanguage when pageAsset is not set', () => {
+            expect(store.pageTranslateProps().currentLanguage).toBeUndefined();
+        });
+
+        it('should reflect translated status from pageLanguages for the current language', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            patchStoreState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: true }
+                ] as DotLanguage[]
+            });
+
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
+        });
+
+        it('should recompute when pageLanguages changes independently of pageAsset', () => {
+            // Regression for #35647: pageTranslateProps was previously wrapped with
+            // untracked(() => store.pageLanguages()), making it blind to language changes.
+            // Removing untracked() makes the computed reactive on both signals so any
+            // call site that updates pageLanguages is automatically reflected here.
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            patchStoreState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: false }
+                ] as DotLanguage[]
+            });
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(false);
+
+            patchStoreState(store, {
+                pageLanguages: [
+                    { id: 1, language: 'English', languageCode: 'en', translated: true }
+                ] as DotLanguage[]
+            });
+            expect(store.pageTranslateProps().currentLanguage?.translated).toBe(true);
         });
     });
 });

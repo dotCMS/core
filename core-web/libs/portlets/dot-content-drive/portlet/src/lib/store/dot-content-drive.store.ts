@@ -39,7 +39,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
+import { decodeFilters, parseWorkflowFilter } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -74,6 +74,9 @@ export const DotContentDriveStore = signalStore(
                     baseTypes: filters()?.baseType?.map(
                         (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
                     ),
+                    workflow: filters()?.workflow?.length
+                        ? parseWorkflowFilter(filters()?.workflow)
+                        : undefined,
                     contentCursor: page.contentCursor ?? 0,
                     folderCursor: page.folderCursor ?? 0,
                     maxResults: paginationSignal?.limit,
@@ -83,17 +86,9 @@ export const DotContentDriveStore = signalStore(
                         page.hasMoreFolders &&
                         !filters()?.baseType?.length &&
                         !filters()?.contentType?.length &&
-                        !filters()?.languageId?.length
+                        !filters()?.languageId?.length &&
+                        !filters()?.workflow?.length
                 };
-            }),
-            // We will need this for the global select all in the future, so I'll leave it here for now
-            // https://github.com/dotCMS/core/issues/33338
-            $query: computed<string>(() => {
-                return buildContentDriveQuery({
-                    path: path(),
-                    currentSite: currentSite() ?? SYSTEM_HOST,
-                    filters: filters()
-                });
             })
         };
     }),
@@ -238,7 +233,21 @@ export const DotContentDriveStore = signalStore(
 
                             if (samePage) {
                                 return {
-                                    pages: store.pages,
+                                    // Refresh the matched page's hasMore flags from this
+                                    // response (new array ref so dependent computeds
+                                    // recompute). Otherwise an emptied result that lands on
+                                    // DEFAULT_PAGE's cursors keeps its optimistic
+                                    // hasMoreContent: true and the paginator wrongly offers a
+                                    // next page when there are zero items.
+                                    pages: store.pages.map((page) =>
+                                        page === samePage
+                                            ? {
+                                                  ...page,
+                                                  hasMoreContent: response.hasMoreContent,
+                                                  hasMoreFolders: response.hasMoreFolders
+                                              }
+                                            : page
+                                    ),
                                     items: response.list,
                                     status: DotContentDriveStatus.LOADED
                                 };
