@@ -24,7 +24,6 @@ export interface ImagePropertiesPayload {
 export interface TablePropertiesPayload {
     initialValues: {
         caption: string;
-        hasCaption: boolean;
         ariaLabel: string;
         ariaLabelledby: string;
     };
