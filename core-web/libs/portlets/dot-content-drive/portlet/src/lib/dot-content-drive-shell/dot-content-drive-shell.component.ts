@@ -62,6 +62,7 @@ import {
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
+    DotContentDriveDialog,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -114,18 +115,26 @@ export class DotContentDriveShellComponent {
 
     readonly $contextMenuData = this.#store.contextMenu;
 
-    readonly $dialog = this.#store.dialog;
-
     readonly DIALOG_TYPE = DIALOG_TYPE;
+
+    /** Drives `[visible]`: open/close state of the dialog. */
+    protected readonly $dialogVisible = signal(false);
+
+    /**
+     * The dialog currently rendered in the body. Held through PrimeNG's close animation
+     * (only cleared on `(onHide)`) so the body doesn't blank out before the dialog finishes
+     * animating away. Synced from the store by {@link syncDialogEffect}.
+     */
+    protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
     /** Folder payload for the folder dialog (narrowed from the dialog payload union). */
     readonly $folderPayload = computed(
-        () => this.#store.dialog()?.payload as DotContentDriveFolder | undefined
+        () => this.$activeDialog()?.payload as DotContentDriveFolder | undefined
     );
 
     /** List type for the content-type selector dialog (encodes which base types to show). */
     readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(
-        () => (this.#store.dialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
+        () => (this.$activeDialog()?.payload as DotContentDriveContentTypeSelectorPayload)?.listType
     );
 
     /**
@@ -133,10 +142,28 @@ export class DotContentDriveShellComponent {
      * the paginator/footer separators span edge-to-edge; the list and footer add their own inset.
      */
     readonly $dialogContentClass = computed(() =>
-        this.#store.dialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+        this.$activeDialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
             ? 'w-[min(92vw,38rem)] px-0! pt-0 pb-4'
             : 'w-[43.75rem] pt-0 p-4'
     );
+
+    /**
+     * Syncs the dialog open/close state from the store. Opening sets the body and visibility
+     * together (no blank-frame flash); closing flips visibility off but leaves the body mounted
+     * so PrimeNG can animate it out — the body is cleared later in {@link onDialogHidden}.
+     */
+    readonly syncDialogEffect = effect(() => {
+        const dialog = this.#store.dialog();
+
+        untracked(() => {
+            if (dialog) {
+                this.$activeDialog.set(dialog);
+                this.$dialogVisible.set(true);
+            } else {
+                this.$dialogVisible.set(false);
+            }
+        });
+    });
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
         equal: (a, b) => a === b
@@ -281,10 +308,20 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Handles dialog hide event to reset the dialog state
+     * Fired by PrimeNG when the dialog visibility changes. A user-driven close (X / ESC /
+     * mask) emits `false`; propagate it to the store so the dialog state stays consistent.
      */
-    protected onHideDialog() {
-        this.#store.closeDialog();
+    protected onVisibleChange(visible: boolean) {
+        if (!visible) {
+            this.#store.closeDialog();
+        }
+    }
+
+    /**
+     * Fired after the close animation completes — now safe to drop the rendered body.
+     */
+    protected onDialogHidden() {
+        this.$activeDialog.set(undefined);
     }
 
     /**

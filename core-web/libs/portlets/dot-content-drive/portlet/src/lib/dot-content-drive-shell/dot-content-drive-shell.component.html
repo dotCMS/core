@@ -89,8 +89,8 @@
 <div
     class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
 <p-dialog
-    [visible]="!!$dialog?.()"
-    [header]="$dialog?.()?.header"
+    [visible]="$dialogVisible()"
+    [header]="$activeDialog()?.header"
     [draggable]="false"
     [resizable]="false"
     [modal]="true"
@@ -99,17 +99,20 @@
     appendTo="body"
     data-testId="dialog"
     [pt]="{ content: { class: $dialogContentClass() } }"
-    (visibleChange)="onHideDialog()">
-    @switch ($dialog?.()?.type) {
+    (visibleChange)="onVisibleChange($event)"
+    (onHide)="onDialogHidden()">
+    @switch ($activeDialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
                 data-testId="dialog-folder"
                 [folder]="$folderPayload()" />
         }
         @case (DIALOG_TYPE.CONTENT_TYPE_SELECTOR) {
-            <dot-content-drive-dialog-content-type-selector
-                data-testId="dialog-content-type-selector"
-                [listType]="$contentTypeSelectorListType()" />
+            @if ($contentTypeSelectorListType(); as listType) {
+                <dot-content-drive-dialog-content-type-selector
+                    data-testId="dialog-content-type-selector"
+                    [listType]="listType" />
+            }
         }
         @default {
             <div>Default dialog</div>
