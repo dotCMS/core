@@ -1,8 +1,8 @@
 import { faker } from '@faker-js/faker';
-import { ListingContentPage, NewEditContentFormPage } from '@pages';
+import { NewEditContentFormPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
-import { createFakeTextField } from '@utils/dot-content-types.mock';
+import { createFakePayloadTextField } from '@utils/dot-content-types.mock';
 
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
@@ -11,7 +11,7 @@ test.beforeEach(async ({ request }) => {
     contentType = await createFakeContentType(request, {
         name: `E2ETextField${Date.now()}`,
         fields: [
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
@@ -28,7 +28,9 @@ test.afterEach(async ({ request }) => {
     }
 });
 
-test('save and persist a text field value @critical', async ({ page }) => {
+test('save reloads with content id in URL and persists text field value @critical', async ({
+    page
+}) => {
     const textFieldValue = faker.lorem.word();
 
     const formPage = new NewEditContentFormPage(page);
@@ -40,9 +42,11 @@ test('save and persist a text field value @critical', async ({ page }) => {
     await titleLocator.fill(textFieldValue);
     await formPage.save();
 
-    const listingPage = new ListingContentPage(page);
-    await listingPage.goTo(contentTypeVariable);
-    await listingPage.clickFirstContentRow();
+    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    expect(savedContentIdentifier).toBeTruthy();
 
     await expect(titleLocator).toHaveValue(textFieldValue);
 });

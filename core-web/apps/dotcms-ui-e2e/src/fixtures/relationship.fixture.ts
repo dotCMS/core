@@ -8,7 +8,10 @@ import {
     createFakeContentType
 } from '../requests/contentType';
 import { createFieldVariable } from '../requests/field-variables';
-import { createFakeRelationshipField, createFakeTextField } from '../utils/dot-content-types.mock';
+import {
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField
+} from '../utils/dot-content-types.mock';
 
 export type TestContentType = ContentType;
 
@@ -173,12 +176,12 @@ function authorContentTypePayload(suffix: string): CreateContentTypePayload {
         name: `E2E_Author_${suffix}`,
         variable: `E2EAuthor${suffix}`,
         fields: [
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
             }),
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Bio',
                 variable: 'bio',
                 sortOrder: 2
@@ -193,7 +196,7 @@ function tagContentTypePayload(suffix: string): CreateContentTypePayload {
         variable: `E2ETag${suffix}`,
         metadata: {},
         fields: [
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Name',
                 variable: 'name',
                 sortOrder: 1
@@ -214,12 +217,12 @@ function blogContentTypePayload(
         name: `${name}_${suffix}`,
         variable: `${variable}${suffix}`,
         fields: [
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
             }),
-            createFakeRelationshipField({
+            createFakePayloadRelationshipField({
                 name:
                     relationshipFieldVariable.charAt(0).toUpperCase() +
                     relationshipFieldVariable.slice(1),

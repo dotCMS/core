@@ -35,47 +35,6 @@ const DotCMSClazzes = {
     WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
 } as const;
 
-const DotCMSDataTypes = {
-    SYSTEM: 'SYSTEM',
-    TEXT: 'TEXT',
-    LONG_TEXT: 'LONG_TEXT',
-    DATE: 'DATE',
-    BOOLEAN: 'BOOL',
-    FLOAT: 'FLOAT',
-    INTEGER: 'INTEGER'
-} as const;
-
-const DotCMSFieldTypes = {
-    ROW: 'Row',
-    COLUMN: 'Column',
-    TAB_DIVIDER: 'Tab_divider',
-    LINE_DIVIDER: 'Line_divider',
-    COLUMN_BREAK: 'Column_break',
-    BINARY: 'Binary',
-    BLOCK_EDITOR: 'Story-Block',
-    CATEGORY: 'Category',
-    CHECKBOX: 'Checkbox',
-    CONSTANT: 'Constant-Field',
-    CUSTOM_FIELD: 'Custom-Field',
-    DATE: 'Date',
-    DATE_AND_TIME: 'Date-and-Time',
-    FILE: 'File',
-    HIDDEN: 'Hidden-Field',
-    IMAGE: 'Image',
-    JSON: 'JSON-Field',
-    KEY_VALUE: 'Key-Value',
-    MULTI_SELECT: 'Multi-Select',
-    RADIO: 'Radio',
-    RELATIONSHIP: 'Relationship',
-    SELECT: 'Select',
-    HOST_FOLDER: 'Host-Folder',
-    TAG: 'Tag',
-    TEXT: 'Text',
-    TEXTAREA: 'Textarea',
-    TIME: 'Time',
-    WYSIWYG: 'WYSIWYG'
-} as const;
-
 /** Backward-compatible clazz aliases used across E2E specs. */
 export const IMMUTABLE_SIMPLE_CONTENT_TYPE = DotCMSClazzes.SIMPLE_CONTENT_TYPE;
 export const IMMUTABLE_TEXT_FIELD = DotCMSClazzes.TEXT;
@@ -84,360 +43,247 @@ export const IMMUTABLE_RELATIONSHIP_FIELD = DotCMSClazzes.RELATIONSHIP;
 
 type FieldOverrides = Partial<ContentTypeFieldInput>;
 
-export function createFakeBaseField(): ContentTypeFieldInput {
+function createFakePayloadBaseField(): ContentTypeFieldInput {
     return {
-        contentTypeId: faker.string.uuid(),
-        fieldVariables: [],
-        fixed: false,
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: false,
-        listed: false,
-        modDate: faker.date.recent().getTime(),
+        clazz: DotCMSClazzes.TEXT,
         name: faker.lorem.word(),
-        readOnly: false,
-        required: false,
-        searchable: false,
-        sortOrder: 0,
-        unique: false,
         variable: faker.lorem.word(),
-        clazz: DotCMSClazzes.TEXT,
-        defaultValue: faker.lorem.word(),
-        hint: faker.lorem.sentence(),
-        forceIncludeInApi: false
+        sortOrder: 0
     };
 }
 
-export function createFakeCategoryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
-    const categoryId = faker.string.uuid();
-
+export function createFakePayloadCategoryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CATEGORY,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.CATEGORY,
-        fieldTypeLabel: 'Category',
-        categories: {
-            categoryName: faker.lorem.word(),
-            description: faker.lorem.sentence(),
-            inode: categoryId,
-            key: faker.lorem.word(),
-            keywords: faker.lorem.word(),
-            sortOrder: faker.number.int()
-        },
-        values: categoryId,
+        values: faker.string.uuid(),
         ...overrides
     };
 }
 
-export function createFakeConstantField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadConstantField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CONSTANT,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.CONSTANT,
-        fieldTypeLabel: 'Constant Field',
         values: '',
         ...overrides
     };
 }
 
-export function createFakeHiddenField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadHiddenField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.HIDDEN,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.HIDDEN,
-        fieldTypeLabel: 'Hidden Field',
         values: '',
         ...overrides
     };
 }
 
-export function createFakeHostFolderField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadHostFolderField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.HOST_FOLDER,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.HOST_FOLDER,
-        fieldTypeLabel: 'Site or Folder',
         ...overrides
     };
 }
 
-export function createFakeTextField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTextField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TEXT,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.TEXT,
-        fieldTypeLabel: 'Text',
         ...overrides
     };
 }
 
-export function createFakeLineDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadLineDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.LINE_DIVIDER,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.LINE_DIVIDER,
-        fieldTypeLabel: 'Line Divider',
         ...overrides
     };
 }
 
-export function createFakeRelationshipField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadRelationshipField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.RELATIONSHIP,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.RELATIONSHIP,
-        fieldTypeLabel: 'Relationships Field',
-        name: 'Relationship Field',
         relationships: {
-            cardinality: 0,
-            isParentField: true,
-            velocityVar: 'AllTypes'
+            velocityVar: 'AllTypes',
+            cardinality: 0
         },
-        skipRelationshipCreation: false,
         ...overrides
     };
 }
 
-export function createFakeRowField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadRowField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.ROW,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.ROW,
-        fieldTypeLabel: 'Row',
         ...overrides
     };
 }
 
-export function createFakeColumnField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadColumnField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.COLUMN,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.COLUMN,
-        fieldTypeLabel: 'Column',
         ...overrides
     };
 }
 
-export function createFakeRadioField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadRadioField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.RADIO,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.RADIO,
-        fieldTypeLabel: 'Radio',
         values: 'Yes|true\r\nNo|false',
         ...overrides
     };
 }
 
-export function createFakeCheckboxField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadCheckboxField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CHECKBOX,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.CHECKBOX,
-        fieldTypeLabel: 'Checkbox',
         values: 'Option 1|1\r\nOption 2|2\r\nOption 3|3',
         ...overrides
     };
 }
 
-export function createFakeTextAreaField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTextAreaField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TEXTAREA,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.TEXTAREA,
-        fieldTypeLabel: 'Text Area',
         ...overrides
     };
 }
 
-export function createFakeWYSIWYGField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadWYSIWYGField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.WYSIWYG,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.WYSIWYG,
-        fieldTypeLabel: 'WYSIWYG',
         ...overrides
     };
 }
 
-export function createFakeDateField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadDateField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.DATE,
-        dataType: DotCMSDataTypes.DATE,
-        fieldType: DotCMSFieldTypes.DATE,
-        fieldTypeLabel: 'Date',
         ...overrides
     };
 }
 
-export function createFakeDateTimeField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadDateTimeField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.DATE_AND_TIME,
-        dataType: DotCMSDataTypes.DATE,
-        fieldType: DotCMSFieldTypes.DATE_AND_TIME,
-        fieldTypeLabel: 'Date and Time',
         ...overrides
     };
 }
 
-export function createFakeTimeField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTimeField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TIME,
-        dataType: DotCMSDataTypes.DATE,
-        fieldType: DotCMSFieldTypes.TIME,
-        fieldTypeLabel: 'Time',
         ...overrides
     };
 }
 
-export function createFakeJSONField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadJSONField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.JSON,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.JSON,
-        fieldTypeLabel: 'JSON',
         ...overrides
     };
 }
 
-export function createFakeFileField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadFileField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.FILE,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.FILE,
-        fieldTypeLabel: 'File',
         ...overrides
     };
 }
 
-export function createFakeImageField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadImageField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.IMAGE,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.IMAGE,
-        fieldTypeLabel: 'Image',
         ...overrides
     };
 }
 
-export function createFakeSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.SELECT,
-        dataType: DotCMSDataTypes.TEXT,
-        fieldType: DotCMSFieldTypes.SELECT,
-        fieldTypeLabel: 'Select',
         values: 'Option A|a\r\nOption B|b\r\nOption C|c',
         ...overrides
     };
 }
 
-export function createFakeTagField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTagField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TAG,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.TAG,
-        fieldTypeLabel: 'Tag',
         ...overrides
     };
 }
 
-export function createFakeTabDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTabDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TAB_DIVIDER,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.TAB_DIVIDER,
-        fieldTypeLabel: 'Tab Divider',
         ...overrides
     };
 }
 
-export function createFakeBlockEditorField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadBlockEditorField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.BLOCK_EDITOR,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
-        fieldTypeLabel: 'Block Editor',
         ...overrides
     };
 }
 
-export function createFakeColumnBreakField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadColumnBreakField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.COLUMN_BREAK,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.COLUMN_BREAK,
-        fieldTypeLabel: 'Column Break',
         ...overrides
     };
 }
 
-export function createFakeMultiSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadMultiSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.MULTI_SELECT,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.MULTI_SELECT,
-        fieldTypeLabel: 'Multi Select',
         values: 'Option A|a\r\nOption B|b\r\nOption C|c',
         ...overrides
     };
 }
 
-export function createFakeBinaryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadBinaryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.BINARY,
-        dataType: DotCMSDataTypes.SYSTEM,
-        fieldType: DotCMSFieldTypes.BINARY,
-        fieldTypeLabel: 'Binary Field',
-        fieldVariables: [],
         ...overrides
     };
 }
 
-export function createFakeCustomField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadCustomField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CUSTOM_FIELD,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.CUSTOM_FIELD,
-        fieldTypeLabel: 'Custom Field',
         values: faker.lorem.sentence(),
         ...overrides
     };
 }
 
-export function createFakeKeyValueField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadKeyValueField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
     return {
-        ...createFakeBaseField(),
+        ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.KEY_VALUE,
-        dataType: DotCMSDataTypes.LONG_TEXT,
-        fieldType: DotCMSFieldTypes.KEY_VALUE,
-        fieldTypeLabel: 'Key/Value Field',
         ...overrides
     };
 }

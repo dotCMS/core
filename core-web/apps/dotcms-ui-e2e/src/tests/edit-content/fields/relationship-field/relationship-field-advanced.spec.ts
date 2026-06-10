@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 import {
-    createFakeRelationshipField,
-    createFakeTextField,
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField,
     IMMUTABLE_SIMPLE_CONTENT_TYPE
 } from '@utils/dot-content-types.mock';
 
@@ -39,12 +39,12 @@ function blogTypeWithRelationships(
         metadata: { CONTENT_EDITOR2_ENABLED: true },
         workflow: [SYSTEM_WORKFLOW_ID],
         fields: [
-            createFakeTextField({
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
             }),
-            createFakeRelationshipField({
+            createFakePayloadRelationshipField({
                 name: 'Authors',
                 variable: 'authors',
                 sortOrder: 2,
@@ -54,7 +54,7 @@ function blogTypeWithRelationships(
                 }
             }),
             ...extraRelationshipFields.map((f) =>
-                createFakeRelationshipField({
+                createFakePayloadRelationshipField({
                     name: f.name,
                     variable: f.variable,
                     sortOrder: f.sortOrder,
