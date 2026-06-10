@@ -10,10 +10,15 @@ import java.util.Optional;
 
 /**
  * Default {@link DotAuthSessionCache} implementation, backed by the dotCMS
- * cache administrator. The {@link #CACHE_GROUP} routes through the same
- * cluster-aware cache provider as every other dotCMS cache, so in a clustered
- * deployment session-refs are automatically replicated across nodes — matching
- * the existing SAML session-replication footprint without any new plumbing.
+ * cache administrator.
+ *
+ * <p><strong>Cluster scope:</strong> the default cache transport broadcasts
+ * invalidations only — values are never replicated between nodes. A session-ref
+ * minted on one node is therefore NOT visible on its peers, and the replay
+ * guard is enforced per node. Clustered deployments must either route headless
+ * API traffic with session affinity (sticky on the {@code Authorization}
+ * header / source) or configure a distributed cache provider (e.g. Redis) for
+ * {@link #CACHE_GROUP} and {@link #REPLAY_CACHE_GROUP}.
  *
  * <p>Session-refs are {@value #ENTROPY_BYTES}-byte random strings encoded
  * URL-safe-base64 with the {@link DotAuthSessionCache#SESSION_REF_PREFIX}
@@ -33,6 +38,7 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final Base64.Encoder B64  = Base64.getUrlEncoder().withoutPadding();
+    private static final Object REPLAY_LOCK  = new Object();
 
     private static final class SingletonHolder {
         private static final DotAuthSessionCacheImpl INSTANCE = new DotAuthSessionCacheImpl();
@@ -91,13 +97,18 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cacha
             // so this only guards against a programming error rather than gating real traffic.
             return true;
         }
-        final Object raw = cache().getNoThrow(tokenFingerprint, REPLAY_CACHE_GROUP);
-        if (raw instanceof Long && System.currentTimeMillis() < (Long) raw) {
-            // Already consumed and the token has not yet expired -> replay.
-            return false;
+        // The cache administrator offers no atomic putIfAbsent, so the check-then-put must be
+        // a critical section or two concurrent exchanges of the same id_token both pass the
+        // one-time-use guard. Single lock is fine: this runs once per token exchange.
+        synchronized (REPLAY_LOCK) {
+            final Object raw = cache().getNoThrow(tokenFingerprint, REPLAY_CACHE_GROUP);
+            if (raw instanceof Long && System.currentTimeMillis() < (Long) raw) {
+                // Already consumed and the token has not yet expired -> replay.
+                return false;
+            }
+            cache().put(tokenFingerprint, Long.valueOf(expiresAtMillis), REPLAY_CACHE_GROUP);
+            return true;
         }
-        cache().put(tokenFingerprint, Long.valueOf(expiresAtMillis), REPLAY_CACHE_GROUP);
-        return true;
     }
 
     @Override

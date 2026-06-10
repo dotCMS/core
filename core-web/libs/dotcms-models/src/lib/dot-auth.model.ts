@@ -190,6 +190,10 @@ export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {
     jwksUrl: string;
     userinfoUrl: string;
     logoutUrl: string;
+    /** Token-revocation endpoint — not edited in the UI, but must round-trip so a save never deletes it. */
+    revocationUrl: string;
+    /** Groups endpoint — not edited in the UI, but must round-trip so a save never deletes it. */
+    groupsUrl: string;
     clientId: string;
     clientSecret: string;
     scopes: string;
@@ -212,6 +216,10 @@ export interface DotAuthSamlExtraProperty {
 }
 
 export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
+    /** Display name for the IdP — not edited in the UI, but must round-trip so a save never resets it. */
+    idpName: string;
+    /** SP endpoint hostname (drives SP entity/ACS URLs) — not edited in the UI, but must round-trip so a save never blanks it. */
+    spEndpointHostname: string;
     metadataUrl: string;
     entityId: string;
     ssoUrl: string;

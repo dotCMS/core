@@ -576,15 +576,22 @@ public class OIDCProvider implements OAuthProvider {
         if (!UtilMethods.isSet(endSessionEndpoint)) {
             return Optional.empty();
         }
-        final StringBuilder sb = new StringBuilder(endSessionEndpoint);
-        sb.append(endSessionEndpoint.contains("?") ? "&" : "?");
+        final StringBuilder query = new StringBuilder();
         if (UtilMethods.isSet(idToken)) {
-            sb.append("id_token_hint=").append(urlEncode(idToken)).append('&');
+            query.append("id_token_hint=").append(urlEncode(idToken));
         }
         if (UtilMethods.isSet(postLogoutRedirectUri)) {
-            sb.append("post_logout_redirect_uri=").append(urlEncode(postLogoutRedirectUri));
+            if (query.length() > 0) {
+                query.append('&');
+            }
+            query.append("post_logout_redirect_uri=").append(urlEncode(postLogoutRedirectUri));
         }
-        return Optional.of(sb.toString());
+        if (query.length() == 0) {
+            return Optional.of(endSessionEndpoint);
+        }
+        return Optional.of(endSessionEndpoint
+                + (endSessionEndpoint.contains("?") ? "&" : "?")
+                + query);
     }
 
     @Override

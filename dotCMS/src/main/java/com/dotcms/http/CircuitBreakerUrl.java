@@ -223,7 +223,7 @@ public class CircuitBreakerUrl {
 
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            doOut(maxResponseBytes < 0 ? out : new BoundedOutputStream(out, maxResponseBytes));
+            doOut(out);
             final String output = out.toString();
             if (isError()) {
                 Logger.warn(
@@ -236,6 +236,18 @@ public class CircuitBreakerUrl {
                         output));
             }
             return output;
+        }
+    }
+
+    /**
+     * Thrown when a response body exceeds the limit configured via
+     * {@link CircuitBreakerUrlBuilder#setMaxResponseBytes(int)}. Always propagated to the
+     * caller, regardless of the {@code raiseFailsafe} setting, so an over-limit response can
+     * never be mistaken for a successful (truncated) one.
+     */
+    public static class ResponseSizeLimitExceededException extends IOException {
+        private ResponseSizeLimitExceededException(final int maxBytes) {
+            super("Response exceeded maximum size of " + maxBytes + " bytes");
         }
     }
 
@@ -265,7 +277,7 @@ public class CircuitBreakerUrl {
 
         private void checkLimit(final int bytesToWrite) throws IOException {
             if (bytesWritten + bytesToWrite > maxBytes) {
-                throw new IOException("Response exceeded maximum size of " + maxBytes + " bytes");
+                throw new ResponseSizeLimitExceededException(maxBytes);
             }
         }
     }
@@ -334,7 +346,9 @@ public class CircuitBreakerUrl {
 
                                 this.response = innerResponse.getStatusLine().getStatusCode();
 
-                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                IOUtils.copy(
+                                    innerResponse.getEntity().getContent(),
+                                    maxResponseBytes < 0 ? out : new BoundedOutputStream(out, maxResponseBytes));
                             } catch (IOException ex) {
                                 Logger.error(
                                     this,
@@ -359,6 +373,14 @@ public class CircuitBreakerUrl {
         } catch (FailsafeException ee) {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+
+            if (ee.getCause() instanceof ResponseSizeLimitExceededException) {
+                // The 2xx status was recorded before the copy aborted; reset it so the partial
+                // body can never read as a successful response, and fail regardless of
+                // raiseFailsafe — a truncated payload must not be returned silently.
+                this.response = -1;
+                throw (ResponseSizeLimitExceededException) ee.getCause();
+            }
 
             if (raiseFailsafe) {
                 throw ee;
