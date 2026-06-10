@@ -2,22 +2,21 @@ import { faker } from '@faker-js/faker';
 import { ListingContentPage, NewEditContentFormPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
-
-import { createFakeTextField } from '@dotcms/utils-testing';
+import { createFakeTextField } from '@utils/dot-content-types.mock';
 
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
 
 test.beforeEach(async ({ request }) => {
-    const titleField = createFakeTextField({
-        name: 'Title',
-        variable: 'title',
-        sortOrder: 1
-    });
-
     contentType = await createFakeContentType(request, {
         name: `E2ETextField${Date.now()}`,
-        fields: [titleField]
+        fields: [
+            createFakeTextField({
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            })
+        ]
     });
     contentTypeVariable = contentType.variable;
 });

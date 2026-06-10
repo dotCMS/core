@@ -14,16 +14,11 @@ export interface ContentTypeField {
 }
 
 /**
- * Field payload accepted when creating a content type. Accepts either a plain
- * object literal (with arbitrary extra props such as `relationships` or
- * `required`) or a fake field produced by the `@dotcms/utils-testing` builders
- * (e.g. `createFakeTextField`, `createFakeHostFolderField`). The second union
- * member (no index signature) is what lets the interface-typed builder results
- * be assigned directly.
+ * Field payload accepted when creating a content type via POST /api/v1/contenttype.
+ * Only the properties needed by the API are required; extra props (e.g. `relationships`,
+ * `required`) are allowed via the index signature.
  */
-export type ContentTypeFieldInput =
-    | ContentTypeField
-    | { clazz: string; name: string; variable: string; sortOrder: number };
+export type ContentTypeFieldInput = ContentTypeField;
 
 export interface ContentType {
     id: string;

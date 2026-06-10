@@ -18,10 +18,7 @@
             "@data/*": ["./src/data/*"],
             "@models/*": ["./src/models/*"],
             "@requests/*": ["./src/requests/*"],
-            "@components/*": ["./src/components/*"],
-            "@dotcms/dotcms-models": ["../../libs/dotcms-models/src/index.ts"],
-            "@dotcms/utils": ["../../libs/utils/src"],
-            "@dotcms/utils-testing": ["../../libs/utils-testing/src/index.ts"]
+            "@components/*": ["./src/components/*"]
         }
     },
     "include": [

@@ -1,7 +1,5 @@
 import { test as base, type Page } from '@playwright/test';
 
-import { createFakeHostFolderField, createFakeTextField } from '@dotcms/utils-testing';
-
 import {
     type ContentType,
     type CreateContentTypePayload,
@@ -10,25 +8,29 @@ import {
 } from '../requests/contentType';
 import { createFolders } from '../requests/folders';
 import { getSites, type Site } from '../requests/sites';
+import {
+    createFakeHostFolderField,
+    createFakeTextField
+} from '../utils/dot-content-types.mock';
 
 // ─── Content Type Payload Builder ────────────────────────────────
 
 function hostFolderContentTypePayload(suffix: string): CreateContentTypePayload {
-    const titleField = createFakeTextField({
-        name: 'Title',
-        variable: 'title',
-        sortOrder: 1
-    });
-    const siteOrFolderField = createFakeHostFolderField({
-        name: 'Site Or Folder',
-        variable: 'siteOrFolder',
-        required: true,
-        sortOrder: 2
-    });
-
     return {
         name: `HostFolderTest${suffix}`,
-        fields: [titleField, siteOrFolderField]
+        fields: [
+            createFakeTextField({
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            }),
+            createFakeHostFolderField({
+                name: 'Site Or Folder',
+                variable: 'siteOrFolder',
+                required: true,
+                sortOrder: 2
+            })
+        ]
     };
 }
 
