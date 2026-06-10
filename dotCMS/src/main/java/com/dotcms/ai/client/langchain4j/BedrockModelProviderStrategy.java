@@ -1,5 +1,6 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.dotmarketing.util.Logger;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.bedrock.BedrockChatRequestParameters;
 import dev.langchain4j.model.bedrock.BedrockCohereEmbeddingModel;
@@ -64,6 +65,14 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public EmbeddingModel buildEmbeddingModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
+        if (config.timeout() != null) {
+            Logger.warn(BedrockModelProviderStrategy.class,
+                    "timeout is not supported for Bedrock embedding models and will be ignored");
+        }
+        if (config.maxRetries() != null) {
+            Logger.warn(BedrockModelProviderStrategy.class,
+                    "maxRetries is not supported for Bedrock embedding models and will be ignored");
+        }
         final String model = config.model();
         final AwsCredentialsProvider credentials = credentials(config);
         final Region region = Region.of(config.region());
@@ -134,10 +143,12 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
      * neither {@code timeout} nor {@code maxRetries} is configured, so the AWS SDK defaults apply
      * untouched.
      *
-     * <p>{@code timeout} (seconds) maps to {@link ClientOverrideConfiguration.Builder#apiCallTimeout(Duration)}.
+     * <p>{@code timeout} (seconds) maps to {@link ClientOverrideConfiguration.Builder#apiCallAttemptTimeout(Duration)},
+     * matching the per-request semantics of other providers (OpenAI, Azure). Each attempt gets the
+     * full timeout budget; {@code maxRetries} controls how many additional attempts are made.
      * {@code maxRetries} maps to the non-deprecated retry API
      * ({@link ClientOverrideConfiguration.Builder#retryStrategy}); attempts are {@code maxRetries + 1}
-     * (one initial call plus the configured number of retries).
+     * (one initial call plus the configured number of retries), clamped to a minimum of 1.
      */
     private static Optional<ClientOverrideConfiguration> overrideConfiguration(final ProviderConfig config) {
         if (config.timeout() == null && config.maxRetries() == null) {
@@ -145,12 +156,12 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
         }
         final ClientOverrideConfiguration.Builder builder = ClientOverrideConfiguration.builder();
         if (config.timeout() != null) {
-            builder.apiCallTimeout(Duration.ofSeconds(config.timeout()));
+            builder.apiCallAttemptTimeout(Duration.ofSeconds(config.timeout()));
         }
         if (config.maxRetries() != null) {
             builder.retryStrategy(AwsRetryStrategy.standardRetryStrategy()
                     .toBuilder()
-                    .maxAttempts(config.maxRetries() + 1)
+                    .maxAttempts(Math.max(1, config.maxRetries() + 1))
                     .build());
         }
         return Optional.of(builder.build());
