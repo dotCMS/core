@@ -191,10 +191,29 @@ public class OAuthHelper {
         }
 
         final String email   = getEmail(userInfo, config);
-        final String subject = str(userInfo, "sub");
+        final String subject = resolveSubject(userInfo);
 
         if (!UtilMethods.isSet(email) && !UtilMethods.isSet(subject)) {
             throw new DotRuntimeException("OAuth userinfo response contained neither a usable email nor a subject claim");
+        }
+
+        // The external id must be DETERMINISTIC across logins — a per-login value would
+        // make the externalId lookup miss every time and re-attempt createUser with the
+        // same email (DuplicateUserException on the second login). When the IdP exposes
+        // no subject-style claim at all, a verified email is the only stable identity we
+        // can key on; an unverified email is not safe to trust, so we refuse instead.
+        final boolean emailVerified = isEmailVerified(userInfo, verifiedClaims);
+        final String effectiveSubject;
+        if (UtilMethods.isSet(subject)) {
+            effectiveSubject = subject;
+        } else if (emailVerified) {
+            effectiveSubject = "email:" + email.toLowerCase();
+        } else {
+            throw new DotRuntimeException(
+                    "OAuth userinfo response did not contain a subject-style claim (tried: "
+                            + String.join(", ", SUBJECT_CLAIM_FALLBACKS)
+                            + ") and the email is not verified — refusing to authenticate because no"
+                            + " stable user identity can be established");
         }
 
         // Namespace the IdP subject with provider type + verified issuer so two
@@ -206,10 +225,9 @@ public class OAuthHelper {
         final String issuer = str(userInfo, "iss");
         final String effectiveIssuer = UtilMethods.isSet(issuer) ? issuer
                 : (config != null ? config.issuerUrl : null);
-        final String externalId = namespacedSubject(provider, subject, effectiveIssuer, hashUserId);
+        final String externalId = namespacedSubject(provider, effectiveSubject, effectiveIssuer, hashUserId);
 
-        final boolean emailVerified = isEmailVerified(userInfo, verifiedClaims);
-        User user = resolveUser(email, emailVerified, externalId, provider, subject, effectiveIssuer);
+        User user = resolveUser(email, emailVerified, externalId, provider, effectiveSubject, effectiveIssuer);
 
         if (user == null) {
             if (config != null && !config.autoProvision) {
@@ -266,22 +284,41 @@ public class OAuthHelper {
     }
 
     /**
+     * Claims tried, in order, to establish the IdP-side user identity. OIDC providers
+     * always send {@code sub}; plain OAuth2 providers commonly expose {@code id}
+     * (Facebook, GitHub), {@code user_id}, or {@code oid} (Azure AD Graph) instead.
+     */
+    private static final List<String> SUBJECT_CLAIM_FALLBACKS = List.of("sub", "id", "user_id", "oid");
+
+    private static String resolveSubject(final Map<String, Object> userInfo) {
+        for (final String claim : SUBJECT_CLAIM_FALLBACKS) {
+            final String value = str(userInfo, claim);
+            if (UtilMethods.isSet(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Namespace the IdP subject with provider type AND verified issuer so two
      * trusted IdPs that emit the same {@code sub} can never collide. The issuer
      * is sanitized to keep the raw id free of {@code :} and {@code /}. When
      * {@code hashUserId} is true (default) the full string is SHA-256 hashed.
+     * The subject must be set — callers guarantee a deterministic identity key.
      */
     private static String namespacedSubject(final OAuthProvider provider,
                                             final String subject,
                                             final String issuer,
                                             final boolean hashUserId) {
+        if (!UtilMethods.isSet(subject)) {
+            throw new DotRuntimeException("Cannot build an OAuth external id without a subject");
+        }
         final String providerType = provider == null || provider.getProviderType() == null
                 ? "unknown" : provider.getProviderType();
         final String issuerSegment = UtilMethods.isSet(issuer)
                 ? "_" + sanitizeForId(issuer) : "";
-        final String raw = UtilMethods.isSet(subject)
-                ? "oauth_" + providerType + issuerSegment + "_" + subject
-                : "oauth_" + providerType + issuerSegment + "_" + UUIDGenerator.generateUuid();
+        final String raw = "oauth_" + providerType + issuerSegment + "_" + subject;
         return hashUserId ? hashIt(raw) : raw;
     }
 

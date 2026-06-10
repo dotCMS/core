@@ -392,6 +392,26 @@ describe('dot-auth-config.mappers', () => {
             expect(payload.values.extraRoles).toBe('Editor');
             expect(payload.values.buildRolesStrategy).toBe('idp');
         });
+
+        it('round-trips revocationUrl and groupsUrl so a save never deletes the stored secrets', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+            config.oidc.revocationUrl = 'https://idp.example/revoke';
+            config.oidc.groupsUrl = 'https://idp.example/groups';
+
+            const payload = toPayload(config);
+            expect(payload.values.revocationUrl).toBe('https://idp.example/revoke');
+            expect(payload.values.groupsUrl).toBe('https://idp.example/groups');
+        });
+
+        it('omits revocationUrl and groupsUrl when unset', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+
+            const payload = toPayload(config);
+            expect(payload.values.revocationUrl).toBeUndefined();
+            expect(payload.values.groupsUrl).toBeUndefined();
+        });
     });
 
     describe('toPayload — SAML', () => {
@@ -440,6 +460,61 @@ describe('dot-auth-config.mappers', () => {
             expect(
                 (toPayload(config).values as Record<string, unknown>)['signatureValidationType']
             ).toBe('none');
+        });
+
+        it('round-trips idpName and sPEndpointHostname so a save never wipes a working SP hostname', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.saml.idpName = 'Okta';
+            config.saml.spEndpointHostname = 'auth.customer.com';
+
+            const vals = toPayload(config).values as Record<string, unknown>;
+            expect(vals['idpName']).toBe('Okta');
+            expect(vals['sPEndpointHostname']).toBe('auth.customer.com');
+        });
+
+        it('omits sPEndpointHostname when unset so the backend host-name fallback stays intact', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.saml.spEndpointHostname = '';
+
+            const vals = toPayload(config).values as Record<string, unknown>;
+            expect(vals['sPEndpointHostname']).toBeUndefined();
+        });
+
+        it('serializes signRequests so the toggle persists', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.saml.signRequests = false;
+
+            const vals = toPayload(config).values as Record<string, unknown>;
+            expect(vals['signRequests']).toBe('false');
+        });
+    });
+
+    describe('fromView/toPayload SAML round-trip', () => {
+        it('preserves loaded idpName and sPEndpointHostname across an unrelated edit', () => {
+            const view: DotAuthConfigView = {
+                hostId: 'SYSTEM_HOST',
+                protocol: 'SAML',
+                configured: true,
+                inherited: false,
+                values: {
+                    enable: true,
+                    idpName: 'Corp IdP',
+                    sPEndpointHostname: 'auth.customer.com',
+                    sPIssuerURL: 'https://cms.example',
+                    signRequests: 'false'
+                },
+                headlessValues: {}
+            };
+            const config = fromView(view);
+            const vals = toPayload(config).values as Record<string, unknown>;
+            expect(vals['idpName']).toBe('Corp IdP');
+            expect(vals['sPEndpointHostname']).toBe('auth.customer.com');
+            expect(vals['signRequests']).toBe('false');
+            // and signRequests must not leak into extraProperties as a custom attribute
+            expect(config.saml.extraProperties).toEqual([]);
         });
     });
 

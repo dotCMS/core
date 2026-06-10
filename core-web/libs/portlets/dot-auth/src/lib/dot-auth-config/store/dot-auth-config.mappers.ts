@@ -23,6 +23,8 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         jwksUrl: '',
         userinfoUrl: '',
         logoutUrl: '',
+        revocationUrl: '',
+        groupsUrl: '',
         clientId: '',
         clientSecret: '',
         scopes: 'openid email profile',
@@ -43,6 +45,8 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         postLogoutRedirect: ''
     },
     saml: {
+        idpName: 'SAML Identity Provider',
+        spEndpointHostname: '',
         metadataUrl: '',
         entityId: '',
         ssoUrl: '',
@@ -93,6 +97,8 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         const values = view.values;
         config.saml = {
             ...config.saml,
+            idpName: String(values.idpName ?? config.saml.idpName),
+            spEndpointHostname: String(values.sPEndpointHostname ?? ''),
             metadataUrl: String(values.idPMetadataFile ?? ''),
             entityId: String(values.sPIssuerURL ?? ''),
             ssoUrl: String(values['identity.provider.destinationsso.url'] ?? ''),
@@ -131,6 +137,8 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         tokenUrl: String(values.tokenUrl ?? ''),
         userinfoUrl: String(values.userinfoUrl ?? ''),
         logoutUrl: String(values.logoutUrl ?? ''),
+        revocationUrl: String(values.revocationUrl ?? ''),
+        groupsUrl: String(values.groupsUrl ?? ''),
         clientId: String(values.clientId ?? ''),
         clientSecret: String(values.clientSecret ?? ''),
         scopes: String(values.scopes ?? config.oidc.scopes),
@@ -154,9 +162,12 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             protocol: 'SAML',
             values: {
                 enable: config.ssoEnabled,
-                idpName: 'SAML Identity Provider',
+                idpName: config.saml.idpName || 'SAML Identity Provider',
                 sPIssuerURL: config.saml.entityId,
-                sPEndpointHostname: '',
+                // Omit when unset: the backend replaces the whole secrets row on save, so an
+                // empty string would be STORED and shadow the host-name fallback downstream.
+                sPEndpointHostname: config.saml.spEndpointHostname || undefined,
+                signRequests: String(config.saml.signRequests),
                 signatureValidationType: config.saml.wantResponseSigned
                     ? config.saml.wantAssertionsSigned
                         ? 'responseandassertion'
@@ -207,6 +218,8 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             tokenUrl: config.oidc.tokenUrl,
             userinfoUrl: config.oidc.userinfoUrl,
             logoutUrl: config.oidc.logoutUrl,
+            revocationUrl: config.oidc.revocationUrl || undefined,
+            groupsUrl: config.oidc.groupsUrl || undefined,
             groupsClaim: config.oidc.claimGroups,
             emailClaim: config.oidc.claimEmail || undefined,
             firstNameClaim: config.oidc.claimFirstName || undefined,
@@ -386,6 +399,7 @@ const SAML_ELEVATED_KEYS = new Set([
     'idpName',
     'sPIssuerURL',
     'sPEndpointHostname',
+    'signRequests',
     'signatureValidationType',
     'idPMetadataFile',
     'publicCert',
