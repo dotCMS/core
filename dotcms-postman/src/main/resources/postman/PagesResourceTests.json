@@ -7344,17 +7344,45 @@
       "name": "_render-sources [api/v1/page/_render-sources]",
       "item": [
         {
-          "name": "Setup: Get default site for render-sources",
+          "name": "Setup: Resolve default site for render-sources",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Resolve the default site id WITHOUT depending on the collection bearer jwt",
+                  "// (which is minted asynchronously and is occasionally empty when this folder runs).",
+                  "// Reuse defaultSiteId if a prior folder already set it; otherwise mint a token",
+                  "// synchronously here and look it up.",
+                  "const existing = pm.collectionVariables.get('defaultSiteId') || pm.environment.get('defaultSiteId');",
+                  "if (existing) {",
+                  "    pm.collectionVariables.set('renderSourcesHostId', existing);",
+                  "    return;",
+                  "}",
+                  "const serverURL = pm.environment.get('serverURL');",
+                  "const user = pm.environment.get('user');",
+                  "const password = pm.environment.get('password');",
+                  "const basicAuth = Buffer.from(`${user}:${password}`).toString('base64');",
+                  "pm.sendRequest({",
+                  "    url: `${serverURL}/api/v1/site/defaultSite`,",
+                  "    method: 'GET',",
+                  "    header: { 'Authorization': `Basic ${basicAuth}`, 'accept': 'application/json' }",
+                  "}, function (err, res) {",
+                  "    if (!err && res && res.code === 200) {",
+                  "        pm.collectionVariables.set('renderSourcesHostId', res.json().entity.identifier);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set(\"renderSourcesHost\", jsonData.entity.hostname);",
-                  "    pm.collectionVariables.set(\"renderSourcesHostId\", jsonData.entity.identifier);",
+                  "pm.test(\"renderSourcesHostId is resolved\", function () {",
+                  "    pm.expect(pm.collectionVariables.get('renderSourcesHostId')).to.be.a('string').and.not.empty;",
                   "});"
                 ],
                 "type": "text/javascript",
