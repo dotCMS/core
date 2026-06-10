@@ -8,6 +8,7 @@ import {
     effect,
     ElementRef,
     inject,
+    OnInit,
     signal,
     untracked,
     viewChild
@@ -95,7 +96,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent {
+export class DotContentDriveShellComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);

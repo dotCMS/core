@@ -53,6 +53,10 @@ export class DotCreateContentletComponent implements OnInit {
      * @memberof DotCreateContentletComponent
      */
     onClose(event: unknown): void {
+        // Assumes the legacy create editor is always routed under `/c/content/new/` (the path
+        // DotContentDriveNavigationService.createContent navigates to). If that prefix ever
+        // changes, the Content Drive back-navigation below is skipped and we fall back to the
+        // content listing — keep the two in sync.
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
             // If opened from Content Drive, the URL carries CD_-prefixed params (filters/path).
             // Return there with the filters preserved — same behavior as editing a contentlet
