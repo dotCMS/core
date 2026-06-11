@@ -39,6 +39,7 @@ import { DotPaletteListStore } from './store/store';
 
 import { DotPaletteListStatus, DotUVEPaletteListTypes, DotUVEPaletteListView } from '../../models';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
+import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
 
 const mockStore = {
     contenttypes: signal([]),
@@ -840,6 +841,169 @@ describe('DotUvePaletteListComponent', () => {
                     listType: DotUVEPaletteListTypes.CONTENT
                 })
             );
+        });
+    });
+
+    describe('allowedContentTypes input', () => {
+        it('should thread allowedContentTypes into the getContentTypes fetch params', () => {
+            const allowed = { blog: true, news: true } as Record<string, true>;
+            spectator.fixture.componentRef.setInput('allowedContentTypes', allowed);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    allowedContentTypes: allowed
+                })
+            );
+        });
+
+        it('should pass undefined allowedContentTypes by default', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(store.getContentTypes).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    allowedContentTypes: undefined
+                })
+            );
+        });
+    });
+
+    describe('selection mode', () => {
+        it('should render selectable cards when selectionMode is true', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            const card = spectator.query(DotUVEPaletteContenttypeComponent);
+            expect(card).toBeTruthy();
+            expect(card?.$selectable()).toBe(true);
+        });
+
+        it('should not render selectable cards when selectionMode is false (default)', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            const card = spectator.query(DotUVEPaletteContenttypeComponent);
+            expect(card).toBeTruthy();
+            expect(card?.$selectable()).toBe(false);
+        });
+
+        it('should emit selectContentType and NOT drill into contentlets when a card is selected', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            const emitSpy = jest.fn();
+            spectator.output('selectContentType').subscribe(emitSpy);
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'onSelectContentType',
+                'blog'
+            );
+            spectator.detectChanges();
+
+            expect(emitSpy).toHaveBeenCalledWith('blog');
+            expect(store.getContentlets).not.toHaveBeenCalled();
+        });
+
+        it('should mark the matching card as selected after selecting a content type', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'onSelectContentType',
+                'blog'
+            );
+            spectator.detectChanges();
+
+            const card = spectator.query(DotUVEPaletteContenttypeComponent);
+            expect(card?.$selected()).toBe(true);
+        });
+
+        it('should drill into contentlets (not emit selectContentType) when selectionMode is false', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            const emitSpy = jest.fn();
+            spectator.output('selectContentType').subscribe(emitSpy);
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'onSelectContentType',
+                'Blog'
+            );
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+            expect(store.getContentlets).toHaveBeenCalledWith({
+                selectedContentType: 'Blog',
+                filter: '',
+                page: 1
+            });
+        });
+
+        it('should not render the favorite selector in selection mode', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(spectator.query(DotFavoriteSelectorComponent)).toBeNull();
+        });
+
+        it('should render the favorite selector when selectionMode is false', () => {
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(spectator.query(DotFavoriteSelectorComponent)).toBeTruthy();
+        });
+
+        it('should remove the grid/list view toggle from the menu items in selection mode', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            switchToContentTypesView();
+            spectator.detectChanges();
+
+            const labels = spectator.component['$menuItems']().map((item) => item.label);
+            expect(labels.includes('uve.palette.menu.view.title')).toBe(false);
+        });
+
+        it('should keep the grid/list view toggle in the menu items when selectionMode is false', () => {
+            switchToContentTypesView();
+            spectator.detectChanges();
+
+            const labels = spectator.component['$menuItems']().map((item) => item.label);
+            expect(labels.includes('uve.palette.menu.view.title')).toBe(true);
+        });
+
+        it('should force grid layout in selection mode', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            mockStore.layoutMode.set('list');
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            expect(spectator.component['$layoutMode']()).toBe('grid');
+        });
+
+        it('should not show the context menu on card right-click in selection mode', () => {
+            spectator.fixture.componentRef.setInput('selectionMode', true);
+            setLoadedContentTypes();
+            spectator.detectChanges();
+
+            const contextMenuComponent = spectator.query(ContextMenu);
+            expect(contextMenuComponent).toBeTruthy();
+
+            const showSpy = jest.spyOn(contextMenuComponent, 'show');
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
+
+            expect(showSpy).not.toHaveBeenCalled();
         });
     });
 });
