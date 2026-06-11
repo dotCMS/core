@@ -80,6 +80,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -97,9 +98,11 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1253,52 +1256,53 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			for(final Relationship relationship : relationships) {
 
-				final List<Contentlet> oldDocs;
-				final List<String> oldRelatedIds = new ArrayList<>();
-				final List<String> newRelatedIds = new ArrayList<>();
+				// Both sides are collected into Sets of identifiers: the index holds one
+				// document per language/variant of the same identifier, and only deduped
+				// collections make the disjunction below a true symmetric difference
+				final Collection<String> oldRelatedIds = new LinkedHashSet<>();
+				final Collection<String> newRelatedIds = new LinkedHashSet<>();
 
-				final List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
-						"+" + relationship.getRelationTypeValue()
-								+ ":" + contentlet.getIdentifier(),
-						-1, 0, null, userAPI.getSystemUser(), false);
+				final String relatedQuery = "+" + relationship.getRelationTypeValue()
+						+ ":" + contentlet.getIdentifier();
+				List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
+						relatedQuery, ESContentletAPIImpl.MAX_LIMIT, 0, null,
+						userAPI.getSystemUser(), false);
+				if (oldSearchResults instanceof PaginatedArrayList
+						&& ((PaginatedArrayList<?>) oldSearchResults).getTotalResults()
+								> oldSearchResults.size()) {
+					// More documents reference this contentlet than a single search page can
+					// return; a limit above MAX_LIMIT makes searchIndex switch to a scroll
+					// search that returns them all
+					Logger.debug(this, () -> "More than " + ESContentletAPIImpl.MAX_LIMIT
+							+ " index documents reference '" + contentlet.getIdentifier()
+							+ "' through '" + relationship.getRelationTypeValue()
+							+ "'. Falling back to a scroll search");
+					oldSearchResults = contentletAPI.searchIndex(relatedQuery,
+							ESContentletAPIImpl.MAX_LIMIT + 1, 0, null,
+							userAPI.getSystemUser(), false);
+				}
 				for (final ContentletSearch result : oldSearchResults) {
 					oldRelatedIds.add(result.getIdentifier());
 				}
 
 				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
-						.equals(relationship.getRelationTypeValue())).forEach(
-						entry -> replaceExistingRelatedContent(entry, contentlet,
-								oldRelatedIds, newRelatedIds));
+						.equals(relationship.getRelationTypeValue())).forEach(entry -> {
+							final String childId = entry.get(ESMappingConstants.CHILD);
+							final String parentId = entry.get(ESMappingConstants.PARENT);
+							newRelatedIds.add(contentlet.getIdentifier().equalsIgnoreCase(childId)
+									? parentId : childId);
+						});
 
-				//Taking the disjunction of both collections will give the old list of dependencies that need to be removed from the
-				//re-indexation and the list of new dependencies no re-indexed yet
+				// The symmetric difference of both Sets is the actual dependency delta: the
+				// contents that lost the relationship (their index document still references
+				// this contentlet) plus the ones that just gained it (not indexed yet).
+				// Contents whose relationship did NOT change are excluded — re-indexing them
+				// on every save is what made saves with heavily related content so expensive
 				dependenciesToReindex.addAll(
 						CollectionUtils.disjunction(oldRelatedIds, newRelatedIds));
 			}
 		}
 		return dependenciesToReindex;
-	}
-
-	/**
-	 *
-	 * @param relatedEntry
-	 * @param con
-	 * @param oldRelatedIds
-	 * @param newRelatedIds
-	 */
-	private void replaceExistingRelatedContent(final Map<String, String> relatedEntry,
-			final Contentlet con, final List<String> oldRelatedIds,
-			final List<String> newRelatedIds) {
-
-		final String childId = relatedEntry.get(ESMappingConstants.CHILD);
-		final String parentId = relatedEntry.get(ESMappingConstants.PARENT);
-		if (con.getIdentifier().equalsIgnoreCase(childId)) {
-			newRelatedIds.add(parentId);
-			oldRelatedIds.remove(parentId);
-		} else {
-			newRelatedIds.add(childId);
-			oldRelatedIds.remove(childId);
-		}
 	}
 
     /**

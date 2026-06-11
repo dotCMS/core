@@ -31,6 +31,7 @@ import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -59,6 +60,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelationshipAPI;
@@ -71,6 +73,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -941,6 +944,132 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertRelatedContents(relationship, contentletB, contentletA, contentletC);
         assertRelatedContents(relationship, contentletC, contentletA, contentletB);
 
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#deleteRelatedContent(Contentlet, Relationship, boolean, User, boolean)}
+     * When: a limited user with EDIT permission on the parent contentlet, READ permission on one
+     * related child but NO permission on another related child deletes the related content
+     * Should: remove only the relationship to the readable child; the relationship to the
+     * unreadable child must be preserved
+     */
+    @Test
+    public void deleteRelatedContentWithLimitedUserPreservesUnreadableRelationships()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet readableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+
+        contentletAPI.relateContent(parent, relationship,
+                list(readableChild, unreadableChild), user, false);
+
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        PermissionUtilTest.addPermission(parent, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        PermissionUtilTest.addPermission(readableChild, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        contentletAPI.deleteRelatedContent(parent, relationship, true, limitedUser, false);
+
+        final List<String> remainingChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Only the readable relationship must be deleted", 1,
+                remainingChildren.size());
+        assertEquals("The relationship to the unreadable child must be preserved",
+                unreadableChild.getIdentifier(), remainingChildren.get(0));
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#relateContent(Contentlet, Relationship, List, User, boolean)}
+     * When: the records list contains the same related contentlet more than once — e.g. a REST
+     * payload listing an identifier twice, or two language versions of the same content
+     * Should: save without a primary key violation and keep a single relationship row
+     */
+    @Test
+    public void relateContentWithDuplicateRecordsSavesSingleRelationship()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet child = new ContentletDataGen(childType).host(host).nextPersisted();
+
+        contentletAPI.relateContent(parent, relationship, list(child, child), user, false);
+
+        final List<String> relatedChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Duplicate records must collapse into a single relationship row", 1,
+                relatedChildren.size());
+        assertEquals(child.getIdentifier(), relatedChildren.get(0));
+    }
+
+    /**
+     * Method to test:
+     * {@link ContentletAPI#relateContent(Contentlet, Relationship, List, User, boolean)}
+     * When: a limited user relates new content to a parent that is already related to content
+     * the user cannot READ
+     * Should: preserve the unreadable relationship and append the new relationship after it in
+     * the tree order, so the surviving rows keep their position
+     */
+    @Test
+    public void relateContentWithLimitedUserAppendsAfterPreservedRelationships()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+        final Contentlet readableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+
+        // The existing relationship points to content the limited user cannot READ
+        contentletAPI.relateContent(parent, relationship, list(unreadableChild), user, false);
+
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        PermissionUtilTest.addPermission(parent, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        PermissionUtilTest.addPermission(readableChild, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+        contentletAPI.relateContent(parent, relationship, list(readableChild), limitedUser,
+                false);
+
+        final List<String> relatedChildren = TreeFactory.getRelatedIdsByParentAndRelationType(
+                parent.getIdentifier(), relationship.getRelationTypeValue());
+        assertEquals("Both the preserved and the new relationship must exist", 2,
+                relatedChildren.size());
+        assertEquals("The preserved relationship must keep its position",
+                unreadableChild.getIdentifier(), relatedChildren.get(0));
+        assertEquals("The new relationship must be appended after the preserved one",
+                readableChild.getIdentifier(), relatedChildren.get(1));
     }
 
     /**
