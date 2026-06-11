@@ -23,6 +23,7 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.workflow.helper.WorkflowHelper;
@@ -212,11 +213,15 @@ public class ContentTypeResourceUpdateMetadataTest {
                     WorkflowHelper.getInstance(),
                     mock(PermissionAPI.class));
 
-            final Response response = limitedResource.updateContentTypeMetadata(
-                    getHttpRequest(), new EmptyHttpResponse(), ct.id(),
-                    Map.of("KEY", "value"));
-
-            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            try {
+                limitedResource.updateContentTypeMetadata(
+                        getHttpRequest(), new EmptyHttpResponse(), ct.id(),
+                        Map.of("KEY", "value"));
+                org.junit.Assert.fail("Expected ForbiddenException to be thrown");
+            } catch (final ForbiddenException e) {
+                assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                        e.getResponse().getStatus());
+            }
         } finally {
             ContentTypeDataGen.remove(ct);
         }

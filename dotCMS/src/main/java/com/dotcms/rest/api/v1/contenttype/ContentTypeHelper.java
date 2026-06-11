@@ -1028,13 +1028,15 @@ public class ContentTypeHelper implements Serializable {
         // Validate/normalize before acquiring the lock — fail fast on bad input
         normalizeStyleEditorSchemaToString(patch);
 
-        // idOrVar is unique per content type (UUID or variable name), so it is a safe lock key
         final IdentifierStripedLock lockManager =
                 DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         try {
-            return lockManager.tryLock("ct-metadata-" + idOrVar, () -> {
+            // Initial find to obtain the stable ID used as the lock key
+            final ContentType initial = contentTypeAPI.find(idOrVar);
+
+            return lockManager.tryLock("ct-metadata-" + initial.id(), () -> {
                 // Re-read inside the lock to pick up any writes committed before we acquired it
-                final ContentType current = contentTypeAPI.find(idOrVar);
+                final ContentType current = contentTypeAPI.find(initial.id());
                 final Map<String, Object> merged = new HashMap<>(
                         current.metadata() != null ? current.metadata() : Map.of());
                 patch.forEach((k, v) -> {
