@@ -412,7 +412,10 @@ describe('DotEditContentSidebarComponent', () => {
         describe('sections', () => {
             it('should carry the expected persistence keys on the three sections', () => {
                 const sections = spectator.queryAll(DotEditContentSidebarSectionComponent);
-                const keys = sections.map((section) => section.key());
+                // The History tab also renders sidebar-sections (history.*); scope to the Actions ones.
+                const keys = sections
+                    .map((section) => section.key())
+                    .filter((key) => key.startsWith('actions.'));
 
                 expect(keys).toEqual(['actions.locales', 'actions.workflow', 'actions.details']);
             });

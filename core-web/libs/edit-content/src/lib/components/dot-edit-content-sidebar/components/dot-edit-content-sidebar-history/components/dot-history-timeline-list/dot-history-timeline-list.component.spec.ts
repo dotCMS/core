@@ -11,7 +11,7 @@ interface TestItem {
 
 /**
  * Host wraps the timeline-list with concrete templates and a typed items
- * array so we can validate input wiring, template projection, scroll
+ * array so we can validate input wiring, template projection, reached-end
  * emission, and test-id propagation from a real consumer's perspective.
  */
 @Component({
@@ -30,7 +30,7 @@ interface TestItem {
             [contentTemplate]="$contentTpl()!"
             [containerTestId]="containerTestId"
             [timelineTestId]="timelineTestId"
-            (scrolled)="onScrolled($event)" />
+            (reachedEnd)="onReachedEnd()" />
     `
 })
 class TestHostComponent {
@@ -44,14 +44,15 @@ class TestHostComponent {
     containerTestId = 'host-container';
     timelineTestId = 'host-timeline';
 
-    lastScrollEvent: Event | null = null;
-    onScrolled(event: Event): void {
-        this.lastScrollEvent = event;
+    reachedEndCount = 0;
+    onReachedEnd(): void {
+        this.reachedEndCount++;
     }
 }
 
 describe('DotHistoryTimelineListComponent', () => {
     let spectator: Spectator<TestHostComponent>;
+    let intersectionCallback: IntersectionObserverCallback;
 
     const createHost = createComponentFactory({
         component: TestHostComponent,
@@ -59,17 +60,34 @@ describe('DotHistoryTimelineListComponent', () => {
     });
 
     beforeEach(() => {
+        // jsdom lacks IntersectionObserver — stub it and capture the callback so
+        // we can simulate the sentinel intersecting the viewport.
+        global.IntersectionObserver = jest
+            .fn()
+            .mockImplementation((callback: IntersectionObserverCallback) => {
+                intersectionCallback = callback;
+                return {
+                    observe: jest.fn(),
+                    unobserve: jest.fn(),
+                    disconnect: jest.fn()
+                };
+            }) as unknown as typeof IntersectionObserver;
+
         spectator = createHost();
         spectator.detectChanges();
     });
 
     describe('test ids', () => {
-        it('should apply containerTestId on the scrollable wrapper', () => {
+        it('should apply containerTestId on the wrapper', () => {
             expect(spectator.query(byTestId('host-container'))).toBeTruthy();
         });
 
         it('should apply timelineTestId on the p-timeline element', () => {
             expect(spectator.query(byTestId('host-timeline'))).toBeTruthy();
+        });
+
+        it('should render the load-more sentinel', () => {
+            expect(spectator.query(byTestId('timeline-sentinel'))).toBeTruthy();
         });
     });
 
@@ -99,13 +117,21 @@ describe('DotHistoryTimelineListComponent', () => {
         });
     });
 
-    describe('scroll output', () => {
-        it('should emit scrolled when the container scrolls', () => {
-            const container = spectator.query(byTestId('host-container'));
-            expect(container).toBeTruthy();
-            spectator.dispatchFakeEvent(container as Element, 'scroll');
-            expect(spectator.component.lastScrollEvent).toBeInstanceOf(Event);
-            expect(spectator.component.lastScrollEvent?.type).toBe('scroll');
+    describe('reachedEnd output', () => {
+        it('should emit reachedEnd when the sentinel intersects the viewport', () => {
+            intersectionCallback(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+            expect(spectator.component.reachedEndCount).toBe(1);
+        });
+
+        it('should not emit reachedEnd when the sentinel is not intersecting', () => {
+            intersectionCallback(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+            expect(spectator.component.reachedEndCount).toBe(0);
         });
     });
 });

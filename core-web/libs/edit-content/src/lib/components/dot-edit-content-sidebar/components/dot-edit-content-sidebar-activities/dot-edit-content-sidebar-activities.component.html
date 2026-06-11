@@ -54,9 +54,17 @@
                     </div>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <span class="block" data-testid="empty-state">
-                        {{ 'edit.content.sidebar.activities.empty' | dm }}
-                    </span>
+                    <div data-testid="empty-state" class="flex justify-center px-4">
+                        <div class="w-full max-w-[280px]">
+                            <dot-empty-container
+                                [configuration]="{
+                                    title: '',
+                                    subtitle: 'edit.content.sidebar.activities.empty' | dm,
+                                    icon: 'pi-comment'
+                                }"
+                                [hideContactUsLink]="true" />
+                        </div>
+                    </div>
                 </ng-template>
             </p-dataview>
         </div>

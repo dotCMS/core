@@ -7,12 +7,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
-import {
-    DotEmptyContainerComponent,
-    DotMessagePipe,
-    DotSidebarAccordionComponent,
-    DotSidebarAccordionTabComponent
-} from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 import { DotHistoryTimelineListComponent } from './components/dot-history-timeline-list/dot-history-timeline-list.component';
@@ -22,6 +17,7 @@ import {
     DotHistoryTimelineItemAction,
     DotPushPublishHistoryItem
 } from '../../../../models/dot-edit-content.model';
+import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -36,8 +32,7 @@ import {
         MenuModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
-        DotSidebarAccordionComponent,
-        DotSidebarAccordionTabComponent,
+        DotEditContentSidebarSectionComponent,
         DotHistoryTimelineItemComponent,
         DotHistoryTimelineListComponent,
         DotPushpublishTimelineItemComponent
@@ -198,27 +193,19 @@ export class DotEditContentSidebarHistoryComponent {
     }
 
     /**
-     * Handle scroll on timeline content to load more items when near bottom
+     * Load more version items when the Versions timeline reaches its end.
      */
-    onTimelineScroll(event: Event): void {
-        const el = event.target as HTMLElement;
-        if (!el) return;
-        const threshold = 100;
-        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-        if (nearBottom && this.$hasMoreItems() && !this.$isLoading()) {
+    onTimelineReachedEnd(): void {
+        if (this.$hasMoreItems() && !this.$isLoading()) {
             this.loadNextPage();
         }
     }
 
     /**
-     * Handle scroll on push publish timeline content to load more when near bottom
+     * Load more push publish items when the Push Publish timeline reaches its end.
      */
-    onPushPublishTimelineScroll(event: Event): void {
-        const el = event.target as HTMLElement;
-        if (!el) return;
-        const threshold = 100;
-        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-        if (nearBottom && this.$hasMorePushPublishItems() && !this.$isLoading()) {
+    onPushPublishTimelineReachedEnd(): void {
+        if (this.$hasMorePushPublishItems() && !this.$isLoading()) {
             this.loadNextPushPublishPage();
         }
     }
@@ -235,11 +222,4 @@ export class DotEditContentSidebarHistoryComponent {
             command: () => this.deletePushPublishHistory.emit()
         }
     ]);
-
-    /**
-     * Handle accordion tab change
-     */
-    onAccordionTabChange(_activeTab: string | null): void {
-        // TODO: Here you can add additional logic if needed
-    }
 }
