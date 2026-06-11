@@ -1,5 +1,6 @@
 import { type FrameLocator, type Page } from '@playwright/test';
 import { getLegacyFrame } from '@utils/iframe';
+import { Portlet } from '@utils/portlets';
 
 /**
  * Focused helper for the Dojo-based content listing portlet.
@@ -22,11 +23,11 @@ export class ContentListingHelper {
     }
 
     get listViewButton() {
-        return this.frame.getByLabel('List', { exact: true });
+        return this.frame.locator('dot-data-view-button').getByLabel('List', { exact: true });
     }
 
     get cardViewButton() {
-        return this.frame.getByLabel('Card');
+        return this.frame.locator('dot-data-view-button').getByLabel('Card');
     }
 
     get addDropdownButton() {
@@ -54,6 +55,14 @@ export class ContentListingHelper {
     }
 
     /**
+     * Navigates to the content portlet and waits for the Dojo iframe to be ready.
+     */
+    async goto() {
+        await this.page.goto(Portlet.Content);
+        await this.waitForReady();
+    }
+
+    /**
      * Waits for the results table to be visible (iframe fully initialized).
      */
     async waitForReady() {
@@ -61,6 +70,12 @@ export class ContentListingHelper {
             .locator('.dijitDropDownButton')
             .first()
             .waitFor({ state: 'visible', timeout: 20000 });
+
+        await this.frame
+            .locator('dot-data-view-button.hydrated')
+            .waitFor({ state: 'visible', timeout: 20000 });
+
+        await this.listViewButton.waitFor({ state: 'visible', timeout: 10000 });
     }
 
     /**

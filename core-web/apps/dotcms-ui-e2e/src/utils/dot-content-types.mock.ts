@@ -52,7 +52,9 @@ function createFakePayloadBaseField(): ContentTypeFieldInput {
     };
 }
 
-export function createFakePayloadCategoryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadCategoryField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CATEGORY,
@@ -61,7 +63,9 @@ export function createFakePayloadCategoryField(overrides: FieldOverrides = {}): 
     };
 }
 
-export function createFakePayloadConstantField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadConstantField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CONSTANT,
@@ -70,7 +74,9 @@ export function createFakePayloadConstantField(overrides: FieldOverrides = {}): 
     };
 }
 
-export function createFakePayloadHiddenField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadHiddenField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.HIDDEN,
@@ -79,7 +85,9 @@ export function createFakePayloadHiddenField(overrides: FieldOverrides = {}): Co
     };
 }
 
-export function createFakePayloadHostFolderField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadHostFolderField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.HOST_FOLDER,
@@ -95,7 +103,9 @@ export function createFakePayloadTextField(overrides: FieldOverrides = {}): Cont
     };
 }
 
-export function createFakePayloadLineDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadLineDividerField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.LINE_DIVIDER,
@@ -103,7 +113,9 @@ export function createFakePayloadLineDividerField(overrides: FieldOverrides = {}
     };
 }
 
-export function createFakePayloadRelationshipField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadRelationshipField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.RELATIONSHIP,
@@ -123,7 +135,9 @@ export function createFakePayloadRowField(overrides: FieldOverrides = {}): Conte
     };
 }
 
-export function createFakePayloadColumnField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadColumnField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.COLUMN,
@@ -140,7 +154,9 @@ export function createFakePayloadRadioField(overrides: FieldOverrides = {}): Con
     };
 }
 
-export function createFakePayloadCheckboxField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadCheckboxField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CHECKBOX,
@@ -149,7 +165,9 @@ export function createFakePayloadCheckboxField(overrides: FieldOverrides = {}): 
     };
 }
 
-export function createFakePayloadTextAreaField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTextAreaField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TEXTAREA,
@@ -157,7 +175,9 @@ export function createFakePayloadTextAreaField(overrides: FieldOverrides = {}): 
     };
 }
 
-export function createFakePayloadWYSIWYGField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadWYSIWYGField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.WYSIWYG,
@@ -173,7 +193,9 @@ export function createFakePayloadDateField(overrides: FieldOverrides = {}): Cont
     };
 }
 
-export function createFakePayloadDateTimeField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadDateTimeField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.DATE_AND_TIME,
@@ -213,7 +235,9 @@ export function createFakePayloadImageField(overrides: FieldOverrides = {}): Con
     };
 }
 
-export function createFakePayloadSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadSelectField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.SELECT,
@@ -230,7 +254,9 @@ export function createFakePayloadTagField(overrides: FieldOverrides = {}): Conte
     };
 }
 
-export function createFakePayloadTabDividerField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadTabDividerField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.TAB_DIVIDER,
@@ -238,7 +264,9 @@ export function createFakePayloadTabDividerField(overrides: FieldOverrides = {})
     };
 }
 
-export function createFakePayloadBlockEditorField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadBlockEditorField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.BLOCK_EDITOR,
@@ -246,7 +274,9 @@ export function createFakePayloadBlockEditorField(overrides: FieldOverrides = {}
     };
 }
 
-export function createFakePayloadColumnBreakField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadColumnBreakField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.COLUMN_BREAK,
@@ -254,7 +284,9 @@ export function createFakePayloadColumnBreakField(overrides: FieldOverrides = {}
     };
 }
 
-export function createFakePayloadMultiSelectField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadMultiSelectField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.MULTI_SELECT,
@@ -263,7 +295,9 @@ export function createFakePayloadMultiSelectField(overrides: FieldOverrides = {}
     };
 }
 
-export function createFakePayloadBinaryField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadBinaryField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.BINARY,
@@ -271,7 +305,9 @@ export function createFakePayloadBinaryField(overrides: FieldOverrides = {}): Co
     };
 }
 
-export function createFakePayloadCustomField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadCustomField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.CUSTOM_FIELD,
@@ -280,7 +316,9 @@ export function createFakePayloadCustomField(overrides: FieldOverrides = {}): Co
     };
 }
 
-export function createFakePayloadKeyValueField(overrides: FieldOverrides = {}): ContentTypeFieldInput {
+export function createFakePayloadKeyValueField(
+    overrides: FieldOverrides = {}
+): ContentTypeFieldInput {
     return {
         ...createFakePayloadBaseField(),
         clazz: DotCMSClazzes.KEY_VALUE,

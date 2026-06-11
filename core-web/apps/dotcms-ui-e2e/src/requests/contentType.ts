@@ -1,5 +1,6 @@
 import { APIRequestContext, expect } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
+import { createFakePayloadTextField } from '@utils/dot-content-types.mock';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 export const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
@@ -62,7 +63,14 @@ export async function createFakeContentType(
         folder: 'SYSTEM_FOLDER',
         name: 'New content type',
         metadata: { CONTENT_EDITOR2_ENABLED: true },
-        workflow: [SYSTEM_WORKFLOW_ID]
+        workflow: [SYSTEM_WORKFLOW_ID],
+        fields: [
+            createFakePayloadTextField({
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            })
+        ]
     };
 
     return createContentType(request, { ...defaults, ...data });
