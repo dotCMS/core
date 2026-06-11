@@ -8,7 +8,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
@@ -107,7 +107,6 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             })
         ],
         imports: [
-            DotEmptyContainerComponent,
             DotMessagePipe,
             DotRelativeDatePipe,
             DotHistoryTimelineItemComponent,

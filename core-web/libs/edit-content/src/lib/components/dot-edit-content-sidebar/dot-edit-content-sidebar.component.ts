@@ -276,7 +276,7 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        nav: { class: 'border-none min-h-12 max-h-[52px]' },
         navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'

@@ -125,7 +125,11 @@ export class DotEditContentSidebarHistoryComponent {
     readonly $hasHistoryItems = computed(() => this.$historyItems().length > 0);
 
     /**
-     * Determines if there are more items to load for infinite scroll
+     * Determines if there are more items to load for infinite scroll.
+     * Assumes `currentPage` is 1-based (API contract): page 1 covers the first
+     * `perPage` items, so `currentPage * perPage` is the count loaded so far. A
+     * 0-based `currentPage` would make this always true and loop — guard upstream
+     * if the contract ever changes.
      */
     readonly $hasMoreItems = computed(() => {
         const pagination = this.$historypagination();
