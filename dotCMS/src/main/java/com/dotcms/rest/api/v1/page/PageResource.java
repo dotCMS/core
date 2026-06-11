@@ -833,6 +833,7 @@ public class PageResource {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+            @ApiResponse(responseCode = "409", description = "Conflict — page content was modified concurrently; refresh and retry"),
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -896,6 +897,9 @@ public class PageResource {
                     pageId);
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        } catch (DotDataException e) {
+            Logger.error(this, String.format("DotDataException on PageResource.addContent, pageId: %s: ", pageId), e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
     }
 
