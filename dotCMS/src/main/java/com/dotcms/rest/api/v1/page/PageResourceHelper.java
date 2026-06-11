@@ -168,7 +168,7 @@ public class PageResourceHelper implements Serializable {
 
         final int totalContentlets = containerEntries.stream()
                 .mapToInt(e -> UtilMethods.isSet(e.getContentIds()) ? e.getContentIds().size() : 0).sum();
-        Logger.debug(PageResourceHelper.class, () -> String.format(
+        Logger.debug(this, () -> String.format(
                 "Page content save: pageId='%s' user='%s' containerEntries=%d totalContentlets=%d " +
                 "variant='%s' language=%d",
                 pageId, user != null ? user.getUserId() : "unknown",
@@ -217,10 +217,10 @@ public class PageResourceHelper implements Serializable {
         for (final String personalization : multiTreesMap.keySet()) {
             final List<MultiTree> multiTrees = multiTreesMap.get(personalization);
             if (multiTrees.isEmpty()) {
-                Logger.warn(PageResourceHelper.class, String.format(
+                Logger.warn(this, String.format(
                         "Empty contentlet payload for page '%s', personalization='%s', variant='%s', " +
                         "language=%d submitted by user '%s'. Existing content in this slot will be wiped " +
-                        "unless MULTITREE_EMPTY_SAVE_GUARD_ENABLED is set.",
+                        "unless MULTITREE_NET_LOSS_THRESHOLD is configured.",
                         pageId, personalization, variantName,
                         language != null ? language.getId() : -1L,
                         user != null ? user.getUserId() : "unknown"));

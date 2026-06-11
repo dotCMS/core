@@ -4672,16 +4672,16 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
 
-    // ── Empty-save guard tests ──────────────────────────────────────────────
+    // ── Net-loss threshold guard tests (empty + non-empty) ─────────────────
 
     /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
-     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=true}, the page already has contentlets, and
-     * the caller submits an empty list (stale-session scenario).
-     * Should: throw {@link StalePageSaveException} and leave the existing rows untouched.
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0}, the page already has contentlets, and
+     * the caller submits an empty list (complete stale-session wipe scenario).
+     * Should: throw {@link StalePageSaveException} — net loss equals all existing rows, exceeding threshold 0.
      */
     @Test(expected = StalePageSaveException.class)
-    public void test_overridesMultitrees_guardEnabled_emptyPayload_throwsStalePageSaveException() throws Exception {
+    public void test_overridesMultitrees_threshold0_emptyPayload_throwsStalePageSaveException() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
@@ -4698,7 +4698,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
                 .setTreeOrder(1).nextPersisted();
 
-        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", true);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
         try {
             APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                     page.getIdentifier(),
@@ -4708,18 +4708,18 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
-            Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
         }
     }
 
     /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
-     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=false} (default), the page has existing
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=-1} (default, disabled), the page has existing
      * contentlets, and the caller submits an empty list.
-     * Should: not throw — wipe proceeds normally (guard is off), leaving 0 rows for the page.
+     * Should: not throw — wipe proceeds normally, leaving 0 rows for the page.
      */
     @Test
-    public void test_overridesMultitrees_guardDisabled_emptyPayload_wipesExistingRows() throws Exception {
+    public void test_overridesMultitrees_thresholdDisabled_emptyPayload_wipesExistingRows() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
@@ -4736,7 +4736,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
                 .setTreeOrder(1).nextPersisted();
 
-        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+        // Default: threshold is -1 (disabled) — no property set needed, but explicit for clarity
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
@@ -4746,24 +4747,24 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         );
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
-        assertTrue("Guard off — empty save should wipe all rows", result.isEmpty());
+        assertTrue("Threshold disabled — empty save should wipe all rows", result.isEmpty());
     }
 
     /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
-     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=true} but the page genuinely has no existing
-     * contentlets (first save on a blank page).
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0} but the page genuinely has no existing contentlets
+     * (first save on a blank page).
      * Should: not throw — the guard only fires when there are existing rows to protect.
      */
     @Test
-    public void test_overridesMultitrees_guardEnabled_emptyPayload_genuinelyEmptyPage_noException() throws Exception {
+    public void test_overridesMultitrees_threshold0_genuinelyEmptyPage_noException() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
         final Template template = new TemplateDataGen().body("body").nextPersisted();
         final Folder folder = new FolderDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
 
-        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", true);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
         try {
             APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                     page.getIdentifier(),
@@ -4773,7 +4774,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
-            Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
         }
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
@@ -4877,6 +4878,56 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
         assertEquals("Intentional removal of 2 should leave 6 contentlets", 6, result.size());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: The default threshold (1) is in effect and the user removes exactly 1 contentlet
+     * (the most a single UVE action can ever remove).
+     * Should: not throw — a net loss of 1 is within the default threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_defaultThreshold_singleRemoval_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // User intentionally removes the last contentlet; keeps the first two
+            if (i < 2) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        // Threshold of 1 — a loss of exactly 1 should be allowed
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 1);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Single intentional removal should leave 2 contentlets", 2, result.size());
     }
 
     // ── Style-properties tests ──────────────────────────────────────────────

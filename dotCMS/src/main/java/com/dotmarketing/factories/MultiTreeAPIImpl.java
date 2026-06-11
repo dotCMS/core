@@ -719,33 +719,26 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             throw new DotDataException("empty list passed in");
         }
 
-        if (multiTrees.isEmpty()) {
+        // Net-loss threshold guard. Disabled by default (-1). Set to 1 to reject any save that
+        // drops 2+ contentlets — safe for the UVE because each user action (add/remove/move)
+        // produces a net change of at most ±1. Also guards the complete-wipe case (empty payload)
+        // since a loss of N > threshold always triggers when N equals all existing rows.
+        // The DB SELECT is skipped entirely when the payload is non-empty AND threshold is -1.
+        final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        if (multiTrees.isEmpty() || threshold >= 0) {
             final Set<String> existing = languageIdOpt.isPresent()
                     ? this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId, languageIdOpt.get())
                     : this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
             if (!existing.isEmpty()) {
-                Logger.warn(this, String.format(
-                        "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
-                        "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
-                        existing.size(), pageId, personalization, variantId,
-                        languageIdOpt.orElse(-1L)));
-                if (Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
-                    throw new StalePageSaveException(
-                            "The page may have been modified by another user — please refresh and try again.");
-                }
-            }
-        } else {
-            // Net-loss threshold guard: fires only when MULTITREE_NET_LOSS_THRESHOLD is configured.
-            // DB SELECT is skipped entirely when the property is absent, so there is no performance
-            // cost on normal saves. Set threshold to the maximum drop you consider safe (e.g. 5 means
-            // a save that removes 6 or more contentlets is rejected as likely stale).
-            final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
-            if (threshold >= 0) {
-                final Set<String> existing = languageIdOpt.isPresent()
-                        ? this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId, languageIdOpt.get())
-                        : this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
                 final int netLoss = existing.size() - multiTrees.size();
-                if (netLoss > threshold) {
+                if (multiTrees.isEmpty()) {
+                    Logger.warn(this, String.format(
+                            "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
+                            "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
+                            existing.size(), pageId, personalization, variantId,
+                            languageIdOpt.orElse(-1L)));
+                }
+                if (threshold >= 0 && netLoss > threshold) {
                     Logger.warn(this, String.format(
                             "Save rejected: net loss of %d contentlet(s) from page '%s' exceeds threshold %d " +
                             "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
