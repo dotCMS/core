@@ -118,7 +118,23 @@ describe('DotHistoryTimelineListComponent', () => {
     });
 
     describe('reachedEnd output', () => {
-        it('should emit reachedEnd when the sentinel intersects the viewport', () => {
+        it('should ignore the initial observer callback so a short list does not auto-load', () => {
+            // The first callback after observe() is the initial observation and
+            // must be skipped even if the sentinel is already intersecting.
+            intersectionCallback(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+            expect(spectator.component.reachedEndCount).toBe(0);
+        });
+
+        it('should emit reachedEnd when the sentinel intersects after the initial observation', () => {
+            // Initial observation (skipped)
+            intersectionCallback(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+            // Real intersection triggered by a user scroll
             intersectionCallback(
                 [{ isIntersecting: true } as IntersectionObserverEntry],
                 {} as IntersectionObserver
@@ -127,6 +143,11 @@ describe('DotHistoryTimelineListComponent', () => {
         });
 
         it('should not emit reachedEnd when the sentinel is not intersecting', () => {
+            // Initial observation (skipped)
+            intersectionCallback(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
             intersectionCallback(
                 [{ isIntersecting: false } as IntersectionObserverEntry],
                 {} as IntersectionObserver

@@ -17,8 +17,9 @@ import { TimelineModule } from 'primeng/timeline';
  * Shared wrapper around PrimeNG's `<p-timeline>` used by both the Versions and
  * Push Publish sections in the History tab. Consumers project a marker template
  * and a content template; the wrapper handles layout, padding, test-ids, and
- * emits `reachedEnd` when its bottom sentinel scrolls into view so callers can
- * lazy-load the next page.
+ * emits `reachedEnd` when its bottom sentinel enters the viewport so callers can
+ * load the next page. The initial IntersectionObserver callback is ignored, so a
+ * list shorter than the viewport does not auto-load before the user scrolls.
  */
 @Component({
     selector: 'dot-history-timeline-list',
@@ -43,12 +44,19 @@ export class DotHistoryTimelineListComponent<T> implements AfterViewInit, OnDest
     /** Test id applied to the `<p-timeline>` element. */
     readonly timelineTestId = input<string>('timeline');
 
-    /** Emitted when the bottom sentinel becomes visible (end of list reached). */
+    /** Emitted when the bottom sentinel enters the viewport (end of list reached). */
     readonly reachedEnd = output<void>();
 
     private readonly $sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
 
     private observer?: IntersectionObserver;
+
+    /**
+     * IntersectionObserver delivers an initial callback right after `observe()`.
+     * We skip it so a list shorter than the viewport (sentinel already on screen)
+     * does not emit `reachedEnd` and auto-load the next page before any scroll.
+     */
+    private initialObservation = true;
 
     ngAfterViewInit(): void {
         const sentinel = this.$sentinel()?.nativeElement;
@@ -56,6 +64,11 @@ export class DotHistoryTimelineListComponent<T> implements AfterViewInit, OnDest
 
         this.observer = new IntersectionObserver(
             (entries) => {
+                if (this.initialObservation) {
+                    this.initialObservation = false;
+                    return;
+                }
+
                 if (entries[0]?.isIntersecting) {
                     this.reachedEnd.emit();
                 }
