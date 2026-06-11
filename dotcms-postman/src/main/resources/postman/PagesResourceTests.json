@@ -7281,48 +7281,22 @@
     },
     {
       "name": "_render-sources [api/v1/page/_render-sources]",
-      "item": [
+      "event": [
         {
-          "name": "Setup: Resolve host for render-sources",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Use the same host the suite created its test pages on ({{firstPageUrl}} is",
-                  "// created and rendered with {{defaultSiteId}} in an earlier folder). The live",
-                  "// 'default site' can be switched by sibling tests, so do NOT re-query it here.",
-                  "pm.collectionVariables.set('renderSourcesHostId', pm.collectionVariables.get('defaultSiteId'));"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"render-sources host and page are available\", function () {",
-                  "    pm.expect(pm.collectionVariables.get('renderSourcesHostId'), 'defaultSiteId must be set by an earlier folder').to.be.a('string').and.not.empty;",
-                  "    pm.expect(pm.collectionVariables.get('firstPageUrl'), 'firstPageUrl must be set by an earlier folder').to.be.a('string').and.not.empty;",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/site/{{renderSourcesHostId}}",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "site", "{{renderSourcesHostId}}"]
-            }
-          },
-          "response": []
-        },
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Target the same host the suite created its test pages on: {{firstPageUrl}} is",
+              "// created and rendered with {{defaultSiteId}} in an earlier folder. The live",
+              "// 'default site' can be switched by sibling tests, so do NOT re-query it here.",
+              "pm.collectionVariables.set('renderSourcesHostId', pm.collectionVariables.get('defaultSiteId'));"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "item": [
         {
           "name": "Happy path: render-sources for a page via host_id",
           "event": [
@@ -7330,6 +7304,10 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test(\"render-sources host and page were resolved by an earlier folder\", function () {",
+                  "    pm.expect(pm.collectionVariables.get('renderSourcesHostId'), 'defaultSiteId must be set by an earlier folder').to.be.a('string').and.not.empty;",
+                  "    pm.expect(pm.collectionVariables.get('firstPageUrl'), 'firstPageUrl must be set by an earlier folder').to.be.a('string').and.not.empty;",
+                  "});",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
@@ -7341,6 +7319,7 @@
                   "    pm.expect(entity).to.have.property('containers');",
                   "    pm.expect(entity).to.have.property('widgets');",
                   "    pm.expect(entity.page).to.have.property('identifier');",
+                  "    pm.expect(entity.page.identifier).to.be.a('string').and.not.empty;",
                   "    pm.expect(entity.page).to.have.property('uri');",
                   "    pm.expect(entity.page).to.have.property('languageId');",
                   "    pm.expect(entity.page.uri).to.match(/^\\/\\//, 'page.uri must be host-qualified (starts with //)');",
@@ -7361,45 +7340,6 @@
               "query": [
                 { "key": "host_id", "value": "{{renderSourcesHostId}}" }
               ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Happy path: render-sources host resolution via host_id",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "// Host resolution chain: host_id query param → default host.",
-                  "// The //host/uri form is NOT supported — dotCMS's NormalizationFilter",
-                  "// rejects any URI containing '//' before it reaches the resource.",
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Entity page identifier is set\", function () {",
-                  "    var entity = pm.response.json().entity;",
-                  "    pm.expect(entity.page.identifier).to.be.a('string').and.not.empty;",
-                  "});",
-                  "pm.test(\"page.uri is host-qualified\", function () {",
-                  "    var entity = pm.response.json().entity;",
-                  "    pm.expect(entity.page.uri).to.match(/^\\/\\//, 'page.uri must start with //');",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/_render-sources/{{firstPageUrl}}?host_id={{renderSourcesHostId}}",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "page", "_render-sources", "{{firstPageUrl}}"],
-              "query": [{"key": "host_id", "value": "{{renderSourcesHostId}}"}]
             }
           },
           "response": []

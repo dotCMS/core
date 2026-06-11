@@ -34,6 +34,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -51,7 +52,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -264,7 +264,7 @@ public class PageRenderSourcesResourceTest {
                 view.getContainers().get(container.getIdentifier());
 
         assertNotNull("Should find the DB container keyed by its identifier", containerView);
-        assertEquals("DB", containerView.getSource());
+        assertEquals(Source.DB.name(), containerView.getSource());
 
         // contentTypes must be non-null and contain the placed content type
         assertNotNull(containerView.getContentTypes());
@@ -333,7 +333,7 @@ public class PageRenderSourcesResourceTest {
         // FILE container key is the host-qualified path (starts with //)
         final Map.Entry<String, ContainerSourceView> fileEntry = view.getContainers().entrySet()
                 .stream()
-                .filter(e -> "FILE".equals(e.getValue().getSource()))
+                .filter(e -> Source.FILE.name().equals(e.getValue().getSource()))
                 .findFirst()
                 .orElse(null);
         assertNotNull("Should find a FILE container in the response", fileEntry);
@@ -341,7 +341,7 @@ public class PageRenderSourcesResourceTest {
                 fileEntry.getKey().startsWith("//"));
 
         final ContainerSourceView fileContainerView = fileEntry.getValue();
-        assertEquals("FILE", fileContainerView.getSource());
+        assertEquals(Source.FILE.name(), fileContainerView.getSource());
         assertNotNull(fileContainerView.getContentTypes());
         assertFalse("contentTypes should not be empty for FILE container with placed content",
                 fileContainerView.getContentTypes().isEmpty());
@@ -613,14 +613,13 @@ public class PageRenderSourcesResourceTest {
                 (ResponseEntityView<PageRenderSourcesView>) resp.getEntity();
         final PageRenderSourcesView view = entity.getEntity();
 
-        // Theme may be null if template is anonymous/system — only assert when present
-        if (view.getTheme() != null) {
-            assertNotNull(view.getTheme().getId());
-            assertNotNull(view.getTheme().getFolderPath());
-            assertTrue("folderPath should start with //",
-                    view.getTheme().getFolderPath().startsWith("//"));
-        }
-        Logger.info(this, "Theme block test passed. Theme: " + view.getTheme());
+        // The template references a real theme folder created above, so it must resolve.
+        assertNotNull("Theme should resolve for a template with a theme folder",
+                view.getTheme());
+        assertNotNull(view.getTheme().getId());
+        assertNotNull(view.getTheme().getFolderPath());
+        assertTrue("folderPath should start with //",
+                view.getTheme().getFolderPath().startsWith("//"));
     }
 
     // -----------------------------------------------------------------------
@@ -700,7 +699,8 @@ public class PageRenderSourcesResourceTest {
                 widgetContent.getInode(), widgetView.getContentletInode());
 
         // source must be CODE; no path/identifier for inline widget
-        assertEquals("source must be CODE for inline widget", "CODE", widgetView.getSource());
+        assertEquals("source must be CODE for inline widget",
+                WidgetSourceView.Source.CODE.name(), widgetView.getSource());
         assertNull("path must be null for CODE widget", widgetView.getPath());
         assertNull("identifier must be null for CODE widget", widgetView.getIdentifier());
     }
@@ -799,7 +799,8 @@ public class PageRenderSourcesResourceTest {
                 widgetContent.getInode(), widgetView.getContentletInode());
 
         // source must be FILE and path/identifier must be populated
-        assertEquals("source must be FILE for file-backed widget", "FILE", widgetView.getSource());
+        assertEquals("source must be FILE for file-backed widget",
+                WidgetSourceView.Source.FILE.name(), widgetView.getSource());
         assertNotNull("path must be set for FILE widget", widgetView.getPath());
         assertTrue("path should start with //", widgetView.getPath().startsWith("//"));
         assertNotNull("identifier must be set for FILE widget", widgetView.getIdentifier());
@@ -925,11 +926,4 @@ public class PageRenderSourcesResourceTest {
         assertNull("urlContentMap must be absent for regular page requests",
                 regularView.getUrlContentMap());
     }
-
-    // -----------------------------------------------------------------------
-    // (Tests 13-15 removed: the //host/uri qualified-path form and its raw-URI
-    // parsing machinery were reverted.  dotCMS's NormalizationFilter rejects any
-    // URI containing "//" before it reaches the resource, making that form
-    // impossible in this stack.  Host resolution is host_id → default host only.)
-    // -----------------------------------------------------------------------
 }
