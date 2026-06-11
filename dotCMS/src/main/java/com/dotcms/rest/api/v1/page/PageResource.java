@@ -888,7 +888,7 @@ public class PageResource {
             } catch (StalePageSaveException e) {
                 Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
                 return ExceptionMapperUtil.createResponse(
-                        new DotDataException("Page content may have been modified by another user — please refresh and try again."),
+                        new DotDataException("Save rejected: net content loss exceeds the configured threshold. Please refresh and try again."),
                         Response.Status.CONFLICT);
             }
 

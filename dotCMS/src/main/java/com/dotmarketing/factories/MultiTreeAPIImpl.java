@@ -745,7 +745,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                             netLoss, pageId, threshold, personalization, variantId,
                             languageIdOpt.orElse(-1L)));
                     throw new StalePageSaveException(
-                            "The page may have been modified by another user — please refresh and try again.");
+                            "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.");
                 }
             }
         }
