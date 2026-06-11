@@ -889,7 +889,7 @@ public class PageResource {
                 Logger.warn(this, String.format("Page content save rejected for pageId '%s' by user '%s': %s",
                         pageId, user.getUserId(), e.getMessage()));
                 return ExceptionMapperUtil.createResponse(
-                        new DotDataException("Save rejected: net content loss exceeds the configured threshold. Please refresh and try again."),
+                        "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.",
                         Response.Status.CONFLICT);
             }
 

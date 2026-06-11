@@ -726,9 +726,29 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         // The DB SELECT is skipped entirely when the payload is non-empty AND threshold is -1.
         final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
         if (multiTrees.isEmpty() || threshold >= 0) {
-            final Set<String> existing = languageIdOpt.isPresent()
-                    ? this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId, languageIdOpt.get())
-                    : this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
+            // Mirror the downstream DELETE branching so the guard counts the same rows that will
+            // be removed. When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and the requested language
+            // differs from the default, the DELETE targets both languages — use the two-language
+            // overload so default-language-only contentlets are not invisible to the guard.
+            final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
+                    "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+            final Set<String> existing;
+            if (languageIdOpt.isPresent() && defaultContentToDefaultLanguageGuard) {
+                final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                if (defaultLanguageId == languageIdOpt.get()) {
+                    existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                            personalization, variantId, languageIdOpt.get());
+                } else {
+                    existing = this.getOriginalContentlets(pageId, personalization, variantId,
+                            languageIdOpt.get(), defaultLanguageId);
+                }
+            } else if (languageIdOpt.isPresent()) {
+                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId, languageIdOpt.get());
+            } else {
+                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId);
+            }
             if (!existing.isEmpty()) {
                 final int netLoss = existing.size() - multiTrees.size();
                 final Set<String> incomingIds = multiTrees.stream()
