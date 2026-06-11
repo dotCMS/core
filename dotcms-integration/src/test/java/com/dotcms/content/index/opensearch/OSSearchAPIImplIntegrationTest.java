@@ -103,6 +103,10 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
     private User systemUser;
 
+    /** Cluster-prefixed (and tag-suffixed) physical names; resolved once per test in {@link #setUp()}. */
+    private String physicalLive;
+    private String physicalWorking;
+
     // =======================================================================
     // Lifecycle
     // =======================================================================
@@ -114,6 +118,9 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
     @Before
     public void setUp() throws Exception {
+        physicalLive    = opsOS.toPhysicalName(IDX_LIVE);
+        physicalWorking = opsOS.toPhysicalName(IDX_WORKING);
+
         cleanupTestOsIndices();
         cleanupVersionedRows();
 
@@ -121,19 +128,16 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
         // Create OS indices and register them under the default OPENSEARCH_3X version
         // so resolveIndex() (which calls loadDefaultVersionedIndices()) finds them.
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
-
-        // createIndex() stores the cluster-prefixed name in OpenSearch; resolveIndex()
-        // must use the same prefixed name, otherwise the search hits a non-existent index.
-        final String fullLive    = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+        // Physical names must match across OS, the DB, and the search path — store the
+        // same value here as the one resolveIndex() will look up later.
+        osIndexAPI.createIndex(physicalLive, 1);
+        osIndexAPI.createIndex(physicalWorking, 1);
 
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
                         .version(DEFAULT_OS_VERSION)
-                        .live(fullLive)
-                        .working(fullWorking)
+                        .live(physicalLive)
+                        .working(physicalWorking)
                         .build());
 
         // Ensure resolveIndex() reads the freshly saved rows, not a cached prior state.
@@ -223,7 +227,11 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void test_searchRaw_nestedTopHits_shouldBePreservedOnBuckets() throws Exception {
-        final String fullLive = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        // Index into the live index's physical (.os-tagged) name registered in setUp(); this is
+        // the exact name searchRaw(live=true) resolves through VersionedIndices. Using the plain
+        // cluster-prefixed name would write to a different index than the one searched, so the
+        // terms aggregation would return zero buckets.
+        final String fullLive = physicalLive;
 
         // Two live docs sharing the same contenttype -> one terms bucket with docCount 2.
         indexDocument(fullLive, "nested-a-" + RUN_ID,
@@ -398,8 +406,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode()
             throws Exception {
 
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
-        indexTestDocument(fullWorking);
+        indexTestDocument(physicalWorking);
 
         final String matchAll = "{\"query\":{\"match_all\":{}}}";
         final ContentSearchResponse response =
@@ -430,8 +437,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode()
             throws Exception {
 
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
-        indexTestDocument(fullWorking);
+        indexTestDocument(physicalWorking);
 
         // Caller requests only identifier — inode intentionally omitted.
         final String queryWithSource =
@@ -485,7 +491,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     private synchronized void cleanupTestOsIndices() {
-        for (final String idx : List.of(IDX_LIVE, IDX_WORKING)) {
+        for (final String idx : List.of(physicalLive, physicalWorking)) {
             try {
                 if (osIndexAPI.indexExists(idx)) {
                     osIndexAPI.delete(idx);

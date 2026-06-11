@@ -27,15 +27,11 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
-import {
-    DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -98,10 +94,6 @@ describe('DotEmaDialogComponent', () => {
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,

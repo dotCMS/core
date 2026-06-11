@@ -4,24 +4,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocketURL,
-    LoggerService,
-    StringUtils,
-    DotEventsSocket
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNotificationItemComponent } from './dot-notification-item.component';
-
-export const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 describe('DotNotificationItemComponent', () => {
     let spectator: Spectator<DotNotificationItemComponent>;
@@ -37,12 +23,9 @@ describe('DotNotificationItemComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-            DotcmsEventsService,
             DotcmsConfigService,
             LoggerService,
-            StringUtils,
-            DotEventsSocket
+            StringUtils
         ],
         detectChanges: false
     });

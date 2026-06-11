@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -36,9 +36,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -46,7 +43,13 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
+import {
+    CONTAINER_SOURCE,
+    DotActionBulkResult,
+    DotContainer,
+    DotSite
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
     DotContentletStatusChipComponent,
@@ -66,7 +69,6 @@ import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
@@ -237,10 +239,13 @@ describe('ContainerListComponent', () => {
     let siteService: SiteServiceMock;
     let store: DotContainerListStore;
     let paginatorService: PaginatorService;
+    let switchSiteSubject: Subject<DotSite>;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
+        switchSiteSubject = new Subject<DotSite>();
+
         await TestBed.configureTestingModule({
             declarations: [],
             imports: [
@@ -268,10 +273,8 @@ describe('ContainerListComponent', () => {
                 DialogService,
                 DotAlertConfirmService,
                 DotcmsConfigService,
-                DotcmsEventsService,
                 DotContainerListStore,
                 DotContainersService,
-                DotEventsSocket,
                 DotHttpErrorManagerService,
                 DotSiteBrowserService,
                 HttpClient,
@@ -300,11 +303,16 @@ describe('ContainerListComponent', () => {
                     }
                 },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: {
+                        switchSiteEvent$: () => switchSiteSubject.asObservable()
+                    }
                 }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
@@ -521,8 +529,9 @@ describe('ContainerListComponent', () => {
 
         it("should fetch containers when site is changed and it's not the first time", () => {
             jest.spyOn(paginatorService, 'setExtraParams');
+            jest.spyOn(paginatorService, 'getFirstPage').mockReturnValue(of(containersMock));
 
-            siteService.setFakeCurrentSite(mockSites[1]);
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite);
 
             fixture.detectChanges();
 
@@ -530,7 +539,7 @@ describe('ContainerListComponent', () => {
                 'host',
                 mockSites[1].identifier
             );
-            expect(paginatorService.get).toHaveBeenCalled();
+            expect(paginatorService.getFirstPage).toHaveBeenCalled();
         });
     });
 

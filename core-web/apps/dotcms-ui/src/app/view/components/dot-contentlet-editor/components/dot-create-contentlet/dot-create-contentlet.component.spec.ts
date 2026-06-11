@@ -18,12 +18,8 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import {
-    DotcmsEventsServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 
@@ -82,7 +78,6 @@ describe('DotCreateContentletComponent', () => {
                 provide: DotRouterService,
                 useClass: MockDotRouterService
             },
-            { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
             {
                 provide: ActivatedRoute,
                 useValue: {
