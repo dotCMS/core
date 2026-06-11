@@ -4,11 +4,13 @@
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
         <div class="min-h-0 flex-1 overflow-y-auto px-[18px] pt-3">
-            <h2
-                class="m-0 px-2 pb-2 text-[11px] leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
-                data-testid="comments-title">
-                {{ 'edit.content.sidebar.tab.comments' | dm }}
-            </h2>
+            <div class="flex min-h-12 items-center px-2">
+                <h2
+                    class="m-0 text-[11px] leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
+                    data-testid="comments-title">
+                    {{ 'edit.content.sidebar.tab.comments' | dm }}
+                </h2>
+            </div>
             <p-dataview
                 #dv
                 [value]="$activities()"
