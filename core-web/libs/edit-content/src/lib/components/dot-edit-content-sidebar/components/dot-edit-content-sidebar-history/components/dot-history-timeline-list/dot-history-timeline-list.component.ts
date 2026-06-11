@@ -47,6 +47,9 @@ export class DotHistoryTimelineListComponent<T> implements OnDestroy {
     /** Emitted when the bottom sentinel enters the viewport (end of list reached). */
     readonly reachedEnd = output<void>();
 
+    // NOTE: viewChild (and all Angular signal queries) cannot be declared on an
+    // ES-private (#) member — the Angular compiler rejects it (NG1053). So the
+    // internal state here stays on TypeScript `private` for consistency.
     private readonly $sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
 
     private observer?: IntersectionObserver;
