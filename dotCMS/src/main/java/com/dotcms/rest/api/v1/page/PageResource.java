@@ -83,6 +83,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -884,7 +885,7 @@ public class PageResource {
             try {
                 savedContent = pageResourceHelper.saveContent(
                         pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
-            } catch (DotDataException e) {
+            } catch (StalePageSaveException e) {
                 Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
                 return ExceptionMapperUtil.createResponse(
                         new DotDataException("Page content may have been modified by another user — please refresh and try again."),

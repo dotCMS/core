@@ -23,6 +23,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -729,10 +730,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         existing.size(), pageId, personalization, variantId,
                         languageIdOpt.orElse(-1L)));
                 if (Config.getBooleanProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false)) {
-                    throw new DotDataException(String.format(
-                            "Save rejected: empty payload would delete %d existing contentlet(s) from page '%s'. " +
-                            "The page may have been modified by another user — please refresh and try again.",
-                            existing.size(), pageId));
+                    throw new StalePageSaveException(
+                            "The page may have been modified by another user — please refresh and try again.");
                 }
             }
         }
