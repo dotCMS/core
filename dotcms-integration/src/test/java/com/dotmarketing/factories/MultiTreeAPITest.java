@@ -16,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -4670,6 +4671,116 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertNotNull("Retrieved multiTree should not be null", retrieved);
         assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
+
+    // ── Empty-save guard tests ──────────────────────────────────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=true}, the page already has contentlets, and
+     * the caller submits an empty list (stale-session scenario).
+     * Should: throw {@link StalePageSaveException} and leave the existing rows untouched.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_guardEnabled_emptyPayload_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=false} (default), the page has existing
+     * contentlets, and the caller submits an empty list.
+     * Should: not throw — wipe proceeds normally (guard is off), leaving 0 rows for the page.
+     */
+    @Test
+    public void test_overridesMultitrees_guardDisabled_emptyPayload_wipesExistingRows() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                DOT_PERSONALIZATION_DEFAULT,
+                Collections.emptyList(),
+                Optional.of(defaultLanguage.getId()),
+                VariantAPI.DEFAULT_VARIANT.name()
+        );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Guard off — empty save should wipe all rows", result.isEmpty());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_EMPTY_SAVE_GUARD_ENABLED=true} but the page genuinely has no existing
+     * contentlets (first save on a blank page).
+     * Should: not throw — the guard only fires when there are existing rows to protect.
+     */
+    @Test
+    public void test_overridesMultitrees_guardEnabled_emptyPayload_genuinelyEmptyPage_noException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_EMPTY_SAVE_GUARD_ENABLED", false);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Genuinely empty page — should remain empty after save", result.isEmpty());
+    }
+
+    // ── Style-properties tests ──────────────────────────────────────────────
 
     /**
      * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}
