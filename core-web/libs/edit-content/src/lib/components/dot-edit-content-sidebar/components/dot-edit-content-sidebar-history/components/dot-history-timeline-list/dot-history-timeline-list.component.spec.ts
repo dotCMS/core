@@ -53,6 +53,7 @@ class TestHostComponent {
 describe('DotHistoryTimelineListComponent', () => {
     let spectator: Spectator<TestHostComponent>;
     let intersectionCallback: IntersectionObserverCallback;
+    let originalIntersectionObserver: typeof IntersectionObserver;
 
     const createHost = createComponentFactory({
         component: TestHostComponent,
@@ -61,7 +62,10 @@ describe('DotHistoryTimelineListComponent', () => {
 
     beforeEach(() => {
         // jsdom lacks IntersectionObserver — stub it and capture the callback so
-        // we can simulate the sentinel intersecting the viewport.
+        // we can simulate the sentinel intersecting the viewport. Keep a reference
+        // to the original so afterEach can restore it and the stub never leaks into
+        // other specs sharing this Jest worker.
+        originalIntersectionObserver = global.IntersectionObserver;
         global.IntersectionObserver = jest
             .fn()
             .mockImplementation((callback: IntersectionObserverCallback) => {
@@ -75,6 +79,10 @@ describe('DotHistoryTimelineListComponent', () => {
 
         spectator = createHost();
         spectator.detectChanges();
+    });
+
+    afterEach(() => {
+        global.IntersectionObserver = originalIntersectionObserver;
     });
 
     describe('test ids', () => {
