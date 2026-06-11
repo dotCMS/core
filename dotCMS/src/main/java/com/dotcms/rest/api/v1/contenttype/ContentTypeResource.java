@@ -31,12 +31,12 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.PaginationUtilParams.Builder;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
@@ -2057,9 +2057,10 @@ public class ContentTypeResource implements Serializable {
                     schema = @Schema(type = "string")
             ) final String idOrVar,
             @RequestBody(
-                    required = true,
                     description = "A flat JSON object whose keys are merged into the Content Type's " +
-                            "existing metadata. Set a key's value to `null` to remove it.",
+                            "existing metadata. Set a key's value to `null` to remove it. " +
+                            "An absent or empty body is treated as a no-op — the current metadata " +
+                            "is returned unchanged with HTTP 200.",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(type = "object", description = "Metadata key/value pairs to merge"),
@@ -2100,8 +2101,17 @@ public class ContentTypeResource implements Serializable {
             return Response.ok(new ResponseEntityContentTypeDetailView(
                     new HashMap<>(contentTypeHelper.contentTypeToMap(saved, user)))).build();
         } catch (final NotFoundInDbException e) {
-            Logger.error(this, String.format("Content Type '%s' was not found", idOrVar), e);
-            return Response.status(Response.Status.NOT_FOUND).build();
+            Logger.warn(this, String.format("Content Type '%s' was not found", idOrVar));
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", idOrVar))
+                    )).build();
+        } catch (final BadRequestException e) {
+            Logger.warn(this, String.format("Bad metadata patch for Content Type '%s': %s", idOrVar, e.getMessage()));
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("INVALID_METADATA", e.getMessage(), "DOT_STYLE_EDITOR_SCHEMA"))
+                    )).build();
         } catch (final DotSecurityException e) {
             throw new ForbiddenException(e);
         } catch (final Exception e) {

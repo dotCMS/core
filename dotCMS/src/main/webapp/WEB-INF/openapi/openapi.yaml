@@ -8179,8 +8179,9 @@ paths:
               type: object
               description: Metadata key/value pairs to merge
         description: A flat JSON object whose keys are merged into the Content Type's
-          existing metadata. Set a key's value to `null` to remove it.
-        required: true
+          existing metadata. Set a key's value to `null` to remove it. An absent or
+          empty body is treated as a no-op — the current metadata is returned unchanged
+          with HTTP 200.
       responses:
         "200":
           content:

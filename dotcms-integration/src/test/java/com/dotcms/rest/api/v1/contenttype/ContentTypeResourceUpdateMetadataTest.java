@@ -5,20 +5,31 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.liferay.portal.model.User;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -161,15 +172,54 @@ public class ContentTypeResourceUpdateMetadataTest {
     /**
      * Given: an ID that does not correspond to any content type
      * When:  PATCH is called
-     * Then:  the response is 404 Not Found
+     * Then:  the response is HTTP 200 with {@code CONTENT_TYPE_NOT_FOUND} in the errors array
      */
     @Test
-    public void givenUnknownId_whenPatch_thenReturns404() {
+    public void givenUnknownId_whenPatch_thenReturns404WithErrorInBody() {
+        final String unknownId = UUID.randomUUID().toString();
         final Response response = resource.updateContentTypeMetadata(
                 getHttpRequest(), new EmptyHttpResponse(),
-                UUID.randomUUID().toString(), Map.of("KEY", "value"));
+                unknownId, Map.of("KEY", "value"));
 
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        final List<ErrorEntity> errors = getErrors(response);
+        assertFalse("errors array should not be empty", errors.isEmpty());
+        assertEquals("CONTENT_TYPE_NOT_FOUND", errors.get(0).getErrorCode());
+        assertEquals(unknownId, errors.get(0).getFieldName());
+    }
+
+    /**
+     * Given: a user who does not have edit permission on the content type
+     * When:  PATCH is called
+     * Then:  the response is 403 Forbidden
+     */
+    @Test
+    public void givenUserWithoutEditPermission_whenPatch_thenReturns403() throws Exception {
+        final ContentType ct = new ContentTypeDataGen().nextPersisted();
+        try {
+            // chrisPublisher has Publisher role but no EDIT permission on newly created content types
+            final User limitedUser = TestUserUtils.getChrisPublisherUser();
+
+            final WebResource mockedWebResource = mock(WebResource.class);
+            final InitDataObject dataObject = mock(InitDataObject.class);
+            when(dataObject.getUser()).thenReturn(limitedUser);
+            when(mockedWebResource.init(any(WebResource.InitBuilder.class))).thenReturn(dataObject);
+
+            final ContentTypeResource limitedResource = new ContentTypeResource(
+                    ContentTypeHelper.getInstance(),
+                    mockedWebResource,
+                    mock(PaginationUtil.class),
+                    WorkflowHelper.getInstance(),
+                    mock(PermissionAPI.class));
+
+            final Response response = limitedResource.updateContentTypeMetadata(
+                    getHttpRequest(), new EmptyHttpResponse(), ct.id(),
+                    Map.of("KEY", "value"));
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        } finally {
+            ContentTypeDataGen.remove(ct);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -352,6 +402,11 @@ public class ContentTypeResourceUpdateMetadataTest {
         final Map<String, Object> entity =
                 (Map<String, Object>) ((ResponseEntityView<?>) response.getEntity()).getEntity();
         return (Map<String, Object>) entity.get("metadata");
+    }
+
+    /** Extracts the {@code errors} list from a response body. */
+    private static List<ErrorEntity> getErrors(final Response response) {
+        return ((ResponseEntityView<?>) response.getEntity()).getErrors();
     }
 
     private static HttpServletRequest getHttpRequest() {

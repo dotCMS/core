@@ -1021,22 +1021,23 @@ public class ContentTypeHelper implements Serializable {
             final Map<String, Object> metadataPatch,
             final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
 
+        // Defensive copy — protects against callers passing immutable maps (e.g. Map.of(...)),
+        // which would cause UnsupportedOperationException inside normalizeStyleEditorSchemaToString
+        final Map<String, Object> patch = new HashMap<>(metadataPatch);
+
         // Validate/normalize before acquiring the lock — fail fast on bad input
-        normalizeStyleEditorSchemaToString(metadataPatch);
+        normalizeStyleEditorSchemaToString(patch);
 
-        // Initial find to obtain the stable ID used as the lock key
-        final ContentType initial = contentTypeAPI.find(idOrVar);
-
+        // idOrVar is unique per content type (UUID or variable name), so it is a safe lock key
         final IdentifierStripedLock lockManager =
                 DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         try {
-            return lockManager.tryLock("ct-metadata-" + initial.id(), () -> {
-                // Re-read inside the lock to pick up any writes committed between our initial
-                // find and the moment we acquired the lock
+            return lockManager.tryLock("ct-metadata-" + idOrVar, () -> {
+                // Re-read inside the lock to pick up any writes committed before we acquired it
                 final ContentType current = contentTypeAPI.find(idOrVar);
                 final Map<String, Object> merged = new HashMap<>(
                         current.metadata() != null ? current.metadata() : Map.of());
-                metadataPatch.forEach((k, v) -> {
+                patch.forEach((k, v) -> {
                     if (v == null) {
                         merged.remove(k);
                     } else {
