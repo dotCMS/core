@@ -1,7 +1,5 @@
 Run the /security-review skill against the diff between
-base ${{ github.event.pull_request.base.sha }} and
-head ${{ github.event.pull_request.head.sha }}
-(PR #${{ github.event.pull_request.number }}).
+base $BASE_SHA and head $HEAD_SHA (PR #$PR_NUMBER).
 
 Follow the three-phase methodology (identify → parallel
 false-positive filter → keep only confidence >= 8).

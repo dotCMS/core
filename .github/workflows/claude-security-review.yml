@@ -123,13 +123,21 @@ jobs:
               body
             });
 
+      - name: Prepare prompt (substitute runtime values)
+        if: steps.semgrep.outputs.found != 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: envsubst < .github/claude-security-review-prompt.md > /tmp/claude-prompt.md
+
       - name: Run Claude security review
         if: steps.semgrep.outputs.found != 'true'
         id: review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt_file: .github/claude-security-review-prompt.md
+          prompt_file: /tmp/claude-prompt.md
           claude_args: |
             --allowed-tools Read,Bash,Grep,Glob,Agent
             --model claude-opus-4-7
