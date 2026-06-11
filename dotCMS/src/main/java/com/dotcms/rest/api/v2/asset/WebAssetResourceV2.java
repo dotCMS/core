@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
@@ -60,7 +61,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.net.URLConnection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -190,12 +190,7 @@ public class WebAssetResourceV2 {
             throw new BadRequestException("Query parameter 'path' is required.");
         }
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
+        final InitDataObject initData = authenticate(request, response);
 
         final User user = initData.getUser();
         Logger.debug(this, () -> String.format(
@@ -280,12 +275,7 @@ public class WebAssetResourceV2 {
             @QueryParam("version") @DefaultValue("working") final String version
     ) throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
+        final InitDataObject initData = authenticate(request, response);
 
         final User user = initData.getUser();
         Logger.debug(this, () -> String.format(
@@ -391,12 +381,7 @@ public class WebAssetResourceV2 {
             @FormDataParam("language") final String language
     ) throws DotDataException, DotSecurityException, IOException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
+        final InitDataObject initData = authenticate(request, response);
 
         final User user = initData.getUser();
         Logger.debug(this, () -> String.format(
@@ -483,12 +468,7 @@ public class WebAssetResourceV2 {
             @FormDataParam("language") final String language
     ) throws DotDataException, DotSecurityException, IOException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
+        final InitDataObject initData = authenticate(request, response);
 
         final User user = initData.getUser();
         Logger.debug(this, () -> String.format(
@@ -501,6 +481,20 @@ public class WebAssetResourceV2 {
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Authenticates the request, requiring a backend user and rejecting anonymous callers.
+     * Shared by every v2 asset endpoint so the auth policy stays consistent.
+     */
+    private InitDataObject authenticate(final HttpServletRequest request,
+                                        final HttpServletResponse response) {
+        return new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+    }
 
     /**
      * Core write logic shared by save and publish endpoints.
@@ -698,7 +692,8 @@ public class WebAssetResourceV2 {
                     String.format("Binary for asset [%s] not found on disk.", fileAsset.getIdentifier()));
         }
 
-        final String mimeType = resolveMimeType(file.getName(), fileAsset.getMimeType());
+        final long length = file.length();
+        final String mimeType = resolveMimeType(file, fileAsset.getMimeType());
         final StreamingOutput streamingOutput = outputStream -> {
             try (final java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
                 final byte[] buffer = new byte[8192];
@@ -712,21 +707,16 @@ public class WebAssetResourceV2 {
         return Response.ok(streamingOutput, mimeType)
                 .header("Content-Disposition",
                         "attachment; filename=\"" + UtilMethods.encodeURL(file.getName()) + "\"")
-                .header("Content-Length", file.length())
+                .header("Content-Length", length)
                 .build();
     }
 
     /**
-     * Resolves the MIME type for a file, preferring the stored value and falling back to
-     * {@link URLConnection#guessContentTypeFromName(String)} then
-     * {@code application/octet-stream}.
+     * Resolves the MIME type for a file, preferring the value stored on the asset and falling back
+     * to dotCMS's standard detection ({@link MimeTypeUtils#getMimeType(File)}).
      */
-    private String resolveMimeType(final String fileName, final String storedMimeType) {
-        if (UtilMethods.isSet(storedMimeType)) {
-            return storedMimeType;
-        }
-        final String guessed = URLConnection.guessContentTypeFromName(fileName);
-        return UtilMethods.isSet(guessed) ? guessed : MediaType.APPLICATION_OCTET_STREAM;
+    private String resolveMimeType(final File file, final String storedMimeType) {
+        return UtilMethods.isSet(storedMimeType) ? storedMimeType : MimeTypeUtils.getMimeType(file);
     }
 
     /**
