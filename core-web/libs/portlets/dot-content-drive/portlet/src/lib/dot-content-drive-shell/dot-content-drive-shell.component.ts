@@ -1,3 +1,4 @@
+import { signalMethod } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -124,7 +125,7 @@ export class DotContentDriveShellComponent implements OnInit {
     /**
      * The dialog currently rendered in the body. Held through PrimeNG's close animation
      * (only cleared on `(onHide)`) so the body doesn't blank out before the dialog finishes
-     * animating away. Synced from the store by {@link syncDialogEffect}.
+     * animating away. Synced from the store by {@link #syncDialog}.
      */
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
@@ -160,19 +161,20 @@ export class DotContentDriveShellComponent implements OnInit {
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
      * together (no blank-frame flash); closing flips visibility off but leaves the body mounted
      * so PrimeNG can animate it out — the body is cleared later in {@link onDialogHidden}.
+     * `signalMethod` only tracks its input, so the writes here need no manual `untracked`.
      */
-    readonly syncDialogEffect = effect(() => {
-        const dialog = this.#store.dialog();
-
-        untracked(() => {
-            if (dialog) {
-                this.$activeDialog.set(dialog);
-                this.$dialogVisible.set(true);
-            } else {
-                this.$dialogVisible.set(false);
-            }
-        });
+    readonly #syncDialog = signalMethod<DotContentDriveDialog | undefined>((dialog) => {
+        if (dialog) {
+            this.$activeDialog.set(dialog);
+            this.$dialogVisible.set(true);
+        } else {
+            this.$dialogVisible.set(false);
+        }
     });
+
+    constructor() {
+        this.#syncDialog(this.#store.dialog);
+    }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
         equal: (a, b) => a === b
