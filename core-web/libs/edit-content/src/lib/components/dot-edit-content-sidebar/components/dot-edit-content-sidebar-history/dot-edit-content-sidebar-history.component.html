@@ -1,7 +1,7 @@
 @let historicalVersionInode = $historicalVersionInode();
 
 <section
-    class="flex h-full min-h-0 flex-col overflow-y-auto"
+    class="flex h-full min-h-0 flex-col overflow-y-auto px-[18px]"
     role="region"
     aria-label="Content Version History">
     <!-- Versions Section -->
@@ -67,7 +67,8 @@
     <!-- Push Publish Section -->
     <dot-edit-content-sidebar-section
         [title]="'edit.content.sidebar.history.push.publish' | dm"
-        key="history.push-publish">
+        key="history.push-publish"
+        class="[&_.dot-section]:border-b-0">
         <!-- Header action template must live outside any @if so the section's
              @ContentChild('sectionAction') can resolve it; gate its content instead. -->
         <ng-template #sectionAction>
