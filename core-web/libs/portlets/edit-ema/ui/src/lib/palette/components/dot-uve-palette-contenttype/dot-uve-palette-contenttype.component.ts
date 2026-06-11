@@ -1,13 +1,6 @@
 import { cn } from '@primeuix/utils';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    HostListener,
-    input,
-    output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ClassNames } from 'primeng/classnames';
 import { TooltipModule } from 'primeng/tooltip';
@@ -26,7 +19,9 @@ import { DotCMSPaletteContentType, DotPaletteViewMode } from '../../models';
         '[attr.draggable]': '$draggable()',
         '[attr.data-item]': '$dataItem()',
         '[class]': '$hostClass()',
-        '[class.disabled]': '$isDisabled()'
+        '[class.disabled]': '$isDisabled()',
+        '(click)': 'onHostClick()',
+        '(contextmenu)': 'onContextMenu($event)'
     }
 })
 export class DotUVEPaletteContenttypeComponent {
@@ -90,7 +85,6 @@ export class DotUVEPaletteContenttypeComponent {
         this.onSelectContentType.emit(contentType.variable);
     }
 
-    @HostListener('click')
     protected onHostClick() {
         if (!this.$selectable() || this.$isDisabled()) {
             return;
@@ -98,7 +92,6 @@ export class DotUVEPaletteContenttypeComponent {
         this.onSelectContentType.emit(this.$contentType().variable);
     }
 
-    @HostListener('contextmenu', ['$event'])
     protected onContextMenu(event: MouseEvent) {
         event.preventDefault();
         this.contextMenu.emit(event);

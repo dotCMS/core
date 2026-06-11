@@ -134,7 +134,8 @@ describe('DotCreateContentletComponent', () => {
             id: 'content'
         } as any);
         spectator.detectChanges();
-        spectator.component.onClose({});
+        // Drive the wrapper's (shutdown) output so the close wiring is covered, not just onClose().
+        spectator.triggerEventHandler('dot-contentlet-wrapper', 'shutdown', {});
         expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
         expect(routerService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
             queryParams: { path: '/foo', filters: 'bar' }

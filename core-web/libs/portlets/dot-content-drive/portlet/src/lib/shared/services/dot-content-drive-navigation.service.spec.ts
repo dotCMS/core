@@ -207,6 +207,21 @@ describe('DotContentDriveNavigationService', () => {
                 queryParams: {}
             });
         });
+
+        it('should surface the error and not navigate when getContentType fails', () => {
+            const error = new HttpErrorResponse({ status: 500 });
+            const mockContentlet = createFakeContentlet({
+                contentType: 'blog',
+                inode: 'test-inode-123'
+            });
+
+            contentTypeService.getContentType.mockReturnValue(throwError(() => error));
+
+            service.editContent(mockContentlet);
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(router.navigate).not.toHaveBeenCalled();
+        });
     });
 
     describe('createContent', () => {

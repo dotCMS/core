@@ -90,6 +90,7 @@ describe('DotUvePaletteComponent', () => {
         mockUVEStore.pageVariantId.set('DEFAULT');
         mockUVEStore.$isStyleEditorEnabled.set(false);
         mockUVEStore.$styleSchema.set(undefined);
+        mockUVEStore.$allowedContentTypes.set({});
         // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
         // editor is now a computed that reflects mockActiveContentlet automatically
         mockActiveContentlet.set(null);
@@ -311,6 +312,16 @@ describe('DotUvePaletteComponent', () => {
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
             expect(ngMocks.input(paletteListDebugEl, 'variantId')).toBe('DEFAULT');
+        });
+
+        it('should thread allowedContentTypes from the store to the Favorites palette list', () => {
+            const allowed = { blog: true, banner: true } as Record<string, true>;
+            mockUVEStore.$allowedContentTypes.set(allowed);
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
+
+            const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
+            expect(ngMocks.input(paletteListDebugEl, 'allowedContentTypes')).toEqual(allowed);
         });
     });
 });

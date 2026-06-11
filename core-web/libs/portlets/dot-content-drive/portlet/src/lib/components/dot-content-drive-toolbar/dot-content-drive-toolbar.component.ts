@@ -209,7 +209,7 @@ export class DotContentDriveToolbarComponent {
     }));
 
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
-    #animationTimeout: ReturnType<typeof setTimeout>;
+    #animationTimeout: ReturnType<typeof setTimeout> | undefined;
 
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing

@@ -62,7 +62,7 @@ export class DotContentDriveNavigationService {
      *
      * @param contentTypeVariable - The variable name of the content type to create
      */
-    createContent(contentTypeVariable: string) {
+    createContent(contentTypeVariable: string): void {
         const currentPath = this.#location.path(true);
         // Parse the query string directly — avoids depending on window.location (SSR/tests).
         const currentQueryParams = new URLSearchParams(currentPath?.split('?')[1] ?? '');
