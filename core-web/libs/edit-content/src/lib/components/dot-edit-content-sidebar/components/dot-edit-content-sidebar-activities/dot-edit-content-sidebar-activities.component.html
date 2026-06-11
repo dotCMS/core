@@ -3,66 +3,67 @@
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-[18px]">
-            <dot-edit-content-sidebar-section
-                [title]="'edit.content.sidebar.tab.comments' | dm"
-                key="comments">
-                <p-dataview
-                    #dv
-                    [value]="$activities()"
-                    [rows]="10"
-                    [layout]="'list'"
-                    [style]="{ display: 'block', border: 'none' }"
-                    [paginator]="false"
-                    data-testid="activities-list">
-                    <ng-template #list let-activities>
-                        <div class="flex flex-col gap-2">
-                            @for (
-                                activity of activities;
-                                track activity.taskId + '_' + activity.createdDate
-                            ) {
-                                <p-card
-                                    #activityItem
-                                    styleClass="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
-                                    data-testid="activity-item">
-                                    <div class="flex items-start gap-3">
-                                        <p-avatar
-                                            shape="circle"
-                                            dotGravatar
-                                            [email]="activity?.email"
-                                            [pt]="avatarPt"
-                                            class="shrink-0" />
-                                        <div class="min-w-0 flex-1">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <span
-                                                    class="text-sm font-semibold text-gray-900"
-                                                    data-testid="activity-user">
-                                                    {{ activity.postedBy }}
-                                                </span>
-                                                <span
-                                                    class="ml-auto shrink-0 text-xs text-gray-600"
-                                                    data-testid="activity-date">
-                                                    {{ activity.createdDate | dotRelativeDate }}
-                                                </span>
-                                            </div>
-                                            <p
-                                                class="mt-1.5 text-sm leading-[1.4] wrap-break-word whitespace-pre-line text-gray-700"
-                                                data-testid="activity-description">
-                                                {{ activity.commentDescription }}
-                                            </p>
+        <div class="min-h-0 flex-1 overflow-y-auto px-[18px] pt-3">
+            <h2
+                class="m-0 px-2 pb-2 text-[11px] leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
+                data-testid="comments-title">
+                {{ 'edit.content.sidebar.tab.comments' | dm }}
+            </h2>
+            <p-dataview
+                #dv
+                [value]="$activities()"
+                [rows]="10"
+                [layout]="'list'"
+                [style]="{ display: 'block', border: 'none' }"
+                [paginator]="false"
+                data-testid="activities-list">
+                <ng-template #list let-activities>
+                    <div class="flex flex-col gap-2">
+                        @for (
+                            activity of activities;
+                            track activity.taskId + '_' + activity.createdDate
+                        ) {
+                            <p-card
+                                #activityItem
+                                styleClass="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
+                                data-testid="activity-item">
+                                <div class="flex items-start gap-3">
+                                    <p-avatar
+                                        shape="circle"
+                                        dotGravatar
+                                        [email]="activity?.email"
+                                        [pt]="avatarPt"
+                                        class="shrink-0" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span
+                                                class="text-sm font-semibold text-gray-900"
+                                                data-testid="activity-user">
+                                                {{ activity.postedBy }}
+                                            </span>
+                                            <span
+                                                class="ml-auto shrink-0 text-xs text-gray-600"
+                                                data-testid="activity-date">
+                                                {{ activity.createdDate | dotRelativeDate }}
+                                            </span>
                                         </div>
+                                        <p
+                                            class="mt-1.5 text-sm leading-[1.4] wrap-break-word whitespace-pre-line text-gray-700"
+                                            data-testid="activity-description">
+                                            {{ activity.commentDescription }}
+                                        </p>
                                     </div>
-                                </p-card>
-                            }
-                        </div>
-                    </ng-template>
-                    <ng-template #emptymessage>
-                        <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
-                            {{ 'edit.content.sidebar.activities.empty' | dm }}
-                        </p>
-                    </ng-template>
-                </p-dataview>
-            </dot-edit-content-sidebar-section>
+                                </div>
+                            </p-card>
+                        }
+                    </div>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
+                        {{ 'edit.content.sidebar.activities.empty' | dm }}
+                    </p>
+                </ng-template>
+            </p-dataview>
         </div>
         @if (!$hideForm()) {
             <div
