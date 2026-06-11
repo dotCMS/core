@@ -886,7 +886,8 @@ public class PageResource {
                 savedContent = pageResourceHelper.saveContent(
                         pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
             } catch (StalePageSaveException e) {
-                Logger.warn(this, String.format("Page content save rejected for pageId '%s': %s", pageId, e.getMessage()));
+                Logger.warn(this, String.format("Page content save rejected for pageId '%s' by user '%s': %s",
+                        pageId, user.getUserId(), e.getMessage()));
                 return ExceptionMapperUtil.createResponse(
                         new DotDataException("Save rejected: net content loss exceeds the configured threshold. Please refresh and try again."),
                         Response.Status.CONFLICT);

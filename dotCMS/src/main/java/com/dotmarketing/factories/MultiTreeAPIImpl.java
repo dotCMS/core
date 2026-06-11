@@ -731,19 +731,27 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     : this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
             if (!existing.isEmpty()) {
                 final int netLoss = existing.size() - multiTrees.size();
+                final Set<String> incomingIds = multiTrees.stream()
+                        .map(MultiTree::getContentlet)
+                        .collect(Collectors.toSet());
+                final Set<String> wipedIds = existing.stream()
+                        .filter(id -> !incomingIds.contains(id))
+                        .collect(Collectors.toSet());
                 if (multiTrees.isEmpty()) {
                     Logger.warn(this, String.format(
                             "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
-                            "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Contentlets at risk: %s",
                             existing.size(), pageId, personalization, variantId,
-                            languageIdOpt.orElse(-1L)));
+                            languageIdOpt.orElse(-1L), existing));
                 }
                 if (threshold >= 0 && netLoss > threshold) {
                     Logger.warn(this, String.format(
                             "Save rejected: net loss of %d contentlet(s) from page '%s' exceeds threshold %d " +
-                            "(personalization='%s', variantId='%s', language=%d). This may indicate a stale edit session.",
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Incoming IDs: %s — Wiped IDs: %s",
                             netLoss, pageId, threshold, personalization, variantId,
-                            languageIdOpt.orElse(-1L)));
+                            languageIdOpt.orElse(-1L), incomingIds, wipedIds));
                     throw new StalePageSaveException(
                             "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.");
                 }
