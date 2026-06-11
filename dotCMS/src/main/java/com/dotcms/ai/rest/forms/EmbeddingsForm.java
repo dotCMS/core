@@ -52,7 +52,7 @@ public class EmbeddingsForm {
 
     String validateBuilderQuery(String query) {
         if (UtilMethods.isEmpty(query)) {
-            throw new IllegalArgumentException("query cannot be null");
+            return null;
         }
         return String.join(" ", query.trim().split("\\s+"));
     }

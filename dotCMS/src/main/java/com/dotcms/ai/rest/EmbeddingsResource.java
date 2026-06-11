@@ -94,6 +94,10 @@ public class EmbeddingsResource {
         long startTime = System.currentTimeMillis();
 
         try {
+            if (!UtilMethods.isSet(embeddingsForm.query)) {
+                return Response.status(400).entity(Map.of(AiKeys.ERROR, "query is required")).build();
+            }
+
             final String requestHostId = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request).getIdentifier();
             final EmbeddingsForm form = EmbeddingsForm.copy(embeddingsForm).requestHostId(requestHostId).build();
 
