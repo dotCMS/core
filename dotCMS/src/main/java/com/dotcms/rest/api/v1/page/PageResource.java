@@ -856,7 +856,7 @@ public class PageResource {
                                     + "  }\n"
                                     + "]")))
             final PageContainerForm pageContainerForm)
-            throws DotSecurityException {
+            throws DotSecurityException, DotDataException {
 
         final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
                 VariantAPI.DEFAULT_VARIANT.name();
@@ -898,9 +898,6 @@ public class PageResource {
                     pageId);
             Logger.error(this, errorMsg, e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (DotDataException e) {
-            Logger.error(this, String.format("DotDataException on PageResource.addContent, pageId: %s: ", pageId), e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
     }
 
