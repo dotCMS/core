@@ -637,13 +637,6 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                 .replace("/" + fileName + "/", "/" + fileName);
     }
 
-    /**
-     * Builds the asset path correctly — folder is one level, file is the last segment.
-     */
-    private String assetPath2(final String fileName) {
-        return String.format("//%s/%s/%s", host.getHostname(), folder.getName(), fileName);
-    }
-
     /** Creates a {@link MockHeaderRequest} carrying the system-user session attribute. */
     @NotNull
     private static MockHeaderRequest mockRequest() {

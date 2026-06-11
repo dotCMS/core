@@ -60,7 +60,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
@@ -288,16 +287,18 @@ public class WebAssetResourceV2 {
         // Resolve the contentlet — throws NotFoundInDbException (→ 404) when absent.
         final Contentlet contentlet = findContentlet(identifier, live, languageId, user);
 
+        // Verify the contentlet is a file asset first so a non-file identifier always returns 404
+        // (the documented contract), regardless of the caller's permission on it.
+        if (!contentlet.isFileAsset()) {
+            throw new NotFoundInDbException(
+                    String.format("Content [%s] is not a file asset.", identifier));
+        }
+
         // Enforce READ permission explicitly — never serve bytes to unauthorized callers.
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
             throw new DotSecurityException(
                     String.format("User [%s] does not have READ permission on asset [%s]",
                             user.getUserId(), identifier));
-        }
-
-        if (!contentlet.isFileAsset()) {
-            throw new NotFoundInDbException(
-                    String.format("Content [%s] is not a file asset.", identifier));
         }
 
         final FileAsset fileAsset = fileAssetAPI.fromContentlet(contentlet);
