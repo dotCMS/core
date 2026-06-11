@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
@@ -126,16 +127,21 @@ public class FieldVariableLazyHydrationTest extends IntegrationTestBase {
             // memoized across reads. It holds for the in-memory (Caffeine) provider used today. If a
             // serialized/remote content-type cache is ever introduced, memoization becomes
             // per-round-trip and this assertion is the intended canary, not a flaky test.
-            ContentType cached = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeId);
-            cached.fields().forEach(Field::fieldVariables);
+            final ContentType warmed = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeId);
+            warmed.fields().forEach(Field::fieldVariables);
 
             final AtomicInteger fieldVarQueries = new AtomicInteger();
             final Connection current = DbConnectionFactory.getConnection();
             DbConnectionFactory.setConnection(
                     new CountingConnection(current, "field_variable", fieldVarQueries));
             try {
-                // Same cached instance — reading variables again must hit the cache, not the DB.
-                cached = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeId);
+                final ContentType cached = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeId);
+                // The warm guarantee depends on the cache returning the SAME instance, so the
+                // @Value.Lazy fieldVariables() memoization survives. Assert identity explicitly:
+                // if a future cache provider returns copies, this fails loudly instead of the
+                // query-count assertion below silently going green on a per-round-trip reload.
+                assertSame("Content-type cache must return the same instance (lazy memoization depends on it)",
+                        warmed, cached);
                 cached.fields().forEach(Field::fieldVariables);
                 assertEquals("Warm reads must be served from cache (0 field_variable queries)",
                         0, fieldVarQueries.get());
