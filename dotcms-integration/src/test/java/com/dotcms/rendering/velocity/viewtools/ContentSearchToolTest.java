@@ -151,6 +151,78 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #end
             """;
 
+    /**
+     * The customer-style aggregation walk driven through {@code $estool.raw($esQuery)} instead of
+     * {@code search()}. Two shapes are exercised against the same response:
+     * <ul>
+     *   <li>the full tree {@code $tree.content_types.buckets} (mirrors the {@code search()} template,
+     *       including the nested {@code top_content} {@code top_hits});</li>
+     *   <li>the flat first-level map {@code $flat.content_types}, which on a
+     *       {@link ContentSearchResponse} is a {@code List<AggregationBucket>} you iterate directly
+     *       (no {@code .buckets}) — the raw-specific shape that differs from {@code search()}.</li>
+     * </ul>
+     *
+     * <p><b>Record accessor note:</b> {@code raw()} returns a {@link ContentSearchResponse}
+     * <i>record</i>, whose accessors are {@code aggregations()} / {@code aggregationTree()} — there
+     * are no {@code get}-prefixed methods. Velocity's property syntax ({@code $results.aggregations})
+     * only resolves {@code getX()}/{@code isX()}/public fields, so on a record it would silently
+     * yield {@code null}. The template therefore calls them with explicit method syntax
+     * ({@code $results.aggregationTree()}). Everything downstream stays property-style because
+     * {@link Aggregation}'s components are named {@code getBuckets}/{@code getHits} and
+     * {@link AggregationBucket} exposes bean getters.</p>
+     *
+     * <p>Uses the already-lowercase {@code contenttype} field name because {@code raw()} does not
+     * normalize the query the way {@code search()} does.</p>
+     */
+    private static final String RAW_VTL = """
+            $response.setContentType("text/plain")
+            $response.setHeader("Cache-Control", "no-cache")
+
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contenttype", "size": 5 },
+                        "aggs": {
+                            "top_content": {
+                                "top_hits": { "size": 3 }
+                            }
+                        }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
+            ## --- raw() --- record accessors need explicit () (see javadoc)
+            #set($results = $estool.raw($esQuery))
+            #set($tree = $results.aggregationTree())
+            #set($flat = $results.aggregations())
+            aggregations: $!{flat}
+            tree CT: $!{tree.content_types}
+
+            ## tree walk — same shape as the search() customer template
+            #set($contentTypeGroups = $tree.content_types.buckets)
+            tree buckets: $!{contentTypeGroups}
+            #foreach($group in $contentTypeGroups)
+              tree key: $!{group.getKeyAsString()}
+              tree docCount: $!{group.getDocCount()}
+              #set($topHits = $group.getAggregations().get("top_content"))
+              #foreach($hit in $topHits.getHits().getHits())
+                tree hit id: $!{hit.id}
+              #end
+            #end
+
+            ## flat first-level map — raw-specific: content_types is a List<AggregationBucket>
+            #foreach($bucket in $flat.content_types)
+              flat key: $!{bucket.getKeyAsString()}
+              flat docCount: $!{bucket.getDocCount()}
+            #end
+            """;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -243,6 +315,32 @@ public class ContentSearchToolTest extends IntegrationTestBase {
 
         assertTrue("Neutral template should emit at least one bucket key", output.contains("key:"));
         assertTrue("Neutral template should emit doc counts", output.contains("docCount:"));
+    }
+
+    /**
+     * Drives {@code $estool.raw($esQuery)} through the dotCMS Velocity engine (the {@code search()}
+     * sibling is {@link #verbatimCustomerVtl_rendersAfterFix()}). Asserts both VTL surfaces of a
+     * {@link ContentSearchResponse} render real data: the tree walk
+     * ({@code $results.aggregationTree.content_types.buckets} with nested {@code top_hits}) and the
+     * flat first-level map ({@code $results.aggregations.content_types}).
+     */
+    @Test
+    public void rawVtl_rendersTreeAndFlatAggregations() throws Exception {
+        final String output = VelocityUtil.eval(RAW_VTL, velocityContext());
+        Logger.info(this, "\n===== raw VTL output =====\n" + output + "\n================================");
+
+        assertTrue("Aggregation data should be present in the response",
+                output.contains("content_types"));
+        assertTrue("raw() tree walk must execute, emitting 'tree key:' lines",
+                output.contains("tree key:"));
+        assertTrue("raw() tree bucket doc counts must render with real numbers",
+                Pattern.compile("tree docCount:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() nested top_hits must be reachable, emitting 'tree hit id:' lines",
+                output.contains("tree hit id:"));
+        assertTrue("raw() flat aggregations map must iterate, emitting 'flat key:' lines",
+                output.contains("flat key:"));
+        assertTrue("raw() flat bucket doc counts must render with real numbers",
+                Pattern.compile("flat docCount:\\s*\\d+").matcher(output).find());
     }
 
     /**
