@@ -33,6 +33,7 @@ public class EmbeddingsForm {
     public final String velocityTemplate;
     public final String[] fields;
     public final String userId;
+    public final String requestHostId;
     public List<String> fieldsAsList(){
         return Arrays.asList(fields);
     }
@@ -46,6 +47,7 @@ public class EmbeddingsForm {
         this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getEmbeddingsModel().getCurrentModel();
         this.fields = (builder.fields != null) ? AppConfig.SPLITTER.split(builder.fields.toLowerCase()) : new String[0];
         this.userId= PortalUtil.getUser() != null ? PortalUtil.getUser().getUserId() : APILocator.systemUser().getUserId();
+        this.requestHostId = UtilMethods.isSet(builder.requestHostId) ? builder.requestHostId : "";
     }
 
     String validateBuilderQuery(String query) {
@@ -63,7 +65,8 @@ public class EmbeddingsForm {
                 .query(form.query)
                 .fields(String.join(",", form.fields))
                 .velocityTemplate(form.velocityTemplate)
-                .indexName(form.indexName);
+                .indexName(form.indexName)
+                .requestHostId(form.requestHostId);
     }
 
     @Override
@@ -120,6 +123,7 @@ public class EmbeddingsForm {
         @JsonSetter(nulls = Nulls.SKIP)
         private String velocityTemplate;
 
+        private String requestHostId;
 
         public Builder query(String query) {
             this.query = query;
@@ -153,6 +157,11 @@ public class EmbeddingsForm {
 
         public Builder velocityTemplate(String velocityTemplate) {
             this.velocityTemplate = velocityTemplate;
+            return this;
+        }
+
+        public Builder requestHostId(String requestHostId) {
+            this.requestHostId = requestHostId;
             return this;
         }
 

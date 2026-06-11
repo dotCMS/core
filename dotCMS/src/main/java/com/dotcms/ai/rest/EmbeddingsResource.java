@@ -8,6 +8,7 @@ import com.dotcms.ai.rest.forms.EmbeddingsForm;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.util.Logger;
@@ -93,14 +94,17 @@ public class EmbeddingsResource {
         long startTime = System.currentTimeMillis();
 
         try {
+            final String requestHostId = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request).getIdentifier();
+            final EmbeddingsForm form = EmbeddingsForm.copy(embeddingsForm).requestHostId(requestHostId).build();
+
             int added = 0;
-            int newOffset = embeddingsForm.offset;
+            int newOffset = form.offset;
             for (int i = 0; i < 10000; i++) {
                 // searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)
                 final List<ContentletSearch> searchResults = contentletAPI
                         .searchIndex(
-                                embeddingsForm.query + " +live:true",
-                                embeddingsForm.limit,
+                                form.query + " +live:true",
+                                form.limit,
                                 newOffset,
                                 AiKeys.MODDATE,
                                 user,
@@ -108,7 +112,7 @@ public class EmbeddingsResource {
                 if (searchResults.isEmpty()) {
                     break;
                 }
-                newOffset += embeddingsForm.limit;
+                newOffset += form.limit;
 
                 final List<String> inodes = searchResults
                         .stream()
@@ -116,14 +120,14 @@ public class EmbeddingsResource {
                         .collect(Collectors.toUnmodifiableList());
                 added += inodes.size();
 
-                EmbeddingsCallStrategy.resolveStrategy().bulkEmbed(inodes, embeddingsForm);
+                EmbeddingsCallStrategy.resolveStrategy().bulkEmbed(inodes, form);
             }
 
             final long totalTime = System.currentTimeMillis() - startTime;
             final Map<String, Object> map = Map.of(
                     AiKeys.TIME_TO_EMBEDDINGS, totalTime + "ms",
                     AiKeys.TOTAL_TO_EMBED, added,
-                    AiKeys.INDEX_NAME, embeddingsForm.indexName);
+                    AiKeys.INDEX_NAME, form.indexName);
             final ResponseBuilder builder = Response.ok(map, MediaType.APPLICATION_JSON);
 
             return builder.build();
