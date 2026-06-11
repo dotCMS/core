@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.contenttype;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -17,11 +18,15 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.BeforeClass;
@@ -250,6 +255,74 @@ public class ContentTypeResourceUpdateMetadataTest {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
             assertFalse("DOT_STYLE_EDITOR_SCHEMA should have been removed",
                     getMetadata(response).containsKey("DOT_STYLE_EDITOR_SCHEMA"));
+        } finally {
+            ContentTypeDataGen.remove(ct);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Concurrency — striped-lock protection
+    // -------------------------------------------------------------------------
+
+    /**
+     * Given: two concurrent PATCH requests on the same Content Type, each adding a different key
+     * When:  both execute simultaneously
+     * Then:  both keys are present in the final metadata — no lost update
+     *
+     * <p>Without the striped lock in {@link ContentTypeHelper#mergeAndSaveMetadata}, the
+     * read-modify-write sequence is not atomic: both threads could read the same stale snapshot,
+     * merge their key independently, and the last writer would overwrite the first one's key.
+     * The lock serializes the two operations so the second thread always re-reads the result
+     * written by the first.
+     */
+    @Test
+    public void givenTwoConcurrentPatches_whenBothExecute_thenNeitherKeyIsLost() throws Exception {
+        final ContentType ct = new ContentTypeDataGen().nextPersisted();
+        try {
+            final ContentTypeAPI contentTypeAPI =
+                    APILocator.getContentTypeAPI(APILocator.getUserAPI().getSystemUser(), true);
+            final ContentTypeHelper helper = ContentTypeHelper.getInstance();
+
+            // Latch that releases both threads at exactly the same moment to maximize
+            // the chance of hitting the race window
+            final CountDownLatch startGate = new CountDownLatch(1);
+            final CountDownLatch doneLatch = new CountDownLatch(2);
+            final AtomicReference<Throwable> firstError = new AtomicReference<>();
+
+            final Runnable patchA = () -> {
+                try {
+                    startGate.await();
+                    helper.mergeAndSaveMetadata(ct.id(), Map.of("KEY_A", "value_a"), contentTypeAPI);
+                } catch (final Throwable t) {
+                    firstError.compareAndSet(null, t);
+                } finally {
+                    doneLatch.countDown();
+                }
+            };
+
+            final Runnable patchB = () -> {
+                try {
+                    startGate.await();
+                    helper.mergeAndSaveMetadata(ct.id(), Map.of("KEY_B", "value_b"), contentTypeAPI);
+                } catch (final Throwable t) {
+                    firstError.compareAndSet(null, t);
+                } finally {
+                    doneLatch.countDown();
+                }
+            };
+
+            new Thread(patchA, "patch-thread-A").start();
+            new Thread(patchB, "patch-thread-B").start();
+            startGate.countDown(); // release both simultaneously
+
+            assertTrue("Patch threads did not complete within 10 s",
+                    doneLatch.await(10, TimeUnit.SECONDS));
+            assertNull("A patch thread threw: " + firstError.get(), firstError.get());
+
+            // Both keys must survive — if they don't, a lost-update occurred
+            final ContentType result = contentTypeAPI.find(ct.id());
+            assertEquals("value_a", result.metadata().get("KEY_A"));
+            assertEquals("value_b", result.metadata().get("KEY_B"));
         } finally {
             ContentTypeDataGen.remove(ct);
         }

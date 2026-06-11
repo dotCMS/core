@@ -21,8 +21,6 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rest.PATCH;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -2090,40 +2088,17 @@ public class ContentTypeResource implements Serializable {
             if (!UtilMethods.isSet(idOrVar)) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
-            final ContentType existing = contentTypeAPI.find(idOrVar);
 
             if (metadataPatch == null || metadataPatch.isEmpty()) {
                 Logger.warn(this, "No metadata patch found for " + idOrVar);
-                final Map<String, Object> responseMap = new HashMap<>(
-                        contentTypeHelper.contentTypeToMap(existing, user)
-                );
-                return Response.ok(new ResponseEntityContentTypeDetailView(responseMap)).build();
+                final ContentType existing = contentTypeAPI.find(idOrVar);
+                return Response.ok(new ResponseEntityContentTypeDetailView(
+                        new HashMap<>(contentTypeHelper.contentTypeToMap(existing, user)))).build();
             }
 
-            normalizeStyleEditorSchemaToString(metadataPatch);
-
-            // Merge: start from current metadata, apply incoming patch (null values remove the key)
-            final Map<String, Object> merged = new HashMap<>(
-                    existing.metadata() != null ? existing.metadata() : Map.of()
-            );
-
-            metadataPatch.forEach((key, value) -> {
-                if (value == null) {
-                    merged.remove(key);
-                } else {
-                    merged.put(key, value);
-                }
-            });
-
-            final ContentType updated = ContentTypeBuilder.builder(existing)
-                    .metadata(merged)
-                    .build();
-            final ContentType saved = contentTypeAPI.save(updated);
-
-            final Map<String, Object> responseMap = new HashMap<>(
-                    contentTypeHelper.contentTypeToMap(saved, user)
-            );
-            return Response.ok(new ResponseEntityContentTypeDetailView(responseMap)).build();
+            final ContentType saved = contentTypeHelper.mergeAndSaveMetadata(idOrVar, metadataPatch, contentTypeAPI);
+            return Response.ok(new ResponseEntityContentTypeDetailView(
+                    new HashMap<>(contentTypeHelper.contentTypeToMap(saved, user)))).build();
         } catch (final NotFoundInDbException e) {
             Logger.error(this, String.format("Content Type '%s' was not found", idOrVar), e);
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -2133,42 +2108,6 @@ public class ContentTypeResource implements Serializable {
             Logger.error(this, String.format("Error updating metadata for Content Type '%s'", idOrVar), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    /**
-     * Normalizes the {@code DOT_STYLE_EDITOR_SCHEMA} entry in the given metadata patch map so that
-     * its value is always stored as a JSON string rather than a raw JSON object.
-     * <p>
-     * When a client sends the schema as a JSON object (e.g. a deserialized {@link java.util.Map}),
-     * Jackson binds it as a {@code LinkedHashMap}. Page-rendering code downstream casts the stored
-     * value directly to {@code String}, so tolerating a non-String value would cause a
-     * {@link ClassCastException} at render time. This method serializes any non-String, non-null
-     * value back to a compact JSON string and writes it in-place into {@code metadataPatch}.
-     * <p>
-     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key
-     * (which signals "remove the key"), are left untouched.
-     *
-     * @param metadataPatch the mutable metadata patch map supplied by the caller; modified in place
-     *                      when the schema value needs normalization
-     * @throws BadRequestException if the value cannot be serialized to a JSON string
-     */
-    private static void normalizeStyleEditorSchemaToString(final Map<String, Object> metadataPatch) {
-        final Object rawSchema = metadataPatch.get("DOT_STYLE_EDITOR_SCHEMA");
-        if (rawSchema == null || rawSchema instanceof String) {
-            return;
-        }
-
-        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-        final String schemaStr;
-        try {
-            schemaStr = mapper.writeValueAsString(rawSchema);
-        } catch (final Exception e) {
-            Logger.warn(ContentTypeResource.class,
-                    "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage());
-            throw new BadRequestException(
-                    "DOT_STYLE_EDITOR_SCHEMA must be a serializable JSON value");
-        }
-        metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
     }
 
 	private static long getLanguageId(final String language) {

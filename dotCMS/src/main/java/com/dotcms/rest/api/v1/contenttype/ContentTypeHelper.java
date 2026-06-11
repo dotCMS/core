@@ -3,7 +3,13 @@ package com.dotcms.rest.api.v1.contenttype;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.lock.IdentifierStripedLock;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.exception.BadRequestException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
@@ -52,6 +58,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -985,6 +992,102 @@ public class ContentTypeHelper implements Serializable {
                         .map(s -> s.trim().toLowerCase())
                         .filter(s -> !s.isEmpty())
                         .collect(Collectors.toList());
+    }
+
+    /**
+     * Atomically merges the given metadata patch into the specified Content Type's metadata and
+     * persists the result.
+     * <p>
+     * The operation is serialized per Content Type using a JVM-local striped lock keyed on the
+     * content type ID. This prevents lost updates when two concurrent PATCH requests target the
+     * same Content Type: the second request waits until the first has committed, then re-reads the
+     * freshest metadata before applying its own changes.
+     * <p>
+     * Note: the lock is JVM-local. Concurrent writes across cluster nodes are still subject to
+     * last-write-wins; true multi-node safety requires either optimistic locking on {@code modDate}
+     * or an atomic DB-level JSON merge, and should be addressed in a follow-up.
+     *
+     * @param idOrVar        ID or velocity variable name of the Content Type to patch
+     * @param metadataPatch  keys to merge; a {@code null} value removes the key from the map
+     * @param contentTypeAPI the API instance to use for reading and saving the Content Type
+     * @return the saved Content Type with the merged metadata
+     * @throws DotDataException     if a database error occurs
+     * @throws DotSecurityException if the user does not have permission to edit the Content Type
+     * @throws BadRequestException  if {@code DOT_STYLE_EDITOR_SCHEMA} is present but cannot be
+     *                              serialized to a JSON string
+     */
+    public ContentType mergeAndSaveMetadata(
+            final String idOrVar,
+            final Map<String, Object> metadataPatch,
+            final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+        // Validate/normalize before acquiring the lock — fail fast on bad input
+        normalizeStyleEditorSchemaToString(metadataPatch);
+
+        // Initial find to obtain the stable ID used as the lock key
+        final ContentType initial = contentTypeAPI.find(idOrVar);
+
+        final IdentifierStripedLock lockManager =
+                DotConcurrentFactory.getInstance().getIdentifierStripedLock();
+        try {
+            return lockManager.tryLock("ct-metadata-" + initial.id(), () -> {
+                // Re-read inside the lock to pick up any writes committed between our initial
+                // find and the moment we acquired the lock
+                final ContentType current = contentTypeAPI.find(idOrVar);
+                final Map<String, Object> merged = new HashMap<>(
+                        current.metadata() != null ? current.metadata() : Map.of());
+                metadataPatch.forEach((k, v) -> {
+                    if (v == null) {
+                        merged.remove(k);
+                    } else {
+                        merged.put(k, v);
+                    }
+                });
+                return contentTypeAPI.save(
+                        ContentTypeBuilder.builder(current).metadata(merged).build());
+            });
+        } catch (final DotDataException | DotSecurityException e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new DotDataException(
+                    "Error patching metadata for Content Type '" + idOrVar + "': " + t.getMessage(), t);
+        }
+    }
+
+    /**
+     * Normalizes the {@code DOT_STYLE_EDITOR_SCHEMA} entry in the given metadata patch map so that
+     * its value is always stored as a JSON string rather than a raw JSON object.
+     * <p>
+     * When a client sends the schema as a JSON object (e.g. a deserialized {@link java.util.Map}),
+     * Jackson binds it as a {@code LinkedHashMap}. Page-rendering code downstream casts the stored
+     * value directly to {@code String}, so tolerating a non-String value would cause a
+     * {@link ClassCastException} at render time. This method serializes any non-String, non-null
+     * value back to a compact JSON string and writes it in-place into {@code metadataPatch}.
+     * <p>
+     * Keys other than {@code DOT_STYLE_EDITOR_SCHEMA}, and a {@code null} value for that key
+     * (which signals "remove the key"), are left untouched.
+     *
+     * @param metadataPatch the mutable metadata patch map; modified in place when normalization
+     *                      is needed
+     * @throws BadRequestException if the value cannot be serialized to a JSON string
+     */
+    private static void normalizeStyleEditorSchemaToString(final Map<String, Object> metadataPatch) {
+        final Object rawSchema = metadataPatch.get("DOT_STYLE_EDITOR_SCHEMA");
+        if (rawSchema == null || rawSchema instanceof String) {
+            return;
+        }
+
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final String schemaStr;
+        try {
+            schemaStr = mapper.writeValueAsString(rawSchema);
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeHelper.class,
+                    "Could not serialize DOT_STYLE_EDITOR_SCHEMA to JSON string: " + e.getMessage());
+            throw new BadRequestException(
+                    "DOT_STYLE_EDITOR_SCHEMA must be a serializable JSON value");
+        }
+        metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
     }
 
 } // E:O:F:ContentTypeHelper.
