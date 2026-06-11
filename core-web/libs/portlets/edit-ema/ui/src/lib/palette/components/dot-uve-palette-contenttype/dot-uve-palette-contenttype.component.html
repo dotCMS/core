@@ -15,11 +15,15 @@
 }
 
 <!-- Content type icon and name -->
+<!-- pClass (cn) so the list-view justify-start overrides the base justify-center instead of
+     leaving both for Tailwind's CSS order to (wrongly) resolve. -->
 <div
-    class="flex min-w-0 flex-1 items-center justify-center"
     [pTooltip]="'uve.palette.item.disabled.tooltip' | dm"
     [tooltipDisabled]="!contentType.disabled"
-    [class]="$isListView() ? 'flex-row justify-start gap-3' : 'flex-col gap-3'">
+    [pClass]="[
+        'flex min-w-0 flex-1 items-center justify-center',
+        $isListView() ? 'flex-row justify-start gap-3' : 'flex-col gap-3'
+    ]">
     <div class="flex shrink-0 items-center justify-center">
         <i
             class="material-symbols-outlined material-symbols-outlined-outlined text-[28px]! leading-none text-gray-600 group-hover:text-(--color-palette-primary-600)">

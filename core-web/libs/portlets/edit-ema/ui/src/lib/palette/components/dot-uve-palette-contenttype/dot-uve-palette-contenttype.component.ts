@@ -1,4 +1,5 @@
-import { NgClass } from '@angular/common';
+import { cn } from '@primeuix/utils';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -8,6 +9,7 @@ import {
     output
 } from '@angular/core';
 
+import { ClassNames } from 'primeng/classnames';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,7 +18,7 @@ import { DotCMSPaletteContentType, DotPaletteViewMode } from '../../models';
 
 @Component({
     selector: 'dot-uve-palette-contenttype',
-    imports: [NgClass, TooltipModule, DotMessagePipe],
+    imports: [ClassNames, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-palette-contenttype.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -42,26 +44,28 @@ export class DotUVEPaletteContenttypeComponent {
     readonly contextMenu = output<MouseEvent>();
 
     readonly $isListView = computed(() => this.$view() === 'list');
+    /**
+     * Host classes built with `cn` (tailwind-merge): base + state-dependent classes are combined
+     * into one string, and conflicting utilities resolve correctly — e.g. the selected
+     * `bg-primary-100`/`border-primary-500` override the base `bg-white`/`border`.
+     */
     readonly $hostClass = computed(() => {
         const isDisabled = this.$isDisabled();
         const selectable = this.$selectable();
-        const base =
-            'group flex w-full min-w-0 items-center border bg-white text-gray-900 h-auto ' +
-            'hover:border-primary-500 hover:bg-primary-100 hover:shadow-sm ' +
-            'rounded-md';
 
-        // Keep the content centered, but place action icons at the sides.
-        const grid = 'py-2 px-2 justify-between gap-2';
-        const list = 'h-16 px-2 justify-between gap-2';
-
-        const disabled = isDisabled ? 'cursor-not-allowed opacity-60 pointer-events-none' : '';
-        const selectableClass = selectable && !isDisabled ? 'cursor-pointer' : '';
-        const selectedClass =
+        return cn(
+            'group flex h-auto w-full min-w-0 items-center rounded-md border bg-white text-gray-900',
+            'hover:border-primary-500 hover:bg-primary-100 hover:shadow-sm',
+            // Keep the content centered, but place action icons at the sides.
+            this.$isListView()
+                ? 'h-16 px-2 justify-between gap-2'
+                : 'px-2 py-2 justify-between gap-2',
+            isDisabled && 'cursor-not-allowed opacity-60 pointer-events-none',
+            selectable && !isDisabled && 'cursor-pointer',
             selectable && this.$selected()
                 ? 'border-primary-500 bg-primary-100 shadow-sm'
-                : 'border-gray-200';
-
-        return `${base} ${this.$isListView() ? list : grid} ${disabled} ${selectableClass} ${selectedClass}`;
+                : 'border-gray-200'
+        );
     });
 
     readonly $isDisabled = computed(() => this.$contentType().disabled);

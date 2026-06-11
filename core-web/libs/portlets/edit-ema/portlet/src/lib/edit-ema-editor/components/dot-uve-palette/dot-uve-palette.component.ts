@@ -1,6 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
@@ -31,7 +30,6 @@ interface TabHeaderConfig {
 @Component({
     selector: 'dot-uve-palette',
     imports: [
-        NgClass,
         TabsModule,
         TooltipModule,
         DotMessagePipe,
