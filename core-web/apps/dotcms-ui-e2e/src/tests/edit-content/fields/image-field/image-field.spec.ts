@@ -70,7 +70,9 @@ test('upload an image, save, reload, and thumbnail still displayed @critical', a
     await formPage.save();
 
     await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page.url().match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
     expect(savedContentIdentifier).toBeTruthy();
 
     await page.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);

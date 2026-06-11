@@ -7,11 +7,7 @@ import {
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
 
-import {
-    BinaryField,
-    E2E_IMPORT_URL,
-    createTestTextFile
-} from './helpers/binary-field';
+import { BinaryField, E2E_IMPORT_URL, createTestTextFile } from './helpers/binary-field';
 
 const BINARY_FIELD_VARIABLE = 'binaryField';
 const TEST_FILE = createTestTextFile();
@@ -72,7 +68,9 @@ test('attach a binary file, save, reload, and file name retained @critical', asy
     await formPage.save();
 
     await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page.url().match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
     expect(savedContentIdentifier).toBeTruthy();
 
     await page.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);
