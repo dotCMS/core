@@ -1,0 +1,202 @@
+@if ($isLoading()) {
+    <div class="rounded-xl border border-surface-300 bg-white p-4">
+        <p-skeleton height="1.1rem" width="7rem" class="mb-3" />
+        <p-skeleton height="1.75rem" class="mb-2" />
+        <p-skeleton height="1.75rem" class="mb-2" />
+        <p-skeleton height="1.75rem" />
+    </div>
+} @else if (!$showEnhancedView()) {
+    <!-- ── Simple view: ≤5 locales ── -->
+    <div class="overflow-hidden rounded-xl border border-surface-300 bg-white">
+        @if ($translatedLocales().length) {
+            <div class="flex items-center gap-2 p-4">
+                <span class="text-sm font-bold text-primary-700">
+                    {{ 'edit.content.sidebar.locales.selector.translated' | dm }}
+                </span>
+                <p-badge
+                    severity="secondary"
+                    badgeSize="small"
+                    [value]="$translatedLocales().length" />
+            </div>
+            <p-listbox
+                [options]="$translatedLocales()"
+                [ngModel]="$currentLocale()"
+                (ngModelChange)="$event && switchLocale.emit($event)"
+                dataKey="id"
+                class="w-full border-0! [--p-listbox-list-padding:0]">
+                <ng-template pTemplate="item" let-locale>
+                    <div
+                        class="flex w-full items-center justify-between text-sm"
+                        data-testid="locale-item">
+                        <span class="flex items-center gap-2">
+                            <span>{{ locale.language }}</span>
+                            <span class="text-xs text-slate-500">
+                                {{ locale.isoCode | dotIsoCode }}
+                            </span>
+                        </span>
+                        @if ($defaultLocale().id === locale.id) {
+                            <p-tag
+                                [value]="'edit.content.sidebar.locales.selector.default' | dm"
+                                data-testid="default-badge" />
+                        }
+                    </div>
+                </ng-template>
+            </p-listbox>
+        }
+
+        @if ($translatedLocales().length && $pendingLocales().length) {
+            <div class="border-t border-surface-300"></div>
+        }
+
+        @if ($pendingLocales().length) {
+            <div class="flex items-center gap-2 px-4 pt-3 pb-1">
+                <span class="text-sm font-bold text-primary-700">
+                    {{ 'edit.content.sidebar.locales.selector.pending' | dm }}
+                </span>
+                <p-badge
+                    severity="secondary"
+                    badgeSize="small"
+                    [value]="$pendingLocales().length" />
+            </div>
+            <p-listbox
+                [options]="$pendingLocales()"
+                [ngModel]="$currentLocale()"
+                (ngModelChange)="$event && switchLocale.emit($event)"
+                dataKey="id"
+                class="w-full border-0! [--p-listbox-list-padding:0]">
+                <ng-template pTemplate="item" let-locale>
+                    <div
+                        class="flex w-full items-center justify-between text-sm"
+                        data-testid="locale-item">
+                        <span class="flex items-center gap-2">
+                            <span>{{ locale.language }}</span>
+                            <span class="text-xs text-slate-500">
+                                {{ locale.isoCode | dotIsoCode }}
+                            </span>
+                        </span>
+                        @if ($defaultLocale().id === locale.id) {
+                            <p-tag
+                                [value]="'edit.content.sidebar.locales.selector.default' | dm"
+                                data-testid="default-badge" />
+                        }
+                    </div>
+                </ng-template>
+            </p-listbox>
+        }
+    </div>
+} @else {
+    <!-- ── Enhanced view: >5 locales ── -->
+    <div class="flex flex-col rounded-xl border border-zinc-200">
+        <!-- Tabs + Search header -->
+        <div class="flex flex-col gap-2 rounded-t-xl bg-surface-100 p-2">
+            <!-- SelectButton tabs -->
+            <p-selectButton
+                styleClass="justify-center  mx-auto!"
+                [ngModel]="$activeTab()"
+                (ngModelChange)="setTab($event)"
+                [options]="tabDefs"
+                [allowEmpty]="false"
+                data-testid="locale-tabs">
+                <ng-template pTemplate="item" let-item>
+                    <div
+                        class="flex items-center justify-center gap-1"
+                        [attr.data-testid]="'tab-' + item.value">
+                        <span class="text-sm">{{ item.label | dm }}</span>
+                        <p-badge
+                            severity="secondary"
+                            [value]="$tabCounts()[item.value]"
+                            [class.bg-white!]="item.value === $activeTab()" />
+                    </div>
+                </ng-template>
+            </p-selectButton>
+
+            <!-- Search -->
+            <p-iconField class="w-full">
+                <p-inputIcon styleClass="pi pi-search text-slate-500 text-sm" />
+                <input
+                    pInputText
+                    class="w-full text-sm"
+                    [placeholder]="'edit.content.sidebar.locales.selector.search' | dm"
+                    [value]="$searchQuery()"
+                    (input)="onSearchChange($event)"
+                    data-testid="search-input" />
+                @if ($searchQuery()) {
+                    <p-inputIcon
+                        class="pi pi-times cursor-pointer text-xs text-slate-500 hover:text-zinc-800"
+                        (click)="clearSearch()"
+                        data-testid="search-clear" />
+                }
+            </p-iconField>
+        </div>
+
+        <!-- List card -->
+        <div
+            class="overflow-hidden rounded-b-xl border-surface-300 bg-white"
+            data-testid="locales-list-card">
+            <!-- Sticky selected row -->
+            @let currentLocale = $currentLocale();
+            <div
+                class="flex items-center justify-between border-b border-surface-300 bg-surface-100 px-4 py-2.5"
+                data-testid="selected-locale">
+                <div class="flex items-center gap-1.5 text-sm">
+                    <span class="font-bold text-primary-700">
+                        {{ 'edit.content.sidebar.locales.selector.selected' | dm }}
+                    </span>
+                    <span class="font-semibold text-zinc-700">
+                        {{ currentLocale.language }}
+                    </span>
+                    <span class="text-xs text-slate-500">
+                        {{ currentLocale.isoCode | dotIsoCode }}
+                    </span>
+                </div>
+                @if ($defaultLocale().id === currentLocale.id) {
+                    <p-tag
+                        [value]="'edit.content.sidebar.locales.selector.default' | dm"
+                        data-testid="default-badge" />
+                }
+            </div>
+
+            <!-- Scrollable list -->
+            <p-listbox
+                [options]="$filteredLocales()"
+                [ngModel]="$currentLocale()"
+                (ngModelChange)="$event && switchLocale.emit($event)"
+                dataKey="id"
+                [scrollHeight]="'224px'"
+                class="rounded-b-xl! border-0! [--p-listbox-list-padding:0]"
+                data-testid="locales-list">
+                <ng-template pTemplate="item" let-locale>
+                    <div class="flex w-full items-center justify-between" data-testid="locale-item">
+                        <span class="flex items-center gap-2 text-sm">
+                            <span class="text-zinc-700">{{ locale.language }}</span>
+                            <span class="text-xs text-slate-500">
+                                {{ locale.isoCode | dotIsoCode }}
+                            </span>
+                        </span>
+                        @if ($defaultLocale().id === locale.id) {
+                            <p-tag
+                                class="bg-transparent! font-bold! text-primary-700!"
+                                [value]="'edit.content.sidebar.locales.selector.default' | dm"
+                                data-testid="default-badge" />
+                        }
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <p class="py-4 text-center text-sm text-slate-500" data-testid="no-results">
+                        {{ 'edit.content.sidebar.locales.selector.empty' | dm }}
+                    </p>
+                </ng-template>
+            </p-listbox>
+        </div>
+    </div>
+}
+
+@if ($canManageLocales()) {
+    <p-button
+        [link]="true"
+        [label]="'edit.content.sidebar.locales.selector.manage' | dm"
+        [size]="'small'"
+        styleClass="my-3"
+        (onClick)="goToManageLocales()"
+        data-testid="manage-locales-link" />
+}

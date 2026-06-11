@@ -8,6 +8,7 @@ import {
     output,
     untracked
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -17,13 +18,14 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSWorkflowAction, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarLocalesSelectorComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales-selector/dot-edit-content-sidebar-locales-selector.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
@@ -56,6 +58,7 @@ import { escapeHtml } from '../../utils/functions.util';
         SelectModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
+        DotEditContentSidebarLocalesSelectorComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent,
         DotWorkflowActionsComponent
@@ -69,6 +72,15 @@ export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    readonly $isLocaleSelectorV2 = toSignal(
+        this.#dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2,
+            false
+        ),
+        { initialValue: false }
+    );
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;

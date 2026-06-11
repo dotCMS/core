@@ -5,6 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { NEVER, of, Subject } from 'rxjs';
 
@@ -24,6 +25,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotPropertiesService,
     DotSiteService,
     DotSystemConfigService,
     DotVersionableService,
@@ -39,6 +41,7 @@ import {
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
+    createFakeLanguage,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
@@ -97,6 +100,9 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DialogService,
                 useValue: {
@@ -115,7 +121,8 @@ describe('DotEditContentSidebarComponent', () => {
                         of({
                             userId: '123',
                             userName: 'John Doe'
-                        })
+                        }),
+                    isPortletInMenu: jest.fn().mockReturnValue(of(false))
                 }
             },
             {
@@ -143,7 +150,8 @@ describe('DotEditContentSidebarComponent', () => {
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
-            isBetaMessageVisible: true
+            isBetaMessageVisible: true,
+            localeSelectorTab: 'all'
         });
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
@@ -210,7 +218,13 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(workflowComponent).toBeTruthy();
             });
 
-            it('should render DotEditContentSidebarLocalesComponent', () => {
+            it('should render DotEditContentSidebarLocalesComponent when locale data is available', () => {
+                const mockLocale = createFakeLanguage();
+                patchState(store as unknown as WritableStateSource<object>, {
+                    systemDefaultLocale: mockLocale,
+                    currentLocale: mockLocale
+                });
+                spectator.detectChanges();
                 const localesComponent = spectator.query(DotEditContentSidebarLocalesComponent);
                 expect(localesComponent).toBeTruthy();
             });
@@ -259,7 +273,13 @@ describe('DotEditContentSidebarComponent', () => {
             expect(workflowElement).toBeTruthy();
         });
 
-        it('should render locales section with data-testId when on info tab', () => {
+        it('should render locales section with data-testId when on info tab and locale data is available', () => {
+            const mockLocale = createFakeLanguage();
+            patchState(store as unknown as WritableStateSource<object>, {
+                systemDefaultLocale: mockLocale,
+                currentLocale: mockLocale
+            });
+            spectator.detectChanges();
             const localesElement = spectator.query(byTestId('locales'));
             expect(localesElement).toBeTruthy();
         });

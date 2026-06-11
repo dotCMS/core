@@ -1186,11 +1186,12 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
             });
 
-            it('should return stored state from sessionStorage', () => {
+            it('should return stored state from sessionStorage merged with defaults', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
@@ -1200,7 +1201,11 @@ describe('Utils Functions', () => {
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
-                expect(state).toEqual(mockState);
+                expect(state).toEqual({
+                    view: 'form',
+                    localeSelectorTab: 'all',
+                    ...mockState
+                });
             });
 
             it('should return default state and warn when sessionStorage has invalid JSON', () => {
@@ -1212,7 +1217,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -1237,7 +1243,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
