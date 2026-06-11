@@ -19,17 +19,9 @@
             </div>
         } @else if (!$hasHistoryItems()) {
             <!-- Empty state -->
-            <div class="flex min-h-[320px] items-center justify-center px-4">
-                <div class="w-full max-w-[280px]">
-                    <dot-empty-container
-                        [configuration]="{
-                            title: '',
-                            subtitle: 'edit.content.sidebar.history.empty.message' | dm,
-                            icon: 'pi-folder-open'
-                        }"
-                        [hideContactUsLink]="true" />
-                </div>
-            </div>
+            <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
+                {{ 'edit.content.sidebar.history.empty.message' | dm }}
+            </p>
         } @else {
             <!-- History content -->
             <ng-template #versionMarker let-item>
@@ -92,18 +84,9 @@
             </div>
         } @else if (!$hasPushPublishHistoryItems()) {
             <!-- Empty state for push publish -->
-            <div class="flex min-h-[320px] items-center justify-center px-4">
-                <div class="w-full max-w-[280px]">
-                    <dot-empty-container
-                        [configuration]="{
-                            title: '',
-                            subtitle:
-                                'edit.content.sidebar.history.push.publish.empty.message' | dm,
-                            icon: 'pi-folder-open'
-                        }"
-                        [hideContactUsLink]="true" />
-                </div>
-            </div>
+            <p class="px-2 py-3 text-sm text-gray-500" data-testid="push-publish-empty-state">
+                {{ 'edit.content.sidebar.history.push.publish.empty.message' | dm }}
+            </p>
         } @else {
             <!-- Push Publish History content -->
             <ng-template #pushPublishMarker let-item>

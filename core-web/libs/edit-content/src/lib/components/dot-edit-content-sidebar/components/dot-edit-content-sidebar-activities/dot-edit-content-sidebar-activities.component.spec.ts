@@ -76,14 +76,15 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.query(byTestId('loading-state'))).not.toBeVisible();
         });
 
-        it('should render a dot-empty-container inside the empty state', () => {
+        it('should render the empty state as plain text (no empty-container/icon)', () => {
             spectator.setInput({
                 status: ComponentStatus.LOADED,
                 activities: []
             });
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="empty-state"] dot-empty-container')).toBeTruthy();
+            expect(spectator.query('dot-empty-container')).toBeFalsy();
+            expect(spectator.query(byTestId('empty-state'))).toBeTruthy();
         });
     });
 

@@ -169,13 +169,14 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should show empty state when no history items', () => {
-            const emptyComponent = spectator.query('dot-empty-container');
-            expect(emptyComponent).toBeTruthy();
+            const emptyState = spectator.query(byTestId('empty-state'));
+            expect(emptyState).toBeTruthy();
         });
 
-        it('should render the empty state inside the width-constrained wrapper', () => {
-            const constrained = spectator.query('.max-w-\\[280px\\] dot-empty-container');
-            expect(constrained).toBeTruthy();
+        it('should render the empty state as plain text (no empty-container/icon)', () => {
+            expect(spectator.query('dot-empty-container')).toBeFalsy();
+            const emptyState = spectator.query(byTestId('empty-state'));
+            expect(emptyState?.textContent?.trim()).toBeTruthy();
         });
 
         it('should not show history timeline when empty', () => {
@@ -555,17 +556,18 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.setInput('pushPublishHistoryItems', []);
                 spectator.detectChanges();
 
-                const emptyContainer = spectator.query('dot-empty-container');
-                expect(emptyContainer).toExist();
+                const emptyState = spectator.query(byTestId('push-publish-empty-state'));
+                expect(emptyState).toExist();
             });
 
-            it('should render the push publish empty state inside the width-constrained wrapper', () => {
+            it('should render the push publish empty state as plain text (no empty-container/icon)', () => {
                 spectator.setInput('status', ComponentStatus.LOADED);
                 spectator.setInput('pushPublishHistoryItems', []);
                 spectator.detectChanges();
 
-                const constrained = spectator.queryAll('.max-w-\\[280px\\] dot-empty-container');
-                expect(constrained.length).toBeGreaterThan(0);
+                expect(spectator.query('dot-empty-container')).toBeFalsy();
+                const emptyState = spectator.query(byTestId('push-publish-empty-state'));
+                expect(emptyState?.textContent?.trim()).toBeTruthy();
             });
 
             it('should show push publish timeline when items exist', () => {

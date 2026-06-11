@@ -7,7 +7,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
 import { DotHistoryTimelineListComponent } from './components/dot-history-timeline-list/dot-history-timeline-list.component';
@@ -30,7 +30,6 @@ import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sideb
         TooltipModule,
         ButtonModule,
         MenuModule,
-        DotEmptyContainerComponent,
         DotMessagePipe,
         DotEditContentSidebarSectionComponent,
         DotHistoryTimelineItemComponent,

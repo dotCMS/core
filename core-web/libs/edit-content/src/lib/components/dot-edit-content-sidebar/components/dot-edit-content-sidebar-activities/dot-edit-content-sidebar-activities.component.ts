@@ -21,7 +21,6 @@ import { TextareaModule } from 'primeng/textarea';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
-    DotEmptyContainerComponent,
     DotFieldValidationMessageComponent,
     DotGravatarDirective,
     DotMessagePipe,
@@ -30,6 +29,7 @@ import {
 
 import { Activity, DotContentletState } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
+import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 
 const COMMENT_MAX_LENGTH = 500;
 
@@ -52,7 +52,7 @@ const COMMENT_MAX_LENGTH = 500;
         DotRelativeDatePipe,
         DotEditContentSidebarActivitiesSkeletonComponent,
         DotFieldValidationMessageComponent,
-        DotEmptyContainerComponent
+        DotEditContentSidebarSectionComponent
     ],
     templateUrl: './dot-edit-content-sidebar-activities.component.html',
     styleUrls: ['./dot-edit-content-sidebar-activities.component.scss'],
