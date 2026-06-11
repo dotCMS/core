@@ -51,6 +51,17 @@ export function withWorkflow() {
             isLoadingWorkflow: computed(() => store.workflow().status === ComponentStatus.LOADING),
 
             /**
+             * Computed property that determines if the allowed workflow actions are being
+             * re-fetched (e.g. after a lock/unlock toggle), so the UI can disable them while
+             * the stale list is refreshed.
+             *
+             * @returns {boolean} True while updateCurrentContentActions is in flight
+             */
+            isLoadingActions: computed(
+                () => store.actionsStatus().status === ComponentStatus.LOADING
+            ),
+
+            /**
              * Gets the workflow scheme for the currently selected scheme ID
              *
              * @returns {DotCMSWorkflow | undefined} The workflow scheme if found, undefined otherwise
@@ -344,6 +355,13 @@ export function withWorkflow() {
                                 return [];
                             }
 
+                            patchState(store, {
+                                actionsStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                }
+                            });
+
                             return workflowActionService
                                 .getByInode(contentlet.inode, DotRenderMode.EDITING)
                                 .pipe(
@@ -353,11 +371,21 @@ export function withWorkflow() {
                                                 parseCurrentActions(actions);
 
                                             patchState(store, {
-                                                currentContentActions: parsedCurrentActions
+                                                currentContentActions: parsedCurrentActions,
+                                                actionsStatus: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                }
                                             });
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);
+                                            patchState(store, {
+                                                actionsStatus: {
+                                                    status: ComponentStatus.ERROR,
+                                                    error: error.message
+                                                }
+                                            });
                                         }
                                     })
                                 );

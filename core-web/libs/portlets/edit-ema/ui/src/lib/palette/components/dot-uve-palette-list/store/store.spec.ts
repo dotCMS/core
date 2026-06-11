@@ -20,14 +20,15 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DotPaletteListStore } from './store';
+import { DOT_PALETTE_PERSIST_PREFERENCES, DotPaletteListStore } from './store';
 
-import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
+    BASE_TYPES_FOR_CONTENT_DRIVE,
     DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotUVEPaletteListTypes,
-    DotUVEPaletteListView
+    DotUVEPaletteListView,
+    LIST_TYPE_BASE_TYPES
 } from '../../../models';
 import { buildPaletteFavorite, EMPTY_PAGINATION } from '../../../utils';
 
@@ -77,7 +78,6 @@ describe('DotPaletteListStore', () => {
     let dotESContentService: jest.Mocked<DotESContentService>;
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
-    let uveStore: { $allowedContentTypes: jest.Mock };
 
     // ===== Test Helper Functions =====
 
@@ -152,13 +152,6 @@ describe('DotPaletteListStore', () => {
         providers: [
             DotPaletteListStore,
             {
-                provide: UVEStore,
-                useValue: {
-                    // Default to empty map so favorites are marked as disabled unless tests override.
-                    $allowedContentTypes: jest.fn().mockReturnValue({})
-                }
-            },
-            {
                 provide: DotLocalstorageService,
                 useValue: {
                     getItem: jest.fn().mockReturnValue(null),
@@ -177,7 +170,6 @@ describe('DotPaletteListStore', () => {
         dotESContentService = spectator.inject(DotESContentService);
         dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
         dotLocalstorageService = spectator.inject(DotLocalstorageService);
-        uveStore = spectator.inject(UVEStore) as unknown as { $allowedContentTypes: jest.Mock };
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -504,10 +496,12 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should pass allowedContentTypes to buildPaletteFavorite when refreshing favorites state', () => {
-                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+                store.getContentTypes({
+                    listType: DotUVEPaletteListTypes.FAVORITES,
+                    allowedContentTypes: { blog: true, banner: true }
+                });
 
                 (buildPaletteFavorite as unknown as jest.Mock).mockClear();
-                uveStore.$allowedContentTypes.mockReturnValueOnce({ blog: true, banner: true });
 
                 store.setContentTypesFromFavorite(mockContentTypes);
 
@@ -678,6 +672,135 @@ describe('DotPaletteListStore', () => {
                         per_page: 30
                     })
                 );
+            });
+
+            describe('page-agnostic list types', () => {
+                // Every page-agnostic list type routes to the global endpoint
+                // (getAllContentTypes) with its mapped base-type filter, NOT the
+                // page-scoped get() endpoint.
+                const pageAgnosticCases: Array<{
+                    listType: DotUVEPaletteListTypes;
+                    types: string[];
+                }> = [
+                    {
+                        listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES,
+                        types: BASE_TYPES_FOR_CONTENT_DRIVE
+                    },
+                    { listType: DotUVEPaletteListTypes.ALL_CONTENT, types: ['CONTENT'] },
+                    { listType: DotUVEPaletteListTypes.ALL_WIDGET, types: ['WIDGET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_FILEASSET, types: ['FILEASSET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_DOTASSET, types: ['DOTASSET'] },
+                    { listType: DotUVEPaletteListTypes.ALL_PERSONA, types: ['PERSONA'] },
+                    { listType: DotUVEPaletteListTypes.ALL_VANITY_URL, types: ['VANITY_URL'] },
+                    { listType: DotUVEPaletteListTypes.ALL_KEY_VALUE, types: ['KEY_VALUE'] },
+                    { listType: DotUVEPaletteListTypes.ALL_HTMLPAGE, types: ['HTMLPAGE'] }
+                ];
+
+                it.each(pageAgnosticCases)(
+                    'should fetch via getAllContentTypes with mapped base types for $listType',
+                    ({ listType, types }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                types,
+                                per_page: 30
+                            })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should use LIST_TYPE_BASE_TYPES mapping for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                types: LIST_TYPE_BASE_TYPES[listType]
+                            })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should NOT call the page endpoint get() for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
+                    'should update store with content types for $listType',
+                    ({ listType }) => {
+                        store.getContentTypes({ listType });
+
+                        expect(store.contenttypes()).toEqual(mockContentTypes);
+                        expectContentTypesView();
+                        expectLoadedState();
+                    }
+                );
+
+                it('should pass ALL base types except FORM for ALL_CONTENT_TYPES', () => {
+                    store.getContentTypes({
+                        listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES
+                    });
+
+                    expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            types: [
+                                'CONTENT',
+                                'WIDGET',
+                                'FILEASSET',
+                                'DOTASSET',
+                                'PERSONA',
+                                'VANITY_URL',
+                                'KEY_VALUE',
+                                'HTMLPAGE'
+                            ]
+                        })
+                    );
+                    expect(pageContentTypeService.getAllContentTypes).not.toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            types: expect.arrayContaining(['FORM'])
+                        })
+                    );
+                });
+
+                it('should pass host parameter through to getAllContentTypes for page-agnostic types', () => {
+                    store.getContentTypes({
+                        host: 'demo.dotcms.com',
+                        listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+                    });
+
+                    expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            host: 'demo.dotcms.com',
+                            types: ['HTMLPAGE'],
+                            per_page: 30
+                        })
+                    );
+                    expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                });
+            });
+
+            it('should pass allowedContentTypes to buildPaletteFavorite for FAVORITES list type', () => {
+                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+
+                store.getContentTypes({
+                    listType: DotUVEPaletteListTypes.FAVORITES,
+                    allowedContentTypes: { blog: true, banner: true }
+                });
+
+                expect(buildPaletteFavorite).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        allowedContentTypes: { blog: true, banner: true }
+                    })
+                );
+                expect(pageContentTypeService.get).not.toHaveBeenCalled();
+                expect(pageContentTypeService.getAllContentTypes).not.toHaveBeenCalled();
             });
         });
 
@@ -967,5 +1090,47 @@ describe('DotPaletteListStore', () => {
                 expect(store.$showListLayout()).toBe(true);
             });
         });
+    });
+});
+
+// Separate suite (own TestBed) so the persistence-off token can be provided at module setup —
+// it can't be overridden after the default suite has already instantiated the store.
+describe('DotPaletteListStore — persistence disabled (transient consumers, e.g. Content Drive)', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
+    let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+
+    const createService = createServiceFactory({
+        service: DotPaletteListStore,
+        providers: [
+            DotPaletteListStore,
+            { provide: DOT_PALETTE_PERSIST_PREFERENCES, useValue: false },
+            {
+                provide: DotLocalstorageService,
+                useValue: {
+                    getItem: jest.fn().mockReturnValue(null),
+                    setItem: jest.fn().mockReturnValue(undefined)
+                }
+            }
+        ],
+        mocks: [DotPageContentTypeService, DotESContentService, DotFavoriteContentTypeService]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        dotLocalstorageService = spectator.inject(DotLocalstorageService);
+    });
+
+    it('should not read view-mode/sort preferences from localStorage on init', () => {
+        expect(dotLocalstorageService.getItem).not.toHaveBeenCalled();
+        // Falls back to the in-code defaults (cards-only grid, name ASC).
+        expect(spectator.service.layoutMode()).toBe('grid');
+        expect(spectator.service.searchParams().orderby).toBe('name');
+    });
+
+    it('should not write preferences when the layout changes', () => {
+        spectator.service.setLayoutMode('list');
+        spectator.flushEffects();
+
+        expect(dotLocalstorageService.setItem).not.toHaveBeenCalled();
     });
 });

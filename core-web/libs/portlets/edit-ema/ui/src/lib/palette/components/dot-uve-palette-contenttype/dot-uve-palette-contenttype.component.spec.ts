@@ -1,4 +1,5 @@
 import {
+    byTestId,
     createComponentFactory,
     createHostFactory,
     Spectator,
@@ -20,11 +21,17 @@ import { DotCMSPaletteContentType } from '../../models';
     selector: 'dot-test-host',
     standalone: false,
     template: `
-        <dot-uve-palette-contenttype [contentType]="contentType" [view]="view" />
+        <dot-uve-palette-contenttype
+            [contentType]="contentType"
+            [view]="view"
+            [selectable]="selectable"
+            [selected]="selected" />
     `
 })
 class TestHostComponent {
     view: 'grid' | 'list' = 'grid';
+    selectable = false;
+    selected = false;
     contentType: DotCMSPaletteContentType = {
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -90,7 +97,11 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dot-uve-palette-contenttype [contentType]="contentType" [view]="view" />`
+            `<dot-uve-palette-contenttype
+                [contentType]="contentType"
+                [view]="view"
+                [selectable]="selectable"
+                [selected]="selected" />`
         );
     });
 
@@ -298,6 +309,182 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             const chevron = spectator.query('.chevron');
             spectator.click(chevron as Element);
+        });
+    });
+
+    describe('Selectable mode', () => {
+        beforeEach(() => {
+            spectator.hostComponent.selectable = true;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+        });
+
+        it('should set host draggable attribute to false when selectable', () => {
+            const element = spectator.element as HTMLElement;
+            expect(element.getAttribute('draggable')).toBe('false');
+        });
+
+        it('should not render the drag handle when selectable', () => {
+            expect(spectator.query('.drag-handle')).toBeFalsy();
+        });
+
+        it('should not render the chevron when selectable', () => {
+            expect(spectator.query('.chevron')).toBeFalsy();
+        });
+
+        it('should emit onSelectContentType with the variable when host is clicked', (done) => {
+            spectator.output('onSelectContentType').subscribe((value: string) => {
+                expect(value).toBe('TestContentType');
+                done();
+            });
+
+            spectator.click(spectator.element as Element);
+        });
+
+        it('should emit the updated variable when contentType changes and host is clicked', (done) => {
+            const newContentType: DotCMSPaletteContentType = {
+                ...spectator.hostComponent.contentType,
+                variable: 'AnotherVariable'
+            };
+
+            spectator.hostComponent.contentType = newContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+
+            spectator.output('onSelectContentType').subscribe((value: string) => {
+                expect(value).toBe('AnotherVariable');
+                done();
+            });
+
+            spectator.click(spectator.element as Element);
+        });
+
+        it('should NOT emit onSelectContentType on host click when disabled', () => {
+            const disabledContentType: DotCMSPaletteContentType = {
+                ...spectator.hostComponent.contentType,
+                disabled: true
+            };
+
+            spectator.hostComponent.contentType = disabledContentType;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+
+            const emitSpy = jest.fn();
+            spectator.output('onSelectContentType').subscribe(emitSpy);
+
+            spectator.click(spectator.element as Element);
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Non-selectable mode (default UVE)', () => {
+        it('should render the drag handle when not selectable', () => {
+            expect(spectator.query('.drag-handle')).toBeTruthy();
+        });
+
+        it('should render the chevron when not selectable', () => {
+            expect(spectator.query('.chevron')).toBeTruthy();
+        });
+
+        it('should have host draggable attribute set to true when not selectable', () => {
+            const element = spectator.element as HTMLElement;
+            expect(element.getAttribute('draggable')).toBe('true');
+        });
+
+        it('should NOT emit onSelectContentType on host click when not selectable', () => {
+            const emitSpy = jest.fn();
+            spectator.output('onSelectContentType').subscribe(emitSpy);
+
+            spectator.click(spectator.element as Element);
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Selected state', () => {
+        it('should render without error when selectable and selected', () => {
+            spectator.hostComponent.selectable = true;
+            spectator.hostComponent.selected = true;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+
+            expect(spectator.component).toBeTruthy();
+            expect(spectator.component.$selected()).toBe(true);
+            expect(spectator.component.$selectable()).toBe(true);
+        });
+
+        it('should reflect a non-selected representative state differently from a selected one', () => {
+            spectator.hostComponent.selectable = true;
+            spectator.hostComponent.selected = false;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+            expect(spectator.component.$selected()).toBe(false);
+
+            spectator.hostComponent.selected = true;
+            spectator.hostFixture.changeDetectorRef.markForCheck();
+            spectator.hostFixture.detectChanges();
+            expect(spectator.component.$selected()).toBe(true);
+        });
+    });
+
+    describe('Name tooltip', () => {
+        it('should render the name element with the content type name', () => {
+            const nameElement = spectator.query(byTestId('content-type-name')) as HTMLElement;
+
+            expect(nameElement).toBeTruthy();
+            expect(nameElement.textContent?.trim()).toBe('Test Content Type');
+        });
+
+        it('should bind the name as the tooltip when content type is not disabled', () => {
+            componentSpectator = createComponent({
+                props: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    contentType: spectator.hostComponent.contentType,
+                    view: 'grid'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any
+            });
+            componentSpectator.detectChanges();
+
+            const nameElement = componentSpectator.query(
+                byTestId('content-type-name')
+            ) as HTMLElement;
+            expect(nameElement).toBeTruthy();
+
+            const tooltipDebugEl = componentSpectator.fixture.debugElement
+                .queryAll(By.directive(Tooltip))
+                .find((de) => de.nativeElement.getAttribute('data-testid') === 'content-type-name');
+
+            expect(tooltipDebugEl).toBeTruthy();
+            const tooltip = tooltipDebugEl?.injector.get(Tooltip);
+            expect(tooltip?.content).toBe('Test Content Type');
+            expect(tooltip?.disabled).toBe(false);
+        });
+
+        it('should suppress the name tooltip when content type is disabled', () => {
+            const disabledContentType: DotCMSPaletteContentType = {
+                ...spectator.hostComponent.contentType,
+                disabled: true
+            };
+
+            componentSpectator = createComponent({
+                props: {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    contentType: disabledContentType,
+                    view: 'grid'
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any
+            });
+            componentSpectator.detectChanges();
+
+            const tooltipDebugEl = componentSpectator.fixture.debugElement
+                .queryAll(By.directive(Tooltip))
+                .find((de) => de.nativeElement.getAttribute('data-testid') === 'content-type-name');
+
+            expect(tooltipDebugEl).toBeTruthy();
+            const tooltip = tooltipDebugEl?.injector.get(Tooltip);
+            expect(tooltip?.disabled).toBe(true);
         });
     });
 

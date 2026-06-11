@@ -8,7 +8,7 @@ import {
 } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { computed, effect, inject } from '@angular/core';
+import { computed, effect, inject, InjectionToken } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -20,7 +20,6 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
     BASETYPES_FOR_CONTENT,
     BASETYPES_FOR_WIDGET,
@@ -31,7 +30,8 @@ import {
     DotPaletteSortOption,
     DotPaletteViewMode,
     DotUVEPaletteListTypes,
-    DotUVEPaletteListView
+    DotUVEPaletteListView,
+    LIST_TYPE_BASE_TYPES
 } from '../../../models';
 import {
     buildPaletteContent,
@@ -45,6 +45,17 @@ import {
     getPaletteState,
     EMPTY_PAGINATION
 } from '../../../utils';
+
+/**
+ * Whether the palette persists view-mode/sort preferences to localStorage. Defaults to `true`
+ * (UVE behavior). Consumers that share the store for a transient, cards-only experience — e.g.
+ * the Content Drive "New" dialog — should provide `false` so they neither read nor overwrite the
+ * UVE palette's saved preferences.
+ */
+export const DOT_PALETTE_PERSIST_PREFERENCES = new InjectionToken<boolean>(
+    'DOT_PALETTE_PERSIST_PREFERENCES',
+    { factory: () => true }
+);
 
 export const DEFAULT_STATE: DotPaletteListState = {
     contenttypes: [],
@@ -99,10 +110,22 @@ export const DotPaletteListStore = signalStore(
         const pageContentTypeService = inject(DotPageContentTypeService);
         const dotESContentService = inject(DotESContentService);
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
-        const uveStore = inject(UVEStore);
 
         const getData = () => {
             const { listType, ...params } = store.searchParams();
+
+            // Page-agnostic list types (e.g. Content Drive "New" menu): fetch content types of
+            // the mapped base types from the global endpoint (no page context), with server-side
+            // pagination so it scales on large instances. System types (e.g. Favorite Page) are
+            // excluded server-side — see backend issue #36072.
+            const baseTypes = LIST_TYPE_BASE_TYPES[listType];
+            if (baseTypes) {
+                return pageContentTypeService.getAllContentTypes({
+                    ...params,
+                    types: baseTypes,
+                    per_page: DEFAULT_PER_PAGE
+                });
+            }
 
             switch (listType) {
                 case DotUVEPaletteListTypes.CONTENT:
@@ -124,10 +147,13 @@ export const DotPaletteListStore = signalStore(
                                 contentTypes,
                                 filter: params.filter || '',
                                 page: params.page,
-                                allowedContentTypes: uveStore.$allowedContentTypes()
+                                allowedContentTypes: params.allowedContentTypes
                             })
                         )
                     );
+                default:
+                    // Unhandled list type — return an empty response so every path returns.
+                    return of(EMPTY_CONTENTTYPE_RESPONSE);
             }
         };
 
@@ -191,13 +217,13 @@ export const DotPaletteListStore = signalStore(
     withMethods((store) => {
         const params = store.searchParams;
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
-        const uveStore = inject(UVEStore);
         const updateFavoriteState = (contentTypes: DotCMSContentType[]) => {
             const response = buildPaletteFavorite({
                 contentTypes,
                 filter: params.filter(),
                 page: params.page() || 1,
-                allowedContentTypes: uveStore?.$allowedContentTypes()
+                // allowedContentTypes is optional, so read it from the snapshot (no deep signal).
+                allowedContentTypes: params().allowedContentTypes
             });
             patchState(store, response);
         };
@@ -257,9 +283,16 @@ export const DotPaletteListStore = signalStore(
     }),
     withHooks((store) => {
         const dotLocalstorageService = inject(DotLocalstorageService);
+        const persistPreferences = inject(DOT_PALETTE_PERSIST_PREFERENCES);
 
         return {
             onInit() {
+                // Transient consumers (e.g. Content Drive "New" dialog) opt out so they neither
+                // read nor overwrite the UVE palette's saved view-mode/sort preferences.
+                if (!persistPreferences) {
+                    return;
+                }
+
                 const layoutMode =
                     dotLocalstorageService.getItem<DotPaletteViewMode>(
                         DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY
