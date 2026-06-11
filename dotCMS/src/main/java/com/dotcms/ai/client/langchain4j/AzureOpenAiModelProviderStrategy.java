@@ -1,5 +1,6 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.dotmarketing.util.Logger;
 import com.openai.azure.AzureOpenAIServiceVersion;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
@@ -64,17 +65,40 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
     }
 
     /**
-     * Builds an image model using the official OpenAI Java SDK with Microsoft Foundry (Azure)
-     * support, which provides access to gpt-image-1 and other modern image models.
+     * Builds an image model using the official OpenAI Java SDK, automatically selecting the
+     * correct routing based on the configured endpoint.
+     *
+     * <ul>
+     *   <li><b>Azure AI Foundry</b> ({@code services.ai.azure.com}): uses a plain OpenAI-style
+     *       client — no deployment-path routing, no {@code api-version} header. Compatible with
+     *       models like {@code gpt-image-2} deployed via the Foundry catalog.</li>
+     *   <li><b>Classic Azure OpenAI</b> ({@code openai.azure.com}): uses
+     *       {@code isMicrosoftFoundry(true)}, which appends
+     *       {@code /openai/deployments/{deploymentName}} to the base URL and injects the
+     *       {@code api-version} query parameter. Supports models like {@code gpt-image-1}.</li>
+     * </ul>
      *
      * <p>The legacy {@code AzureOpenAiImageModel} only supported dall-e-3, which was deprecated
-     * by Azure in June 2025. This implementation uses {@code OpenAiOfficialImageModel} with
-     * {@code isMicrosoftFoundry(true)}, which routes through the official OpenAI SDK and
-     * supports gpt-image-1 on Azure.
+     * by Azure in June 2025. Both paths here use {@code OpenAiOfficialImageModel} from the
+     * official OpenAI Java SDK.
      */
     @Override
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
+        if (config.endpoint().contains("services.ai.azure.com")) {
+            if (config.apiVersion() != null) {
+                Logger.warn(AzureOpenAiModelProviderStrategy.class,
+                        "apiVersion is not used for Azure AI Foundry endpoints and will be ignored");
+            }
+            final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
+                    .baseUrl(config.endpoint())
+                    .apiKey(config.apiKey())
+                    .modelName(deploymentName(config));
+            if (config.size() != null) builder.size(config.size());
+            if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+            if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+            return builder.build();
+        }
         final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
                 .isMicrosoftFoundry(true)
                 .baseUrl(config.endpoint())
