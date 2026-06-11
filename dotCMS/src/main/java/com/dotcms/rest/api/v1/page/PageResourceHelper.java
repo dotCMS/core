@@ -947,8 +947,10 @@ public class PageResourceHelper implements Serializable {
      * Builds a {@link PageRenderSourcesView} for the given page path. All parameters except
      * {@code path} are optional; see individual parameter docs for resolution rules.
      *
-     * @param path        Required. Qualified ({@code //host/uri}) or plain ({@code /uri}) page path.
-     * @param hostId      Optional. Explicit host identifier (ignored when {@code path} is qualified).
+     * @param path        Required. Plain page path ({@code /uri}); the host is resolved from
+     *                    {@code hostId} or the default host (the {@code //host/uri} form is not
+     *                    supported — NormalizationFilter rejects URIs containing {@code //}).
+     * @param hostId      Optional. Explicit host identifier; defaults to the default host.
      * @param languageId  Optional. Language identifier; defaults to the default language.
      * @param personaId   Optional. Persona contentlet identifier whose key-tag is used for
      *                    personalization lookup (maps to WebKeys.CMS_PERSONA_PARAMETER semantics).
@@ -1389,10 +1391,13 @@ public class PageResourceHelper implements Serializable {
                 Logger.debug(this, () -> "Version-aware lookup failed for widget contentlet '"
                         + contentletId + "', falling back to any-language: " + e.getMessage());
             }
-            // Fall back to any-language/any-variant if the specific version is absent.
+            // Fall back to any-language/any-variant if the specific version is absent. This
+            // overload does not take a user, so re-check READ permission explicitly to avoid
+            // leaking identifiers/inodes of a widget the caller cannot read.
             if (c == null || !UtilMethods.isSet(c.getInode())) {
-                c = Try.of(() -> contentletAPI
+                final Contentlet anyLang = Try.of(() -> contentletAPI
                         .findContentletByIdentifierAnyLanguage(contentletId)).getOrNull();
+                c = (anyLang != null && canReadContentlet(anyLang, user)) ? anyLang : null;
             }
             if (c == null) {
                 continue;
@@ -1502,15 +1507,31 @@ public class PageResourceHelper implements Serializable {
             Logger.debug(this, "URL map contentlet version lookup failed for '" + contentletId
                     + "': " + e.getMessage());
         }
+        // Fall back to any-language if the requested version is absent. That overload does not
+        // take a user, so re-check READ permission before exposing its inode/title.
         if (versioned == null || !UtilMethods.isSet(versioned.getInode())) {
-            versioned = Try.of(
+            final Contentlet anyLang = Try.of(
                     () -> contentletAPI.findContentletByIdentifierAnyLanguage(contentletId))
                     .getOrNull();
+            versioned = (anyLang != null && canReadContentlet(anyLang, user)) ? anyLang : null;
         }
 
-        final String inode = versioned != null ? versioned.getInode() : raw.getInode();
-        final String title = versioned != null ? versioned.getTitle() : raw.getTitle();
+        // Only surface the resolved version's inode/title when the caller can read it; otherwise
+        // expose the identifier/type alone (never the inode/title of unreadable content).
+        final boolean exposeVersion = versioned != null;
+        final String inode = exposeVersion ? versioned.getInode() : null;
+        final String title = exposeVersion ? versioned.getTitle() : null;
         return new UrlContentMapView(contentTypeVar, title, contentletId, inode);
+    }
+
+    /**
+     * Returns {@code true} when {@code user} has READ permission on {@code contentlet}. Used to
+     * re-gate contentlets resolved via the user-less {@code findContentletByIdentifierAnyLanguage}
+     * fallback so their identifiers/inodes are not exposed to callers who cannot read them.
+     */
+    private boolean canReadContentlet(final Contentlet contentlet, final User user) {
+        return Try.of(() -> permissionAPI.doesUserHavePermission(
+                contentlet, PermissionAPI.PERMISSION_READ, user, false)).getOrElse(false);
     }
 
     /**

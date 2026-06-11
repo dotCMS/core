@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Top-level view returned by {@code GET /api/v1/page/_render-sources}.
+ * Top-level view returned by {@code GET /api/v1/page/_render-sources/{uri}}.
  * Contains references only — no rendered HTML, no file content, no container code.
  *
  * <p>{@code containers} is a JSON object keyed by the container reference:

@@ -19,7 +19,7 @@ public class ThemeSourceView {
     @Schema(description = "Host-qualified path to the theme folder, e.g. //demo.dotcms.com/application/themes/travel/")
     private final String folderPath;
 
-    @Schema(description = "VTL files found directly in the theme folder")
+    @Schema(description = "VTL files found anywhere under the theme folder (searched recursively)")
     private final List<VtlFileRefView> vtls;
 
     public ThemeSourceView(final String id, final String name, final String folderPath,

@@ -248,6 +248,7 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Render sources retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityPageRenderSourcesView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameter (e.g. an unknown mode value)"),
             @ApiResponse(responseCode = "403", description = "User does not have READ permission on the page"),
             @ApiResponse(responseCode = "404", description = "Page not found, wrong language, or unknown host")
     })

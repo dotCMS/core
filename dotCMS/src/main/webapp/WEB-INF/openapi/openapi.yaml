@@ -12535,6 +12535,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityPageRenderSourcesView"
           description: Render sources retrieved successfully
+        "400":
+          description: Invalid request parameter (e.g. an unknown mode value)
         "403":
           description: User does not have READ permission on the page
         "404":
@@ -35987,7 +35989,7 @@ components:
           description: Theme folder name
         vtls:
           type: array
-          description: VTL files found directly in the theme folder
+          description: VTL files found anywhere under the theme folder (searched recursively)
           items:
             $ref: "#/components/schemas/VtlFileRefView"
     ThemeView:
@@ -37501,7 +37503,7 @@ components:
             format: float
     VtlFileRefView:
       type: object
-      description: VTL files found directly in the theme folder
+      description: VTL files found anywhere under the theme folder (searched recursively)
       properties:
         identifier:
           type: string
