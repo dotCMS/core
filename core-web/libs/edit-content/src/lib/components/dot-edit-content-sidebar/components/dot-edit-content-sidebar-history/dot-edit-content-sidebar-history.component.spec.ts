@@ -1,17 +1,14 @@
 import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
-import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
-    DotEmptyContainerComponent,
-    DotMessagePipe,
-    DotRelativeDatePipe,
-    DotSidebarAccordionComponent,
-    DotSidebarAccordionTabComponent
-} from '@dotcms/ui';
+    DotFormatDateService,
+    DotLocalstorageService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
@@ -103,20 +100,28 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             DotMessagePipe,
             DotRelativeDatePipe,
             { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotFormatDateService)
+            mockProvider(DotFormatDateService),
+            mockProvider(DotLocalstorageService, {
+                getItem: jest.fn().mockReturnValue(false),
+                setItem: jest.fn()
+            })
         ],
         imports: [
-            DotEmptyContainerComponent,
             DotMessagePipe,
             DotRelativeDatePipe,
-            DotSidebarAccordionComponent,
-            DotSidebarAccordionTabComponent,
             DotHistoryTimelineItemComponent,
             DotPushpublishTimelineItemComponent
         ]
     });
 
     beforeEach(() => {
+        // jsdom lacks IntersectionObserver — the timeline list observes a sentinel.
+        global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+            observe: jest.fn(),
+            unobserve: jest.fn(),
+            disconnect: jest.fn()
+        })) as unknown as typeof IntersectionObserver;
+
         spectator = createComponent({
             detectChanges: false // Don't auto-detect changes
         });
@@ -163,8 +168,14 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should show empty state when no history items', () => {
-            const emptyComponent = spectator.query('dot-empty-container');
-            expect(emptyComponent).toBeTruthy();
+            const emptyState = spectator.query(byTestId('empty-state'));
+            expect(emptyState).toBeTruthy();
+        });
+
+        it('should render the empty state as plain text (no empty-container/icon)', () => {
+            expect(spectator.query('dot-empty-container')).toBeFalsy();
+            const emptyState = spectator.query(byTestId('empty-state'));
+            expect(emptyState?.textContent?.trim()).toBeTruthy();
         });
 
         it('should not show history timeline when empty', () => {
@@ -188,7 +199,40 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         it('should render timeline container with correct structure', () => {
             const timelineContainer = spectator.query(byTestId('history-timeline-container'));
             expect(timelineContainer).toBeTruthy();
-            expect(timelineContainer).toHaveClass('overflow-y-auto');
+        });
+    });
+
+    describe('Sections', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should render two collapsible sections with titles', () => {
+            const sections = spectator.queryAll('dot-edit-content-sidebar-section');
+            expect(sections).toHaveLength(2);
+
+            const titles = spectator
+                .queryAll(byTestId('dot-section-title'))
+                .map((el) => el.textContent?.trim());
+            expect(titles).toEqual(['Versions', 'Push Publish']);
+        });
+
+        it('should toggle each section independently', () => {
+            const toggles = spectator.queryAll(byTestId('dot-section-toggle'));
+            expect(toggles).toHaveLength(2);
+
+            // Both expanded by default
+            expect(toggles[0].getAttribute('aria-expanded')).toBe('true');
+            expect(toggles[1].getAttribute('aria-expanded')).toBe('true');
+
+            // Collapse the first; the second must stay expanded
+            spectator.click(toggles[0]);
+            spectator.detectChanges();
+
+            expect(toggles[0].getAttribute('aria-expanded')).toBe('false');
+            expect(toggles[1].getAttribute('aria-expanded')).toBe('true');
         });
     });
 
@@ -223,36 +267,26 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
-    describe('Scroll Events (timeline lazy load)', () => {
-        function createNearBottomScrollEvent(): Event {
-            const target = {
-                scrollHeight: 500,
-                scrollTop: 400,
-                clientHeight: 100
-            };
-            return { target } as unknown as Event;
-        }
-
+    describe('Versions infinite scroll (reachedEnd)', () => {
         beforeEach(() => {
             spectator.setInput('historyPagination', mockPagination);
             spectator.setInput('historyItems', mockHistoryItems);
             spectator.detectChanges();
         });
 
-        it('should emit pageChange when scroll is near bottom', fakeAsync(() => {
+        it('should emit historyPageChange when the timeline reaches its end', () => {
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
-            tick();
+            spectator.component.onTimelineReachedEnd();
 
             expect(spy).toHaveBeenCalledWith(2);
-        }));
+        });
 
-        it('should not emit pageChange when already loading', () => {
+        it('should not emit historyPageChange when already loading', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
+            spectator.component.onTimelineReachedEnd();
 
             expect(spy).not.toHaveBeenCalled();
         });
@@ -401,36 +435,26 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             });
         });
 
-        describe('Push Publish Scroll Events', () => {
+        describe('Push Publish infinite scroll (reachedEnd)', () => {
             beforeEach(() => {
                 spectator.setInput('pushPublishHistoryPagination', mockPagination);
                 spectator.setInput('pushPublishHistoryItems', mockPushPublishHistoryItems);
                 spectator.detectChanges();
             });
 
-            function createNearBottomScrollEvent(): Event {
-                const target = {
-                    scrollHeight: 500,
-                    scrollTop: 400,
-                    clientHeight: 100
-                };
-                return { target } as unknown as Event;
-            }
-
-            it('should emit pushPublishPageChange when scroll is near bottom', fakeAsync(() => {
+            it('should emit pushPublishPageChange when the timeline reaches its end', () => {
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
-                tick();
+                spectator.component.onPushPublishTimelineReachedEnd();
 
                 expect(spy).toHaveBeenCalledWith(2);
-            }));
+            });
 
             it('should not emit pushPublishPageChange when already loading', () => {
                 spectator.setInput('status', ComponentStatus.LOADING);
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
+                spectator.component.onPushPublishTimelineReachedEnd();
 
                 expect(spy).not.toHaveBeenCalled();
             });
@@ -445,7 +469,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
+                spectator.component.onPushPublishTimelineReachedEnd();
 
                 expect(spy).not.toHaveBeenCalled();
             });
@@ -499,6 +523,22 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 expect(actualButton).toBeTruthy();
                 expect(actualButton.disabled).toBe(false);
             });
+
+            it('should not toggle the Push Publish section when the menu button is clicked', () => {
+                // Push Publish is the second section
+                const toggles = spectator.queryAll(byTestId('dot-section-toggle'));
+                const pushPublishToggle = toggles[1];
+                expect(pushPublishToggle.getAttribute('aria-expanded')).toBe('true');
+
+                const menuButton = spectator
+                    .query('[data-testid="push-publish-menu-button"]')
+                    ?.querySelector('button') as HTMLButtonElement;
+                spectator.click(menuButton);
+                spectator.detectChanges();
+
+                // Section must remain expanded — the click must not have toggled it
+                expect(pushPublishToggle.getAttribute('aria-expanded')).toBe('true');
+            });
         });
 
         describe('Push Publish Display States', () => {
@@ -515,8 +555,18 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.setInput('pushPublishHistoryItems', []);
                 spectator.detectChanges();
 
-                const emptyContainer = spectator.query('dot-empty-container');
-                expect(emptyContainer).toExist();
+                const emptyState = spectator.query(byTestId('push-publish-empty-state'));
+                expect(emptyState).toExist();
+            });
+
+            it('should render the push publish empty state as plain text (no empty-container/icon)', () => {
+                spectator.setInput('status', ComponentStatus.LOADED);
+                spectator.setInput('pushPublishHistoryItems', []);
+                spectator.detectChanges();
+
+                expect(spectator.query('dot-empty-container')).toBeFalsy();
+                const emptyState = spectator.query(byTestId('push-publish-empty-state'));
+                expect(emptyState?.textContent?.trim()).toBeTruthy();
             });
 
             it('should show push publish timeline when items exist', () => {
