@@ -7280,142 +7280,19 @@
       "response": []
     },
     {
-      "name": "invalidateSession",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test(\"Body matches string\", function () {",
-              "    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
-              "});",
-              "",
-              "pm.environment.unset('jwt');",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {}
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{serverURL}}/api/v1/logout",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "logout"]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Check Cache-Control",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Cache-Control is correct\", function () {",
-              "    pm.response.to.be.header('Cache-Control','max-age=100');",
-              "});"
-            ],
-            "type": "text/javascript",
-            "packages": {}
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{serverURL}}/pageassetsystemtemplate",
-          "host": ["{{serverURL}}"],
-          "path": ["pageassetsystemtemplate"]
-        }
-      },
-      "response": []
-    },
-    {
       "name": "_render-sources [api/v1/page/_render-sources]",
-      "auth": {
-        "type": "bearer",
-        "bearer": [{ "key": "token", "value": "{{renderSourcesJwt}}", "type": "string" }]
-      },
-      "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "// A sibling folder logs out right before this one, invalidating the shared session,",
-              "// and the collection's {{jwt}} is minted by an un-awaited pm.sendRequest. Both make",
-              "// the inherited bearer empty here (401 with 'JWT ... Found: 0 period characters').",
-              "// Mint a dedicated, self-contained token synchronously and use it as this folder's",
-              "// bearer for every request below. pm.sendRequest in a pre-request IS awaited by Newman.",
-              "const serverURL = pm.environment.get('serverURL');",
-              "const user = pm.environment.get('user');",
-              "const password = pm.environment.get('password');",
-              "const basicAuth = Buffer.from(`${user}:${password}`).toString('base64');",
-              "pm.sendRequest({",
-              "    url: `${serverURL}/api/v1/apitoken`,",
-              "    method: 'POST',",
-              "    header: { 'accept': '*/*', 'content-type': 'application/json', 'Authorization': `Basic ${basicAuth}` },",
-              "    body: { mode: 'raw', raw: JSON.stringify({ expirationSeconds: 7200, userId: 'dotcms.org.1', network: '0.0.0.0/0', claims: { label: 'postman-render-sources' } }) }",
-              "}, function (err, res) {",
-              "    if (!err && res && res.code === 200) {",
-              "        pm.collectionVariables.set('renderSourcesJwt', res.json().entity.jwt);",
-              "    } else {",
-              "        console.log('render-sources token mint failed:', err || (res && res.code));",
-              "    }",
-              "});"
-            ]
-          }
-        }
-      ],
       "item": [
         {
-          "name": "Setup: Resolve default site for render-sources",
+          "name": "Setup: Get default site for render-sources",
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Resolve the default site id using this folder's dedicated token (set in the",
-                  "// folder pre-request). Reuse defaultSiteId if an earlier folder already set it.",
-                  "const existing = pm.collectionVariables.get('defaultSiteId') || pm.environment.get('defaultSiteId');",
-                  "if (existing) {",
-                  "    pm.collectionVariables.set('renderSourcesHostId', existing);",
-                  "    return;",
-                  "}",
-                  "const serverURL = pm.environment.get('serverURL');",
-                  "const user = pm.environment.get('user');",
-                  "const password = pm.environment.get('password');",
-                  "const basicAuth = Buffer.from(`${user}:${password}`).toString('base64');",
-                  "pm.sendRequest({",
-                  "    url: `${serverURL}/api/v1/site/defaultSite`,",
-                  "    method: 'GET',",
-                  "    header: { 'Authorization': `Basic ${basicAuth}`, 'accept': 'application/json' }",
-                  "}, function (err, res) {",
-                  "    if (!err && res && res.code === 200) {",
-                  "        pm.collectionVariables.set('renderSourcesHostId', res.json().entity.identifier);",
-                  "    }",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"renderSourcesHostId is resolved\", function () {",
-                  "    pm.expect(pm.collectionVariables.get('renderSourcesHostId')).to.be.a('string').and.not.empty;",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"renderSourcesHostId\", jsonData.entity.identifier);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -7424,13 +7301,6 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "{{user}}", "type": "string" },
-                { "key": "password", "value": "{{password}}", "type": "string" }
-              ]
-            },
             "method": "GET",
             "header": [],
             "url": {
@@ -7627,6 +7497,67 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "invalidateSession",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Body matches string\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
+              "});",
+              "",
+              "pm.environment.unset('jwt');",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/logout",
+          "host": ["{{serverURL}}"],
+          "path": ["api", "v1", "logout"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Cache-Control",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Cache-Control is correct\", function () {",
+              "    pm.response.to.be.header('Cache-Control','max-age=100');",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/pageassetsystemtemplate",
+          "host": ["{{serverURL}}"],
+          "path": ["pageassetsystemtemplate"]
+        }
+      },
+      "response": []
     }
   ],
   "auth": {
@@ -7798,15 +7729,7 @@
       "value": ""
     },
     {
-      "key": "renderSourcesHost",
-      "value": ""
-    },
-    {
       "key": "renderSourcesHostId",
-      "value": ""
-    },
-    {
-      "key": "renderSourcesJwt",
       "value": ""
     }
   ]
