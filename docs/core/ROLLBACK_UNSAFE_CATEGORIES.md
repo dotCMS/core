@@ -35,12 +35,11 @@ New ContentType field type?                           → 🟠 HIGH     (H-4)
 Storage provider configuration change?                → 🟠 HIGH     (H-5)
 DROP PROCEDURE or DROP FUNCTION?                      → 🟠 HIGH     (H-6)
 NOT NULL column without default?                      → 🟠 HIGH     (H-7)
+VTL viewtool contract change?                         → 🟠 HIGH     (H-8)
 Non-broadening column type change?                    → 🟡 MEDIUM   (M-1)
 Push publishing bundle XML schema change?             → 🟡 MEDIUM   (M-2)
 REST / GraphQL API contract change?                   → 🟡 MEDIUM   (M-3)
 OSGi public interface / service change?               → 🟡 MEDIUM   (M-4)
-VTL viewtool contract change?                         → 🟡 MEDIUM   (M-5)
-  ↳ used in shared/global templates?                  → 🟠 HIGH     (M-5)
 
 
 None of the above (ADD COLUMN nullable, CREATE TABLE,
@@ -434,6 +433,88 @@ The risk escalates to MEDIUM/HIGH if:
 
 ---
 
+## H-8 — VTL Viewtool Contract Change
+
+**Risk level:** 🟠 HIGH
+
+### Context
+
+dotCMS exposes Java helper objects to Velocity (VTL) templates as **viewtools** — classes that implement `ViewTool` and are registered in `toolbox.xml` under a `$key` (e.g. `$estool`, `$dotcontent`). Templates call the public methods of these objects directly (`$estool.raw($query)`) and then chain onto the returned object's accessors (`$result.aggregationTree()`).
+
+VTL templates are **not** part of the application binary. They live as stored data — in the database (containers, templates, content with widget/wysiwyg fields) and/or on the theme filesystem — and are **interpreted at render time** against whatever binary is currently loaded.
+
+### Why it is unsafe
+
+This is the same class of risk as M-3 (REST contract) and M-4 (OSGi interface): a contract change breaks a **persistent consumer that survives a rollback**. Here the consumer is a stored VTL template.
+
+The subtlety is that **VTL calls chain**, and Velocity resolves *each hop independently at render time*:
+
+```velocity
+$estool.raw($q).aggregationTree()
+   │       │          │
+   │       │          └─ (2) accessor on the RETURNED object
+   │       └─ (1) the VIEWTOOL method
+   └─ viewtool registered in toolbox.xml
+```
+
+So the break can occur at **either level**, and they are distinct vectors:
+
+- **(1) The viewtool method itself** — its name, parameter list, or declared return type changed. If N renames `raw` → `query` and the template now calls `$estool.query($q)`, N-1 (which only has `raw`) fails to resolve the first hop.
+- **(2) Any object reachable from a viewtool method** — the contract of the *returned* object changed, even when the viewtool method's signature is byte-identical. This applies transitively to the whole chain (`$tool.m().a().b()`), and has two sub-cases:
+  - **(2a)** the return *type* was swapped, so the new type exposes different accessors (the `raw()` example below — `raw(String)` still resolves on N-1, but `$result.aggregationTree()` does not);
+  - **(2b)** the return type is the *same class*, but that class gained a new accessor in N that templates adopted. The viewtool did not change at all, yet `$result.newAccessor()` fails on N-1, which lacks the method.
+
+In every case the mechanism is identical: a template resolves a method that exists in N but **not** in N-1. After rollback:
+
+- Velocity method resolution fails **at render time** — the page renders blank, partial, or errors
+- N-1 *starts* normally and the DB/index are untouched, but it **cannot serve the affected requests correctly**
+
+There is no compile-time safety net (VTL is dynamically resolved) and no automatic rollback of templates. Vector (2b) is the easiest to miss in review, because the diff that introduces the risk touches a returned DTO/record/domain object — not anything that looks like a viewtool.
+
+> **Removal is the opposite case — and is _not_ a rollback risk.** *Removing* a viewtool method (or an accessor on a returned object) breaks on **N** at deploy time, because templates still calling it fail forward. A rollback to N-1 *restores* the removed member, so it heals the break. Pure removal is therefore a **forward-compatibility** concern, out of scope for this rollback category. The rollback-dangerous operations are **adding**, **renaming**, and **return-type / accessor changes** — anything that leaves N resolving a contract that N-1 lacks.
+
+### Why HIGH
+
+When it manifests, a viewtool contract break takes out the **rendering layer** of the affected pages — a blank or error page, i.e. *"core features broken for affected content or users"* (the HIGH definition), not a degradation (MEDIUM). The VTL surface is also broader and more central than a single OSGi plugin (M-4, rated MEDIUM): viewtools are reached from customer templates across the whole site, so the blast radius is potentially every page that renders the affected call.
+
+It is **not** CRITICAL: no data is lost, N-1 boots normally, and recovery is a content/template edit — no backup restore or reindex.
+
+**Likelihood is conditional** (this lowers the *odds*, not the *severity*): the break only fires if a template was co-migrated to the new contract during the N cycle — the same conditionality as M-3. Where the affected call is *provably* confined to a single scope-limited template, the impact may be downgraded to 🟡 MEDIUM; absent that proof, assume HIGH, because the call may be reached from shared/global templates (layouts, headers, footers, widely-reused containers).
+
+### Example from dotCMS history
+
+- **ES→OpenSearch migration of `$estool.raw()`:** `ESContentTool.raw(String)` changed its return type from `org.elasticsearch.action.search.SearchResponse` to the vendor-neutral `ContentSearchResponse` record. The two types expose different accessors (the record adds `aggregationTree()` / `aggregations()`). A template migrated to `$result.aggregationTree()` fails on N-1, whose `raw()` still returns `SearchResponse`.
+
+### Signals to watch for in code review
+
+**Vector (1) — the viewtool itself:**
+
+- A **rename**, **parameter-list change**, or **return-type change** on a public method of a class that implements `ViewTool`
+- The changed class is registered in `WEB-INF/toolbox.xml` (or an OSGi/plugin toolbox) under a `$key`
+- (Pure *removal* of a method is a forward-break, not a rollback risk — see the note above)
+
+**Vector (2) — the returned object (easy to miss):**
+
+- **Adding** a new method/accessor (templates may adopt it), or **renaming / changing** an existing one, on **any type a viewtool returns to VTL** — DTOs, records, and domain objects such as `ContentSearchResponse`, `ContentMap`, `Contentlet` — **even when the viewtool method's signature is unchanged** (sub-case 2b)
+- A viewtool method whose **return type is swapped** for a different class exposing different accessors (sub-case 2a)
+- This applies **transitively** to the whole chain `$tool.m().a().b()` — review any object reachable from a viewtool call, not just the first hop
+- Heuristic: if a diff changes the public surface of a class, ask "is an instance of this class ever handed to a template?" If yes (directly or via a viewtool's return chain), it is in scope
+
+### Safer alternative
+
+Apply a **two-phase contract change** so co-migrated templates and rolled-back binaries both resolve:
+
+| Release N | Release N+1 |
+| :---- | :---- |
+| New return type **also** exposes the old accessors (delegating/compat methods), OR keep the old method as a deprecated overload | Remove the compat accessors / old overload (after N-1 is retired) |
+| Old templates and new templates both work | Only the new contract remains |
+
+For vector (2b) specifically — a new accessor on an existing returned type — **warm the contract**: ship the accessor in release N but do not migrate any template to use it until N+1. That way N-1 already understands the method if a rollback occurs (same idea as H-4's "warm the registry before use").
+
+If a backward-compatible accessor set is not feasible, document the change as rollback-unsafe in the release notes and identify which viewtool keys (and returned types) are affected.
+
+---
+
 ---
 
 # 🟡 MEDIUM
@@ -540,86 +621,5 @@ There is no semantic versioning enforced on internal dotCMS APIs exposed to OSGi
 - Method signature changes to interfaces that are declared in `osgi/`\-exported packages
 - Changes to `@Reference` or `@Provides` annotations on OSGi service components
 - Removal of a service registration that plugins may be consuming
-
----
-
-## M-5 — VTL Viewtool Contract Change
-
-**Risk level:** 🟡 MEDIUM — escalates to 🟠 HIGH (see below)
-
-### Context
-
-dotCMS exposes Java helper objects to Velocity (VTL) templates as **viewtools** — classes that implement `ViewTool` and are registered in `toolbox.xml` under a `$key` (e.g. `$estool`, `$dotcontent`). Templates call the public methods of these objects directly (`$estool.raw($query)`) and then chain onto the returned object's accessors (`$result.aggregationTree()`).
-
-VTL templates are **not** part of the application binary. They live as stored data — in the database (containers, templates, content with widget/wysiwyg fields) and/or on the theme filesystem — and are **interpreted at render time** against whatever binary is currently loaded.
-
-### Why it is unsafe
-
-This is the same class of risk as M-3 (REST contract) and M-4 (OSGi interface): a contract change breaks a **persistent consumer that survives a rollback**. Here the consumer is a stored VTL template.
-
-The subtlety is that **VTL calls chain**, and Velocity resolves *each hop independently at render time*:
-
-```velocity
-$estool.raw($q).aggregationTree()
-   │       │          │
-   │       │          └─ (2) accessor on the RETURNED object
-   │       └─ (1) the VIEWTOOL method
-   └─ viewtool registered in toolbox.xml
-```
-
-So the break can occur at **either level**, and they are distinct vectors:
-
-- **(1) The viewtool method itself** — its name, parameters, or declared return type changed. If N renames `raw` → `query` and the template now calls `$estool.query($q)`, N-1 (which only has `raw`) fails to resolve the first hop.
-- **(2) Any object reachable from a viewtool method** — the contract of the *returned* object changed, even when the viewtool method's signature is byte-identical. This applies transitively to the whole chain (`$tool.m().a().b()`), and has two sub-cases:
-  - **(2a)** the return *type* was swapped, so the new type exposes different accessors (the `raw()` example below — `raw(String)` still resolves on N-1, but `$result.aggregationTree()` does not);
-  - **(2b)** the return type is the *same class*, but that class gained a new accessor in N that templates adopted. The viewtool did not change at all, yet `$result.newAccessor()` fails on N-1, which lacks the method.
-
-In every case the mechanism is identical: a template resolves a method that exists in N but **not** in N-1. After rollback:
-
-- Velocity method resolution fails **at render time** — the page renders blank, partial, or errors
-- N-1 *starts* normally and the DB/index are untouched, but it **cannot serve the affected requests correctly**
-
-There is no compile-time safety net (VTL is dynamically resolved) and no automatic rollback of templates. Vector (2b) is the easiest to miss in review, because the diff that introduces the risk touches a returned DTO/record/domain object — not anything that looks like a viewtool.
-
-**Severity scales with template reach:**
-
-| Condition | Risk |
-| :---- | :---- |
-| The viewtool method is used only in **scope-limited** templates (a specific page or detail type) | 🟡 MEDIUM — few pages affected; recovery is editing that one template |
-| The viewtool method is invoked from **shared/global** templates (layouts, headers, footers, widely-reused containers) | 🟠 HIGH — one contract change breaks many pages at once; matches "core features broken for affected users" |
-
-This is **not** CRITICAL: no data is lost, N-1 boots normally, and recovery is a content/template edit — no backup restore or reindex. It is rated no higher than M-4 as a flat level to keep the document internally calibrated (M-4 OSGi breakage can destabilize the container yet is MEDIUM). Like M-3, the hazard is **conditional** — it only materializes if a template was co-migrated to the new contract.
-
-### Example from dotCMS history
-
-- **ES→OpenSearch migration of `$estool.raw()`:** `ESContentTool.raw(String)` changed its return type from `org.elasticsearch.action.search.SearchResponse` to the vendor-neutral `ContentSearchResponse` record. The two types expose different accessors (the record adds `aggregationTree()` / `aggregations()`). A template migrated to `$result.aggregationTree()` fails on N-1, whose `raw()` still returns `SearchResponse`.
-
-### Signals to watch for in code review
-
-**Vector (1) — the viewtool itself:**
-
-- A return-type or method-signature change on a class that implements `ViewTool`
-- The changed class is registered in `WEB-INF/toolbox.xml` (or an OSGi/plugin toolbox) under a `$key`
-- Removing or renaming any public method on a registered viewtool, or changing its parameter list
-
-**Vector (2) — the returned object (easy to miss):**
-
-- Adding, removing, or renaming a public method/accessor on **any type a viewtool returns to VTL** — DTOs, records, and domain objects such as `ContentSearchResponse`, `ContentMap`, `Contentlet` — **even when the viewtool method's signature is unchanged** (sub-case 2b)
-- A viewtool method whose **return type is swapped** for a different class exposing different accessors (sub-case 2a)
-- This applies **transitively** to the whole chain `$tool.m().a().b()` — review any object reachable from a viewtool call, not just the first hop
-- Heuristic: if a diff changes the public surface of a class, ask "is an instance of this class ever handed to a template?" If yes (directly or via a viewtool's return chain), it is in scope
-
-### Safer alternative
-
-Apply a **two-phase contract change** so co-migrated templates and rolled-back binaries both resolve:
-
-| Release N | Release N+1 |
-| :---- | :---- |
-| New return type **also** exposes the old accessors (delegating/compat methods), OR keep the old method as a deprecated overload | Remove the compat accessors / old overload (after N-1 is retired) |
-| Old templates and new templates both work | Only the new contract remains |
-
-For vector (2b) specifically — a new accessor on an existing returned type — **warm the contract**: ship the accessor in release N but do not migrate any template to use it until N+1. That way N-1 already understands the method if a rollback occurs (same idea as H-4's "warm the registry before use").
-
-If a backward-compatible accessor set is not feasible, document the change as rollback-unsafe in the release notes and identify which viewtool keys (and returned types) are affected.
 
 ---
