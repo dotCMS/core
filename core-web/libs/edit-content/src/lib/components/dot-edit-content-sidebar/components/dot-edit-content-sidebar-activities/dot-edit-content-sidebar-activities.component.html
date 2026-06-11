@@ -3,10 +3,10 @@
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="min-h-0 flex-1 overflow-y-auto px-[18px]">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4">
             <div class="sticky top-0 z-10 flex min-h-12 items-center bg-white px-2 pt-3">
                 <h2
-                    class="m-0 text-[11px] leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
+                    class="m-0 text-xs leading-none font-bold tracking-[0.08em] text-gray-500 uppercase"
                     data-testid="comments-title">
                     {{ 'edit.content.sidebar.tab.comments' | dm }}
                 </h2>
@@ -69,7 +69,7 @@
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-1 w-full border-t border-gray-200 px-[18px] py-3"
+                class="sticky bottom-0 z-1 w-full border-t border-gray-200 px-4 py-3"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"

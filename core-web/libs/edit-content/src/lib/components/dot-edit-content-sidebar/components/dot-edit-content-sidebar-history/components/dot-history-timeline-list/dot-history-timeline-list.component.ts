@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-    AfterViewInit,
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
@@ -28,7 +28,7 @@ import { TimelineModule } from 'primeng/timeline';
     styleUrls: ['./dot-history-timeline-list.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotHistoryTimelineListComponent<T> implements AfterViewInit, OnDestroy {
+export class DotHistoryTimelineListComponent<T> implements OnDestroy {
     /** Items rendered along the timeline. */
     readonly $items = input.required<T[]>({ alias: 'items' });
 
@@ -58,24 +58,28 @@ export class DotHistoryTimelineListComponent<T> implements AfterViewInit, OnDest
      */
     private initialObservation = true;
 
-    ngAfterViewInit(): void {
-        const sentinel = this.$sentinel()?.nativeElement;
-        if (!sentinel) return;
+    constructor() {
+        // afterNextRender runs once after the first render, browser-only — the
+        // sentinel ViewChild is resolved by then and SSR never touches the DOM API.
+        afterNextRender(() => {
+            const sentinel = this.$sentinel()?.nativeElement;
+            if (!sentinel) return;
 
-        this.observer = new IntersectionObserver(
-            (entries) => {
-                if (this.initialObservation) {
-                    this.initialObservation = false;
-                    return;
-                }
+            this.observer = new IntersectionObserver(
+                (entries) => {
+                    if (this.initialObservation) {
+                        this.initialObservation = false;
+                        return;
+                    }
 
-                if (entries[0]?.isIntersecting) {
-                    this.reachedEnd.emit();
-                }
-            },
-            { threshold: 0 }
-        );
-        this.observer.observe(sentinel);
+                    if (entries[0]?.isIntersecting) {
+                        this.reachedEnd.emit();
+                    }
+                },
+                { threshold: 0 }
+            );
+            this.observer.observe(sentinel);
+        });
     }
 
     ngOnDestroy(): void {
