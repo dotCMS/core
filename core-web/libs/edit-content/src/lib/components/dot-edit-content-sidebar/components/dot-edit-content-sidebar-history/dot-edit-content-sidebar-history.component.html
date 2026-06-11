@@ -67,7 +67,7 @@
             @if ($hasPushPublishHistoryItems()) {
                 <p-button
                     icon="pi pi-ellipsis-v"
-                    styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
+                    class="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
                     (click)="ppMenu.toggle($event); $event.stopPropagation()"
                     data-testid="push-publish-menu-button" />
                 <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />

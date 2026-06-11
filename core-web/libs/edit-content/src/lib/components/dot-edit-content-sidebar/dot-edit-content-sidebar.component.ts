@@ -62,10 +62,14 @@ import { escapeHtml } from '../../utils/functions.util';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[360px] h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden'
+        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden',
+        '[style.width.px]': 'sidebarWidth'
     }
 })
 export class DotEditContentSidebarComponent {
+    /** Fixed width of the sidebar panel, in pixels. */
+    protected readonly sidebarWidth = 360;
+
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
