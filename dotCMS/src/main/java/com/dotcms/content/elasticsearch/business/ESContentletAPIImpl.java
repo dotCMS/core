@@ -1,12 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-import static com.liferay.util.StringPool.BLANK;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -22,6 +15,7 @@ import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFacto
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -199,6 +193,16 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+
+import javax.activation.MimeType;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -228,16 +232,13 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import com.dotcms.content.index.domain.ContentSearchResponse;
-import org.elasticsearch.action.search.SearchResponse;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 
 /**
@@ -311,8 +312,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
-
-    ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
 
@@ -4711,7 +4710,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         respectFrontendRoles, user);
 
         // When the permission filter removed nothing, a single bulk delete per direction is
-        // safe; otherwise the delete must be scoped to the readable identifiers so the
+        // safe; otherwise, the delete operation must be scoped to the readable identifiers so the
         // remaining rows are preserved
         if (relatedContents.size() == allRelatedContents.size()) {
             if (hasParent) {
@@ -4752,11 +4751,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private static final int VERSION_INFO_LOOKUP_CHUNK_SIZE = 500;
-
     /**
-     * Loads the working version of every language/variant of the given identifiers using batched
-     * queries against {@code contentlet_version_info} instead of one lookup per identifier.
+     * Loads the working version of every language/variant of the given identifiers using the
+     * batched {@link com.dotmarketing.business.VersionableFactory} lookup instead of one query
+     * per identifier.
      *
      * @param identifiers The identifiers of the contentlets to load
      * @return The working version {@link Contentlet} objects, one per existing version row
@@ -4766,19 +4764,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (identifiers.isEmpty()) {
             return List.of();
         }
-        final List<String> workingInodes = new ArrayList<>();
-        for (int from = 0; from < identifiers.size(); from += VERSION_INFO_LOOKUP_CHUNK_SIZE) {
-            final List<String> chunk = identifiers.subList(from,
-                    Math.min(from + VERSION_INFO_LOOKUP_CHUNK_SIZE, identifiers.size()));
-            final DotConnect dc = new DotConnect().setSQL(
-                    "SELECT working_inode FROM contentlet_version_info"
-                            + " WHERE working_inode IS NOT NULL AND identifier IN ("
-                            + DotConnect.createParametersPlaceholder(chunk.size()) + ")");
-            chunk.forEach(dc::addParam);
-            for (final Map<String, Object> row : dc.loadObjectResults()) {
-                workingInodes.add((String) row.get("working_inode"));
-            }
-        }
+        final List<String> workingInodes = FactoryLocator.getVersionableFactory()
+                .findAllContentletVersionInfos(identifiers).stream()
+                .map(ContentletVersionInfo::getWorkingInode)
+                .filter(UtilMethods::isSet)
+                .toList();
         return findContentlets(workingInodes);
     }
 
@@ -5149,15 +5139,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // READ are preserved by deleteRelatedContent. New rows are appended after the
             // highest surviving position so their relative order never collides with them;
             // when nothing survived, positions simply start at 1
-            final String nextPositionSQL = related.isHasParent()
-                    ? "SELECT COALESCE(MAX(tree_order), 0) + 1 AS next_position FROM tree"
-                            + " WHERE parent = ? AND relation_type = ?"
-                    : "SELECT COALESCE(MAX(tree_order), 0) + 1 AS next_position FROM tree"
-                            + " WHERE child = ? AND relation_type = ?";
-            int treePosition = new DotConnect().setSQL(nextPositionSQL)
-                    .addParam(contentlet.getIdentifier())
-                    .addParam(relationship.getRelationTypeValue())
-                    .getInt("next_position");
+            int treePosition = related.isHasParent()
+                    ? TreeFactory.getNextTreeOrderByParentAndRelationType(
+                            contentlet.getIdentifier(), relationship.getRelationTypeValue())
+                    : TreeFactory.getNextTreeOrderByChildAndRelationType(
+                            contentlet.getIdentifier(), relationship.getRelationTypeValue());
             int positionInParent = 1;
             final List<Tree> treesToInsert = new ArrayList<>();
             for (final Contentlet relatedContent : related.getRecords()) {

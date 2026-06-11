@@ -1,20 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentMappingAPI;
@@ -89,6 +74,9 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -111,8 +99,20 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
+
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -1237,25 +1237,37 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		return mapper.writeValueAsString(map);
 	}
 
+	/**
+	 * Returns the identifiers of the contentlets whose search index documents became stale
+	 * because of changes to the given contentlet's relationships — i.e., the contents that must
+	 * be re-indexed along with it.
+	 *
+	 * <p>The method compares the relationships referencing this contentlet in the search index
+	 * (the state previous to the current save) against the rows in the {@code tree} table (the
+	 * just-saved state). The symmetric difference of both sets — relationships that were removed
+	 * plus relationships that were added — is the complete set of stale documents: only PARENT
+	 * documents store relationship references (see
+	 * {@link #loadRelationshipFields(Contentlet, Map, StringWriter)}), so contents whose
+	 * relationship to this contentlet did not change never need re-indexing.</p>
+	 *
+	 * @param contentlet The {@link Contentlet} being re-indexed
+	 * @return Identifiers of the related contents that must be re-indexed along with it
+	 */
 	@CloseDBIfOpened
 	public List<String> dependenciesLeftToReindex(final Contentlet contentlet) throws DotStateException, DotDataException, DotSecurityException {
 		final List<String> dependenciesToReindex = new ArrayList<>();
-
-
 		final String relatedSQL = "select tree.* from tree where child = ? order by tree_order";
 		final DotConnect db = new DotConnect();
 		db.setSQL(relatedSQL);
 		db.addParam(contentlet.getIdentifier());
 
 		final List<HashMap<String, String>> relatedContentlets = db.loadResults();
-
-		if(!relatedContentlets.isEmpty()) {
+		if (!relatedContentlets.isEmpty()) {
 
 			final List<Relationship> relationships = relationshipAPI
 					.byContentType(contentlet.getContentType());
 
-			for(final Relationship relationship : relationships) {
-
+			for (final Relationship relationship : relationships) {
 				// Both sides are collected into Sets of identifiers: the index holds one
 				// document per language/variant of the same identifier, and only deduped
 				// collections make the disjunction below a true symmetric difference
@@ -1273,7 +1285,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					// More documents reference this contentlet than a single search page can
 					// return; a limit above MAX_LIMIT makes searchIndex switch to a scroll
 					// search that returns them all
-					Logger.debug(this, () -> "More than " + ESContentletAPIImpl.MAX_LIMIT
+					Logger.warn(this, () -> "More than " + ESContentletAPIImpl.MAX_LIMIT
 							+ " index documents reference '" + contentlet.getIdentifier()
 							+ "' through '" + relationship.getRelationTypeValue()
 							+ "'. Falling back to a scroll search");
@@ -1285,12 +1297,14 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					oldRelatedIds.add(result.getIdentifier());
 				}
 
-				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
-						.equals(relationship.getRelationTypeValue())).forEach(entry -> {
+				relatedContentlets.stream()
+						.filter(map -> map.get(ESMappingConstants.RELATION_TYPE).equals(relationship.getRelationTypeValue()))
+						.forEach(entry -> {
 							final String childId = entry.get(ESMappingConstants.CHILD);
 							final String parentId = entry.get(ESMappingConstants.PARENT);
 							newRelatedIds.add(contentlet.getIdentifier().equalsIgnoreCase(childId)
-									? parentId : childId);
+									? parentId
+									: childId);
 						});
 
 				// The symmetric difference of both Sets is the actual dependency delta: the

@@ -17,12 +17,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 
+ * Provides low-level, direct database access to the {@code tree} table, which stores
+ * parent-child associations between dotCMS objects through the {@code parent}, {@code child},
+ * {@code relation_type}, and {@code tree_order} columns.
+ *
+ * <p>Its most important use is persisting content relationships: each row links a parent
+ * contentlet identifier to a child contentlet identifier under the relationship's type value,
+ * with {@code tree_order} preserving the ordering of the related records. The table is also used
+ * by other legacy object associations, such as categories and menu links.</p>
+ *
+ * <p>The table has no foreign keys and both sides of a row are plain strings, so callers —
+ * typically {@code ESContentletAPIImpl} and the relationship factories — are responsible for
+ * referential consistency and permission enforcement. In particular, the bulk delete operations
+ * remove rows regardless of user permissions; see the individual method docs for their
+ * contracts.</p>
+ *
  * @author maria
+ * @since Mar 22nd, 2022
  */
 public class TreeFactory {
 
-
+    private static final int DELETE_TREES_CHUNK_SIZE = 500;
 
     public static Tree getTree(final Inode parent, final Inode child) {
         return getTree(parent.getInode(), child.getInode());
@@ -352,6 +367,16 @@ public class TreeFactory {
         }
     }
 
+    /**
+     * Deletes ALL the tree rows for the given parent and relation type in a single statement,
+     * regardless of which children they point to. Callers are responsible for enforcing READ
+     * permissions BEFORE calling this method: when only some of the relationships may be
+     * removed, use {@link #deleteTreesByParentAndChildrenAndRelationType(String, List, String)}
+     * instead.
+     *
+     * @param parentId     Identifier of the parent content
+     * @param relationType The relationship type value
+     */
     public static void deleteTreesByParentAndRelationType(final String parentId,
                                                           final String relationType) {
         try {
@@ -365,6 +390,16 @@ public class TreeFactory {
         }
     }
 
+    /**
+     * Deletes ALL the tree rows for the given child and relation type in a single statement,
+     * regardless of which parents they point to. Callers are responsible for enforcing READ
+     * permissions BEFORE calling this method: when only some of the relationships may be
+     * removed, use {@link #deleteTreesByChildAndParentsAndRelationType(String, List, String)}
+     * instead.
+     *
+     * @param childId      Identifier of the child content
+     * @param relationType The relationship type value
+     */
     public static void deleteTreesByChildAndRelationType(final String childId,
                                                          final String relationType) {
         try {
@@ -406,6 +441,17 @@ public class TreeFactory {
         return getRelatedIds("parent", "child", childId, relationType);
     }
 
+    /**
+     * Shared lookup for the public identifier methods: returns the values of the
+     * {@code selectColumn} for the tree rows matching the given {@code whereColumn} value and
+     * relation type, ordered by tree order.
+     *
+     * @param selectColumn Column to return: {@code parent} or {@code child}
+     * @param whereColumn  Column to filter by: the opposite side of {@code selectColumn}
+     * @param id           Identifier to match in the {@code whereColumn}
+     * @param relationType The relationship type value
+     * @return The identifiers found, in tree order
+     */
     private static List<String> getRelatedIds(final String selectColumn, final String whereColumn,
             final String id, final String relationType) {
         try {
@@ -420,6 +466,52 @@ public class TreeFactory {
         } catch (final DotDataException e) {
             throw new DotStateException(e);
         }
+    }
+
+    /**
+     * Returns the next available tree order for the children of the given parent under the
+     * given relation type: the highest existing tree order plus one, or 1 when no rows exist.
+     *
+     * @param parentId     Identifier of the parent content
+     * @param relationType The relationship type value
+     * @return The next tree order value
+     */
+    public static int getNextTreeOrderByParentAndRelationType(final String parentId,
+            final String relationType) {
+        return getNextTreeOrder("parent", parentId, relationType);
+    }
+
+    /**
+     * Returns the next available tree order for the parents of the given child under the given
+     * relation type: the highest existing tree order plus one, or 1 when no rows exist.
+     *
+     * @param childId      Identifier of the child content
+     * @param relationType The relationship type value
+     * @return The next tree order value
+     */
+    public static int getNextTreeOrderByChildAndRelationType(final String childId,
+            final String relationType) {
+        return getNextTreeOrder("child", childId, relationType);
+    }
+
+    /**
+     * Shared lookup for the public next-tree-order methods: returns the highest
+     * {@code tree_order} plus one among the rows matching the given column value and relation
+     * type, or 1 when no rows exist.
+     *
+     * @param whereColumn  Column to filter by: {@code parent} or {@code child}
+     * @param id           Identifier to match in the {@code whereColumn}
+     * @param relationType The relationship type value
+     * @return The next tree order value
+     */
+    private static int getNextTreeOrder(final String whereColumn, final String id,
+            final String relationType) {
+        return new DotConnect()
+                .setSQL("SELECT COALESCE(MAX(tree_order), 0) + 1 AS next_position FROM tree"
+                        + " WHERE " + whereColumn + " = ? AND relation_type = ?")
+                .addParam(id)
+                .addParam(relationType)
+                .getInt("next_position");
     }
 
     /**
@@ -450,8 +542,20 @@ public class TreeFactory {
         deleteTreesScopedByRelationType("child", "parent", childId, parentIds, relationType);
     }
 
-    private static final int DELETE_TREES_CHUNK_SIZE = 500;
-
+    /**
+     * Shared implementation of the scoped deletes: removes the tree rows whose
+     * {@code fixedColumn} matches the given identifier under the given relation type, but only
+     * when their {@code scopedColumn} value is included in the {@code scopedIds} list. Rows
+     * pointing to identifiers NOT in the list are preserved. The list is processed in chunks of
+     * {@code DELETE_TREES_CHUNK_SIZE} (500) identifiers, keeping the number of bound parameters
+     * per statement within safe database limits.
+     *
+     * @param fixedColumn  Column matched against {@code fixedId}: {@code parent} or {@code child}
+     * @param scopedColumn The opposite side, matched against the {@code scopedIds} list
+     * @param fixedId      Identifier of the content whose relationships are being deleted
+     * @param scopedIds    Identifiers whose rows may be deleted
+     * @param relationType The relationship type value
+     */
     private static void deleteTreesScopedByRelationType(final String fixedColumn,
             final String scopedColumn, final String fixedId, final List<String> scopedIds,
             final String relationType) {
