@@ -418,6 +418,24 @@ const showClearPrompt = (idToClear) => {
 }
 
 
+const loadSitesDropdown = () => {
+    fetch("/api/v1/site?perPage=500&showSystem=false&showLive=true")
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById("siteFilterSelect");
+            if (!select) return;
+            (data.entity || [])
+                .sort((a, b) => a.hostName.localeCompare(b.hostName))
+                .forEach(site => {
+                    const opt = document.createElement("option");
+                    opt.value = site.identifier;
+                    opt.textContent = site.hostName;
+                    select.appendChild(opt);
+                });
+        })
+        .catch(err => console.warn("Could not load sites for dropdown:", err));
+};
+
 const setUpValuesFromPreferences = () => {
     const prefs = preferences();
 
