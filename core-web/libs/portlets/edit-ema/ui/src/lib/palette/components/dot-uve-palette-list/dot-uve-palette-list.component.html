@@ -2,7 +2,10 @@
 @let currentView = $currentView();
 @let actionBtn = $actionButton();
 
-<div class="flex shrink-0 items-center gap-2 p-4">
+<div
+    class="flex shrink-0 items-center gap-2 py-4"
+    [class.px-4]="!$selectionMode()"
+    [class.px-8]="$selectionMode()">
     @if ($isContentletsView()) {
         <p-button
             data-testid="back-to-content-types-button"
@@ -38,19 +41,25 @@
         }
     }
 </div>
-<div class="grid min-h-0 flex-1 overflow-x-hidden pl-4">
+<div
+    class="grid min-h-0 flex-1 overflow-x-hidden"
+    [class.pl-4]="!$selectionMode()"
+    [class.pl-8]="$selectionMode()">
     @if ($isEmpty()) {
         <div class="grid h-full grid-cols-1 place-items-center overflow-hidden">
             <ng-container *ngTemplateOutlet="emptyStateTemplate" />
         </div>
     } @else {
         <div
-            class="grid h-full auto-rows-max gap-2 pr-4"
+            class="grid h-full auto-rows-max gap-2"
             [class]="{
-                'grid-cols-2': !listStyle,
+                'grid-cols-3': !listStyle && $selectionMode(),
+                'grid-cols-2': !listStyle && !$selectionMode(),
                 'auto-rows-[7.5rem]!': !listStyle,
                 'grid-cols-1': listStyle,
-                'overflow-auto': !$isLoading()
+                'overflow-auto': !$isLoading(),
+                'pr-4': !$selectionMode(),
+                'pr-8': $selectionMode()
             }">
             @if ($isLoading()) {
                 <ng-container *ngTemplateOutlet="loadingTemplate" />
@@ -101,8 +110,10 @@
                 <dot-uve-palette-contenttype
                     [contentType]="contentType"
                     [view]="$layoutMode()"
+                    [selectable]="$selectionMode()"
+                    [selected]="contentType.variable === $selectedVariable()"
                     (onSelectContentType)="onSelectContentType($event)"
-                    (contextMenu)="onContextMenu(contentType); cm.show($event)" />
+                    (contextMenu)="onCardContextMenu(contentType, $event)" />
             }
         }
     }
@@ -139,4 +150,7 @@
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
 
-<dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />
+<!-- Favorites are not used in selection mode (e.g. Content Drive); avoid its init fetch. -->
+@if (!$selectionMode()) {
+    <dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />
+}
