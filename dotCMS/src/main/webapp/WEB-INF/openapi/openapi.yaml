@@ -12897,8 +12897,8 @@ paths:
         "400":
           description: Bad request or data exception
         "409":
-          description: Conflict — page content was modified concurrently; refresh
-            and retry
+          description: Conflict — net content loss exceeds the configured threshold;
+            refresh and retry
       summary: Replace the content mapping of a page
       tags:
       - Page

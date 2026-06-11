@@ -834,7 +834,7 @@ public class PageResource {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
-            @ApiResponse(responseCode = "409", description = "Conflict — page content was modified concurrently; refresh and retry"),
+            @ApiResponse(responseCode = "409", description = "Conflict — net content loss exceeds the configured threshold; refresh and retry"),
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
