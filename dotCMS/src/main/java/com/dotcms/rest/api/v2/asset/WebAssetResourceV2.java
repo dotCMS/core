@@ -203,7 +203,7 @@ public class WebAssetResourceV2 {
                 user.getUserId(), path, language, version));
 
         final boolean live = resolveVersionParam(version);
-        final String resolvedLang = resolveLanguageParam(language);
+        final String resolvedLang = resolveLanguage(language).toString();
         final FileAsset fileAsset;
         try {
             fileAsset = helper.getAsset(buildAssetsRequestForm(path, resolvedLang, live), user);
@@ -293,7 +293,7 @@ public class WebAssetResourceV2 {
                 user.getUserId(), identifier, language, version));
 
         final boolean live = resolveVersionParam(version);
-        final long languageId = resolveLanguageId(language);
+        final long languageId = resolveLanguage(language).getId();
 
         // Resolve the contentlet — throws NotFoundInDbException (→ 404) when absent.
         final Contentlet contentlet = findContentlet(identifier, live, languageId, user);
@@ -546,7 +546,7 @@ public class WebAssetResourceV2 {
         }
 
         // Validate language up-front: blank → site default (no error), non-blank unknown → 400.
-        final String resolvedLang = resolveLanguageParam(language);
+        final String resolvedLang = resolveLanguage(language).toString();
 
         // Adapt flat v2 form fields into the v1 FileUploadData/FileUploadDetail model so we can
         // reuse WebAssetHelper.saveUpdateAsset unchanged.
@@ -620,18 +620,18 @@ public class WebAssetResourceV2 {
     }
 
     /**
-     * Resolves a language query/form parameter to a language tag string.
+     * Resolves a language query/form parameter to a concrete {@link Language}.
      * <ul>
-     *   <li>Blank/null → site default language tag (no error).</li>
+     *   <li>Blank/null → site default language (no error).</li>
      *   <li>Non-blank but unrecognised → {@link BadRequestException} (400).</li>
      * </ul>
+     * Callers derive the tag ({@link Language#toString()}) or id ({@link Language#getId()})
+     * as needed — path-based reads/writes use the tag, identifier reads use the id.
      */
-    private String resolveLanguageParam(final String language) {
+    private Language resolveLanguage(final String language) {
         if (!UtilMethods.isSet(language)) {
-            // Blank → site default; WebAssetHelper.parseLang handles the actual resolution.
-            return languageAPI.getDefaultLanguage().toString();
+            return languageAPI.getDefaultLanguage();
         }
-        // Non-blank: validate existence.
         final Optional<Language> resolved = helper.parseLang(language, false);
         if (resolved.isEmpty() || resolved.get().getId() == 0) {
             throw new BadRequestException(
@@ -639,23 +639,7 @@ public class WebAssetResourceV2 {
                             "Provide a valid language code such as 'en-US' or leave blank for the site default.",
                             language));
         }
-        return language;
-    }
-
-    /**
-     * Resolves a language parameter to a language ID for identifier-based lookups.
-     * Blank → site default language ID; unknown → 400.
-     */
-    private long resolveLanguageId(final String language) {
-        if (!UtilMethods.isSet(language)) {
-            return languageAPI.getDefaultLanguage().getId();
-        }
-        final Optional<Language> resolved = helper.parseLang(language, false);
-        if (resolved.isEmpty() || resolved.get().getId() == 0) {
-            throw new BadRequestException(
-                    String.format("Unknown language tag [%s].", language));
-        }
-        return resolved.get().getId();
+        return resolved.get();
     }
 
     /**
