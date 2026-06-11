@@ -4780,6 +4780,105 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue("Genuinely empty page — should remain empty after save", result.isEmpty());
     }
 
+    // ── Net-loss threshold guard tests ─────────────────────────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the save would drop 10 contentlets (20 → 10).
+     * Should: throw {@link StalePageSaveException} — the net loss exceeds the configured threshold.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_netLossThreshold_excessiveDrop_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(20).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 20 contentlets on the page (simulates what the DB looks like after other users' work)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // Stale session only saw the first 10 — re-submit those 10
+            if (i < 10) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Submitting 10 of 20 contentlets → net loss of 10, which exceeds threshold of 5
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the user intentionally removes 2 contentlets
+     * (8 existing → 6 incoming, net loss of 2).
+     * Should: not throw — the net loss is within the configured threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_netLossThreshold_smallDrop_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(8).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 8 contentlets; user intentionally keeps 6 (removes 2)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            if (i < 6) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Net loss of 2 — within threshold of 5, should save cleanly
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Intentional removal of 2 should leave 6 contentlets", 6, result.size());
+    }
+
     // ── Style-properties tests ──────────────────────────────────────────────
 
     /**
