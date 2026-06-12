@@ -15,7 +15,7 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.34</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
