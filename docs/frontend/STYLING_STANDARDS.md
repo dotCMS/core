@@ -92,7 +92,7 @@ PrimeNG ships two visually similar but semantically different components. Pick b
    <dot-contentlet-status-badge [state]="contentlet" />
    ```
 
-2. **Showing any other status / read-only state?** Use `p-tag` with the matching `severity` (see mapping below).
+2. **Showing any other status / read-only state?** Use `p-tag` with the matching `severity` (see mapping below). Example: the version-history timeline shows *per-version* states — not a contentlet `DotContentState` — so it uses raw tags: this version is live → `success`, working copy → `warn`, experiment variant → `info`.
 3. **Anything without a status** — interactive, removable, or clickable items (filters, selections) — use `p-chip`.
 
 ### Severity mapping convention
@@ -107,7 +107,7 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 ### Rules
 
 - **Always use `<dot-contentlet-status-badge>` for contentlet statuses** — never a raw `p-tag` or `p-chip`.
-- **Locale labels use `p-tag severity="info"`** — locales are informative, never chips (e.g. the Locale column in Content Drive). This applies to read-only locale *display*; interactive locale *selectors* are designed per area.
+- **Locale/language labels use `p-tag severity="info"`** — locales are informative, never chips (e.g. the Locale column in Content Drive, the asset card language label). This applies to read-only locale *display*; interactive locale *selectors* are designed per area.
 - **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
 - **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
 
