@@ -26,4 +26,14 @@ public class SemgrepGateVerification630 {
     public Process run(final String userInput) throws IOException {
         return Runtime.getRuntime().exec("sh -c " + userInput);
     }
+
+    public ResultSet lookup_1B(final Connection conn, final String userInput) throws SQLException {
+        final Statement st = conn.createStatement();
+        return st.executeQuery("SELECT * FROM users WHERE name = '" + userInput + "'");
+    }
+
+    public Process run_2D(final String userInput) throws IOException {
+        return Runtime.getRuntime().exec("sh -c " + userInput);
+    }
+    
 }
