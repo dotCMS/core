@@ -15,10 +15,7 @@
     </ng-template>
     <ng-template #footer>
         <div class="state">
-            <p-chip
-                [label]="contentlet?.language"
-                class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
-                data-testId="dot-card-language" />
+            <p-tag severity="info" [value]="contentlet?.language" data-testId="dot-card-language" />
             <dot-contentlet-status-badge [state]="contentlet" />
         </div>
     </ng-template>
