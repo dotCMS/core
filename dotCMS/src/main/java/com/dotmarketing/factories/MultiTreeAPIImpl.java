@@ -23,6 +23,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -716,6 +717,65 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (multiTrees == null) {
             throw new DotDataException("empty list passed in");
+        }
+
+        // Net-loss threshold guard. Disabled by default (-1). Set to 1 to reject any save that
+        // drops 2+ contentlets — safe for the UVE because each user action (add/remove/move)
+        // produces a net change of at most ±1. Also guards the complete-wipe case (empty payload)
+        // since a loss of N > threshold always triggers when N equals all existing rows.
+        // The DB SELECT is skipped entirely when the payload is non-empty AND threshold is -1.
+        final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        if (multiTrees.isEmpty() || threshold >= 0) {
+            // Mirror the downstream DELETE branching so the guard counts the same rows that will
+            // be removed. When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and the requested language
+            // differs from the default, the DELETE targets both languages — use the two-language
+            // overload so default-language-only contentlets are not invisible to the guard.
+            final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
+                    "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+            final Set<String> existing;
+            if (languageIdOpt.isPresent() && defaultContentToDefaultLanguageGuard) {
+                final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                if (defaultLanguageId == languageIdOpt.get()) {
+                    existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                            personalization, variantId, languageIdOpt.get());
+                } else {
+                    existing = this.getOriginalContentlets(pageId, personalization, variantId,
+                            languageIdOpt.get(), defaultLanguageId);
+                }
+            } else if (languageIdOpt.isPresent()) {
+                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId, languageIdOpt.get());
+            } else {
+                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId);
+            }
+            if (!existing.isEmpty()) {
+                final int netLoss = existing.size() - multiTrees.size();
+                final Set<String> incomingIds = multiTrees.stream()
+                        .map(MultiTree::getContentlet)
+                        .collect(Collectors.toSet());
+                final Set<String> wipedIds = existing.stream()
+                        .filter(id -> !incomingIds.contains(id))
+                        .collect(Collectors.toSet());
+                if (multiTrees.isEmpty()) {
+                    Logger.warn(this, String.format(
+                            "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Contentlets at risk: %s",
+                            existing.size(), pageId, personalization, variantId,
+                            languageIdOpt.orElse(-1L), existing));
+                }
+                if (threshold >= 0 && netLoss > threshold) {
+                    Logger.warn(this, String.format(
+                            "Save rejected: net loss of %d contentlet(s) from page '%s' exceeds threshold %d " +
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Incoming IDs: %s — Wiped IDs: %s",
+                            netLoss, pageId, threshold, personalization, variantId,
+                            languageIdOpt.orElse(-1L), incomingIds, wipedIds));
+                    throw new StalePageSaveException(
+                            "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.");
+                }
+            }
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));

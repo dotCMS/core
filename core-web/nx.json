@@ -244,5 +244,6 @@
     },
     "serve": {
         "dependsOn": []
-    }
+    },
+    "analytics": true
 }

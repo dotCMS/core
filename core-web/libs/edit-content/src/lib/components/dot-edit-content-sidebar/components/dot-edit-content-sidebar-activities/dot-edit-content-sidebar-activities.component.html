@@ -3,7 +3,14 @@
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4">
+            <div class="sticky top-0 z-10 flex min-h-12 items-center bg-white px-2 pt-3">
+                <h2
+                    class="m-0 text-sm leading-none font-bold tracking-[0.08em] text-gray-500 lowercase first-letter:uppercase"
+                    data-testid="comments-title">
+                    {{ 'edit.content.sidebar.tab.comments' | dm }}
+                </h2>
+            </div>
             <p-dataview
                 #dv
                 [value]="$activities()"
@@ -20,7 +27,7 @@
                         ) {
                             <p-card
                                 #activityItem
-                                styleClass="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
+                                class="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
                                 data-testid="activity-item">
                                 <div class="flex items-start gap-3">
                                     <p-avatar
@@ -54,9 +61,9 @@
                     </div>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <span class="block" data-testid="empty-state">
+                    <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
                         {{ 'edit.content.sidebar.activities.empty' | dm }}
-                    </span>
+                    </p>
                 </ng-template>
             </p-dataview>
         </div>

@@ -15,7 +15,20 @@ backend: &backend
   - 'test-karate/**'
   - 'e2e/**'
   - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
-  - 'dotCMS/!(src/main/webapp/html/|src/main/webapp/WEB-INF/messages/)**'
+  # Exclude html/ and WEB-INF/messages/ from backend triggering via per-segment
+  # negation (picomatch !() only negates within a single path segment, so a
+  # multi-segment !() followed by ** does NOT exclude a directory — see lines 78-89).
+  # html/ is re-included for non-css/js above; messages/ for non-Language* above.
+  - 'dotCMS/*'
+  - 'dotCMS/!(src)/**'
+  - 'dotCMS/src/*'
+  - 'dotCMS/src/!(main)/**'
+  - 'dotCMS/src/main/*'
+  - 'dotCMS/src/main/!(webapp)/**'
+  - 'dotCMS/src/main/webapp/*'
+  - 'dotCMS/src/main/webapp/!(html|WEB-INF)/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/*'
+  - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
@@ -42,7 +55,19 @@ sdk_libs:
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
 area_backend:
   - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
-  - 'dotCMS/!(src/main/webapp/WEB-INF/messages/)**'
+  # Exclude WEB-INF/messages/Language* from the Area:Backend label via per-segment
+  # negation (see backend filter above and the note at lines 78-89). html/ is NOT
+  # excluded here — area_backend intentionally labels html changes as backend.
+  - 'dotCMS/*'
+  - 'dotCMS/!(src)/**'
+  - 'dotCMS/src/*'
+  - 'dotCMS/src/!(main)/**'
+  - 'dotCMS/src/main/*'
+  - 'dotCMS/src/main/!(webapp)/**'
+  - 'dotCMS/src/main/webapp/*'
+  - 'dotCMS/src/main/webapp/!(WEB-INF)/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/*'
+  - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
   - 'test-karate/**'

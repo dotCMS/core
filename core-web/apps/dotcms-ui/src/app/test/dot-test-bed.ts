@@ -26,9 +26,6 @@ import {
     ApiRoot,
     BrowserUtil,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     StringUtils,
@@ -83,13 +80,6 @@ export class MockGlobalStore {
     };
 }
 
-export const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
-
 /**
  * DOTTestBed its deprecated
  * @deprecated This class is deprecated
@@ -125,10 +115,7 @@ export class DOTTestBed {
             DotHttpErrorManagerService,
             DotIframeService,
             DotMessageService,
-            DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfigService,
-            DotcmsEventsService,
             DotFormatDateService,
             LoggerService,
             StringUtils,

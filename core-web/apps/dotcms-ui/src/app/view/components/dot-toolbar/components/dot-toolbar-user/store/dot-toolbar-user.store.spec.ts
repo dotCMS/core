@@ -15,15 +15,7 @@ import {
     DotSystemConfigService,
     DotIframeService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock, LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
@@ -31,7 +23,6 @@ import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
 import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../../providers';
-import { dotEventSocketURLFactory } from '../../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserStore', () => {
@@ -51,8 +42,6 @@ describe('DotToolbarUserStore', () => {
             DotEventsService,
             DotIframeService,
             DotMenuService,
-            DotcmsEventsService,
-            DotEventsSocket,
             DotcmsConfigService,
             StringUtils,
             DotRouterService,
@@ -65,7 +54,6 @@ describe('DotToolbarUserStore', () => {
                     }
                 }
             },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: LoginService, useClass: LoginServiceMock },
             {
                 provide: DotSystemConfigService,
