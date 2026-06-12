@@ -425,11 +425,12 @@ const loadSitesDropdown = () => {
             const select = document.getElementById("siteFilterSelect");
             if (!select) return;
             (data.entity || [])
-                .sort((a, b) => a.hostName.localeCompare(b.hostName))
+                .filter(site => site.identifier && site.hostname)
+                .sort((a, b) => a.hostname.localeCompare(b.hostname))
                 .forEach(site => {
                     const opt = document.createElement("option");
                     opt.value = site.identifier;
-                    opt.textContent = site.hostName;
+                    opt.textContent = site.hostname;
                     select.appendChild(opt);
                 });
         })
