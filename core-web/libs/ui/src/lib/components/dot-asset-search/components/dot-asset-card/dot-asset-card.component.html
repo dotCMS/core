@@ -17,9 +17,9 @@
         <div class="state">
             <p-chip
                 [label]="contentlet?.language"
-                class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
                 data-testId="dot-card-language" />
-            <dot-contentlet-status-chip [state]="contentlet" />
+            <dot-contentlet-status-badge [state]="contentlet" />
         </div>
     </ng-template>
 </p-card>

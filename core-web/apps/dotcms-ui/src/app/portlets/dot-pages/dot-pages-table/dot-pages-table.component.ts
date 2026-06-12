@@ -33,7 +33,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -67,7 +67,7 @@ type TableRowSelectEvent<T> = {
         TooltipModule,
         RouterModule,
         ReactiveFormsModule,
-        DotContentletStatusChipComponent
+        DotContentletStatusBadgeComponent
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

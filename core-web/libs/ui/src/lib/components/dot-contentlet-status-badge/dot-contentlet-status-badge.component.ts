@@ -29,12 +29,12 @@ const STATUS_SEVERITY: Record<DotContentletStatus, DotContentletStatusSeverity> 
  * "New" badge shown when `state` is null.
  */
 @Component({
-    selector: 'dot-contentlet-status-chip',
+    selector: 'dot-contentlet-status-badge',
     imports: [TagModule],
-    templateUrl: './dot-contentlet-status-chip.component.html',
+    templateUrl: './dot-contentlet-status-badge.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentletStatusChipComponent {
+export class DotContentletStatusBadgeComponent {
     /** The contentlet publish state; null renders the "New" badge. */
     readonly state = input<DotContentState | null>(null);
 

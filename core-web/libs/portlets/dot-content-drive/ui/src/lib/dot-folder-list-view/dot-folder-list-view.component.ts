@@ -32,7 +32,7 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -45,7 +45,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     imports: [
         ButtonModule,
         ChipModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,

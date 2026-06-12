@@ -83,7 +83,7 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
             return 'danger';
         case 'Revision':
         case 'New':
-            // Both render as a soft blue pill, matching the shared dot-contentlet-status-chip
+            // Both render as a soft blue pill, matching the shared dot-contentlet-status-badge
             // (Content Drive) where Revision and brand-new content are blue.
             return 'info';
         default:

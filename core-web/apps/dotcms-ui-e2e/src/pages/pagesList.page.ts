@@ -38,7 +38,7 @@ export class PagesListPage {
     }
 
     getStatusChip(rowLocator: Locator) {
-        return rowLocator.locator('dot-contentlet-status-chip');
+        return rowLocator.locator('dot-contentlet-status-badge');
     }
 
     getStatusChipText(rowLocator: Locator) {

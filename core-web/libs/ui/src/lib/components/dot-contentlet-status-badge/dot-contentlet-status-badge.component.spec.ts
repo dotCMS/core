@@ -4,15 +4,15 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotContentletStatusChipComponent } from './dot-contentlet-status-chip.component';
+import { DotContentletStatusBadgeComponent } from './dot-contentlet-status-badge.component';
 
-describe('DotContentletStatusChipComponent', () => {
-    let spectator: Spectator<DotContentletStatusChipComponent>;
+describe('DotContentletStatusBadgeComponent', () => {
+    let spectator: Spectator<DotContentletStatusBadgeComponent>;
 
     const messageServiceMock = new MockDotMessageService({ New: 'New Translated' });
 
     const createComponent = createComponentFactory({
-        component: DotContentletStatusChipComponent,
+        component: DotContentletStatusBadgeComponent,
         providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
