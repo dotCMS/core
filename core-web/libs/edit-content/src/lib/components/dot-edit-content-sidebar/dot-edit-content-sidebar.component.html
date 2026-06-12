@@ -88,13 +88,29 @@
                     <dot-edit-content-sidebar-section
                         key="actions.locales"
                         [title]="'edit.content.sidebar.locales' | dm">
-                        <dot-edit-content-sidebar-locales
-                            [locales]="$store.locales()"
-                            [defaultLocale]="$store.systemDefaultLocale()"
-                            [currentLocale]="$store.currentLocale()"
-                            [isLoading]="$store.isLoadingLocales()"
-                            (switchLocale)="$store.switchLocale($event)"
-                            data-testId="locales" />
+                        @let defaultLocale = $store.systemDefaultLocale();
+                        @let currentLocale = $store.currentLocale();
+                        @if ($store.isLoadingLocales() || (defaultLocale && currentLocale)) {
+                            @if ($isLocaleSelectorV2()) {
+                                <dot-edit-content-sidebar-locales-selector
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    [activeTab]="$store.localeSelectorTab()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    (tabChange)="$store.setLocaleSelectorTab($event)"
+                                    data-testId="locales-selector" />
+                            } @else {
+                                <dot-edit-content-sidebar-locales
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    data-testId="locales" />
+                            }
+                        }
                     </dot-edit-content-sidebar-section>
 
                     <!-- Workflow section -->
