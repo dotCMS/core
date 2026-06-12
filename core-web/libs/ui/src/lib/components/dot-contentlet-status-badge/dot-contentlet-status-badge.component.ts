@@ -31,7 +31,9 @@ type DotContentletStatusSeverity = (typeof STATUS_SEVERITY)[DotContentletStatus]
 @Component({
     selector: 'dot-contentlet-status-badge',
     imports: [TagModule],
-    templateUrl: './dot-contentlet-status-badge.component.html',
+    template: `
+        <p-tag [severity]="severity()" [value]="label()" data-testid="status-tag" />
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentletStatusBadgeComponent {
