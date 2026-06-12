@@ -136,6 +136,14 @@ See [File Naming Convention](WORKFLOW_ARCHITECTURE.md#file-naming-convention) fo
 - Leverage reusable phase workflows
 - Follow the standard phase pattern 
 
+⚠️ **Semgrep Gating** (see [private-issues#630](https://github.com/dotCMS/private-issues/issues/630)):
+- Semgrep blocks merges **via `Finalize / Final Status` on the PR workflow**, not via a required status check
+- The `semgrep` job in `cicd_1-pr.yml` runs `semgrep ci` and is wired into `finalize: needs: [ semgrep, test ]` — a failing scan turns `Finalize / Final Status` red, which blocks the PR from entering the merge queue
+- Controlled by repo variables: `DISABLE_SEMGREP` (skips the job entirely) and `SEMGREP_NO_FAIL` (runs the scan but ignores failures) — both must be `false` for the gate to be active
+- **NEVER add `semgrep-cloud-platform/scan` to required status checks** (branch protection or rulesets): the Semgrep Cloud app only posts that check on `pull_request` events, never on `merge_group` commits, so requiring it makes the merge queue time out and dequeue every PR (incident of 2026-05-19)
+- The disabled ruleset "Default Merge Queue" (id 3651671) still lists `semgrep-cloud-platform/scan` as required — do not re-enable it as-is
+- `cicd_2-merge-queue.yml` intentionally has **no** semgrep job: the queue never waits on Semgrep
+
 ## Architecture Overview
 
 Our CI/CD uses a **three-tier architecture** for modularity and maintainability:
