@@ -6,18 +6,17 @@ import {
     createFakePayloadBinaryField,
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
+import { uniqueSuffix } from '@utils/utils';
 
-import { BinaryField, E2E_IMPORT_URL, createTestTextFile } from './helpers/binary-field';
+import { BinaryField } from './helpers/binary-field';
+
+import { E2E_IMPORT_URL, createTestTextFile } from '../../helpers/file-test-data';
 
 const BINARY_FIELD_VARIABLE = 'binaryField';
 const TEST_FILE = createTestTextFile();
 
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
-
-function uniqueSuffix() {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 async function createBinaryFieldContentType(
     request: Parameters<typeof createFakeContentType>[0],
@@ -78,9 +77,7 @@ test('attach a binary file, save, reload, and file name retained @critical', asy
     await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
 
     await field.expectPreviewVisible();
-    await expect(field.preview.getByTestId('code-preview')).toContainText(
-        'dotCMS E2E test file content'
-    );
+    await field.expectPreviewShowsContent('dotCMS E2E test file content');
 });
 
 test('import from URL completes without 400 and shows preview', async ({ page }) => {

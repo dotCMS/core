@@ -6,20 +6,17 @@ import {
     createFakePayloadImageField,
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
+import { uniqueSuffix } from '@utils/utils';
 
 import { ImageField } from './helpers/image-field';
 
-import { createTestPngFile } from '../file-field/helpers/file-field';
+import { createTestPngFile } from '../../helpers/file-test-data';
 
 const IMAGE_FIELD_VARIABLE = 'imageField';
 const TEST_IMAGE = createTestPngFile();
 
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
-
-function uniqueSuffix() {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 async function createImageFieldContentType(
     request: Parameters<typeof createFakeContentType>[0],

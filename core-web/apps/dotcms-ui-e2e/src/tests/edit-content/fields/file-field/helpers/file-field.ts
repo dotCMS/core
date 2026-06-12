@@ -1,29 +1,12 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-/** Stable public image URL for import-from-URL tests; override via E2E_IMPORT_URL env. */
-export const E2E_IMPORT_URL = process.env['E2E_IMPORT_URL'] ?? 'https://placehold.co/1x1.png';
+import { REQUIRED_FIELD_ERROR } from '../../helpers/file-test-data';
 
-export const REQUIRED_FIELD_ERROR = 'This field is mandatory';
-
-/** Minimal text file buffer for file/binary upload tests. */
-export function createTestTextFile(name = 'e2e-test-file.txt') {
-    return {
-        name,
-        mimeType: 'text/plain',
-        buffer: Buffer.from('dotCMS E2E test file content')
-    };
-}
-
-/** Minimal 1x1 PNG for image upload tests. */
-export function createTestPngFile(name = 'e2e-test-image.png') {
-    const base64Png =
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-    return {
-        name,
-        mimeType: 'image/png',
-        buffer: Buffer.from(base64Png, 'base64')
-    };
-}
+export {
+    E2E_IMPORT_URL,
+    createTestPngFile,
+    createTestTextFile
+} from '../../helpers/file-test-data';
 
 /**
  * Locator wrapper for the File field (`dot-edit-content-file-field` / `dot-file-field`).
@@ -84,13 +67,13 @@ export class FileField {
     }
 
     async expectPreviewShowsFileName(fileName: string) {
-        const codePreview = this.root.getByTestId('code-preview');
-        if (await codePreview.isVisible()) {
-            await expect(codePreview).toBeVisible({ timeout: 15000 });
-            return;
-        }
-
         await expect(this.root.getByTestId('metadata-title')).toContainText(fileName, {
+            timeout: 15000
+        });
+    }
+
+    async expectPreviewShowsContent(text: string) {
+        await expect(this.root.getByTestId('code-preview')).toContainText(text, {
             timeout: 15000
         });
     }
@@ -127,10 +110,7 @@ export class FileField {
 
     async closeImportDialogViaX() {
         const dialog = this.page.getByRole('dialog');
-        const closeButton = dialog
-            .locator('.p-dialog-header-close, .p-dialog-close-button, button[aria-label="Close"]')
-            .first();
-        await closeButton.click();
+        await dialog.getByRole('button', { name: 'Close' }).click();
         await expect(dialog).toBeHidden({ timeout: 10000 });
     }
 
@@ -156,7 +136,7 @@ export class FileField {
         await importButton.getByRole('button').click();
 
         const response = await byUrlResponse;
-        expect(response.status()).not.toBe(400);
+        expect(response.ok()).toBeTruthy();
 
         await workflowResponse;
         await this.expectPreviewVisible();

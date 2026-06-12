@@ -4,7 +4,7 @@ import {
     E2E_IMPORT_URL,
     REQUIRED_FIELD_ERROR,
     createTestTextFile
-} from '../../file-field/helpers/file-field';
+} from '../../helpers/file-test-data';
 
 export { E2E_IMPORT_URL, createTestTextFile };
 
@@ -37,9 +37,7 @@ export class BinaryField {
         this.createNewFileBtn = this.root.getByTestId('action-editor-btn');
         this.generateWithAiBtn = this.root.getByTestId('action-ai-btn');
         this.preview = this.root.getByTestId('preview');
-        this.requiredError = page
-            .locator(`dot-binary-field-wrapper[data-testid="field-${fieldVariable}"]`)
-            .locator('.error-message small');
+        this.requiredError = this.root.locator('.error-message small');
     }
 
     async expectVisible() {
@@ -67,13 +65,13 @@ export class BinaryField {
     }
 
     async expectPreviewShowsFileName(fileName: string) {
-        const codePreview = this.preview.getByTestId('code-preview');
-        if (await codePreview.isVisible()) {
-            await expect(codePreview).toBeVisible({ timeout: 15000 });
-            return;
-        }
-
         await expect(this.preview.locator('.preview-metadata_header')).toContainText(fileName, {
+            timeout: 15000
+        });
+    }
+
+    async expectPreviewShowsContent(text: string) {
+        await expect(this.preview.getByTestId('code-preview')).toContainText(text, {
             timeout: 15000
         });
     }
@@ -109,14 +107,15 @@ export class BinaryField {
         const byUrlResponse = this.page.waitForResponse(
             (response) =>
                 response.url().includes('/api/v1/temp/byUrl') &&
-                response.request().method() === 'POST'
+                response.request().method() === 'POST',
+            { timeout: 30000 }
         );
 
         await urlInput.fill(url);
         await importButton.getByRole('button').click();
 
         const response = await byUrlResponse;
-        expect(response.status()).not.toBe(400);
+        expect(response.ok()).toBeTruthy();
 
         await this.expectPreviewVisible();
     }

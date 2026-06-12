@@ -6,18 +6,17 @@ import {
     createFakePayloadFileField,
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
+import { uniqueSuffix } from '@utils/utils';
 
-import { E2E_IMPORT_URL, FileField, createTestTextFile } from './helpers/file-field';
+import { FileField } from './helpers/file-field';
+
+import { E2E_IMPORT_URL, createTestTextFile } from '../../helpers/file-test-data';
 
 const FILE_FIELD_VARIABLE = 'fileField';
 const TEST_FILE = createTestTextFile();
 
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
-
-function uniqueSuffix() {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 async function createFileFieldContentType(
     request: Parameters<typeof createFakeContentType>[0],
@@ -78,9 +77,7 @@ test('upload a file, save, reload, and file still shown @critical', async ({ pag
     await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
 
     await field.expectPreviewVisible();
-    await expect(field.root.getByTestId('code-preview')).toContainText(
-        'dotCMS E2E test file content'
-    );
+    await field.expectPreviewShowsContent('dotCMS E2E test file content');
 });
 
 test('import from URL dialog opens with header, footer, and close button', async ({ page }) => {
