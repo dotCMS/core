@@ -10,7 +10,7 @@ import { uniqueSuffix } from '@utils/utils';
 
 import { ImageField } from './helpers/image-field';
 
-import { createTestPngFile } from '../../helpers/file-test-data';
+import { createTestPngFile } from '../helpers/file-test-data';
 
 const IMAGE_FIELD_VARIABLE = 'imageField';
 const TEST_IMAGE = createTestPngFile();

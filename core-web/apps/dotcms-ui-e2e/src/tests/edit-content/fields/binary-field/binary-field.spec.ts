@@ -10,7 +10,7 @@ import { uniqueSuffix } from '@utils/utils';
 
 import { BinaryField } from './helpers/binary-field';
 
-import { E2E_IMPORT_URL, createTestTextFile } from '../../helpers/file-test-data';
+import { E2E_IMPORT_URL, createTestTextFile } from '../helpers/file-test-data';
 
 const BINARY_FIELD_VARIABLE = 'binaryField';
 const TEST_FILE = createTestTextFile();

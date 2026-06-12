@@ -10,7 +10,7 @@ import { uniqueSuffix } from '@utils/utils';
 
 import { FileField } from './helpers/file-field';
 
-import { E2E_IMPORT_URL, createTestTextFile } from '../../helpers/file-test-data';
+import { E2E_IMPORT_URL, createTestTextFile } from '../helpers/file-test-data';
 
 const FILE_FIELD_VARIABLE = 'fileField';
 const TEST_FILE = createTestTextFile();
