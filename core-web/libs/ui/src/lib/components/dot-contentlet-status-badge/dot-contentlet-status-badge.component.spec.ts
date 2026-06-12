@@ -1,5 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { Tag } from 'primeng/tag';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -16,106 +18,141 @@ describe('DotContentletStatusBadgeComponent', () => {
         providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
-    const getTag = () => spectator.query(byTestId('status-tag'));
+    const getTag = () => spectator.query(Tag);
 
     beforeEach(() => {
         spectator = createComponent();
     });
 
-    describe('Status tag rendering', () => {
-        it('should render a "Published" tag with success severity when contentlet is published', () => {
-            const state: DotContentState = {
-                live: true,
-                working: true,
-                hasLiveVersion: true,
-                archived: false,
-                deleted: false
-            };
+    describe('status derivation', () => {
+        const cases: {
+            case: string;
+            state: DotContentState;
+            value: string;
+            severity: string;
+        }[] = [
+            {
+                case: 'published',
+                state: {
+                    live: true,
+                    working: true,
+                    hasLiveVersion: true,
+                    archived: false,
+                    deleted: false
+                },
+                value: 'Published',
+                severity: 'success'
+            },
+            {
+                case: 'archived',
+                state: {
+                    archived: true,
+                    live: false,
+                    working: false,
+                    hasLiveVersion: false,
+                    deleted: false
+                },
+                value: 'Archived',
+                severity: 'danger'
+            },
+            {
+                case: 'deleted',
+                state: {
+                    deleted: true,
+                    live: false,
+                    working: false,
+                    hasLiveVersion: false,
+                    archived: false
+                },
+                value: 'Archived',
+                severity: 'danger'
+            },
+            {
+                case: 'archived wins over live (precedence)',
+                state: {
+                    archived: true,
+                    live: true,
+                    working: true,
+                    hasLiveVersion: true,
+                    deleted: false
+                },
+                value: 'Archived',
+                severity: 'danger'
+            },
+            {
+                case: 'revision',
+                state: {
+                    live: false,
+                    working: false,
+                    hasLiveVersion: true,
+                    archived: false,
+                    deleted: false
+                },
+                value: 'Revision',
+                severity: 'info'
+            },
+            {
+                case: 'draft (all false)',
+                state: {
+                    live: false,
+                    working: false,
+                    hasLiveVersion: false,
+                    archived: false,
+                    deleted: false
+                },
+                value: 'Draft',
+                severity: 'warn'
+            },
+            {
+                case: 'live but not working → draft',
+                state: {
+                    live: true,
+                    working: false,
+                    hasLiveVersion: true,
+                    archived: false,
+                    deleted: false
+                },
+                value: 'Draft',
+                severity: 'warn'
+            },
+            {
+                case: 'live without live version → draft',
+                state: {
+                    live: true,
+                    working: true,
+                    hasLiveVersion: false,
+                    archived: false,
+                    deleted: false
+                },
+                value: 'Draft',
+                severity: 'warn'
+            }
+        ];
 
-            spectator.setInput('state', state);
+        it.each(cases)(
+            'should hand value "$value" and severity "$severity" to the Tag when $case',
+            ({ state, value, severity }) => {
+                spectator.setInput('state', state);
 
-            const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-success');
-            expect(tag).toHaveText('Published');
-        });
+                const tag = getTag();
+                expect(tag.value).toBe(value);
+                expect(tag.severity).toBe(severity);
+            }
+        );
+    });
 
-        it('should render an "Archived" tag with danger severity when contentlet is archived', () => {
-            const state: DotContentState = {
-                archived: true,
-                live: false,
-                working: false,
-                hasLiveVersion: false
-            };
-
-            spectator.setInput('state', state);
-
-            const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-danger');
-            expect(tag).toHaveText('Archived');
-        });
-
-        it('should render an "Archived" tag with danger severity when contentlet is deleted', () => {
-            const state: DotContentState = {
-                deleted: true,
-                live: false,
-                working: false,
-                hasLiveVersion: false
-            };
-
-            spectator.setInput('state', state);
-
-            const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-danger');
-            expect(tag).toHaveText('Archived');
-        });
-
-        it('should render a "Revision" tag with info severity when contentlet has live version but is not live', () => {
-            const state: DotContentState = {
-                live: false,
-                working: false,
-                hasLiveVersion: true,
-                archived: false,
-                deleted: false
-            };
-
-            spectator.setInput('state', state);
-
-            const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-info');
-            expect(tag).toHaveText('Revision');
-        });
-
-        it('should render a "Draft" tag with warn severity when contentlet is draft', () => {
-            const state: DotContentState = {
-                live: false,
-                working: false,
-                hasLiveVersion: false,
-                archived: false,
-                deleted: false
-            };
-
-            spectator.setInput('state', state);
-
-            const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-warn');
-            expect(tag).toHaveText('Draft');
-        });
-
-        it('should render a translated "New" tag with info severity when state is null', () => {
+    describe('null state', () => {
+        it('should hand the translated "New" label and info severity to the Tag', () => {
             spectator.setInput('state', null);
 
             const tag = getTag();
-            expect(tag).toBeTruthy();
-            expect(tag).toHaveClass('p-tag-info');
-            expect(tag).toHaveText('New Translated');
+            expect(tag.value).toBe('New Translated');
+            expect(tag.severity).toBe('info');
         });
+    });
 
-        it('should never render a p-chip', () => {
+    describe('rendering', () => {
+        it('should render the status tag', () => {
             spectator.setInput('state', {
                 live: true,
                 working: true,
@@ -124,7 +161,7 @@ describe('DotContentletStatusBadgeComponent', () => {
                 deleted: false
             });
 
-            expect(spectator.query('p-chip')).toBeNull();
+            expect(spectator.query(byTestId('status-tag'))).toBeTruthy();
         });
     });
 });
