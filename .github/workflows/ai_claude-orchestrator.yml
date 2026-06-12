@@ -58,6 +58,8 @@ jobs:
           fi
 
   # Interactive Claude mentions (simplified using centralized logic)
+  # Stays on Anthropic Claude — @claude is intentionally the Claude brand and
+  # developers expect Claude-specific tool use (Bash, Agent, etc.) when they invoke it.
   claude-interactive:
     needs: security-check
     # Never cancel in-progress interactive sessions — a user may be mid-conversation
@@ -80,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.0
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -95,7 +97,10 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   # Automatic PR reviews (no @claude mention)
-  claude-automatic-review:
+  # Uses GPT-5.5 via AWS Bedrock Mantle for model diversity — Claude writes code here,
+  # GPT reviews it so training/weighting biases from one model family don't carry into
+  # the review. Interactive @claude sessions remain on Anthropic Claude (job above).
+  gpt-automatic-review:
     needs: security-check
     # Cancel in-progress automatic reviews when a new push arrives — always review latest state
     concurrency:
@@ -110,15 +115,29 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.0
     with:
-      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      model_id: openai.gpt-5.5
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
+      reasoning_effort: medium
       prompt: |
-        Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
-      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
-      timeout_minutes: 15
+        You are reviewing a pull request for **dotCMS**, a Java/Angular headless CMS platform (Java 25 + Maven backend, Angular 19 + Nx frontend).
+
+        Review only what's in the diff. Be direct and specific — include file and line for every finding. Skip praise, summaries, and style nitpicks. Do not invent issues.
+
+        Check for:
+        1. **Bugs** — logic errors, null dereferences, off-by-one, missing edge cases, race conditions
+        2. **Security** — SQL injection (`DotConnect + addParam()` required, never string concat), missing permission checks (`hasPermission` / `DotSecurityException`), sensitive data in logs, hardcoded secrets, unvalidated input in file paths or system calls
+        3. **dotCMS conventions** — `Config.getStringProperty()` not `System.getProperty/getenv`; `Logger` not `System.out`; `APILocator`/`FactoryLocator` for service access; `@WrapInTransaction` on multi-step DB writes; add dependency versions to `bom/application/pom.xml` only (never `dotCMS/pom.xml`)
+        4. **Design** — wrong layer of concern, broken abstraction, unnecessary complexity
+        5. **Test gaps** — meaningful new behavior with no test coverage
+
+        Format each finding as:
+        > **[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
+
+        If the PR is clean, say so in one sentence.
+      timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
     secrets:
