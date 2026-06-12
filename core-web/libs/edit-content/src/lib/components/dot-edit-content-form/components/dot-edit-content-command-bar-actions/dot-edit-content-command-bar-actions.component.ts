@@ -65,6 +65,16 @@ export class DotEditContentCommandBarActionsComponent {
     /** Contentlet title used for the references dialog header. */
     readonly title = input<string>('');
 
+    /**
+     * Pass-through styling for the overflow menu: flush list, square item content,
+     * and a taller hit area for each link. Replaces the deprecated `styleClass`.
+     */
+    readonly menuPt = {
+        list: { class: 'p-0!' },
+        itemContent: { class: 'rounded-none!' },
+        itemLink: { class: 'py-3!' }
+    };
+
     /** Menu model for the overflow popup. Rebuilt reactively from the inputs. */
     readonly $model = computed<MenuItem[]>(() => {
         const items: MenuItem[] = [

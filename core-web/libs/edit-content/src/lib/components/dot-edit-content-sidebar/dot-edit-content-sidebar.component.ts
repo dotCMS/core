@@ -62,10 +62,14 @@ import { escapeHtml } from '../../utils/functions.util';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[360px] h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden'
+        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden',
+        '[style.width.px]': 'sidebarWidth'
     }
 })
 export class DotEditContentSidebarComponent {
+    /** Fixed width of the sidebar panel, in pixels. */
+    protected readonly sidebarWidth = 360;
+
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -272,7 +276,7 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        nav: { class: 'border-none min-h-12 max-h-[52px]' },
         navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
