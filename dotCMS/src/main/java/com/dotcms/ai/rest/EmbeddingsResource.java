@@ -95,7 +95,7 @@ public class EmbeddingsResource {
 
         try {
             if (!UtilMethods.isSet(embeddingsForm.query)) {
-                return Response.status(400).entity(Map.of(AiKeys.ERROR, "query is required")).build();
+                return Response.status(400).entity(Map.of(AiKeys.MESSAGE, "query cannot be null")).build();
             }
 
             final String requestHostId = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request).getIdentifier();
