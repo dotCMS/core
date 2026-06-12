@@ -84,6 +84,17 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 - **`p-tag`** — informative, read-only status display. Use it for anything that communicates state the user does not interact with directly: content status badges, locale labels, etc. Tags carry a `severity`, so colors come from native severity states (configured once in the `tag` block of the theme preset), never from per-template classes.
 - **`p-chip`** — interactive or removable elements: filters, removable selections, anything the user can click or dismiss. Chips are mostly neutral gray and do not express severity.
 
+### Decision rule
+
+1. **Showing a contentlet status?** Use the shared **`<dot-contentlet-status-badge>`** component (`libs/ui`). It takes the `DotContentState` and resolves the label, severity, and translation internally — do not hand-roll a `p-tag` for contentlet statuses.
+
+   ```html
+   <dot-contentlet-status-badge [state]="contentlet" />
+   ```
+
+2. **Showing any other status / read-only state?** Use `p-tag` with the matching `severity` (see mapping below).
+3. **Anything without a status** — interactive, removable, or clickable items (filters, selections) — use `p-chip`.
+
 ### Severity mapping convention
 
 | Severity  | Status |
@@ -95,6 +106,7 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 
 ### Rules
 
+- **Always use `<dot-contentlet-status-badge>` for contentlet statuses** — never a raw `p-tag` or `p-chip`.
 - **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
 - **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
 
