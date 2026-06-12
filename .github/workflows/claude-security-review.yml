@@ -39,6 +39,7 @@ permissions:
   pull-requests: write
   issues: write
   checks: write
+  id-token: write
 
 concurrency:
   group: claude-security-review-${{ github.event.pull_request.number || inputs.pr_number }}
@@ -176,13 +177,22 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: envsubst < /tmp/claude-security-review-prompt.md > /tmp/claude-prompt.md
 
+      - name: Load resolved prompt
+        if: steps.semgrep.outputs.found != 'true'
+        id: prompt
+        run: |
+          content=$(cat /tmp/claude-prompt.md)
+          echo "content<<PROMPT_EOF" >> "$GITHUB_OUTPUT"
+          echo "$content" >> "$GITHUB_OUTPUT"
+          echo "PROMPT_EOF" >> "$GITHUB_OUTPUT"
+
       - name: Run Claude security review
         if: steps.semgrep.outputs.found != 'true'
         id: review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt_file: /tmp/claude-prompt.md
+          prompt: ${{ steps.prompt.outputs.content }}
           claude_args: |
             --allowed-tools Read,Bash,Grep,Glob,Agent
             --model claude-opus-4-7
