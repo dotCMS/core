@@ -37,7 +37,7 @@
             class="flex h-full min-h-0 flex-1 flex-col bg-white! p-0! [&_.p-tabpanel]:p-0!">
             <p-tabpanel [value]="0" class="flex h-full min-h-0 flex-col">
                 <!-- Actions tab content — padding lives on this first inner wrapper -->
-                <div class="flex h-full min-h-0 flex-col px-[18px] pt-[18px]">
+                <div class="flex h-full min-h-0 flex-col px-4 pt-4">
                     <!-- Lock / unlock button — visually grouped with the workflow actions below:
                          no divider and the same 0.5rem gap the stacked actions use (gap-2), so it
                          reads as part of the Actions block even though it lives in its own @if and
@@ -88,13 +88,29 @@
                     <dot-edit-content-sidebar-section
                         key="actions.locales"
                         [title]="'edit.content.sidebar.locales' | dm">
-                        <dot-edit-content-sidebar-locales
-                            [locales]="$store.locales()"
-                            [defaultLocale]="$store.systemDefaultLocale()"
-                            [currentLocale]="$store.currentLocale()"
-                            [isLoading]="$store.isLoadingLocales()"
-                            (switchLocale)="$store.switchLocale($event)"
-                            data-testId="locales" />
+                        @let defaultLocale = $store.systemDefaultLocale();
+                        @let currentLocale = $store.currentLocale();
+                        @if ($store.isLoadingLocales() || (defaultLocale && currentLocale)) {
+                            @if ($isLocaleSelectorV2()) {
+                                <dot-edit-content-sidebar-locales-selector
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    [activeTab]="$store.localeSelectorTab()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    (tabChange)="$store.setLocaleSelectorTab($event)"
+                                    data-testId="locales-selector" />
+                            } @else {
+                                <dot-edit-content-sidebar-locales
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    data-testId="locales" />
+                            }
+                        }
                     </dot-edit-content-sidebar-section>
 
                     <!-- Workflow section -->

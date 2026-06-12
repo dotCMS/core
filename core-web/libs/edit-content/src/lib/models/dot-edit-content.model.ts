@@ -45,12 +45,15 @@ export interface DotWorkflowState extends DotCMSWorkflowStatus {
  * @export
  * @interface UIState
  */
+export type LocaleTab = 'all' | 'translated' | 'pending';
+
 export interface UIState {
     view: 'form' | 'compare';
     activeTab: number;
     isSidebarOpen: boolean;
     activeSidebarTab: number;
     isBetaMessageVisible: boolean;
+    localeSelectorTab: LocaleTab;
 }
 
 /**
