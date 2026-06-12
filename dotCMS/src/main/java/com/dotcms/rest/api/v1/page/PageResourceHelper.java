@@ -209,8 +209,18 @@ public class PageResourceHelper implements Serializable {
                         .collect(java.util.stream.Collectors.joining(", "))));
 
         for (final String personalization : multiTreesMap.keySet()) {
+            final List<MultiTree> multiTrees = multiTreesMap.get(personalization);
+            if (multiTrees.isEmpty()) {
+                Logger.warn(this, String.format(
+                        "Empty contentlet payload for page '%s', personalization='%s', variant='%s', " +
+                        "language=%d submitted by user '%s'. Existing content in this slot will be wiped " +
+                        "unless MULTITREE_NET_LOSS_THRESHOLD is configured.",
+                        pageId, personalization, variantName,
+                        language != null ? language.getId() : -1L,
+                        user != null ? user.getUserId() : "unknown"));
+            }
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.of(language.getId()),
+                    multiTrees, Optional.of(language.getId()),
                     variantName);
         }
 
