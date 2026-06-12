@@ -57,6 +57,7 @@ public interface RedisClient<K, V> {
      * @param msg V
      * @return V
      */
+    @Deprecated
     V echo (final V msg);
 
     /**
@@ -99,6 +100,7 @@ public interface RedisClient<K, V> {
      * @param values V
      * @return long
      */
+    @Deprecated
     long addMembers (final K key, final V... values);
 
     /**
@@ -143,6 +145,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return long
      */
+    @Deprecated
     long ttlMillis (final K key);
 
     /**
@@ -172,6 +175,7 @@ public interface RedisClient<K, V> {
      * @param keyBatchingSize {@link Integer} how many records do you want to fetch by iteration
      * @param keyConsumer {@link Consumer} consumer for each key
      */
+    @Deprecated
     void scanEachKey(final String matchesPattern, int keyBatchingSize, final Consumer<K> keyConsumer);
 
     /**
@@ -191,6 +195,7 @@ public interface RedisClient<K, V> {
      * @param field  K
      * @return boolean
      */
+    @Deprecated
     boolean existsHash (K key, K field);
 
     /**
@@ -199,6 +204,7 @@ public interface RedisClient<K, V> {
      * @param field K
      * @return V
      */
+    @Deprecated
     V getHash(K key, K field);
 
     /**
@@ -206,6 +212,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return Map, field -> value
      */
+    @Deprecated
     Map<K, V> getHash(K key);
 
     /**
@@ -213,6 +220,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return Set of K
      */
+    @Deprecated
     Set<K> fieldsHash (K key);
 
     /**
@@ -221,6 +229,7 @@ public interface RedisClient<K, V> {
      * @param fields  Array of K
      * @return List, K -> V
      */
+    @Deprecated
     List<Map.Entry<K, V>> getHash(K key, K... fields);
 
     /**
@@ -229,6 +238,7 @@ public interface RedisClient<K, V> {
      * @param map Map, field -> value
      * @return SetResult
      */
+    @Deprecated
     SetResult setHash(K key, Map<K, V> map);
 
     /**
@@ -238,6 +248,7 @@ public interface RedisClient<K, V> {
      * @param value V
      * @return SetResult
      */
+    @Deprecated
     SetResult setHash(K key, K field, V value);
 
     /**
@@ -246,6 +257,7 @@ public interface RedisClient<K, V> {
      * @param fields Array of K
      * @return long number of fields deleted (-1 if can not delete)
      */
+    @Deprecated
     long deleteHash(final K key, K... fields);
 
     ///// INCR
@@ -255,6 +267,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return long current counter (if fail -1)
      */
+    @Deprecated
     long incrementOne(K key);
 
     /**
@@ -270,6 +283,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return Future long current counter (if fail -1)
      */
+    @Deprecated
     Future<Long> incrementOneAsync (final K key);
 
     /**
@@ -278,6 +292,7 @@ public interface RedisClient<K, V> {
      * @param amount long
      * @return Future long current counter (if fail -1)
      */
+    @Deprecated
     Future<Long> incrementAsync (final K key, final long amount);
 
     /**
@@ -285,6 +300,7 @@ public interface RedisClient<K, V> {
      * @param key K
      * @return Long -1 if does not exists.
      */
+    @Deprecated
     long getIncrement (final K key);
 
     ////// Streams Pub/Sub
@@ -348,8 +364,12 @@ public interface RedisClient<K, V> {
     }
 
     /**
-     * Deletes all entries that matches the pattern
-     * @param pattern String
+     * Deletes all entries whose key matches the given glob pattern.
+     * <p><b>Precondition:</b> {@code pattern} must NOT include the cluster key prefix — implementations
+     * prepend it internally (so callers pass a pattern relative to the prefix only). Passing an
+     * already-prefixed pattern would double-prefix and match nothing; omitting the prefix entirely could
+     * match other clusters' keys in a shared Redis space.
+     * @param pattern String glob pattern, relative to (without) the cluster key prefix
      */
     void deleteFromPattern(String pattern);
 }

@@ -1,6 +1,7 @@
 import { NodeViewRenderer } from '@tiptap/core';
 import { Table, TableCell, TableHeader, TableKit } from '@tiptap/extension-table';
 import { Node as PMNode } from '@tiptap/pm/model';
+import { toggleHeader } from '@tiptap/pm/tables';
 
 import { TableScopeAutoAssign } from './table-scope-auto-assign.plugin';
 
@@ -9,6 +10,37 @@ import type { EditorPopoverService } from '../services/editor-popover.service';
 // ── DotTable ───────────────────────────────────────────────────────────────────────
 
 const DotTable = Table.extend({
+    /**
+     * TipTap's built-in `toggleHeaderRow` / `toggleHeaderColumn` call prosemirror-tables'
+     * `toggleHeader('row' | 'column')` with its modern logic, which is hard-coded to the
+     * FIRST row / FIRST column regardless of the cursor position (it builds the cell rect with
+     * `top: 0, bottom: 1` for rows and `left: 0, right: 1` for columns). dotCMS exposes a
+     * per-row / per-column header toggle through the cell handle popovers, so the default
+     * commands make every toggle land on the first row/column only.
+     *
+     * We override them to call `toggleHeader(type, { useDeprecatedLogic: true })`, whose logic
+     * operates on the row / column of the *currently selected* cell (the popover places the
+     * selection in the target cell before running the command). See issue #35980 (bug 3).
+     *
+     * `useDeprecatedLogic` is a documented option on the `@public` `toggleHeader` signature, so
+     * this is the explicit, supported way to get per-selection toggling — preferred over the
+     * `toggleHeaderRow` / `toggleHeaderColumn` constant exports, which are just thin wrappers
+     * around the same option. If a future prosemirror-tables major drops the flag, replace this
+     * with an inlined cell-rect toggle built on the still-public `selectedRect` + `tableNodeTypes`.
+     */
+    addCommands() {
+        return {
+            ...this.parent?.(),
+            toggleHeaderRow:
+                () =>
+                ({ state, dispatch }) =>
+                    toggleHeader('row', { useDeprecatedLogic: true })(state, dispatch),
+            toggleHeaderColumn:
+                () =>
+                ({ state, dispatch }) =>
+                    toggleHeader('column', { useDeprecatedLogic: true })(state, dispatch)
+        };
+    },
     addAttributes() {
         return {
             ...this.parent?.(),

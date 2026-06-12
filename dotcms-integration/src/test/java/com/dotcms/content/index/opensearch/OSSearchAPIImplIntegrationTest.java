@@ -1,6 +1,7 @@
 package com.dotcms.content.index.opensearch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -9,6 +10,8 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.index.domain.IndexBulkRequest;
@@ -18,6 +21,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -99,6 +103,10 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
     private User systemUser;
 
+    /** Cluster-prefixed (and tag-suffixed) physical names; resolved once per test in {@link #setUp()}. */
+    private String physicalLive;
+    private String physicalWorking;
+
     // =======================================================================
     // Lifecycle
     // =======================================================================
@@ -110,6 +118,9 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
     @Before
     public void setUp() throws Exception {
+        physicalLive    = opsOS.toPhysicalName(IDX_LIVE);
+        physicalWorking = opsOS.toPhysicalName(IDX_WORKING);
+
         cleanupTestOsIndices();
         cleanupVersionedRows();
 
@@ -117,19 +128,16 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
         // Create OS indices and register them under the default OPENSEARCH_3X version
         // so resolveIndex() (which calls loadDefaultVersionedIndices()) finds them.
-        osIndexAPI.createIndex(IDX_LIVE, 1);
-        osIndexAPI.createIndex(IDX_WORKING, 1);
-
-        // createIndex() stores the cluster-prefixed name in OpenSearch; resolveIndex()
-        // must use the same prefixed name, otherwise the search hits a non-existent index.
-        final String fullLive    = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+        // Physical names must match across OS, the DB, and the search path — store the
+        // same value here as the one resolveIndex() will look up later.
+        osIndexAPI.createIndex(physicalLive, 1);
+        osIndexAPI.createIndex(physicalWorking, 1);
 
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
                         .version(DEFAULT_OS_VERSION)
-                        .live(fullLive)
-                        .working(fullWorking)
+                        .live(physicalLive)
+                        .working(physicalWorking)
                         .build());
 
         // Ensure resolveIndex() reads the freshly saved rows, not a cached prior state.
@@ -140,6 +148,11 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void tearDown() {
         cleanupTestOsIndices();
         cleanupVersionedRows();
+        // Drop the cached pointer to the now-deleted test indices. setUp() registers these indices
+        // as the default versioned indices and clears the cache; tearDown must clear it again, or the
+        // stale cache (pointing at deleted `*_search_*` indices) leaks into the next suite member and
+        // breaks its index resolution. Mirrors the clearCache() in setUp.
+        versionedIndicesAPI.clearCache();
     }
 
     // =======================================================================
@@ -165,7 +178,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
         assertNotNull("aggregations map must not be null", response.aggregations());
         Logger.info(this,
                 "✅ test_searchRaw_matchAll_shouldReturnEmptyResultsWithNonNullStructure passed"
-                        + " – totalHits=" + response.hits().totalHits().value());
+                        + " – totalHits=" + response.hits().getTotalHits().value());
     }
 
     /**
@@ -190,6 +203,75 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
                 response.aggregations().get("entries").isEmpty());
         Logger.info(this,
                 "✅ test_searchRaw_withTermsAgg_shouldReturnAggregationKey passed");
+    }
+
+    /**
+     * Given scenario: Two live documents share the same {@code contenttype}, queried with a
+     * {@code terms} aggregation that carries a <b>nested {@code top_hits}</b> sub-aggregation —
+     * exactly the shape the customer template in #36026 walks
+     * ({@code aggregations.content_types.buckets[].top_content.hits}).
+     *
+     * <p>Expected (correct behaviour): the first-level {@code content_types} terms bucket is
+     * returned <i>and</i> its nested {@code top_content} ({@code top_hits}) sub-aggregation is
+     * preserved on the bucket, carrying the matching hits.</p>
+     *
+     * <p><b>Reproduction for the OpenSearch read-path bug:</b> this test currently <b>FAILS</b> at
+     * the nested-aggregation assertion. {@code OSSearchAPIImpl} parses the query body through
+     * {@code SearchRequest._DESERIALIZER} and re-applies only {@code bodyTemplate.aggregations()};
+     * the opensearch-java request model ({@code Aggregation} tagged-union) does not carry the
+     * sibling {@code "aggs"} key, so the nested {@code top_hits} is dropped from the request and
+     * never computed by OpenSearch. The first-level bucket (key/docCount) survives, but
+     * {@code bucket.getAggregations()} comes back empty. The {@code Aggregation.fromOS} /
+     * {@code AggregationBucket.fromOS} mappers are <i>not</i> at fault — they faithfully map an
+     * already-empty sub-aggregation map.</p>
+     */
+    @Test
+    public void test_searchRaw_nestedTopHits_shouldBePreservedOnBuckets() throws Exception {
+        // Index into the live index's physical (.os-tagged) name registered in setUp(); this is
+        // the exact name searchRaw(live=true) resolves through VersionedIndices. Using the plain
+        // cluster-prefixed name would write to a different index than the one searched, so the
+        // terms aggregation would return zero buckets.
+        final String fullLive = physicalLive;
+
+        // Two live docs sharing the same contenttype -> one terms bucket with docCount 2.
+        indexDocument(fullLive, "nested-a-" + RUN_ID,
+                "{\"identifier\":\"nested-a-" + RUN_ID + "\",\"inode\":\"nested-a-inode-" + RUN_ID
+                        + "\",\"contenttype\":\"blogtype\",\"live\":true}");
+        indexDocument(fullLive, "nested-b-" + RUN_ID,
+                "{\"identifier\":\"nested-b-" + RUN_ID + "\",\"inode\":\"nested-b-inode-" + RUN_ID
+                        + "\",\"contenttype\":\"blogtype\",\"live\":true}");
+
+        // terms(content_types) -> top_hits(top_content): aggregate on the keyword sub-field so the
+        // dynamically-mapped string field is aggregatable regardless of explicit mappings.
+        final String nestedAggQuery =
+                "{\"size\":0,\"query\":{\"match_all\":{}},"
+                        + "\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contenttype.keyword\",\"size\":5},"
+                        + "\"aggs\":{\"top_content\":{\"top_hits\":{\"size\":3}}}}}}";
+
+        final ContentSearchResponse response =
+                osSearchAPI.searchRaw(nestedAggQuery, true, systemUser, false);
+
+        // Sanity: first-level terms aggregation works (this part is NOT affected by the bug).
+        final Map<String, Aggregation> tree = response.aggregationTree();
+        assertTrue("aggregation tree must contain content_types", tree.containsKey("content_types"));
+        final Aggregation contentTypes = tree.get("content_types");
+        assertFalse("content_types must have at least one bucket", contentTypes.getBuckets().isEmpty());
+        final AggregationBucket bucket = contentTypes.getBuckets().get(0);
+        assertEquals("bucket docCount must reflect the two indexed docs", 2L, bucket.getDocCount());
+
+        Logger.info(this, "nested-agg bucket key=" + bucket.getKeyAsString()
+                + " docCount=" + bucket.getDocCount()
+                + " subAggKeys=" + bucket.getAggregations().keySet());
+
+        // THE BUG: the nested top_hits sub-aggregation must be preserved on the bucket.
+        final Aggregation topContent = bucket.getAggregations().get("top_content");
+        assertNotNull("nested top_hits sub-aggregation 'top_content' must be preserved on the bucket"
+                + " (dropped today by the OpenSearch request round-trip)", topContent);
+        assertNotNull("nested top_hits must carry a SearchHits", topContent.getHits());
+        assertFalse("nested top_hits must carry at least one hit",
+                topContent.getHits().getHits().isEmpty());
+
+        Logger.info(this, "✅ test_searchRaw_nestedTopHits_shouldBePreservedOnBuckets passed");
     }
 
     /**
@@ -324,22 +406,21 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode()
             throws Exception {
 
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
-        indexTestDocument(fullWorking);
+        indexTestDocument(physicalWorking);
 
         final String matchAll = "{\"query\":{\"match_all\":{}}}";
         final ContentSearchResponse response =
                 osSearchAPI.searchRaw(matchAll, false, systemUser, false);
 
         assertNotNull("searchRaw must return a non-null response", response);
-        assertEquals("Exactly one hit expected", 1, response.hits().totalHits().value());
+        assertEquals("Exactly one hit expected", 1, response.hits().getTotalHits().value());
 
         final com.dotcms.content.index.domain.SearchHit hit =
                 response.hits().iterator().next();
         assertEquals("identifier must be present in sourceAsMap",
-                TEST_DOC_IDENTIFIER, hit.sourceAsMap().get("identifier"));
+                TEST_DOC_IDENTIFIER, hit.getSourceAsMap().get("identifier"));
         assertEquals("inode must be present in sourceAsMap — _source rewrite must include it",
-                TEST_DOC_INODE, hit.sourceAsMap().get("inode"));
+                TEST_DOC_INODE, hit.getSourceAsMap().get("inode"));
 
         Logger.info(this, "✅ test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode passed");
     }
@@ -356,8 +437,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     public void test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode()
             throws Exception {
 
-        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
-        indexTestDocument(fullWorking);
+        indexTestDocument(physicalWorking);
 
         // Caller requests only identifier — inode intentionally omitted.
         final String queryWithSource =
@@ -366,12 +446,12 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
                 osSearchAPI.searchRaw(queryWithSource, false, systemUser, false);
 
         assertNotNull(response);
-        assertTrue("Response must have at least one hit", response.hits().totalHits().value() > 0);
+        assertTrue("Response must have at least one hit", response.hits().getTotalHits().value() > 0);
 
         final com.dotcms.content.index.domain.SearchHit hit =
                 response.hits().iterator().next();
         assertNotNull("inode must still be present after _source overwrite",
-                hit.sourceAsMap().get("inode"));
+                hit.getSourceAsMap().get("inode"));
 
         Logger.info(this, "✅ test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode passed");
     }
@@ -385,8 +465,17 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
      * document is immediately visible to searches.
      */
     private void indexTestDocument(final String fullIndexName) throws Exception {
+        indexDocument(fullIndexName, TEST_DOC_ID, TEST_DOC_JSON);
+    }
+
+    /**
+     * Indexes an arbitrary {@code docJson} under {@code docId} into the given index and refreshes
+     * it so the document is immediately visible to searches.
+     */
+    private void indexDocument(final String fullIndexName, final String docId, final String docJson)
+            throws Exception {
         final IndexBulkRequest req = opsOS.createBulkRequest();
-        opsOS.addIndexOp(req, fullIndexName, TEST_DOC_ID, TEST_DOC_JSON);
+        opsOS.addIndexOp(req, fullIndexName, docId, docJson);
         opsOS.putToIndex(req);
         refreshTestIndex(fullIndexName);
     }
@@ -402,7 +491,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     private synchronized void cleanupTestOsIndices() {
-        for (final String idx : List.of(IDX_LIVE, IDX_WORKING)) {
+        for (final String idx : List.of(physicalLive, physicalWorking)) {
             try {
                 if (osIndexAPI.indexExists(idx)) {
                     osIndexAPI.delete(idx);

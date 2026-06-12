@@ -75,6 +75,17 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.query(byTestId('activity-item'))).not.toBeVisible();
             expect(spectator.query(byTestId('loading-state'))).not.toBeVisible();
         });
+
+        it('should render the empty state as plain text (no empty-container/icon)', () => {
+            spectator.setInput({
+                status: ComponentStatus.LOADED,
+                activities: []
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('dot-empty-container')).toBeFalsy();
+            expect(spectator.query(byTestId('empty-state'))).toBeTruthy();
+        });
     });
 
     describe('Activities list', () => {

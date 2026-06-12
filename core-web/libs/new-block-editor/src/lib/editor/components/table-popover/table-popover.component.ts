@@ -78,14 +78,14 @@ const MAX_VALUE = 20;
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); manager.close()"
-                            class="rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
+                            class="cursor-pointer rounded-sm px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300 focus:outline-none">
                             {{ 'Cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); onApply()"
                             [disabled]="form.invalid"
-                            class="rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+                            class="cursor-pointer rounded-sm bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                             {{ 'Insert' | dm }}
                         </button>
                     </div>

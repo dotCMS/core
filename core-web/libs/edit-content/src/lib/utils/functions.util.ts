@@ -239,6 +239,61 @@ export const isValidJson = (value: string): boolean => {
 };
 
 /**
+ * Escapes HTML special characters so an API-provided value (e.g. a user display name) can be
+ * safely interpolated into a string that is rendered via `[innerHTML]`. Angular already
+ * sanitizes `[innerHTML]`, but escaping at the source neutralizes the markup entirely and
+ * keeps the value rendering as plain text.
+ *
+ * @param {string} value - The raw value to escape.
+ * @returns {string} - The value with `& < > " '` replaced by their HTML entities.
+ */
+export const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => {
+        switch (char) {
+            case '&':
+                return '&amp;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '"':
+                return '&quot;';
+            default:
+                return '&#39;';
+        }
+    });
+
+/**
+ * Resolves the user that holds the lock on a contentlet.
+ *
+ * The `lockedBy` field has two shapes depending on the API endpoint: a plain string (userId)
+ * with the display name in `lockedByName`, or a `{ userId, firstName, lastName }` object.
+ * TODO: remove this branching once the backend normalizes the shape across content types.
+ *
+ * @param {DotCMSContentlet | null | undefined} contentlet - The contentlet to inspect.
+ * @returns `{ userId, displayName }`, or null when the content is not locked.
+ */
+export const resolveLocker = (
+    contentlet: DotCMSContentlet | null | undefined
+): { userId: string; displayName: string } | null => {
+    const lockedBy = contentlet?.lockedBy;
+
+    if (!lockedBy) {
+        return null;
+    }
+
+    const isLockedByString = typeof lockedBy === 'string';
+    const userId = isLockedByString ? lockedBy : lockedBy.userId;
+    const displayName = (
+        isLockedByString
+            ? (contentlet?.lockedByName ?? '')
+            : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+    ).trim();
+
+    return { userId, displayName };
+};
+
+/**
  * Parses an array of `DotCMSContentTypeFieldVariable` objects and returns a new object
  * with key-value pairs.
  *
@@ -375,6 +430,30 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     const params = new URLSearchParams();
 
     params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
+ * Generates an edit-page URL for a given page contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated edit-page URL.
+ */
+export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
+    if (!contentlet.url || !contentlet.host || contentlet.languageId === undefined) {
+        console.warn('Missing required contentlet attributes to generate edit page URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.url}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
     params.set('mode', UVE_MODE.EDIT);

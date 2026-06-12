@@ -42,6 +42,80 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `
         },
+        chip: {
+            // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
+            // tall, vertically centered, with a small label. Applied to the base
+            // `.p-chip` so every chip (Content Status, locale, relationship, etc.)
+            // gets the size without per-template classes. PrimeNG has no chip size
+            // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
+            css: `
+                .p-chip {
+                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
+                    font-size: var(--text-xs); /* 0.75rem */
+                }
+            `
+        },
+        tag: {
+            // Status tags follow the dotCMS design spec globally (not per-instance, so a
+            // forgotten class can never make one look different): a fully-rounded pill with
+            // a tinted background + dark text instead of Lara's default small-radius solid
+            // fill + white text. Soft per-severity colors use PrimeNG palette tokens
+            // ({green.100}/{green.700} map 1:1 to the design); shape/typography are expressed
+            // with Tailwind theme variables — same mechanism as `chip` — so there are no magic
+            // numbers. `calc(infinity * 1px)` is exactly what Tailwind's `rounded-full` emits;
+            // there is no --radius-full token.
+            css: `
+                .p-tag {
+                    height: calc(var(--spacing) * 7); /* 1.75rem — same fixed height as chip */
+                    border-radius: calc(infinity * 1px);
+                    padding: 0 calc(var(--spacing) * 3); /* 0 0.75rem — vertical centering via inline-flex */
+                    font-weight: var(--font-weight-medium); /* 500 */
+                }
+            `,
+            // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
+            // {x.700}) instead of Lara's solid fills, so status tags read consistently and match
+            // the version-history chips (which use bg-{color}-100 / text-{color}-700) 1:1.
+            // `secondary` is omitted — Lara already maps it to surface.100/surface.600 (soft gray).
+            colorScheme: {
+                light: {
+                    success: {
+                        background: '{green.100}',
+                        color: '{green.700}'
+                    },
+                    info: {
+                        background: '{blue.100}',
+                        color: '{blue.700}'
+                    },
+                    warn: {
+                        background: '{yellow.100}',
+                        color: '{yellow.700}'
+                    },
+                    danger: {
+                        background: '{red.100}',
+                        color: '{red.700}'
+                    }
+                }
+            }
+        },
+        tabs: {
+            // Underline-style tabs per the design: the active indicator sits on the BOTTOM
+            // border (Lara defaults to a 2px TOP border) and tabs have no static background
+            // (Lara fills inactive tabs with surface-50). The active state still reads via the
+            // primary bottom border + primary text (tab.activeBorderColor / activeColor).
+            tab: {
+                borderWidth: '0 0 2px 0'
+            },
+            colorScheme: {
+                light: {
+                    tab: {
+                        background: 'transparent',
+                        hoverBackground: 'transparent',
+                        activeBackground: 'transparent'
+                    }
+                }
+            }
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
