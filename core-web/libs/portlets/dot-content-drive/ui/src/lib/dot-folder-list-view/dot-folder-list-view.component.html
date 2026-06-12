@@ -116,9 +116,9 @@
                 </td>
                 <td data-testId="item-language">
                     @if (!isFolder) {
-                        <p-chip
-                            class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
-                            [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
+                        <p-tag
+                            severity="info"
+                            [value]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
                 </td>
 
