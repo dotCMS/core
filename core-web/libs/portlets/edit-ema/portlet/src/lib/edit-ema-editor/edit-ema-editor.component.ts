@@ -60,7 +60,13 @@ import {
 import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSPageAsset,
+    DotCMSURLContentMap,
+    DotCMSUVEAction,
+    UVE_MODE
+} from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
@@ -420,7 +426,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
 
-        if (currentLanguage && !currentLanguage?.translated) {
+        if (currentLanguage && !currentLanguage.translated) {
             this.createNewTranslation(currentLanguage, page);
         }
     });
@@ -1704,8 +1710,21 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.translatePage({ page, newLanguage: language.id });
             },
             reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
+                // The page is already loaded in the target language.
+                // Keep it if any contentlet on the page is in that language;
+                // otherwise revert to the first language that has a page version.
+                const pageAsset = untracked(() => this.uveStore.pageAsset());
+                const hasContent =
+                    pageAsset &&
+                    this.#pageHasContentInLanguage(pageAsset.containers, language.id);
+
+                if (!hasContent) {
+                    const pageLanguages = untracked(() => this.uveStore.pageLanguages());
+                    const revertLang = pageLanguages.find(
+                        (l) => l.translated && l.id !== language.id
+                    );
+                    this.uveStore.pageLoad({ language_id: (revertLang?.id ?? 1).toString() });
+                }
             }
         });
     }
@@ -1715,13 +1734,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Use the Page Language to navigate back to the current language
-     *
-     * @memberof DotEmaShellComponent
+     * Returns true if at least one contentlet in the page containers has a version
+     * in the given language.
      */
-    #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
+    #pageHasContentInLanguage(
+        containers: DotCMSPageAsset['containers'],
+        targetLanguageId: number
+    ): boolean {
+        return Object.values(containers).some((entry) =>
+            Object.values(entry.contentlets).some((contentletList) =>
+                contentletList.some((c) => c.languageId === targetLanguageId)
+            )
+        );
     }
 
     #clientPayload() {
