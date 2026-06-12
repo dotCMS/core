@@ -211,12 +211,26 @@ export class DotContentDriveWorkflowFilterComponent {
     /** Left checkbox: toggle scheme membership; dropping a scheme drops its step. */
     protected onSchemeToggle(schemeId: string): void {
         const selection = this.$selection();
-        const next = selection.some((entry) => entry.scheme === schemeId)
+        const wasSelected = selection.some((entry) => entry.scheme === schemeId);
+        const next = wasSelected
             ? selection.filter((entry) => entry.scheme !== schemeId)
             : [...selection, { scheme: schemeId }];
 
         this.$selection.set(next);
         this.#syncStore();
+
+        if (!wasSelected) {
+            // Checking a scheme focuses it, so its steps load on the right —
+            // keeps the checkbox click consistent with a title click.
+            this.#focusScheme(schemeId);
+        } else if (this.$focusedScheme() === schemeId) {
+            // Unchecking the scheme you're viewing clears the right column.
+            // There's no "all steps" view (steps are per-scheme), so the
+            // natural empty state is no focus and no steps. Unchecking a
+            // scheme you're NOT viewing leaves the right column untouched.
+            this.$focusedScheme.set(null);
+            patchState(this.$state, { steps: [] });
+        }
     }
 
     /** Right radio: pin/replace the step for the focused scheme (single per scheme). */

@@ -215,7 +215,8 @@ export const initialRootState: EditContentState = {
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,
-        isBetaMessageVisible: true
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
     },
 
     // Information state

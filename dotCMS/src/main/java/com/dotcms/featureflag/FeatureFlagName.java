@@ -72,4 +72,6 @@ public interface FeatureFlagName {
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED}.
      */
     String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
+
+    String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
 }
