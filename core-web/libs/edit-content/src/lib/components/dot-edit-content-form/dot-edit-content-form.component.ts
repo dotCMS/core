@@ -30,7 +30,6 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
-import { Tag, TagModule } from 'primeng/tag';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -44,10 +43,11 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
+    DotContentState,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusPipe, DotMessagePipe } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
@@ -68,30 +68,6 @@ import {
 } from '../../utils/functions.util';
 import { blockEditorRequiredValidator } from '../../utils/validators';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
-
-/**
- * Maps a contentlet status label to its PrimeNG Tag severity.
- *
- * Kept as a pure, exported function so the mapping stays unit-testable in isolation
- * (no component/store needed) and is consumed by the `$statusSeverity` computed.
- */
-export function contentStatusSeverity(status: string): Tag['severity'] {
-    switch (status) {
-        case 'Published':
-            return 'success';
-        case 'Archived':
-            return 'danger';
-        case 'Revision':
-        case 'New':
-            // Both render as a soft blue pill, matching the shared dot-contentlet-status-badge
-            // (Content Drive) where Revision and brand-new content are blue.
-            return 'info';
-        default:
-            // Draft (and any unknown status) → `warn`, themed as soft yellow (see tag preset)
-            // to match the version-history "Draft" chip.
-            return 'warn';
-    }
-}
 
 /**
  * DotEditContentFormComponent
@@ -124,14 +100,13 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
         DotEditContentFieldComponent,
         ButtonModule,
         TabsModule,
-        TagModule,
+        DotContentletStatusBadgeComponent,
         TabViewInsertDirective,
         DotMessagePipe,
         DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet
     ],
-    providers: [DotContentletStatusPipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeIn', [
@@ -156,7 +131,6 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
     readonly #appRef = inject(ApplicationRef);
-    readonly #statusPipe = inject(DotContentletStatusPipe);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -209,22 +183,15 @@ export class DotEditContentFormComponent implements OnInit {
     });
 
     /**
-     * Status label shown in the command-bar tag. A brand-new contentlet has no status yet,
-     * so it shows "New"; otherwise the contentlet state is mapped via DotContentletStatusPipe.
+     * Publish state passed to the shared status badge in the command bar. A brand-new
+     * contentlet has no state yet, so it resolves to `null` and the badge renders the
+     * translated "New" label; otherwise the current contentlet drives the badge.
      *
      * @memberof DotEditContentFormComponent
      */
-    $contentStatus = computed(() =>
-        this.$store.isNew() ? 'New' : this.#statusPipe.transform(this.$store.contentlet())
+    $statusState = computed<DotContentState | null>(() =>
+        this.$store.isNew() ? null : this.$store.contentlet()
     );
-
-    /**
-     * PrimeNG Tag severity derived from the current status label. A computed (not a template
-     * method) so it is memoized and only recomputes when the status changes.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $statusSeverity = computed<Tag['severity']>(() => contentStatusSeverity(this.$contentStatus()));
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
@@ -289,8 +256,7 @@ export class DotEditContentFormComponent implements OnInit {
             contentType: this.$store.contentType(),
             currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
             currentIdentifier: this.$store.currentIdentifier(),
-            $contentStatus: this.$contentStatus,
-            $statusSeverity: this.$statusSeverity,
+            $statusState: this.$statusState,
             showPreview: () => this.showPreview()
         };
     });

@@ -58,7 +58,6 @@ export * from './lib/services/clipboard/ClipboardUtil';
 export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
 export * from './lib/services/dot-browsing/dot-browsing.service';
 // Pipes
-export * from './lib/dot-contentlet-status/dot-contentlet-status.pipe';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/pipes/dot-file-size-format/dot-file-size-format.pipe';

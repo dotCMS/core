@@ -23,10 +23,9 @@ type DotContentletStatusSeverity = (typeof STATUS_SEVERITY)[DotContentletStatus]
 /**
  * Renders the publish status of a contentlet as a single PrimeNG Tag.
  *
- * The status is derived from the `state` input through `status()`, which mirrors
- * the logic of `DotContentletStatusPipe`. `severity()` maps that status to a Tag
- * severity, and `label()` resolves the displayed text — translating only the
- * "New" badge shown when `state` is null.
+ * The status is derived from the `state` input through `status()`. `severity()`
+ * maps that status to a Tag severity, and `label()` resolves the displayed
+ * text — translating only the "New" badge shown when `state` is null.
  */
 @Component({
     selector: 'dot-contentlet-status-badge',

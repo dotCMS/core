@@ -75,8 +75,8 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `,
             // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
-            // {x.700}) instead of Lara's solid fills, so status tags read consistently and match
-            // the version-history chips (which use bg-{color}-100 / text-{color}-700) 1:1.
+            // {x.700}) instead of Lara's solid fills, so status tags read consistently across the
+            // app (status badges, version-history states, locale labels) per the design reference.
             // `secondary` is omitted — Lara already maps it to surface.100/surface.600 (soft gray).
             colorScheme: {
                 light: {
