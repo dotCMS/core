@@ -77,6 +77,27 @@ Custom SCSS is only allowed for:
 - **Flat SCSS structure** — no deeply nested selectors (max 3 levels).
 - **No `!important`** unless justified with a comment.
 
+## Tags vs Chips
+
+PrimeNG ships two visually similar but semantically different components. Pick by intent, not appearance.
+
+- **`p-tag`** — informative, read-only status display. Use it for anything that communicates state the user does not interact with directly: content status badges, locale labels, etc. Tags carry a `severity`, so colors come from native severity states (configured once in the `tag` block of the theme preset), never from per-template classes.
+- **`p-chip`** — interactive or removable elements: filters, removable selections, anything the user can click or dismiss. Chips are mostly neutral gray and do not express severity.
+
+### Severity mapping convention
+
+| Severity  | Status |
+|-----------|--------|
+| `success` | Published / live |
+| `danger`  | Archived / deleted |
+| `info`    | Revision / new |
+| `warn`    | Draft |
+
+### Rules
+
+- **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
+- **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
+
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs

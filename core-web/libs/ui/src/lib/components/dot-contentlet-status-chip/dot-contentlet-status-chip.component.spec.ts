@@ -1,33 +1,29 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentletStatusChipComponent } from './dot-contentlet-status-chip.component';
 
 describe('DotContentletStatusChipComponent', () => {
     let spectator: Spectator<DotContentletStatusChipComponent>;
 
+    const messageServiceMock = new MockDotMessageService({ New: 'New Translated' });
+
     const createComponent = createComponentFactory({
-        component: DotContentletStatusChipComponent
+        component: DotContentletStatusChipComponent,
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
+
+    const getTag = () => spectator.query(byTestId('status-tag'));
 
     beforeEach(() => {
-        // Create component with a default state since state is required
-        spectator = createComponent({
-            props: {
-                state: {
-                    live: false,
-                    working: false,
-                    hasLiveVersion: false,
-                    archived: false,
-                    deleted: false
-                }
-            }
-        });
+        spectator = createComponent();
     });
 
-    describe('Status chip rendering', () => {
-        it('should render "Published" chip with green styling when contentlet is published', () => {
+    describe('Status tag rendering', () => {
+        it('should render a "Published" tag with success severity when contentlet is published', () => {
             const state: DotContentState = {
                 live: true,
                 working: true,
@@ -37,16 +33,14 @@ describe('DotContentletStatusChipComponent', () => {
             };
 
             spectator.setInput('state', state);
-            spectator.detectChanges();
 
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-green-100!');
-            expect(chip).toHaveClass('text-green-700!');
-            expect(chip?.textContent?.trim()).toBe('Published');
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-success');
+            expect(tag).toHaveText('Published');
         });
 
-        it('should render "Archived" chip with red styling when contentlet is archived', () => {
+        it('should render an "Archived" tag with danger severity when contentlet is archived', () => {
             const state: DotContentState = {
                 archived: true,
                 live: false,
@@ -55,16 +49,14 @@ describe('DotContentletStatusChipComponent', () => {
             };
 
             spectator.setInput('state', state);
-            spectator.detectChanges();
 
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-red-100!');
-            expect(chip).toHaveClass('text-red-700!');
-            expect(chip?.textContent?.trim()).toBe('Archived');
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-danger');
+            expect(tag).toHaveText('Archived');
         });
 
-        it('should render "Archived" chip with red styling when contentlet is deleted', () => {
+        it('should render an "Archived" tag with danger severity when contentlet is deleted', () => {
             const state: DotContentState = {
                 deleted: true,
                 live: false,
@@ -73,16 +65,14 @@ describe('DotContentletStatusChipComponent', () => {
             };
 
             spectator.setInput('state', state);
-            spectator.detectChanges();
 
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-red-100!');
-            expect(chip).toHaveClass('text-red-700!');
-            expect(chip?.textContent?.trim()).toBe('Archived');
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-danger');
+            expect(tag).toHaveText('Archived');
         });
 
-        it('should render "Revision" chip with blue styling when contentlet has live version but is not live', () => {
+        it('should render a "Revision" tag with info severity when contentlet has live version but is not live', () => {
             const state: DotContentState = {
                 live: false,
                 working: false,
@@ -92,16 +82,14 @@ describe('DotContentletStatusChipComponent', () => {
             };
 
             spectator.setInput('state', state);
-            spectator.detectChanges();
 
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-blue-100!');
-            expect(chip).toHaveClass('text-blue-700!');
-            expect(chip?.textContent?.trim()).toBe('Revision');
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-info');
+            expect(tag).toHaveText('Revision');
         });
 
-        it('should render "Draft" chip with yellow styling when contentlet is draft', () => {
+        it('should render a "Draft" tag with warn severity when contentlet is draft', () => {
             const state: DotContentState = {
                 live: false,
                 working: false,
@@ -111,53 +99,32 @@ describe('DotContentletStatusChipComponent', () => {
             };
 
             spectator.setInput('state', state);
-            spectator.detectChanges();
 
-            const chip = spectator.query('p-chip');
-            expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-yellow-100!');
-            expect(chip).toHaveClass('text-yellow-700!');
-            expect(chip?.textContent?.trim()).toBe('Draft');
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-warn');
+            expect(tag).toHaveText('Draft');
         });
 
-        it('should render chip for all status types', () => {
-            const states: DotContentState[] = [
-                {
-                    live: true,
-                    working: true,
-                    hasLiveVersion: true,
-                    archived: false,
-                    deleted: false
-                },
-                {
-                    archived: true,
-                    live: false,
-                    working: false,
-                    hasLiveVersion: false
-                },
-                {
-                    live: false,
-                    working: false,
-                    hasLiveVersion: true,
-                    archived: false,
-                    deleted: false
-                },
-                {
-                    live: false,
-                    working: false,
-                    hasLiveVersion: false,
-                    archived: false,
-                    deleted: false
-                }
-            ];
+        it('should render a translated "New" tag with info severity when state is null', () => {
+            spectator.setInput('state', null);
 
-            states.forEach((state) => {
-                spectator.setInput('state', state);
-                spectator.detectChanges();
+            const tag = getTag();
+            expect(tag).toBeTruthy();
+            expect(tag).toHaveClass('p-tag-info');
+            expect(tag).toHaveText('New Translated');
+        });
 
-                const chip = spectator.query('p-chip');
-                expect(chip).toBeTruthy();
+        it('should never render a p-chip', () => {
+            spectator.setInput('state', {
+                live: true,
+                working: true,
+                hasLiveVersion: true,
+                archived: false,
+                deleted: false
             });
+
+            expect(spectator.query('p-chip')).toBeNull();
         });
     });
 });
