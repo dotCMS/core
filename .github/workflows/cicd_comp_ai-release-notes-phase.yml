@@ -49,7 +49,6 @@ jobs:
     permissions:
       contents: write      # gh release view + gh release edit
       pull-requests: read  # Octokit pulls.get for PR details
-      id-token: write      # Required by claude-code-action for OIDC
     # All run: blocks reference these via $RELEASE_TAG / $REPO instead of
     # direct ${{ }} interpolation to prevent shell injection from crafted tags.
     env:
@@ -131,27 +130,20 @@ jobs:
           echo "- **Skipped**: ${SKIPPED}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble prompt
-        id: prompt
         run: |
-          # Build the full prompt: template + JSON data
           cat .github/scripts/gather-release-data/prompt-template.md > /tmp/claude-prompt.md
           printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/claude-prompt.md
           cat /tmp/release-data.json >> /tmp/claude-prompt.md
           printf '\n```\n' >> /tmp/claude-prompt.md
 
-          # Pass prompt content via environment file to avoid shell escaping issues
-          {
-            echo 'PROMPT_CONTENT<<PROMPT_EOF'
-            cat /tmp/claude-prompt.md
-            echo 'PROMPT_EOF'
-          } >> "$GITHUB_ENV"
-
       - name: Generate release notes with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: ${{ env.PROMPT_CONTENT }}
-          claude_args: "--allowedTools Write --max-turns 3"
+          prompt_file: /tmp/claude-prompt.md
+          allowed_tools: "Write"
+          max_turns: 3
+          timeout_minutes: 10
 
       - name: Update release description
         env:
