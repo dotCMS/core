@@ -160,6 +160,15 @@ public class PageResourceHelper implements Serializable {
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         final List<ContentView> responseViews = new ArrayList<>();
 
+        final int totalContentlets = containerEntries.stream()
+                .mapToInt(e -> UtilMethods.isSet(e.getContentIds()) ? e.getContentIds().size() : 0).sum();
+        Logger.debug(this, () -> String.format(
+                "Page content save: pageId='%s' user='%s' containerEntries=%d totalContentlets=%d " +
+                        "variant='%s' language=%d",
+                pageId, user != null ? user.getUserId() : "unknown",
+                containerEntries.size(), totalContentlets,
+                variantName, language != null ? language.getId() : -1L));
+
         for (final ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final List<String> contentIds = containerEntry.getContentIds();
