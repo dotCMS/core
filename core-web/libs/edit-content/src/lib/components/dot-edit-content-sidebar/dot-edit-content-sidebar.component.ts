@@ -81,9 +81,9 @@ export class DotEditContentSidebarComponent {
     readonly $isLocaleSelectorV2 = toSignal(
         this.#dotPropertiesService.getFeatureFlagWithDefault(
             FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2,
-            false
+            true
         ),
-        { initialValue: false }
+        { initialValue: true }
     );
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
