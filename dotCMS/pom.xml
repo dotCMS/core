@@ -515,6 +515,11 @@
             <artifactId>langchain4j-open-ai-official</artifactId>
         </dependency>
         <dependency>
+            <!-- LangChain4J Anthropic provider: Chat model via the Anthropic Messages API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+        </dependency>
+        <dependency>
             <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-vertex-ai-gemini</artifactId>

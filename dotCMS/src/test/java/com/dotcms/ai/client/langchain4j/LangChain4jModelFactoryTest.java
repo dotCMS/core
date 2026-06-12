@@ -472,7 +472,124 @@ public class LangChain4jModelFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
+    // ── Anthropic ─────────────────────────────────────────────────────────────
+
+    /**
+     * Given a valid Anthropic config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(anthropicConfig("claude-sonnet-4-6"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid Anthropic config with optional parameters,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(4096)
+                .maxRetries(2)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Anthropic config,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_anthropic_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
+    /**
+     * Given an Anthropic config with a custom endpoint override,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_customEndpoint_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .apiKey("test-key")
+                .endpoint("https://my-gateway.example.com/anthropic/v1")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model("claude-sonnet-4-6")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_anthropic_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an Anthropic config,
+     * When buildEmbeddingModel is called,
+     * Then an UnsupportedOperationException is thrown since Anthropic has no embeddings API.
+     */
+    @Test
+    public void test_buildEmbeddingModel_anthropic_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
+    /**
+     * Given an Anthropic config,
+     * When buildImageModel is called,
+     * Then an UnsupportedOperationException is thrown since Anthropic has no image API.
+     */
+    @Test
+    public void test_buildImageModel_anthropic_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(anthropicConfig("claude-sonnet-4-6")));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static ProviderConfig anthropicConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("anthropic")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
 
     private static ProviderConfig openAiConfig(final String model) {
         return ImmutableProviderConfig.builder()

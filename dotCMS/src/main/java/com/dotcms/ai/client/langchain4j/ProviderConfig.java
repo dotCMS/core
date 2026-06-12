@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -41,6 +41,13 @@ import java.util.List;
  *   <li>{@code region}</li>
  *   <li>{@code accessKeyId}</li>
  *   <li>{@code secretAccessKey}</li>
+ * </ul>
+ *
+ * <p>Anthropic (chat only — Anthropic has no embeddings or image APIs):
+ * <ul>
+ *   <li>{@code apiKey} – Anthropic API key</li>
+ *   <li>{@code model} – e.g. {@code claude-sonnet-4-6}, {@code claude-haiku-4-5}</li>
+ *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
  * </ul>
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
