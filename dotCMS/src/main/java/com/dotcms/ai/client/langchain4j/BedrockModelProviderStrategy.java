@@ -140,11 +140,13 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
                     .build();
         }
         if (modelLower.startsWith("amazon.titan-")) {
-            return BedrockTitanEmbeddingModel.builder()
-                    .model(model)
-                    .region(region)
-                    .credentialsProvider(credentials)
-                    .build();
+            final BedrockTitanEmbeddingModel.BedrockTitanEmbeddingModelBuilder<?, ?> builder =
+                    BedrockTitanEmbeddingModel.builder()
+                            .model(model)
+                            .region(region)
+                            .credentialsProvider(credentials);
+            if (config.dimensions() != null) builder.dimensions(config.dimensions());
+            return builder.build();
         }
         throw new IllegalArgumentException(
                 "Unsupported Bedrock embedding model: '" + model + "'. Supported families: cohere.*, amazon.titan-*");

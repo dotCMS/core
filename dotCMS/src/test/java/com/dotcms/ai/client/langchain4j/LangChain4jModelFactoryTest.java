@@ -218,6 +218,19 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildEmbeddingModel_bedrock_titan_withDimensions_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("amazon.titan-embed-text-v2:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .dimensions(1024)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    @Test
     public void test_buildEmbeddingModel_bedrock_cohere_returnsModel() {
         final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("cohere.embed-english-v3"));
         assertNotNull(model);
