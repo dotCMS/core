@@ -52,19 +52,22 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     }
 
 
+    // These run on every request-cost increment, so they return the values resolved at
+    // construction time rather than walking Config on each call. Config changes are picked
+    // up when the application-scoped bean is recreated.
     @Override
     public boolean isEnabled() {
-        return Config.getBooleanProperty("RATE_LIMIT_ENABLED", enabled);
+        return enabled;
     }
 
     @Override
     public long getMaximumBucketSize() {
-        return Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", maximumBucketSize);
+        return maximumBucketSize;
     }
 
     @Override
     public long getRefillPerSecond() {
-        return Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", refillPerSecond);
+        return refillPerSecond;
     }
 
     @Override

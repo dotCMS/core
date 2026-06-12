@@ -68,15 +68,16 @@ public class Logger {
     }
 
     public static void info(Class clazz, final Supplier<String> message) {
-       
+        if (isInfoEnabled(clazz)) {
             info(clazz, message.get());
-        
+        }
     }
 
     public static void info(final Object ob, final Supplier<String> message) {
-
-            info(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isInfoEnabled(clazz)) {
+            info(clazz, message.get());
+        }
     }
 
     public static void info(Object ob, String message) {
@@ -104,18 +105,23 @@ public class Logger {
     }
 
     public static void debug(final Object ob, final Supplier<String> message) {
-        debug(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get());
+        }
     }
 
     public static void debug(final String className, final Supplier<String> message) {
-        debug(className, message.get());
-        
+        if (isDebugEnabled(className)) {
+            debug(className, message.get());
+        }
     }
 
     public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
-        debug(ob.getClass(), message.get(), throwable);
-
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get(), throwable);
+        }
     }
 
     public static void debug(Object ob, String message) {
@@ -529,21 +535,28 @@ public class Logger {
         return isVelocityMessage(obj.getClass());
     }
 
+    /**
+     * Memoized per class name: this runs on every Class-keyed log call, and the lowercased
+     * name allocation showed up in allocation profiles.
+     */
+    private static final Cache<String, Boolean> velocityClassMap =
+                    Caffeine.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterAccess(6, TimeUnit.HOURS)
+                        .build();
+
     private static boolean isVelocityMessage(Class clazz) {
-        boolean ret = false;
-        if (clazz != null && clazz.getName() != null) {
-            String name = clazz.getName().toLowerCase();
-            ret = name.contains("velocity") || name.contains("viewtool");
-
-            if (!ret) {
-                ret = ViewTool.class.isAssignableFrom(clazz);
-            }
-            if (!ret) {
-                ret = VelocityServlet.class.isAssignableFrom(clazz);
-            }
+        if (clazz == null || clazz.getName() == null) {
+            return false;
         }
-        return ret;
+        return velocityClassMap.get(clazz.getName(), name -> computeIsVelocityMessage(clazz));
+    }
 
+    private static boolean computeIsVelocityMessage(final Class clazz) {
+        final String name = clazz.getName().toLowerCase();
+        return name.contains("velocity") || name.contains("viewtool")
+                || ViewTool.class.isAssignableFrom(clazz)
+                || VelocityServlet.class.isAssignableFrom(clazz);
     }
 
     /**
