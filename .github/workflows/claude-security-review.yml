@@ -92,6 +92,14 @@ jobs:
           ref: ${{ steps.pr.outputs.head_sha }}
           fetch-depth: 0
 
+      - name: Save prompt template (before checkout overwrites it)
+        run: |
+          # The checkout above replaces the working tree with the target PR's code,
+          # which does not contain this workflow's prompt file. Copy it to /tmp first
+          # so the envsubst step can find it regardless of what branch is checked out.
+          git show origin/security/add-claude-security-review-workflow:.github/claude-security-review-prompt.md \
+            > /tmp/claude-security-review-prompt.md
+
       - name: Check for prior Semgrep review (skip Claude if present)
         id: semgrep
         uses: actions/github-script@v7
@@ -166,7 +174,7 @@ jobs:
           BASE_SHA:  ${{ steps.pr.outputs.base_sha }}
           HEAD_SHA:  ${{ steps.pr.outputs.head_sha }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
-        run: envsubst < .github/claude-security-review-prompt.md > /tmp/claude-prompt.md
+        run: envsubst < /tmp/claude-security-review-prompt.md > /tmp/claude-prompt.md
 
       - name: Run Claude security review
         if: steps.semgrep.outputs.found != 'true'
