@@ -5139,11 +5139,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // READ are preserved by deleteRelatedContent. New rows are appended after the
             // highest surviving position so their relative order never collides with them;
             // when nothing survived, positions simply start at 1
+            // The next position is only needed when this contentlet is the parent side: the
+            // child branch below positions its rows via positionInParent instead
             int treePosition = related.isHasParent()
                     ? TreeFactory.getNextTreeOrderByParentAndRelationType(
                             contentlet.getIdentifier(), relationship.getRelationTypeValue())
-                    : TreeFactory.getNextTreeOrderByChildAndRelationType(
-                            contentlet.getIdentifier(), relationship.getRelationTypeValue());
+                    : 1;
             int positionInParent = 1;
             final List<Tree> treesToInsert = new ArrayList<>();
             for (final Contentlet relatedContent : related.getRecords()) {

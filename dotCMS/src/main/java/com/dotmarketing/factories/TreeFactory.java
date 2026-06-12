@@ -7,7 +7,9 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 
 import java.util.ArrayList;
@@ -442,6 +444,20 @@ public class TreeFactory {
     }
 
     /**
+     * Guards the private methods that interpolate tree column names into SQL: only the
+     * {@code parent} and {@code child} columns are legal. Any other value is a programming
+     * error and is rejected before it can reach the database.
+     *
+     * @param columnName The column name to validate
+     */
+    private static void assertTreeColumn(final String columnName) {
+        if (!"parent".equals(columnName) && !"child".equals(columnName)) {
+            throw new IllegalArgumentException("Invalid tree column name: " + columnName
+                    + ". Only 'parent' and 'child' are allowed");
+        }
+    }
+
+    /**
      * Shared lookup for the public identifier methods: returns the values of the
      * {@code selectColumn} for the tree rows matching the given {@code whereColumn} value and
      * relation type, ordered by tree order.
@@ -454,6 +470,8 @@ public class TreeFactory {
      */
     private static List<String> getRelatedIds(final String selectColumn, final String whereColumn,
             final String id, final String relationType) {
+        assertTreeColumn(selectColumn);
+        assertTreeColumn(whereColumn);
         try {
             return new DotConnect()
                     .setSQL("SELECT " + selectColumn + " FROM tree WHERE " + whereColumn
@@ -481,18 +499,6 @@ public class TreeFactory {
         return getNextTreeOrder("parent", parentId, relationType);
     }
 
-    /**
-     * Returns the next available tree order for the parents of the given child under the given
-     * relation type: the highest existing tree order plus one, or 1 when no rows exist.
-     *
-     * @param childId      Identifier of the child content
-     * @param relationType The relationship type value
-     * @return The next tree order value
-     */
-    public static int getNextTreeOrderByChildAndRelationType(final String childId,
-            final String relationType) {
-        return getNextTreeOrder("child", childId, relationType);
-    }
 
     /**
      * Shared lookup for the public next-tree-order methods: returns the highest
@@ -506,6 +512,7 @@ public class TreeFactory {
      */
     private static int getNextTreeOrder(final String whereColumn, final String id,
             final String relationType) {
+        assertTreeColumn(whereColumn);
         return new DotConnect()
                 .setSQL("SELECT COALESCE(MAX(tree_order), 0) + 1 AS next_position FROM tree"
                         + " WHERE " + whereColumn + " = ? AND relation_type = ?")
@@ -559,6 +566,8 @@ public class TreeFactory {
     private static void deleteTreesScopedByRelationType(final String fixedColumn,
             final String scopedColumn, final String fixedId, final List<String> scopedIds,
             final String relationType) {
+        assertTreeColumn(fixedColumn);
+        assertTreeColumn(scopedColumn);
         if (scopedIds == null || scopedIds.isEmpty()) {
             return;
         }
@@ -608,13 +617,18 @@ public class TreeFactory {
         }
 
         try {
-            new DotConnect().executeBatch(
-                    "DELETE FROM tree WHERE child = ? AND parent = ? AND relation_type = ?",
-                    deleteParams);
-            new DotConnect().executeBatch(
-                    "INSERT INTO tree (child, parent, relation_type, tree_order) VALUES (?,?,?,?)",
-                    insertParams);
-        } catch (final DotDataException e) {
+            // Both batches must be atomic for ANY caller: when a transaction is already open
+            // (e.g. relateContent) this joins it; standalone callers get their own one, so a
+            // failed insert can never leave the delete process committed on its own
+            LocalTransaction.wrap(() -> {
+                new DotConnect().executeBatch(
+                        "DELETE FROM tree WHERE child = ? AND parent = ? AND relation_type = ?",
+                        deleteParams);
+                new DotConnect().executeBatch(
+                        "INSERT INTO tree (child, parent, relation_type, tree_order) VALUES (?,?,?,?)",
+                        insertParams);
+            });
+        } catch (final DotDataException | DotSecurityException e) {
             throw new DotStateException(e);
         }
     }

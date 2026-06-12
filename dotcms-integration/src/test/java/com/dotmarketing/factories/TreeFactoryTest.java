@@ -189,4 +189,23 @@ public class TreeFactoryTest {
         assertEquals(List.of(parent), parents);
     }
 
+    /**
+     * Method to test: {@link TreeFactory#getNextTreeOrderByParentAndRelationType(String, String)}
+     * When: no rows exist for the parent and relation type, and then a row with tree order 7 is
+     * inserted
+     * Should: return 1 first, and the highest existing tree order plus one afterwards
+     */
+    @Test
+    public void getNextTreeOrderReturnsHighestOrderPlusOne() {
+        final String parent = newId();
+        final String relationType = newRelationType();
+
+        assertEquals(1,
+                TreeFactory.getNextTreeOrderByParentAndRelationType(parent, relationType));
+
+        TreeFactory.insertTrees(List.of(new Tree(parent, newId(), relationType, 7)));
+        assertEquals(8,
+                TreeFactory.getNextTreeOrderByParentAndRelationType(parent, relationType));
+    }
+
 }
