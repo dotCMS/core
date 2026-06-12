@@ -58,6 +58,8 @@ jobs:
           fi
 
   # Interactive Claude mentions (simplified using centralized logic)
+  # Stays on Anthropic Claude — @claude is intentionally the Claude brand and
+  # developers expect Claude-specific tool use (Bash, Agent, etc.) when they invoke it.
   claude-interactive:
     needs: security-check
     # Never cancel in-progress interactive sessions — a user may be mid-conversation
@@ -80,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.2
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -94,13 +96,12 @@ jobs:
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-  # Automatic PR reviews (no @claude mention)
-  claude-automatic-review:
+  # Load the GPT review prompt from its dedicated file so prompt edits don't
+  # require touching the workflow YAML (which is locked to trunk on open PRs).
+  # Only runs when a GPT automatic review would actually fire, avoiding a
+  # wasted checkout on PRs that will use the @claude interactive path instead.
+  load-gpt-prompt:
     needs: security-check
-    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
-    concurrency:
-      group: claude-automatic-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       github.event_name == 'pull_request' &&
@@ -110,15 +111,43 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      prompt: ${{ steps.read.outputs.prompt }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          {
+            echo 'prompt<<PROMPT_EOF'
+            cat .github/prompts/gpt-auto-review.md
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  # Automatic PR reviews (no @claude mention)
+  # Uses GPT-5.5 via AWS Bedrock Mantle for model diversity — Claude writes code here,
+  # GPT reviews it so training/weighting biases from one model family don't carry into
+  # the review. Interactive @claude sessions remain on Anthropic Claude (job above).
+  # Prompt lives in .github/prompts/gpt-auto-review.md — edit it there, not here.
+  gpt-automatic-review:
+    needs: [security-check, load-gpt-prompt]
+    # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
+    # or failed this job is skipped too.
+    if: needs.load-gpt-prompt.result == 'success'
+    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
+    concurrency:
+      group: claude-automatic-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.2
     with:
-      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      model_id: openai.gpt-5.5
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
-      prompt: |
-        Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
-      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
-      timeout_minutes: 15
+      reasoning_effort: medium
+      prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
+      timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
     secrets:
