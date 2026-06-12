@@ -14,8 +14,8 @@ import {
 import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { Menu, MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -34,7 +34,7 @@ import {
 
 /**
  * Component that displays a single history timeline item with version details and actions.
- * Shows version information, user details, status chips, and provides action menu.
+ * Shows version information, user details, status tags, and provides action menu.
  *
  * @example
  * ```html
@@ -49,7 +49,7 @@ import {
     imports: [
         AvatarModule,
         ButtonModule,
-        ChipModule,
+        TagModule,
         MenuModule,
         TooltipModule,
         DotCopyButtonComponent,
