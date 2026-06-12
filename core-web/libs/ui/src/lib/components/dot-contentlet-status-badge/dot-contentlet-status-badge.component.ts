@@ -5,20 +5,20 @@ import { TagModule } from 'primeng/tag';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
 
-/** The set of publish statuses a contentlet can be rendered with. */
-type DotContentletStatus = 'Published' | 'Archived' | 'Revision' | 'Draft' | 'New';
-
-/** PrimeNG Tag severities used to render content status badges. */
-type DotContentletStatusSeverity = 'success' | 'danger' | 'info' | 'warn';
-
-/** Maps each content status to its PrimeNG Tag severity. Exhaustiveness is compiler-enforced. */
-const STATUS_SEVERITY: Record<DotContentletStatus, DotContentletStatusSeverity> = {
+/** Maps each content status to its PrimeNG Tag severity — the single source of truth. */
+const STATUS_SEVERITY = {
     Published: 'success',
     Archived: 'danger',
     Revision: 'info',
     Draft: 'warn',
     New: 'info'
-};
+} as const;
+
+/** The set of publish statuses a contentlet can be rendered with, inferred from the map. */
+type DotContentletStatus = keyof typeof STATUS_SEVERITY;
+
+/** PrimeNG Tag severities used to render content status badges, inferred from the map. */
+type DotContentletStatusSeverity = (typeof STATUS_SEVERITY)[DotContentletStatus];
 
 /**
  * Renders the publish status of a contentlet as a single PrimeNG Tag.
