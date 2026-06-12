@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code google_ai}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -41,6 +41,14 @@ import java.util.List;
  *   <li>{@code region}</li>
  *   <li>{@code accessKeyId}</li>
  *   <li>{@code secretAccessKey}</li>
+ * </ul>
+ *
+ * <p>Google AI (Gemini API / AI Studio — chat and embeddings; image not supported):
+ * <ul>
+ *   <li>{@code apiKey} – Google AI Studio API key</li>
+ *   <li>{@code model} – e.g. {@code gemini-2.0-flash}, {@code gemini-embedding-001}</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
+ *   <li>{@code endpoint} – optional base URL override</li>
  * </ul>
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
