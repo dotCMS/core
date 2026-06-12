@@ -3,10 +3,13 @@ package com.dotcms.cost;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Suppliers;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -17,6 +20,14 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     final long maximumBucketSize;
     final boolean enabled;
 
+    // These values are read on every request-cost increment, but a Config walk per call is an
+    // allocation hotspot. The TTL-memoized suppliers keep runtime overrides (system table /
+    // config refresh) working with at most CONFIG_REFRESH_SECONDS of staleness.
+    private static final long CONFIG_REFRESH_SECONDS = 30;
+    private final Supplier<Boolean> enabledSupplier;
+    private final Supplier<Long> refillPerSecondSupplier;
+    private final Supplier<Long> maximumBucketSizeSupplier;
+
     private final AtomicLong lastRefill = new AtomicLong(0);
     private final AtomicLong tokenCount = new AtomicLong(0);
     String REQUEST_COST_HEADER_TOKEN_MAX = "x-dotratelimit-toks-max";
@@ -26,6 +37,15 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
         this.enabled = enabled;
         this.maximumBucketSize = maximumBucketSize;
         this.refillPerSecond = refillPerSecond;
+        this.enabledSupplier = Suppliers.memoizeWithExpiration(
+                () -> Config.getBooleanProperty("RATE_LIMIT_ENABLED", enabled),
+                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
+        this.refillPerSecondSupplier = Suppliers.memoizeWithExpiration(
+                () -> Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", refillPerSecond),
+                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
+        this.maximumBucketSizeSupplier = Suppliers.memoizeWithExpiration(
+                () -> Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", maximumBucketSize),
+                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
 
         Logger.info(this.getClass(),
                 "Rate limiting enabled: " + enabled + ", refill per second: " + refillPerSecond + ", max bucket size: "
@@ -52,22 +72,19 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     }
 
 
-    // These run on every request-cost increment, so they return the values resolved at
-    // construction time rather than walking Config on each call. Config changes are picked
-    // up when the application-scoped bean is recreated.
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return enabledSupplier.get();
     }
 
     @Override
     public long getMaximumBucketSize() {
-        return maximumBucketSize;
+        return maximumBucketSizeSupplier.get();
     }
 
     @Override
     public long getRefillPerSecond() {
-        return refillPerSecond;
+        return refillPerSecondSupplier.get();
     }
 
     @Override
