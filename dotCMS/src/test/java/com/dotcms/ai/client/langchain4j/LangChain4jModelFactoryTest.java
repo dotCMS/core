@@ -570,14 +570,46 @@ public class LangChain4jModelFactoryTest {
     }
 
     /**
-     * Given a Google AI config,
+     * Given a valid Google AI config,
      * When buildImageModel is called,
-     * Then an UnsupportedOperationException is thrown since image generation is not supported.
+     * Then an ImageModel is returned successfully.
      */
     @Test
-    public void test_buildImageModel_googleAi_throws() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> LangChain4jModelFactory.buildImageModel(googleAiConfig("imagen-3.0")));
+    public void test_buildImageModel_googleAi_returnsModel() {
+        final ImageModel model = LangChain4jModelFactory.buildImageModel(googleAiConfig("gemini-2.5-flash-image"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a Google AI config with optional image parameters,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .apiKey("test-key")
+                .size("1K")
+                .timeout(60)
+                .maxRetries(2)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    /**
+     * Given a Google AI config without an apiKey,
+     * When buildImageModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

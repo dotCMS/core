@@ -43,11 +43,12 @@ import java.util.List;
  *   <li>{@code secretAccessKey}</li>
  * </ul>
  *
- * <p>Google AI (Gemini API / AI Studio — chat and embeddings; image not supported):
+ * <p>Google AI (Gemini API / AI Studio — chat, embeddings and image):
  * <ul>
  *   <li>{@code apiKey} – Google AI Studio API key</li>
- *   <li>{@code model} – e.g. {@code gemini-2.0-flash}, {@code gemini-embedding-001}</li>
+ *   <li>{@code model} – e.g. {@code gemini-2.0-flash}, {@code gemini-embedding-001}, {@code gemini-2.5-flash-image}</li>
  *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
+ *   <li>{@code size} – image size, e.g. {@code 1K}, {@code 2K} (image only)</li>
  *   <li>{@code endpoint} – optional base URL override</li>
  * </ul>
  *

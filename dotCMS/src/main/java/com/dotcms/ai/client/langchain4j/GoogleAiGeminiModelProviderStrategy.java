@@ -6,6 +6,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiImageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiStreamingChatModel;
 import dev.langchain4j.model.image.ImageModel;
 
@@ -19,9 +20,9 @@ import java.time.Duration;
  * {@code vertex_ai} provider, which targets the same model family through Google
  * Cloud (project/location + service-account or ADC auth).
  *
- * <p>Supports chat (streaming and non-streaming) and embeddings
- * (e.g. {@code gemini-embedding-001}, {@code text-embedding-004}).
- * Image generation is not exposed by LangChain4J for this provider.
+ * <p>Supports chat (streaming and non-streaming), embeddings
+ * (e.g. {@code gemini-embedding-001}, {@code text-embedding-004}) and image
+ * generation (e.g. {@code gemini-2.5-flash-image}).
  */
 class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
 
@@ -77,8 +78,15 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
 
     @Override
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
-        throw new UnsupportedOperationException(
-                "Image generation is not supported for the Google AI Gemini provider via LangChain4J");
+        validate(config, modelType);
+        final GoogleAiGeminiImageModel.GoogleAiGeminiImageModelBuilder builder = GoogleAiGeminiImageModel.builder()
+                .apiKey(config.apiKey())
+                .modelName(config.model());
+        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
+        if (config.size() != null) builder.imageSize(config.size());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        return builder.build();
     }
 
     private void validate(final ProviderConfig config, final String modelType) {

@@ -15,8 +15,7 @@ import java.util.List;
  * and add an instance to {@link #STRATEGIES}. No other class needs to change.
  *
  * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code vertex_ai}, {@code google_ai}
- * <p>Note: {@code vertex_ai} supports chat only; {@code google_ai} supports chat and embeddings;
- * image is not available for either via LangChain4J.
+ * <p>Note: {@code vertex_ai} supports chat only; {@code google_ai} supports chat, embeddings and image.
  */
 public class LangChain4jModelFactory {
 
