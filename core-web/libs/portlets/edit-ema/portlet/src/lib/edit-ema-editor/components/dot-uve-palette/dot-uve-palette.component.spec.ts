@@ -4,11 +4,10 @@ import { MockComponent, ngMocks } from 'ng-mocks';
 import { computed, signal } from '@angular/core';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
-import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
-import { DotUVEPaletteListTypes } from './models';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
@@ -38,6 +37,7 @@ const mockUVEStore = {
     pageURI: signal('/test/page/path'),
     pageLanguageId: signal(1),
     pageVariantId: signal('DEFAULT'),
+    $allowedContentTypes: signal<Record<string, true>>({}),
     $isStyleEditorEnabled: signal(false),
     $canEditStyles: () => false, // Computed property used by component
     $styleSchema: signal(undefined),
@@ -90,6 +90,7 @@ describe('DotUvePaletteComponent', () => {
         mockUVEStore.pageVariantId.set('DEFAULT');
         mockUVEStore.$isStyleEditorEnabled.set(false);
         mockUVEStore.$styleSchema.set(undefined);
+        mockUVEStore.$allowedContentTypes.set({});
         // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
         // editor is now a computed that reflects mockActiveContentlet automatically
         mockActiveContentlet.set(null);
@@ -311,6 +312,16 @@ describe('DotUvePaletteComponent', () => {
             expect(ngMocks.input(paletteListDebugEl, 'languageId')).toBe(1);
             expect(ngMocks.input(paletteListDebugEl, 'pagePath')).toBe('/test/page/path');
             expect(ngMocks.input(paletteListDebugEl, 'variantId')).toBe('DEFAULT');
+        });
+
+        it('should thread allowedContentTypes from the store to the Favorites palette list', () => {
+            const allowed = { blog: true, banner: true } as Record<string, true>;
+            mockUVEStore.$allowedContentTypes.set(allowed);
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
+
+            const paletteListDebugEl = ngMocks.find(DotUvePaletteListComponent);
+            expect(ngMocks.input(paletteListDebugEl, 'allowedContentTypes')).toEqual(allowed);
         });
     });
 });

@@ -56,12 +56,17 @@ public enum SystemEventType {
 	/**
 	 * When a site is published
 	 */
-	PUBLISH_SITE, // todo: not used
+	PUBLISH_SITE,
 
 	/**
 	 * When a site is updated
 	 */
 	UPDATE_SITE, // todo: not used
+
+	/**
+	 * When a site is unpublished (stopped)
+	 */
+	UN_PUBLISH_SITE,
 
 	/**
 	 * When a site is archived

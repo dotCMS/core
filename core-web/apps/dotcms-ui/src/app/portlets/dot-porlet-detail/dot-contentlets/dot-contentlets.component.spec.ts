@@ -34,9 +34,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -52,7 +49,7 @@ import { DotContentletsComponent } from './dot-contentlets.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -101,10 +98,7 @@ describe('DotContentletsComponent', () => {
             DotFormatDateService,
             UserModel,
             StringUtils,
-            DotcmsEventsService,
             LoggerService,
-            DotEventsSocket,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
             DotCurrentUserService,
             DotMessageDisplayService,
