@@ -536,27 +536,22 @@ public class Logger {
     }
 
     /**
-     * Memoized per class name: this runs on every Class-keyed log call, and the lowercased
-     * name allocation showed up in allocation profiles.
+     * Memoized per class: this runs on every Class-keyed log call, and the lowercased name
+     * allocation showed up in allocation profiles. ClassValue lookups are allocation-free and
+     * entries are released with their class, so OSGi classloaders aren't pinned.
      */
-    private static final Cache<String, Boolean> velocityClassMap =
-                    Caffeine.newBuilder()
-                        .maximumSize(10000)
-                        .expireAfterAccess(6, TimeUnit.HOURS)
-                        .build();
+    private static final ClassValue<Boolean> velocityClassValue = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            final String name = type.getName().toLowerCase();
+            return name.contains("velocity") || name.contains("viewtool")
+                    || ViewTool.class.isAssignableFrom(type)
+                    || VelocityServlet.class.isAssignableFrom(type);
+        }
+    };
 
     private static boolean isVelocityMessage(Class clazz) {
-        if (clazz == null || clazz.getName() == null) {
-            return false;
-        }
-        return velocityClassMap.get(clazz.getName(), name -> computeIsVelocityMessage(clazz));
-    }
-
-    private static boolean computeIsVelocityMessage(final Class clazz) {
-        final String name = clazz.getName().toLowerCase();
-        return name.contains("velocity") || name.contains("viewtool")
-                || ViewTool.class.isAssignableFrom(clazz)
-                || VelocityServlet.class.isAssignableFrom(clazz);
+        return clazz != null && velocityClassValue.get(clazz);
     }
 
     /**

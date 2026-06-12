@@ -27,6 +27,7 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     private final Supplier<Boolean> enabledSupplier;
     private final Supplier<Long> refillPerSecondSupplier;
     private final Supplier<Long> maximumBucketSizeSupplier;
+    private final Supplier<Boolean> addHeaderInfoSupplier;
 
     private final AtomicLong lastRefill = new AtomicLong(0);
     private final AtomicLong tokenCount = new AtomicLong(0);
@@ -34,18 +35,28 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
     @VisibleForTesting
     LeakyTokenBucketImpl(boolean enabled, long refillPerSecond, long maximumBucketSize) {
+        this(enabled, refillPerSecond, maximumBucketSize,
+                TimeUnit.SECONDS.toNanos(CONFIG_REFRESH_SECONDS));
+    }
+
+    @VisibleForTesting
+    LeakyTokenBucketImpl(boolean enabled, long refillPerSecond, long maximumBucketSize,
+            long configRefreshNanos) {
         this.enabled = enabled;
         this.maximumBucketSize = maximumBucketSize;
         this.refillPerSecond = refillPerSecond;
         this.enabledSupplier = Suppliers.memoizeWithExpiration(
                 () -> Config.getBooleanProperty("RATE_LIMIT_ENABLED", enabled),
-                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
+                configRefreshNanos, TimeUnit.NANOSECONDS);
         this.refillPerSecondSupplier = Suppliers.memoizeWithExpiration(
                 () -> Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", refillPerSecond),
-                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
+                configRefreshNanos, TimeUnit.NANOSECONDS);
         this.maximumBucketSizeSupplier = Suppliers.memoizeWithExpiration(
                 () -> Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", maximumBucketSize),
-                CONFIG_REFRESH_SECONDS, TimeUnit.SECONDS);
+                configRefreshNanos, TimeUnit.NANOSECONDS);
+        this.addHeaderInfoSupplier = Suppliers.memoizeWithExpiration(
+                () -> Config.getBooleanProperty("RATE_LIMIT_ADD_HEADER_INFO", true),
+                configRefreshNanos, TimeUnit.NANOSECONDS);
 
         Logger.info(this.getClass(),
                 "Rate limiting enabled: " + enabled + ", refill per second: " + refillPerSecond + ", max bucket size: "
@@ -64,7 +75,7 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     @Override
     public Optional<Tuple2<String, String>> getHeaderInfo() {
 
-        if (!Config.getBooleanProperty("RATE_LIMIT_ADD_HEADER_INFO", true)) {
+        if (!addHeaderInfoSupplier.get()) {
             return Optional.empty();
         }
         return Optional.of(Tuple.of(REQUEST_COST_HEADER_TOKEN_MAX, getTokenCount() + "/" + getMaximumBucketSize()));
@@ -107,7 +118,7 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
             }
         }
 
-        Logger.debug(this.getClass(), "Request tokens available: " + currentCount);
+        Logger.debug(this, () -> "Request tokens available: " + currentCount);
         return true;
     }
 
