@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code openrouter}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -41,6 +41,13 @@ import java.util.List;
  *   <li>{@code region}</li>
  *   <li>{@code accessKeyId}</li>
  *   <li>{@code secretAccessKey}</li>
+ * </ul>
+ *
+ * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
+ * <ul>
+ *   <li>{@code apiKey} – OpenRouter API key</li>
+ *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4}</li>
+ *   <li>{@code endpoint} – optional override of the default base URL ({@code https://openrouter.ai/api/v1})</li>
  * </ul>
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):

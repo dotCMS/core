@@ -472,7 +472,113 @@ public class LangChain4jModelFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
+    // ── OpenRouter ────────────────────────────────────────────────────────────
+
+    /**
+     * Given a valid OpenRouter config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(openRouterConfig("openai/gpt-4o"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid OpenRouter config with optional parameters,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_openRouter_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("anthropic/claude-sonnet-4")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(2048)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config with a custom endpoint override,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_customEndpoint_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("openai/gpt-4o")
+                .apiKey("test-key")
+                .endpoint("https://my-proxy.example.com/api/v1")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("openai/gpt-4o")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_openRouter_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given an OpenRouter config,
+     * When buildEmbeddingModel is called,
+     * Then an UnsupportedOperationException is thrown since OpenRouter has no embeddings endpoint.
+     */
+    @Test
+    public void test_buildEmbeddingModel_openRouter_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(openRouterConfig("openai/text-embedding-3-small")));
+    }
+
+    /**
+     * Given an OpenRouter config,
+     * When buildImageModel is called,
+     * Then an UnsupportedOperationException is thrown since image generation is not supported.
+     */
+    @Test
+    public void test_buildImageModel_openRouter_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(openRouterConfig("openai/dall-e-3")));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static ProviderConfig openRouterConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
 
     private static ProviderConfig openAiConfig(final String model) {
         return ImmutableProviderConfig.builder()
