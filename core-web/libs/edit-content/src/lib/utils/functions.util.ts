@@ -465,23 +465,25 @@ export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
  * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
+    const defaults: UIState = {
+        view: 'form',
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
+    };
+
     try {
         const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
-            return JSON.parse(storedState);
+            return { ...defaults, ...JSON.parse(storedState) };
         }
     } catch (e) {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
-    // Default values
-    return {
-        view: 'form',
-        activeTab: 0,
-        isSidebarOpen: true,
-        activeSidebarTab: 0,
-        isBetaMessageVisible: true
-    };
+    return defaults;
 };
 
 /**

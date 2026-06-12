@@ -8,6 +8,7 @@ import {
     output,
     untracked
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -17,13 +18,14 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSWorkflowAction, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarLocalesSelectorComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales-selector/dot-edit-content-sidebar-locales-selector.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
@@ -56,19 +58,33 @@ import { escapeHtml } from '../../utils/functions.util';
         SelectModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
+        DotEditContentSidebarLocalesSelectorComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent,
         DotWorkflowActionsComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[360px] h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden'
+        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden',
+        '[style.width.px]': 'sidebarWidth'
     }
 })
 export class DotEditContentSidebarComponent {
+    /** Fixed width of the sidebar panel, in pixels. */
+    protected readonly sidebarWidth = 360;
+
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    readonly $isLocaleSelectorV2 = toSignal(
+        this.#dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2,
+            false
+        ),
+        { initialValue: false }
+    );
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;
@@ -272,7 +288,7 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        nav: { class: 'border-none min-h-12 max-h-[52px]' },
         navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
