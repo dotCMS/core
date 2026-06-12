@@ -11,7 +11,13 @@ import { DotContentletStatusBadgeComponent } from './dot-contentlet-status-badge
 describe('DotContentletStatusBadgeComponent', () => {
     let spectator: Spectator<DotContentletStatusBadgeComponent>;
 
-    const messageServiceMock = new MockDotMessageService({ New: 'New Translated' });
+    // 'New' and 'Published' have explicit translations to prove every label goes
+    // through DotMessageService; the rest fall back to the key (mock and real
+    // service behave the same way).
+    const messageServiceMock = new MockDotMessageService({
+        New: 'New Translated',
+        Published: 'Published Translated'
+    });
 
     const createComponent = createComponentFactory({
         component: DotContentletStatusBadgeComponent,
@@ -40,7 +46,7 @@ describe('DotContentletStatusBadgeComponent', () => {
                     archived: false,
                     deleted: false
                 },
-                value: 'Published',
+                value: 'Published Translated',
                 severity: 'success'
             },
             {

@@ -24,8 +24,9 @@ type DotContentletStatusSeverity = (typeof STATUS_SEVERITY)[DotContentletStatus]
  * Renders the publish status of a contentlet as a single PrimeNG Tag.
  *
  * The status is derived from the `state` input through `status()`. `severity()`
- * maps that status to a Tag severity, and `label()` resolves the displayed
- * text — translating only the "New" badge shown when `state` is null.
+ * maps that status to a Tag severity, and `label()` resolves the displayed text
+ * through `DotMessageService` (each status name is an i18n key; the service
+ * falls back to the key itself when no translation exists).
  */
 @Component({
     selector: 'dot-contentlet-status-badge',
@@ -71,10 +72,6 @@ export class DotContentletStatusBadgeComponent {
         () => STATUS_SEVERITY[this.status()]
     );
 
-    /** The Tag label; "New" is translated, other statuses use their English label. */
-    protected readonly label = computed(() => {
-        const status = this.status();
-
-        return status === 'New' ? this.#dotMessageService.get('New') : status;
-    });
+    /** The translated Tag label for the current status. */
+    protected readonly label = computed(() => this.#dotMessageService.get(this.status()));
 }
