@@ -39,7 +39,6 @@ permissions:
   pull-requests: write
   issues: write
   checks: write
-  id-token: write
 
 concurrency:
   group: claude-security-review-${{ github.event.pull_request.number || inputs.pr_number }}
@@ -177,25 +176,23 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: envsubst < /tmp/claude-security-review-prompt.md > /tmp/claude-prompt.md
 
-      - name: Load resolved prompt
+      - name: Install Claude Code CLI
         if: steps.semgrep.outputs.found != 'true'
-        id: prompt
-        run: |
-          content=$(cat /tmp/claude-prompt.md)
-          echo "content<<PROMPT_EOF" >> "$GITHUB_OUTPUT"
-          echo "$content" >> "$GITHUB_OUTPUT"
-          echo "PROMPT_EOF" >> "$GITHUB_OUTPUT"
+        run: npm install -g @anthropic-ai/claude-code@latest --quiet
 
       - name: Run Claude security review
         if: steps.semgrep.outputs.found != 'true'
         id: review
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: ${{ steps.prompt.outputs.content }}
-          claude_args: |
-            --allowed-tools Read,Bash,Grep,Glob,Agent
-            --model claude-opus-4-7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Run Claude headlessly. The prompt instructs Claude to write
+          # security-findings.json to the workspace.
+          claude \
+            --dangerously-skip-permissions \
+            --allowedTools "Bash,Read,Grep,Glob,Agent" \
+            --model claude-opus-4-7 \
+            -p "$(cat /tmp/claude-prompt.md)"
 
       - name: Parse findings
         if: steps.semgrep.outputs.found != 'true'
