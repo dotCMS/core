@@ -25816,6 +25816,8 @@ components:
           minimum: 0
         query:
           type: string
+        requestHostId:
+          type: string
         userId:
           type: string
         velocityTemplate:
