@@ -107,6 +107,7 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 ### Rules
 
 - **Always use `<dot-contentlet-status-badge>` for contentlet statuses** — never a raw `p-tag` or `p-chip`.
+- **Locale labels use `p-tag severity="info"`** — locales are informative, never chips (e.g. the Locale column in Content Drive). This applies to read-only locale *display*; interactive locale *selectors* are designed per area.
 - **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
 - **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
 
