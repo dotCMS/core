@@ -455,7 +455,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                     is, disposition(f), path, null);  // null language
             assertNotNull(result);
             assertNotNull(result.getEntity());
-            assertNotNull(result.getEntity().getIdentifier());
+            assertNotNull(result.getEntity().identifier());
         }
     }
 
@@ -567,9 +567,9 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
             assertNotNull(result);
             final FileAssetView view = result.getEntity();
             assertNotNull(view);
-            assertTrue("fileSize must be > 0", view.getFileSize() > 0);
+            assertTrue("fileSize must be > 0", view.fileSize() > 0);
             // Byte length matches the file on disk
-            assertEquals(f.length(), view.getFileSize());
+            assertEquals(f.length(), view.fileSize());
         }
     }
 
@@ -593,7 +593,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
             final ResponseEntityFileAssetView saved = resource.save(
                     mockRequest(), new MockHttpResponse(),
                     is, disposition(sassFile), path, null);
-            assertNotNull(saved.getEntity().getIdentifier());
+            assertNotNull(saved.getEntity().identifier());
         }
 
         // Read back
