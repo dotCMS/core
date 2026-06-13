@@ -14,6 +14,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -50,6 +51,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
@@ -483,17 +485,23 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         final String identifier = saved.getIdentifier();
 
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        final Role adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 
         // getById checks doesUserHavePermission(contentlet, READ, user). Lock the asset down
-        // directly: break inheritance on the contentlet and grant READ to the CMS Admin role only,
-        // so the limited user (Chris Publisher, a non-admin) is genuinely without READ on it.
+        // directly so the limited user (Chris Publisher, a non-admin) is genuinely without READ:
+        //   1. break inheritance on the contentlet (permissionIndividually copies the parent's
+        //      perms down — which would otherwise carry the host's broad READ), then
+        //   2. REPLACE the whole set with a single READ for a throwaway role nobody is in.
+        // The collection form of save() replaces all existing permissions to match the list (the
+        // single-Permission form only appends, which would leave the inherited broad READ behind).
+        // A fresh RoleDataGen role is used rather than the CMS Admin role, which is a locked
+        // system role that rejects individual permission edits ("Role ... is locked").
         // Setting it on the contentlet itself removes any folder/host inheritance ambiguity.
+        final Role isolatedRole = new RoleDataGen().nextPersisted();
         permissionAPI.permissionIndividually(
                 permissionAPI.findParentPermissionable(saved), saved, sysUser);
         permissionAPI.save(
-                new Permission(saved.getPermissionId(), adminRole.getId(),
-                        PermissionAPI.PERMISSION_READ, true),
+                List.of(new Permission(saved.getPermissionId(), isolatedRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true)),
                 saved, sysUser, false);
 
         final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
