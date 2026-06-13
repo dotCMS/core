@@ -31,6 +31,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -51,6 +52,7 @@ import java.nio.file.Files;
 import java.util.Base64;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -249,7 +251,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
 
         assertNotNull("Expected BadRequestException for missing file part", thrown);
         assertTrue("Message should mention missing file part",
-                thrown.getMessage().toLowerCase().contains("missing"));
+                errorMessage(thrown).toLowerCase().contains("missing"));
     }
 
     /**
@@ -269,7 +271,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         }
 
         assertNotNull("Expected BadRequestException for missing file part on publish", thrown);
-        assertTrue(thrown.getMessage().toLowerCase().contains("missing"));
+        assertTrue(errorMessage(thrown).toLowerCase().contains("missing"));
     }
 
     // -----------------------------------------------------------------------
@@ -302,7 +304,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
 
         assertNotNull("Expected BadRequestException for zero-byte file part", thrown);
 
-        final String msg = thrown.getMessage();
+        final String msg = errorMessage(thrown);
         assertNotNull("Exception must have a message", msg);
 
         // Must contain "zero bytes" — the distinct wording from the resource guard.
@@ -340,7 +342,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         }
 
         assertNotNull("Expected BadRequestException for unknown language", thrown);
-        assertTrue(thrown.getMessage().contains("xx-INVALID"));
+        assertTrue(errorMessage(thrown).contains("xx-INVALID"));
     }
 
     @Test
@@ -359,7 +361,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         }
 
         assertNotNull("Expected BadRequestException for unknown language on save", thrown);
-        assertTrue(thrown.getMessage().contains("zz-NOEXIST"));
+        assertTrue(errorMessage(thrown).contains("zz-NOEXIST"));
     }
 
     // -----------------------------------------------------------------------
@@ -388,7 +390,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         }
 
         assertNotNull("Expected BadRequestException for invalid version value", thrown);
-        assertTrue(thrown.getMessage().contains("lvie"));
+        assertTrue(errorMessage(thrown).contains("lvie"));
     }
 
     // -----------------------------------------------------------------------
@@ -416,7 +418,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         }
 
         assertNotNull("Expected BadRequestException for missing Content-Disposition", thrown);
-        assertTrue(thrown.getMessage().contains("Content-Disposition"));
+        assertTrue(errorMessage(thrown).contains("Content-Disposition"));
     }
 
     // -----------------------------------------------------------------------
@@ -469,19 +471,32 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
      */
     @Test
     public void testGetById_noReadPermission_throws403() throws Exception {
+        final User sysUser = APILocator.systemUser();
+
+        // A dedicated, locally-scoped folder so we don't mutate the shared static fixture.
+        final Folder privateFolder = new FolderDataGen().site(host).nextPersisted();
+
         final File f = FileUtil.createTemporaryFile("perm-test", ".txt",
                 RandomStringUtils.random(64));
         final Contentlet saved =
-                new FileAssetDataGen(folder, f).languageId(defaultLanguage.getId()).nextPersisted();
+                new FileAssetDataGen(privateFolder, f).languageId(defaultLanguage.getId()).nextPersisted();
         final String identifier = saved.getIdentifier();
 
-        // Use a limited user (Chris Publisher, registered in TestUserUtils)
-        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
-
-        // Explicitly revoke READ on the folder so the limited user has no access
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        permissionAPI.resetPermissionsUnder(folder);
+        final Role adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 
+        // getById checks doesUserHavePermission(contentlet, READ, user). Lock the asset down
+        // directly: break inheritance on the contentlet and grant READ to the CMS Admin role only,
+        // so the limited user (Chris Publisher, a non-admin) is genuinely without READ on it.
+        // Setting it on the contentlet itself removes any folder/host inheritance ambiguity.
+        permissionAPI.permissionIndividually(
+                permissionAPI.findParentPermissionable(saved), saved, sysUser);
+        permissionAPI.save(
+                new Permission(saved.getPermissionId(), adminRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                saved, sysUser, false);
+
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
         final WebAssetResourceV2 resource = createResource(limitedUser);
 
         Exception thrown = null;
@@ -627,6 +642,27 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                 APILocator.getLanguageAPI(),
                 APILocator.getPermissionAPI()
         );
+    }
+
+    /**
+     * Extracts the human-readable error text from a dotCMS {@link BadRequestException}.
+     *
+     * <p>{@code BadRequestException} extends {@code WebApplicationException}, which never forwards
+     * the detail message to {@code Throwable} — so {@code getMessage()} returns only the generic
+     * {@code "HTTP 400 Bad Request"} status line. The real message is carried in the response
+     * entity (a JSON {@code {"error":"<key>: <message>"}} body) and the {@code error-message}
+     * header. This reads the entity, matching the pattern used elsewhere (e.g.
+     * {@code PermissionResourceIntegrationTest}).
+     */
+    private static String errorMessage(final Throwable e) {
+        if (e instanceof WebApplicationException) {
+            final Response response = ((WebApplicationException) e).getResponse();
+            final Object entity = response != null ? response.getEntity() : null;
+            if (entity != null) {
+                return entity.toString();
+            }
+        }
+        return String.valueOf(e.getMessage());
     }
 
     /** Returns a host-qualified asset path under the shared test folder. */
