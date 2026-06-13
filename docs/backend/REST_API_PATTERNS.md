@@ -177,6 +177,33 @@ public class MyEntityForm {
 }
 ```
 
+## View Object Pattern (`@Value.Immutable`)
+
+REST view objects use the `@Value.Immutable` **`Abstract*` interface** style (dominant in
+`rest/`), not the `Immutable*`-prefix class style from
+[JAVA_STANDARDS.md](JAVA_STANDARDS.md#immutable-objects-critical-pattern). Don't hand-write a
+`final class` with a `@JsonCreator` constructor and manual getters. Two REST-specific points:
+
+- **`typeAbstract = "Abstract*"`** — the generated type drops the prefix (`AbstractAssetView` → `AssetView`).
+- **`passAnnotations = Schema.class`** — required, or a *class-level* `@Schema(description=…)` is
+  dropped from `openapi.yaml` (Immutables doesn't copy type annotations by default). Property-level
+  `@Schema` on accessors carries over automatically.
+
+```java
+@Value.Style(typeImmutable = "*", typeAbstract = "Abstract*", passAnnotations = Schema.class)
+@Value.Immutable
+@JsonDeserialize(as = FileAssetView.class)   // the GENERATED type, not Immutable*
+@Schema(description = "File asset view returned after a save")
+public interface AbstractFileAssetView {
+    @Schema(description = "Asset identifier") String identifier();
+    @Schema(description = "File size in bytes") long fileSize();
+}
+// FileAssetView.builder().identifier(id).fileSize(size).build();
+```
+
+After changes, `./mvnw compile -pl :dotcms-core -DskipTests` then confirm
+`git diff .../openapi/openapi.yaml` is empty.
+
 ## Security Patterns
 
 ### Authentication Check

@@ -572,15 +572,16 @@ public class WebAssetResourceV2 {
         final long fileSize = extractFileSize(metadata);
         final String path   = extractString(metadata, "path", "");
 
-        final FileAssetView fileAssetView = new FileAssetView(
-                assetView.identifier(),
-                assetView.inode(),
-                assetView.name(),
-                path,
-                assetView.lang(),
-                assetView.live(),
-                assetView.working(),
-                fileSize);
+        final FileAssetView fileAssetView = FileAssetView.builder()
+                .identifier(assetView.identifier())
+                .inode(assetView.inode())
+                .name(assetView.name())
+                .path(path)
+                .lang(assetView.lang())
+                .live(assetView.live())
+                .working(assetView.working())
+                .fileSize(fileSize)
+                .build();
 
         return new ResponseEntityFileAssetView(fileAssetView);
     }
