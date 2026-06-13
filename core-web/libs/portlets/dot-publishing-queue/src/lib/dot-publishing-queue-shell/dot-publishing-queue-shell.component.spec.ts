@@ -6,12 +6,11 @@ import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
-    DotEventsService,
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotPublishingQueueService,
-    DotPushPublishFiltersService,
-    DotSiteService
+    DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -46,16 +45,20 @@ describe('DotPublishingQueueShellComponent', () => {
                             pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                         })
                     ),
+                getUnsendBundles: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
+                    ),
                 getBundleAssets: jest.fn().mockReturnValue(of([])),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of({})),
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'dotcms.org.1' }))
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPushPublishFiltersService, { get: jest.fn().mockReturnValue(of([])) }),
-            mockProvider(DotEventsService, { listen: jest.fn().mockReturnValue(of({})) }),
-            mockProvider(DotSiteService, {
-                getSites: jest.fn().mockReturnValue(of({ sites: [], total: 0 }))
-            }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]

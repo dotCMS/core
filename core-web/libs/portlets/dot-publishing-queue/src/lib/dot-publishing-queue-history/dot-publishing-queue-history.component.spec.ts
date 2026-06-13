@@ -97,9 +97,30 @@ describe('DotPublishingQueueHistoryComponent', () => {
         expect(spectator.query(byTestId('pq-history-table'))).toBeTruthy();
     });
 
+    it('renders all five column headers (Filter, Bundle Id, Status, Data Entered, Last Update)', () => {
+        expect(spectator.query(byTestId('pq-history-col-filter'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-col-bundle-id'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-col-status'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-col-created'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-col-modified'))).toBeTruthy();
+    });
+
     it('renders rows with status chips', () => {
         const tags = spectator.queryAll(byTestId('pq-history-status'));
         expect(tags.length).toBe(2);
+    });
+
+    it('renders Filter cell falling back to "—" when filterName + filterKey are null', () => {
+        const cells = spectator.queryAll(byTestId('pq-history-filter'));
+        expect(cells.length).toBe(2);
+        expect(cells[0].textContent?.trim()).toBe('—');
+    });
+
+    it('renders Bundle Id cell with the full id (no truncation) + copy button', () => {
+        const cells = spectator.queryAll(byTestId('pq-history-bundle-id'));
+        expect(cells.length).toBe(2);
+        expect(cells[0].textContent).toContain('b1');
+        expect(cells[0].querySelector('[data-testid="pq-history-bundle-id-copy"]')).toBeTruthy();
     });
 
     it('shows the bulk action bar only when there is a selection', () => {
@@ -129,10 +150,8 @@ describe('DotPublishingQueueHistoryComponent', () => {
         expect(store.deleteBundlesBulk).toHaveBeenCalledWith(['b1', 'b2']);
     });
 
-    it('statusSeverity maps SUCCESS → success and failures → danger', () => {
-        expect(spectator.component.statusSeverity(PublishAuditStatus.SUCCESS)).toBe('success');
-        expect(spectator.component.statusSeverity(PublishAuditStatus.FAILED_TO_PUBLISH)).toBe(
-            'danger'
-        );
+    it('renders a dot-publishing-status-chip per row', () => {
+        const chips = spectator.queryAll('dot-publishing-status-chip');
+        expect(chips.length).toBe(2);
     });
 });

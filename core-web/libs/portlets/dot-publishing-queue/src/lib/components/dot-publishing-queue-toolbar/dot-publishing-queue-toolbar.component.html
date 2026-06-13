@@ -25,17 +25,6 @@
                 icon="pi pi-upload"
                 (onClick)="uploadClick.emit()"
                 data-testid="pq-upload-btn" />
-            <p-select
-                dotSiteSelector
-                optionLabel="hostname"
-                [showClear]="true"
-                [filter]="true"
-                filterBy="hostname"
-                [placeholder]="'publishing-queue.site-selector.placeholder' | dm"
-                (onChange)="onSiteChange($event)"
-                [attr.aria-label]="'publishing-queue.site-selector.placeholder' | dm"
-                data-testid="pq-site-selector"
-                class="w-56" />
         </div>
     </div>
 </p-toolbar>

@@ -19,11 +19,8 @@
                 </div>
             }
         } @else if (rows().length === 0) {
-            <div
-                class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center"
-                data-testid="pq-list-empty">
-                <i class="pi pi-inbox text-color-secondary text-5xl!" aria-hidden="true"></i>
-                <p class="text-color-secondary m-0 text-sm">{{ emptyKey() | dm }}</p>
+            <div class="flex h-full items-center justify-center p-6" data-testid="pq-list-empty">
+                <dot-empty-container [configuration]="emptyConfig()" [hideContactUsLink]="true" />
             </div>
         } @else {
             @for (job of rows(); track job.bundleId) {
@@ -40,14 +37,17 @@
                             data-testid="pq-row-name">
                             {{ job.bundleName || job.bundleId }}
                         </span>
-                        <span class="text-color-secondary text-xs" data-testid="pq-row-meta">
-                            {{ job.assetCount }} assets · {{ job.environmentCount }} env
-                        </span>
+                        @if (job.assetCount > 0 || job.environmentCount > 0) {
+                            <span class="text-color-secondary text-xs" data-testid="pq-row-meta">
+                                {{ job.assetCount }} assets · {{ job.environmentCount }} env
+                            </span>
+                        }
                     </div>
-                    <p-tag
-                        [value]="statusLabelKey(job.status) | dm"
-                        [severity]="statusSeverity(job.status)"
-                        data-testid="pq-row-status" />
+                    @if (job.status) {
+                        <dot-publishing-status-chip
+                            [status]="job.status"
+                            data-testid="pq-row-status" />
+                    }
                     @if (mode() === 'ready') {
                         <p-button
                             [label]="'publishing-queue.send' | dm"

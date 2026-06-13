@@ -38,7 +38,11 @@ describe('DotPublishingQueueListComponent', () => {
         page: 1,
         rowsPerPage: 10,
         headerKey: 'publishing-queue.ready.title',
-        emptyKey: 'publishing-queue.empty.ready'
+        emptyConfig: {
+            icon: 'pi-folder-open',
+            title: "Your bundle's empty",
+            subtitle: 'Add content here'
+        }
     };
 
     beforeEach(() => {
@@ -127,25 +131,18 @@ describe('DotPublishingQueueListComponent', () => {
         expect(emitted?.bundleId).toBe('bundle-1');
     });
 
-    describe('statusSeverity', () => {
-        it('returns success for SUCCESS', () => {
-            expect(spectator.component.statusSeverity(PublishAuditStatus.SUCCESS)).toBe('success');
+    describe('status chip', () => {
+        it('renders the chip when row.status is set', () => {
+            spectator.setInput('mode', 'progress');
+            spectator.setInput('rows', [job({ status: PublishAuditStatus.BUNDLING })]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-row-status'))).toBeTruthy();
         });
 
-        it('returns danger for FAILED_TO_PUBLISH', () => {
-            expect(spectator.component.statusSeverity(PublishAuditStatus.FAILED_TO_PUBLISH)).toBe(
-                'danger'
-            );
-        });
-
-        it('returns info for WAITING_FOR_PUBLISHING', () => {
-            expect(
-                spectator.component.statusSeverity(PublishAuditStatus.WAITING_FOR_PUBLISHING)
-            ).toBe('info');
-        });
-
-        it('returns warn for in-progress like BUNDLING', () => {
-            expect(spectator.component.statusSeverity(PublishAuditStatus.BUNDLING)).toBe('warn');
+        it('skips the chip when row.status is null (drafts)', () => {
+            spectator.setInput('rows', [job({ status: null })]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-row-status'))).toBeFalsy();
         });
     });
 

@@ -1,7 +1,11 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService, DotPublishingQueueService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotHttpErrorManagerService,
+    DotPublishingQueueService
+} from '@dotcms/data-access';
 import {
     BundleAssetView,
     IN_PROGRESS_STATUSES,
@@ -9,7 +13,7 @@ import {
     PublishingJobDetailView,
     PublishingJobsResponse,
     PublishingJobView,
-    READY_STATUSES
+    UnsentBundlesResponse
 } from '@dotcms/dotcms-models';
 
 import { DotPublishingQueueStore } from './dot-publishing-queue.store';
@@ -29,9 +33,11 @@ const buildJob = (overrides: Partial<PublishingJobView> = {}): PublishingJobView
     ...overrides
 });
 
-const READY_RESPONSE: PublishingJobsResponse = {
-    entity: [buildJob({ bundleId: 'ready-1' })],
-    pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+const UNSENT_RESPONSE: UnsentBundlesResponse = {
+    identifier: 'id',
+    label: 'name',
+    items: [{ id: 'ready-1', name: 'Ready Bundle' }],
+    numRows: 1
 };
 
 const PROGRESS_RESPONSE: PublishingJobsResponse = {
@@ -82,10 +88,10 @@ describe('DotPublishingQueueStore', () => {
         providers: [
             mockProvider(DotPublishingQueueService, {
                 listPublishingJobs: jest.fn().mockImplementation(({ statuses }) => {
-                    if (statuses === READY_STATUSES) return of(READY_RESPONSE);
                     if (statuses === IN_PROGRESS_STATUSES) return of(PROGRESS_RESPONSE);
                     return of(HISTORY_RESPONSE);
                 }),
+                getUnsendBundles: jest.fn().mockReturnValue(of(UNSENT_RESPONSE)),
                 getBundleAssets: jest.fn().mockReturnValue(of(MOCK_ASSETS)),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of(MOCK_DETAIL)),
                 getEnvironments: jest.fn().mockReturnValue(
@@ -94,16 +100,14 @@ describe('DotPublishingQueueStore', () => {
                         { id: 'env-2', name: 'Stage' }
                     ])
                 ),
-                pushBundle: jest
-                    .fn()
-                    .mockReturnValue(
-                        of({
-                            bundleId: 'b',
-                            operation: 'publish',
-                            environments: [],
-                            filterKey: 'k'
-                        })
-                    ),
+                pushBundle: jest.fn().mockReturnValue(
+                    of({
+                        bundleId: 'b',
+                        operation: 'publish',
+                        environments: [],
+                        filterKey: 'k'
+                    })
+                ),
                 retryBundles: jest.fn().mockReturnValue(of([])),
                 deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
                 deleteBundles: jest.fn().mockReturnValue(of({ message: 'ok', deleted: [] })),
@@ -112,7 +116,12 @@ describe('DotPublishingQueueStore', () => {
                     .fn()
                     .mockReturnValue(of({ bundleName: 'b', status: 'BUNDLE_REQUESTED' }))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest
+                    .fn()
+                    .mockReturnValue(of({ userId: 'dotcms.org.1', email: 'admin@dotcms.com' }))
+            })
         ]
     });
 
@@ -133,10 +142,40 @@ describe('DotPublishingQueueStore', () => {
     });
 
     describe('onInit', () => {
-        it('loads queue tab columns on init', () => {
-            expect(service.listPublishingJobs).toHaveBeenCalledTimes(2);
+        it('defaults activeTab to history and loads only the history list', () => {
+            expect(store.activeTab()).toBe('history');
+            // History uses listPublishingJobs with HISTORY_STATUSES;
+            // Queue columns stay idle until the user switches tabs.
+            expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
+            expect(service.getUnsendBundles).not.toHaveBeenCalled();
+            expect(store.historyStatus()).toBe('loaded');
+        });
+
+        it('loads queue columns when switching to the Queue tab', () => {
+            store.setActiveTab('queue');
+            spectator.flushEffects();
+
+            expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
             expect(store.readyStatus()).toBe('loaded');
             expect(store.progressStatus()).toBe('loaded');
+        });
+
+        it('maps unsent bundle items to PublishingJobView rows with status=null', () => {
+            store.setActiveTab('queue');
+            spectator.flushEffects();
+
+            const row = store.readyRows()[0];
+            expect(row.bundleId).toBe('ready-1');
+            expect(row.bundleName).toBe('Ready Bundle');
+            expect(row.status).toBeNull();
+            expect(row.assetCount).toBe(0);
+            expect(row.environmentCount).toBe(0);
+        });
+
+        it('caches userId from DotCurrentUserService once Queue tab is opened', () => {
+            store.setActiveTab('queue');
+            spectator.flushEffects();
+            expect(store.userId()).toBe('dotcms.org.1');
         });
     });
 
@@ -148,6 +187,7 @@ describe('DotPublishingQueueStore', () => {
             store.setHistorySelection(['x']);
             spectator.flushEffects();
             (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.getUnsendBundles as jest.Mock).mockClear();
 
             store.setSearch('term');
             spectator.flushEffects();
@@ -158,18 +198,29 @@ describe('DotPublishingQueueStore', () => {
             expect(store.historyPage()).toBe(1);
             expect(store.historySelectedIds()).toEqual([]);
         });
+
+        it('wildcards the search term when reloading READY via getUnsendBundles', () => {
+            store.setActiveTab('queue');
+            spectator.flushEffects();
+            (service.getUnsendBundles as jest.Mock).mockClear();
+
+            store.setSearch('term');
+            spectator.flushEffects();
+
+            expect(service.getUnsendBundles).toHaveBeenCalledWith('dotcms.org.1', '*term*', 0, 10);
+        });
     });
 
     describe('setActiveTab', () => {
-        it('switching to history triggers loadHistory', () => {
+        it('switching to queue triggers loadReady + loadProgress', () => {
             (service.listPublishingJobs as jest.Mock).mockClear();
-            store.setActiveTab('history');
+            (service.getUnsendBundles as jest.Mock).mockClear();
+            store.setActiveTab('queue');
             spectator.flushEffects();
+
+            expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
             expect(service.listPublishingJobs).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    sort: undefined,
-                    sortDirection: 'desc'
-                })
+                expect.objectContaining({ statuses: IN_PROGRESS_STATUSES })
             );
         });
     });
@@ -198,10 +249,14 @@ describe('DotPublishingQueueStore', () => {
     });
 
     describe('refresh', () => {
-        it('reloads queue when active tab is queue', () => {
+        it('reloads queue when active tab is queue (ready via getUnsendBundles, progress via listPublishingJobs)', () => {
+            store.setActiveTab('queue');
+            spectator.flushEffects();
             (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.getUnsendBundles as jest.Mock).mockClear();
             store.refresh();
-            expect(service.listPublishingJobs).toHaveBeenCalledTimes(2);
+            expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
+            expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
         });
 
         it('reloads history when active tab is history', () => {
@@ -329,7 +384,7 @@ describe('DotPublishingQueueStore', () => {
     describe('error handling', () => {
         it('loadReady error → handle + status=error', () => {
             const error = new Error('boom');
-            (service.listPublishingJobs as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
             store.loadReady();
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.readyStatus()).toBe('error');

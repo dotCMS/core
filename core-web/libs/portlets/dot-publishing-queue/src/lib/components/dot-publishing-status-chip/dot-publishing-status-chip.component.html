@@ -1,0 +1,28 @@
+@if (status()) {
+    @switch (bucket()) {
+        @case ('success') {
+            <p-chip
+                class="border-green-100! bg-green-100! text-xs text-green-700!"
+                [label]="labelKey() | dm"
+                data-testid="pq-status-chip" />
+        }
+        @case ('danger') {
+            <p-chip
+                class="border-red-100! bg-red-100! text-xs text-red-700!"
+                [label]="labelKey() | dm"
+                data-testid="pq-status-chip" />
+        }
+        @case ('warning') {
+            <p-chip
+                class="border-yellow-100! bg-yellow-100! text-xs text-yellow-700!"
+                [label]="labelKey() | dm"
+                data-testid="pq-status-chip" />
+        }
+        @case ('info') {
+            <p-chip
+                class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
+                [label]="labelKey() | dm"
+                data-testid="pq-status-chip" />
+        }
+    }
+}

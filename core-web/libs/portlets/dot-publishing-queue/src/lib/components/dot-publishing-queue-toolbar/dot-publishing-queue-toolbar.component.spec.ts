@@ -1,7 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
 
-import { DotEventsService, DotMessageService, DotSiteService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueToolbarComponent } from './dot-publishing-queue-toolbar.component';
@@ -22,17 +21,12 @@ describe('DotPublishingQueueToolbarComponent', () => {
             })
         ],
         providers: [
-            mockProvider(DotEventsService, { listen: jest.fn().mockReturnValue(of({})) }),
-            mockProvider(DotSiteService, {
-                getSites: jest.fn().mockReturnValue(of({ sites: [], total: 0 }))
-            }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'publishing-queue.search.placeholder': 'Search bundles',
                     'publishing-queue.refresh': 'Refresh',
-                    'publishing-queue.upload-bundle': 'Upload Bundle',
-                    'publishing-queue.site-selector.placeholder': 'Site'
+                    'publishing-queue.upload-bundle': 'Upload Bundle'
                 })
             }
         ]
@@ -50,11 +44,11 @@ describe('DotPublishingQueueToolbarComponent', () => {
     });
 
     describe('layout', () => {
-        it('renders search, refresh, upload (disabled), site selector (disabled)', () => {
+        it('renders search, refresh, upload', () => {
             expect(spectator.query(byTestId('pq-search-input'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-refresh-btn'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-upload-btn'))).toBeTruthy();
-            expect(spectator.query(byTestId('pq-site-selector'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-site-selector'))).toBeFalsy();
         });
 
         it('upload button click emits uploadClick', () => {

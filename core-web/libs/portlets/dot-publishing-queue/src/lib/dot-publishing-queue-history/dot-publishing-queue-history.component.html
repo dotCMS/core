@@ -48,16 +48,22 @@
                     <th style="width: 3rem">
                         <p-tableHeaderCheckbox />
                     </th>
-                    <th pSortableColumn="bundle_name" data-testid="pq-history-sort-bundle">
-                        {{ 'publishing-queue.column.bundle' | dm }}
-                        <p-sortIcon field="bundle_name" />
+                    <th data-testid="pq-history-col-bundle-id">
+                        {{ 'publishing-queue.column.bundle-id' | dm }}
                     </th>
-                    <th pSortableColumn="status" data-testid="pq-history-sort-status">
+                    <th data-testid="pq-history-col-filter">
+                        {{ 'publishing-queue.column.filter' | dm }}
+                    </th>
+                    <th pSortableColumn="status" data-testid="pq-history-col-status">
                         {{ 'publishing-queue.column.status' | dm }}
                         <p-sortIcon field="status" />
                     </th>
-                    <th pSortableColumn="modified">
-                        {{ 'publishing-queue.column.modified' | dm }}
+                    <th pSortableColumn="created" data-testid="pq-history-col-created">
+                        {{ 'publishing-queue.column.data-entered' | dm }}
+                        <p-sortIcon field="created" />
+                    </th>
+                    <th pSortableColumn="modified" data-testid="pq-history-col-modified">
+                        {{ 'publishing-queue.column.last-update' | dm }}
                         <p-sortIcon field="modified" />
                     </th>
                 </tr>
@@ -70,26 +76,38 @@
                         <td><p-skeleton height="1.25rem" /></td>
                         <td><p-skeleton height="1.25rem" /></td>
                         <td><p-skeleton height="1.25rem" /></td>
+                        <td><p-skeleton height="1.25rem" /></td>
+                        <td><p-skeleton height="1.25rem" /></td>
                     </tr>
                 } @else {
                     <tr
-                        class="cursor-pointer"
+                        class="group cursor-pointer"
                         (click)="onRowClick(row)"
                         data-testid="pq-history-row">
                         <td (click)="$event.stopPropagation()">
                             <p-tableCheckbox [value]="row" />
                         </td>
-                        <td data-testid="pq-history-bundle-name">
-                            {{ row.bundleName || row.bundleId }}
+                        <td data-testid="pq-history-bundle-id">
+                            <div class="flex items-center gap-1">
+                                <span class="font-mono text-xs">{{ row.bundleId }}</span>
+                                <dot-copy-button
+                                    [copy]="row.bundleId"
+                                    tooltipText="{{ 'publishing-queue.copy-bundle-id' | dm }}"
+                                    customClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full"
+                                    data-testid="pq-history-bundle-id-copy" />
+                            </div>
                         </td>
-                        <td>
-                            <p-tag
-                                [value]="statusLabelKey(row.status) | dm"
-                                [severity]="statusSeverity(row.status)"
-                                data-testid="pq-history-status" />
+                        <td data-testid="pq-history-filter">
+                            {{ row.filterName || row.filterKey || '—' }}
                         </td>
-                        <td class="text-color-secondary text-xs">
-                            {{ row.statusUpdated || row.createDate }}
+                        <td data-testid="pq-history-status">
+                            <dot-publishing-status-chip [status]="row.status" />
+                        </td>
+                        <td class="text-color-secondary text-xs" data-testid="pq-history-created">
+                            {{ (row.createDate | date: 'medium') || '—' }}
+                        </td>
+                        <td class="text-color-secondary text-xs" data-testid="pq-history-modified">
+                            {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
                         </td>
                     </tr>
                 }
@@ -97,16 +115,13 @@
 
             <ng-template pTemplate="emptymessage">
                 <tr class="hover:bg-transparent!">
-                    <td colspan="4" class="p-6 text-center">
+                    <td colspan="6" class="p-8">
                         <div
-                            class="mx-auto flex max-w-md flex-col items-center gap-2"
+                            class="flex items-center justify-center"
                             data-testid="pq-history-empty">
-                            <i
-                                class="pi pi-inbox text-color-secondary text-5xl!"
-                                aria-hidden="true"></i>
-                            <p class="text-color-secondary m-0 text-sm">
-                                {{ 'publishing-queue.history.empty' | dm }}
-                            </p>
+                            <dot-empty-container
+                                [configuration]="historyEmpty"
+                                [hideContactUsLink]="true" />
                         </div>
                     </td>
                 </tr>

@@ -94,4 +94,37 @@ describe('DotPublishingQueueService', () => {
             req.flush(mockAssets);
         });
     });
+
+    describe('getUnsendBundles', () => {
+        it('hits /api/bundle/getunsendbundles/userid/{userId} with name + start + count', () => {
+            const mockResponse = {
+                identifier: 'id',
+                label: 'name',
+                items: [{ id: 'b1', name: 'My Bundle' }],
+                numRows: 1
+            };
+
+            service.getUnsendBundles('dotcms.org.1', '*term*', 0, 50).subscribe((response) => {
+                expect(response).toEqual(mockResponse);
+            });
+
+            const req = httpMock.expectOne(
+                (request) => request.url === '/api/bundle/getunsendbundles/userid/dotcms.org.1'
+            );
+            expect(req.request.method).toBe('GET');
+            expect(req.request.params.get('name')).toBe('*term*');
+            expect(req.request.params.get('start')).toBe('0');
+            expect(req.request.params.get('count')).toBe('50');
+            req.flush(mockResponse);
+        });
+
+        it('falls back to wildcard when filter is empty', () => {
+            service.getUnsendBundles('u1', '').subscribe();
+            const req = httpMock.expectOne(
+                (request) => request.url === '/api/bundle/getunsendbundles/userid/u1'
+            );
+            expect(req.request.params.get('name')).toBe('*');
+            req.flush({ identifier: 'id', label: 'name', items: [], numRows: 0 });
+        });
+    });
 });

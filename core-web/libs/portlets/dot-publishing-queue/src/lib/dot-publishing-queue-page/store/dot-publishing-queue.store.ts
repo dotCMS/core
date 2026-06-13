@@ -1,11 +1,12 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY, forkJoin } from 'rxjs';
+import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 
 import { DestroyRef, effect, inject, untracked } from '@angular/core';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotPublishingQueueService,
     PublishingSortDirection,
@@ -19,8 +20,7 @@ import {
     IN_PROGRESS_STATUSES,
     PublishAuditStatus,
     PublishingJobDetailView,
-    PublishingJobView,
-    READY_STATUSES
+    PublishingJobView
 } from '@dotcms/dotcms-models';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
@@ -67,7 +67,9 @@ interface DotPublishingQueueState {
 
     rowsPerPage: number;
     search: string;
-    siteId: string | null;
+
+    /** Cached id of the logged-in user; required by the legacy unsent-bundles endpoint. */
+    userId: string | null;
 
     selectedBundleId: string | null;
     selectedAssets: BundleAssetView[];
@@ -88,7 +90,7 @@ interface DotPublishingQueueState {
 }
 
 const initialState: DotPublishingQueueState = {
-    activeTab: 'queue',
+    activeTab: 'history',
 
     readyRows: [],
     readyPage: 1,
@@ -110,7 +112,8 @@ const initialState: DotPublishingQueueState = {
 
     rowsPerPage: 10,
     search: '',
-    siteId: null,
+
+    userId: null,
 
     selectedBundleId: null,
     selectedAssets: [],
@@ -134,21 +137,41 @@ export const DotPublishingQueueStore = signalStore(
     withState<DotPublishingQueueState>(initialState),
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
+        const currentUserService = inject(DotCurrentUserService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const destroyRef = inject(DestroyRef);
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
 
+        /** Resolves the current user id, fetching once and caching it in store state. */
+        function resolveUserId(): Observable<string> {
+            const cached = store.userId();
+            if (cached) {
+                return of(cached);
+            }
+            return currentUserService.getCurrentUser().pipe(
+                tap((user) => patchState(store, { userId: user.userId })),
+                switchMap((user) => of(user.userId))
+            );
+        }
+
+        /**
+         * READY TO SEND = drafts owned by the current user. Drafts live in
+         * `publishing_bundle` only and have no `publish_audit` row, so we hit
+         * the legacy `getunsendbundles` endpoint. Maps the slim `{id, name}`
+         * payload to `PublishingJobView` with `status: null` + zero counts;
+         * the list template hides the chip / meta line when those are absent.
+         */
         function loadReady() {
             patchState(store, { readyStatus: 'loading' });
-            service
-                .listPublishingJobs({
-                    statuses: READY_STATUSES,
-                    page: store.readyPage(),
-                    perPage: store.rowsPerPage(),
-                    filter: store.search() || undefined
-                })
+            const offset = (store.readyPage() - 1) * store.rowsPerPage();
+            const filter = store.search() ? `*${store.search()}*` : '*';
+
+            resolveUserId()
                 .pipe(
+                    switchMap((userId) =>
+                        service.getUnsendBundles(userId, filter, offset, store.rowsPerPage())
+                    ),
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
@@ -158,9 +181,23 @@ export const DotPublishingQueueStore = signalStore(
                     })
                 )
                 .subscribe((response) => {
+                    const rows: PublishingJobView[] = response.items.map((item) => ({
+                        bundleId: item.id,
+                        bundleName: item.name,
+                        status: null,
+                        filterName: null,
+                        filterKey: null,
+                        assetCount: 0,
+                        assetPreview: [],
+                        environmentCount: 0,
+                        createDate: '',
+                        statusUpdated: null,
+                        numTries: 0
+                    }));
+
                     patchState(store, {
-                        readyRows: response.entity,
-                        readyTotal: response.pagination?.totalEntries ?? 0,
+                        readyRows: rows,
+                        readyTotal: response.numRows ?? rows.length,
                         readyStatus: 'loaded'
                     });
                 });
@@ -352,15 +389,6 @@ export const DotPublishingQueueStore = signalStore(
                     progressPage: 1,
                     historyPage: 1,
                     historySelectedIds: []
-                });
-            },
-
-            setSiteId(siteId: string | null) {
-                patchState(store, {
-                    siteId,
-                    readyPage: 1,
-                    progressPage: 1,
-                    historyPage: 1
                 });
             },
 

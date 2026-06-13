@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -5,33 +6,32 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 
 import { DotMessageService, PublishingSortField } from '@dotcms/data-access';
-import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { PublishingJobView } from '@dotcms/dotcms-models';
+import {
+    DotCopyButtonComponent,
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
+import { DotPublishingStatusChipComponent } from '../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
 import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-publishing-queue.store';
-
-type ChipSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary';
-
-const SUCCESS_STATUSES = new Set<PublishAuditStatus>([
-    PublishAuditStatus.SUCCESS,
-    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-    PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY,
-    PublishAuditStatus.SUCCESS_WITH_WARNINGS
-]);
 
 @Component({
     selector: 'dot-publishing-queue-history',
     standalone: true,
     imports: [
+        DatePipe,
         ButtonModule,
         ConfirmDialogModule,
         SkeletonModule,
         TableModule,
-        TagModule,
-        DotMessagePipe
+        DotCopyButtonComponent,
+        DotEmptyContainerComponent,
+        DotMessagePipe,
+        DotPublishingStatusChipComponent
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-publishing-queue-history.component.html',
@@ -45,20 +45,18 @@ export class DotPublishingQueueHistoryComponent {
 
     readonly first = computed(() => (this.store.historyPage() - 1) * this.store.rowsPerPage());
 
+    readonly historyEmpty: PrincipalConfiguration = {
+        icon: 'pi-history',
+        title: this.dotMessageService.get('publishing-queue.empty.history.title'),
+        subtitle: this.dotMessageService.get('publishing-queue.empty.history.subtitle')
+    };
+
     readonly selectedRows = computed(() => {
         const selectedIds = new Set(this.store.historySelectedIds());
         return this.store.historyRows().filter((row) => selectedIds.has(row.bundleId));
     });
 
     readonly hasSelection = computed(() => this.store.historySelectedIds().length > 0);
-
-    statusSeverity(status: PublishAuditStatus): ChipSeverity {
-        return SUCCESS_STATUSES.has(status) ? 'success' : 'danger';
-    }
-
-    statusLabelKey(status: PublishAuditStatus): string {
-        return `publishing-queue.status.${status}`;
-    }
 
     onLazyLoad(event: TableLazyLoadEvent): void {
         const rows = (event.rows as number) ?? this.store.rowsPerPage();

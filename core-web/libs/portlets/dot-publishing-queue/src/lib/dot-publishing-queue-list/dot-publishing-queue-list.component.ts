@@ -5,21 +5,14 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 
 import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
+
+import { DotPublishingStatusChipComponent } from '../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 type Mode = 'ready' | 'progress';
-type ChipSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary';
-
-const SUCCESS_STATUSES = new Set<PublishAuditStatus>([
-    PublishAuditStatus.SUCCESS,
-    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-    PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY,
-    PublishAuditStatus.SUCCESS_WITH_WARNINGS
-]);
 
 const FAILURE_STATUSES = new Set<PublishAuditStatus>([
     PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
@@ -32,15 +25,18 @@ const FAILURE_STATUSES = new Set<PublishAuditStatus>([
     PublishAuditStatus.LICENSE_REQUIRED
 ]);
 
-const READY_STATUSES_SET = new Set<PublishAuditStatus>([
-    PublishAuditStatus.BUNDLE_REQUESTED,
-    PublishAuditStatus.WAITING_FOR_PUBLISHING
-]);
-
 @Component({
     selector: 'dot-publishing-queue-list',
     standalone: true,
-    imports: [ButtonModule, MenuModule, PaginatorModule, SkeletonModule, TagModule, DotMessagePipe],
+    imports: [
+        ButtonModule,
+        MenuModule,
+        PaginatorModule,
+        SkeletonModule,
+        DotEmptyContainerComponent,
+        DotMessagePipe,
+        DotPublishingStatusChipComponent
+    ],
     templateUrl: './dot-publishing-queue-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col min-h-0 h-full' }
@@ -53,7 +49,7 @@ export class DotPublishingQueueListComponent {
     readonly page = input.required<number>();
     readonly rowsPerPage = input.required<number>();
     readonly headerKey = input.required<string>();
-    readonly emptyKey = input.required<string>();
+    readonly emptyConfig = input.required<PrincipalConfiguration>();
     /** Builder for the per-row kebab menu items. Only used in ready mode. */
     readonly kebabBuilder = input<(job: PublishingJobView) => MenuItem[] | null>(() => null);
 
@@ -66,25 +62,8 @@ export class DotPublishingQueueListComponent {
 
     readonly skeletonRows = Array.from({ length: 5 });
 
-    statusSeverity(status: PublishAuditStatus): ChipSeverity {
-        if (SUCCESS_STATUSES.has(status)) {
-            return 'success';
-        }
-        if (FAILURE_STATUSES.has(status)) {
-            return 'danger';
-        }
-        if (READY_STATUSES_SET.has(status)) {
-            return 'info';
-        }
-        return 'warn';
-    }
-
-    statusLabelKey(status: PublishAuditStatus): string {
-        return `publishing-queue.status.${status}`;
-    }
-
-    isRetryable(status: PublishAuditStatus): boolean {
-        return FAILURE_STATUSES.has(status);
+    isRetryable(status: PublishAuditStatus | null): boolean {
+        return status !== null && FAILURE_STATUSES.has(status);
     }
 
     kebabFor(job: PublishingJobView): MenuItem[] {

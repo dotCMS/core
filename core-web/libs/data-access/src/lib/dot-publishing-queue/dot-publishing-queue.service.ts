@@ -13,7 +13,8 @@ import {
     PublishingJobDetailView,
     PublishingJobsResponse,
     PushBundleResultView,
-    RetryBundleResultView
+    RetryBundleResultView,
+    UnsentBundlesResponse
 } from '@dotcms/dotcms-models';
 
 export type PublishingSortField = 'bundle_name' | 'status' | 'created' | 'modified';
@@ -103,10 +104,9 @@ export class DotPublishingQueueService {
 
     pushBundle(bundleId: string, payload: PushBundlePayload): Observable<PushBundleResultView> {
         return this.http
-            .post<DotCMSResponse<PushBundleResultView>>(
-                `/api/v1/publishing/push/${bundleId}`,
-                payload
-            )
+            .post<
+                DotCMSResponse<PushBundleResultView>
+            >(`/api/v1/publishing/push/${bundleId}`, payload)
             .pipe(map((response) => response.entity));
     }
 
@@ -143,15 +143,41 @@ export class DotPublishingQueueService {
     uploadBundle(file: File): Observable<{ bundleName: string; status: string }> {
         const formData = new FormData();
         formData.append('file', file, file.name);
-        return this.http.post<{ bundleName: string; status: string }>(
-            '/api/bundle/sync',
-            formData
-        );
+        return this.http.post<{ bundleName: string; status: string }>('/api/bundle/sync', formData);
     }
 
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
     getBundleDownloadUrl(bundleId: string): string {
         return `/api/bundle/_download/${bundleId}`;
+    }
+
+    /**
+     * Lists unsent (draft) bundles owned by the given user.
+     *
+     * Backed by the legacy endpoint `GET /api/bundle/getunsendbundles/userid/{userId}`
+     * (`BundleResource#getUnsendBundles`). The newer v1 `/api/v1/publishing` reads
+     * from `publish_audit` and does NOT include drafts — drafts live in
+     * `publishing_bundle` only. This is the only endpoint that surfaces them
+     * until #36048 (legacy → v1 consolidation) lands.
+     *
+     * Response shape: `{ identifier, label, items: [{ id, name }, ...], numRows }`.
+     * Caller is responsible for mapping `items` to whatever row shape the UI needs.
+     */
+    getUnsendBundles(
+        userId: string,
+        filter = '*',
+        start = 0,
+        count = 50
+    ): Observable<UnsentBundlesResponse> {
+        const query = new HttpParams()
+            .set('name', filter || '*')
+            .set('start', start)
+            .set('count', count);
+
+        return this.http.get<UnsentBundlesResponse>(
+            `/api/bundle/getunsendbundles/userid/${userId}`,
+            { params: query }
+        );
     }
 
     getBundleAssets(bundleId: string): Observable<BundleAssetView[]> {

@@ -6,6 +6,7 @@ import { MenuModule } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishingJobView } from '@dotcms/dotcms-models';
+import { PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from './store/dot-publishing-queue.store';
 
@@ -25,6 +26,18 @@ export class DotPublishingQueuePageComponent {
 
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
+
+    readonly readyEmpty: PrincipalConfiguration = {
+        icon: 'pi-folder-open',
+        title: this.dotMessageService.get('publishing-queue.empty.ready.title'),
+        subtitle: this.dotMessageService.get('publishing-queue.empty.ready.subtitle')
+    };
+
+    readonly progressEmpty: PrincipalConfiguration = {
+        icon: 'pi-hourglass',
+        title: this.dotMessageService.get('publishing-queue.empty.in-progress.title'),
+        subtitle: this.dotMessageService.get('publishing-queue.empty.in-progress.subtitle')
+    };
 
     readyKebabFor(job: PublishingJobView): MenuItem[] {
         return [

@@ -8,13 +8,11 @@ import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotSite } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
 
@@ -27,9 +25,7 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        SelectModule,
         ToolbarModule,
-        DotSiteSelectorDirective,
         DotMessagePipe
     ],
     templateUrl: './dot-publishing-queue-toolbar.component.html',
@@ -50,10 +46,5 @@ export class DotPublishingQueueToolbarComponent {
 
     onSearch(value: string): void {
         this.searchSubject.next(value);
-    }
-
-    onSiteChange(event: SelectChangeEvent): void {
-        const site = event.value as DotSite | null;
-        this.store.setSiteId(site?.identifier ?? null);
     }
 }

@@ -12,9 +12,7 @@
             <div>
                 <dt class="text-color-secondary">{{ 'publishing-queue.detail.status' | dm }}</dt>
                 <dd>
-                    <p-tag
-                        [value]="statusLabelKey(detail.status) | dm"
-                        [severity]="statusSeverity(detail.status)" />
+                    <dot-publishing-status-chip [status]="detail.status" />
                 </dd>
             </div>
             <div class="col-span-2">
@@ -89,9 +87,8 @@
                                     </td>
                                     <td>
                                         @if (endpoint.status) {
-                                            <p-tag
-                                                [value]="statusLabelKey(endpoint.status) | dm"
-                                                [severity]="statusSeverity(endpoint.status)" />
+                                            <dot-publishing-status-chip
+                                                [status]="endpoint.status" />
                                         } @else {
                                             <span class="text-color-secondary">—</span>
                                         }
