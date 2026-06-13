@@ -591,9 +591,10 @@ public class PageRenderSourcesResourceTest {
         vtlContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(vtlContentlet, adminUser, false);
 
-        // Create a template that uses this theme
+        // Create a template that uses this theme. The template stores the theme folder's
+        // identifier (ThemeAPI.findThemeById resolves it via FolderAPI.find), not its path.
         final Template template = new TemplateDataGen()
-                .theme("//" + host.getHostname() + themeFolder.getPath())
+                .theme(themeFolder.getIdentifier())
                 .nextPersisted();
         APILocator.getVersionableAPI().setWorking(template);
         APILocator.getVersionableAPI().setLive(template);
@@ -661,10 +662,11 @@ public class PageRenderSourcesResourceTest {
         APILocator.getVersionableAPI().setWorking(page);
         APILocator.getVersionableAPI().setLive(page);
 
-        // Place a widget contentlet on the page
+        // Place a widget contentlet on the page (widgetTitle is required on the WIDGET base type)
         final Contentlet widgetContent = new ContentletDataGen(widgetCT.id())
                 .languageId(defaultLang.getId())
                 .host(host)
+                .setProperty("widgetTitle", "code-widget-" + System.currentTimeMillis())
                 .setProperty("code", "#set($x=1)")
                 .nextPersisted();
         widgetContent.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -762,9 +764,11 @@ public class PageRenderSourcesResourceTest {
         APILocator.getVersionableAPI().setLive(page);
 
         // Widget contentlet with the file field pointing to the VTL asset
+        // (widgetTitle is required on the WIDGET base type)
         final Contentlet widgetContent = new ContentletDataGen(widgetCT.id())
                 .languageId(defaultLang.getId())
                 .host(host)
+                .setProperty("widgetTitle", "file-widget-" + System.currentTimeMillis())
                 .setProperty("vtlFile", vtlContentlet.getIdentifier())
                 .nextPersisted();
         widgetContent.setIndexPolicy(IndexPolicy.WAIT_FOR);
