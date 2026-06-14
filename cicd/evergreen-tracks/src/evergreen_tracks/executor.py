@@ -38,7 +38,13 @@ def hub_login(username: str, password: str) -> str:
         timeout=_TIMEOUT,
     )
     resp.raise_for_status()
-    return resp.json()["token"]
+    body = resp.json()
+    if "token" not in body:
+        raise RuntimeError(
+            f"Hub login succeeded (HTTP {resp.status_code}) but response contained no 'token' key. "
+            f"Response body: {body!r}"
+        )
+    return body["token"]
 
 
 def delete_tag(repo: str, tag: str, token: str, *, apply: bool) -> None:
