@@ -56,13 +56,13 @@ def cmd_promote(args: argparse.Namespace) -> int:
         if hold_digest is None:
             continue
         if digests.get(track) == hold_digest:
+            log.info("%s: held at %s, skipping promotion", track, marker)
             continue
         log.info("%s (held) -> reconcile to %s (%s)", track, marker, hold_digest)
         point_tag(args.repo, track, hold_digest, apply=args.apply)
 
     if not moves:
-        if not held:
-            log.info("no track moves needed")
+        log.info("no track moves needed")
         return 0
     for m in moves:
         digest = digests[m.target_version]

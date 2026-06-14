@@ -205,6 +205,29 @@ def test_promote_reconciles_held_track_to_hold_digest(mock_list_tags, mock_point
         assert c.kwargs.get("apply") is True
 
 
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_held_track_logs_when_consistent(mock_list_tags, mock_point_tag, caplog):
+    """A held track already matching its hold marker must log that it is held and
+    skipped (no silent no-op), and emit no reconciling point_tag call."""
+    mock_list_tags.return_value = [
+        _make_tag("26.06.02-01", "sha256:aaa"),
+        _make_tag("standard_hold", "sha256:aaa"),
+        _make_tag("standard", "sha256:aaa"),  # already consistent with the hold
+    ]
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--apply",
+         "--latest-days", "0", "--standard-days", "0", "--trailing-days", "0"]
+    )
+    with caplog.at_level("INFO", logger="evergreen_tracks"):
+        with patch("evergreen_tracks.cli.dt") as mock_dt:
+            mock_dt.date.today.return_value = dt.date(2026, 7, 15)
+            rc = cmd_promote(args)
+    assert rc == 0
+    assert any("held at standard_hold" in r.message for r in caplog.records)
+    assert not [c for c in mock_point_tag.call_args_list if c.args[1] == "standard"]
+
+
 # ---------------------------------------------------------------------------
 # cmd_admin — taint
 # ---------------------------------------------------------------------------
