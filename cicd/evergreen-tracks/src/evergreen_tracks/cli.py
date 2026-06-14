@@ -71,7 +71,12 @@ def cmd_admin(args: argparse.Namespace) -> int:
                 return 2
             point_tag(args.repo, marker, digests[args.version], apply=args.apply)
         else:
-            token = hub_login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_TOKEN"])
+            username = os.environ.get("DOCKER_USERNAME")
+            token_val = os.environ.get("DOCKER_TOKEN")
+            if not username or not token_val:
+                log.error("DOCKER_USERNAME and DOCKER_TOKEN must be set for untaint")
+                return 2
+            token = hub_login(username, token_val)
             delete_tag(args.repo, marker, token, apply=args.apply)
         return 0
 
@@ -91,7 +96,12 @@ def cmd_admin(args: argparse.Namespace) -> int:
             point_tag(args.repo, marker, digests[args.version], apply=args.apply)
             point_tag(args.repo, args.track, digests[args.version], apply=args.apply)
         else:
-            token = hub_login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_TOKEN"])
+            username = os.environ.get("DOCKER_USERNAME")
+            token_val = os.environ.get("DOCKER_TOKEN")
+            if not username or not token_val:
+                log.error("DOCKER_USERNAME and DOCKER_TOKEN must be set for release-hold")
+                return 2
+            token = hub_login(username, token_val)
             delete_tag(args.repo, marker, token, apply=args.apply)
         return 0
 
@@ -101,11 +111,11 @@ def cmd_admin(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="evergreen-tracks")
-    p.add_argument("--apply", action="store_true", help="actually mutate the registry")
     sub = p.add_subparsers(dest="command", required=True)
 
     pr = sub.add_parser("promote", help="advance track tags by release age")
     pr.add_argument("--repo", required=True)
+    pr.add_argument("--apply", action="store_true", help="actually mutate the registry")
     pr.add_argument("--latest-days", type=int, default=0)
     pr.add_argument("--standard-days", type=int, default=14)
     pr.add_argument("--trailing-days", type=int, default=28)
@@ -113,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     ad = sub.add_parser("admin", help="taint / untaint / hold / release-hold")
     ad.add_argument("--repo", required=True)
+    ad.add_argument("--apply", action="store_true", help="actually mutate the registry")
     ad.add_argument("--action", required=True,
                     choices=["taint", "untaint", "hold", "release-hold"])
     ad.add_argument("--version", default="")
