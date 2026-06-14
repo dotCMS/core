@@ -1,0 +1,43 @@
+name: evergreen-tracks-promote
+on:
+  schedule:
+    - cron: '17 6 * * *'   # daily at 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Docker repo to operate on'
+        required: true
+        default: 'dotcms/dotcms-test'
+      apply:
+        description: 'Actually move tags (false = dry-run)'
+        required: true
+        default: 'false'
+      standard_days:
+        description: 'Min age (days) for the standard track'
+        required: false
+        default: '14'
+      trailing_days:
+        description: 'Min age (days) for the trailing track'
+        required: false
+        default: '28'
+
+jobs:
+  promote:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Promote tracks
+        working-directory: cicd/evergreen-tracks
+        run: |
+          uv run evergreen-tracks promote \
+            --repo "${{ github.event.inputs.repo || 'dotcms/dotcms-test' }}" \
+            --standard-days "${{ github.event.inputs.standard_days || '14' }}" \
+            --trailing-days "${{ github.event.inputs.trailing_days || '28' }}" \
+            ${{ (github.event.inputs.apply == 'true') && '--apply' || '' }}
