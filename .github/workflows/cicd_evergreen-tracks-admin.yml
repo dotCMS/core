@@ -5,7 +5,7 @@ on:
       repo:
         description: 'Docker repo to operate on'
         required: true
-        default: 'dotcms/dotcms-test'
+        default: 'dotcms/dotcms'
       action:
         description: 'taint | untaint | hold | release-hold'
         required: true
@@ -45,11 +45,20 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Run admin action
         working-directory: cicd/evergreen-tracks
+        env:
+          REPO: ${{ github.event.inputs.repo }}
+          ACTION: ${{ github.event.inputs.action }}
+          VERSION: ${{ github.event.inputs.version }}
+          TRACK: ${{ github.event.inputs.track }}
+          FORCE: ${{ github.event.inputs.force }}
+          APPLY: ${{ github.event.inputs.apply }}
         run: |
+          EXTRA=""
+          if [ "$FORCE" = "true" ]; then EXTRA="$EXTRA --force"; fi
+          if [ "$APPLY" = "true" ]; then EXTRA="$EXTRA --apply"; fi
           uv run evergreen-tracks admin \
-            --repo "${{ github.event.inputs.repo }}" \
-            --action "${{ github.event.inputs.action }}" \
-            --version "${{ github.event.inputs.version }}" \
-            --track "${{ github.event.inputs.track }}" \
-            ${{ (github.event.inputs.force == 'true') && '--force' || '' }} \
-            ${{ (github.event.inputs.apply == 'true') && '--apply' || '' }}
+            --repo "$REPO" \
+            --action "$ACTION" \
+            --version "$VERSION" \
+            --track "$TRACK" \
+            $EXTRA

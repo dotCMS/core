@@ -7,7 +7,7 @@ on:
       repo:
         description: 'Docker repo to operate on'
         required: true
-        default: 'dotcms/dotcms-test'
+        default: 'dotcms/dotcms'
       apply:
         description: 'Actually move tags (false = dry-run)'
         required: true
@@ -20,6 +20,9 @@ on:
         description: 'Min age (days) for the trailing track'
         required: false
         default: '28'
+
+permissions:
+  contents: read
 
 jobs:
   promote:
@@ -35,9 +38,29 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Promote tracks
         working-directory: cicd/evergreen-tracks
+        env:
+          # Scheduled runs default to dotcms/dotcms; dispatch can override.
+          REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_APPLY: ${{ github.event.inputs.apply }}
+          # Production safety gate: the daily cron only moves real tags when the
+          # repo variable EVERGREEN_TRACKS_APPLY is set to 'true'. Until then the
+          # scheduled run is a dry-run, so merging this workflow does not silently
+          # start mutating dotcms/dotcms.
+          SCHEDULED_APPLY: ${{ vars.EVERGREEN_TRACKS_APPLY }}
         run: |
+          APPLY=""
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DISPATCH_APPLY" = "true" ]; then
+            APPLY="--apply"
+          fi
+          if [ "$EVENT_NAME" = "schedule" ] && [ "$SCHEDULED_APPLY" = "true" ]; then
+            APPLY="--apply"
+          fi
+          echo "event=$EVENT_NAME repo=$REPO apply=${APPLY:-<dry-run>}"
           uv run evergreen-tracks promote \
-            --repo "${{ github.event.inputs.repo || 'dotcms/dotcms-test' }}" \
-            --standard-days "${{ github.event.inputs.standard_days || '14' }}" \
-            --trailing-days "${{ github.event.inputs.trailing_days || '28' }}" \
-            ${{ (github.event.inputs.apply == 'true') && '--apply' || '' }}
+            --repo "$REPO" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" \
+            $APPLY
