@@ -9,7 +9,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from evergreen_tracks.cli import build_parser, cmd_admin, cmd_promote, main
+from evergreen_tracks.cli import (
+    _current_version,
+    build_parser,
+    cmd_admin,
+    cmd_promote,
+    main,
+)
 from evergreen_tracks.registry import Tag
 
 
@@ -134,6 +140,69 @@ def test_promote_apply_calls_point_tag(mock_list_tags, mock_point_tag):
     # All calls must use apply=True
     for call in mock_point_tag.call_args_list:
         assert call.kwargs.get("apply") is True or call[1].get("apply") is True
+
+
+# ---------------------------------------------------------------------------
+# _current_version — newest GA wins on a shared digest (FIX 1)
+# ---------------------------------------------------------------------------
+
+def test_current_version_picks_newest_on_shared_digest():
+    """When two GA versions share the track tag's digest, the NEWEST must be returned."""
+    from evergreen_tracks.calver import parse_release
+
+    digests = {
+        "latest": "sha256:shared",
+        "26.06.02-01": "sha256:shared",  # older GA, same digest
+        "26.06.16-01": "sha256:shared",  # newer GA, same digest
+    }
+    releases = [
+        parse_release("26.06.02-01"),
+        parse_release("26.06.16-01"),
+    ]
+    assert _current_version("latest", digests, releases) == "26.06.16-01"
+
+
+def test_current_version_none_when_no_match():
+    """No matching digest -> None."""
+    from evergreen_tracks.calver import parse_release
+
+    digests = {"latest": "sha256:zzz", "26.06.02-01": "sha256:aaa"}
+    releases = [parse_release("26.06.02-01")]
+    assert _current_version("latest", digests, releases) is None
+
+
+# ---------------------------------------------------------------------------
+# cmd_promote — held track reconciliation (FIX 2)
+# ---------------------------------------------------------------------------
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_reconciles_held_track_to_hold_digest(mock_list_tags, mock_point_tag):
+    """A held track whose floating tag diverges from its hold marker must be reconciled
+    to the hold marker's digest (not promoted elsewhere)."""
+    mock_list_tags.return_value = [
+        _make_tag("26.06.02-01", "sha256:aaa"),
+        _make_tag("26.06.16-01", "sha256:bbb"),
+        # standard is held to the older release...
+        _make_tag("standard_hold", "sha256:aaa"),
+        # ...but the floating standard tag has drifted to the newer digest.
+        _make_tag("standard", "sha256:bbb"),
+    ]
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--apply",
+         "--latest-days", "0", "--standard-days", "0", "--trailing-days", "0"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 7, 15)
+        rc = cmd_promote(args)
+    assert rc == 0
+    # The held "standard" track must be pointed at the hold marker digest (sha256:aaa),
+    # and never at the newer digest (sha256:bbb) as a promotion.
+    standard_calls = [c for c in mock_point_tag.call_args_list if c.args[1] == "standard"]
+    assert standard_calls, "expected a point_tag call reconciling the held 'standard' track"
+    for c in standard_calls:
+        assert c.args[2] == "sha256:aaa"
+        assert c.kwargs.get("apply") is True
 
 
 # ---------------------------------------------------------------------------

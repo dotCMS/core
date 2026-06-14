@@ -33,10 +33,10 @@ def _current_version(track: str, digests: dict[str, str], releases) -> str | Non
     track_digest = digests.get(track)
     if not track_digest:
         return None
-    for r in releases:
-        if digests.get(r.version) == track_digest:
-            return r.version
-    return None
+    matches = [r for r in releases if digests.get(r.version) == track_digest]
+    if not matches:
+        return None
+    return max(matches, key=lambda r: r.sort_key).version
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
@@ -47,8 +47,22 @@ def cmd_promote(args: argparse.Namespace) -> int:
         TrackState("trailing", args.trailing_days, _current_version("trailing", digests, releases)),
     ]
     moves = plan(releases, tainted, held, tracks, today=dt.date.today())
+
+    # Held tracks are frozen against promotion; instead reconcile the floating
+    # <track> tag to its <track>_hold marker digest so a divergence self-heals.
+    for track in held:
+        marker = hold_tag(track)
+        hold_digest = digests.get(marker)
+        if hold_digest is None:
+            continue
+        if digests.get(track) == hold_digest:
+            continue
+        log.info("%s (held) -> reconcile to %s (%s)", track, marker, hold_digest)
+        point_tag(args.repo, track, hold_digest, apply=args.apply)
+
     if not moves:
-        log.info("no track moves needed")
+        if not held:
+            log.info("no track moves needed")
         return 0
     for m in moves:
         digest = digests[m.target_version]
