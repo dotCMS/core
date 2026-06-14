@@ -16,7 +16,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -487,7 +487,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
         // getById checks doesUserHavePermission(contentlet, READ, user). Lock the asset down
-        // directly so the limited user (Chris Publisher, a non-admin) is genuinely without READ:
+        // directly so the limited user is genuinely without READ:
         //   1. break inheritance on the contentlet (permissionIndividually copies the parent's
         //      perms down — which would otherwise carry the host's broad READ), then
         //   2. REPLACE the whole set with a single READ for a throwaway role nobody is in.
@@ -504,7 +504,19 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                         PermissionAPI.PERMISSION_READ, true)),
                 saved, sysUser, false);
 
-        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        // A purpose-built user whose only role grants nothing. The shared TestUserUtils users
+        // (e.g. Chris Publisher) are cached across the suite and carry a type-level CONTENTLETS
+        // READ grant on a host via their role, which would survive the lockdown above and grant
+        // READ through inheritance — making this assertion flaky. A fresh user in a fresh empty
+        // role has no such grant.
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+        // Sanity-check the fixture itself: if the lockdown ever fails to deny READ the failure
+        // should point here, not at the endpoint behaviour under test.
+        assertFalse("Fixture error: limited user should NOT have READ on the locked-down asset",
+                permissionAPI.doesUserHavePermission(saved, PermissionAPI.PERMISSION_READ, limitedUser, false));
+
         final WebAssetResourceV2 resource = createResource(limitedUser);
 
         Exception thrown = null;
