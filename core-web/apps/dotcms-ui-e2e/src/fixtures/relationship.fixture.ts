@@ -8,6 +8,10 @@ import {
     createFakeContentType
 } from '../requests/contentType';
 import { createFieldVariable } from '../requests/field-variables';
+import {
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField
+} from '../utils/dot-content-types.mock';
 
 export type TestContentType = ContentType;
 
@@ -172,18 +176,16 @@ function authorContentTypePayload(suffix: string): CreateContentTypePayload {
         name: `E2E_Author_${suffix}`,
         variable: `E2EAuthor${suffix}`,
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            }),
+            createFakePayloadTextField({
                 name: 'Bio',
                 variable: 'bio',
                 sortOrder: 2
-            }
+            })
         ]
     };
 }
@@ -194,12 +196,11 @@ function tagContentTypePayload(suffix: string): CreateContentTypePayload {
         variable: `E2ETag${suffix}`,
         metadata: {},
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Name',
                 variable: 'name',
                 sortOrder: 1
-            }
+            })
         ]
     };
 }
@@ -216,14 +217,12 @@ function blogContentTypePayload(
         name: `${name}_${suffix}`,
         variable: `${variable}${suffix}`,
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+            }),
+            createFakePayloadRelationshipField({
                 name:
                     relationshipFieldVariable.charAt(0).toUpperCase() +
                     relationshipFieldVariable.slice(1),
@@ -233,7 +232,7 @@ function blogContentTypePayload(
                     velocityVar: relatedContentTypeVariable,
                     cardinality
                 }
-            }
+            })
         ]
     };
 }

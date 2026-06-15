@@ -83,6 +83,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -116,6 +117,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -787,11 +789,15 @@ public class PageResource {
      */
     @Operation(
             operationId = "addContentToPage",
-            summary = "Add or update content in page containers",
-            description = "Updates all the contents in an HTML Page. Used to add or remove Contentlets from Containers. "
-                    + "Takes a JSON array of container entries, each specifying a container ID, a unique UUID, and the "
-                    + "list of contentlet identifiers. Duplicate container entries are merged automatically. "
-                    + "Note: 'sortOrder' is required for each container entry but may not be present in the auto-generated schema."
+            summary = "Replace the content mapping of a page",
+            description = "Replaces all container-to-contentlet assignments for the page (DEFAULT variant, "
+                    + "or a named variant when 'variantName' is provided). This is a full replacement, not a patch: "
+                    + "omitting a container slot removes its content. The body is a bare JSON array of container "
+                    + "entries; each entry maps one container instance to its ordered list of contentlets. "
+                    + "Duplicate entries are merged automatically. To build the payload, fetch "
+                    + "GET /api/v1/page/json/{uri} first (faster than /render — no Velocity execution): use "
+                    + "'page.containers' for the path-based identifier and "
+                    + "'page.layout.body.rows[].columns[].containers[]' for the uuid of each slot."
     )
     @POST
     @JSONP
@@ -828,6 +834,7 @@ public class PageResource {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+            @ApiResponse(responseCode = "409", description = "Conflict — net content loss exceeds the configured threshold; refresh and retry"),
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -835,9 +842,19 @@ public class PageResource {
             @PathParam("pageId") final String pageId,
             @Parameter(description = "Variant name for A/B testing (defaults to DEFAULT)")
             @QueryParam("variantName") final String variantNameParam,
-            @RequestBody(description = "Container entries with contentlet identifiers",
+            @RequestBody(description = "Array of container entries. Full replacement: "
+                    + "omitting a slot removes its content from the page.",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = PageContainerForm.class)))
+                    content = @Content(
+                            mediaType = "application/json",
+                            array = @ArraySchema(schema = @Schema(implementation = PageContainerEntryView.class)),
+                            examples = @ExampleObject(value = "[\n"
+                                    + "  {\n"
+                                    + "    \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n"
+                                    + "    \"uuid\": \"10\",\n"
+                                    + "    \"contentletsId\": [\"7b33f0b474ba3b82c3a908b81dce5e2c\"]\n"
+                                    + "  }\n"
+                                    + "]")))
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
@@ -864,8 +881,17 @@ public class PageResource {
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
             // Save content and Get the saved contentlets
-            final List<ContentView> savedContent = pageResourceHelper.saveContent(
-                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            final List<ContentView> savedContent;
+            try {
+                savedContent = pageResourceHelper.saveContent(
+                        pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            } catch (StalePageSaveException e) {
+                Logger.warn(this, String.format("Page content save rejected for pageId '%s' by user '%s': %s",
+                        pageId, user.getUserId(), e.getMessage()));
+                return ExceptionMapperUtil.createResponse(
+                        "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.",
+                        Response.Status.CONFLICT);
+            }
 
             return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {

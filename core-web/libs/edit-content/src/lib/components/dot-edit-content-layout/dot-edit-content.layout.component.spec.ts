@@ -33,7 +33,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
@@ -343,6 +343,41 @@ describe('EditContentLayoutComponent', () => {
                 spectator.component.onFormChange(MOCK_FORM_VALUES);
 
                 expect(onFormChangeSpy).toHaveBeenCalledWith(MOCK_FORM_VALUES);
+            });
+        });
+
+        describe('onWorkflowActionFired()', () => {
+            it('should delegate to the form with params built from the store', () => {
+                const fireWorkflowActionSpy = jest.fn();
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                    fireWorkflowAction: fireWorkflowActionSpy
+                } as unknown as DotEditContentFormComponent);
+
+                jest.spyOn(store, 'currentLocale').mockReturnValue(MOCK_LANGUAGES[0]);
+                jest.spyOn(store, 'contentlet').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+                jest.spyOn(store, 'contentType').mockReturnValue(CONTENT_TYPE_MOCK);
+                jest.spyOn(store, 'currentIdentifier').mockReturnValue(
+                    MOCK_CONTENTLET_1_TAB.identifier
+                );
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+                spectator.component.onWorkflowActionFired(workflow);
+
+                expect(fireWorkflowActionSpy).toHaveBeenCalledWith({
+                    workflow,
+                    inode: MOCK_CONTENTLET_1_TAB.inode,
+                    contentType: CONTENT_TYPE_MOCK.variable,
+                    languageId: MOCK_LANGUAGES[0].id.toString(),
+                    identifier: MOCK_CONTENTLET_1_TAB.identifier
+                });
+            });
+
+            it('should not throw when the form ref is undefined (compare view)', () => {
+                jest.spyOn(spectator.component, '$editContentForm').mockReturnValue(undefined);
+
+                const workflow = { id: 'action-id' } as DotCMSWorkflowAction;
+
+                expect(() => spectator.component.onWorkflowActionFired(workflow)).not.toThrow();
             });
         });
 

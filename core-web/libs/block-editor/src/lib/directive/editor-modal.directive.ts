@@ -20,6 +20,9 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     private editorElement: HTMLElement;
 
+    /** Stable reference so {@link ngOnDestroy} can actually remove the listener it registered. */
+    private readonly hideOnEditorMousedown = () => this.hide();
+
     private readonly PROPER_MODIFIERS = {
         modifiers: [
             {
@@ -53,16 +56,19 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             placement: 'bottom-start',
             popperOptions: this.PROPER_MODIFIERS,
             hideOnClick: 'toggle',
+            // Append to body so the popover escapes the editor's `overflow-auto` scroll
+            // container (and the surrounding field card), which otherwise clips it (#35908).
+            appendTo: () => document.body,
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
         }) as Instance;
 
-        editorElement.addEventListener('mousedown', () => this.hide());
+        editorElement.addEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     ngOnDestroy(): void {
         this.tippy?.destroy();
-        this.editorElement.removeEventListener('mousedown', () => this.hide());
+        this.editorElement?.removeEventListener('mousedown', this.hideOnEditorMousedown);
     }
 
     show() {
@@ -85,8 +91,10 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         if (isNodeSelection(state.selection)) {
             const node = this.getNodeElement(view, from);
             if (node) {
-                // If the node has a bubble menu, return its bounding client rect
-                const bubbleMenu = document.querySelector('[tiptapbubblemenu]');
+                // Scope to THIS editor's bubble menu — a global query returns the first instance (#35908).
+                const bubbleMenu = this.elRef.nativeElement
+                    .closest('dot-bubble-menu')
+                    ?.querySelector('[tiptapbubblemenu]');
 
                 if (bubbleMenu) {
                     return bubbleMenu.getBoundingClientRect();

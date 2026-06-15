@@ -25,6 +25,28 @@
     transition: grid-template-columns 150ms ease-in-out;
 
     &.edit-content--with-sidebar {
-        grid-template-columns: minmax(0, 1fr) 21.875rem;
+        grid-template-columns: minmax(0, 1fr) 360px;
+    }
+}
+
+// Normalize every p-message banner in the top bar to the same compact banner padding
+// (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
+// each other. Done here once instead of per-instance styleClass so they can't drift apart.
+.edit-content-layout__topBar {
+    ::ng-deep .p-message-content-wrapper {
+        padding: 0 !important;
+    }
+
+    // Fixed banner height + vertical centering (instead of vertical padding) so every top-bar
+    // message is the same height regardless of its content. The info banner carries a close
+    // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
+    // Font is set in px (not rem) because the app root is 14px, so a rem value would not land
+    // on the intended 13.5px.
+    ::ng-deep .p-message-content {
+        display: flex;
+        align-items: center;
+        min-height: 54px;
+        padding: 0 1.75rem !important;
+        font-size: 13.5px;
     }
 }

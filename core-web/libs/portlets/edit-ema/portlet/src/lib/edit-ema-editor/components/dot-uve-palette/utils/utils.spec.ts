@@ -8,22 +8,24 @@ import {
     DotCMSContentlet,
     DotCMSContentType
 } from '@dotcms/dotcms-models';
-
 import {
     buildContentletsQuery,
     buildESContentParams,
     buildPaletteContent,
     buildPaletteFavorite,
     buildPaletteMenuItems,
+    DotPaletteListStatus,
+    getPaletteState,
+    getSortActiveClass
+} from '@dotcms/portlets/dot-ema/ui';
+
+import {
     extractContentletPropertiesFromPageAsset,
     filterFormValues,
-    getPaletteState,
-    getSortActiveClass,
     updateContentletPropertiesInPageAsset
 } from './index';
 
 import { ActionPayload } from '../../../../shared/models';
-import { DotPaletteListStatus } from '../models';
 
 describe('Dot UVE Palette Utils', () => {
     describe('getSortActiveClass', () => {

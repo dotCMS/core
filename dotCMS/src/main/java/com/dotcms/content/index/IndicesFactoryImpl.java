@@ -115,6 +115,9 @@ public class IndicesFactoryImpl implements IndicesFactory {
             throw new DotDataException("At least one index must be specified when saving versioned indices for version: " + version);
         }
 
+        // Guard: every name must carry the .os suffix — catch stripped names before they hit the DB
+        IndicesFactory.requireOSTagged(indicesInfo);
+
         try {
             // First, remove existing indices for this version
             removeExistingIndicesForVersion(version);
