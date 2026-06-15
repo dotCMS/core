@@ -12358,6 +12358,9 @@ paths:
           description: Contentlets saved successfully
         "400":
           description: Bad request or data exception
+        "409":
+          description: Conflict — net content loss exceeds the configured threshold;
+            refresh and retry
       summary: Add or update content in page containers
       tags:
       - Page
