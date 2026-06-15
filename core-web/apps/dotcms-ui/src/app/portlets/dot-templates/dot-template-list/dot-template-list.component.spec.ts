@@ -30,9 +30,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -44,8 +41,10 @@ import {
     DotContentState,
     DotMessageSeverity,
     DotMessageType,
+    DotSite,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
@@ -99,7 +98,6 @@ afterAll(() => {
 });
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
@@ -451,6 +449,10 @@ describe('DotTemplateListComponent', () => {
 
     const dialogRefClose = new Subject();
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable()
+    };
 
     beforeEach(async () => {
         // Create spies for services that will be injected
@@ -488,7 +490,6 @@ describe('DotTemplateListComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotRouterService,
                     useValue: dotRouterServiceSpy
@@ -501,8 +502,6 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 { provide: DialogService, useValue: dialogServiceSpy },
@@ -516,7 +515,8 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: PushPublishService,
                     useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
-                }
+                },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ],
             imports: [
                 DotTemplateListComponent,
@@ -601,9 +601,8 @@ describe('DotTemplateListComponent', () => {
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
-            siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 

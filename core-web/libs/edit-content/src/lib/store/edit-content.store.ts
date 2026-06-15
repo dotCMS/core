@@ -69,6 +69,12 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+    // Status of the allowed-actions re-fetch (updateCurrentContentActions). Lets the UI
+    // disable the workflow actions while the list is being refreshed (e.g. after a lock toggle).
+    actionsStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
     workflowActionSuccess: DotCMSContentlet | null;
 
     // User state
@@ -86,6 +92,7 @@ export interface EditContentState {
 
     // Lock state
     lockError: string | null;
+    lockStatus: ComponentStatus;
     canLock: boolean;
     lockSwitchLabel: string;
 
@@ -193,6 +200,10 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    actionsStatus: {
+        status: ComponentStatus.INIT,
+        error: null
+    },
     workflowActionSuccess: null,
 
     // User state
@@ -204,7 +215,8 @@ export const initialRootState: EditContentState = {
         activeTab: 0,
         isSidebarOpen: true,
         activeSidebarTab: 0,
-        isBetaMessageVisible: true
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
     },
 
     // Information state
@@ -216,6 +228,7 @@ export const initialRootState: EditContentState = {
 
     // Lock state
     lockError: null,
+    lockStatus: ComponentStatus.IDLE,
     canLock: false,
     lockSwitchLabel: 'edit.content.unlocked',
 

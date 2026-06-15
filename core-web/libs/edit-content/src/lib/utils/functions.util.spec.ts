@@ -16,11 +16,14 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
+    escapeHtml,
+    generatePageEditUrl,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
     isFilteredType,
     isValidJson,
+    resolveLocker,
     sortLocalesTranslatedFirst,
     stringToJson,
     transformFormDataFn
@@ -1183,11 +1186,12 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
             });
 
-            it('should return stored state from sessionStorage', () => {
+            it('should return stored state from sessionStorage merged with defaults', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
@@ -1197,7 +1201,11 @@ describe('Utils Functions', () => {
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
-                expect(state).toEqual(mockState);
+                expect(state).toEqual({
+                    view: 'form',
+                    localeSelectorTab: 'all',
+                    ...mockState
+                });
             });
 
             it('should return default state and warn when sessionStorage has invalid JSON', () => {
@@ -1209,7 +1217,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -1234,7 +1243,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -1359,6 +1369,33 @@ describe('Utils Functions', () => {
             });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+    });
+
+    describe('generatePageEditUrl', () => {
+        it('should generate the correct edit page URL when all attributes are present', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: '/blog/index',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Findex%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
+
+            expect(generatePageEditUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string when required attributes are missing', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            expect(generatePageEditUrl(contentlet)).toBe('');
         });
     });
 
@@ -1809,6 +1846,40 @@ describe('Utils Functions', () => {
                     expect(processFieldValue(value, field)).toBe(value);
                 });
             });
+        });
+    });
+
+    describe('escapeHtml', () => {
+        it('should escape HTML special characters', () => {
+            expect(escapeHtml('<script>alert("x")</script>')).toBe(
+                '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+            );
+            expect(escapeHtml("Tom & Jerry's <b>")).toBe('Tom &amp; Jerry&#39;s &lt;b&gt;');
+        });
+
+        it('should leave a plain name untouched', () => {
+            expect(escapeHtml('Anna García')).toBe('Anna García');
+        });
+    });
+
+    describe('resolveLocker', () => {
+        it('should resolve from a lockedBy object', () => {
+            expect(
+                resolveLocker({
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should resolve from a lockedBy string + lockedByName', () => {
+            expect(
+                resolveLocker({ lockedBy: '123', lockedByName: 'Anna García' } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should return null when there is no lock', () => {
+            expect(resolveLocker({} as never)).toBeNull();
+            expect(resolveLocker(null)).toBeNull();
         });
     });
 });

@@ -1,5 +1,7 @@
 package com.dotcms.content.index.domain;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,8 +23,9 @@ import java.util.Map;
  * @param <T> the type of elements in this list — typically {@code Contentlet} when produced
  *            by {@code SearchAPI}, or {@code ContentMap} when produced by {@code ESContentTool}
  */
-public class ContentSearchResults<T> implements List<T> {
+public class ContentSearchResults<T> implements List<T>, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final ContentSearchResponse response;
@@ -49,7 +52,7 @@ public class ContentSearchResults<T> implements List<T> {
     }
 
     public long getTotalResults() {
-        return response.hits().totalHits().value();
+        return response.hits().getTotalHits().value();
     }
 
     public String getScrollId() {
@@ -60,8 +63,15 @@ public class ContentSearchResults<T> implements List<T> {
         return response.tookMillis();
     }
 
-    public Map<String, List<AggregationBucket>> getAggregations() {
-        return response.aggregations();
+    /**
+     * Returns the full neutral aggregation tree exposed to Velocity as
+     * {@code $results.aggregations}. Preserves nested sub-aggregations and {@code top_hits}, so
+     * legacy templates that walk {@code .buckets} / {@code getKeyAsNumber()} / {@code getDocCount()}
+     * / {@code getAggregations()} keep working. For the flat first-level terms map, use
+     * {@link #getResponse()}.{@link ContentSearchResponse#aggregations() aggregations()}.
+     */
+    public Map<String, Aggregation> getAggregations() {
+        return response.aggregationTree();
     }
 
     public List<T> getContentlets() {
