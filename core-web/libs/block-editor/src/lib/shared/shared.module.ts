@@ -4,6 +4,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { Button } from 'primeng/button';
 
+import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
+
 // Shared
 import {
     ContentletStatePipe,
@@ -17,7 +19,13 @@ import {
 import { SuggestionsService } from './services';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, Button],
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        Button,
+        DotContentletStatusBadgeComponent
+    ],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,
