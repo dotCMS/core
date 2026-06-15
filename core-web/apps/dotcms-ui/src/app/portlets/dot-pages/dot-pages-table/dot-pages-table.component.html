@@ -95,9 +95,7 @@
             <td>
                 <div class="flex items-center gap-2 whitespace-nowrap">
                     <dot-contentlet-status-badge [state]="page" />
-                    <dot-badge [bordered]="true">
-                        {{ languageIsoCodeById[page['languageId']] }}
-                    </dot-badge>
+                    <p-tag severity="info" [value]="languageIsoCodeById[page['languageId']]" />
                     <dot-contentlet-lock-icon [locked]="page['locked']" />
                 </div>
             </td>

@@ -25,6 +25,7 @@ import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
@@ -64,6 +65,7 @@ type TableRowSelectEvent<T> = {
         SelectModule,
         InputTextModule,
         TableModule,
+        TagModule,
         TooltipModule,
         RouterModule,
         ReactiveFormsModule,
