@@ -35,9 +35,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -54,7 +51,7 @@ import { DotDownloadBundleDialogService } from '../../../api/services/dot-downlo
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { NotificationsService } from '../../../api/services/notifications-service';
 import { LOCATION_TOKEN } from '../../../providers';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
@@ -145,9 +142,6 @@ describe('MainLegacyComponent', () => {
                 DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,

@@ -20,8 +20,8 @@
     }
     @if (data?.contentlet) {
         <div class="state">
-            <dot-contentlet-status-chip [state]="data.contentlet" />
-            <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
+            <dot-contentlet-status-badge [state]="data.contentlet" />
+            <p-tag severity="info" [value]="data.contentlet.language | lowercase" />
         </div>
     }
 </div>

@@ -114,6 +114,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
@@ -398,6 +399,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
+        WebAssetResourceV2IntegrationTest.class,
         SystemTableFactoryTest.class,
         Task230707CreateSystemTableTest.class,
         SystemAPITest.class,

@@ -1,0 +1,19 @@
+<div class="min-h-0 flex-1">
+    <dot-uve-palette-list
+        [listType]="$listType()"
+        [selectionMode]="true"
+        (selectContentType)="onSelect($event)" />
+</div>
+
+<div class="flex justify-end gap-2 border-t border-gray-200 px-4 pt-4">
+    <p-button
+        [label]="'dot.common.cancel' | dm"
+        [text]="true"
+        data-testid="content-type-selector-cancel"
+        (click)="onCancel()" />
+    <p-button
+        [label]="'content-drive.dialog.content-type-selector.create' | dm"
+        [disabled]="!$canCreate()"
+        data-testid="content-type-selector-create"
+        (click)="onCreate()" />
+</div>

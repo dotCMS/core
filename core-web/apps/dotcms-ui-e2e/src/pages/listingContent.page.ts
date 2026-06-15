@@ -1,12 +1,10 @@
 import { expect, Page } from '@playwright/test';
+import { getLegacyFrame } from '@utils/iframe';
 
 export class ListingContentPage {
     private addBtn = this.page.locator("span[widgetid='dijit_form_DropDownButton_0']");
     private addNewContent = this.page.locator(".dijitPopup tr[aria-label='Add New Content']");
-    private resultsTable = this.page
-        .locator('iframe[name="detailFrame"]')
-        .contentFrame()
-        .locator('#results_table');
+    private resultsTable = getLegacyFrame(this.page).locator('#results_table');
 
     constructor(private page: Page) {}
 
