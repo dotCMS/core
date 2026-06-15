@@ -141,6 +141,10 @@ return Response.status(Response.Status.CREATED)
 
 ## Form Object Pattern
 
+> Forms are **inbound request-binding beans**, not immutable value objects. They stay as mutable
+> classes (Jackson binds them, then the resource validates and consumes them) — they do **not** use
+> records or the Immutables library, so the record migration below does not apply to them.
+
 ### Form Validation
 ```java
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -177,32 +181,98 @@ public class MyEntityForm {
 }
 ```
 
-## View Object Pattern (`@Value.Immutable`)
+## View Object Pattern (Java Records)
 
-REST view objects use the `@Value.Immutable` **`Abstract*` interface** style (dominant in
-`rest/`), not the `Immutable*`-prefix class style from
-[JAVA_STANDARDS.md](JAVA_STANDARDS.md#immutable-objects-critical-pattern). Don't hand-write a
-`final class` with a `@JsonCreator` constructor and manual getters. Two REST-specific points:
+REST view objects are **Java records** — not the Immutables `@Value.Immutable` `Abstract*` interface
+style, and not the `Immutable*`-prefix class style from
+[JAVA_STANDARDS.md](JAVA_STANDARDS.md#immutable-objects-critical-pattern). The record *is* the public
+type: there is no generated `Abstract*`/`Immutable*` indirection, no `@Value.Style`, and no
+`passAnnotations`. Records are implicitly `final` and their components are `final`, so immutability
+comes for free.
 
-- **`typeAbstract = "Abstract*"`** — the generated type drops the prefix (`AbstractAssetView` → `AssetView`).
-- **`passAnnotations = Schema.class`** — required, or a *class-level* `@Schema(description=…)` is
-  dropped from `openapi.yaml` (Immutables doesn't copy type annotations by default). Property-level
-  `@Schema` on accessors carries over automatically.
+Key points when migrating a view object off Immutables:
+
+- **The record is the type.** Drop `@Value.Immutable`, `@Value.Style`, the `Abstract*` interface, and
+  the `@JsonDeserialize(as = …)` redirect. Reference the record directly everywhere.
+- **`@Schema` goes straight on the record and its components.** Because the record is a concrete,
+  directly-annotated type, the class-level `@Schema(description=…)` is emitted into `openapi.yaml`
+  without the `passAnnotations` workaround Immutables required. Component-level `@Schema` carries over
+  the same way it did on interface accessors.
+- **Jackson uses native record support (Jackson 2.12+).** Deserialization runs through the canonical
+  constructor — no `@JsonCreator` needed. **Gotcha:** Jackson needs the constructor parameter names,
+  so the module must be compiled with `-parameters` (preferred); otherwise fall back to
+  `@JsonProperty` on each component.
+- **Builder is hand-written for now.** Records don't generate a builder, and many view objects have
+  enough fields that positional construction is error-prone. Provide a small static nested `Builder`.
+  *Going forward,* prefer the [`@RecordBuilder`](https://github.com/Randgalt/record-builder)
+  annotation processor to generate the builder instead of maintaining it by hand — the call site
+  (`FileAssetView.builder()…build()`) stays identical, so the swap is non-breaking.
 
 ```java
-@Value.Style(typeImmutable = "*", typeAbstract = "Abstract*", passAnnotations = Schema.class)
-@Value.Immutable
-@JsonDeserialize(as = FileAssetView.class)   // the GENERATED type, not Immutable*
 @Schema(description = "File asset view returned after a save")
-public interface AbstractFileAssetView {
-    @Schema(description = "Asset identifier") String identifier();
-    @Schema(description = "File size in bytes") long fileSize();
+public record FileAssetView(
+        @Schema(description = "Asset identifier") String identifier,
+        @Schema(description = "File size in bytes") long fileSize
+) {
+    // Hand-written builder for now; replace with @RecordBuilder on the record going forward.
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String identifier;
+        private long fileSize;
+
+        public Builder identifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder fileSize(long fileSize) {
+            this.fileSize = fileSize;
+            return this;
+        }
+
+        public FileAssetView build() {
+            return new FileAssetView(identifier, fileSize);
+        }
+    }
 }
 // FileAssetView.builder().identifier(id).fileSize(size).build();
 ```
 
-After changes, `./mvnw compile -pl :dotcms-core -DskipTests` then confirm
-`git diff .../openapi/openapi.yaml` is empty.
+The same record + hand-written-builder approach applies to **immutable query / parameter objects**
+(e.g. `MyEntityQuery` used in pagination below). These are the other place the Immutables builder
+was pulling its weight, and records cover them cleanly — set the builder defaults to match the
+endpoint's `@DefaultValue`s:
+
+```java
+public record MyEntityQuery(int page, int perPage, String filter, String orderBy) {
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private int page = 1;       // matches @DefaultValue("1")
+        private int perPage = 20;   // matches @DefaultValue("20")
+        private String filter;
+        private String orderBy;
+
+        public Builder page(int page) { this.page = page; return this; }
+        public Builder perPage(int perPage) { this.perPage = perPage; return this; }
+        public Builder filter(String filter) { this.filter = filter; return this; }
+        public Builder orderBy(String orderBy) { this.orderBy = orderBy; return this; }
+
+        public MyEntityQuery build() {
+            return new MyEntityQuery(page, perPage, filter, orderBy);
+        }
+    }
+}
+// MyEntityQuery.builder().page(page).perPage(perPage).filter(filter).orderBy(orderBy).build();
+```
+
+After changes, run `./mvnw compile -pl :dotcms-core -DskipTests`, then confirm
+`git diff .../openapi/openapi.yaml` is empty (or contains only the intended schema changes).
 
 ## Security Patterns
 
@@ -289,6 +359,8 @@ return Response.status(Response.Status.NOT_FOUND)
 - **OpenAPI spec**: Auto-generated at `/WEB-INF/openapi/openapi.yaml`
 - **Pre-commit hook**: Regenerates spec on REST API changes
 - **Merge strategy**: Uses "ours" strategy for merge conflicts
+- **Record view objects**: `@Schema` annotations on the record type and its components are picked up
+  directly — no `passAnnotations` configuration is needed since records are concrete annotated types.
 
 ### Annotation Examples
 ```java
@@ -370,7 +442,7 @@ public Response list(
         );
     }
     
-    // Build query
+    // Build query (MyEntityQuery is now a record with a hand-written builder)
     MyEntityQuery query = MyEntityQuery.builder()
         .page(page)
         .perPage(perPage)
@@ -422,4 +494,5 @@ public Response bulkOperation(
 - **WebResource**: Found in `com.dotcms.rest.WebResource`
 - **ResponseUtil**: Located in `com.dotcms.rest.ResponseUtil`
 - **Forms**: Typically in same package as resource or `*.form` subpackage
+- **View / query records**: Same package as the resource or a `*.view` / `*.query` subpackage
 - **Integration tests**: Located in `dotcms-integration` module
