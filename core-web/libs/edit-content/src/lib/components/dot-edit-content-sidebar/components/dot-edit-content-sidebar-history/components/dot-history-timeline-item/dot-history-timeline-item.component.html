@@ -102,7 +102,7 @@
                         dotGravatar
                         [email]="$item().modUserName"
                         shape="circle"
-                        class="size-6! text-[11px]!"
+                        styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
                         data-testid="user-avatar" />
                 </div>
                 <span data-testid="history-user" class="min-w-0 truncate text-xs text-gray-700">
@@ -117,7 +117,7 @@
                     [copy]="$item().inode"
                     [label]="$inodeShort()"
                     [tooltipText]="'edit.content.sidebar.history.copy.inode' | dm"
-                    customClass="p-0! text-red-700! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
+                    customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
                     data-testid="copy-inode" />
             </div>
         </div>
