@@ -71,6 +71,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.RelationshipUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -6713,8 +6714,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);
-                    relationshipRecords.getRecords()
-                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+                    // The contentlet map normally holds a List<Contentlet> for a relationship
+                    // field, but some flows (e.g. "Translate Manually" / saveDraft) leave the raw
+                    // comma-separated UUID String set by MapToContentletPopulator. Inspect the
+                    // runtime type and resolve the String via RelationshipUtil when needed.
+                    final Object fieldValue = contentlet.get(field.variable());
+                    if (fieldValue instanceof List) {
+                        relationshipRecords.getRecords().addAll((List<Contentlet>) fieldValue);
+                    } else if (fieldValue instanceof String && UtilMethods.isSet((String) fieldValue)) {
+                        try {
+                            relationshipRecords.getRecords().addAll(RelationshipUtil.filterContentlet(
+                                    contentlet.getLanguageId(), (String) fieldValue, user, false));
+                        } catch (DotDataException | DotSecurityException | DotStateException e) {
+                            Logger.warn(this, "Could not resolve relationship field '"
+                                    + field.variable() + "': " + e.getMessage());
+                        }
+                    }
 
                     contentRelationships.getRelationshipsRecords().add(relationshipRecords);
                 }
