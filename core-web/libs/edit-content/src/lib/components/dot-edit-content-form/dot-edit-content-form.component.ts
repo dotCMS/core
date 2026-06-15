@@ -47,7 +47,7 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusPipe, DotMessagePipe } from '@dotcms/ui';
+import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
@@ -127,6 +127,7 @@ export function contentStatusSeverity(status: string): Tag['severity'] {
         TagModule,
         TabViewInsertDirective,
         DotMessagePipe,
+        DotRelativeDatePipe,
         DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet

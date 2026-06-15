@@ -92,14 +92,9 @@
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         @if ($store.isViewingHistoricalVersion()) {
-            <!-- Historical version actions - only Restore -->
-            <button
-                pButton
-                (click)="$store.restoreCurrentHistoricalVersion()"
-                data-testId="restore-historical-version-button">
-                {{ 'edit.content.sidebar.history.restore' | dm }}
-            </button>
-            <!-- Compare button hidden as requested -->
+            <span class="text-sm text-gray-500" data-testId="previewing-label">
+                Previewing {{ $store.contentlet()?.modDate | dotRelativeDate }}
+            </span>
         } @else {
             <!-- Status tag: label + severity are memoized computeds on the component
                  (a brand-new contentlet has no status yet, so it shows "New"). -->

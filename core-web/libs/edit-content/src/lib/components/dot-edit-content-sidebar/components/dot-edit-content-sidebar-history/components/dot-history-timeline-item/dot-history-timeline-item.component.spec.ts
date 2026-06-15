@@ -1,11 +1,11 @@
-import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
@@ -44,7 +44,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         imports: [
             AvatarModule,
             ButtonModule,
-            ChipModule,
+            TagModule,
             MenuModule,
             TooltipModule,
             DotGravatarDirective,

@@ -32,6 +32,30 @@
                 <i class="pi pi-comment"></i>
             </p-tab>
         </p-tablist>
+        <!-- Restore banner: visible only when previewing a historical version -->
+        @if ($store.isViewingHistoricalVersion()) {
+            <div
+                class="flex items-center justify-end gap-2 border-b border-surface-200 bg-surface-50 px-3 py-4"
+                data-testId="historical-version-banner">
+                <p-button
+                    icon="pi pi-times"
+                    label="Close"
+                    rounded="true"
+                    [outlined]="true"
+                    size="small"
+                    (click)="$store.exitHistoricalView()"
+                    data-testId="close-historical-version-button" />
+                <p-button
+                    icon="pi pi-history"
+                    label="Restore"
+                    rounded="true"
+
+                    size="small"
+                    (click)="$store.restoreCurrentHistoricalVersion()"
+                    data-testId="restore-historical-version-button" />
+            </div>
+        }
+
         <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
         <p-tabpanels
             class="flex h-full min-h-0 flex-1 flex-col bg-white! p-0! [&_.p-tabpanel]:p-0!">
