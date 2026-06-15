@@ -5,8 +5,8 @@
     [class.border-color-error]="$hasError()"
     [class]="
         $vertical()
-            ? 'dot-file-field__container flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2'
-            : 'dot-file-field__container flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2 min-[306px]:flex-row'
+            ? 'dot-file-field__container relative flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2'
+            : 'dot-file-field__container relative flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2 min-[306px]:flex-row'
     ">
     @switch (store.fileStatus()) {
         @case ('init') {

@@ -183,12 +183,16 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * General rule for every field type (File/Image/Binary): the action shows
-     * only when the previewed file is actually an image and an image editor
-     * launcher is available.
+     * Only Binary fields expose the image editor, and only when the previewed
+     * file is actually an image and an image editor launcher is available.
+     * File/Image fields never show the action.
      */
     $canEditImage = computed<boolean>(() => {
         if (!this.#imageEditorLauncher?.isAvailable()) {
+            return false;
+        }
+
+        if (this.store.inputType() !== INPUT_TYPES.Binary) {
             return false;
         }
 

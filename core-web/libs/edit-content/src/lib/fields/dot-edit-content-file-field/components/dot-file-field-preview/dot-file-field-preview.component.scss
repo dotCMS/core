@@ -111,13 +111,12 @@ dot-contentlet-thumbnail::ng-deep {
 
 .preview-resource-links__actions {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: spacing.$spacing-1;
+    right: spacing.$spacing-1;
     display: none;
     flex-direction: column;
     align-items: center;
     gap: spacing.$spacing-1;
-    padding-top: spacing.$spacing-1;
     z-index: 100;
 }
 
@@ -166,7 +165,7 @@ dot-contentlet-thumbnail::ng-deep {
     gap: spacing.$spacing-0;
 }
 
-.preview-container--fade::after {
+.preview-container--fade .preview-code_container::after {
     content: "";
     background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
     position: absolute;

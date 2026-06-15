@@ -174,12 +174,15 @@ export class BinaryField {
     }
 
     /**
-     * New editor: the Dojo ImageEditor dialog opens at page level (the new editor
-     * runs inside the same Dojo admin shell as the legacy form).
+     * New editor: the legacy image editor JSP is embedded in a PrimeNG dialog
+     * iframe (`dot-legacy-image-editor-dialog`), not the Dojo `#dotImageDialog`.
      */
     async expectImageEditorOpen() {
-        await expect(this.page.locator('#dotImageDialog')).toBeVisible({ timeout: 15000 });
-        await expect(this.page.locator('#imageToolIframe')).toBeVisible({ timeout: 30000 });
+        const dialog = this.page.getByRole('dialog');
+        await expect(dialog).toBeVisible({ timeout: 15000 });
+        await expect(dialog.getByTestId('legacy-image-editor-iframe')).toBeVisible({
+            timeout: 30000
+        });
     }
 
     async openImageEditorInNewEditor() {
