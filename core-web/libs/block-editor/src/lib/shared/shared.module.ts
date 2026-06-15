@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { Button } from 'primeng/button';
+import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 
 import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
@@ -24,7 +24,7 @@ import { SuggestionsService } from './services';
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        Button,
+        ButtonModule,
         TagModule,
         DotContentletStatusBadgeComponent
     ],
