@@ -349,8 +349,8 @@ public class StringUtils {
 
         return loweredString.toString();
     }
-    
-    
+
+
     /**
      * this is just a reference to the FileUtil methos, 
      * added for findability
