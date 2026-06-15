@@ -24,6 +24,16 @@ on:
 permissions:
   contents: read
 
+# Serialize promote runs so a scheduled run and a manual promote/admin run can
+# never overlap. Both read live registry state and then apply tag moves, so two
+# concurrent runs could act on stale state and overwrite a hold/taint or move a
+# track based on outdated data. For a tag-promotion engine queueing is safer
+# than cancelling, so cancel-in-progress is false: concurrent runs wait their
+# turn rather than aborting mid-promote and leaving tags half-moved.
+concurrency:
+  group: evergreen-tracks-promote-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   promote:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
