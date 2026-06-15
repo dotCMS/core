@@ -89,26 +89,32 @@ test('import from URL completes without 400 and shows preview', async ({ page })
     await field.importFromUrl(E2E_IMPORT_URL);
 });
 
-test('required empty binary field shows error helper text on save', async ({ page, request }) => {
-    if (contentType) {
-        await deleteContentType(request, contentType.id);
-        contentType = null;
-    }
+test.describe('required binary field', () => {
+    let requiredContentType: ContentType;
+    let requiredContentTypeVariable: string;
 
-    contentType = await createBinaryFieldContentType(request, { required: true });
-    contentTypeVariable = contentType.variable;
+    test.beforeEach(async ({ request }) => {
+        requiredContentType = await createBinaryFieldContentType(request, { required: true });
+        requiredContentTypeVariable = requiredContentType.variable;
+    });
 
-    const formPage = new NewEditContentFormPage(page);
-    await formPage.goToNew(contentTypeVariable);
+    test.afterEach(async ({ request }) => {
+        await deleteContentType(request, requiredContentType.id);
+    });
 
-    const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
-    await field.expectVisible();
+    test('required empty binary field shows error helper text on save', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(requiredContentTypeVariable);
 
-    await formPage.fillTextField(`E2E Required Binary ${faker.lorem.word()}`);
-    await page.getByRole('button', { name: 'Save' }).click();
+        const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
+        await field.expectVisible();
 
-    await field.expectRequiredErrorVisible();
-    await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+        await formPage.fillTextField(`E2E Required Binary ${faker.lorem.word()}`);
+        await page.getByRole('button', { name: 'Save' }).click();
+
+        await field.expectRequiredErrorVisible();
+        await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+    });
 });
 
 test('upload text file does not show Edit image button', async ({ page }) => {
@@ -170,9 +176,5 @@ test('disabled Generate With dotAI button shows tooltip when AI plugin not insta
 
     const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
     await field.expectVisible();
-
-    const aiEnabled = await field.isAiButtonEnabled();
-    test.skip(aiEnabled, 'dotAI plugin is installed — disabled-tooltip case does not apply');
-
     await field.expectAiButtonDisabledWithTooltip();
 });

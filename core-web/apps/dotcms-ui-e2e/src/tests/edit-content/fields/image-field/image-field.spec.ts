@@ -91,26 +91,32 @@ test('upload image does not show Edit image button', async ({ page }) => {
     await field.expectEditButtonHidden();
 });
 
-test('required empty image field shows error helper text on save', async ({ page, request }) => {
-    if (contentType) {
-        await deleteContentType(request, contentType.id);
-        contentType = null;
-    }
+test.describe('required image field', () => {
+    let requiredContentType: ContentType;
+    let requiredContentTypeVariable: string;
 
-    contentType = await createImageFieldContentType(request, { required: true });
-    contentTypeVariable = contentType.variable;
+    test.beforeEach(async ({ request }) => {
+        requiredContentType = await createImageFieldContentType(request, { required: true });
+        requiredContentTypeVariable = requiredContentType.variable;
+    });
 
-    const formPage = new NewEditContentFormPage(page);
-    await formPage.goToNew(contentTypeVariable);
+    test.afterEach(async ({ request }) => {
+        await deleteContentType(request, requiredContentType.id);
+    });
 
-    const field = new ImageField(page, IMAGE_FIELD_VARIABLE);
-    await field.expectVisible();
+    test('required empty image field shows error helper text on save', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(requiredContentTypeVariable);
 
-    await formPage.fillTextField(`E2E Required Image ${faker.lorem.word()}`);
-    await page.getByRole('button', { name: 'Save' }).click();
+        const field = new ImageField(page, IMAGE_FIELD_VARIABLE);
+        await field.expectVisible();
 
-    await field.expectRequiredErrorVisible();
-    await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+        await formPage.fillTextField(`E2E Required Image ${faker.lorem.word()}`);
+        await page.getByRole('button', { name: 'Save' }).click();
+
+        await field.expectRequiredErrorVisible();
+        await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+    });
 });
 
 test('image field shows Generate With dotAI and hides Create New File @smoke', async ({ page }) => {

@@ -117,24 +117,30 @@ test('import image URL does not show Edit image button', async ({ page }) => {
     await field.expectEditButtonHidden();
 });
 
-test('required empty file field shows error helper text on save', async ({ page, request }) => {
-    if (contentType) {
-        await deleteContentType(request, contentType.id);
-        contentType = null;
-    }
+test.describe('required file field', () => {
+    let requiredContentType: ContentType;
+    let requiredContentTypeVariable: string;
 
-    contentType = await createFileFieldContentType(request, { required: true });
-    contentTypeVariable = contentType.variable;
+    test.beforeEach(async ({ request }) => {
+        requiredContentType = await createFileFieldContentType(request, { required: true });
+        requiredContentTypeVariable = requiredContentType.variable;
+    });
 
-    const formPage = new NewEditContentFormPage(page);
-    await formPage.goToNew(contentTypeVariable);
+    test.afterEach(async ({ request }) => {
+        await deleteContentType(request, requiredContentType.id);
+    });
 
-    const field = new FileField(page, FILE_FIELD_VARIABLE);
-    await field.expectVisible();
+    test('required empty file field shows error helper text on save', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(requiredContentTypeVariable);
 
-    await formPage.fillTextField(`E2E Required File ${faker.lorem.word()}`);
-    await page.getByRole('button', { name: 'Save' }).click();
+        const field = new FileField(page, FILE_FIELD_VARIABLE);
+        await field.expectVisible();
 
-    await field.expectRequiredErrorVisible();
-    await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+        await formPage.fillTextField(`E2E Required File ${faker.lorem.word()}`);
+        await page.getByRole('button', { name: 'Save' }).click();
+
+        await field.expectRequiredErrorVisible();
+        await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+    });
 });

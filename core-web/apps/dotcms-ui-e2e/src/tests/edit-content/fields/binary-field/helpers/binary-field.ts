@@ -77,12 +77,8 @@ export class BinaryField extends FileField {
         const aiButton = this.generateWithAiBtn.getByRole('button');
         await expect(aiButton).toBeDisabled();
 
-        await aiButton.hover({ force: true });
+        await this.generateWithAiBtn.hover();
         await expect(this.page.getByText(AI_DISABLED_TOOLTIP)).toBeVisible({ timeout: 10000 });
-    }
-
-    async isAiButtonEnabled(): Promise<boolean> {
-        return this.generateWithAiBtn.getByRole('button').isEnabled();
     }
 
     async clickEditImage() {
