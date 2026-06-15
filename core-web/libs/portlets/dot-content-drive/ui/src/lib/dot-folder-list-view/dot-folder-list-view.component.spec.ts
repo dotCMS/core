@@ -99,12 +99,17 @@ describe('DotFolderListViewComponent', () => {
         component: DotFolderListViewComponent,
         imports: [],
         providers: [
-            mockProvider(
-                DotMessageService,
-                new MockDotMessageService({
-                    Folder: 'Folder'
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    Folder: 'Folder',
+                    Published: 'Published',
+                    Archived: 'Archived',
+                    Revision: 'Revision',
+                    Draft: 'Draft',
+                    New: 'New'
                 })
-            ),
+            },
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
             mockProvider(DotLanguagesService, {
