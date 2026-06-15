@@ -134,7 +134,10 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' }}
+      # `latest` is no longer moved here. evergreen-tracks is the single controller
+      # of the floating latest/standard/trailing tags; the promote-latest job below
+      # repoints `latest` on-demand once the release images are published.
+      latest: false
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
@@ -148,6 +151,51 @@ jobs:
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Promote latest - move the floating `latest` Docker tag to this GA release.
+  #
+  # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
+  # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
+  # `latest` must move the instant a GA ships — so the release pipeline invokes
+  # the same engine on-demand, scoped to the latest track only (--tracks latest).
+  # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
+  #
+  # Applies unconditionally for a real latest release from main on dotcms/core
+  # (this restores always-on behavior; it is NOT behind EVERGREEN_TRACKS_APPLY,
+  # which gates only the new aged standard/trailing tracks during rollout).
+  promote-latest:
+    name: Promote latest tag
+    # Default success() gate: only runs when release-prepare AND deployment both
+    # succeeded, so the release images are guaranteed to exist before we repoint.
+    needs: [ release-prepare, deployment ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.ref_name == 'main'
+      && github.repository == 'dotcms/core'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    # Share the registry-mutation lock with the promote/admin workflows so this
+    # on-demand promote can never race the daily cron or an admin run.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
+        working-directory: cicd/evergreen-tracks
+        run: |
+          for repo in dotcms/dotcms dotcms/dotcms-dev; do
+            echo "--- promoting latest on ${repo} ---"
+            uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
+          done
 
   # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
   # Waits for deployment to complete to safely update labels only if both succeed

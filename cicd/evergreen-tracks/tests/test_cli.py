@@ -469,3 +469,42 @@ def test_admin_release_hold_unknown_track_returns_2(mock_list_tags, monkeypatch)
     )
     rc = cmd_admin(args)
     assert rc == 2
+
+
+# ---------------------------------------------------------------------------
+# cmd_promote — --tracks subset (release pipeline moves only `latest`)
+# ---------------------------------------------------------------------------
+
+def test_promote_tracks_defaults_empty():
+    args = build_parser().parse_args(["promote", "--repo", "dotcms/dotcms-test"])
+    assert args.tracks == ""
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_tracks_latest_moves_only_latest(mock_list_tags, mock_point_tag):
+    """--tracks latest must move ONLY the latest tag, even when standard/trailing
+    are also eligible (thresholds 0). This is the release-pipeline invocation."""
+    mock_list_tags.return_value = _tags_for_promote()
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--apply", "--tracks", "latest",
+         "--latest-days", "0", "--standard-days", "0", "--trailing-days", "0"]
+    )
+    with patch("evergreen_tracks.cli.dt") as mock_dt:
+        mock_dt.date.today.return_value = dt.date(2026, 7, 15)
+        rc = cmd_promote(args)
+    assert rc == 0
+    moved = {call.args[1] for call in mock_point_tag.call_args_list}
+    assert moved == {"latest"}
+
+
+@patch("evergreen_tracks.cli.point_tag")
+@patch("evergreen_tracks.cli.list_tags")
+def test_promote_tracks_unknown_returns_2(mock_list_tags, mock_point_tag):
+    mock_list_tags.return_value = _tags_for_promote()
+    args = build_parser().parse_args(
+        ["promote", "--repo", "dotcms/dotcms-test", "--tracks", "bogus"]
+    )
+    rc = cmd_promote(args)
+    assert rc == 2
+    mock_point_tag.assert_not_called()

@@ -24,14 +24,16 @@ on:
 permissions:
   contents: read
 
-# Serialize promote runs so a scheduled run and a manual promote/admin run can
-# never overlap. Both read live registry state and then apply tag moves, so two
-# concurrent runs could act on stale state and overwrite a hold/taint or move a
-# track based on outdated data. For a tag-promotion engine queueing is safer
-# than cancelling, so cancel-in-progress is false: concurrent runs wait their
-# turn rather than aborting mid-promote and leaving tags half-moved.
+# Serialize every registry mutation. The daily cron, a manual promote/admin
+# dispatch, and the on-demand latest-promote in the release pipeline all read
+# live registry state and then apply tag moves, so two concurrent runs could act
+# on stale state and overwrite a hold/taint or move a track based on outdated
+# data. A single static group (not keyed by workflow/ref) makes them serialize
+# across all three workflows. For a tag-promotion engine queueing is safer than
+# cancelling, so cancel-in-progress is false: concurrent runs wait their turn
+# rather than aborting mid-promote and leaving tags half-moved.
 concurrency:
-  group: evergreen-tracks-promote-${{ github.workflow }}-${{ github.ref }}
+  group: evergreen-tracks-registry
   cancel-in-progress: false
 
 jobs:

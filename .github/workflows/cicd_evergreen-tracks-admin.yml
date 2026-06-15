@@ -28,6 +28,12 @@ on:
         required: true
         default: 'false'
 
+# Share the registry-mutation lock with the promote workflows so an admin
+# taint/hold can never overlap a promote run on the same tags.
+concurrency:
+  group: evergreen-tracks-registry
+  cancel-in-progress: false
+
 jobs:
   admin:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}

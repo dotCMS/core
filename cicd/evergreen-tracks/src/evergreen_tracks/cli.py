@@ -46,6 +46,19 @@ def cmd_promote(args: argparse.Namespace) -> int:
         TrackState("standard", args.standard_days, _current_version("standard", digests, releases)),
         TrackState("trailing", args.trailing_days, _current_version("trailing", digests, releases)),
     ]
+
+    # Optional subset (e.g. --tracks latest): the release pipeline invokes this
+    # engine on-demand to move only `latest` the instant a GA ships, while the
+    # daily cron ages standard/trailing. One engine, two triggers.
+    if args.tracks:
+        wanted = {t.strip() for t in args.tracks.split(",") if t.strip()}
+        unknown = wanted - set(TRACKS)
+        if unknown:
+            log.error("unknown track(s): %s", ", ".join(sorted(unknown)))
+            return 2
+        tracks = [t for t in tracks if t.name in wanted]
+        held = held & wanted
+
     moves = plan(releases, tainted, held, tracks, today=dt.date.today())
 
     # Held tracks are frozen against promotion; instead reconcile the floating
@@ -130,6 +143,8 @@ def build_parser() -> argparse.ArgumentParser:
     pr = sub.add_parser("promote", help="advance track tags by release age")
     pr.add_argument("--repo", required=True)
     pr.add_argument("--apply", action="store_true", help="actually mutate the registry")
+    pr.add_argument("--tracks", default="",
+                    help="comma-separated subset to move (latest,standard,trailing); default all")
     pr.add_argument("--latest-days", type=int, default=0)
     pr.add_argument("--standard-days", type=int, default=14)
     pr.add_argument("--trailing-days", type=int, default=28)
