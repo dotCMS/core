@@ -1500,7 +1500,9 @@ describe('DotEmaShellComponent', () => {
 
                 const { currentUrl, siteId } = spectator.component['$seoParams']();
                 const expectedUrl = new URL(currentUrl, window.location.origin);
-                expectedUrl.searchParams.set('host_id', siteId);
+                if (siteId) {
+                    expectedUrl.searchParams.set('host_id', siteId);
+                }
                 expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
             });
 
@@ -1521,12 +1523,35 @@ describe('DotEmaShellComponent', () => {
                 spectator.component['pageScanner'] = {
                     open: openSpy
                 } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: 'site-b-identifier',
+                    languageId: 1
+                } as never);
 
                 spectator.component.handleScannerToolClick('a11y');
 
-                const { siteId } = spectator.component['$seoParams']();
                 const calledUrl = openSpy.mock.calls[0][1] as string;
-                expect(new URL(calledUrl).searchParams.get('host_id')).toBe(siteId);
+                expect(new URL(calledUrl).searchParams.get('host_id')).toBe('site-b-identifier');
+            });
+
+            it('should omit host_id when the page has no site identifier', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: undefined,
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.has('host_id')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {
