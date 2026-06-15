@@ -1498,8 +1498,23 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.component.handleScannerToolClick('a11y');
 
-                const { requestHostName, currentUrl } = spectator.component['$seoParams']();
-                expect(openSpy).toHaveBeenCalledWith('a11y', `${requestHostName}${currentUrl}`);
+                const { requestHostName, currentUrl, siteId } = spectator.component['$seoParams']();
+                const expectedUrl = new URL(`${requestHostName}${currentUrl}`);
+                expectedUrl.searchParams.set('host_id', siteId);
+                expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
+            });
+
+            it('should append the page site host_id so the scanner resolves the correct site on multisite', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const { siteId } = spectator.component['$seoParams']();
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.get('host_id')).toBe(siteId);
             });
 
             it('should pass geo type to the page scanner', () => {

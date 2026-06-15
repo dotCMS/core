@@ -354,13 +354,23 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Handle scanner tool click from the page tools panel.
      * Opens the page scanner report dialog with the selected tool type.
      *
+     * The `host_id` query param is appended so the scanner resolves the page's
+     * own site when it renders back into dotCMS. Without it dotCMS falls back to
+     * the host derived from the request — wrong on multisite instances where
+     * different sites share the same path (e.g. `/index`).
+     *
      * @param {PageScannerToolType} type
      * @memberof DotEmaShellComponent
      */
     handleScannerToolClick(type: PageScannerToolType): void {
-        const { currentUrl, requestHostName } = this.$seoParams();
-        const pageUrl = `${requestHostName}${currentUrl ?? '/'}`;
-        this.pageScanner.open(type, pageUrl);
+        const { currentUrl, requestHostName, siteId } = this.$seoParams();
+        const url = new URL(`${requestHostName}${currentUrl ?? '/'}`);
+
+        if (siteId) {
+            url.searchParams.set('host_id', siteId);
+        }
+
+        this.pageScanner.open(type, url.toString());
     }
 
     /**
