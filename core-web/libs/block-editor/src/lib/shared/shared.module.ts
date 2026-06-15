@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { Button } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
 
 import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
 
@@ -24,6 +25,7 @@ import { SuggestionsService } from './services';
         FormsModule,
         ReactiveFormsModule,
         Button,
+        TagModule,
         DotContentletStatusBadgeComponent
     ],
     declarations: [
