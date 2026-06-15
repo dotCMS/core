@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import static com.dotcms.rest.api.v1.contenttype.ContentTypeHelper.requestContainsKey;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 import static com.liferay.util.StringPool.COMMA;
@@ -657,8 +658,10 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-			"⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. " +
-			"Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.\n\n" +
+			"⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. " +
+			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
+			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
+			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
 			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
@@ -776,12 +779,22 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+			ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
 					idOrVar, form.getContentType(), user, false
 			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class,
 					"Content Type 'id' attribute must be set");
+
+			// If 'metadata' was absent from the request body (not the same as "metadata": null),
+			// carry forward whatever is currently stored. Clients unaware of metadata won't wipe it
+			// inadvertently; sending "metadata": null still clears it explicitly.
+            if (contentType.metadata() == null && !requestContainsKey(form.getRequestJson(), "metadata")) {
+				final ContentType existing = contentTypeAPI.find(idOrVar);
+				if (existing.metadata() != null) {
+					contentType = ContentTypeBuilder.builder(contentType).metadata(existing.metadata()).build();
+				}
+			}
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,

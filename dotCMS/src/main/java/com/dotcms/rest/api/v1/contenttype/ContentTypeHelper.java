@@ -1093,4 +1093,22 @@ public class ContentTypeHelper implements Serializable {
         metadataPatch.put("DOT_STYLE_EDITOR_SCHEMA", schemaStr);
     }
 
+    /**
+     * Returns {@code true} if the raw request JSON contains the given top-level key, regardless of
+     * whether its value is {@code null} or a non-null object. Used to distinguish "key absent"
+     * (preserve server-side value) from "key explicitly set to null" (clear server-side value).
+     */
+    public static boolean requestContainsKey(final Object requestJson, final String key) {
+        if (requestJson == null) {
+            return false;
+        }
+        try {
+            return DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readTree(requestJson.toString()).has(key);
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeResource.class,
+                    "Could not parse request JSON to check for key '" + key + "': " + e.getMessage());
+            return false;
+        }
+    }
 } // E:O:F:ContentTypeHelper.

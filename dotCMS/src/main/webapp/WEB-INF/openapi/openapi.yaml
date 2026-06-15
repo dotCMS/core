@@ -8048,7 +8048,7 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        ⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.
+        ⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
 
         **Recommended update pattern:**
         1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
