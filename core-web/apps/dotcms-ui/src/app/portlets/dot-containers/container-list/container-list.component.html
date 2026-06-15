@@ -1,6 +1,6 @@
 @if (vm$ | async; as vm) {
     <dot-portlet-base>
-        <div class="h-full flex flex-col justify-between">
+        <div class="flex h-full flex-col justify-between">
             <dot-action-header [options]="vm.actionHeaderOptions">
                 <dot-content-type-selector
                     class="mr-3"
@@ -13,7 +13,7 @@
                     placeholder="{{ 'Type-to-filter' | dm }}"
                     type="text"
                     data-testId="query-input" />
-                <div class="w-full flex items-center justify-between mx-3">
+                <div class="mx-3 flex w-full items-center justify-between">
                     <div class="flex gap-3">
                         <div class="flex items-center gap-2">
                             <p-checkbox
@@ -56,7 +56,7 @@
                     [totalRecords]="vm.totalRecords"
                     [responsiveLayout]="'scroll'"
                     [lazy]="true"
-                    class="flex-1! flex! flex-col! justify-between!"
+                    class="flex! flex-1! flex-col! justify-between!"
                     selectionMode="multiple"
                     loadingIcon="pi pi-spin pi-spinner"
                     dataKey="inode"
@@ -93,7 +93,7 @@
                             class="group transition-colors duration-200"
                             [class]="
                                 rowData.disableInteraction
-                                    ? 'bg-gray-200! text-gray-500! pointer-events-none'
+                                    ? 'pointer-events-none bg-gray-200! text-gray-500!'
                                     : ''
                             "
                             [pSelectableRowDisabled]="rowData.disableInteraction"
@@ -121,7 +121,7 @@
                                 }
                             </td>
                             <td [style.text-align]="vm.tableColumns[1].textAlign">
-                                <dot-contentlet-status-chip [state]="getContainerState(rowData)" />
+                                <dot-contentlet-status-badge [state]="getContainerState(rowData)" />
                             </td>
                             <td [style.text-align]="vm.tableColumns[2].textAlign">
                                 {{ rowData.friendlyName }}
@@ -136,14 +136,14 @@
                                         [attr.data-testid]="rowData.identifier"
                                         icon="pi pi-ellipsis-v"
                                         styleClass="p-button-sm p-button-rounded p-button-text"
-                                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                                        class="opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                 }
                             </td>
                         </tr>
                     </ng-template>
                     <ng-template pTemplate="emptymessage">
                         <div
-                            class="flex justify-center text-xl mt-4"
+                            class="mt-4 flex justify-center text-xl"
                             data-testId="listing-datatable__empty">
                             {{ 'No-Results-Found' | dm }}
                         </div>

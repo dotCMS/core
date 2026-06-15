@@ -37,7 +37,7 @@ import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
     DotClipboardUtil,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     PrincipalConfiguration
@@ -108,7 +108,7 @@ const QUERY_EDITOR_OPTIONS = {
         SkeletonModule,
         MessageModule,
         TagModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         DotEmptyContainerComponent,
         DotMessagePipe
     ],

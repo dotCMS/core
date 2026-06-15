@@ -21301,6 +21301,209 @@ paths:
           description: default response
       tags:
       - System Monitoring
+  /v2/assets:
+    get:
+      description: "Streams the raw bytes of a file asset addressed by a host-qualified\
+        \ path (//hostname/path/file.ext).  Returns the working version by default;\
+        \ use version=live for the published version.  Responds with 404 when the\
+        \ asset or language version does not exist, 400 when the path points at a\
+        \ folder."
+      operationId: getFileAssetByPath
+      parameters:
+      - description: "Host-qualified asset path, e.g. //demo.dotcms.com/application/foo.vtl"
+        example: //demo.dotcms.com/application/containers/default/banner.vtl
+        in: query
+        name: path
+        required: true
+        schema:
+          type: string
+      - description: Language tag (e.g. en-US). Defaults to site default language.
+        example: en-US
+        in: query
+        name: language
+        schema:
+          type: string
+      - description: "Asset version to retrieve. Accepted values: working (default),\
+          \ live."
+        example: working
+        in: query
+        name: version
+        schema:
+          type: string
+          default: working
+          enum:
+          - working
+          - live
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Raw file bytes streamed with resolved MIME type and Content-Disposition
+            header
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — path is missing, ambiguous, points at a folder,\
+            \ or unknown language/version value"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient read permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Not Found — host, path, or language version does not exist"
+      summary: Get raw file-asset content by path
+      tags:
+      - File Assets
+  /v2/assets/publish:
+    put:
+      description: "Creates or updates a file asset at the given host-qualified path\
+        \ and immediately publishes it (promotes to live). Submit via multipart/form-data\
+        \ with fields: file (binary), path (//host/folder/file.ext), language (optional)."
+      operationId: publishFileAsset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFileAssetView"
+          description: Asset saved and published successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — missing file part, zero-byte file, unknown language,\
+            \ or invalid path"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient permissions on target folder
+        "404":
+          content:
+            application/json: {}
+          description: Not Found — unknown host in path
+      summary: Publish file asset (working + live)
+      tags:
+      - File Assets
+  /v2/assets/save:
+    put:
+      description: "Creates or updates a file asset at the given host-qualified path.\
+        \ Only the working version is affected — the live version is NOT changed.\
+        \ Submit via multipart/form-data with fields: file (binary), path (//host/folder/file.ext),\
+        \ language (optional)."
+      operationId: saveFileAsset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFileAssetView"
+          description: Asset saved successfully as working version
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — missing file part, zero-byte file, unknown language,\
+            \ or invalid path"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient permissions on target folder
+        "404":
+          content:
+            application/json: {}
+          description: Not Found — unknown host in path
+      summary: Save file asset (working version)
+      tags:
+      - File Assets
+  /v2/assets/{identifier}:
+    get:
+      description: Streams the raw bytes of a file asset addressed by its dotCMS identifier
+        (UUID). Returns the working version in the site default language by default.
+        READ permission is enforced — 403 is returned when the user lacks permission.
+      operationId: getFileAssetById
+      parameters:
+      - description: Asset identifier (UUID)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: Language tag (e.g. en-US). Defaults to site default language.
+        example: en-US
+        in: query
+        name: language
+        schema:
+          type: string
+      - description: "Asset version to retrieve. Accepted values: working (default),\
+          \ live."
+        example: working
+        in: query
+        name: version
+        schema:
+          type: string
+          default: working
+          enum:
+          - working
+          - live
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Raw file bytes streamed with resolved MIME type and Content-Disposition
+            header
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request — unknown language tag or version value
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — user does not have READ permission on this asset
+        "404":
+          content:
+            application/json: {}
+          description: "Not Found — identifier not found, not a file asset, or language\
+            \ version unavailable"
+      summary: Get raw file-asset content by identifier
+      tags:
+      - File Assets
   /v2/contenttype/{typeIdOrVarName}/fields:
     delete:
       deprecated: true
@@ -26373,6 +26576,43 @@ components:
             type: string
           versionable:
             type: boolean
+    FileAssetView:
+      type: object
+      description: File asset view returned after a save or publish operation
+      properties:
+        fileSize:
+          type: integer
+          format: int64
+          description: File size in bytes as stored in the content repository
+          example: 4096
+        identifier:
+          type: string
+          description: Asset identifier
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        inode:
+          type: string
+          description: Asset inode
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        lang:
+          type: string
+          description: Language tag for the asset version
+          example: en-US
+        live:
+          type: boolean
+          description: Whether this is the live (published) version
+          example: false
+        name:
+          type: string
+          description: File name
+          example: banner.vtl
+        path:
+          type: string
+          description: Host-qualified path to the asset
+          example: //demo.dotcms.com/application/containers/default/banner.vtl
+        working:
+          type: boolean
+          description: Whether this is the working version
+          example: true
     FileField:
       type: object
       allOf:
@@ -31167,6 +31407,31 @@ components:
             type: object
             additionalProperties:
               type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFileAssetView:
+      type: object
+      description: Response entity wrapping a FileAssetView after a save or publish
+        operation
+      properties:
+        entity:
+          $ref: "#/components/schemas/FileAssetView"
         errors:
           type: array
           items:

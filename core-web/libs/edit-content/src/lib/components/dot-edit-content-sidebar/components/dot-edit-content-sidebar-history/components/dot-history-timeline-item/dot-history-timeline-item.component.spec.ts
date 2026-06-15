@@ -112,25 +112,35 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Conditional Rendering', () => {
-        it('should show live chip for published content', () => {
-            expect(spectator.query(byTestId('state-live'))).toBeTruthy();
+        it('should show a success live tag with the published label for published content', () => {
+            const liveTag = spectator.query(byTestId('state-live'));
+            expect(liveTag).toBeTruthy();
+            expect(liveTag?.textContent?.trim()).toBe('Published');
+            expect(liveTag?.classList.contains('p-tag-success')).toBe(true);
             expect(spectator.query(byTestId('state-draft'))).toBeFalsy();
         });
 
-        it('should show draft chip for working content', () => {
+        it('should show a warn draft tag with the draft label for working content', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
 
+            const draftTag = spectator.query(byTestId('state-draft'));
             expect(spectator.query(byTestId('state-live'))).toBeFalsy();
-            expect(spectator.query(byTestId('state-draft'))).toBeTruthy();
+            expect(draftTag).toBeTruthy();
+            expect(draftTag?.textContent?.trim()).toBe('Draft');
+            expect(draftTag?.classList.contains('p-tag-warn')).toBe(true);
         });
 
-        it('should show variant chip when experimentVariant is true', () => {
+        it('should show an info variant tag when experimentVariant is true', () => {
             spectator.setInput('item', { ...mockVersionItem, experimentVariant: true });
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('state-variant'))).toBeTruthy();
+            const variantTag = spectator.query(byTestId('state-variant'));
+            expect(variantTag).toBeTruthy();
+            expect(variantTag?.classList.contains('p-tag-info')).toBe(true);
         });
 
-        it('should hide variant chip when experimentVariant is false', () => {
+        it('should hide variant tag when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
 

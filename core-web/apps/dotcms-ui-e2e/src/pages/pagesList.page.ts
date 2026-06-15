@@ -38,10 +38,10 @@ export class PagesListPage {
     }
 
     getStatusChip(rowLocator: Locator) {
-        return rowLocator.locator('dot-contentlet-status-chip');
+        return rowLocator.locator('dot-contentlet-status-badge');
     }
 
     getStatusChipText(rowLocator: Locator) {
-        return this.getStatusChip(rowLocator).locator('p-chip').textContent();
+        return this.getStatusChip(rowLocator).locator('p-tag').textContent();
     }
 }
