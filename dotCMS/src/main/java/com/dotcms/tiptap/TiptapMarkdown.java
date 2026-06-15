@@ -302,7 +302,11 @@ public final class TiptapMarkdown {
         @Override
         public void visit(final Image node) {
             final ObjectNode img = MAPPER.createObjectNode();
-            img.put("type", "image");
+            // Emit dotImage (not the generic ProseMirror "image"): the dotCMS editor schema
+            // only registers "dotImage", so an "image" node fails to load and a subsequent
+            // editor save wipes the document. Markdown carries no dotCMS asset binding, so
+            // only src/alt/title are populated — sufficient for content authored as markdown.
+            img.put("type", "dotImage");
             final ObjectNode attrs = img.putObject("attrs");
             attrs.put("src", emptyToNull(node.getDestination()));
             // Alt text is the textual content of the Image node's children.
@@ -526,6 +530,16 @@ public final class TiptapMarkdown {
                     final String src = node.path("attrs").path("src").asText("");
                     if (!src.isEmpty()) {
                         emitBlock("[" + src + "](" + src + ")");
+                    }
+                    break;
+                }
+                case "dotContent": {
+                    // Embedded contentlet: markdown has no embed syntax, so emit the hydrated
+                    // title as text. Preserves it for AI ingestion (toHtml + Tika keeps it today);
+                    // dropping it entirely would make markdown embeds carry less than the HTML path.
+                    final String title = node.path("attrs").path("data").path("title").asText("");
+                    if (!title.isEmpty()) {
+                        emitBlock(escapeText(title, false));
                     }
                     break;
                 }

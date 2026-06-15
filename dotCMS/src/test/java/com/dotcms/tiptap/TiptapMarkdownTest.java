@@ -160,7 +160,8 @@ public class TiptapMarkdownTest extends UnitTestBase {
     public void parse_image_inline_in_paragraph() {
         final JsonNode doc = TiptapMarkdown.toTiptap("![alt](http://x/y.png \"t\")");
         final JsonNode img = doc.path("content").get(0).path("content").get(0);
-        assertEquals("image", img.path("type").asText());
+        // Emitted as dotImage (the dotCMS editor schema node), not the generic ProseMirror "image".
+        assertEquals("dotImage", img.path("type").asText());
         assertEquals("http://x/y.png", img.path("attrs").path("src").asText());
         assertEquals("alt", img.path("attrs").path("alt").asText());
         assertEquals("t", img.path("attrs").path("title").asText());
