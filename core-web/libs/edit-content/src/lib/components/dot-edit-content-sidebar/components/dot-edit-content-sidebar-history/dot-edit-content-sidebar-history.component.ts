@@ -38,7 +38,6 @@ import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sideb
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
-    styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'flex flex-col h-full min-h-0'
