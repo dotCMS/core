@@ -53,7 +53,7 @@ core-web/apps/dotcms-ui-e2e/
 | Legacy editor opens Dojo image dialog | E2E Playwright |
 | Launcher service / dialog component | Unit (existing Jest specs) |
 
-Image setup: `importFromUrl(E2E_IMPORT_URL)` — stable PNG URL, already used in `binary-field.spec.ts`.
+Image setup: `importFromUrl(E2E_IMPORT_URL)` — stable 800x800 PNG URL (`placehold.co`), already used in `binary-field.spec.ts`.
 
 ## Boundaries
 

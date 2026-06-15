@@ -1,5 +1,5 @@
-/** Stable public image URL for import-from-URL tests; override via E2E_IMPORT_URL env. */
-export const E2E_IMPORT_URL = process.env['E2E_IMPORT_URL'] ?? 'https://placehold.co/1x1.png';
+/** Stable 800x800 public PNG URL for import-from-URL tests; override via E2E_IMPORT_URL env. */
+export const E2E_IMPORT_URL = process.env['E2E_IMPORT_URL'] ?? 'https://placehold.co/800x800.png';
 
 export const REQUIRED_FIELD_ERROR = 'This field is mandatory';
 

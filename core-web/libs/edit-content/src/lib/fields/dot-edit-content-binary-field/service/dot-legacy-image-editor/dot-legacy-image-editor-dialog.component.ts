@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+
+import { SafeUrlPipe } from '@dotcms/ui';
 
 /**
  * Data passed to {@link DotLegacyImageEditorDialogComponent} when opening the legacy image editor.
@@ -17,6 +18,8 @@ export interface DotLegacyImageEditorDialogData {
 
 const IMAGE_EDITOR_STANDALONE_JSP = '/html/js/dotcms/dijit/image/image-editor-standalone.jsp';
 
+type LegacyImageEditorDialogConfig = { data: DotLegacyImageEditorDialogData };
+
 /**
  * Renders the legacy Dojo image editor inside a PrimeNG dialog iframe.
  *
@@ -27,24 +30,27 @@ const IMAGE_EDITOR_STANDALONE_JSP = '/html/js/dotcms/dijit/image/image-editor-st
     selector: 'dot-legacy-image-editor-dialog',
     template: `
         <iframe
-            [src]="$iframeSrc()"
+            [src]="$iframeUrl() | safeUrl"
             class="block size-full border-0"
             data-testid="legacy-image-editor-iframe"
             frameborder="0"
             title="Image editor"></iframe>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block h-full w-full' }
+    host: { class: 'block h-full w-full' },
+    standalone: true,
+    imports: [SafeUrlPipe]
 })
 export class DotLegacyImageEditorDialogComponent {
-    readonly #dialogConfig = inject(DynamicDialogConfig<DotLegacyImageEditorDialogData>);
-    readonly #sanitizer = inject(DomSanitizer);
+    readonly #dialogData: DotLegacyImageEditorDialogData = (
+        inject(DynamicDialogConfig) as LegacyImageEditorDialogConfig
+    ).data;
 
     /**
-     * Sanitized iframe URL for the standalone legacy image editor JSP.
+     * Raw iframe URL for the standalone legacy image editor JSP (sanitized in template via SafeUrlPipe).
      */
-    readonly $iframeSrc = computed(() => {
-        const { inode, tempId, variable } = this.#dialogConfig.data;
+    readonly $iframeUrl = computed(() => {
+        const { inode, tempId, variable } = this.#dialogData;
         const params = new URLSearchParams();
 
         if (inode) {
@@ -58,8 +64,6 @@ export class DotLegacyImageEditorDialogComponent {
         params.set('fieldName', variable);
         params.set('variable', variable);
 
-        const url = `${IMAGE_EDITOR_STANDALONE_JSP}?${params.toString()}`;
-
-        return this.#sanitizer.bypassSecurityTrustResourceUrl(url);
+        return `${IMAGE_EDITOR_STANDALONE_JSP}?${params.toString()}`;
     });
 }
