@@ -1,9 +1,15 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotcms.rest.api.v1.temp.TempFileAPI"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.util.Config"%>
+<%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
+<%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%
     String dojoPath = Config.getStringProperty("path.to.dojo");
     String inode = UtilMethods.isSet(request.getParameter("inode")) ? request.getParameter("inode") : "";
@@ -17,6 +23,36 @@
         response.getWriter().println("Unauthorized");
         return;
     }
+
+    if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(tempId)) {
+        response.getWriter().println("Unauthorized");
+        return;
+    }
+
+    if (UtilMethods.isSet(tempId)) {
+        TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+        if (!tempFileAPI.getTempFile(request, tempId).isPresent()) {
+            response.getWriter().println("Unauthorized");
+            return;
+        }
+    }
+
+    if (UtilMethods.isSet(inode)) {
+        Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, false);
+        PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        if (contentlet == null
+                || !InodeUtils.isSet(contentlet.getInode())
+                || !permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, false)) {
+            response.getWriter().println("Unauthorized");
+            return;
+        }
+    }
+
+    String jsVariable = StringEscapeUtils.escapeJavaScript(variable);
+    String jsInode = StringEscapeUtils.escapeJavaScript(inode);
+    String jsTempId = StringEscapeUtils.escapeJavaScript(tempId);
+    String jsFieldName = StringEscapeUtils.escapeJavaScript(fieldName);
 %>
 <!DOCTYPE html>
 <html>
@@ -38,10 +74,10 @@
     <script type="text/javascript">
         dojo.require("dotcms.dijit.image.ImageEditor");
 
-        var editorVariable = "<%=variable%>";
-        var editorInode = "<%=inode%>";
-        var editorTempId = "<%=tempId%>";
-        var editorFieldName = "<%=fieldName%>";
+        var editorVariable = "<%=jsVariable%>";
+        var editorInode = "<%=jsInode%>";
+        var editorTempId = "<%=jsTempId%>";
+        var editorFieldName = "<%=jsFieldName%>";
 
         window.contentAdmin = {
             contentletInode: editorInode
@@ -50,7 +86,8 @@
         function forwardImageEditorMessage(type, tempFile) {
             var payload = {
                 source: "dot-image-editor",
-                type: type
+                type: type,
+                variable: editorVariable
             };
 
             if (tempFile) {

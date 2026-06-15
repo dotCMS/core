@@ -16,6 +16,8 @@ interface DotImageEditorPostMessage {
     source: typeof POST_MESSAGE_SOURCE;
     type: 'tempfile' | 'close';
     tempFile?: DotCMSTempFile;
+    /** Binary field variable that opened the editor; scopes message routing. */
+    variable?: string;
 }
 
 /** Detail of the `binaryField-open-image-editor-{variable}` custom event. */
@@ -134,9 +136,13 @@ export class DotLegacyImageEditorLauncherService implements OnDestroy {
                 return;
             }
 
+            if (!this.#dialogRef) {
+                return;
+            }
+
             const variable = this.#variable;
 
-            if (!variable) {
+            if (!variable || data.variable !== variable) {
                 return;
             }
 

@@ -32,20 +32,37 @@ describe('DotLegacyImageEditorLauncherService', () => {
 
     afterEach(() => {
         spectator.service.stopListening();
+        jest.restoreAllMocks();
     });
+
+    const openEditorDialog = (): void => {
+        document.dispatchEvent(
+            new CustomEvent(openEventName, {
+                detail: { inode: 'inode-1', tempId: 'temp-1', variable }
+            })
+        );
+    };
+
+    const dispatchPostMessage = (data: Record<string, unknown>): void => {
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                origin: window.location.origin,
+                data
+            })
+        );
+    };
+
+    const getTempfileDispatches = (dispatchSpy: jest.SpyInstance): CustomEvent[] =>
+        dispatchSpy.mock.calls
+            .map(([event]) => event)
+            .filter(
+                (event): event is CustomEvent =>
+                    event instanceof CustomEvent && event.type === tempEventName
+            );
 
     it('should open dialog when open-image-editor event is dispatched', () => {
         spectator.service.listen(variable);
-
-        document.dispatchEvent(
-            new CustomEvent(openEventName, {
-                detail: {
-                    inode: 'inode-1',
-                    tempId: 'temp-1',
-                    variable
-                }
-            })
-        );
+        openEditorDialog();
 
         expect(dialogService.open).toHaveBeenCalledWith(
             DotLegacyImageEditorDialogComponent,
@@ -66,52 +83,33 @@ describe('DotLegacyImageEditorLauncherService', () => {
         const tempFile = { id: 'temp-123' } as DotCMSTempFile;
 
         spectator.service.listen(variable);
-        document.dispatchEvent(
-            new CustomEvent(openEventName, {
-                detail: { inode: 'inode-1', tempId: 'temp-1', variable }
-            })
-        );
+        openEditorDialog();
+        dispatchSpy.mockClear();
 
-        window.dispatchEvent(
-            new MessageEvent('message', {
-                origin: window.location.origin,
-                data: {
-                    source: 'dot-image-editor',
-                    type: 'tempfile',
-                    tempFile
-                }
-            })
-        );
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'tempfile',
+            tempFile,
+            variable
+        });
 
-        expect(dispatchSpy).toHaveBeenCalledWith(
-            expect.objectContaining({
-                type: tempEventName,
-                detail: { tempFile }
-            })
-        );
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(1);
+        expect(getTempfileDispatches(dispatchSpy)[0].detail).toEqual({ tempFile });
         expect(dialogRef.close).toHaveBeenCalled();
-        dispatchSpy.restore();
     });
 
     it('should re-dispatch close event when postMessage close is received', () => {
         const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
 
         spectator.service.listen(variable);
-        document.dispatchEvent(
-            new CustomEvent(openEventName, {
-                detail: { inode: 'inode-1', tempId: 'temp-1', variable }
-            })
-        );
+        openEditorDialog();
+        dispatchSpy.mockClear();
 
-        window.dispatchEvent(
-            new MessageEvent('message', {
-                origin: window.location.origin,
-                data: {
-                    source: 'dot-image-editor',
-                    type: 'close'
-                }
-            })
-        );
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'close',
+            variable
+        });
 
         expect(dispatchSpy).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -119,7 +117,6 @@ describe('DotLegacyImageEditorLauncherService', () => {
             })
         );
         expect(dialogRef.close).toHaveBeenCalled();
-        dispatchSpy.restore();
     });
 
     it('should ignore postMessage from a different origin', () => {
@@ -130,6 +127,8 @@ describe('DotLegacyImageEditorLauncherService', () => {
                 : 'https://evil.example';
 
         spectator.service.listen(variable);
+        openEditorDialog();
+        dispatchSpy.mockClear();
 
         window.dispatchEvent(
             new MessageEvent('message', {
@@ -137,28 +136,83 @@ describe('DotLegacyImageEditorLauncherService', () => {
                 data: {
                     source: 'dot-image-editor',
                     type: 'tempfile',
-                    tempFile: { id: 'temp-123' }
+                    tempFile: { id: 'temp-123' },
+                    variable
                 }
             })
         );
 
-        const tempfileDispatches = dispatchSpy.mock.calls.filter(
-            ([event]) => event instanceof CustomEvent && event.type === tempEventName
-        );
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(0);
+    });
 
-        expect(tempfileDispatches).toHaveLength(0);
-        dispatchSpy.restore();
+    it('should ignore postMessage when dialog is not open', () => {
+        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+
+        spectator.service.listen(variable);
+        dispatchSpy.mockClear();
+
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'tempfile',
+            tempFile: { id: 'temp-123' },
+            variable
+        });
+
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(0);
+    });
+
+    it('should ignore postMessage when variable does not match', () => {
+        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+
+        spectator.service.listen(variable);
+        openEditorDialog();
+        dispatchSpy.mockClear();
+
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'tempfile',
+            tempFile: { id: 'temp-123' },
+            variable: 'otherField'
+        });
+
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(0);
+    });
+
+    it('should ignore postMessage after the editor dialog closes', () => {
+        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const tempFile = { id: 'temp-123' } as DotCMSTempFile;
+
+        spectator.service.listen(variable);
+        openEditorDialog();
+
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'tempfile',
+            tempFile,
+            variable
+        });
+
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(1);
+        expect(dialogRef.close).toHaveBeenCalledTimes(1);
+
+        dispatchSpy.mockClear();
+        (dialogRef.close as jest.Mock).mockClear();
+
+        dispatchPostMessage({
+            source: 'dot-image-editor',
+            type: 'tempfile',
+            tempFile,
+            variable
+        });
+
+        expect(getTempfileDispatches(dispatchSpy)).toHaveLength(0);
+        expect(dialogRef.close).not.toHaveBeenCalled();
     });
 
     it('should not open dialog after stopListening', () => {
         spectator.service.listen(variable);
         spectator.service.stopListening();
-
-        document.dispatchEvent(
-            new CustomEvent(openEventName, {
-                detail: { inode: 'inode-1', tempId: 'temp-1', variable }
-            })
-        );
+        openEditorDialog();
 
         expect(dialogService.open).not.toHaveBeenCalled();
     });
