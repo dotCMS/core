@@ -127,6 +127,9 @@ importers:
       '@primeuix/themes':
         specifier: 2.0.3
         version: 2.0.3
+      '@primeuix/utils':
+        specifier: 0.6.4
+        version: 0.6.4
       '@tailwindcss/postcss':
         specifier: 4.2.1
         version: 4.2.1

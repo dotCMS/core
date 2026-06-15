@@ -86,6 +86,7 @@
         "@nx/angular": "22.5.4",
         "@nx/playwright": "22.5.4",
         "@primeuix/themes": "2.0.3",
+        "@primeuix/utils": "0.6.4",
         "@tailwindcss/postcss": "4.2.1",
         "@tailwindcss/typography": "^0.5.19",
         "@tarekraafat/autocomplete.js": "10.2.9",
