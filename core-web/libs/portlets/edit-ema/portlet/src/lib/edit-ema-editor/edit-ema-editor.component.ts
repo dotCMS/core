@@ -62,7 +62,6 @@ import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlet
 import { GlobalStore } from '@dotcms/store';
 import {
     DotCMSPage,
-    DotCMSPageAsset,
     DotCMSURLContentMap,
     DotCMSUVEAction,
     UVE_MODE
@@ -1711,41 +1710,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             },
             reject: () => {
                 // The page is already loaded in the target language.
-                // Keep it if any contentlet on the page is in that language;
-                // otherwise revert to the first language that has a page version.
-                const pageAsset = untracked(() => this.uveStore.pageAsset());
-                const hasContent =
-                    pageAsset &&
-                    this.#pageHasContentInLanguage(pageAsset.containers, language.id);
-
-                if (!hasContent) {
-                    const pageLanguages = untracked(() => this.uveStore.pageLanguages());
-                    const revertLang = pageLanguages.find(
-                        (l) => l.translated && l.id !== language.id
-                    );
-                    this.uveStore.pageLoad({ language_id: (revertLang?.id ?? 1).toString() });
-                }
+                // Just dismiss the dialog — no page reload needed.
+                // Content will display in the target language where versions exist,
+                // with fallback to the default language where they don't.
             }
         });
     }
 
     translatePage(event: { page: DotCMSPage; newLanguage: number }) {
         this.dialog.translatePage(event);
-    }
-
-    /**
-     * Returns true if at least one contentlet in the page containers has a version
-     * in the given language.
-     */
-    #pageHasContentInLanguage(
-        containers: DotCMSPageAsset['containers'],
-        targetLanguageId: number
-    ): boolean {
-        return Object.values(containers).some((entry) =>
-            Object.values(entry.contentlets).some((contentletList) =>
-                contentletList.some((c) => c.languageId === targetLanguageId)
-            )
-        );
     }
 
     #clientPayload() {
