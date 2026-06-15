@@ -317,6 +317,7 @@
     "pnpm": {
         "overrides": {
             "@babel/helper-define-polyfill-provider": "0.6.6",
+            "@tiptap/core": "3.22.2",
             "@vue/shared": "3.5.29",
             "http-cache-semantics": "4.1.1",
             "pdfjs-dist": "4.2.67",

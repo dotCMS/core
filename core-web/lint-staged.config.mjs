@@ -21,12 +21,12 @@ export default {
     '**/*.{ts,js,mjs,cjs,tsx,jsx}': (files) => {
         const list = toRelative(files);
         return [
-            `yarn nx affected -t lint --exclude=tag:skip:lint --fix --files="${list}"`,
-            `yarn nx format:write --files="${list}"`
+            `pnpm nx affected -t lint --exclude=tag:skip:lint --fix --files="${list}"`,
+            `pnpm nx format:write --files="${list}"`
         ];
     },
     '**/*.{json,html,css,scss,md,yaml,yml}': (files) => {
         const list = toRelative(files);
-        return `yarn nx format:write --files="${list}"`;
+        return `pnpm nx format:write --files="${list}"`;
     }
 };
