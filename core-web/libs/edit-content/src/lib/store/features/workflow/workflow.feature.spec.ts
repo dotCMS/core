@@ -2,7 +2,7 @@
 import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -270,6 +270,39 @@ describe('WorkflowFeature', () => {
                 expect(store.currentContentActions()).toEqual(
                     parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
+
+                // The actions re-fetch should settle into a non-loading state
+                expect(store.actionsStatus().status).toBe(ComponentStatus.LOADED);
+                expect(store.isLoadingActions()).toBe(false);
+            }));
+
+            it('should flag the actions as loading while they are being re-fetched', fakeAsync(() => {
+                workflowActionService.getByInode.mockClear();
+                // A request that never resolves keeps the re-fetch in flight
+                workflowActionService.getByInode.mockReturnValue(NEVER);
+
+                store.updateContent({ ...MOCK_CONTENTLET_1_TAB, inode: '789' });
+
+                spectator.flushEffects();
+
+                expect(store.actionsStatus().status).toBe(ComponentStatus.LOADING);
+                expect(store.isLoadingActions()).toBe(true);
+            }));
+
+            it('should clear the loading flag when the actions re-fetch fails', fakeAsync(() => {
+                workflowActionService.getByInode.mockClear();
+                workflowActionService.getByInode.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.updateContent({ ...MOCK_CONTENTLET_1_TAB, inode: '999' });
+
+                spectator.flushEffects();
+                tick();
+
+                // A failed re-fetch must not leave the workflow actions disabled forever
+                expect(store.actionsStatus().status).toBe(ComponentStatus.ERROR);
+                expect(store.isLoadingActions()).toBe(false);
             }));
 
             it('should not update workflow actions when contentlet has no inode', fakeAsync(() => {

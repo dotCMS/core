@@ -198,9 +198,22 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // Index lifecycle
     // =========================================================================
 
+
     @Override
     public IndexAPI indexAPI() {
         return osIndexAPI;
+    }
+
+    /**
+     * Returns the physical OS index name: cluster-ID prefix + logical name + {@code .os} suffix.
+     *
+     * <p>Example: {@code working_20230101} → {@code cluster_e0f4fa027f.working_20230101.os}</p>
+     * <p>Idempotent: names that already end in {@code .os} are returned unchanged.</p>
+     */
+    @Override
+    public String toPhysicalName(final String indexName) {
+        final String clustered = indexAPI().getNameWithClusterIDPrefix(indexName);
+        return IndexTag.OS.isTagged(clustered) ? clustered : IndexTag.OS.tag(clustered);
     }
 
     @Override
@@ -359,9 +372,10 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         try {
             final OpenSearchClient client = getClientProvider().getClient();
             for (final String indexName : indices) {
+                final String physical = toPhysicalName(indexName);
                 final org.opensearch.client.opensearch.core.DeleteByQueryRequest deleteByQuery =
                         org.opensearch.client.opensearch.core.DeleteByQueryRequest.of(r -> r
-                                .index(indexName)
+                                .index(physical)
                                 .query(q -> q.queryString(
                                         QueryStringQuery.of(qs -> qs.query(
                                                 "contenttype:" + structureName.toLowerCase())))));
@@ -369,7 +383,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         client.deleteByQuery(deleteByQuery);
                 Logger.info(this, "OS: Deleted " + response.deleted()
                         + " records of contentType " + structureName
-                        + " from index " + indexName);
+                        + " from index " + physical);
             }
         } catch (final Exception e) {
             throw new DotDataException("Error removing content type from OS index: "

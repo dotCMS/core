@@ -120,10 +120,12 @@ public interface ContentletIndexOperations {
      * Converts a logical index name to the physical name stored in the persistence layer.
      *
      * <p>Prepends the cluster-ID prefix: {@code cluster_{id}.name}
-     * (e.g. {@code cluster_08abc3.working_20240101}).
-     * Both ES and OS providers use the same format; the {@code os::} vendor tag is
-     * managed exclusively by {@link VersionedIndicesAPI} — it is never part of a name
-     * returned or accepted by this method.</p>
+     * (e.g. {@code cluster_08abc3.working_20240101}). This default implementation is the ES
+     * behavior — prefix only. The OS provider overrides this method to additionally append the
+     * {@code .os} tag ({@code ContentletIndexOperationsOS#toPhysicalName}); for OS the tag is
+     * part of the canonical index name end-to-end — see "Distinction tag as the canonical
+     * marker" and "The tag is part of the name identity" in
+     * {@code docs/backend/OPENSEARCH_MIGRATION.md}.</p>
      *
      * <p>Idempotent: if {@code indexName} already carries the prefix it is returned unchanged.</p>
      *

@@ -8466,7 +8466,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(contentDefaultVariant.getIdentifier() + "_"
                         + contentDefaultVariant.getLanguageId() + "_"
                         + contentDefaultVariant.getVariantId(),
-                responseDefaultVariant.hits().iterator().next().id());
+                responseDefaultVariant.hits().iterator().next().getId());
 
         final String queryContentOnNewVariant = "{"
                 + "query: {"
@@ -8483,7 +8483,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         assertEquals(contentNewVariant.getIdentifier() + "_"
                         + contentNewVariant.getLanguageId() + "_" + contentNewVariant.getVariantId(),
-                responseNewVariant.hits().iterator().next().id());
+                responseNewVariant.hits().iterator().next().getId());
     }
 
     @DataProvider
