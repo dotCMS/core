@@ -42,6 +42,6 @@ export class PagesListPage {
     }
 
     getStatusChipText(rowLocator: Locator) {
-        return this.getStatusChip(rowLocator).locator('p-chip').textContent();
+        return this.getStatusChip(rowLocator).locator('p-tag').textContent();
     }
 }
