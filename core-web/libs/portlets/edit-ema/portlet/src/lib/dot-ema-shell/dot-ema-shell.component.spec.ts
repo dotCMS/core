@@ -37,13 +37,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService,
-    Site,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
@@ -58,7 +52,6 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -276,10 +269,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,
@@ -1509,8 +1498,60 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.component.handleScannerToolClick('a11y');
 
-                const { requestHostName, currentUrl } = spectator.component['$seoParams']();
-                expect(openSpy).toHaveBeenCalledWith('a11y', `${requestHostName}${currentUrl}`);
+                const { currentUrl, siteId } = spectator.component['$seoParams']();
+                const expectedUrl = new URL(currentUrl, window.location.origin);
+                if (siteId) {
+                    expectedUrl.searchParams.set('host_id', siteId);
+                }
+                expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
+            });
+
+            it('should scan the authoring instance origin, not the page content host', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).origin).toBe(window.location.origin);
+            });
+
+            it('should append the page site host_id so the scanner resolves the correct site on multisite', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: 'site-b-identifier',
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.get('host_id')).toBe('site-b-identifier');
+            });
+
+            it('should omit host_id when the page has no site identifier', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: undefined,
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.has('host_id')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {

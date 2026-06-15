@@ -18,7 +18,12 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSBaseTypesContentTypes,
+    DotContentletDepth,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
@@ -83,6 +88,16 @@ export function withContent() {
              * into tabs and returns them.
              */
             tabs: computed(() => transformFormDataFn(store.contentType())),
+
+            /**
+             * Computed property that determines if the current content type is an HTML Page.
+             * Single source of truth shared by the form and sidebar components.
+             *
+             * @returns {boolean} True when the content type's base type is HTMLPAGE.
+             */
+            isPage: computed(
+                () => store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+            ),
 
             /**
              * Computed property that determines if the new content editor feature is enabled.
