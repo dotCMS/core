@@ -12,12 +12,15 @@ import {
     OnInit
 } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError } from 'rxjs/operators';
 
-import { DotResourceLinksService } from '@dotcms/data-access';
+import { DotMessageService, DotResourceLinksService } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
@@ -51,10 +54,12 @@ type FileInfo = UploadedFile & {
         DotFileSizeFormatPipe,
         DotMessagePipe,
         ButtonModule,
+        ConfirmPopupModule,
         DialogModule,
+        TooltipModule,
         DotCopyButtonComponent
     ],
-    providers: [],
+    providers: [ConfirmationService],
     templateUrl: './dot-file-field-preview.component.html',
     styleUrls: ['./dot-file-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +67,8 @@ type FileInfo = UploadedFile & {
 })
 export class DotFileFieldPreviewComponent implements OnInit {
     readonly #dotResourceLinksService = inject(DotResourceLinksService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
     /**
      * Preview file
      *
@@ -77,11 +84,26 @@ export class DotFileFieldPreviewComponent implements OnInit {
     $disabled = input<boolean>(false, { alias: 'disabled' });
 
     /**
+     * Whether the "Edit image" action should be shown for the current file.
+     * Driven by the parent based on field type, metadata and launcher availability.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    $canEditImage = input<boolean>(false, { alias: 'canEditImage' });
+
+    /**
      * Remove file
      *
      * @memberof DotFileFieldPreviewComponent
      */
     removeFile = output();
+
+    /**
+     * Edit image. Emitted when the user triggers the image editor action.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    editImage = output();
     /**
      * Show dialog
      *
@@ -114,7 +136,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
         return {
             source: previewFile.source,
             file: previewFile.file,
-            content: null,
+            content: previewFile.file.content ?? null,
             contentType: DEFAULT_CONTENT_TYPE,
             downloadLink: null,
             metadata: previewFile.file.metadata
@@ -154,6 +176,32 @@ export class DotFileFieldPreviewComponent implements OnInit {
         }
 
         this.$showDialog.update((value) => !value);
+    }
+
+    /**
+     * Asks for confirmation before removing the file, displaying a ConfirmPopup
+     * anchored to the triggering button. Emits {@link removeFile} only on accept.
+     *
+     * @param {Event} event The click event from the remove button.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    confirmRemove(event: Event): void {
+        if (this.$disabled()) {
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            target: event.currentTarget as EventTarget,
+            message: this.#dotMessageService.get('dot.file.field.action.remove.confirm'),
+            icon: 'pi pi-info-circle',
+            closeOnEscape: true,
+            acceptLabel: this.#dotMessageService.get('dot.common.remove'),
+            rejectLabel: this.#dotMessageService.get('dot.common.cancel'),
+            acceptButtonStyleClass: 'p-button-sm p-button-danger',
+            rejectButtonStyleClass: 'p-button-sm p-button-text p-button-secondary',
+            accept: () => this.removeFile.emit()
+        });
     }
 
     /**

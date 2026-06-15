@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -7,6 +7,7 @@ import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models'
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
+import { IMAGE_EDITOR_LAUNCHER, LegacyDojoImageEditorLauncher } from './services/image-editor';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 
@@ -28,7 +29,15 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe,
         ReactiveFormsModule
     ],
-    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
+    providers: [
+        DotFileFieldUploadService,
+        FileFieldStore,
+        DialogService,
+        // The new editor runs inside the Dojo admin shell, so the legacy image
+        // editor is reachable via DOM events. Show "Edit image" for any field
+        // whose file is actually an image (gated by $canEditImage).
+        { provide: IMAGE_EDITOR_LAUNCHER, useClass: LegacyDojoImageEditorLauncher }
+    ],
     templateUrl: './dot-edit-content-file-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -51,4 +60,9 @@ export class DotEditContentFileFieldComponent extends BaseWrapperField {
      * @memberof DotEditContentFileFieldComponent
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    /**
+     * Emits when the field value changes due to a user action. Bubbled from the
+     * inner file field so the parent can sync FileAsset title/fileName.
+     */
+    valueUpdated = output<{ value: string; fileName: string }>();
 }

@@ -52,25 +52,41 @@
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
+            [pTooltip]="'dot.common.info' | dm"
+            tooltipPosition="left"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
             icon="pi pi-info" />
+
+        @if ($canEditImage()) {
+            <p-button
+                (click)="editImage.emit()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.edit' | dm"
+                tooltipPosition="left"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="edit-button"
+                icon="pi pi-pencil" />
+        }
 
         @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 [disabled]="$disabled()"
+                [pTooltip]="'dot.common.download' | dm"
+                tooltipPosition="left"
                 data-testId="download-btn"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
-    </div>
-    <div class="preview-metadata__actions">
+
         <p-button
-            (click)="removeFile.emit()"
+            (click)="confirmRemove($event)"
             [disabled]="$disabled()"
-            [label]="'dot.common.remove' | dm"
-            styleClass="p-button-link p-button-sm"
+            [pTooltip]="'dot.common.remove' | dm"
+            tooltipPosition="left"
+            severity="danger"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="remove-button"
             icon="pi pi-trash" />
     </div>
@@ -82,6 +98,14 @@
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="info-btn-responsive"
             icon="pi pi-info" />
+        @if ($canEditImage()) {
+            <p-button
+                (click)="editImage.emit()"
+                [disabled]="$disabled()"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                data-testId="edit-button-responsive"
+                icon="pi pi-pencil" />
+        }
         @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-tertiary"
@@ -91,13 +115,16 @@
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
         <p-button
-            (click)="removeFile.emit()"
+            (click)="confirmRemove($event)"
             [disabled]="$disabled()"
+            severity="danger"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
 </div>
+
+<p-confirmpopup />
 
 <p-dialog
     [(visible)]="$showDialog"

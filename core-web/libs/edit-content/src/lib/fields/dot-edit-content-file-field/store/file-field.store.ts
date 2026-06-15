@@ -1,14 +1,19 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { Observable, of, pipe } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
+
+import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 
 import {
     INPUT_TYPE,
+    INPUT_TYPES,
+    UPLOAD_TYPE,
     FILE_STATUS,
     UIMessage,
     UploadedFile
@@ -20,6 +25,7 @@ import { getUiMessage } from '../utils/messages';
 export interface FileFieldState {
     value: string;
     inputType: INPUT_TYPE | null;
+    uploadType: UPLOAD_TYPE;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;
     isEnterprise: boolean;
@@ -38,6 +44,7 @@ export interface FileFieldState {
 const initialState: FileFieldState = {
     value: '',
     inputType: null,
+    uploadType: 'dotasset',
     fileStatus: 'init',
     dropZoneActive: false,
     isEnterprise: false,
@@ -51,6 +58,38 @@ const initialState: FileFieldState = {
     maxFileSize: null,
     fieldVariable: '',
     uploadedFile: null
+};
+
+/**
+ * Resolves the file metadata from a contentlet, supporting FileAsset (`metaData`),
+ * dotAsset (`assetMetaData`) and per-field (`{variable}MetaData`) shapes.
+ */
+const resolveContentletMetadata = (
+    contentlet: DotCMSContentlet,
+    fieldVariable: string
+): DotFileMetadata => {
+    const metadata =
+        contentlet?.metaData ||
+        contentlet?.['assetMetaData'] ||
+        contentlet?.[`${fieldVariable}MetaData`];
+
+    return (metadata || {}) as DotFileMetadata;
+};
+
+/**
+ * Resolves the versioned file URL of a contentlet field, used to fetch the text
+ * content of files flagged as `editableAsText`.
+ */
+const resolveContentletVersion = (
+    contentlet: DotCMSContentlet,
+    fieldVariable: string
+): string | null => {
+    return (
+        contentlet?.['assetVersion'] ||
+        contentlet?.fileAssetVersion ||
+        contentlet?.[`${fieldVariable}Version`] ||
+        null
+    );
 };
 
 export const FileFieldStore = signalStore(
@@ -75,6 +114,23 @@ export const FileFieldStore = signalStore(
     })),
     withMethods((store) => {
         const uploadService = inject(DotFileFieldUploadService);
+        const http = inject(HttpClient);
+
+        /**
+         * Fetches the text content of an `editableAsText` file so the preview can
+         * render it inline. Returns the same file when no content needs loading.
+         */
+        const hydrateTempContent = (file: DotCMSTempFile): Observable<DotCMSTempFile> => {
+            const editableAsText = file?.metadata?.editableAsText ?? false;
+
+            if (!editableAsText || !file?.referenceUrl) {
+                return of(file);
+            }
+
+            return http
+                .get(file.referenceUrl, { responseType: 'text' })
+                .pipe(map((content) => ({ ...file, content })));
+        };
 
         return {
             /**
@@ -94,6 +150,9 @@ export const FileFieldStore = signalStore(
                     inputType,
                     fieldVariable,
                     isAIPluginInstalled,
+                    // Binary fields upload to the temp endpoint (legacy contract);
+                    // File/Image fields create a dotAsset contentlet directly.
+                    uploadType: inputType === INPUT_TYPES.Binary ? 'temp' : 'dotasset',
                     ...actions
                 });
             },
@@ -188,11 +247,24 @@ export const FileFieldStore = signalStore(
                         return uploadService
                             .uploadFile({
                                 file,
-                                uploadType: 'dotasset',
+                                uploadType: store.uploadType(),
                                 acceptedFiles: store.acceptedFiles(),
                                 maxSize: store.maxFileSize() ? `${store.maxFileSize()}` : null
                             })
                             .pipe(
+                                switchMap((uploadedFile) =>
+                                    uploadedFile.source === 'temp'
+                                        ? hydrateTempContent(uploadedFile.file).pipe(
+                                              map(
+                                                  (hydrated) =>
+                                                      ({
+                                                          source: 'temp',
+                                                          file: hydrated
+                                                      }) as UploadedFile
+                                              )
+                                          )
+                                        : of(uploadedFile)
+                                ),
                                 tapResponse({
                                     next: (uploadedFile) => {
                                         patchState(store, {
@@ -212,6 +284,92 @@ export const FileFieldStore = signalStore(
                                     }
                                 })
                             );
+                    })
+                )
+            ),
+            /**
+             * applyTempFile applies an edited/generated temp file to the preview.
+             * Used by the image editor round-trip to swap the current asset.
+             * @param tempFile temp file returned by the image editor
+             */
+            applyTempFile: rxMethod<DotCMSTempFile>(
+                pipe(
+                    filter((tempFile) => !!tempFile),
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
+                    switchMap((tempFile) =>
+                        hydrateTempContent(tempFile).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value: file.id,
+                                        uploadedFile: { source: 'temp', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        )
+                    )
+                )
+            ),
+            /**
+             * setFileFromContentlet hydrates the preview from a saved contentlet.
+             * Used by the binary web component, which receives the contentlet
+             * imperatively (no reactive form value to drive {@link getAssetData}).
+             * @param params contentlet, field variable and the stored value
+             */
+            setFileFromContentlet: rxMethod<{
+                contentlet: DotCMSContentlet;
+                fieldVariable: string;
+                value: string;
+            }>(
+                pipe(
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
+                    switchMap(({ contentlet, fieldVariable, value }) => {
+                        const metadata = resolveContentletMetadata(contentlet, fieldVariable);
+                        const versionUrl = resolveContentletVersion(contentlet, fieldVariable);
+                        const content$ =
+                            metadata.editableAsText && versionUrl
+                                ? http.get(versionUrl, { responseType: 'text' })
+                                : of('');
+
+                        return content$.pipe(
+                            tapResponse({
+                                next: (content = '') => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value,
+                                        uploadedFile: {
+                                            source: 'contentlet',
+                                            file: {
+                                                ...contentlet,
+                                                metaData: metadata,
+                                                content
+                                            }
+                                        }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value,
+                                        uploadedFile: {
+                                            source: 'contentlet',
+                                            file: { ...contentlet, metaData: metadata }
+                                        }
+                                    });
+                                }
+                            })
+                        );
                     })
                 )
             ),

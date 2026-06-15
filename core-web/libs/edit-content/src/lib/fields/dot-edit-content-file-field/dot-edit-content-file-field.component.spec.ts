@@ -4,11 +4,16 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotContentletService,
+    DotMessageService,
+    DotUploadFileService,
+    DotUploadService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -16,7 +21,7 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
-import { DotEditContentFileFieldComponent } from './dot-edit-content-file-field.component';
+import { IMAGE_EDITOR_LAUNCHER } from './services/image-editor/image-editor-launcher.model';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 
@@ -33,33 +38,42 @@ import {
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
     field: DotCMSContentTypeField;
     contentlet: DotCMSContentlet;
 }
 
-xdescribe('DotEditContentFileFieldComponent', () => {
-    let spectator: SpectatorHost<DotEditContentFileFieldComponent, MockFormComponent>;
+const mockLauncher = {
+    isAvailable: jest.fn().mockReturnValue(false),
+    open: jest.fn().mockReturnValue(of(null))
+};
+
+describe('DotFileFieldComponent', () => {
+    let spectator: SpectatorHost<DotFileFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof FileFieldStore>;
     let uploadService: jest.Mocked<DotFileFieldUploadService>;
 
     const createHost = createHostFactory({
-        component: DotEditContentFileFieldComponent,
+        component: DotFileFieldComponent,
         host: MockFormComponent,
-        imports: [ReactiveFormsModule],
         detectChanges: false,
         componentMocks: [
             DotFileFieldPreviewComponent,
             DotFileFieldUiMessageComponent,
             DotDropZoneComponent
         ],
+        // The file field self-provides FileFieldStore + DotFileFieldUploadService.
+        // We also provide them (and mock the upload service's transitive deps) at
+        // the module level so the harness can resolve them, then spy per test.
         providers: [
             FileFieldStore,
-            mockProvider(DotFileFieldUploadService),
+            DialogService,
+            DotFileFieldUploadService,
+            { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockLauncher },
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DialogService),
+            mockProvider(DotUploadFileService),
+            mockProvider(DotUploadService),
+            mockProvider(DotContentletService),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
             }),
@@ -69,27 +83,25 @@ xdescribe('DotEditContentFileFieldComponent', () => {
         ]
     });
 
-    describe('FileField', () => {
-        beforeEach(() => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-file-field [field]="field" [contentlet]="contentlet" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [FILE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: FILE_FIELD_MOCK,
-                        contentlet: createFakeContentlet({
-                            [FILE_FIELD_MOCK.variable]: null
-                        })
-                    }
+    const setup = (field: DotCMSContentTypeField, contentlet?: DotCMSContentlet) => {
+        spectator = createHost(
+            `<dot-file-field [field]="field" [contentlet]="contentlet" [hasError]="false" />`,
+            {
+                hostProps: {
+                    field,
+                    contentlet: contentlet ?? createFakeContentlet({ [field.variable]: null })
                 }
-            );
-            store = spectator.inject(FileFieldStore, true);
-            uploadService = spectator.inject(DotFileFieldUploadService, true);
-        });
+            }
+        );
+        store = spectator.component.store;
+        uploadService = spectator.inject(
+            DotFileFieldUploadService,
+            true
+        ) as jest.Mocked<DotFileFieldUploadService>;
+    };
+
+    describe('FileField', () => {
+        beforeEach(() => setup(FILE_FIELD_MOCK));
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -125,12 +137,11 @@ xdescribe('DotEditContentFileFieldComponent', () => {
 
         it('should call getAssetData when an value is set', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            uploadService.getContentById.mockReturnValue(of(mockContentlet));
+            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
             const spyGetAssetData = jest.spyOn(store, 'getAssetData');
 
-            const fieldComponent = spectator.query(DotFileFieldComponent);
-            fieldComponent.writeValue(mockContentlet.identifier);
+            spectator.component.writeValue(mockContentlet.identifier);
             spectator.detectChanges();
 
             expect(spyGetAssetData).toHaveBeenCalledTimes(1);
@@ -139,12 +150,11 @@ xdescribe('DotEditContentFileFieldComponent', () => {
 
         it('should does not call getAssetData when an null value', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            uploadService.getContentById.mockReturnValue(of(mockContentlet));
+            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
             const spyGetAssetData = jest.spyOn(store, 'getAssetData');
 
-            const fieldComponent = spectator.query(DotFileFieldComponent);
-            fieldComponent.writeValue(null);
+            spectator.component.writeValue(null);
             spectator.detectChanges();
 
             expect(spyGetAssetData).not.toHaveBeenCalled();
@@ -152,10 +162,9 @@ xdescribe('DotEditContentFileFieldComponent', () => {
 
         it('should have a preview with a proper content', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            uploadService.getContentById.mockReturnValue(of(mockContentlet));
+            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
-            const fieldComponent = spectator.query(DotFileFieldComponent);
-            fieldComponent.writeValue(mockContentlet.identifier);
+            spectator.component.writeValue(mockContentlet.identifier);
 
             spectator.detectChanges();
 
@@ -165,7 +174,7 @@ xdescribe('DotEditContentFileFieldComponent', () => {
         describe('fileDropped event', () => {
             it('should call to handleUploadFile when and proper file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadFile.mockReturnValue(
+                jest.spyOn(uploadService, 'uploadFile').mockReturnValue(
                     of({ source: 'contentlet', file: mockContentlet })
                 );
 
@@ -190,11 +199,6 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             });
 
             it('should not call to handleUploadFile when a null file', () => {
-                const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadFile.mockReturnValue(
-                    of({ source: 'contentlet', file: mockContentlet })
-                );
-
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
                 const mockEvent: DropZoneFileEvent = {
@@ -215,11 +219,6 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             });
 
             it('should set a proper error message with a invalid file', () => {
-                const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadFile.mockReturnValue(
-                    of({ source: 'contentlet', file: mockContentlet })
-                );
-
                 const spySetUIMessage = jest.spyOn(store, 'setUIMessage');
 
                 const mockEvent: DropZoneFileEvent = {
@@ -242,30 +241,20 @@ xdescribe('DotEditContentFileFieldComponent', () => {
 
         describe('fileSelected event', () => {
             it('should call to handleUploadFile with proper file', () => {
-                const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadFile.mockReturnValue(
-                    of({ source: 'contentlet', file: mockContentlet })
-                );
-
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
                 const file = new File([''], 'filename', { type: 'text/html' });
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.fileSelected([file] as unknown as FileList);
+                spectator.detectChanges();
+                spectator.component.fileSelected([file] as unknown as FileList);
 
                 expect(spyHandleUploadFile).toHaveBeenCalledTimes(1);
                 expect(spyHandleUploadFile).toHaveBeenCalledWith(file);
             });
 
             it('should not call to handleUploadFile when a null file', () => {
-                const mockContentlet = NEW_FILE_MOCK.entity;
-                uploadService.uploadFile.mockReturnValue(
-                    of({ source: 'contentlet', file: mockContentlet })
-                );
-
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.fileSelected([] as unknown as FileList);
+                spectator.detectChanges();
+                spectator.component.fileSelected([] as unknown as FileList);
 
                 expect(spyHandleUploadFile).not.toHaveBeenCalled();
             });
@@ -275,18 +264,13 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             it('should set disabled state correctly through setDisabledState method', () => {
                 spectator.detectChanges();
 
-                const fieldComponent = spectator.query(DotFileFieldComponent);
+                expect(spectator.component.$isDisabled()).toBe(false);
 
-                // Initially not disabled
-                expect(fieldComponent.$isDisabled()).toBe(false);
+                spectator.component.setDisabledState(true);
+                expect(spectator.component.$isDisabled()).toBe(true);
 
-                // Set disabled
-                spectator.hostComponent.formGroup.disable();
-                expect(fieldComponent.$isDisabled()).toBe(true);
-
-                // Set enabled
-                spectator.hostComponent.formGroup.enable();
-                expect(fieldComponent.$isDisabled()).toBe(false);
+                spectator.component.setDisabledState(false);
+                expect(spectator.component.$isDisabled()).toBe(false);
             });
 
             it('should disable file input when field is disabled', () => {
@@ -296,47 +280,24 @@ xdescribe('DotEditContentFileFieldComponent', () => {
                     byTestId('file-field__file-input')
                 ) as HTMLInputElement;
 
-                // Initially not disabled
                 expect(fileInput.disabled).toBe(false);
 
-                // Set disabled
-                spectator.hostComponent.formGroup.disable();
+                spectator.component.setDisabledState(true);
                 spectator.detectChanges();
                 expect(fileInput.disabled).toBe(true);
-            });
-
-            it('should disable action buttons when field is disabled', () => {
-                const dialogService = spectator.inject(DialogService);
-                const spyDialogOpen = jest.spyOn(dialogService, 'open');
-
-                spectator.detectChanges();
-
-                // Set disabled
-                spectator.hostComponent.formGroup.disable();
-                spectator.detectChanges();
-
-                // Try to trigger the action methods
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.showImportUrlDialog();
-                fieldComponent.showSelectExistingFileDialog();
-                fieldComponent.showFileEditorDialog();
-
-                // Verify that no dialogs are opened (dialog service not called)
-                expect(spyDialogOpen).not.toHaveBeenCalled();
             });
 
             it('should prevent file selection when disabled', () => {
                 spectator.detectChanges();
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
-                spectator.hostComponent.formGroup.disable();
+                spectator.component.setDisabledState(true);
                 const mockFiles = {
                     length: 1,
                     0: new File(['test'], 'test.txt', { type: 'text/plain' })
                 } as unknown as FileList;
 
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.fileSelected(mockFiles);
+                spectator.component.fileSelected(mockFiles);
 
                 expect(spyHandleUploadFile).not.toHaveBeenCalled();
             });
@@ -345,7 +306,7 @@ xdescribe('DotEditContentFileFieldComponent', () => {
                 spectator.detectChanges();
                 const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
 
-                spectator.hostComponent.formGroup.disable();
+                spectator.component.setDisabledState(true);
 
                 const mockEvent: DropZoneFileEvent = {
                     file: new File(['test'], 'test.txt', { type: 'text/plain' }),
@@ -358,24 +319,22 @@ xdescribe('DotEditContentFileFieldComponent', () => {
                     }
                 };
 
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.handleFileDrop(mockEvent);
+                spectator.component.handleFileDrop(mockEvent);
 
                 expect(spyHandleUploadFile).not.toHaveBeenCalled();
             });
 
             it('should prevent opening dialogs when disabled', () => {
-                const dialogService = spectator.inject(DialogService);
+                spectator.detectChanges();
+                const dialogService = spectator.inject(DialogService, true);
                 const spyDialogOpen = jest.spyOn(dialogService, 'open');
 
-                spectator.hostComponent.formGroup.disable();
+                spectator.component.setDisabledState(true);
 
-                // Test each dialog method
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-                fieldComponent.showImportUrlDialog();
-                fieldComponent.showSelectExistingFileDialog();
-                fieldComponent.showFileEditorDialog();
-                fieldComponent.showAIImagePromptDialog();
+                spectator.component.showImportUrlDialog();
+                spectator.component.showSelectExistingFileDialog();
+                spectator.component.showFileEditorDialog();
+                spectator.component.showAIImagePromptDialog();
 
                 expect(spyDialogOpen).not.toHaveBeenCalled();
             });
@@ -383,61 +342,19 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             it('should add disabled CSS class to container when disabled', () => {
                 spectator.detectChanges();
 
-                const container = spectator.query('.file-field__container');
+                const container = spectator.query('.dot-file-field__container');
 
-                // Initially not disabled
-                expect(container).not.toHaveClass('file-field__container--disabled');
+                expect(container).not.toHaveClass('opacity-50');
 
-                // Set disabled
-                spectator.hostComponent.formGroup.disable();
+                spectator.component.setDisabledState(true);
                 spectator.detectChanges();
-                expect(container).toHaveClass('file-field__container--disabled');
-            });
-
-            it('should pass disabled state to preview component when file is uploaded', () => {
-                const store = spectator.inject(FileFieldStore, true);
-
-                // Use the existing NEW_FILE_MOCK with proper UploadedFile structure
-                const mockFile = { source: 'contentlet' as const, file: NEW_FILE_MOCK.entity };
-
-                // Mock the store signals to return the uploaded file and preview status
-                jest.spyOn(store, 'uploadedFile').mockReturnValue(mockFile);
-                jest.spyOn(store, 'fileStatus').mockReturnValue('preview');
-
-                spectator.detectChanges();
-
-                // Set disabled
-                spectator.hostComponent.formGroup.disable();
-                spectator.detectChanges();
-
-                // Verify preview component exists - this confirms the template binding works
-                const previewComponent = spectator.query('dot-file-field-preview');
-                expect(previewComponent).toBeTruthy();
-
-                const fieldComponent = spectator.query(DotFileFieldComponent);
-
-                // Verify the component's disabled state is set correctly
-                expect(fieldComponent.$isDisabled()).toBe(true);
+                expect(container).toHaveClass('opacity-50');
             });
         });
     });
 
     describe('ImageField', () => {
-        beforeEach(() => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-file-field [field]="field" [formControlName]="field.variable" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [IMAGE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: IMAGE_FIELD_MOCK
-                    }
-                }
-            );
-        });
+        beforeEach(() => setup(IMAGE_FIELD_MOCK));
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -460,21 +377,7 @@ xdescribe('DotEditContentFileFieldComponent', () => {
     });
 
     describe('BinaryField', () => {
-        beforeEach(() => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-file-field [field]="field" [formControlName]="field.variable" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [BINARY_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: BINARY_FIELD_MOCK
-                    }
-                }
-            );
-        });
+        beforeEach(() => setup(BINARY_FIELD_MOCK));
 
         it('should be created', () => {
             expect(spectator.component).toBeTruthy();
@@ -493,6 +396,112 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             expect(spectator.query(byTestId('action-existing-file'))).toBeFalsy();
             expect(spectator.query(byTestId('action-new-file'))).toBeTruthy();
             expect(spectator.query(byTestId('action-generate-with-ai'))).toBeTruthy();
+        });
+    });
+
+    describe('BinaryField contentlet hydration', () => {
+        const contentlet = createFakeContentlet({
+            [BINARY_FIELD_MOCK.variable]: 'my-file.txt',
+            metaData: { name: 'my-file.txt', title: 'my-file.txt', editableAsText: false }
+        });
+
+        beforeEach(() => setup(BINARY_FIELD_MOCK, contentlet));
+
+        it('should hydrate from the contentlet metadata instead of fetching an asset by id', () => {
+            const spyGetAssetData = jest.spyOn(store, 'getAssetData');
+            const spySetFromContentlet = jest.spyOn(store, 'setFileFromContentlet');
+
+            spectator.detectChanges();
+
+            expect(spyGetAssetData).not.toHaveBeenCalled();
+            expect(spySetFromContentlet).toHaveBeenCalledWith({
+                contentlet,
+                fieldVariable: BINARY_FIELD_MOCK.variable,
+                value: 'my-file.txt'
+            });
+        });
+    });
+
+    describe('Edit image gating ($canEditImage)', () => {
+        afterEach(() => mockLauncher.isAvailable.mockReturnValue(false));
+
+        const setImagePreview = (isImage: boolean) =>
+            store.setPreviewFile({
+                source: 'temp',
+                file: { id: 'temp-1', metadata: { isImage } }
+            } as never);
+
+        it('should be false when the launcher is not available even for an image', () => {
+            mockLauncher.isAvailable.mockReturnValue(false);
+            setup(IMAGE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('should be false when there is no previewed file', () => {
+            mockLauncher.isAvailable.mockReturnValue(true);
+            setup(IMAGE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('should be true for an Image field when the file is an image', () => {
+            mockLauncher.isAvailable.mockReturnValue(true);
+            setup(IMAGE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('should be true for a File field when the file is an image', () => {
+            mockLauncher.isAvailable.mockReturnValue(true);
+            setup(FILE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('should be true for a Binary field when the file is an image', () => {
+            mockLauncher.isAvailable.mockReturnValue(true);
+            setup(BINARY_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(true);
+        });
+
+        it('should be false when the previewed file is not an image', () => {
+            mockLauncher.isAvailable.mockReturnValue(true);
+            setup(FILE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(false);
+
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('should open the launcher and apply the returned temp file on edit', () => {
+            const tempFile = { id: 'edited-temp', metadata: { isImage: true } };
+            mockLauncher.isAvailable.mockReturnValue(true);
+            mockLauncher.open.mockReturnValue(of(tempFile));
+            setup(IMAGE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            const spyApply = jest.spyOn(store, 'applyTempFile');
+
+            spectator.component.onEditImage();
+
+            expect(mockLauncher.open).toHaveBeenCalled();
+            expect(spyApply).toHaveBeenCalledWith(tempFile);
         });
     });
 });

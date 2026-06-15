@@ -7,13 +7,13 @@
 @if (form) {
     <form
         [formGroup]="form"
-        class="form w-full flex flex-col overflow-auto flex-1 min-h-0 px-6 pb-6 pt-3"
+        class="form flex min-h-0 w-full flex-1 flex-col overflow-auto px-6 pt-3 pb-6"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">
         @if (data().contentlet?.inode) {
             <input type="hidden" formControlName="inode" />
         }
-        <div class="flex justify-end mb-0!">
+        <div class="mb-0! flex justify-end">
             <p-button
                 [text]="true"
                 size="small"
@@ -51,7 +51,7 @@
                             @if (field.options && field.options.length > 0) {
                                 <div class="flex flex-col gap-2">
                                     @for (option of field.options; track option.value) {
-                                        <div class="flex align-items-center gap-2">
+                                        <div class="align-items-center flex gap-2">
                                             <p-checkbox
                                                 [formControlName]="field.variable"
                                                 [name]="field.variable"
@@ -86,7 +86,7 @@
                         @case (DotCMSClazzes.RADIO) {
                             <div class="flex flex-col gap-2">
                                 @for (option of field.options; track option.value) {
-                                    <div class="flex align-items-center gap-2">
+                                    <div class="align-items-center flex gap-2">
                                         <p-radioButton
                                             [formControlName]="field.variable"
                                             [name]="field.variable"
@@ -112,10 +112,12 @@
                                 [placeholder]="('Select' | dm) + ' ' + field.name"></p-multiSelect>
                         }
                         @case (DotCMSClazzes.BINARY) {
-                            <dot-edit-content-binary-field
+                            <dot-file-field
                                 [formControlName]="field.variable"
                                 [field]="$any(field)"
-                                [contentlet]="data().contentlet" />
+                                [contentlet]="data().contentlet"
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
+                                [vertical]="true" />
                         }
                         @case (DotCMSClazzes.IMAGE) {
                             <dot-file-field
@@ -144,7 +146,7 @@
             }
         </div>
     </form>
-    <div class="flex justify-between shrink-0 p-4 border-t border-gray-300">
+    <div class="flex shrink-0 justify-between border-t border-gray-300 p-4">
         <p-button
             [outlined]="true"
             [label]="'Cancel' | dm"

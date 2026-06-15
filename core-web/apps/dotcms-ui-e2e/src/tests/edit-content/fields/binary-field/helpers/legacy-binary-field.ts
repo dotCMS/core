@@ -24,8 +24,8 @@ export class LegacyBinaryField {
     ) {
         this.root = frame.locator(`#binary-field-${fieldVariable}, dotcms-binary-field`);
         this.dropzone = this.root.getByTestId('dropzone');
-        this.fileInput = this.root.getByTestId('binary-field__file-input');
-        this.importFromUrlBtn = this.root.getByTestId('action-url-btn');
+        this.fileInput = this.root.getByTestId('file-field__file-input');
+        this.importFromUrlBtn = this.root.getByTestId('action-import-from-url');
         this.preview = this.root.getByTestId('preview');
         this.editButton = this.root.getByTestId('edit-button');
         this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');

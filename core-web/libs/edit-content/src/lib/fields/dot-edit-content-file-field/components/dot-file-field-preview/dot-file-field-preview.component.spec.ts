@@ -9,6 +9,7 @@ import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 
+import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import { DotResourceLinksService } from '@dotcms/data-access';
@@ -27,6 +28,7 @@ describe('DotFileFieldPreviewComponent', () => {
         detectChanges: false,
         providers: [provideHttpClient()],
         componentProviders: [
+            ConfirmationService,
             mockProvider(DotResourceLinksService, {
                 getFileResourceLinksByInode: jest.fn().mockReturnValue(
                     of({

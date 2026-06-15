@@ -12,8 +12,9 @@ export { E2E_IMPORT_URL, createTestPngFile, createTestTextFile };
 const AI_DISABLED_TOOLTIP = 'Please configure dotAI to enable this feature';
 
 /**
- * Locator wrapper for the Binary field (`dot-binary-field-wrapper` / `dot-edit-content-binary-field`).
- * Scopes interactions to `data-testid="field-{variable}"`.
+ * Locator wrapper for the Binary field rendered by the unified
+ * `dot-edit-content-file-field` component. Scopes interactions to
+ * `data-testid="field-{variable}"`.
  */
 export class BinaryField {
     readonly root: Locator;
@@ -34,11 +35,11 @@ export class BinaryField {
     ) {
         this.root = page.getByTestId(`field-${fieldVariable}`);
         this.dropzone = this.root.getByTestId('dropzone');
-        this.fileInput = this.root.getByTestId('binary-field__file-input');
+        this.fileInput = this.root.getByTestId('file-field__file-input');
         this.chooseFileBtn = this.root.getByTestId('choose-file-btn');
-        this.importFromUrlBtn = this.root.getByTestId('action-url-btn');
-        this.createNewFileBtn = this.root.getByTestId('action-editor-btn');
-        this.generateWithAiBtn = this.root.getByTestId('action-ai-btn');
+        this.importFromUrlBtn = this.root.getByTestId('action-import-from-url');
+        this.createNewFileBtn = this.root.getByTestId('action-new-file');
+        this.generateWithAiBtn = this.root.getByTestId('action-generate-with-ai');
         this.preview = this.root.getByTestId('preview');
         this.requiredError = this.root.locator('.error-message small');
         this.editButton = this.root.getByTestId('edit-button');
@@ -114,7 +115,6 @@ export class BinaryField {
         const dialog = this.page.getByRole('dialog');
         return {
             dialog,
-            urlMode: dialog.getByTestId('url-mode'),
             urlInput: dialog.getByTestId('url-input'),
             cancelButton: dialog.getByTestId('cancel-button'),
             importButton: dialog.getByTestId('import-button')
@@ -159,27 +159,32 @@ export class BinaryField {
         });
     }
 
+    /**
+     * The "Edit image" action only shows when the previewed file is actually an
+     * image, so it stays hidden for non-image files (e.g. plain text uploads).
+     */
+    async expectEditButtonHidden() {
+        await this.expectPreviewVisible();
+        await expect(this.editButton).toBeHidden();
+        await expect(this.editButtonResponsive).toBeHidden();
+    }
+
     async clickEditImage() {
         await this.editButton.or(this.editButtonResponsive).first().click();
     }
 
-    /** New editor: PrimeNG dialog + standalone JSP iframe */
-    async expectNewEditorImageEditorOpen() {
-        const dialog = this.page.getByRole('dialog');
-        await expect(dialog).toBeVisible({ timeout: 15000 });
-
-        const iframe = dialog.getByTestId('legacy-image-editor-iframe');
-        await expect(iframe).toBeVisible();
-
-        const editorFrame = this.page.frameLocator('[data-testid="legacy-image-editor-iframe"]');
-        await expect(editorFrame.locator('#dotImageDialog, #imageToolIframe').first()).toBeVisible({
-            timeout: 30000
-        });
+    /**
+     * New editor: the Dojo ImageEditor dialog opens at page level (the new editor
+     * runs inside the same Dojo admin shell as the legacy form).
+     */
+    async expectImageEditorOpen() {
+        await expect(this.page.locator('#dotImageDialog')).toBeVisible({ timeout: 15000 });
+        await expect(this.page.locator('#imageToolIframe')).toBeVisible({ timeout: 30000 });
     }
 
     async openImageEditorInNewEditor() {
         await this.expectEditButtonVisible();
         await this.clickEditImage();
-        await this.expectNewEditorImageEditorOpen();
+        await this.expectImageEditorOpen();
     }
 }

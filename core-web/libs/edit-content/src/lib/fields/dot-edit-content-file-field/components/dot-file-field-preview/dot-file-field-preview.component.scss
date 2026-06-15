@@ -30,7 +30,6 @@ dot-contentlet-thumbnail::ng-deep {
     justify-content: center;
     height: 100%;
     width: 100%;
-    position: relative;
     container-type: inline-size;
     container-name: preview;
 
@@ -88,6 +87,7 @@ dot-contentlet-thumbnail::ng-deep {
     width: 100%;
     overflow: hidden;
     user-select: none;
+    position: relative;
 
     code {
         background: #ffffff;
@@ -115,18 +115,9 @@ dot-contentlet-thumbnail::ng-deep {
     right: 0;
     display: none;
     flex-direction: column;
-    gap: spacing.$spacing-0;
-    padding-top: spacing.$spacing-1;
-}
-
-.preview-metadata__actions {
-    position: absolute;
-    bottom: spacing.$spacing-1;
-    right: 0;
-    display: none;
-    justify-content: flex-end;
     align-items: center;
     gap: spacing.$spacing-1;
+    padding-top: spacing.$spacing-1;
     z-index: 100;
 }
 
@@ -188,8 +179,7 @@ dot-contentlet-thumbnail::ng-deep {
 }
 
 @container preview (min-width: 500px) {
-    .preview-metadata__container,
-    .preview-metadata__actions {
+    .preview-metadata__container {
         display: flex;
     }
 

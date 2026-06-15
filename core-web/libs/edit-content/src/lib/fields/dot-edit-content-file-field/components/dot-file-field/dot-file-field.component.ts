@@ -6,8 +6,10 @@ import {
     Component,
     inject,
     input,
+    output,
     OnInit,
     OnDestroy,
+    AfterViewInit,
     DestroyRef,
     computed,
     forwardRef
@@ -25,6 +27,7 @@ import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
+    DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
@@ -36,7 +39,12 @@ import {
     DropZoneFileValidity,
     DotBrowserSelectorComponent
 } from '@dotcms/ui';
+import { getFileMetadata } from '@dotcms/utils';
 
+import {
+    IMAGE_EDITOR_LAUNCHER,
+    ImageEditorLauncher
+} from './../../services/image-editor/image-editor-launcher.model';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
 import { getUiMessage } from './../../utils/messages';
@@ -80,13 +88,20 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
 })
 export class DotFileFieldComponent
     extends BaseControlValueAccessor<string>
-    implements OnInit, OnDestroy
+    implements OnInit, AfterViewInit, OnDestroy
 {
     /**
      * A readonly instance of the FileFieldStore injected into the component.
      * This store is used to manage the state and actions related to the file field.
      */
     readonly store = inject(FileFieldStore);
+    /**
+     * Image editor seam. Optional so hosts without a launcher (e.g. EMA quick edit)
+     * simply keep the "Edit image" action hidden.
+     */
+    readonly #imageEditorLauncher = inject<ImageEditorLauncher>(IMAGE_EDITOR_LAUNCHER, {
+        optional: true
+    });
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -140,6 +155,62 @@ export class DotFileFieldComponent
     $vertical = input<boolean>(false, { alias: 'vertical' });
 
     /**
+     * Emits when the field value changes due to a user action (upload, image edit,
+     * dialog import or remove). Mirrors the legacy binary field contract consumed
+     * by the legacy JSP editor and the FileAsset title/fileName auto-fill.
+     */
+    valueUpdated = output<{ value: string; fileName: string }>();
+
+    /**
+     * Current file name derived from the preview file, used in `valueUpdated`.
+     */
+    $currentFileName = computed<string>(() => {
+        const uploaded = this.store.uploadedFile();
+
+        if (!uploaded) {
+            return '';
+        }
+
+        if (uploaded.source === 'temp') {
+            return uploaded.file.fileName ?? uploaded.file.metadata?.name ?? '';
+        }
+
+        const file = uploaded.file;
+
+        return file.fileName ?? getFileMetadata(file)?.name ?? file.title ?? '';
+    });
+
+    /**
+     * Whether the "Edit image" action is available for the current file.
+     *
+     * General rule for every field type (File/Image/Binary): the action shows
+     * only when the previewed file is actually an image and an image editor
+     * launcher is available.
+     */
+    $canEditImage = computed<boolean>(() => {
+        if (!this.#imageEditorLauncher?.isAvailable()) {
+            return false;
+        }
+
+        return !!this.#currentMetadata()?.isImage;
+    });
+
+    /**
+     * Metadata of the current preview file, resolved for both temp and contentlet sources.
+     */
+    #currentMetadata = computed<DotFileMetadata | null>(() => {
+        const uploaded = this.store.uploadedFile();
+
+        if (!uploaded) {
+            return null;
+        }
+
+        return uploaded.source === 'temp'
+            ? (uploaded.file.metadata ?? null)
+            : getFileMetadata(uploaded.file);
+    });
+
+    /**
      * Signal indicating whether the AI plugin is installed.
      *
      * This signal is initialized with a boolean value indicating the installation status
@@ -173,6 +244,7 @@ export class DotFileFieldComponent
         super();
         this.handleStoreValueChange(this.store.value);
         this.handleValueChange(this.$value);
+        this.emitValueUpdated(this.store.value);
     }
 
     /**
@@ -189,6 +261,91 @@ export class DotFileFieldComponent
             fieldVariable: field.variable,
             inputType: field.fieldType as INPUT_TYPE
         });
+    }
+
+    /**
+     * AfterViewInit lifecycle hook.
+     *
+     * Hydrates the preview from the contentlet for:
+     * - Binary fields, whose value is stored inline on the contentlet (so there
+     *   is no separate asset to fetch via {@link getAssetData}).
+     * - File/Image fields driven imperatively (binary web component) instead of
+     *   via a reactive form value.
+     */
+    ngAfterViewInit() {
+        const field = this.$field();
+        const contentlet = this.$contentlet();
+
+        if (!field?.variable || !contentlet) {
+            return;
+        }
+
+        const isBinary = this.store.inputType() === INPUT_TYPES.Binary;
+
+        // File/Image fields hydrate from the reactive form value via getAssetData.
+        if (!isBinary && this.$value()) {
+            return;
+        }
+
+        const value = this.$value() || contentlet[field.variable] || field.defaultValue;
+
+        if (!value) {
+            return;
+        }
+
+        // Binary previews need the metadata stored on the contentlet; bail out
+        // when there is none (e.g. a freshly created, empty binary field).
+        if (isBinary && !this.#hasContentletMetadata(contentlet, field.variable)) {
+            return;
+        }
+
+        this.#originalValue = value;
+
+        this.store.setFileFromContentlet({
+            contentlet,
+            fieldVariable: field.variable,
+            value
+        });
+    }
+
+    /**
+     * Whether the contentlet carries file metadata for the given field, covering
+     * FileAsset (`metaData`), dotAsset (`assetMetaData`) and per-field shapes.
+     */
+    #hasContentletMetadata(contentlet: DotCMSContentlet, fieldVariable: string): boolean {
+        return !!(
+            contentlet['metaData'] ||
+            contentlet['assetMetaData'] ||
+            contentlet[`${fieldVariable}MetaData`]
+        );
+    }
+
+    /**
+     * Opens the image editor for the current asset and applies the edited result.
+     *
+     * @memberof DotFileFieldComponent
+     */
+    onEditImage() {
+        const launcher = this.#imageEditorLauncher;
+
+        if (!launcher?.isAvailable() || this.$isDisabled()) {
+            return;
+        }
+
+        const variable = this.$field().variable;
+        const uploaded = this.store.uploadedFile();
+        const inode = this.$contentlet()?.inode;
+        const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
+
+        launcher
+            .open({ inode, tempId, variable, fieldName: variable })
+            .pipe(
+                filter((tempFile) => !!tempFile),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((tempFile) => {
+                this.store.applyTempFile(tempFile);
+            });
     }
 
     /**
@@ -489,14 +646,43 @@ export class DotFileFieldComponent
      */
     #hasHydrated = false;
 
+    /**
+     * The value the field was loaded with (reactive form value or contentlet
+     * value). Used to distinguish hydration ticks from user-driven changes when
+     * emitting `valueUpdated`.
+     */
+    #originalValue: string | null = null;
+
+    /** Last value emitted through `valueUpdated`, to avoid duplicate emissions. */
+    #lastEmittedValue: string | null = null;
+
     override writeValue(value: string): void {
         super.writeValue(value);
+        this.#originalValue = value ?? null;
         // If Angular wrote a falsy value, there is no async hydration
         // to wait for — the next tick is already user-territory.
         if (!value) {
             this.#hasHydrated = true;
         }
     }
+
+    /**
+     * Emits `valueUpdated` whenever the store value changes to a user-driven
+     * value (upload, image edit, dialog import or remove), skipping the initial
+     * load/hydration value.
+     */
+    readonly emitValueUpdated = signalMethod<string>((value) => {
+        if (value === null || value === undefined) {
+            return;
+        }
+
+        if (value === this.#originalValue || value === this.#lastEmittedValue) {
+            return;
+        }
+
+        this.#lastEmittedValue = value;
+        this.valueUpdated.emit({ value, fileName: this.$currentFileName() });
+    });
 
     readonly handleStoreValueChange = signalMethod<string>((value) => {
         if (value === null || value === undefined || !this.onChange) {
@@ -518,6 +704,13 @@ export class DotFileFieldComponent
 
     readonly handleValueChange = signalMethod<string>((value) => {
         if (!value) {
+            return;
+        }
+
+        // Binary fields keep the asset inline on the contentlet, so they hydrate
+        // from contentlet metadata (ngAfterViewInit) rather than fetching a
+        // separate asset by identifier.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
             return;
         }
 

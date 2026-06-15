@@ -120,8 +120,11 @@
             @if (uploadedFile) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
+                    (editImage)="onEditImage()"
+                    [canEditImage]="$canEditImage()"
                     [disabled]="$isDisabled()"
-                    [previewFile]="uploadedFile" />
+                    [previewFile]="uploadedFile"
+                    data-testId="preview" />
             }
         }
     }
