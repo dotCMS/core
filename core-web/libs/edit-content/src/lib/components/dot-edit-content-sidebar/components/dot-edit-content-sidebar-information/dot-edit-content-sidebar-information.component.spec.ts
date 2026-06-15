@@ -74,7 +74,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should NOT show contentlet status chip', () => {
-            expect(spectator.query('dot-contentlet-status-chip')).toBeFalsy();
+            expect(spectator.query('dot-contentlet-status-badge')).toBeFalsy();
         });
 
         it('should show json link', () => {
