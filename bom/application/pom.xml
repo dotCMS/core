@@ -17,6 +17,7 @@
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
+        <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
@@ -28,7 +29,8 @@
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
+        <langchain4j.version>1.15.1</langchain4j.version>
+        <commonmark.version>0.22.0</commonmark.version>
     </properties>
     <dependencyManagement>
 
@@ -481,6 +483,21 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.txtmark</artifactId>
                 <version>0.14-SNAPSHOT_1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-tables</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+                <version>${commonmark.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -1101,6 +1118,12 @@
                 <groupId>com.github.gotson</groupId>
                 <artifactId>webp-imageio</artifactId>
                 <version>0.2.2</version>
+            </dependency>
+            <!-- libvips bindings (FFM, JDK 23+) — alternative image engine, requires native libvips on host -->
+            <dependency>
+                <groupId>app.photofox.vips-ffm</groupId>
+                <artifactId>vips-ffm-core</artifactId>
+                <version>${vips-ffm.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>

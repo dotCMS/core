@@ -585,13 +585,11 @@ export class ToolbarComponent implements OnDestroy {
 
         const editor = this.editor();
         const tableAttrs = editor.getAttributes('table');
-        const { captionText, hasCaption } = this.readActiveTableCaption(editor);
         const btn = event.currentTarget as HTMLElement;
 
         this.popovers.openTableProperties(() => btn.getBoundingClientRect(), {
             initialValues: {
-                caption: captionText,
-                hasCaption,
+                caption: this.readActiveTableCaption(editor),
                 ariaLabel: tableAttrs['ariaLabel'] ?? '',
                 ariaLabelledby: tableAttrs['ariaLabelledby'] ?? ''
             }
@@ -599,15 +597,14 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     /** Reads the active table's `caption` attribute from the current selection. */
-    private readActiveTableCaption(editor: Editor): { captionText: string; hasCaption: boolean } {
+    private readActiveTableCaption(editor: Editor): string {
         const { $from } = editor.state.selection;
         for (let depth = $from.depth; depth >= 0; depth--) {
             const node = $from.node(depth);
             if (node.type.name !== 'table') continue;
-            const caption = (node.attrs['caption'] as string | null) ?? '';
-            return { captionText: caption, hasCaption: caption.length > 0 };
+            return (node.attrs['caption'] as string | null) ?? '';
         }
-        return { captionText: '', hasCaption: false };
+        return '';
     }
 
     // ── Keyboard navigation (roving tabindex) ────────────────────────────────

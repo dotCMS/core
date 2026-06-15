@@ -78,6 +78,9 @@
             ],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
+            "@dotcms/portlets/dot-velocity-playground/portlet": [
+                "libs/portlets/dot-velocity-playground/src/index.ts"
+            ],
             "@dotcms/query-builder": [
                 "libs/sdk/client/src/lib/client/content/builders/query/query.ts"
             ],
@@ -99,7 +102,8 @@
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
-            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"]
+            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
+            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

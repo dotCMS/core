@@ -49,6 +49,11 @@ on:
         type: boolean
         default: true
         required: false
+      update_latest:
+        description: 'Update the "latest" Docker tag (disable for back-patches of older release lines)'
+        type: boolean
+        default: true
+        required: false
       notify_slack:
         description: 'Notify Slack'
         type: boolean
@@ -138,7 +143,7 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' }}
+      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' && github.event.inputs.update_latest == 'true' }}
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false

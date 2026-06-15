@@ -37,13 +37,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService,
-    Site,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
@@ -58,7 +52,6 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -276,10 +269,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,
@@ -1011,6 +1000,24 @@ describe('DotEmaShellComponent', () => {
                 expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
+            it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
+                spectator.detectChanges();
+                const spyReload = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {}
+                    })
+                );
+
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'pageReload');
@@ -1037,6 +1044,22 @@ describe('DotEmaShellComponent', () => {
                 const reloadSpy = jest.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+
+            it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                        payload: { htmlPageReferer: '/index?com.dotmarketing.htmlpage.language=2' }
+                    })
+                );
+                spectator.detectChanges();
 
                 expect(reloadSpy).toHaveBeenCalled();
             });

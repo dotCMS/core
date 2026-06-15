@@ -8,6 +8,10 @@ import {
 } from '../requests/contentType';
 import { createFolders } from '../requests/folders';
 import { getSites, type Site } from '../requests/sites';
+import {
+    createFakePayloadHostFolderField,
+    createFakePayloadTextField
+} from '../utils/dot-content-types.mock';
 
 // ─── Content Type Payload Builder ────────────────────────────────
 
@@ -15,19 +19,17 @@ function hostFolderContentTypePayload(suffix: string): CreateContentTypePayload 
     return {
         name: `HostFolderTest${suffix}`,
         fields: [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+            }),
+            createFakePayloadHostFolderField({
                 name: 'Site Or Folder',
                 variable: 'siteOrFolder',
                 required: true,
                 sortOrder: 2
-            }
+            })
         ]
     };
 }

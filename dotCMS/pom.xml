@@ -388,6 +388,18 @@
             <artifactId>dot.txtmark</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.util-taglib</artifactId>
         </dependency>
@@ -505,9 +517,14 @@
             <artifactId>langchain4j-open-ai</artifactId>
         </dependency>
         <dependency>
-            <!-- LangChain4J Azure OpenAI provider: Chat, Embedding, Image models via Azure OpenAI Service -->
+            <!-- LangChain4J Azure OpenAI provider: Chat, Embedding models via Azure OpenAI Service -->
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-azure-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J official OpenAI SDK provider: Image model via gpt-image-1 on Azure (Microsoft Foundry) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-official</artifactId>
         </dependency>
         <dependency>
             <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
@@ -930,6 +947,11 @@
         <dependency>
             <groupId>com.github.gotson</groupId>
             <artifactId>webp-imageio</artifactId>
+        </dependency>
+        <!-- libvips bindings (FFM) — alternative image engine; native libvips must be present on host -->
+        <dependency>
+            <groupId>app.photofox.vips-ffm</groupId>
+            <artifactId>vips-ffm-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
