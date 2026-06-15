@@ -20,14 +20,6 @@
     border-color: var(--p-inputtext-invalid-border-color);
 }
 
-/* Active state when dragging over drop zone (theme variable; not valid in [class.x] binding) */
-.dot-file-field__drop-zone--active {
-    background: #fff;
-    box-shadow:
-        0 10px 15px -3px rgb(0 0 0 / 0.1),
-        0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-
 /* Container query: stack drop zone and actions vertically on narrow widths */
 @container dotFileField (max-width: 500px) {
     .dot-file-field__root--preview,

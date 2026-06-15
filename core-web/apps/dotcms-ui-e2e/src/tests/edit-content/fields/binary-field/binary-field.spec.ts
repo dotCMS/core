@@ -111,6 +111,57 @@ test('required empty binary field shows error helper text on save', async ({ pag
     await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
 });
 
+test('upload text file does not show Edit image button', async ({ page }) => {
+    const formPage = new NewEditContentFormPage(page);
+    await formPage.goToNew(contentTypeVariable);
+
+    const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
+    await field.expectVisible();
+    await field.uploadFile(TEST_FILE);
+    await field.expectEditButtonHidden();
+});
+
+test('remove file shows confirm popup and clears preview', async ({ page }) => {
+    const formPage = new NewEditContentFormPage(page);
+    await formPage.goToNew(contentTypeVariable);
+
+    const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
+    await field.expectVisible();
+    await field.uploadFile(TEST_FILE);
+    await field.expectPreviewVisible();
+
+    await field.clickRemoveButton();
+    await field.confirmRemoveInPopup();
+    await field.expectPreviewHidden();
+});
+
+test('edit existing binary contentlet shows preview without server error', async ({ page }) => {
+    const title = `E2E Binary Image Hydration ${faker.lorem.word()}`;
+    const formPage = new NewEditContentFormPage(page);
+    await formPage.goToNew(contentTypeVariable);
+
+    const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
+    await field.expectVisible();
+    await field.importFromUrl(E2E_IMPORT_URL);
+
+    await formPage.fillTextField(title);
+    await formPage.save();
+
+    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    expect(savedContentIdentifier).toBeTruthy();
+
+    await page.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);
+    await page.waitForLoadState('domcontentloaded');
+    await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+
+    await field.expectPreviewVisible();
+    await field.expectNoServerErrorMessage();
+    await field.expectThumbnailVisible();
+});
+
 test('disabled Generate With dotAI button shows tooltip when AI plugin not installed', async ({
     page
 }) => {

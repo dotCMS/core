@@ -24,10 +24,6 @@ interface ImageEditorTempFileDetail {
  */
 @Injectable()
 export class LegacyDojoImageEditorLauncher implements ImageEditorLauncher {
-    isAvailable(): boolean {
-        return true;
-    }
-
     open({ inode, tempId, variable }: ImageEditorOpenParams): Observable<DotCMSTempFile> {
         return new Observable<DotCMSTempFile>((subscriber) => {
             const tempFileEventName = `binaryField-tempfile-${variable}`;

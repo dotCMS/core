@@ -42,9 +42,9 @@ import {
 import { getFileMetadata } from '@dotcms/utils';
 
 import {
-    IMAGE_EDITOR_LAUNCHER,
-    ImageEditorLauncher
-} from './../../services/image-editor/image-editor-launcher.model';
+    LegacyDialogImageEditorLauncher,
+    LegacyDojoImageEditorLauncher
+} from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
 import { getUiMessage } from './../../utils/messages';
@@ -76,6 +76,8 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         DotFileFieldUploadService,
         FileFieldStore,
         DialogService,
+        LegacyDialogImageEditorLauncher,
+        LegacyDojoImageEditorLauncher,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -95,13 +97,10 @@ export class DotFileFieldComponent
      * This store is used to manage the state and actions related to the file field.
      */
     readonly store = inject(FileFieldStore);
-    /**
-     * Image editor seam. Optional so hosts without a launcher (e.g. EMA quick edit)
-     * simply keep the "Edit image" action hidden.
-     */
-    readonly #imageEditorLauncher = inject<ImageEditorLauncher>(IMAGE_EDITOR_LAUNCHER, {
-        optional: true
-    });
+    /** Opens the legacy image editor JSP inside a PrimeNG dialog (new editor default). */
+    readonly #legacyDialogImageEditorLauncher = inject(LegacyDialogImageEditorLauncher);
+    /** Dispatches Dojo image-editor events (legacy web-component bridge only). */
+    readonly #legacyDojoImageEditorLauncher = inject(LegacyDojoImageEditorLauncher);
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -153,6 +152,15 @@ export class DotFileFieldComponent
      * Use in narrow containers where side-by-side layout would clip the buttons.
      */
     $vertical = input<boolean>(false, { alias: 'vertical' });
+    /**
+     * When false, hides the "Edit image" action (e.g. EMA quick edit).
+     */
+    $enableImageEditor = input<boolean>(true, { alias: 'enableImageEditor' });
+    /**
+     * When true, routes image editing through Dojo DOM events instead of the
+     * dialog iframe. Only set by {@link DotBinaryFieldCeBridgeComponent}.
+     */
+    $useLegacyDojoImageEditor = input<boolean>(false, { alias: 'useLegacyDojoImageEditor' });
 
     /**
      * Emits when the field value changes due to a user action (upload, image edit,
@@ -183,12 +191,11 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * Only Binary fields expose the image editor, and only when the previewed
-     * file is actually an image and an image editor launcher is available.
-     * File/Image fields never show the action.
+     * Only Binary fields expose the image editor when enabled, and only when
+     * the previewed file is actually an image. File/Image fields never show it.
      */
     $canEditImage = computed<boolean>(() => {
-        if (!this.#imageEditorLauncher?.isAvailable()) {
+        if (!this.$enableImageEditor()) {
             return false;
         }
 
@@ -330,9 +337,7 @@ export class DotFileFieldComponent
      * @memberof DotFileFieldComponent
      */
     onEditImage() {
-        const launcher = this.#imageEditorLauncher;
-
-        if (!launcher?.isAvailable() || this.$isDisabled()) {
+        if (this.$isDisabled() || !this.$canEditImage()) {
             return;
         }
 
@@ -340,6 +345,11 @@ export class DotFileFieldComponent
         const uploaded = this.store.uploadedFile();
         const inode = this.$contentlet()?.inode;
         const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
+
+        const launcher = this.$useLegacyDojoImageEditor()
+            ? this.#legacyDojoImageEditorLauncher
+            : this.#legacyDialogImageEditorLauncher;
+        // Future PR: replace the dialog launcher path with the native Angular image editor.
 
         launcher
             .open({ inode, tempId, variable, fieldName: variable })

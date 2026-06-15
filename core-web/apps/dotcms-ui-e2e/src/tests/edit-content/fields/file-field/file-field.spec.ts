@@ -107,6 +107,16 @@ test('import from URL completes without 400 and shows preview @critical', async 
     await field.importFromUrl(E2E_IMPORT_URL);
 });
 
+test('import image URL does not show Edit image button', async ({ page }) => {
+    const formPage = new NewEditContentFormPage(page);
+    await formPage.goToNew(contentTypeVariable);
+
+    const field = new FileField(page, FILE_FIELD_VARIABLE);
+    await field.expectVisible();
+    await field.importFromUrl(E2E_IMPORT_URL);
+    await field.expectEditButtonHidden();
+});
+
 test('required empty file field shows error helper text on save', async ({ page, request }) => {
     if (contentType) {
         await deleteContentType(request, contentType.id);

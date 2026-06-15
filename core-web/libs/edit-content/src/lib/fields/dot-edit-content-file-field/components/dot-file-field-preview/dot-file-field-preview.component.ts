@@ -62,6 +62,7 @@ type FileInfo = UploadedFile & {
     providers: [ConfirmationService],
     templateUrl: './dot-file-field-preview.component.html',
     styleUrls: ['./dot-file-field-preview.component.scss'],
+    host: { class: 'block size-full' },
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

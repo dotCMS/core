@@ -9,33 +9,10 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { LegacyDialogImageEditorLauncher } from './legacy-dialog-image-editor-launcher.service';
 import { LegacyDojoImageEditorLauncher } from './legacy-dojo-image-editor-launcher.service';
-import { NoOpImageEditorLauncher } from './no-op-image-editor-launcher.service';
-
-describe('NoOpImageEditorLauncher', () => {
-    const launcher = new NoOpImageEditorLauncher();
-
-    it('should report the editor as unavailable', () => {
-        expect(launcher.isAvailable()).toBe(false);
-    });
-
-    it('should not emit when opened', () => {
-        const next = jest.fn();
-        const complete = jest.fn();
-
-        launcher.open().subscribe({ next, complete });
-
-        expect(next).not.toHaveBeenCalled();
-        expect(complete).toHaveBeenCalled();
-    });
-});
 
 describe('LegacyDojoImageEditorLauncher', () => {
     const launcher = new LegacyDojoImageEditorLauncher();
     const variable = 'fileAsset';
-
-    it('should report the editor as available', () => {
-        expect(launcher.isAvailable()).toBe(true);
-    });
 
     it('should dispatch the open-image-editor event with the asset details', () => {
         const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
@@ -117,10 +94,6 @@ describe('LegacyDialogImageEditorLauncher', () => {
         });
 
         launcher = TestBed.inject(LegacyDialogImageEditorLauncher);
-    });
-
-    it('should report the editor as available', () => {
-        expect(launcher.isAvailable()).toBe(true);
     });
 
     it('should open the dialog with the asset details', () => {

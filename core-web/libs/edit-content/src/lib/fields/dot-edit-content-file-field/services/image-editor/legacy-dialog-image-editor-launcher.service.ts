@@ -37,10 +37,6 @@ export class LegacyDialogImageEditorLauncher implements ImageEditorLauncher {
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    isAvailable(): boolean {
-        return true;
-    }
-
     open({ inode, tempId, variable }: ImageEditorOpenParams): Observable<DotCMSTempFile> {
         return new Observable<DotCMSTempFile>((subscriber) => {
             const data: DotLegacyImageEditorDialogData = { inode, tempId, variable };

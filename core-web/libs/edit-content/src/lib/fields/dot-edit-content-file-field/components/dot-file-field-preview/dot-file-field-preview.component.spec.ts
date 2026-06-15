@@ -150,6 +150,7 @@ describe('DotFileFieldPreviewComponent', () => {
             const infoBtnElement = spectator.query(byTestId('info-btn'));
 
             spectator.click(infoBtnElement);
+            spectator.detectChanges();
 
             const links = spectator.queryAll('.file-info__item');
             const copyBtns = spectator.queryAll(DotCopyButtonComponent);

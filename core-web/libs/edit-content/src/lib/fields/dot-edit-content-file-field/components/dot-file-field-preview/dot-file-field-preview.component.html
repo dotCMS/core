@@ -1,13 +1,21 @@
 @let fileInfo = $fileInfo();
 @let metadata = fileInfo.metadata;
 
-<div class="preview-container" [class.preview-container--fade]="metadata?.editableAsText">
+<div
+    class="@container/preview flex size-full items-start justify-center gap-2 only:gap-0"
+    [class.preview-container--fade]="metadata?.editableAsText">
     @if (metadata?.editableAsText) {
-        <div class="preview-code_container" data-testId="code-preview">
-            <code>{{ fileInfo.content }}</code>
+        <div
+            class="preview-code_container relative flex max-h-[14.4rem] w-full items-start justify-start overflow-hidden select-none"
+            data-testId="code-preview">
+            <code
+                class="w-full overflow-hidden bg-white leading-normal whitespace-pre-wrap text-primary-500">
+                {{ fileInfo.content }}
+            </code>
         </div>
     } @else {
-        <div class="preview-image__container">
+        <div
+            class="flex size-full items-center justify-center overflow-hidden bg-gray-200 @min-[500px]/preview:max-w-70">
             @if (fileInfo.source === 'temp') {
                 <dot-temp-file-thumbnail
                     [tempFile]="fileInfo.file"
@@ -22,13 +30,14 @@
                     data-testId="contentlet-thumbnail" />
             }
         </div>
-        <div class="preview-metadata__container">
+        <div
+            class="hidden min-w-[150px] grow flex-col gap-3 overflow-hidden p-2 pr-10 @min-[500px]/preview:flex [&_span]:truncate">
             @if (metadata) {
-                <span data-testId="metadata-title" class="preview-metadata_header">
+                <span data-testId="metadata-title" class="m-0 text-sm font-medium text-color">
                     {{ metadata.title }}
                 </span>
                 @if (metadata.width && metadata.height) {
-                    <div class="preview-metadata__info">
+                    <div class="flex items-center justify-start gap-1">
                         <i class="pi pi-arrows-alt"></i>
                         <span data-testId="metadata-dimensions">
                             {{ metadata.width }} x {{ metadata.height }}
@@ -36,7 +45,7 @@
                     </div>
                 }
                 @if (metadata.fileSize) {
-                    <div class="preview-metadata__info">
+                    <div class="flex items-center justify-start gap-1">
                         <i class="pi pi-file"></i>
                         <span data-testId="metadata-file-size">
                             {{ metadata.fileSize | dotFileSizeFormat }}
@@ -48,7 +57,8 @@
     }
 
     <!-- Actions -->
-    <div class="preview-resource-links__actions">
+    <div
+        class="absolute top-2 right-2 z-100 hidden flex-col items-center gap-2 @min-[500px]/preview:flex">
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
@@ -91,7 +101,7 @@
             icon="pi pi-trash" />
     </div>
     <!-- Actions in small screens -->
-    <div class="preview-metadata__action--responsive">
+    <div class="absolute right-2 bottom-2 z-100 flex flex-col gap-2 @min-[500px]/preview:hidden">
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
@@ -134,32 +144,37 @@
     [header]="metadata.title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
-    <div class="file-info__item">
-        <span class="file-info__title">{{ 'Size' | dm }}:</span>
-        <div class="file-info__link">
-            @if (metadata.width && metadata.height) {
-                <div class="file-info__size" data-testId="file-resolution">
-                    <i class="pi pi-arrows-alt"></i>
-                    <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+    <div class="flex flex-col divide-y divide-gray-200">
+        <div class="file-info__item flex flex-col items-start justify-center gap-1 py-2">
+            <span class="text-xs font-semibold">{{ 'Size' | dm }}:</span>
+            <div class="flex min-h-8 w-full items-center gap-2 text-xs">
+                @if (metadata.width && metadata.height) {
+                    <div class="flex items-center gap-1" data-testId="file-resolution">
+                        <i class="pi pi-arrows-alt"></i>
+                        <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+                    </div>
+                }
+                <div class="flex items-center gap-1">
+                    <i class="pi pi-file"></i>
+                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
                 </div>
-            }
-            <div class="file-info__size">
-                <i class="pi pi-file"></i>
-                <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
         </div>
+        @for (sourceLink of $resourceLinks(); track $index) {
+            <div class="file-info__item flex flex-col items-start justify-center gap-1 py-2">
+                <span class="text-xs font-semibold">{{ sourceLink.key | dm }}:</span>
+                <div class="flex min-h-8 w-full items-center gap-2 text-xs">
+                    <a
+                        class="flex-1 text-color no-underline"
+                        [href]="sourceLink.value"
+                        target="_blank">
+                        {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
+                    </a>
+                    <dot-copy-button [copy]="sourceLink.value" />
+                </div>
+            </div>
+        }
     </div>
-    @for (sourceLink of $resourceLinks(); track $index) {
-        <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
-            <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
-            <div class="file-info__link">
-                <a [href]="sourceLink.value" target="_blank">
-                    {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
-                </a>
-                <dot-copy-button [copy]="sourceLink.value" />
-            </div>
-        </div>
-    }
 
     <ng-template pTemplate="footer">
         <p-button

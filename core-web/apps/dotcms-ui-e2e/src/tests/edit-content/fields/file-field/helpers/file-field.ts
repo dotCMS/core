@@ -21,6 +21,11 @@ export class FileField {
     readonly selectExistingFileBtn: Locator;
     readonly createNewFileBtn: Locator;
     readonly generateWithAiBtn: Locator;
+    readonly preview: Locator;
+    readonly editButton: Locator;
+    readonly editButtonResponsive: Locator;
+    readonly removeButton: Locator;
+    readonly removeButtonResponsive: Locator;
     readonly requiredError: Locator;
 
     constructor(
@@ -35,6 +40,11 @@ export class FileField {
         this.selectExistingFileBtn = this.root.getByTestId('action-existing-file');
         this.createNewFileBtn = this.root.getByTestId('action-new-file');
         this.generateWithAiBtn = this.root.getByTestId('action-generate-with-ai');
+        this.preview = this.root.getByTestId('preview');
+        this.editButton = this.root.getByTestId('edit-button');
+        this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');
+        this.removeButton = this.root.getByTestId('remove-button');
+        this.removeButtonResponsive = this.root.getByTestId('remove-button-responsive');
         this.requiredError = this.root.locator('.error-message small');
     }
 
@@ -58,12 +68,42 @@ export class FileField {
     }
 
     async expectPreviewVisible() {
-        const preview = this.root
-            .getByTestId('code-preview')
-            .or(this.root.getByTestId('metadata-title'))
-            .or(this.root.getByTestId('contentlet-thumbnail'))
-            .or(this.root.getByTestId('temp-file-thumbnail'));
-        await expect(preview.first()).toBeVisible({ timeout: 15000 });
+        await expect(this.preview).toBeVisible({ timeout: 15000 });
+    }
+
+    async expectPreviewHidden() {
+        await expect(this.preview).toBeHidden({ timeout: 15000 });
+        await expect(this.dropzone).toBeVisible({ timeout: 15000 });
+    }
+
+    /**
+     * The "Edit image" action is only available for Binary fields with an image file.
+     */
+    async expectEditButtonVisible() {
+        await expect(this.editButton.or(this.editButtonResponsive).first()).toBeVisible({
+            timeout: 15000
+        });
+    }
+
+    async expectEditButtonHidden() {
+        await this.expectPreviewVisible();
+        await expect(this.editButton).toBeHidden();
+        await expect(this.editButtonResponsive).toBeHidden();
+    }
+
+    async clickRemoveButton() {
+        await this.removeButton.or(this.removeButtonResponsive).first().click();
+    }
+
+    async confirmRemoveInPopup() {
+        const popup = this.page.locator('.p-confirmpopup');
+        await expect(popup).toBeVisible({ timeout: 10000 });
+        await expect(popup).toContainText('Are you sure you want to remove this file?');
+        await popup.getByRole('button', { name: 'Remove' }).click();
+    }
+
+    async expectNoServerErrorMessage() {
+        await expect(this.root.getByText('Something went wrong')).toBeHidden();
     }
 
     async expectPreviewShowsFileName(fileName: string) {

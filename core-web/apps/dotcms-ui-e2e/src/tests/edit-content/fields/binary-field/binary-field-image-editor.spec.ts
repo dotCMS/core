@@ -56,10 +56,9 @@ test.describe('Binary field image editor — new editor', () => {
         }
     });
 
-    // The unified field shows "Edit image" whenever the previewed file is an
-    // image, in both editors. The new editor reaches the Dojo image editor
-    // through the same admin shell as the legacy form.
-    test('import image and Edit opens Dojo image editor @critical', async ({ page }) => {
+    // The unified Binary field shows "Edit image" for image files. The new
+    // editor opens the legacy image editor JSP inside a PrimeNG dialog iframe.
+    test('import image and Edit opens legacy image editor dialog @critical', async ({ page }) => {
         const formPage = new NewEditContentFormPage(page);
         await formPage.goToNew(contentTypeVariable);
 

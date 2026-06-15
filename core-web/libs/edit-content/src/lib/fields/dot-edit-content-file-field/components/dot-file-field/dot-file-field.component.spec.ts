@@ -13,6 +13,10 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { DotFileFieldComponent } from './dot-file-field.component';
 
 import { IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
+import {
+    LegacyDialogImageEditorLauncher,
+    LegacyDojoImageEditorLauncher
+} from '../../services/image-editor';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 import { FileFieldStore } from '../../store/file-field.store';
 import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file-field-preview.component';
@@ -29,6 +33,8 @@ describe('DotFileFieldComponent', () => {
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),
+            LegacyDialogImageEditorLauncher,
+            LegacyDojoImageEditorLauncher,
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
             }),

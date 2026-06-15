@@ -9,7 +9,6 @@ import {
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { IMAGE_EDITOR_LAUNCHER, LegacyDojoImageEditorLauncher } from '../../services/image-editor';
 import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.component';
 
 /**
@@ -24,7 +23,8 @@ import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.componen
  * bridge keeps the classic API at the boundary while the unified
  * {@link DotFileFieldComponent} stays signal-based internally.
  *
- * The legacy Dojo image editor is wired through {@link LegacyDojoImageEditorLauncher}.
+ * Image editing uses Dojo DOM events via `useLegacyDojoImageEditor` on the inner
+ * file field (the JSP listener in `edit_field.jsp` opens the editor).
  */
 @Component({
     selector: 'dot-binary-field-ce-bridge',
@@ -33,10 +33,10 @@ import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.componen
             [field]="$field()"
             [contentlet]="$contentlet()"
             [hasError]="false"
+            [useLegacyDojoImageEditor]="true"
             (valueUpdated)="valueUpdated.emit($event)" />
     `,
     imports: [DotFileFieldComponent],
-    providers: [{ provide: IMAGE_EDITOR_LAUNCHER, useClass: LegacyDojoImageEditorLauncher }],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldCeBridgeComponent {

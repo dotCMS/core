@@ -1,7 +1,5 @@
 import { Observable } from 'rxjs';
 
-import { InjectionToken } from '@angular/core';
-
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 /**
@@ -19,21 +17,13 @@ export interface ImageEditorOpenParams {
 }
 
 /**
- * Seam used by the unified file field to launch an image editor.
+ * Contract for legacy image editor launchers used by {@link DotFileFieldComponent}.
  *
- * Implementations decide whether an editor is available in the current host
- * (legacy JSP/Dojo editor vs. the new Angular editor) and how the editing
- * session is performed. `open` resolves with the edited {@link DotCMSTempFile}.
+ * The new editor defaults to the dialog iframe launcher; the web-component bridge
+ * uses the Dojo event launcher. A future Angular-native editor will replace the
+ * dialog path in `onEditImage()` without changing this interface.
  */
 export interface ImageEditorLauncher {
-    /**
-     * Whether an image editor is available in the current host.
-     *
-     * The unified field only renders the "Edit image" action when this returns
-     * `true`, keeping the action hidden in hosts that have no editor wired yet.
-     */
-    isAvailable(): boolean;
-
     /**
      * Opens the image editor and emits the edited temp file when the user is done.
      *
@@ -43,14 +33,3 @@ export interface ImageEditorLauncher {
      */
     open(params: ImageEditorOpenParams): Observable<DotCMSTempFile>;
 }
-
-/**
- * Injection token for the {@link ImageEditorLauncher} used by the unified file field.
- *
- * Provide {@link NoOpImageEditorLauncher} in hosts without an editor (default in
- * the new Angular editor) and {@link LegacyDojoImageEditorLauncher} in the legacy
- * binary web component.
- */
-export const IMAGE_EDITOR_LAUNCHER = new InjectionToken<ImageEditorLauncher>(
-    'IMAGE_EDITOR_LAUNCHER'
-);

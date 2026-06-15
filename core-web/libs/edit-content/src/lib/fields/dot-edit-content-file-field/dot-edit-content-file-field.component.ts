@@ -7,7 +7,6 @@ import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models'
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
-import { IMAGE_EDITOR_LAUNCHER, LegacyDialogImageEditorLauncher } from './services/image-editor';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 
@@ -29,16 +28,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe,
         ReactiveFormsModule
     ],
-    providers: [
-        DotFileFieldUploadService,
-        FileFieldStore,
-        DialogService,
-        // The new editor embeds the legacy image editor JSP in a dialog iframe
-        // (the global Dojo "open-image-editor" listener only exists in the old
-        // editor). Show "Edit image" for any field whose file is actually an
-        // image (gated by $canEditImage).
-        { provide: IMAGE_EDITOR_LAUNCHER, useClass: LegacyDialogImageEditorLauncher }
-    ],
+    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
     templateUrl: './dot-edit-content-file-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

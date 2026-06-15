@@ -21,7 +21,10 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
 import { DotFileFieldPreviewComponent } from './components/dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
-import { IMAGE_EDITOR_LAUNCHER } from './services/image-editor/image-editor-launcher.model';
+import {
+    LegacyDialogImageEditorLauncher,
+    LegacyDojoImageEditorLauncher
+} from './services/image-editor';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 
@@ -43,7 +46,6 @@ export class MockFormComponent {
 }
 
 const mockLauncher = {
-    isAvailable: jest.fn().mockReturnValue(false),
     open: jest.fn().mockReturnValue(of(null))
 };
 
@@ -51,6 +53,8 @@ describe('DotFileFieldComponent', () => {
     let spectator: SpectatorHost<DotFileFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof FileFieldStore>;
     let uploadService: jest.Mocked<DotFileFieldUploadService>;
+    let dialogLauncher: LegacyDialogImageEditorLauncher;
+    let dojoLauncher: LegacyDojoImageEditorLauncher;
 
     const createHost = createHostFactory({
         component: DotFileFieldComponent,
@@ -68,7 +72,8 @@ describe('DotFileFieldComponent', () => {
             FileFieldStore,
             DialogService,
             DotFileFieldUploadService,
-            { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockLauncher },
+            LegacyDialogImageEditorLauncher,
+            LegacyDojoImageEditorLauncher,
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotUploadFileService),
@@ -98,6 +103,10 @@ describe('DotFileFieldComponent', () => {
             DotFileFieldUploadService,
             true
         ) as jest.Mocked<DotFileFieldUploadService>;
+        dialogLauncher = spectator.inject(LegacyDialogImageEditorLauncher, true);
+        dojoLauncher = spectator.inject(LegacyDojoImageEditorLauncher, true);
+        jest.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
+        jest.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
     };
 
     describe('FileField', () => {
@@ -423,7 +432,7 @@ describe('DotFileFieldComponent', () => {
     });
 
     describe('Edit image gating ($canEditImage)', () => {
-        afterEach(() => mockLauncher.isAvailable.mockReturnValue(false));
+        afterEach(() => mockLauncher.open.mockClear());
 
         const setImagePreview = (isImage: boolean) =>
             store.setPreviewFile({
@@ -431,9 +440,17 @@ describe('DotFileFieldComponent', () => {
                 file: { id: 'temp-1', metadata: { isImage } }
             } as never);
 
-        it('should be false when the launcher is not available even for an image', () => {
-            mockLauncher.isAvailable.mockReturnValue(false);
-            setup(IMAGE_FIELD_MOCK);
+        it('should be false when enableImageEditor is false even for a binary image', () => {
+            spectator = createHost(
+                `<dot-file-field [field]="field" [contentlet]="contentlet" [hasError]="false" [enableImageEditor]="false" />`,
+                {
+                    hostProps: {
+                        field: BINARY_FIELD_MOCK,
+                        contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null })
+                    }
+                }
+            );
+            store = spectator.component.store;
             spectator.detectChanges();
 
             setImagePreview(true);
@@ -441,36 +458,14 @@ describe('DotFileFieldComponent', () => {
             expect(spectator.component.$canEditImage()).toBe(false);
         });
 
-        it('should be false when there is no previewed file', () => {
-            mockLauncher.isAvailable.mockReturnValue(true);
-            setup(IMAGE_FIELD_MOCK);
+        it('should be false for a Binary field when there is no previewed file', () => {
+            setup(BINARY_FIELD_MOCK);
             spectator.detectChanges();
 
             expect(spectator.component.$canEditImage()).toBe(false);
-        });
-
-        it('should be true for an Image field when the file is an image', () => {
-            mockLauncher.isAvailable.mockReturnValue(true);
-            setup(IMAGE_FIELD_MOCK);
-            spectator.detectChanges();
-
-            setImagePreview(true);
-
-            expect(spectator.component.$canEditImage()).toBe(true);
-        });
-
-        it('should be true for a File field when the file is an image', () => {
-            mockLauncher.isAvailable.mockReturnValue(true);
-            setup(FILE_FIELD_MOCK);
-            spectator.detectChanges();
-
-            setImagePreview(true);
-
-            expect(spectator.component.$canEditImage()).toBe(true);
         });
 
         it('should be true for a Binary field when the file is an image', () => {
-            mockLauncher.isAvailable.mockReturnValue(true);
             setup(BINARY_FIELD_MOCK);
             spectator.detectChanges();
 
@@ -479,9 +474,8 @@ describe('DotFileFieldComponent', () => {
             expect(spectator.component.$canEditImage()).toBe(true);
         });
 
-        it('should be false when the previewed file is not an image', () => {
-            mockLauncher.isAvailable.mockReturnValue(true);
-            setup(FILE_FIELD_MOCK);
+        it('should be false for a Binary field when the file is not an image', () => {
+            setup(BINARY_FIELD_MOCK);
             spectator.detectChanges();
 
             setImagePreview(false);
@@ -489,19 +483,65 @@ describe('DotFileFieldComponent', () => {
             expect(spectator.component.$canEditImage()).toBe(false);
         });
 
-        it('should open the launcher and apply the returned temp file on edit', () => {
-            const tempFile = { id: 'edited-temp', metadata: { isImage: true } };
-            mockLauncher.isAvailable.mockReturnValue(true);
-            mockLauncher.open.mockReturnValue(of(tempFile));
+        it('should be false for an Image field even when the file is an image', () => {
             setup(IMAGE_FIELD_MOCK);
             spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('should be false for a File field even when the file is an image', () => {
+            setup(FILE_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+
+            expect(spectator.component.$canEditImage()).toBe(false);
+        });
+
+        it('should open the dialog launcher and apply the returned temp file on edit', () => {
+            const tempFile = { id: 'edited-temp', metadata: { isImage: true } };
+            mockLauncher.open.mockReturnValue(of(tempFile));
+            setup(BINARY_FIELD_MOCK);
+            spectator.detectChanges();
+
+            setImagePreview(true);
 
             const spyApply = jest.spyOn(store, 'applyTempFile');
 
             spectator.component.onEditImage();
 
-            expect(mockLauncher.open).toHaveBeenCalled();
+            expect(dialogLauncher.open).toHaveBeenCalled();
+            expect(dojoLauncher.open).not.toHaveBeenCalled();
             expect(spyApply).toHaveBeenCalledWith(tempFile);
+        });
+
+        it('should open the Dojo launcher when useLegacyDojoImageEditor is true', () => {
+            const tempFile = { id: 'edited-temp', metadata: { isImage: true } };
+            mockLauncher.open.mockReturnValue(of(tempFile));
+            spectator = createHost(
+                `<dot-file-field [field]="field" [contentlet]="contentlet" [hasError]="false" [useLegacyDojoImageEditor]="true" />`,
+                {
+                    hostProps: {
+                        field: BINARY_FIELD_MOCK,
+                        contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null })
+                    }
+                }
+            );
+            store = spectator.component.store;
+            dialogLauncher = spectator.inject(LegacyDialogImageEditorLauncher, true);
+            dojoLauncher = spectator.inject(LegacyDojoImageEditorLauncher, true);
+            jest.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
+            jest.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
+            spectator.detectChanges();
+
+            setImagePreview(true);
+            spectator.component.onEditImage();
+
+            expect(dojoLauncher.open).toHaveBeenCalled();
+            expect(dialogLauncher.open).not.toHaveBeenCalled();
         });
     });
 });
