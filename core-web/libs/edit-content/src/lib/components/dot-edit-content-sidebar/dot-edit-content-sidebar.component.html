@@ -15,12 +15,9 @@
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <p-tablist
-            class="min-h-[53px] border-b border-(--p-inputtext-border-color) [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
-            <p-tab
-                [value]="0"
-                [pTooltip]="'edit.content.sidebar.tab.information' | dm"
-                tooltipPosition="bottom">
-                <i class="pi pi-info-circle"></i>
+            class="sticky top-0 z-10 min-h-[53px] border-b border-surface-200 bg-white [&_.p-tab]:flex [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px [&_.p-tablist-tab-list]:h-full">
+            <p-tab [value]="0" [pTooltip]="'Actions' | dm" tooltipPosition="bottom">
+                <i class="pi pi-bolt"></i>
             </p-tab>
             <p-tab
                 [value]="1"
@@ -34,34 +31,108 @@
                 tooltipPosition="bottom">
                 <i class="pi pi-comment"></i>
             </p-tab>
-            @if (!isNew) {
-                <p-tab
-                    [value]="3"
-                    [pTooltip]="'edit.content.sidebar.tab.settings' | dm"
-                    tooltipPosition="bottom">
-                    <i class="pi pi-cog"></i>
-                </p-tab>
-            }
         </p-tablist>
         <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
         <p-tabpanels
-            class="flex h-full min-h-0 flex-1 flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
+            class="flex h-full min-h-0 flex-1 flex-col bg-white! p-0! [&_.p-tabpanel]:p-0!">
             <p-tabpanel [value]="0" class="flex h-full min-h-0 flex-col">
-                <!-- Information tab content — padding lives on this first inner wrapper -->
-                <div class="flex h-full min-h-0 flex-col px-4 pt-3">
-                    <!-- Information section -->
-                    <dot-edit-content-sidebar-section
-                        [title]="'edit.content.sidebar.general.title' | dm">
-                        <ng-template #sectionAction>
-                            @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                                <dot-copy-button
-                                    [copy]="contentlet.identifier"
-                                    [label]="contentlet.shortyId"
-                                    [tooltipText]="'Identifier' | dm"
-                                    customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
-                            }
-                        </ng-template>
+                <!-- Actions tab content — padding lives on this first inner wrapper -->
+                <div class="flex h-full min-h-0 flex-col px-4 pt-4">
+                    <!-- Lock / unlock button — visually grouped with the workflow actions below:
+                         no divider and the same 0.5rem gap the stacked actions use (gap-2), so it
+                         reads as part of the Actions block even though it lives in its own @if and
+                         fires a separate handler. -->
+                    @if (
+                        !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
+                    ) {
+                        <div class="pb-2" data-testId="sidebar-lock-section">
+                            <!-- Secondary (gray) button for both states; the lock icon and label
+                                 switch between "Lock for Editing" and "Unlock". -->
+                            <button
+                                pButton
+                                type="button"
+                                severity="secondary"
+                                [fluid]="true"
+                                data-testId="sidebar-lock-button"
+                                [label]="
+                                    ($store.isLockedByAnotherUser()
+                                        ? 'Release-Lock'
+                                        : $store.isContentLocked()
+                                          ? 'Unlock'
+                                          : 'Make-Editable'
+                                    ) | dm
+                                "
+                                [icon]="$store.isContentLocked() ? 'pi pi-lock-open' : 'pi pi-lock'"
+                                [loading]="$store.isLocking()"
+                                [disabled]="$store.isLocking()"
+                                (click)="onLockAction()"></button>
+                        </div>
+                    }
 
+                    <!-- Workflow actions: full-width, stacked one above another. No top padding so
+                         the lock button above sits flush against the stack (one Actions group); the
+                         bottom border + padding separate that group from the collapsible sections. -->
+                    @if ($store.showWorkflowActions()) {
+                        <dot-workflow-actions
+                            class="border-b border-surface-200 pb-4"
+                            data-testId="sidebar-workflow-actions"
+                            [actions]="$store.getActions()"
+                            [stacked]="true"
+                            [loading]="$store.isSaving()"
+                            [disabled]="
+                                $store.isSaving() || $store.isLocking() || $store.isLoadingActions()
+                            "
+                            (actionFired)="workflowActionFired.emit($event)" />
+                    }
+
+                    <dot-edit-content-sidebar-section
+                        key="actions.locales"
+                        [title]="'edit.content.sidebar.locales' | dm">
+                        @let defaultLocale = $store.systemDefaultLocale();
+                        @let currentLocale = $store.currentLocale();
+                        @if ($store.isLoadingLocales() || (defaultLocale && currentLocale)) {
+                            @if ($isLocaleSelectorV2()) {
+                                <dot-edit-content-sidebar-locales-selector
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    [activeTab]="$store.localeSelectorTab()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    (tabChange)="$store.setLocaleSelectorTab($event)"
+                                    data-testId="locales-selector" />
+                            } @else {
+                                <dot-edit-content-sidebar-locales
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    data-testId="locales" />
+                            }
+                        }
+                    </dot-edit-content-sidebar-section>
+
+                    <!-- Workflow section -->
+                    <dot-edit-content-sidebar-section
+                        key="actions.workflow"
+                        [title]="'edit.content.sidebar.workflow.title' | dm">
+                        <dot-edit-content-sidebar-workflow
+                            [workflowSelection]="$workflowSelection()"
+                            [(showDialog)]="$showDialog"
+                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                            (onResetWorkflow)="fireResetWorkflowAction($event)"
+                            [workflow]="$workflow()"
+                            [isLoading]="$store.isLoadingWorkflow()"
+                            data-testId="workflow" />
+                    </dot-edit-content-sidebar-section>
+
+                    <!-- Content details section -->
+                    <dot-edit-content-sidebar-section
+                        key="actions.details"
+                        [title]="'details' | dm"
+                        class="[&_.dot-section]:border-b-0">
                         <dot-edit-content-sidebar-information
                             [data]="{
                                 contentlet: contentlet,
@@ -70,31 +141,6 @@
                                 referencesPageCount: referencePagesCount
                             }"
                             data-testId="information" />
-                    </dot-edit-content-sidebar-section>
-
-                    <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
-                        <dot-edit-content-sidebar-locales
-                            [locales]="$store.locales()"
-                            [defaultLocale]="$store.systemDefaultLocale()"
-                            [currentLocale]="$store.currentLocale()"
-                            [isLoading]="$store.isLoadingLocales()"
-                            (switchLocale)="$store.switchLocale($event)"
-                            data-testId="locales" />
-                    </dot-edit-content-sidebar-section>
-
-                    <!-- Workflow section -->
-                    <dot-edit-content-sidebar-section
-                        [title]="'edit.content.sidebar.workflow.title' | dm"
-                        class="[&_.dot-section]:border-b-0">
-                        <dot-edit-content-sidebar-workflow
-                            [workflowSelection]="$workflowSelection()"
-                            [(showDialog)]="$showDialog"
-                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
-                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                            (onResetWorkflow)="fireWorkflowAction($event)"
-                            [workflow]="$workflow()"
-                            [isLoading]="$store.isLoadingWorkflow()"
-                            data-testId="workflow" />
                     </dot-edit-content-sidebar-section>
                 </div>
             </p-tabpanel>
@@ -124,27 +170,10 @@
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </p-tabpanel>
-            @if (!isNew) {
-                <p-tabpanel [value]="3" class="flex h-full min-h-0 flex-col">
-                    <!-- Settings tab content — padding lives on this first inner wrapper -->
-                    <div class="flex h-full min-h-0 flex-col px-4 pt-3">
-                        <!-- Permissions section -->
-                        <dot-edit-content-sidebar-permissions
-                            [identifier]="$identifier() ?? ''"
-                            [languageId]="$contentlet()?.languageId ?? 0"
-                            data-testId="permissions" />
-                        <!-- Rules section (Page content type only) -->
-                        @if ($isPage()) {
-                            <dot-edit-content-sidebar-rules
-                                [identifier]="$identifier() ?? ''"
-                                data-testId="rules" />
-                        }
-                    </div>
-                </p-tabpanel>
-            }
         </p-tabpanels>
     </p-tabs>
 </aside>
 
-<!-- Confirmation dialog for delete actions -->
-<p-confirmDialog />
+<!-- Shared confirmation dialog (e.g. release-lock). Width is constrained so a long message
+     wraps instead of stretching the dialog across the viewport. -->
+<p-confirmDialog [style]="{ width: '32rem' }" />

@@ -12965,6 +12965,9 @@ paths:
           description: Contentlets saved successfully
         "400":
           description: Bad request or data exception
+        "409":
+          description: Conflict — net content loss exceeds the configured threshold;
+            refresh and retry
       summary: Replace the content mapping of a page
       tags:
       - Page
@@ -25916,6 +25919,8 @@ components:
           format: int32
           minimum: 0
         query:
+          type: string
+        requestHostId:
           type: string
         userId:
           type: string

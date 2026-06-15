@@ -279,6 +279,7 @@ export class DotFileFieldComponent
             header,
             appendTo: 'body',
             closable: true,
+            closeAriaLabel: 'Close',
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,

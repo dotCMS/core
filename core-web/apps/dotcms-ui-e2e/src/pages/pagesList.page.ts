@@ -26,7 +26,7 @@ export class PagesListPage {
     async doActionOnPage(rowLocator: Locator, action: 'Unpublish' | 'Archive' | 'Destroy') {
         await rowLocator.getByRole('button').click();
 
-        const actionLocator = this.page.locator('.p-menu-overlay').getByLabel(action).locator('a');
+        const actionLocator = this.page.locator('.p-tieredmenu').getByLabel(action).locator('a');
 
         await expect(actionLocator).toBeVisible();
 
@@ -37,7 +37,11 @@ export class PagesListPage {
         await responsePromise;
     }
 
-    getStatusIcon(rowLocator: Locator) {
-        return rowLocator.locator('dot-state-icon');
+    getStatusChip(rowLocator: Locator) {
+        return rowLocator.locator('dot-contentlet-status-chip');
+    }
+
+    getStatusChipText(rowLocator: Locator) {
+        return this.getStatusChip(rowLocator).locator('p-chip').textContent();
     }
 }

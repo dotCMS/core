@@ -9,6 +9,11 @@ import java.util.Optional;
  * This interface defines methods for managing and interacting with versioned and non-versioned indices.
  * It provides functionality for loading, saving, removing, and inspecting indices and their versions.
  * It also includes utilities for constructing indices objects from database query results.
+ *
+ * <p><strong>DB tagging invariant:</strong> the {@code indicies} table stores OS index names with
+ * the {@code .os} suffix ({@link IndexTag#OS}) to prevent primary-key collisions with ES rows.
+ * Every {@link #saveIndices} implementation MUST call {@link #requireOSTagged(VersionedIndices)}
+ * before writing, so untagged names are rejected fast rather than silently corrupting the DB.</p>
  */
 public interface IndicesFactory {
 
@@ -126,5 +131,35 @@ public interface IndicesFactory {
      */
     void insertIndexIfPresent(String indexName, String indexType,
             String version) throws DotDataException;
+
+    /**
+     * Validates that every present index name in {@code indicesInfo} carries the
+     * {@link IndexTag#OS} marker ({@code .os} suffix) required for DB storage.
+     *
+     * <p>Call this at the top of every {@link #saveIndices} implementation.  The check is
+     * skipped for legacy (non-versioned) indices because those predate the tagging scheme.</p>
+     *
+     * <p>Rationale: the {@code .os} suffix is the only thing that keeps OS and ES rows from
+     * colliding on the same primary key in the shared {@code indicies} table.  If an untagged
+     * name reaches the DB the row silently overwrites the ES entry — stripping a tag before
+     * calling {@code saveIndices} is the one regression we must catch before it hits disk.</p>
+     *
+     * @param indicesInfo the object about to be persisted
+     * @throws DotDataException if any present name is missing the {@code .os} tag
+     */
+    static void requireOSTagged(final VersionedIndices indicesInfo) throws DotDataException {
+        if (indicesInfo.isLegacy()) {
+            return; // non-versioned / legacy ES rows: no tag required
+        }
+        for (final String name : indicesInfo.allIndices()) {
+            if (!IndexTag.OS.isTagged(name)) {
+                throw new DotDataException(
+                        "IndicesFactory invariant violated: index name '" + name +
+                        "' (version=" + indicesInfo.version() + ") is missing the .os tag. " +
+                        "Tag it with IndexTag.OS.tag(name) before persisting, or call " +
+                        "VersionedIndicesAPIImpl.saveIndices() instead of the factory directly.");
+            }
+        }
+    }
 
 }

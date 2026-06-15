@@ -84,6 +84,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -959,6 +960,7 @@ public class PageResource {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+            @ApiResponse(responseCode = "409", description = "Conflict — net content loss exceeds the configured threshold; refresh and retry"),
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -1005,8 +1007,17 @@ public class PageResource {
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
             // Save content and Get the saved contentlets
-            final List<ContentView> savedContent = pageResourceHelper.saveContent(
-                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            final List<ContentView> savedContent;
+            try {
+                savedContent = pageResourceHelper.saveContent(
+                        pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
+            } catch (StalePageSaveException e) {
+                Logger.warn(this, String.format("Page content save rejected for pageId '%s' by user '%s': %s",
+                        pageId, user.getUserId(), e.getMessage()));
+                return ExceptionMapperUtil.createResponse(
+                        "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.",
+                        Response.Status.CONFLICT);
+            }
 
             return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
