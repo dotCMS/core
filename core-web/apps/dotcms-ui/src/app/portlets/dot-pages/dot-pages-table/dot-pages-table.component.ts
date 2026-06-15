@@ -25,6 +25,7 @@ import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
@@ -33,7 +34,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -64,10 +65,11 @@ type TableRowSelectEvent<T> = {
         SelectModule,
         InputTextModule,
         TableModule,
+        TagModule,
         TooltipModule,
         RouterModule,
         ReactiveFormsModule,
-        DotContentletStatusChipComponent
+        DotContentletStatusBadgeComponent
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

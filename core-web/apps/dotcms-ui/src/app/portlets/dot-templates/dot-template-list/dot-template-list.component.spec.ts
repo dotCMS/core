@@ -48,7 +48,7 @@ import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -530,7 +530,7 @@ describe('DotTemplateListComponent', () => {
                 DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
-                DotContentletStatusChipComponent,
+                DotContentletStatusBadgeComponent,
                 DynamicDialogModule,
                 BrowserAnimationsModule
             ],
@@ -714,13 +714,15 @@ describe('DotTemplateListComponent', () => {
                 hasLiveVersion: true
             };
 
-            const statusChips = fixture.debugElement.queryAll(By.css('dot-contentlet-status-chip'));
+            const statusChips = fixture.debugElement.queryAll(
+                By.css('dot-contentlet-status-badge')
+            );
             expect(statusChips.length).toBeGreaterThan(0);
             const chipForLocked = statusChips[1];
             expect(chipForLocked).toBeTruthy();
 
             const chipComponent =
-                chipForLocked.componentInstance as DotContentletStatusChipComponent;
+                chipForLocked.componentInstance as DotContentletStatusBadgeComponent;
             expect(chipComponent.state()).toEqual(state);
         }));
 
