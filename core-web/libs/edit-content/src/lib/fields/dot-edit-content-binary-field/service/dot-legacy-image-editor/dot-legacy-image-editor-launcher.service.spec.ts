@@ -90,6 +90,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
             })
         );
         expect(dialogRef.close).toHaveBeenCalled();
+        dispatchSpy.restore();
     });
 
     it('should re-dispatch close event when postMessage close is received', () => {
@@ -118,16 +119,21 @@ describe('DotLegacyImageEditorLauncherService', () => {
             })
         );
         expect(dialogRef.close).toHaveBeenCalled();
+        dispatchSpy.restore();
     });
 
     it('should ignore postMessage from a different origin', () => {
         const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const invalidOrigin =
+            window.location.origin === 'https://evil.example'
+                ? 'http://evil.example'
+                : 'https://evil.example';
 
         spectator.service.listen(variable);
 
         window.dispatchEvent(
             new MessageEvent('message', {
-                origin: 'https://evil.example',
+                origin: invalidOrigin,
                 data: {
                     source: 'dot-image-editor',
                     type: 'tempfile',
@@ -137,10 +143,11 @@ describe('DotLegacyImageEditorLauncherService', () => {
         );
 
         const tempfileDispatches = dispatchSpy.mock.calls.filter(
-            ([event]) => (event as Event).type === tempEventName
+            ([event]) => event instanceof CustomEvent && event.type === tempEventName
         );
 
         expect(tempfileDispatches).toHaveLength(0);
+        dispatchSpy.restore();
     });
 
     it('should not open dialog after stopListening', () => {
