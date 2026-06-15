@@ -191,7 +191,7 @@ export class DotEditContentSidebarHistoryComponent {
         return 'border-gray-400!';
     }
 
-/**
+    /**
      * Load more version items when the Versions timeline reaches its end.
      */
     onTimelineReachedEnd(): void {
