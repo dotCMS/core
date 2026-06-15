@@ -93,7 +93,8 @@
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         @if ($store.isViewingHistoricalVersion()) {
             <span class="text-sm text-gray-500" data-testId="previewing-label">
-                Previewing {{ $store.contentlet()?.modDate | dotRelativeDate }}
+                {{ 'edit.content.sidebar.history.previewing' | dm }}
+                {{ $store.contentlet()?.modDate | dotRelativeDate }}
             </span>
         } @else {
             <!-- Status tag: label + severity are memoized computeds on the component

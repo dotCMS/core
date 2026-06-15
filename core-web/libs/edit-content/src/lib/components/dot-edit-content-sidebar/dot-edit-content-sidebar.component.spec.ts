@@ -766,5 +766,75 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(activitiesElement).toBeTruthy();
             }));
         });
+
+        describe('Historical Version Banner', () => {
+            const mockHistoricalContentlet = createFakeContentlet({
+                inode: 'historical-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Historical Version'
+            });
+
+            it('should not show the banner when not viewing a historical version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when viewing a historical version', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitHistoricalView when the Close button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const exitSpy = jest.spyOn(store, 'exitHistoricalView');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('close-historical-version-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('restore-historical-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitHistoricalView is called', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+
+                store.exitHistoricalView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+        });
     });
 });

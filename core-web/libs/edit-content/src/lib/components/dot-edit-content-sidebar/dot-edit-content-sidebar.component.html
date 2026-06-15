@@ -39,7 +39,7 @@
                 data-testId="historical-version-banner">
                 <p-button
                     icon="pi pi-times"
-                    label="Close"
+                    [label]="'close' | dm"
                     rounded="true"
                     [outlined]="true"
                     size="small"
@@ -47,9 +47,8 @@
                     data-testId="close-historical-version-button" />
                 <p-button
                     icon="pi pi-history"
-                    label="Restore"
+                    [label]="'edit.content.sidebar.history.restore' | dm"
                     rounded="true"
-
                     size="small"
                     (click)="$store.restoreCurrentHistoricalVersion()"
                     data-testId="restore-historical-version-button" />
