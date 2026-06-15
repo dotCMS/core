@@ -535,23 +535,26 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
     // -----------------------------------------------------------------------
 
     /**
-     * When the path resolves to a folder (ends with /) the endpoint must return
-     * IllegalArgumentException (→ 400) rather than bytes.
+     * When the path resolves to a folder (ends with /) the endpoint must return a clean
+     * {@link BadRequestException} (→ 400) with a folder-specific message, rather than bytes or
+     * the helper's generic "Unspecified Asset name." error.
      */
     @Test
     public void testGetByPath_folderPath_returns400() throws Exception {
         final String folderPath = String.format("//%s/%s/", host.getHostname(), folder.getName());
         final WebAssetResourceV2 resource = createResource(APILocator.systemUser());
 
-        Exception thrown = null;
+        BadRequestException thrown = null;
         try {
             resource.getByPath(mockRequest(), new MockHttpResponse(),
                     folderPath, null, "working");
-        } catch (IllegalArgumentException | BadRequestException e) {
+        } catch (BadRequestException e) {
             thrown = e;
         }
 
-        assertNotNull("Expected 400-class exception when path points at a folder", thrown);
+        assertNotNull("Expected BadRequestException when path points at a folder", thrown);
+        assertTrue("Message should explain the path does not point at a file asset",
+                errorMessage(thrown).toLowerCase().contains("does not point at a file asset"));
     }
 
     // -----------------------------------------------------------------------

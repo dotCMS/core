@@ -205,6 +205,13 @@ public class WebAssetResourceV2 {
             throw new NotFoundException(
                     String.format("Asset not found for path [%s] lang=[%s] version=[%s].",
                             path, resolvedLang, version));
+        } catch (IllegalArgumentException e) {
+            // The path resolved to a folder (no asset name) or was otherwise malformed. Remap to a
+            // clean 400 so the response matches the documented contract and the rest of the
+            // endpoint's error shape, rather than leaking the helper's generic message.
+            throw new BadRequestException(
+                    String.format("Path [%s] does not point at a file asset — it must include a "
+                            + "file name (a path ending in '/' addresses a folder).", path));
         }
 
         return buildFileResponse(fileAsset);
