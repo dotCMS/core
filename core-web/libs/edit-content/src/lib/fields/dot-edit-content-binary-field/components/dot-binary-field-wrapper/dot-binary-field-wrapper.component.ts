@@ -23,9 +23,10 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
 import { DotLegacyImageEditorLauncherService } from '../../service/dot-legacy-image-editor/dot-legacy-image-editor-launcher.service';
 
 /**
- * JSON field editor component that uses Monaco Editor for JSON content editing.
- * Uses DotEditContentMonacoEditorControl for editor functionality with JSON language forced.
- * Supports language variable insertion through DotLanguageVariableSelectorComponent.
+ * Wrapper for binary fields in the content editor card layout.
+ *
+ * Enables the legacy image editor by wiring {@link DotLegacyImageEditorLauncherService}
+ * to the binary field web component lifecycle.
  */
 @Component({
     selector: 'dot-binary-field-wrapper',
@@ -72,6 +73,9 @@ export class DotBinaryFieldWrapperComponent extends BaseWrapperField implements 
      */
     valueUpdated = output<{ value: string; fileName: string }>();
 
+    /**
+     * Starts listening for legacy image editor events for this field and cleans up on destroy.
+     */
     ngOnInit(): void {
         this.#legacyImageEditorLauncher.listen(this.$field().variable);
 

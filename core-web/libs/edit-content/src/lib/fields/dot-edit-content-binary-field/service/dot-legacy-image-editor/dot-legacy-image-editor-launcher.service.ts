@@ -11,18 +11,27 @@ import {
 
 const POST_MESSAGE_SOURCE = 'dot-image-editor';
 
+/** Payload sent from the legacy image editor iframe via `postMessage`. */
 interface DotImageEditorPostMessage {
     source: typeof POST_MESSAGE_SOURCE;
     type: 'tempfile' | 'close';
     tempFile?: DotCMSTempFile;
 }
 
+/** Detail of the `binaryField-open-image-editor-{variable}` custom event. */
 interface ImageEditorOpenDetail {
     inode?: string;
     tempId?: string;
     variable: string;
 }
 
+/**
+ * Bridges the Angular binary field with the legacy Dojo image editor.
+ *
+ * Listens for open events dispatched by the binary field web component, opens a
+ * modal dialog with the editor iframe, and relays `postMessage` results back as
+ * `binaryField-tempfile-{variable}` and `binaryField-close-image-editor-{variable}` events.
+ */
 @Injectable()
 export class DotLegacyImageEditorLauncherService implements OnDestroy {
     readonly #dialogService = inject(DialogService);
@@ -32,6 +41,11 @@ export class DotLegacyImageEditorLauncherService implements OnDestroy {
     #messageHandler: ((event: MessageEvent) => void) | null = null;
     #variable: string | null = null;
 
+    /**
+     * Registers listeners for the given binary field variable.
+     *
+     * @param variable - Content type field variable that scopes editor events.
+     */
     listen(variable: string): void {
         this.stopListening();
 
@@ -52,6 +66,9 @@ export class DotLegacyImageEditorLauncherService implements OnDestroy {
         this.#registerMessageListener();
     }
 
+    /**
+     * Removes event listeners, closes any open dialog, and clears the active field scope.
+     */
     stopListening(): void {
         if (this.#variable && this.#openEventHandler) {
             document.removeEventListener(
@@ -70,6 +87,13 @@ export class DotLegacyImageEditorLauncherService implements OnDestroy {
         this.stopListening();
     }
 
+    /**
+     * Opens the legacy image editor dialog for the given asset and field.
+     *
+     * @param inode - Content inode when editing a published asset.
+     * @param tempId - Temporary file id when editing an unsaved upload.
+     * @param variable - Binary field variable used for editor event routing.
+     */
     private openDialog({ inode, tempId, variable }: DotLegacyImageEditorDialogData): void {
         this.#closeDialog();
 
