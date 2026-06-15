@@ -43,8 +43,7 @@
     <build>
         <plugins>
             <!-- dotcms-ui-e2e reuses core-web's node_modules (workingDirectory=../../)
-                 and therefore uses pnpm, matching core-web. The legacy yarn goals
-                 are replaced by exec-maven-plugin calling installs/node/pnpm. -->
+                 and uses pnpm, matching core-web. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
