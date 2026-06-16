@@ -134,6 +134,7 @@ public class AppsAPIImplTest {
         final Optional<AppSecrets> optionalBean = api
                 .getSecrets(appKey, host, admin);
 
+                
         assertTrue(optionalBean.isPresent());
 
         final AppSecrets recoveredBean = optionalBean.get();
