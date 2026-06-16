@@ -160,9 +160,7 @@ jobs:
   # the same engine on-demand, scoped to the latest track only (--tracks latest).
   # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
   #
-  # Applies unconditionally for a real latest release from main on dotcms/core
-  # (this restores always-on behavior; it is NOT behind EVERGREEN_TRACKS_APPLY,
-  # which gates only the new aged standard/trailing tracks during rollout).
+  # Applies for any real latest release from main on dotcms/core.
   promote-latest:
     name: Promote latest tag
     # Default success() gate: only runs when release-prepare AND deployment both

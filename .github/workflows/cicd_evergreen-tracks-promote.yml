@@ -57,17 +57,15 @@ jobs:
           TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
           EVENT_NAME: ${{ github.event_name }}
           DISPATCH_APPLY: ${{ github.event.inputs.apply }}
-          # Production safety gate: the daily cron only moves real tags when the
-          # repo variable EVERGREEN_TRACKS_APPLY is set to 'true'. Until then the
-          # scheduled run is a dry-run, so merging this workflow does not silently
-          # start mutating dotcms/dotcms.
-          SCHEDULED_APPLY: ${{ vars.EVERGREEN_TRACKS_APPLY }}
         run: |
+          # Scheduled (cron) runs always apply — this is the engine that ages
+          # standard/trailing forward. To pause promotion, disable this workflow
+          # in the Actions tab or `hold` the affected track; there is no separate
+          # apply gate. Manual dispatch defaults to dry-run unless apply=true.
           APPLY=""
-          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DISPATCH_APPLY" = "true" ]; then
+          if [ "$EVENT_NAME" = "schedule" ]; then
             APPLY="--apply"
-          fi
-          if [ "$EVENT_NAME" = "schedule" ] && [ "$SCHEDULED_APPLY" = "true" ]; then
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DISPATCH_APPLY" = "true" ]; then
             APPLY="--apply"
           fi
           echo "event=$EVENT_NAME repo=$REPO apply=${APPLY:-<dry-run>}"
