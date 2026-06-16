@@ -764,6 +764,36 @@ public class StaticPublisherIntegrationTestHelper {
                 filesExpected, list(livePageWithContent.language, language), assetsMap);
     }
 
+    /**
+     * A page that is LIVE in its original language and has a WORKING-only version (never published)
+     * in a second language. On un-publish the live language is rendered by the content bundlers (and
+     * removed by the publisher's delete branch), while the working-only language has no live version
+     * and therefore gets a /live/ removal marker. Verifies that markers are scoped to the non-live
+     * languages only — the live language must NOT get a marker. See issue #35365.
+     */
+    public static TestCase getLivePageInOneLangAndWorkingInAnother()
+            throws WebAssetException, DotDataException, DotSecurityException {
+        final PageWithDependencies livePageWithContent = new PageWithDependenciesBuilder().buildAndPublish();
+
+        // Second-language version left as WORKING (NOT published) -> no live version in that language.
+        final Language workingLanguage = new LanguageDataGen().nextPersisted();
+        new PageWithDependenciesBuilder().buildAnotherVersion(livePageWithContent, workingLanguage);
+
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(getXmlFilePath(livePageWithContent), null, true),
+                new FileExpected(getPageFilePath(livePageWithContent), "<div>Testing Field Value</div>", true)
+        );
+
+        final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
+
+        final TestCase testCase = new TestCase(livePageWithContent.page, filesExpected,
+                list(livePageWithContent.language, workingLanguage), assetsMap);
+        // Only the working-only (non-live) language gets a removal marker; the live language does not.
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(livePageWithContent, workingLanguage), null, true));
+        return testCase;
+    }
+
     private static Contentlet createNewVersionInDifferentLang(final Contentlet contentlet,
             final Language language, final Map<String, String> fieldValues) throws DotDataException, DotSecurityException {
 

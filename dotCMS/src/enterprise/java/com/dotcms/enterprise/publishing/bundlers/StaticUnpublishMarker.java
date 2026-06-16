@@ -123,6 +123,13 @@ public final class StaticUnpublishMarker {
                 || assetPath == null || assetPath.isBlank()) {
             return;
         }
+        // Defense-in-depth: reject a hostname that could escape the bundle root before composing the
+        // path (safeLivePath is the downstream backstop). A valid hostname has no path separators.
+        if (hostname.contains(File.separator) || hostname.contains("/") || hostname.contains("..")) {
+            Logger.warn(StaticUnpublishMarker.class, "Skipping un-publish markers for a hostname that "
+                    + "contains path separators or traversal sequences: " + hostname);
+            return;
+        }
         for (final String languageId : languageIds) {
             final String liveUnpublishPath = File.separator + "live" + File.separator
                     + hostname + File.separator + languageId

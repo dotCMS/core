@@ -12,7 +12,11 @@ package com.dotcms.enterprise.publishing.staticpublishing;
 import com.dotcms.enterprise.publishing.bundlers.StaticUnpublishMarker;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.util.PusheableAsset;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.IBundler;
+import com.dotcms.publishing.IPublisher;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -29,13 +33,20 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class StaticDependencyBundler implements IBundler {
 
@@ -137,19 +148,31 @@ public class StaticDependencyBundler implements IBundler {
                 }
 
                 if (asset.getType().equals(PusheableAsset.CONTENTLET.getType())) {
-                	List<Contentlet> cons = contentletAPI.search("+identifier:"+asset.getAsset(), 0, 0, null, systemUser, false);
+                    // Guard the identifier before building a Lucene query with it (avoids malformed
+                    // queries / unintended matches), mirroring AWSS3Publisher.
+                    if (!UUIDUtil.isUUID(asset.getAsset())) {
+                        continue;
+                    }
+                    List<Contentlet> cons = contentletAPI.search("+identifier:\"" + asset.getAsset() + "\"",
+                            0, 0, null, systemUser, false);
+                    // No version found in the index (e.g. fully archived/deleted content): nothing to
+                    // resolve a path or languages from, so skip rather than crash on cons.get(0).
+                    if (cons.isEmpty()) {
+                        continue;
+                    }
 
-                    Folder folder = folderAPI.find(cons.get(0).getFolder(), systemUser, false);
+                    final Contentlet contentlet = cons.get(0);
+                    Folder folder = folderAPI.find(contentlet.getFolder(), systemUser, false);
                     if (folder != null) {
                         folders.add(folder.getIdentifier());
                     }
 
                     String contentPath = null;
-                	if (!cons.isEmpty() && cons.get(0).isFileAsset() || cons.get(0).isHTMLPage()) {
+                	if (contentlet.isFileAsset() || contentlet.isHTMLPage()) {
                         contentPath = id.getPath();
                         includes.add(contentPath);
-                    } else if (!cons.isEmpty() && UtilMethods.isSet(cons.get(0).getStructure().getUrlMapPattern())) {
-                        String urlMap = contentletAPI.getUrlMapForContentlet(cons.get(0), systemUser, true);
+                    } else if (UtilMethods.isSet(contentlet.getStructure().getUrlMapPattern())) {
+                        String urlMap = contentletAPI.getUrlMapForContentlet(contentlet, systemUser, true);
                         if (urlMap != null) {
                             contentPath = urlMap;
                             includes.add(urlMap);
