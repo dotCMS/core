@@ -2,15 +2,69 @@ name: Autodoc — Epic Documentation Audit
 
 on:
   issues:
-    types: [labeled]
+    types: [closed]
 
 jobs:
+  preflight:
+    name: Determine whether to run
+    # Run if the issue carries any of the three trigger labels.
+    if: |
+      contains(github.event.issue.labels.*.name, 'Epic') ||
+      contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
+      contains(github.event.issue.labels.*.name, 'Changelog: Needs Doc')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+
+    steps:
+      - name: Check run conditions
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          # Epic label present means unconditional run — no further checks needed.
+          HAS_EPIC: ${{ contains(github.event.issue.labels.*.name, 'Epic') }}
+        run: |
+          if [ "$HAS_EPIC" = "true" ]; then
+            echo "Issue #$ISSUE_NUMBER has Epic label — proceeding unconditionally."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Non-Epic issue: check whether it is a sub-task of an Epic.
+          # If so, skip — the parent Epic closure will handle documentation.
+          PARENT_LABELS=$(gh api graphql \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $number) {
+                    parent {
+                      labels(first: 20) { nodes { name } }
+                    }
+                  }
+                }
+              }
+            ' \
+            -f owner="${REPO%/*}" \
+            -f repo="${REPO#*/}" \
+            -F number="$ISSUE_NUMBER" \
+            --jq '.data.repository.issue.parent.labels.nodes[].name // empty')
+
+          if echo "$PARENT_LABELS" | grep -qx "Epic"; then
+            echo "Issue #$ISSUE_NUMBER is a sub-task of an Epic — skipping; Epic closure will handle docs."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Issue #$ISSUE_NUMBER has a doc label and is not an Epic sub-task — proceeding."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
   autodoc:
     name: Run documentation audit
-    # Fire when a doc-trigger label is applied to an Epic issue.
-    if: |
-      (github.event.label.name == 'Doc : Needs Doc' || github.event.label.name == 'Changelog: Needs Doc') &&
-      contains(github.event.issue.labels.*.name, 'Epic')
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       issues: write   # post/edit the report comment
@@ -19,14 +73,10 @@ jobs:
     env:
       EPIC_NUMBER: ${{ github.event.issue.number }}
       REPO: ${{ github.repository }}
-      # Built-in token — used for gh CLI operations (issue comments, dotcms-aios API access).
-      # Same pattern as ai_claude-rollback-safety.yml.
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Corporate Anthropic key — already provisioned in this repo; same secret name as
-      # ai_claude-rollback-safety.yml. No additional key needed.
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      DOTCMS_API_TOKEN: ${{ secrets.DOTCMS_API_TOKEN }}
-      DOTCMS_API_TOKEN_LOCAL: ${{ secrets.DOTCMS_API_TOKEN_LOCAL }}
+      DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.DOTCMS_API_TOKEN_AISEARCH }}
+      DOTCMS_API_TOKEN_AUTODOCDRAFT: ${{ secrets.DOTCMS_API_TOKEN_AUTODOCDRAFT }}
       DOTCMS_BASE_URL: ${{ secrets.DOTCMS_BASE_URL }}
       DOTCMS_SITE_FOLDER: ${{ secrets.DOTCMS_SITE_FOLDER }}
 
@@ -37,8 +87,6 @@ jobs:
       - name: Checkout autodoc scripts
         uses: actions/checkout@v4
         with:
-          # Set AUTODOC_REPO secret to the org/repo slug once autodoc has a GitHub remote
-          # (e.g. "dotCMS/autodoc"). Uses CI_MACHINE_TOKEN for cross-repo access.
           repository: ${{ secrets.AUTODOC_REPO }}
           token: ${{ secrets.AUTODOC_TOKEN }}
           path: autodoc
@@ -47,7 +95,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
-          # GITHUB_TOKEN has org-level read access; same access path the rollback workflow uses.
           token: ${{ secrets.GITHUB_TOKEN }}
           path: dotcms-aios
 
@@ -76,7 +123,6 @@ jobs:
       - name: Run finalize (apply + post comment + commit)
         working-directory: autodoc
         run: |
-          # Configure git so commits from CI have a clean identity
           git config user.name "autodoc[bot]"
           git config user.email "autodoc-bot@users.noreply.github.com"
 
