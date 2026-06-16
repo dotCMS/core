@@ -1499,9 +1499,17 @@ describe('DotEmaShellComponent', () => {
                 spectator.component.handleScannerToolClick('a11y');
 
                 const { currentUrl, siteId } = spectator.component['$seoParams']();
+                const params = store.pageParams();
                 const expectedUrl = new URL(currentUrl, window.location.origin);
                 if (siteId) {
                     expectedUrl.searchParams.set('host_id', siteId);
+                }
+                // The scanner re-renders with the editor's page-resolving params
+                if (params?.language_id) {
+                    expectedUrl.searchParams.set('language_id', params.language_id);
+                }
+                if (params?.mode) {
+                    expectedUrl.searchParams.set('mode', params.mode);
                 }
                 expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
             });
