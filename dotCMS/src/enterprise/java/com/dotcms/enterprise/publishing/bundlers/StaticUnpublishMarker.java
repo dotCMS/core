@@ -12,9 +12,11 @@ package com.dotcms.enterprise.publishing.bundlers;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.Collection;
 
 /**
@@ -33,6 +35,9 @@ import java.util.Collection;
  * @see <a href="https://github.com/dotCMS/core/issues/35365">issue #35365</a>
  */
 public final class StaticUnpublishMarker {
+
+    /** The bundle-relative prefix every marker must stay within. */
+    private static final String LIVE_PREFIX = File.separator + "live" + File.separator;
 
     private StaticUnpublishMarker() {
     }
@@ -67,14 +72,36 @@ public final class StaticUnpublishMarker {
         if (!isStaticUnpublish(config)) {
             return false;
         }
+        // Defend against path traversal / tar-slip: the host and asset path segments are not
+        // validated against ".." at save time, so normalize and reject anything that escapes the
+        // bundle /live/ subtree before it can reach the bundle output (filesystem or tar entry).
+        final String safePath = safeLivePath(liveUnpublishPath);
+        if (safePath == null) {
+            Logger.warn(StaticUnpublishMarker.class, "Skipping un-publish marker whose path escapes "
+                    + "the bundle /live/ root (possible traversal): " + liveUnpublishPath);
+            return true;
+        }
         // Record the canonical /live/ path (contents irrelevant) so the static publisher knows which
         // rendered artifact to delete from the endpoint. The publisher deletes by path, not content.
-        if (!output.exists(liveUnpublishPath)) {
-            try (final OutputStream marker = output.addFile(liveUnpublishPath)) {
+        if (!output.exists(safePath)) {
+            try (final OutputStream marker = output.addFile(safePath)) {
                 // marker only; no content needed
             }
         }
         return true;
+    }
+
+    /**
+     * Normalizes a bundle-relative marker path and returns it only when it still resolves within the
+     * {@code /live/} subtree. Returns {@code null} when traversal segments ({@code ..}) would place
+     * the marker outside {@code /live/}, so callers skip writing it.
+     *
+     * @param liveUnpublishPath the composed {@code /live/<host>/<langId>/<uri>} path
+     * @return the normalized safe path, or {@code null} if it escapes {@code /live/}
+     */
+    private static String safeLivePath(final String liveUnpublishPath) {
+        final String normalized = Paths.get(liveUnpublishPath).normalize().toString();
+        return normalized.startsWith(LIVE_PREFIX) ? normalized : null;
     }
 
     /**
@@ -93,7 +120,7 @@ public final class StaticUnpublishMarker {
             final String hostname, final Collection<String> languageIds, final String assetPath)
             throws IOException {
         if (!isStaticUnpublish(config) || hostname == null || languageIds == null
-                || assetPath == null || assetPath.trim().isEmpty()) {
+                || assetPath == null || assetPath.isBlank()) {
             return;
         }
         for (final String languageId : languageIds) {

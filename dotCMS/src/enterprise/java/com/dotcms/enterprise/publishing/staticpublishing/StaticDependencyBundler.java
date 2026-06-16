@@ -156,8 +156,14 @@ public class StaticDependencyBundler implements IBundler {
                     }
 
                     if (staticUnpublish && contentPath != null && h != null) {
+                        // The publish queue does not track the asset language — PublisherAPIImpl
+                        // hardcodes language_id=1 ("push regardless of language"), so
+                        // PublishQueueElement.getLanguageId() is unreliable. Remove the artifact
+                        // across all bundle languages rather than guessing a single one. Per-language
+                        // un-publish would require the queue to carry the real language; see the
+                        // open question on #35365.
                         StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
-                                markerLanguages(asset, languages), contentPath);
+                                languages, contentPath);
                     }
                 }
             }
@@ -167,24 +173,6 @@ public class StaticDependencyBundler implements IBundler {
         config.setIncludePatterns(includes);
         config.setLanguages(languages);
         config.setFolders(folders);
-    }
-
-    /**
-     * Resolves which languages an un-published asset's static artifacts should be removed for. When
-     * the queue element targets a specific language, only that language is removed; otherwise all
-     * the bundle languages are removed (a language-agnostic un-publish).
-     *
-     * @param asset        the publish queue element being un-published
-     * @param allLanguages the languages configured for the bundle
-     * @return the language ids (as strings) to remove the content for
-     */
-    static Collection<String> markerLanguages(final PublishQueueElement asset,
-            final Set<String> allLanguages) {
-        final Integer assetLanguageId = asset.getLanguageId();
-        if (assetLanguageId != null && assetLanguageId > 0) {
-            return Collections.singletonList(String.valueOf(assetLanguageId));
-        }
-        return allLanguages;
     }
 
     @Override

@@ -159,4 +159,39 @@ public class StaticUnpublishMarkerTest {
         // no exception, and the temp root has no /live/ tree
         assertFalse(new File(tempFolder.getRoot(), "live").exists());
     }
+
+    /**
+     * Path traversal in the asset path must not escape the bundle /live/ root: no file is written
+     * anywhere outside /live/ and the marker is skipped.
+     */
+    @Test
+    public void test_writeMarker_rejects_path_traversal_in_asset_path() throws Exception {
+        final PublisherConfig config = config(true, Operation.UNPUBLISH);
+        final DirectoryBundleOutput output = output(config);
+
+        final String evil = File.separator + "live" + File.separator + "demo.dotcms.com"
+                + File.separator + "1" + File.separator + ".." + File.separator + ".."
+                + File.separator + ".." + File.separator + "etc" + File.separator + "evil";
+
+        final boolean handled = StaticUnpublishMarker.writeMarkerIfNeeded(config, output, evil);
+
+        assertTrue("static UNPUBLISH is still 'handled' even when the marker is skipped", handled);
+        // nothing escaped the bundle root
+        assertFalse(new File(tempFolder.getRoot(), "etc").exists());
+        assertFalse(new File(tempFolder.getRoot().getParentFile(), "etc").exists());
+    }
+
+    /**
+     * Path traversal in the hostname segment is likewise rejected.
+     */
+    @Test
+    public void test_writeMarker_rejects_path_traversal_in_hostname() throws Exception {
+        final PublisherConfig config = config(true, Operation.UNPUBLISH);
+        final DirectoryBundleOutput output = output(config);
+
+        StaticUnpublishMarker.writeContentMarkers(config, output, ".." + File.separator + ".."
+                + File.separator + "outside", Arrays.asList("1"), "/page/index");
+
+        assertFalse(new File(tempFolder.getRoot().getParentFile(), "outside").exists());
+    }
 }
