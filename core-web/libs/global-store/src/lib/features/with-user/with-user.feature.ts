@@ -5,7 +5,7 @@ import { pipe } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { switchMap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -87,18 +87,25 @@ export function withUser() {
              * because login navigates via the SPA router (no full page reload), the user
              * would stay `null` until a manual refresh.
              *
-             * `loginService.watchUser()` fires the callback synchronously only if auth was
-             * already established before the store initialized; otherwise it fires when
-             * `auth$` emits. In practice that means: on a hard refresh it fires once the
-             * AuthGuard resolves auth via `loadAuth()` (the store subscribes at bootstrap,
-             * before the guard runs), and on every login it fires when `setAuth()` emits — so
-             * the user is loaded for the initial login and subsequent re-logins alike. This
-             * mirrors the reactive pattern the legacy `SiteService` used
-             * (`loginService.watchUser(() => this.loadCurrentSite())`).
+             * Instead we react to `loginService.auth$`: `startWith(loginService.auth)` seeds
+             * the stream with the current auth (already-established session, e.g. lazy store
+             * init after login), then `auth$` delivers future logins. On a hard refresh the
+             * emission comes once the AuthGuard resolves auth via `loadAuth()` → `setAuth()`
+             * (the store subscribes at bootstrap, before the guard runs); on login it comes
+             * from `setAuth()`. We key on `user.userId` and `distinctUntilChanged()` so
+             * re-emissions that don't change the user (e.g. login-as, which only sets
+             * `loginAsUser`) don't trigger a redundant reload.
              */
             onInit() {
                 const loginService = inject(LoginService);
-                loginService.watchUser(() => store.loadLoggedUser());
+                loginService.auth$
+                    .pipe(
+                        startWith(loginService.auth),
+                        map((auth) => auth?.user?.userId ?? null),
+                        filter((userId): userId is string => !!userId),
+                        distinctUntilChanged()
+                    )
+                    .subscribe(() => store.loadLoggedUser());
             }
         }))
     );

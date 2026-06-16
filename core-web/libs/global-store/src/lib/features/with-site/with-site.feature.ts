@@ -13,7 +13,7 @@ import { Observable, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -142,12 +142,20 @@ export function withSite() {
                 // a one-shot bootstrap load. The GlobalStore is created at app startup
                 // (`provideAppInitializer`), before the session cookie is valid, so a one-shot
                 // load would fire pre-auth and never retry after the SPA login navigation —
-                // leaving the site selector empty until a manual refresh. `watchUser()` fires
-                // when `auth$` emits: on refresh once the AuthGuard resolves auth via
-                // `loadAuth()`, and on every login via `setAuth()` (it only fires synchronously
-                // if auth was already set before the store initialized). Mirrors the legacy
-                // SiteService behavior. See `withUser` for full rationale.
-                loginService.watchUser(() => store.loadCurrentSite());
+                // leaving the site selector empty until a manual refresh. We seed the stream
+                // with the current auth (`startWith`) for an already-established session, then
+                // react to `auth$`: on refresh once the AuthGuard resolves auth via
+                // `loadAuth()`, and on every login via `setAuth()`. Keying on `user.userId`
+                // with `distinctUntilChanged()` avoids a redundant reload on re-emissions that
+                // don't change the user (e.g. login-as). See `withUser` for full rationale.
+                loginService.auth$
+                    .pipe(
+                        startWith(loginService.auth),
+                        map((auth) => auth?.user?.userId ?? null),
+                        filter((userId): userId is string => !!userId),
+                        distinctUntilChanged()
+                    )
+                    .subscribe(() => store.loadCurrentSite());
                 store.syncSiteOnSwitchEvent();
             }
         }))

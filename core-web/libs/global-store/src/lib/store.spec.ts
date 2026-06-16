@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { Subject, of, throwError } from 'rxjs';
+import { defer, Subject, of, throwError } from 'rxjs';
 
 import {
     DotCurrentUserService,
@@ -7,7 +7,7 @@ import {
     DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotCurrentUser, DotSite } from '@dotcms/dotcms-models';
 
 import { GlobalStore } from './store';
@@ -18,13 +18,16 @@ const mockCurrentUser = {
     email: 'john@example.com'
 } as DotCurrentUser;
 
+// Minimal Auth payload; the features only read `auth.user.userId` to key the reactive load.
+const authForUser = (userId: string): Auth => ({ user: { userId } }) as unknown as Auth;
+
 describe('GlobalStore', () => {
     let spectator: SpectatorService<InstanceType<typeof GlobalStore>>;
     let store: InstanceType<typeof GlobalStore>;
     let switchSiteSubject: Subject<DotSite>;
-    // Callbacks registered via LoginService.watchUser() by the site/user features on init.
-    // Invoking them simulates the LoginService notifying that a user is authenticated.
-    let authCallbacks: Array<() => void>;
+    // Auth stream the site/user features subscribe to. Emitting on it simulates the
+    // LoginService notifying that the authenticated user changed (login / re-login).
+    let authSubject: Subject<Auth>;
 
     const createService = createServiceFactory({
         service: GlobalStore,
@@ -37,10 +40,11 @@ describe('GlobalStore', () => {
                 switchSite: jest.fn().mockReturnValue(of({} as DotSite))
             }),
             mockProvider(DotSystemConfigService),
-            // watchUser captures the callback instead of firing it, so tests control exactly
-            // when the "user authenticated" signal happens (no implicit load at store init).
+            // No session at init (`auth` null); the deferred `auth$` resolves to the current
+            // per-test subject so tests control exactly when an authenticated user is signalled.
             mockProvider(LoginService, {
-                watchUser: jest.fn((fn: () => void) => authCallbacks.push(fn))
+                auth: null as unknown as Auth,
+                auth$: defer(() => authSubject)
             }),
             mockProvider(DotEventsSocket, {
                 connect: () => of({}),
@@ -58,7 +62,7 @@ describe('GlobalStore', () => {
         // switchSiteSubject is assigned before createService() so the on() closure
         // captures the correct subject by the time onInit subscribes to SWITCH_SITE.
         switchSiteSubject = new Subject<DotSite>();
-        authCallbacks = [];
+        authSubject = new Subject<Auth>();
         // Reset shared mock call counts each test so assertions don't depend on test order.
         // clearAllMocks() clears recorded calls but preserves the mockReturnValue / jest.fn
         // implementations declared in createServiceFactory.
@@ -77,7 +81,7 @@ describe('GlobalStore', () => {
             const siteService = spectator.inject(DotSiteService);
             const userService = spectator.inject(DotCurrentUserService);
 
-            // watchUser() has registered callbacks but they have not fired yet.
+            // The store subscribed to auth$ but no authenticated user has been emitted yet.
             expect(siteService.getCurrentSite).not.toHaveBeenCalled();
             expect(userService.getCurrentUser).not.toHaveBeenCalled();
             expect(store.siteDetails()).toBeNull();
@@ -86,13 +90,12 @@ describe('GlobalStore', () => {
     });
 
     describe('auth-reactive loading', () => {
-        it('should load the current site and user when the auth state becomes a logged-in user', () => {
+        it('should load the current site and user when a user authenticates', () => {
             const siteService = spectator.inject(DotSiteService);
             const userService = spectator.inject(DotCurrentUserService);
             siteService.getCurrentSite.mockReturnValue(of(mockSiteEntity));
 
-            // Simulate LoginService notifying subscribers that a user is authenticated.
-            authCallbacks.forEach((cb) => cb());
+            authSubject.next(authForUser('user-123'));
 
             expect(siteService.getCurrentSite).toHaveBeenCalled();
             expect(userService.getCurrentUser).toHaveBeenCalled();
@@ -100,14 +103,24 @@ describe('GlobalStore', () => {
             expect(store.loggedUser()).toEqual(mockCurrentUser);
         });
 
-        it('should reload state on every auth notification (e.g. re-login)', () => {
+        it('should NOT reload when the same user is re-emitted (e.g. login-as)', () => {
             const siteService = spectator.inject(DotSiteService);
             siteService.getCurrentSite.mockReturnValue(of(mockSiteEntity));
 
-            authCallbacks.forEach((cb) => cb());
-            authCallbacks.forEach((cb) => cb());
+            authSubject.next(authForUser('user-123'));
+            authSubject.next(authForUser('user-123'));
 
-            // getCurrentSite fires once per notification (2 notifications here).
+            // distinctUntilChanged on userId collapses the duplicate emission.
+            expect(siteService.getCurrentSite).toHaveBeenCalledTimes(1);
+        });
+
+        it('should reload when a different user authenticates (re-login)', () => {
+            const siteService = spectator.inject(DotSiteService);
+            siteService.getCurrentSite.mockReturnValue(of(mockSiteEntity));
+
+            authSubject.next(authForUser('user-123'));
+            authSubject.next(authForUser('user-456'));
+
             expect(siteService.getCurrentSite).toHaveBeenCalledTimes(2);
         });
 
@@ -115,7 +128,7 @@ describe('GlobalStore', () => {
             const userService = spectator.inject(DotCurrentUserService);
             userService.getCurrentUser.mockReturnValue(throwError(() => new Error('401')));
 
-            authCallbacks.forEach((cb) => cb());
+            authSubject.next(authForUser('user-123'));
 
             // The pre-auth/failed-load scenario must degrade gracefully, not crash the store.
             expect(store.loggedUser()).toBeNull();
@@ -125,7 +138,7 @@ describe('GlobalStore', () => {
             const siteService = spectator.inject(DotSiteService);
             siteService.getCurrentSite.mockReturnValue(throwError(() => new Error('500')));
 
-            authCallbacks.forEach((cb) => cb());
+            authSubject.next(authForUser('user-123'));
 
             expect(store.siteDetails()).toBeNull();
         });
