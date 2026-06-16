@@ -292,18 +292,25 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.component.$isMenuOpen()).toBe(false);
         });
 
-        it('should set $isMenuOpen to true when onMenuShown is called', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (spectator.component as any).onMenuShown();
-            expect(spectator.component.$isMenuOpen()).toBe(true);
+        it('should show the menu button wrapper as fully visible when $isMenuOpen is true', () => {
+            spectator.component.$isMenuOpen.set(true);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-100')).toBe(true);
         });
 
-        it('should set $isMenuOpen to false when onMenuHidden is called', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (spectator.component as any).onMenuShown();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (spectator.component as any).onMenuHidden();
-            expect(spectator.component.$isMenuOpen()).toBe(false);
+        it('should show the menu button wrapper as hover-only when $isMenuOpen is false', () => {
+            spectator.component.$isMenuOpen.set(false);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-0')).toBe(true);
+            expect(menuWrapper?.classList.contains('group-hover:opacity-100')).toBe(true);
         });
     });
 
