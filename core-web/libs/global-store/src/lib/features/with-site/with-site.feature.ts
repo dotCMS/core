@@ -16,6 +16,7 @@ import { computed, inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotSite } from '@dotcms/dotcms-models';
 
 /**
@@ -134,11 +135,19 @@ export function withSite() {
                 )
             )
         })),
-        withHooks({
-            onInit(store) {
-                store.loadCurrentSite();
+        withHooks((store) => ({
+            onInit() {
+                const loginService = inject(LoginService);
+                // Load the current site reactively from the authentication state instead of
+                // a one-shot bootstrap load. The GlobalStore is created at app startup
+                // (`provideAppInitializer`), before the session cookie is valid, so a one-shot
+                // load would fire pre-auth and never retry after the SPA login navigation —
+                // leaving the site selector empty until a manual refresh. `watchUser()` fires
+                // immediately when a session already exists (refresh) and on every login,
+                // mirroring the legacy SiteService behavior. See `withUser` for full rationale.
+                loginService.watchUser(() => store.loadCurrentSite());
                 store.syncSiteOnSwitchEvent();
             }
-        })
+        }))
     );
 }

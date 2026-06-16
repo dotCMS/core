@@ -8,6 +8,7 @@ import { inject } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotCurrentUser } from '@dotcms/dotcms-models';
 
 /**
@@ -75,14 +76,27 @@ export function withUser() {
                 )
             )
         })),
-        withHooks({
+        withHooks((store) => ({
             /**
-             * Automatically loads the current user when the feature is initialized.
+             * Reactively (re)loads the current user from the authentication state.
+             *
+             * Why not a one-shot load here:
+             * The GlobalStore is instantiated at app bootstrap (`provideAppInitializer`),
+             * before the session cookie is valid (e.g. while on the login page). A one-shot
+             * load in `onInit` would therefore fire pre-auth, fail, and never retry — and
+             * because login navigates via the SPA router (no full page reload), the user
+             * would stay `null` until a manual refresh.
+             *
+             * `loginService.watchUser()` fires the callback immediately when a session
+             * already exists (e.g. on refresh, once the AuthGuard resolves auth via
+             * `loadAuth()`) and again on every login, so the user is loaded for both the
+             * initial login and subsequent re-logins. This mirrors the reactive pattern the
+             * legacy `SiteService` used (`loginService.watchUser(() => this.loadCurrentSite())`).
              */
-            onInit(store) {
-                // Auto-load current user on feature initialization
-                store.loadLoggedUser();
+            onInit() {
+                const loginService = inject(LoginService);
+                loginService.watchUser(() => store.loadLoggedUser());
             }
-        })
+        }))
     );
 }
