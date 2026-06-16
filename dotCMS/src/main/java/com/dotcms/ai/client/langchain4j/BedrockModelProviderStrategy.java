@@ -94,8 +94,12 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
                 .client(bedrockClient(config));
         if (config.temperature() != null || config.maxTokens() != null) {
             final BedrockChatRequestParameters.Builder params = BedrockChatRequestParameters.builder();
-            if (config.temperature() != null) params.temperature(config.temperature());
-            if (config.maxTokens() != null) params.maxOutputTokens(config.maxTokens());
+            if (config.temperature() != null) {
+                params.temperature(config.temperature());
+            }
+            if (config.maxTokens() != null) {
+                params.maxOutputTokens(config.maxTokens());
+            }
             builder.defaultRequestParameters(params.build());
         }
         return builder.build();
@@ -109,8 +113,12 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
                 .client(bedrockAsyncClient(config));
         if (config.temperature() != null || config.maxTokens() != null) {
             final BedrockChatRequestParameters.Builder params = BedrockChatRequestParameters.builder();
-            if (config.temperature() != null) params.temperature(config.temperature());
-            if (config.maxTokens() != null) params.maxOutputTokens(config.maxTokens());
+            if (config.temperature() != null) {
+                params.temperature(config.temperature());
+            }
+            if (config.maxTokens() != null) {
+                params.maxOutputTokens(config.maxTokens());
+            }
             builder.defaultRequestParameters(params.build());
         }
         return builder.build();
@@ -212,12 +220,17 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
         }
         final ClientOverrideConfiguration.Builder builder = ClientOverrideConfiguration.builder();
         if (config.timeout() != null) {
+            Logger.debug(BedrockModelProviderStrategy.class,
+                    "Bedrock: applying timeout=" + config.timeout() + "s");
             builder.apiCallAttemptTimeout(Duration.ofSeconds(config.timeout()));
         }
         if (config.maxRetries() != null) {
+            final int attempts = Math.max(1, config.maxRetries() + 1);
+            Logger.debug(BedrockModelProviderStrategy.class,
+                    "Bedrock: applying maxRetries=" + config.maxRetries() + " (maxAttempts=" + attempts + ")");
             builder.retryStrategy(AwsRetryStrategy.standardRetryStrategy()
                     .toBuilder()
-                    .maxAttempts(Math.max(1, config.maxRetries() + 1))
+                    .maxAttempts(attempts)
                     .build());
         }
         return Optional.of(builder.build());
