@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 
 import { Select, SelectChangeEvent } from 'primeng/select';
 
+import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../../config.utils';
+
 interface LanguageOption {
     label: string;
     value: string;
@@ -22,6 +24,7 @@ interface LanguageOption {
                 filter="true"
                 class="code-block__lang"
                 appendTo="body"
+                [overlayOptions]="overlayOptions"
                 optionLabel="label"
                 optionValue="value"
                 placeholder="Select Code Language"
@@ -33,6 +36,13 @@ interface LanguageOption {
     `
 })
 export class DotCodeBlockNodeViewComponent extends AngularNodeViewComponent {
+    /**
+     * The language `<p-select>` panel appends to `document.body`; lift its base z-index above
+     * the fullscreen editor shell's `z-[9998]` backdrop so the dropdown stays clickable in
+     * fullscreen. See {@link FULLSCREEN_AWARE_OVERLAY_OPTIONS}.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
+
     /** Empty string maps to the "auto" option; lowlight will auto-detect. */
     protected readonly currentLanguage = computed(
         () => (this.node().attrs['language'] as string | null) ?? ''
