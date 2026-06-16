@@ -11,6 +11,10 @@
     <packaging>jar</packaging>
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
+        <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
+             Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
+             'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -1608,6 +1612,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} so the test argLine can
+                             preload it via -javaagent (see bytebuddy.agent.argline property). -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>unpack</id>
                         <phase>prepare-package</phase>
