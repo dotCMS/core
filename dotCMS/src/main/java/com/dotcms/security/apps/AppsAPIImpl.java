@@ -989,7 +989,7 @@ public class AppsAPIImpl implements AppsAPI {
                             // persisted, so they may legitimately resolve to nothing here. Skip
                             // them rather than failing the export; the empty-result guard below
                             // still catches the case where nothing at all could be collected.
-                            Logger.debug(AppsAPIImpl.class, () -> String.format(
+                            Logger.warn(AppsAPIImpl.class, () -> String.format(
                                     "No exportable secret resolved for key `%s` under site `%s` ; skipping.",
                                     appKey, site.getIdentifier()));
                         }
