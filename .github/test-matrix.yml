@@ -43,7 +43,7 @@ test_types:
     defaults:
       needs_license: false
       needs_docker: false
-      needs_node: false
+      needs_node: true
     suites:
       - name: "Frontend Unit Tests"
         maven_args: "test -pl :dotcms-core-web"

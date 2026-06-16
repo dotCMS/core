@@ -19,9 +19,9 @@ playwright.config.ts
 ## Run
 
 ```bash
-yarn nx e2e dotcms-ui-e2e --grep "pattern"
-HEADLESS=true yarn nx e2e dotcms-ui-e2e --grep "pattern"
-yarn e2e:dev | e2e:dev:headless | e2e:ci | e2e:ui   # from dotcms-ui-e2e/
+pnpm nx e2e dotcms-ui-e2e --grep "pattern"
+HEADLESS=true pnpm nx e2e dotcms-ui-e2e --grep "pattern"
+pnpm e2e:dev | e2e:dev:headless | e2e:ci | e2e:ui   # from dotcms-ui-e2e/
 npx playwright codegen http://localhost:4200/dotAdmin
 ```
 
