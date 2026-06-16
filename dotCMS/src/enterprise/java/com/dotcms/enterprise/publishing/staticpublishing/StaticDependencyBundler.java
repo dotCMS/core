@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.staticpublishing;
 
+import com.dotcms.enterprise.publishing.bundlers.StaticUnpublishMarker;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.*;
@@ -32,6 +33,7 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 
 import java.io.FileFilter;
+import java.io.IOException;
 import java.util.*;
 
 public class StaticDependencyBundler implements IBundler {
@@ -72,14 +74,15 @@ public class StaticDependencyBundler implements IBundler {
     public void generate(BundleOutput output, BundlerStatus status) throws DotBundleException {
         try {
             systemUser = userAPI.getSystemUser();
-            buildPathIncludes();
+            buildPathIncludes(output);
         } catch (Exception e) {
             throw new DotBundleException("Error generating StaticDependencyBundler:", e);
         }
     }
 
 
-    private void buildPathIncludes() throws DotDataException, DotSecurityException {
+    private void buildPathIncludes(final BundleOutput output)
+            throws DotDataException, DotSecurityException, IOException {
         List<PublishQueueElement> assets = config.getAssets();
         List<String> includes = (config.getIncludePatterns() == null) ? new ArrayList<>() : config.getIncludePatterns();
         Set<Host> hosts = (config.getHosts() == null) ? new HashSet<>() : new HashSet<>(config.getHosts());
@@ -90,6 +93,13 @@ public class StaticDependencyBundler implements IBundler {
                 languages.add(l.getId() + "");
             }
         }
+
+        // On un-publish, this bundler is the single place that knows the actual content being
+        // removed (the publish queue deltas) and resolves its path even when no live version
+        // remains. It writes /live/ path markers that the static publishers turn into endpoint
+        // deletions. The content bundlers only export live content, so they cannot do this. See
+        // issue #35365.
+        final boolean staticUnpublish = StaticUnpublishMarker.isStaticUnpublish(config);
 
         for (PublishQueueElement asset : assets) {
             //If Asset is HOST/SITE
@@ -133,13 +143,21 @@ public class StaticDependencyBundler implements IBundler {
                         folders.add(folder.getIdentifier());
                     }
 
+                    String contentPath = null;
                 	if (!cons.isEmpty() && cons.get(0).isFileAsset() || cons.get(0).isHTMLPage()) {
-                        includes.add(id.getPath());
+                        contentPath = id.getPath();
+                        includes.add(contentPath);
                     } else if (!cons.isEmpty() && UtilMethods.isSet(cons.get(0).getStructure().getUrlMapPattern())) {
                         String urlMap = contentletAPI.getUrlMapForContentlet(cons.get(0), systemUser, true);
                         if (urlMap != null) {
+                            contentPath = urlMap;
                             includes.add(urlMap);
                         }
+                    }
+
+                    if (staticUnpublish && contentPath != null && h != null) {
+                        StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
+                                markerLanguages(asset, languages), contentPath);
                     }
                 }
             }
@@ -149,6 +167,24 @@ public class StaticDependencyBundler implements IBundler {
         config.setIncludePatterns(includes);
         config.setLanguages(languages);
         config.setFolders(folders);
+    }
+
+    /**
+     * Resolves which languages an un-published asset's static artifacts should be removed for. When
+     * the queue element targets a specific language, only that language is removed; otherwise all
+     * the bundle languages are removed (a language-agnostic un-publish).
+     *
+     * @param asset        the publish queue element being un-published
+     * @param allLanguages the languages configured for the bundle
+     * @return the language ids (as strings) to remove the content for
+     */
+    static Collection<String> markerLanguages(final PublishQueueElement asset,
+            final Set<String> allLanguages) {
+        final Integer assetLanguageId = asset.getLanguageId();
+        if (assetLanguageId != null && assetLanguageId > 0) {
+            return Collections.singletonList(String.valueOf(assetLanguageId));
+        }
+        return allLanguages;
     }
 
     @Override
