@@ -101,10 +101,19 @@ export class ContentListingHelper {
     }
 
     /**
-     * Opens the add-content dropdown (Dojo). Use `force: true` to handle animation flicker.
+     * Opens the add-content dropdown (Dojo).
      */
     async openAddContentDropdown() {
         await this.addDropdownButton.waitFor({ state: 'visible', timeout: 10000 });
         await this.addDropdownButton.click();
+    }
+
+    /**
+     * Clicks the API link inside the query modal (opens a new browser tab).
+     */
+    async clickQueryModalApiLink() {
+        const apiLink = this.frame.getByText('API', { exact: true });
+        await apiLink.waitFor({ state: 'visible', timeout: 10000 });
+        await apiLink.click();
     }
 }

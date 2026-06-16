@@ -60,13 +60,13 @@ test.describe('Content listing portlet — UI integrity', () => {
         await expect(listing.frame.locator('#queryResults')).toBeVisible();
     });
 
-    test.skip('API link in query modal opens new tab', async ({ page }) => {
+    test('API link in query modal opens new tab @smoke', async ({ page }) => {
         const listing = new ContentListingHelper(page);
         await listing.goto();
         await listing.openQueryModal();
 
         const newTabPromise = page.waitForEvent('popup');
-        await listing.frame.getByText('API', { exact: true }).click();
+        await listing.clickQueryModalApiLink();
         const newTab = await newTabPromise;
 
         await newTab.waitForLoadState();
