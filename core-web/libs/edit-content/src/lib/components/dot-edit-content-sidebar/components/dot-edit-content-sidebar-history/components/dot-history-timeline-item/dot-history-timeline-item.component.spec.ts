@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 
@@ -162,33 +162,59 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Menu Items by Status', () => {
-        it('should expose no actions for draft items (working && !live)', () => {
+        it('should expose no actions for working items (working && !live)', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
             spectator.detectChanges();
 
-            const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(0);
+            expect(spectator.component.$menuItems()).toHaveLength(0);
         });
 
-        it('should expose restore and compare for published items (live)', () => {
+        it('should expose no actions for the current published version (working && live)', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: true, working: true });
+            spectator.detectChanges();
+
+            expect(spectator.component.$menuItems()).toHaveLength(0);
+        });
+
+        it('should expose restore, separator and compare for published items (live)', () => {
             // Default item is live: true, working: false
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(2);
+            expect(menuItems).toHaveLength(3);
             expect(menuItems[0].id).toBe('restore');
             expect(menuItems[0].label).toBe('Restore');
-            expect(menuItems[1].id).toBe('compare');
-            expect(menuItems[1].label).toBe('Compare');
+            expect(menuItems[1].separator).toBe(true);
+            expect(menuItems[2].id).toBe('compare');
+            expect(menuItems[2].label).toBe('Compare');
         });
 
-        it('should expose restore, compare and delete for historical items (!working && !live)', () => {
+        it('should expose restore, compare, separator and delete for historical items (!working && !live)', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(3);
+            expect(menuItems).toHaveLength(4);
             expect(menuItems[0].id).toBe('restore');
             expect(menuItems[1].id).toBe('compare');
-            expect(menuItems[2].id).toBe('delete');
+            expect(menuItems[2].separator).toBe(true);
+            expect(menuItems[3].id).toBe('delete');
+        });
+
+        it('should always place separator before the last non-separator item', () => {
+            // Published: [restore, separator, compare] — separator before last (compare)
+            const publishedItems = spectator.component.$menuItems();
+            const lastPublished = publishedItems[publishedItems.length - 1];
+            const secondToLastPublished = publishedItems[publishedItems.length - 2];
+            expect(lastPublished.separator).toBeFalsy();
+            expect(secondToLastPublished.separator).toBe(true);
+
+            // Historical: [restore, compare, separator, delete] — separator before last (delete)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+            const historicalItems = spectator.component.$menuItems();
+            const lastHistorical = historicalItems[historicalItems.length - 1];
+            const secondToLastHistorical = historicalItems[historicalItems.length - 2];
+            expect(lastHistorical.separator).toBeFalsy();
+            expect(secondToLastHistorical.separator).toBe(true);
         });
     });
 
@@ -264,6 +290,33 @@ describe('DotHistoryTimelineItemComponent', () => {
                 type: DotHistoryTimelineItemActionType.DELETE,
                 item: { ...mockVersionItem, live: false, working: false }
             });
+        });
+    });
+
+    describe('Menu Open State ($isMenuOpen)', () => {
+        it('should initialize $isMenuOpen as false', () => {
+            expect(spectator.component.$isMenuOpen()).toBe(false);
+        });
+
+        it('should show the menu button wrapper as fully visible when $isMenuOpen is true', () => {
+            spectator.component.$isMenuOpen.set(true);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-100')).toBe(true);
+        });
+
+        it('should show the menu button wrapper as hover-only when $isMenuOpen is false', () => {
+            spectator.component.$isMenuOpen.set(false);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-0')).toBe(true);
+            expect(menuWrapper?.classList.contains('group-hover:opacity-100')).toBe(true);
         });
     });
 

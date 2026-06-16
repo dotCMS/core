@@ -92,14 +92,10 @@
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         @if ($store.isViewingHistoricalVersion()) {
-            <!-- Historical version actions - only Restore -->
-            <button
-                pButton
-                (click)="$store.restoreCurrentHistoricalVersion()"
-                data-testId="restore-historical-version-button">
-                {{ 'edit.content.sidebar.history.restore' | dm }}
-            </button>
-            <!-- Compare button hidden as requested -->
+            <span class="text-sm text-gray-500" data-testId="previewing-label">
+                {{ 'edit.content.sidebar.history.previewing' | dm }}
+                {{ $store.contentlet()?.modDate | dotRelativeDate }}
+            </span>
         } @else {
             <!-- Status badge: the shared component derives its label + severity from the
                  contentlet state (a brand-new contentlet has no state yet, so it shows

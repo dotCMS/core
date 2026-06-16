@@ -10,7 +10,7 @@
     <div class="overflow-hidden rounded-xl border border-surface-300 bg-white">
         @if ($translatedLocales().length) {
             <div class="flex items-center gap-2 p-4">
-                <span class="text-sm font-bold text-primary-700">
+                <span class="text-sm font-bold text-slate-500">
                     {{ 'edit.content.sidebar.locales.selector.translated' | dm }}
                 </span>
                 <p-badge
@@ -50,7 +50,7 @@
 
         @if ($pendingLocales().length) {
             <div class="flex items-center gap-2 px-4 pt-3 pb-1">
-                <span class="text-sm font-bold text-primary-700">
+                <span class="text-sm font-bold text-slate-500">
                     {{ 'edit.content.sidebar.locales.selector.pending' | dm }}
                 </span>
                 <p-badge

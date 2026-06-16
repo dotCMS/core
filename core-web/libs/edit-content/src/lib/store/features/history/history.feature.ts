@@ -218,6 +218,7 @@ export function withHistory() {
                                                 : currentContentlet,
                                             // Set the historical version as current
                                             contentlet: versionContent,
+                                            compareContentlet: null,
                                             isViewingHistoricalVersion: true,
                                             historicalVersionInode: inode
                                         });
