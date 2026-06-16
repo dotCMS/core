@@ -40,7 +40,7 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
-import { PERSONA_KEY } from '../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -394,8 +394,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * (`language_id`, persona, `variantName`, `mode`, `publishDate`). The page
      * path, `clientHost` and `depth` are excluded: the path is already the URL
      * itself, and `clientHost`/`depth` are editor-fetch concerns the public
-     * scanner must not inherit. `normalizeQueryParams` renames the persona key to
-     * `personaId` and drops the default persona, matching the rest of the editor.
+     * scanner must not inherit.
+     *
+     * Unlike SPA navigation, this URL is fetched and rendered by the dotCMS
+     * backend, so the persona must use the backend request param key
+     * (`com.dotmarketing.persona.id`, `WebKeys.CMS_PERSONA_PARAMETER`) — NOT the
+     * SPA-friendly `personaId`. Sending `personaId` would be silently ignored and
+     * the page would render with no persona. The default persona and default
+     * variant are dropped so the scanner falls back to the same implicit defaults
+     * as the editor.
      *
      * @return {Record<string, string>}
      * @memberof DotEmaShellComponent
@@ -405,20 +412,24 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         const forwarded: Record<string, unknown> = {
             [DotPageAssetKeys.LANGUAGE_ID]: params.language_id,
-            [PERSONA_KEY]: params[PERSONA_KEY],
             [DotPageAssetKeys.MODE]: params.mode,
             [DotPageAssetKeys.PUBLISH_DATE]: params.publishDate
         };
+
+        // Persona keeps the backend request param key — the scanner is a backend
+        // page render, not SPA navigation. Drop the default persona (implicit).
+        const persona = params[PERSONA_KEY];
+        if (persona && persona !== DEFAULT_PERSONA.identifier) {
+            forwarded[PERSONA_KEY] = persona;
+        }
 
         // The default variant is implicit — omit it to keep the URL clean.
         if (params.variantName && params.variantName !== DEFAULT_VARIANT_ID) {
             forwarded[DotPageAssetKeys.VARIANT_NAME] = params.variantName;
         }
 
-        const normalized = normalizeQueryParams(forwarded);
-
         return Object.fromEntries(
-            Object.entries(normalized)
+            Object.entries(forwarded)
                 .filter(([, value]) => value !== undefined && value !== null && value !== '')
                 .map(([key, value]) => [key, String(value)])
         );

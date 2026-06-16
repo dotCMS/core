@@ -1587,8 +1587,10 @@ describe('DotEmaShellComponent', () => {
                 const params = new URL(calledUrl).searchParams;
 
                 expect(params.get('language_id')).toBe('2');
-                // PERSONA_KEY is normalized to personaId, matching the rest of the editor
-                expect(params.get('personaId')).toBe('persona-123');
+                // The scanner is a backend page render, so persona uses the backend
+                // request param key (WebKeys.CMS_PERSONA_PARAMETER), not personaId
+                expect(params.get(PERSONA_KEY)).toBe('persona-123');
+                expect(params.has('personaId')).toBe(false);
                 expect(params.get('variantName')).toBe('my-variant');
                 expect(params.get('mode')).toBe(UVE_MODE.LIVE);
                 expect(params.get('publishDate')).toBe('2026-06-15');
@@ -1621,9 +1623,9 @@ describe('DotEmaShellComponent', () => {
                 const params = new URL(calledUrl).searchParams;
 
                 expect(params.has('variantName')).toBe(false);
-                // Default persona is dropped by normalizeQueryParams
+                // Default persona is implicit and dropped from the scanned URL
+                expect(params.has(PERSONA_KEY)).toBe(false);
                 expect(params.has('personaId')).toBe(false);
-                expect(params.has('com.dotmarketing.persona.id')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {
