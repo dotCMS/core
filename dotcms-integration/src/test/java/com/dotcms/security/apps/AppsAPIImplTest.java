@@ -36,6 +36,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
@@ -1497,6 +1498,67 @@ public class AppsAPIImplTest {
            file.delete();
         }
 
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)} and
+     * {@link AppsAPIImpl#collectSecretsForExport(Map, User)} — regression for issue #36179.
+     * <p>
+     * Given scenario: An app is provisioned ONLY through a System Host environment variable
+     * (tier-3, {@code DOT_{APP_KEY}_SYSTEM_HOST_{PARAM}}) with no stored secret blob. The listing
+     * ({@code appKeysByHost}) counts such an app as present on every valid site, but export used to
+     * resolve it with {@code fallbackOnSystemHost = false}, which suppresses the System Host tiers —
+     * so {@code getSecrets} returned empty and the whole export aborted with an
+     * {@link IllegalArgumentException}.
+     * <p>
+     * Expected result: the export completes (the System Host tier participates in resolution) and an
+     * env-backed app with no exportable blob is skipped rather than failing the export.
+     */
+    @Test
+    public void Test_Export_App_Backed_Only_By_System_Host_Env_Does_Not_Abort()
+            throws DotDataException, IOException, AlreadyExistException, DotSecurityException, EncryptorException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        api.resetSecrets(admin);
+
+        // A regular (non-System) site: appKeysByHost will list the env-backed app for it.
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .stringParam("p2", false, true)
+                .withName("system-host-env-app-example")
+                .withDescription("system-host-env-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        final String appKey = dataGen.getKey();
+
+        // Tier-3 (System Host env) value for a single param, with NO stored secret saved anywhere.
+        final String systemHostEnvKey =
+                AppsUtil.envVarName(appKey, AppsUtil.SYSTEM_HOST_ENV_SEGMENT, "p1");
+        final String originalEnvValue = Config.getStringProperty(systemHostEnvKey, null);
+        try {
+            api.createAppDescriptor(file, admin);
+            Config.setProperty(systemHostEnvKey, "env-secret-1");
+
+            // Sanity: the app is enumerated for the regular site purely via the System Host env tier.
+            assertTrue(api.appKeysByHost().getOrDefault(site.getIdentifier(), Set.of())
+                    .contains(appKey));
+
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+
+            // Export All. Before the fix this threw IllegalArgumentException
+            // ("Unable to find secret identified by key ... under site ...") for the regular site.
+            final Path exportSecretsFile = api.exportSecrets(securityKey, true, null, admin);
+            assertTrue(exportSecretsFile.toFile().exists());
+            assertTrue(exportSecretsFile.toFile().length() > 0);
+        } finally {
+            // Restore the env prop (descriptor removal already neutralizes tier-3, but keep it tidy).
+            Config.setProperty(systemHostEnvKey, originalEnvValue == null ? "" : originalEnvValue);
+            Try.run(() -> api.removeApp(appKey, admin, true));
+            file.delete();
+        }
     }
 
     /**
