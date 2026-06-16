@@ -23,8 +23,9 @@ type LegacyImageEditorDialogConfig = { data: DotLegacyImageEditorDialogData };
 /**
  * Renders the legacy Dojo image editor inside a PrimeNG dialog iframe.
  *
- * Builds a sanitized URL to `image-editor-standalone.jsp` with the inode, temp file,
- * and field variable required by the legacy editor.
+ * Builds a URL to `image-editor-standalone.jsp` with the inode, temp file, and field
+ * variable required by the legacy editor; marked trusted via SafeUrlPipe
+ * (`bypassSecurityTrustResourceUrl`) so Angular renders it as the iframe src.
  */
 @Component({
     selector: 'dot-legacy-image-editor-dialog',
@@ -38,7 +39,6 @@ type LegacyImageEditorDialogConfig = { data: DotLegacyImageEditorDialogData };
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block h-full w-full' },
-    standalone: true,
     imports: [SafeUrlPipe]
 })
 export class DotLegacyImageEditorDialogComponent {
@@ -47,7 +47,8 @@ export class DotLegacyImageEditorDialogComponent {
     ).data;
 
     /**
-     * Raw iframe URL for the standalone legacy image editor JSP (sanitized in template via SafeUrlPipe).
+     * Raw iframe URL for the standalone legacy image editor JSP; marked trusted in the
+     * template via SafeUrlPipe (`bypassSecurityTrustResourceUrl`).
      */
     readonly $iframeUrl = computed(() => {
         const { inode, tempId, variable } = this.#dialogData;
