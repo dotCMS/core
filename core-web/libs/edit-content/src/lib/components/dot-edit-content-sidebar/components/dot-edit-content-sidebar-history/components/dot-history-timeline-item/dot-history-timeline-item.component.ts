@@ -139,12 +139,11 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     readonly $menuItems = computed<MenuItem[]>(() => {
         const labels = this.$labels();
         const item = this.$item();
-        const isDraft = item.working && !item.live;
-        const isPublished = item.live;
-
-        if (isDraft) {
+        if (item.working) {
             return [];
         }
+
+        const isPublished = item.live;
 
         const items: MenuItem[] = [
             {

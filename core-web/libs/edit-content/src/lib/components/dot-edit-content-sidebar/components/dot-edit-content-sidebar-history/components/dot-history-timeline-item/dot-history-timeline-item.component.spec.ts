@@ -162,12 +162,18 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Menu Items by Status', () => {
-        it('should expose no actions for draft items (working && !live)', () => {
+        it('should expose no actions for working items (working && !live)', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
             spectator.detectChanges();
 
-            const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(0);
+            expect(spectator.component.$menuItems()).toHaveLength(0);
+        });
+
+        it('should expose no actions for the current published version (working && live)', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: true, working: true });
+            spectator.detectChanges();
+
+            expect(spectator.component.$menuItems()).toHaveLength(0);
         });
 
         it('should expose restore, separator and compare for published items (live)', () => {

@@ -836,5 +836,69 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
             }));
         });
+
+        describe('Compare Version Banner', () => {
+            const mockCompareContentlet = createFakeContentlet({
+                inode: 'compare-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Compare Version'
+            });
+
+            it('should not show the banner when not comparing a version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when comparing a version', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitCompareView when the Close button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const exitSpy = jest.spyOn(store, 'exitCompareView');
+                spectator.click(byTestId('close-compare-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+                spectator.click(byTestId('restore-compare-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitCompareView is called', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+
+                store.exitCompareView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
+            }));
+        });
     });
 });

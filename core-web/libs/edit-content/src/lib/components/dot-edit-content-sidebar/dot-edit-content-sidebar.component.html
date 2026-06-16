@@ -32,8 +32,28 @@
                 <i class="pi pi-comment"></i>
             </p-tab>
         </p-tablist>
-        <!-- Restore banner: visible only when previewing a historical version -->
-        @if ($store.isViewingHistoricalVersion()) {
+        <!-- Compare and historical-preview banners are mutually exclusive -->
+        @if ($store.compareContentlet()) {
+            <div
+                class="flex items-center justify-end gap-2 border-b border-surface-200 bg-surface-50 px-3 py-4"
+                data-testid="compare-version-banner">
+                <p-button
+                    icon="pi pi-times"
+                    [label]="'close' | dm"
+                    [rounded]="true"
+                    [outlined]="true"
+                    size="small"
+                    (click)="$store.exitCompareView()"
+                    data-testid="close-compare-button" />
+                <p-button
+                    icon="pi pi-history"
+                    [label]="'edit.content.sidebar.history.restore' | dm"
+                    [rounded]="true"
+                    size="small"
+                    (click)="$store.restoreCurrentHistoricalVersion()"
+                    data-testid="restore-compare-version-button" />
+            </div>
+        } @else if ($store.isViewingHistoricalVersion()) {
             <div
                 class="flex items-center justify-end gap-2 border-b border-surface-200 bg-surface-50 px-3 py-4"
                 data-testid="historical-version-banner">
