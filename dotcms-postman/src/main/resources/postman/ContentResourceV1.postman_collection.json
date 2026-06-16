@@ -2240,6 +2240,279 @@
                 "description": "Test an easy case for parent 2, should returns 20 contents"
               },
               "response": []
+            },
+            {
+              "name": "#35862 - Ensure fallback language (French)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "// Tolerant: the language may already exist from a previous collection/run.",
+                      "pm.test(\"Ensure fallback language request completed\", function () {",
+                      "    pm.expect([200,400,500]).to.include(pm.response.code);",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n\t\"languageCode\":\"fr\",\n\t\"language\":\"French\",\n\t\"countryCode\":\"FR\",\n\t\"country\":\"France\"\n}"
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v2/languages",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "languages"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "#35862 - Resolve fallback language id",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "var langs = pm.response.json().entity;",
+                      "var fr = langs.find(function (l) { return l.languageCode === 'fr'; });",
+                      "pm.test(\"Fallback (French) language is available\", function () {",
+                      "    pm.expect(fr, 'French language must exist').to.not.be.undefined;",
+                      "});",
+                      "pm.collectionVariables.set(\"fallbackLangId\", fr.id);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v2/languages",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v2",
+                    "languages"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "#35862 - Create EN-only child",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Validate that the 'errors' array is empty\", function () {",
+                      "    pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+                      "});",
+                      "pm.collectionVariables.set(\"fallbackChildId\", pm.response.json().entity.identifier);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"ChildContentType\",\n        \"title\": \"Fallback Child EN 35862\"\n    }\n}"
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "#35862 - Create parent (EN) related to EN-only child",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Validate that the 'errors' array is empty\", function () {",
+                      "    pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+                      "});",
+                      "pm.collectionVariables.set(\"fallbackParentId\", pm.response.json().entity.identifier);"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"ParentContentType\",\n        \"title\": \"Fallback Parent 35862\",\n        \"children\": \"{{fallbackChildId}}\"\n    }\n}"
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "#35862 - Create French version of the parent",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Validate that the 'errors' array is empty\", function () {",
+                      "    pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"contentlet\": {\n        \"identifier\": \"{{fallbackParentId}}\",\n        \"contentType\": \"ParentContentType\",\n        \"languageId\": {{fallbackLangId}},\n        \"title\": \"Fallback Parent FR 35862\",\n        \"children\": \"{{fallbackChildId}}\"\n    }\n}"
+                },
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{fallbackParentId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ],
+                  "query": [
+                    {
+                      "key": "identifier",
+                      "value": "{{fallbackParentId}}"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "#35862 - View parent in French lists EN-only related child",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Validate that the 'errors' array is empty\", function () {",
+                      "    pm.expect(pm.response.json().errors).to.be.an('array').that.is.empty;",
+                      "});",
+                      "var entity = pm.response.json().entity;",
+                      "pm.test(\"Parent is viewed in the French (fallback) language\", function () {",
+                      "    pm.expect(String(entity.languageId)).to.eql(String(pm.collectionVariables.get('fallbackLangId')));",
+                      "});",
+                      "pm.test(\"Relationship lists the related child even with no version in the viewed language (#35862)\", function () {",
+                      "    var children = entity.children;",
+                      "    pm.expect(children, 'children relationship must be present').to.be.an('array');",
+                      "    var ids = children.map(function (ch) { return ch.identifier; });",
+                      "    pm.expect(ids).to.include(pm.collectionVariables.get('fallbackChildId'));",
+                      "});"
+                    ],
+                    "type": "text/javascript",
+                    "packages": {}
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/content/{{fallbackParentId}}?language={{fallbackLangId}}&depth=1",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "content",
+                    "{{fallbackParentId}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "language",
+                      "value": "{{fallbackLangId}}"
+                    },
+                    {
+                      "key": "depth",
+                      "value": "1"
+                    }
+                  ]
+                }
+              }
             }
           ],
           "description": "This folder contains a comprehensive set of requests designed to handle the creation, relationship management, and updating of content within our application. These requests are essential for ensuring that content operations are performed correctly and efficiently.\n\n#### Objectives:\n\n1. **Content Creation**: Verify the correct functioning of endpoints that handle the creation of new content.\n    \n2. **Content Relationship Management**: Ensure that relationships between different content types are correctly established and managed.\n    \n3. **Content Updates**: Validate the proper updating of existing content, ensuring data integrity and consistency.",

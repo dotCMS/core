@@ -129,6 +129,12 @@ public abstract class MyEntity {
 // IMPORTANT: Run ./mvnw compile after creating @Value.Immutable classes
 ```
 
+> **REST view objects use a different style.** The example above generates `Immutable*`-prefixed
+> types. REST response views instead use the `Abstract*` interface style
+> (`@Value.Style(typeAbstract = "Abstract*")`) so the generated type drops the prefix, plus
+> `passAnnotations = Schema.class` for Swagger. See
+> [REST_API_PATTERNS.md → View Object Pattern](REST_API_PATTERNS.md#view-object-pattern-valueimmutable).
+
 ### Exception Handling (dotCMS Hierarchy)
 ```java
 try {

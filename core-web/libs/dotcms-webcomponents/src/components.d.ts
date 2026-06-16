@@ -1141,7 +1141,7 @@ export namespace Components {
         "value": string;
     }
     /**
-     * @deprecated Use dot-contentlet-status-chip instead
+     * @deprecated Use dot-contentlet-status-badge instead
      */
     interface DotStateIcon {
         /**
@@ -2129,7 +2129,7 @@ declare global {
         new (): HTMLDotSelectButtonElement;
     };
     /**
-     * @deprecated Use dot-contentlet-status-chip instead
+     * @deprecated Use dot-contentlet-status-badge instead
      */
     interface HTMLDotStateIconElement extends Components.DotStateIcon, HTMLStencilElement {
     }
@@ -3432,7 +3432,7 @@ declare namespace LocalJSX {
         "value"?: string;
     }
     /**
-     * @deprecated Use dot-contentlet-status-chip instead
+     * @deprecated Use dot-contentlet-status-badge instead
      */
     interface DotStateIcon {
         /**
@@ -3937,7 +3937,7 @@ declare module "@stencil/core" {
             "dot-select": LocalJSX.DotSelect & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
             "dot-select-button": LocalJSX.DotSelectButton & JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
             /**
-             * @deprecated Use dot-contentlet-status-chip instead
+             * @deprecated Use dot-contentlet-status-badge instead
              */
             "dot-state-icon": LocalJSX.DotStateIcon & JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
             "dot-tags": LocalJSX.DotTags & JSXBase.HTMLAttributes<HTMLDotTagsElement>;

@@ -107,6 +107,13 @@ public class ESSearchAPIImpl implements ESSeachAPI {
             throw new DotStateException("ES Query is null");
         }
 
+        // Normalize the query the same way esSearch() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity with esSearch(); idempotent when the
+        // caller already lowercased (esSearch delegates here after lowercasing).
+        esQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                esQuery, ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
+
         JSONObject completeQueryJSON;
 
         try{

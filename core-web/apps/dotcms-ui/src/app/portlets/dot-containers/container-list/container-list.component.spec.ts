@@ -52,7 +52,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -256,7 +256,7 @@ describe('ContainerListComponent', () => {
                 CheckboxModule,
                 CommonModule,
                 DotAddToBundleComponent,
-                DotContentletStatusChipComponent,
+                DotContentletStatusBadgeComponent,
                 DotEmptyStateComponent,
                 DotMessagePipe,
                 DotPortletBaseComponent,

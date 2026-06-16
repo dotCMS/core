@@ -82,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.2
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -127,11 +127,16 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   # Automatic PR reviews (no @claude mention)
-  # Uses GPT-5.5 via AWS Bedrock Mantle for model diversity — Claude writes code here,
-  # GPT reviews it so training/weighting biases from one model family don't carry into
-  # the review. Interactive @claude sessions remain on Anthropic Claude (job above).
-  # Prompt lives in .github/prompts/gpt-auto-review.md — edit it there, not here.
-  gpt-automatic-review:
+  # Uses DeepSeek V3.2 via AWS Bedrock (Converse API, generic-bedrock route) for model
+  # diversity — Claude writes code here, a non-Claude model reviews it so training/weighting
+  # biases from one model family don't carry into the review. Interactive @claude sessions
+  # remain on Anthropic Claude (job above). Prompt lives in .github/prompts/gpt-auto-review.md.
+  #
+  # Was openai.gpt-5.5 (Bedrock Mantle), but as of 2026-06-15 gpt-5.5 is failing on mantle
+  # in both regions ("Engine not found"; AWS-side — see ext-aws-tam thread). DeepSeek V3.2 is
+  # healthy on bedrock-runtime and keeps the reviews running. Switch back to a mantle model by
+  # setting model_id to an openai.* id once AWS restores it.
+  ai-automatic-review:
     needs: [security-check, load-gpt-prompt]
     # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
     # or failed this job is skipped too.
@@ -140,12 +145,13 @@ jobs:
     concurrency:
       group: claude-automatic-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.2
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
     with:
-      model_id: openai.gpt-5.5
+      # deepseek.* is not anthropic/openai, so the orchestrator routes it to the
+      # bedrock-generic (Converse) executor. reasoning_effort has no effect on that path.
+      model_id: deepseek.v3.2
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
-      reasoning_effort: medium
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
       timeout_minutes: 20
       runner: ubuntu-latest
