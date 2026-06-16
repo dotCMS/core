@@ -1,0 +1,86 @@
+name: Autodoc — Epic Documentation Audit
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  autodoc:
+    name: Run documentation audit
+    # Fire when a doc-trigger label is applied to an Epic issue.
+    if: |
+      (github.event.label.name == 'Doc : Needs Doc' || github.event.label.name == 'Changelog: Needs Doc') &&
+      contains(github.event.issue.labels.*.name, 'Epic')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write   # post/edit the report comment
+      contents: read
+
+    env:
+      EPIC_NUMBER: ${{ github.event.issue.number }}
+      REPO: ${{ github.repository }}
+      # Built-in token — used for gh CLI operations (issue comments, dotcms-aios API access).
+      # Same pattern as ai_claude-rollback-safety.yml.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Corporate Anthropic key — already provisioned in this repo; same secret name as
+      # ai_claude-rollback-safety.yml. No additional key needed.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DOTCMS_API_TOKEN: ${{ secrets.DOTCMS_API_TOKEN }}
+      DOTCMS_API_TOKEN_LOCAL: ${{ secrets.DOTCMS_API_TOKEN_LOCAL }}
+      DOTCMS_BASE_URL: ${{ secrets.DOTCMS_BASE_URL }}
+      DOTCMS_SITE_FOLDER: ${{ secrets.DOTCMS_SITE_FOLDER }}
+
+    steps:
+      - name: Checkout core-workflow-test (for repo/gh context)
+        uses: actions/checkout@v4
+
+      - name: Checkout autodoc scripts
+        uses: actions/checkout@v4
+        with:
+          # Set AUTODOC_REPO secret to the org/repo slug once autodoc has a GitHub remote
+          # (e.g. "dotCMS/autodoc"). Uses CI_MACHINE_TOKEN for cross-repo access.
+          repository: ${{ secrets.AUTODOC_REPO }}
+          token: ${{ secrets.AUTODOC_TOKEN }}
+          path: autodoc
+
+      - name: Checkout dotcms-aios (vault substitute)
+        uses: actions/checkout@v4
+        with:
+          repository: dotCMS/dotcms-aios
+          # GITHUB_TOKEN has org-level read access; same access path the rollback workflow uses.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: dotcms-aios
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          working-directory: autodoc
+
+      - name: Install autodoc dependencies
+        working-directory: autodoc
+        run: uv sync
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run eval → Claude
+        working-directory: autodoc
+        run: |
+          uv run python scripts/run_eval.py \
+            --epic "$EPIC_NUMBER" \
+            --repo "$REPO" \
+            --prompt burlap \
+            --aios-dir ../dotcms-aios \
+          | claude --print --allowedTools Bash,Write
+
+      - name: Run finalize (apply + post comment + commit)
+        working-directory: autodoc
+        run: |
+          # Configure git so commits from CI have a clean identity
+          git config user.name "autodoc[bot]"
+          git config user.email "autodoc-bot@users.noreply.github.com"
+
+          uv run python scripts/finalize.py \
+            --epic "$EPIC_NUMBER" \
+            --prompt burlap \
+            --repo "$REPO"
