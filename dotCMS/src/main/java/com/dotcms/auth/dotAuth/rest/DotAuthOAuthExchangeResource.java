@@ -550,8 +550,8 @@ public class DotAuthOAuthExchangeResource implements Serializable {
      * Lowercase-hex SHA-256 of the id_token, used as the one-time-use replay key. Hashing
      * keeps the raw bearer token out of cache keys and yields a case-insensitive key that
      * survives the cache administrator's key normalization without collision risk.
-     * Returns {@code null} only if SHA-256 is somehow unavailable, in which case the replay
-     * guard is permissive for that one request rather than failing the exchange.
+     * Fails closed on the JVM-impossible {@code NoSuchAlgorithmException} rather than
+     * skipping the replay check — matches {@code OAuthCrypto.pkceChallengeS256}.
      */
     private static String idTokenFingerprint(final String idToken) {
         try {
@@ -563,10 +563,9 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                   .append(Character.forDigit(b & 0xF, 16));
             }
             return sb.toString();
-        } catch (final Exception e) {
-            Logger.warn(DotAuthOAuthExchangeResource.class,
-                    "Could not fingerprint id_token for replay guard: " + e.getMessage());
-            return null;
+        } catch (final java.security.NoSuchAlgorithmException e) {
+            // SHA-256 is JVM-mandatory; fail closed rather than skip replay protection.
+            throw new DotRuntimeException("SHA-256 unavailable for id_token replay fingerprint", e);
         }
     }
 
