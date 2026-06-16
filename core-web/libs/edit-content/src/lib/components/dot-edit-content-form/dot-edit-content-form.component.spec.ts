@@ -41,21 +41,17 @@ import {
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
-    DotContentletDepths,
-    DotContentState
+    DotContentletDepths
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusPipe } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockMatchMedia
 } from '@dotcms/utils-testing';
 
-import {
-    contentStatusSeverity,
-    DotEditContentFormComponent
-} from './dot-edit-content-form.component';
+import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
@@ -806,33 +802,26 @@ describe('DotFormComponent', () => {
             expect(commandBar).toBeFalsy();
         });
 
-        describe('contentStatusSeverity', () => {
-            it('should map status labels to PrimeNG severities', () => {
-                expect(contentStatusSeverity('Published')).toBe('success');
-                expect(contentStatusSeverity('Archived')).toBe('danger');
-                expect(contentStatusSeverity('Revision')).toBe('info');
-                expect(contentStatusSeverity('Draft')).toBe('warn');
-                expect(contentStatusSeverity('New')).toBe('info');
+        describe('status badge', () => {
+            it('should pass the contentlet as the badge state for existing content', () => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toEqual(store.contentlet());
             });
 
-            // Guards the coupling between DotContentletStatusPipe's output strings and the
-            // severity switch: if the pipe ever changes a label, this fails instead of silently
-            // falling back to 'warn'.
-            it('should map every DotContentletStatusPipe output to its intended severity', () => {
-                const pipe = new DotContentletStatusPipe();
-                const cases: { state: DotContentState; severity: string }[] = [
-                    {
-                        state: { live: true, working: true, hasLiveVersion: true },
-                        severity: 'success'
-                    },
-                    { state: { archived: true }, severity: 'danger' },
-                    { state: { live: false, hasLiveVersion: true }, severity: 'info' },
-                    { state: { working: true }, severity: 'warn' }
-                ] as { state: DotContentState; severity: string }[];
+            it('should pass null as the badge state for new content', () => {
+                store.initializeNewContent('TestMock');
+                spectator.detectChanges();
 
-                cases.forEach(({ state, severity }) => {
-                    expect(contentStatusSeverity(pipe.transform(state))).toBe(severity);
-                });
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toBeNull();
             });
         });
     });

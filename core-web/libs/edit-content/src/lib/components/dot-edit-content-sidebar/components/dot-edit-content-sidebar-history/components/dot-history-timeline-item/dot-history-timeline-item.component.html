@@ -47,21 +47,21 @@
                 </span>
                 <div class="flex items-center gap-1">
                     @if ($item().live) {
-                        <p-chip
-                            styleClass="bg-green-100! text-green-700! border-green-100! text-xs"
-                            [label]="'edit.content.sidebar.history.published' | dm"
+                        <p-tag
+                            severity="success"
+                            [value]="'edit.content.sidebar.history.published' | dm"
                             data-testid="state-live" />
                     } @else if ($item().working) {
-                        <p-chip
-                            styleClass="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
-                            [label]="'edit.content.sidebar.history.draft' | dm"
+                        <p-tag
+                            severity="warn"
+                            [value]="'edit.content.sidebar.history.draft' | dm"
                             data-testid="state-draft" />
                     }
 
                     @if ($item().experimentVariant) {
-                        <p-chip
-                            styleClass="bg-blue-100! text-blue-700! border-blue-100! text-xs"
-                            [label]="'edit.content.sidebar.history.variant.tag' | dm"
+                        <p-tag
+                            severity="info"
+                            [value]="'edit.content.sidebar.history.variant.tag' | dm"
                             data-testid="state-variant" />
                     }
                 </div>
