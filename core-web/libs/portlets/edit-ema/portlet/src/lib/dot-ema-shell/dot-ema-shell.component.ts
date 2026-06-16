@@ -26,7 +26,11 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotPageToolUrlParams,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent,
@@ -39,6 +43,7 @@ import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
@@ -357,10 +362,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * The scanner is an external service that fetches the URL over the public
      * internet, so the URL must point at this authoring instance
      * (`window.location.origin`) — never the page's content-site hostname or a
-     * headless `clientHost`, which may not be publicly reachable. The site is
-     * disambiguated via the `host_id` query param, which dotCMS resolves for the
-     * backend user regardless of the host. Without it, multisite pages sharing a
-     * path (e.g. `/index`) resolve to the wrong site.
+     * headless `clientHost`, which may not be publicly reachable.
+     *
+     * To re-render the exact page the user is looking at, every page-resolving
+     * param the editor is using is forwarded onto the scanned URL:
+     * - `host_id` — disambiguates the site for multisite pages sharing a path
+     *   (e.g. `/index`); dotCMS resolves it for the backend user regardless of host.
+     * - `language_id`, `personaId`, `variantName`, `mode` and `publishDate`
+     *   (time machine) — taken from the current page params so the scanner sees
+     *   the same language, persona, variant, mode and point-in-time as the editor.
      *
      * @param {PageScannerToolType} type
      * @memberof DotEmaShellComponent
@@ -373,7 +383,49 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             url.searchParams.set('host_id', siteId);
         }
 
+        for (const [key, value] of Object.entries(this.#getScannerPageParams())) {
+            url.searchParams.set(key, value);
+        }
+
         this.pageScanner.open(type, url.toString());
+    }
+
+    /**
+     * Build the page-resolving query params forwarded to the scanner from the
+     * params the editor is currently rendering with.
+     *
+     * Only the params that change which page dotCMS resolves are kept
+     * (`language_id`, persona, `variantName`, `mode`, `publishDate`). The page
+     * path, `clientHost` and `depth` are excluded: the path is already the URL
+     * itself, and `clientHost`/`depth` are editor-fetch concerns the public
+     * scanner must not inherit. `normalizeQueryParams` renames the persona key to
+     * `personaId` and drops the default persona, matching the rest of the editor.
+     *
+     * @return {Record<string, string>}
+     * @memberof DotEmaShellComponent
+     */
+    #getScannerPageParams(): Record<string, string> {
+        const params = this.uveStore.pageParams() ?? ({} as DotPageAssetParams);
+
+        const forwarded: Record<string, unknown> = {
+            [DotPageAssetKeys.LANGUAGE_ID]: params.language_id,
+            [PERSONA_KEY]: params[PERSONA_KEY],
+            [DotPageAssetKeys.MODE]: params.mode,
+            [DotPageAssetKeys.PUBLISH_DATE]: params.publishDate
+        };
+
+        // The default variant is implicit — omit it to keep the URL clean.
+        if (params.variantName && params.variantName !== DEFAULT_VARIANT_ID) {
+            forwarded[DotPageAssetKeys.VARIANT_NAME] = params.variantName;
+        }
+
+        const normalized = normalizeQueryParams(forwarded);
+
+        return Object.fromEntries(
+            Object.entries(normalized)
+                .filter(([, value]) => value !== undefined && value !== null && value !== '')
+                .map(([key, value]) => [key, String(value)])
+        );
     }
 
     /**

@@ -38,7 +38,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
@@ -1552,6 +1552,70 @@ describe('DotEmaShellComponent', () => {
 
                 const calledUrl = openSpy.mock.calls[0][1] as string;
                 expect(new URL(calledUrl).searchParams.has('host_id')).toBe(false);
+            });
+
+            it('should forward all page-resolving params (language, persona, variant, mode, time machine) so the scanner re-renders the same page', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                patchState(store, {
+                    pageParams: {
+                        url: 'my-page',
+                        language_id: '2',
+                        [PERSONA_KEY]: 'persona-123',
+                        variantName: 'my-variant',
+                        mode: UVE_MODE.LIVE,
+                        publishDate: '2026-06-15',
+                        clientHost: 'https://headless.example.com',
+                        depth: '2'
+                    }
+                });
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                const params = new URL(calledUrl).searchParams;
+
+                expect(params.get('language_id')).toBe('2');
+                // PERSONA_KEY is normalized to personaId, matching the rest of the editor
+                expect(params.get('personaId')).toBe('persona-123');
+                expect(params.get('variantName')).toBe('my-variant');
+                expect(params.get('mode')).toBe(UVE_MODE.LIVE);
+                expect(params.get('publishDate')).toBe('2026-06-15');
+
+                // Editor-fetch concerns must not leak to the public scanner
+                expect(params.has('clientHost')).toBe(false);
+                expect(params.has('depth')).toBe(false);
+                expect(params.has('url')).toBe(false);
+            });
+
+            it('should omit the default variant from the scanned URL', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                patchState(store, {
+                    pageParams: {
+                        url: 'my-page',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                        variantName: DEFAULT_VARIANT_ID,
+                        mode: UVE_MODE.EDIT
+                    }
+                });
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                const params = new URL(calledUrl).searchParams;
+
+                expect(params.has('variantName')).toBe(false);
+                // Default persona is dropped by normalizeQueryParams
+                expect(params.has('personaId')).toBe(false);
+                expect(params.has('com.dotmarketing.persona.id')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {
