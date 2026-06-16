@@ -77,7 +77,7 @@ export class BinaryField extends FileField {
         const aiButton = this.generateWithAiBtn.getByRole('button');
         await expect(aiButton).toBeDisabled();
 
-        await this.generateWithAiBtn.hover();
+        await aiButton.hover({ force: true });
         await expect(this.page.getByText(AI_DISABLED_TOOLTIP)).toBeVisible({ timeout: 10000 });
     }
 
@@ -92,7 +92,12 @@ export class BinaryField extends FileField {
     async expectImageEditorOpen() {
         const dialog = this.page.getByRole('dialog');
         await expect(dialog).toBeVisible({ timeout: 15000 });
-        await expect(dialog.getByTestId('legacy-image-editor-iframe')).toBeVisible({
+
+        const iframe = dialog.getByTestId('legacy-image-editor-iframe');
+        await expect(iframe).toBeVisible({ timeout: 30000 });
+
+        const editorFrame = this.page.frameLocator('[data-testid="legacy-image-editor-iframe"]');
+        await expect(editorFrame.locator('#dotImageDialog, #imageToolIframe').first()).toBeVisible({
             timeout: 30000
         });
     }
