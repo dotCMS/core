@@ -53,6 +53,14 @@ public class ESContentTool implements ViewTool {
 		}
 	}
 
+	/**
+	 * Velocity {@code $estool.search(...)}: runs the query and returns DB-loaded contentlets as
+	 * {@link ContentMap}s, plus the aggregation tree via {@code $results.aggregations}.
+	 *
+	 * <p>This path <b>lowercases the whole query</b> before executing it, so a mixed-case field name
+	 * such as {@code contentType} still resolves to the physical index field {@code contenttype}.
+	 * {@link #raw(String)} applies the same normalization, so both behave consistently.</p>
+	 */
 	public ContentSearchResults<ContentMap> search(final String esQuery) throws DotSecurityException, DotDataException {
 		final SearchAPI searchAPI = APILocator.getSearchAPI();
 		final ContentSearchResults<Contentlet> cons = searchAPI.search(esQuery, mode.showLive, user, true);
@@ -65,6 +73,16 @@ public class ESContentTool implements ViewTool {
 		return new ContentSearchResults<>(cons.getResponse(), maps);
 	}
 
+	/**
+	 * Velocity {@code $estool.raw(...)}: runs the query and returns the index response directly
+	 * (aggregation tree + index hits) <b>without</b> loading contentlets from the DB — the right
+	 * choice for analytics/aggregation templates.
+	 *
+	 * <p><b>Query normalization:</b> like {@link #search(String)}, this path lowercases the whole
+	 * query before executing it, so a mixed-case field such as {@code "field":"contentType"} resolves
+	 * to the physical lower-case index field {@code contenttype}. The folding also lowercases query
+	 * values, so neither {@code raw} nor {@code search} supports case-sensitive exact matches.</p>
+	 */
 	public ContentSearchResponse raw(final String esQuery) throws DotSecurityException, DotDataException {
 		return APILocator.getSearchAPI().searchRaw(esQuery, mode.showLive, user, true);
 	}
@@ -85,6 +103,8 @@ public class ESContentTool implements ViewTool {
 	/**
 	 * @deprecated Use {@link #raw(String)} for vendor-neutral access.
 	 *             This method returns an Elasticsearch-specific type and will be removed in v26.08.04.
+	 *             <p>Like {@link #raw(String)}, the query is lowercased before execution, so mixed-case
+	 *             field names resolve to the physical index field name.</p>
 	 */
 	@Deprecated(forRemoval = true)
 	@SuppressWarnings("deprecation")
