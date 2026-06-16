@@ -453,8 +453,11 @@ public class OIDCProvider implements OAuthProvider {
                                 + "match this client_id");
             }
         }
-        // exp — nimbus validates claim set structure but expiry is not enforced by default processor.
-        if (claims.getExpirationTime() == null || claims.getExpirationTime().getTime() <= System.currentTimeMillis()) {
+        // exp is required by OIDC Core §2 (Nimbus's default verifier treats it as optional).
+        // Nimbus's DefaultJWTProcessor already rejects expired tokens with a 60s clock-skew
+        // allowance; mirror that 60s here so this explicit gate never rejects a token it accepted.
+        if (claims.getExpirationTime() == null
+                || claims.getExpirationTime().getTime() + 60_000L <= System.currentTimeMillis()) {
             throw new DotRuntimeException("OIDC id_token is expired or has no exp claim");
         }
         // nonce — constant-time comparison to match the state check in OAuthWebInterceptor
