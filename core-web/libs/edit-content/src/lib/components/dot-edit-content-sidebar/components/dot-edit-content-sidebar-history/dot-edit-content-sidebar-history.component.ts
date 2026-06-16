@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -38,7 +38,6 @@ import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sideb
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
-    styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'flex flex-col h-full min-h-0'
@@ -185,14 +184,10 @@ export class DotEditContentSidebarHistoryComponent {
         return this.$pushPublishHistoryItems().indexOf(item);
     }
 
-    /**
-     * Get modifier class for the timeline marker (halo/glow by state).
-     * Live: green + green glow, draft: yellow + yellow glow, default: gray + gray glow.
-     */
-    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
-        if (item.live) return 'timeline-marker--live';
-        if (item.working) return 'timeline-marker--draft';
-        return 'timeline-marker--default';
+    getMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) return 'border-green-500!';
+        if (item.working) return 'border-yellow-500!';
+        return 'border-gray-400!';
     }
 
     /**
