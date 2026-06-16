@@ -285,7 +285,17 @@ public class StaticPublisherIntegrationTestHelper {
         final Language language = APILocator.getLanguageAPI()
                 .getLanguage(contentlet.getLanguageId());
 
-        return new TestCase(contentlet, list(), list(language), assetsMap);
+        final TestCase testCase = new TestCase(contentlet, list(), list(language), assetsMap);
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        final String urlMap = APILocator.getContentletAPI()
+                .getUrlMapForContentlet(contentlet, APILocator.systemUser(), false);
+        if (UtilMethods.isSet(urlMap)) {
+            final String markerPath = File.separator + "live" + File.separator
+                    + host.getHostname() + File.separator + language.getId()
+                    + urlMap.replace("/", File.separator);
+            testCase.unPublishExpected = list(new FileExpected(markerPath, null, true));
+        }
+        return testCase;
     }
 
     private static String getPageFileParentFolder(final PageWithDependencies detailPage) {
@@ -435,7 +445,11 @@ public class StaticPublisherIntegrationTestHelper {
 
         final Map<String, String> assetsMap = getAssetsMap(fileAssetWorking);
 
-        return new TestCase(fileAssetWorking, list(), language, assetsMap);
+        final TestCase testCase = new TestCase(fileAssetWorking, list(), language, assetsMap);
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        testCase.unPublishExpected = list(
+                new FileExpected(getFileAssetPath(fileAssetWorking), null, true));
+        return testCase;
     }
 
     private static Contentlet createFileAsset(Language language)
@@ -701,10 +715,14 @@ public class StaticPublisherIntegrationTestHelper {
     public static TestCase getWorkingPage() {
         final PageWithDependencies workingPageWithContent = new PageWithDependenciesBuilder().build();
 
-        return new TestCase(workingPageWithContent.page,
-                Collections.EMPTY_LIST,
+        final TestCase testCase = new TestCase(workingPageWithContent.page,
+                new ArrayList<>(),
                 workingPageWithContent.language,
                 java.util.Collections.emptyMap());
+        // Content has no live version, so un-publish writes a /live/ removal marker (issue #35365).
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(workingPageWithContent), null, true));
+        return testCase;
     }
 
     public static TestCase getLivePageWithDifferentLangIncludingJustOne()
@@ -828,6 +846,11 @@ public class StaticPublisherIntegrationTestHelper {
         List<FileExpected> filesExpected;
         Collection<Language> languages;
         Map<String, String> assetsMap;
+        /**
+         * Files expected ONLY in an un-publish bundle (not in a publish bundle), e.g. the zero-byte
+         * /live/ removal markers written for content with no live version (issue #35365).
+         */
+        List<FileExpected> unPublishExpected = new ArrayList<>();
 
         public TestCase(final Object addToBundle,
                 final List<FileExpected> filesExpected,
@@ -847,7 +870,9 @@ public class StaticPublisherIntegrationTestHelper {
         }
 
         Optional<FileExpected> getFileExpected(final String absolutePath){
-            for (FileExpected fileExpected : filesExpected) {
+            final List<FileExpected> all = new ArrayList<>(filesExpected);
+            all.addAll(unPublishExpected);
+            for (FileExpected fileExpected : all) {
                 if (absolutePath.endsWith(fileExpected.path)) {
                     return Optional.of(fileExpected);
                 }
@@ -857,9 +882,11 @@ public class StaticPublisherIntegrationTestHelper {
         }
 
         public Collection<FileExpected> getAddToBundleFiles() {
-            return filesExpected.stream()
+            final List<FileExpected> addToBundleFiles = filesExpected.stream()
                     .filter(fileExpected -> fileExpected.shouldBeIncludeInUnPublish)
                     .collect(Collectors.toList());
+            addToBundleFiles.addAll(unPublishExpected);
+            return addToBundleFiles;
         }
     }
 

@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -156,14 +157,14 @@ public class StaticDependencyBundler implements IBundler {
                     }
 
                     if (staticUnpublish && contentPath != null && h != null) {
-                        // The publish queue does not track the asset language — PublisherAPIImpl
-                        // hardcodes language_id=1 ("push regardless of language"), so
-                        // PublishQueueElement.getLanguageId() is unreliable. Remove the artifact
-                        // across all bundle languages rather than guessing a single one. Per-language
-                        // un-publish would require the queue to carry the real language; see the
-                        // open question on #35365.
+                        // A marker is only needed for languages where the content has NO live
+                        // version: live content is rendered by the content bundlers and removed by
+                        // the publisher's delete branch, so it needs no marker. The publish queue
+                        // does not track the asset language (PublisherAPIImpl hardcodes
+                        // language_id=1), so derive the languages from the content's own versions
+                        // rather than the bundle languages. See issue #35365.
                         StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
-                                languages, contentPath);
+                                nonLiveLanguages(id.getId(), cons), contentPath);
                     }
                 }
             }
@@ -173,6 +174,28 @@ public class StaticDependencyBundler implements IBundler {
         config.setIncludePatterns(includes);
         config.setLanguages(languages);
         config.setFolders(folders);
+    }
+
+    /**
+     * Resolves the languages (as ids) in which the content has NO live version — the only languages
+     * that need an un-publish marker. Languages where a live version exists are rendered by the
+     * content bundlers and removed by the publisher's delete branch, so they are excluded.
+     *
+     * @param identifierId the content identifier
+     * @param versions     the content versions found for the identifier (one or more languages)
+     * @return the language ids (as strings) with no live version
+     */
+    private Collection<String> nonLiveLanguages(final String identifierId, final List<Contentlet> versions) {
+        final Set<String> nonLive = new LinkedHashSet<>();
+        for (final Contentlet version : versions) {
+            final long languageId = version.getLanguageId();
+            final Optional<ContentletVersionInfo> versionInfo =
+                    APILocator.getVersionableAPI().getContentletVersionInfo(identifierId, languageId);
+            if (versionInfo.isEmpty() || !UtilMethods.isSet(versionInfo.get().getLiveInode())) {
+                nonLive.add(String.valueOf(languageId));
+            }
+        }
+        return nonLive;
     }
 
     @Override
