@@ -293,9 +293,16 @@ export class DotFileFieldComponent
 
         const isBinary = this.store.inputType() === INPUT_TYPES.Binary;
 
-        // File/Image fields hydrate from the reactive form value via getAssetData.
-        if (!isBinary && this.$value()) {
-            return;
+        // File/Image fields hydrate from the reactive form via getAssetData unless
+        // driven imperatively by the legacy CE bridge (no reactive form value).
+        if (!isBinary) {
+            if (!this.$useLegacyDojoImageEditor()) {
+                return;
+            }
+
+            if (this.$value()) {
+                return;
+            }
         }
 
         const value = this.$value() || contentlet[field.variable] || field.defaultValue;
@@ -687,6 +694,10 @@ export class DotFileFieldComponent
      */
     readonly emitValueUpdated = signalMethod<string>((value) => {
         if (value === null || value === undefined) {
+            return;
+        }
+
+        if (!this.#hasHydrated) {
             return;
         }
 

@@ -353,7 +353,8 @@ export const FileFieldStore = signalStore(
                                             file: {
                                                 ...contentlet,
                                                 metaData: metadata,
-                                                content
+                                                content,
+                                                fieldVariable
                                             }
                                         }
                                     });
@@ -364,7 +365,11 @@ export const FileFieldStore = signalStore(
                                         value,
                                         uploadedFile: {
                                             source: 'contentlet',
-                                            file: { ...contentlet, metaData: metadata }
+                                            file: {
+                                                ...contentlet,
+                                                metaData: metadata,
+                                                fieldVariable
+                                            }
                                         }
                                     });
                                 }

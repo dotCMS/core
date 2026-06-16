@@ -42,6 +42,8 @@ import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE } from '../../dot-edit-content-file
 
 type FileInfo = UploadedFile & {
     contentType: string;
+    /** Binary inline field variable when hydrated from contentlet metadata. */
+    fieldVariable: string;
     downloadLink: string;
     content: string | null;
     metadata: DotFileMetadata;
@@ -121,15 +123,18 @@ export class DotFileFieldPreviewComponent implements OnInit {
 
         if (previewFile.source === 'contentlet') {
             const file = previewFile.file;
-
+            const inlineFieldVariable =
+                typeof file['fieldVariable'] === 'string' ? file['fieldVariable'] : undefined;
             const contentType = CONTENT_TYPES[file.contentType] || DEFAULT_CONTENT_TYPE;
+            const fieldVariable = inlineFieldVariable ?? contentType;
 
             return {
                 source: previewFile.source,
                 file,
                 content: file.content,
                 contentType,
-                downloadLink: `/contentAsset/raw-data/${file.inode}/${contentType}?byInode=true&force_download=true`,
+                fieldVariable,
+                downloadLink: `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`,
                 metadata: getFileMetadata(file)
             };
         }
@@ -139,6 +144,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
             file: previewFile.file,
             content: previewFile.file.content ?? null,
             contentType: DEFAULT_CONTENT_TYPE,
+            fieldVariable: DEFAULT_CONTENT_TYPE,
             downloadLink: null,
             metadata: previewFile.file.metadata
         };
@@ -162,7 +168,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
         const fileInfo = this.$fileInfo();
 
         if (fileInfo.source === 'contentlet') {
-            this.fetchResourceLinks(fileInfo.file, fileInfo.contentType);
+            this.fetchResourceLinks(fileInfo.file, fileInfo.fieldVariable);
         }
     }
 

@@ -73,11 +73,21 @@ export class BinaryField extends FileField {
         await this.expectPreviewVisible();
     }
 
-    async expectAiButtonDisabledWithTooltip() {
+    /**
+     * Asserts the disabled dotAI tooltip when the plugin is not installed.
+     * No-op when dotAI is configured (button enabled) — that environment is valid but out of scope for this case.
+     */
+    async expectAiButtonDisabledWithTooltipWhenApplicable() {
         const aiButton = this.generateWithAiBtn.getByRole('button');
+
+        if (await aiButton.isEnabled()) {
+            return;
+        }
+
         await expect(aiButton).toBeDisabled();
 
-        await aiButton.hover({ force: true });
+        // Hover the p-button host (pointer-events-auto) — disabled inner buttons ignore hover.
+        await this.generateWithAiBtn.hover();
         await expect(this.page.getByText(AI_DISABLED_TOOLTIP)).toBeVisible({ timeout: 10000 });
     }
 

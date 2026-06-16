@@ -33,6 +33,7 @@ import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.componen
             [field]="$field()"
             [contentlet]="$contentlet()"
             [hasError]="false"
+            [enableImageEditor]="$imageEditor()"
             [useLegacyDojoImageEditor]="true"
             (valueUpdated)="valueUpdated.emit($event)" />
     `,
@@ -63,5 +64,5 @@ export class DotBinaryFieldCeBridgeComponent {
 
     protected readonly $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
     protected readonly $contentlet = signal<DotCMSContentlet>({} as DotCMSContentlet);
-    protected readonly $imageEditor = signal<boolean>(false);
+    protected readonly $imageEditor = signal<boolean>(true);
 }

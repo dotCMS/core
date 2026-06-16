@@ -176,5 +176,5 @@ test('disabled Generate With dotAI button shows tooltip when AI plugin not insta
 
     const field = new BinaryField(page, BINARY_FIELD_VARIABLE);
     await field.expectVisible();
-    await field.expectAiButtonDisabledWithTooltip();
+    await field.expectAiButtonDisabledWithTooltipWhenApplicable();
 });

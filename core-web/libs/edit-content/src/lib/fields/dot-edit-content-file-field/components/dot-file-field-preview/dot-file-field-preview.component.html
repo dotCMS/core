@@ -23,7 +23,7 @@
                     data-testId="temp-file-thumbnail" />
             } @else {
                 <dot-contentlet-thumbnail
-                    [fieldVariable]="fileInfo.contentType"
+                    [fieldVariable]="fileInfo.fieldVariable"
                     [iconSize]="'48px'"
                     [contentlet]="fileInfo.file"
                     [playableVideo]="true"
@@ -63,6 +63,7 @@
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
             [pTooltip]="'dot.common.info' | dm"
+            [attr.aria-label]="'dot.common.info' | dm"
             tooltipPosition="left"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
             data-testId="info-btn"
@@ -73,6 +74,7 @@
                 (click)="editImage.emit()"
                 [disabled]="$disabled()"
                 [pTooltip]="'dot.common.edit' | dm"
+                [attr.aria-label]="'dot.common.edit' | dm"
                 tooltipPosition="left"
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="edit-button"
@@ -84,6 +86,7 @@
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 [disabled]="$disabled()"
                 [pTooltip]="'dot.common.download' | dm"
+                [attr.aria-label]="'dot.common.download' | dm"
                 tooltipPosition="left"
                 data-testId="download-btn"
                 icon="pi pi-download"
@@ -94,6 +97,7 @@
             (click)="confirmRemove($event)"
             [disabled]="$disabled()"
             [pTooltip]="'dot.common.remove' | dm"
+            [attr.aria-label]="'dot.common.remove' | dm"
             tooltipPosition="left"
             severity="danger"
             styleClass="p-button-rounded p-button-sm p-button-outlined"
@@ -105,6 +109,8 @@
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
+            [pTooltip]="'dot.common.info' | dm"
+            [attr.aria-label]="'dot.common.info' | dm"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="info-btn-responsive"
             icon="pi pi-info" />
@@ -112,6 +118,8 @@
             <p-button
                 (click)="editImage.emit()"
                 [disabled]="$disabled()"
+                [pTooltip]="'dot.common.edit' | dm"
+                [attr.aria-label]="'dot.common.edit' | dm"
                 styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 data-testId="edit-button-responsive"
                 icon="pi pi-pencil" />
@@ -120,6 +128,8 @@
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 [disabled]="$disabled()"
+                [pTooltip]="'dot.common.download' | dm"
+                [attr.aria-label]="'dot.common.download' | dm"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
@@ -127,6 +137,8 @@
         <p-button
             (click)="confirmRemove($event)"
             [disabled]="$disabled()"
+            [pTooltip]="'dot.common.remove' | dm"
+            [attr.aria-label]="'dot.common.remove' | dm"
             severity="danger"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
