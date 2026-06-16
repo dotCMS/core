@@ -45,6 +45,20 @@ export class DotPublishingQueueHistoryComponent {
 
     readonly first = computed(() => (this.store.historyPage() - 1) * this.store.rowsPerPage());
 
+    /** Pass-through config so the table fills 100% height when empty/loading,
+     * matching the dot-tags pattern (no rounded card, table flows edge-to-edge). */
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed' as const,
+                ...(this.store.historyRows().length === 0 && {
+                    height: '100%',
+                    width: '100%'
+                })
+            }
+        }
+    }));
+
     readonly historyEmpty: PrincipalConfiguration = {
         icon: 'pi-history',
         title: this.dotMessageService.get('publishing-queue.empty.history.title'),

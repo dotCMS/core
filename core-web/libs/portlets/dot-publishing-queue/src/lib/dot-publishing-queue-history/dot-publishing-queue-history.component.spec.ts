@@ -123,13 +123,15 @@ describe('DotPublishingQueueHistoryComponent', () => {
         expect(cells[0].querySelector('[data-testid="pq-history-bundle-id-copy"]')).toBeTruthy();
     });
 
-    it('shows the bulk action bar only when there is a selection', () => {
-        expect(spectator.query(byTestId('pq-history-bulk-bar'))).toBeFalsy();
+    it('shows the bulk action buttons only when there is a selection', () => {
+        expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeFalsy();
+        expect(spectator.query(byTestId('pq-history-bulk-remove'))).toBeFalsy();
 
         historySelectedIds.set(['b1']);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('pq-history-bulk-bar'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-bulk-remove'))).toBeTruthy();
     });
 
     it('row click opens the detail dialog', () => {

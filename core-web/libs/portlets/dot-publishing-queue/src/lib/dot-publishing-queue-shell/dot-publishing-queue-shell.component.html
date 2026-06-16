@@ -15,11 +15,11 @@
         </p-tab>
     </p-tablist>
 
-    <p-tabpanels class="flex min-h-0 flex-1 flex-col">
-        <p-tabpanel value="history" class="flex min-h-0 flex-1 flex-col">
+    <p-tabpanels [pt]="tabPanelsPt">
+        <p-tabpanel value="history" [pt]="tabPanelPt">
             <dot-publishing-queue-history />
         </p-tabpanel>
-        <p-tabpanel value="queue" class="flex min-h-0 flex-1 flex-col">
+        <p-tabpanel value="queue" [pt]="tabPanelPt">
             <dot-publishing-queue-page />
         </p-tabpanel>
     </p-tabpanels>

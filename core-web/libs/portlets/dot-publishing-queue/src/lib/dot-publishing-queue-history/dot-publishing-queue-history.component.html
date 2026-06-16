@@ -1,132 +1,160 @@
-<div class="flex h-full min-h-0 flex-col gap-2 p-3" data-testid="pq-history">
-    @if (hasSelection()) {
-        <div
-            class="flex items-center justify-between rounded-md border border-surface-200 bg-surface-50 px-3 py-2"
-            data-testid="pq-history-bulk-bar">
-            <span class="text-sm text-color">
-                {{ store.historySelectedIds().length }}
-                {{ 'publishing-queue.selected' | dm }}
-            </span>
-            <div class="flex gap-2">
-                <p-button
-                    [label]="'publishing-queue.retry-send' | dm"
-                    icon="pi pi-replay"
-                    [outlined]="true"
-                    (onClick)="onBulkRetry()"
-                    data-testid="pq-history-bulk-retry" />
-                <p-button
-                    [label]="'publishing-queue.remove' | dm"
-                    icon="pi pi-trash"
-                    severity="danger"
-                    [outlined]="true"
-                    (onClick)="onBulkRemove()"
-                    data-testid="pq-history-bulk-remove" />
-            </div>
-        </div>
-    }
-
+@if (hasSelection()) {
     <div
-        class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-surface-200 bg-white">
-        <p-table
-            [value]="store.historyRows()"
-            [lazy]="true"
-            (onLazyLoad)="onLazyLoad($event)"
-            [paginator]="true"
-            [rows]="store.rowsPerPage()"
-            [totalRecords]="store.historyTotal()"
-            [first]="first()"
-            [rowsPerPageOptions]="[10, 25, 50]"
-            [rowHover]="true"
-            [scrollable]="true"
-            scrollHeight="flex"
-            [selection]="selectedRows()"
-            (selectionChange)="onSelectionChange($event)"
-            dataKey="bundleId"
-            data-testid="pq-history-table">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th style="width: 3rem">
-                        <p-tableHeaderCheckbox />
-                    </th>
-                    <th data-testid="pq-history-col-bundle-id">
-                        {{ 'publishing-queue.column.bundle-id' | dm }}
-                    </th>
-                    <th data-testid="pq-history-col-filter">
-                        {{ 'publishing-queue.column.filter' | dm }}
-                    </th>
-                    <th pSortableColumn="status" data-testid="pq-history-col-status">
-                        {{ 'publishing-queue.column.status' | dm }}
-                        <p-sortIcon field="status" />
-                    </th>
-                    <th pSortableColumn="created" data-testid="pq-history-col-created">
-                        {{ 'publishing-queue.column.data-entered' | dm }}
-                        <p-sortIcon field="created" />
-                    </th>
-                    <th pSortableColumn="modified" data-testid="pq-history-col-modified">
-                        {{ 'publishing-queue.column.last-update' | dm }}
-                        <p-sortIcon field="modified" />
-                    </th>
-                </tr>
-            </ng-template>
+        class="flex items-center gap-2 border-b border-surface-200 px-3 py-2"
+        data-testid="pq-history-bulk-bar">
+        <span class="text-color-secondary text-sm">
+            {{ store.historySelectedIds().length }}
+            {{ 'publishing-queue.selected' | dm }}
+        </span>
+        <div class="ml-auto flex gap-2">
+            <p-button
+                [label]="'publishing-queue.retry-send' | dm"
+                icon="pi pi-replay"
+                [outlined]="true"
+                size="small"
+                (onClick)="onBulkRetry()"
+                data-testid="pq-history-bulk-retry" />
+            <p-button
+                [label]="'publishing-queue.remove' | dm"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                size="small"
+                (onClick)="onBulkRemove()"
+                data-testid="pq-history-bulk-remove" />
+        </div>
+    </div>
+}
 
-            <ng-template pTemplate="body" let-row>
-                @if (store.historyStatus() === 'loading') {
-                    <tr data-testid="pq-history-skeleton">
-                        <td><p-skeleton height="1.25rem" /></td>
-                        <td><p-skeleton height="1.25rem" /></td>
-                        <td><p-skeleton height="1.25rem" /></td>
-                        <td><p-skeleton height="1.25rem" /></td>
-                        <td><p-skeleton height="1.25rem" /></td>
-                        <td><p-skeleton height="1.25rem" /></td>
-                    </tr>
-                } @else {
-                    <tr
-                        class="group cursor-pointer"
-                        (click)="onRowClick(row)"
-                        data-testid="pq-history-row">
-                        <td (click)="$event.stopPropagation()">
-                            <p-tableCheckbox [value]="row" />
-                        </td>
-                        <td data-testid="pq-history-bundle-id">
-                            <div class="flex items-center gap-1">
-                                <span class="font-mono text-xs">{{ row.bundleId }}</span>
-                                <dot-copy-button
-                                    [copy]="row.bundleId"
-                                    tooltipText="{{ 'publishing-queue.copy-bundle-id' | dm }}"
-                                    customClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full"
-                                    data-testid="pq-history-bundle-id-copy" />
-                            </div>
-                        </td>
-                        <td data-testid="pq-history-filter">
-                            {{ row.filterName || row.filterKey || '—' }}
-                        </td>
-                        <td data-testid="pq-history-status">
-                            <dot-publishing-status-chip [status]="row.status" />
-                        </td>
-                        <td class="text-color-secondary text-xs" data-testid="pq-history-created">
-                            {{ (row.createDate | date: 'medium') || '—' }}
-                        </td>
-                        <td class="text-color-secondary text-xs" data-testid="pq-history-modified">
-                            {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
-                        </td>
-                    </tr>
-                }
-            </ng-template>
+<!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-history-table-wrapper">
+    <p-table
+        [value]="store.historyRows()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="true"
+        [rows]="store.rowsPerPage()"
+        [totalRecords]="store.historyTotal()"
+        [first]="first()"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [pt]="$ptConfig()"
+        [selection]="selectedRows()"
+        (selectionChange)="onSelectionChange($event)"
+        dataKey="bundleId"
+        data-testid="pq-history-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 3rem">
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th data-testid="pq-history-col-bundle-id">
+                    {{ 'publishing-queue.column.bundle-id' | dm }}
+                </th>
+                <th data-testid="pq-history-col-filter">
+                    {{ 'publishing-queue.column.filter' | dm }}
+                </th>
+                <th pSortableColumn="status" data-testid="pq-history-col-status">
+                    {{ 'publishing-queue.column.status' | dm }}
+                    <p-sortIcon field="status" />
+                </th>
+                <th pSortableColumn="created" data-testid="pq-history-col-created">
+                    {{ 'publishing-queue.column.data-entered' | dm }}
+                    <p-sortIcon field="created" />
+                </th>
+                <th pSortableColumn="modified" data-testid="pq-history-col-modified">
+                    {{ 'publishing-queue.column.last-update' | dm }}
+                    <p-sortIcon field="modified" />
+                </th>
+            </tr>
+        </ng-template>
 
-            <ng-template pTemplate="emptymessage">
-                <tr class="hover:bg-transparent!">
-                    <td colspan="6" class="p-8">
-                        <div
-                            class="flex items-center justify-center"
-                            data-testid="pq-history-empty">
-                            <dot-empty-container
-                                [configuration]="historyEmpty"
-                                [hideContactUsLink]="true" />
-                        </div>
+        <ng-template pTemplate="body" let-row>
+            @if (store.historyStatus() === 'loading') {
+                <tr
+                    data-testid="pq-history-skeleton"
+                    class="h-17 cursor-default hover:bg-transparent!">
+                    <td [style.width]="'3rem'" class="pl-4">
+                        <span class="flex h-full items-center justify-center">
+                            <p-skeleton height="1.5rem" width="2rem" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="80%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="60%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="40%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
                     </td>
                 </tr>
-            </ng-template>
-        </p-table>
-    </div>
+            } @else {
+                <tr
+                    class="group cursor-pointer"
+                    (click)="onRowClick(row)"
+                    data-testid="pq-history-row">
+                    <td (click)="$event.stopPropagation()">
+                        <p-tableCheckbox [value]="row" />
+                    </td>
+                    <td data-testid="pq-history-bundle-id">
+                        <div class="flex items-center gap-1">
+                            <span class="font-mono text-xs">{{ row.bundleId }}</span>
+                            <dot-copy-button
+                                [copy]="row.bundleId"
+                                tooltipText="{{ 'publishing-queue.copy-bundle-id' | dm }}"
+                                customClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full"
+                                data-testid="pq-history-bundle-id-copy" />
+                        </div>
+                    </td>
+                    <td data-testid="pq-history-filter">
+                        {{ row.filterName || row.filterKey || '—' }}
+                    </td>
+                    <td data-testid="pq-history-status">
+                        <dot-publishing-status-chip [status]="row.status" />
+                    </td>
+                    <td class="text-color-secondary text-xs" data-testid="pq-history-created">
+                        {{ (row.createDate | date: 'medium') || '—' }}
+                    </td>
+                    <td class="text-color-secondary text-xs" data-testid="pq-history-modified">
+                        {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
+                    </td>
+                </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="h-full hover:bg-transparent!">
+                <td colspan="6" class="h-full border-none p-6 text-center">
+                    <div
+                        class="flex h-full items-center justify-center"
+                        data-testid="pq-history-empty">
+                        <dot-empty-container
+                            [configuration]="historyEmpty"
+                            [hideContactUsLink]="true" />
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
 </div>
+
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

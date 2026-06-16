@@ -17,12 +17,11 @@
             <p-button
                 [label]="'publishing-queue.refresh' | dm"
                 icon="pi pi-refresh"
-                [outlined]="true"
+                [text]="true"
                 (onClick)="store.refresh()"
                 data-testid="pq-refresh-btn" />
             <p-button
                 [label]="'publishing-queue.upload-bundle' | dm"
-                icon="pi pi-upload"
                 (onClick)="uploadClick.emit()"
                 data-testid="pq-upload-btn" />
         </div>

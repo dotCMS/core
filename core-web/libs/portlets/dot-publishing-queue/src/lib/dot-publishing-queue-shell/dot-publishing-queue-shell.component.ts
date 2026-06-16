@@ -43,6 +43,11 @@ export class DotPublishingQueueShellComponent {
 
     readonly TABS = ['queue', 'history'] as const;
 
+    /** Zero-out PrimeNG's default tabpanel padding so portlet content goes flush
+     * edge-to-edge, matching the dot-tags / dot-query-tool layout. */
+    readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 p-0!' } };
+    readonly tabPanelPt = { root: { class: 'h-full p-0! flex flex-col min-h-0' } };
+
     constructor() {
         effect(() => {
             const bundleId = this.store.selectedBundleId();
