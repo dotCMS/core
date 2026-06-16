@@ -100,7 +100,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      */
     readonly $versionMenu = viewChild<Menu>('versionMenu');
 
-    protected readonly $isMenuOpen = signal(false);
+    readonly $isMenuOpen = signal(false);
 
     /**
      * Signal for cached translations map
