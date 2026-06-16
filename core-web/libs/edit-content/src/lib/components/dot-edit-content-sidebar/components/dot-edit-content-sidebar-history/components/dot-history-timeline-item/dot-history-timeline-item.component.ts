@@ -125,8 +125,8 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     /**
      * Computed signal that generates menu items for version actions based on
      * the version's status:
-     * - Draft (working && !live): no actions
-     * - Published (live): Restore + Compare
+     * - Working (any live state): no actions
+     * - Published (live && !working): Restore + Compare
      * - Historical (!working && !live): Restore + Compare + Delete
      *
      * Note: "Restore" is intentionally exposed on the live version per the
