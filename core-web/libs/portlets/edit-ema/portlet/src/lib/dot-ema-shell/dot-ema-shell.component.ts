@@ -26,11 +26,7 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import {
-    DEFAULT_VARIANT_ID,
-    DotPageToolUrlParams,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent,
