@@ -143,8 +143,10 @@ export function withSite() {
                 // (`provideAppInitializer`), before the session cookie is valid, so a one-shot
                 // load would fire pre-auth and never retry after the SPA login navigation —
                 // leaving the site selector empty until a manual refresh. `watchUser()` fires
-                // immediately when a session already exists (refresh) and on every login,
-                // mirroring the legacy SiteService behavior. See `withUser` for full rationale.
+                // when `auth$` emits: on refresh once the AuthGuard resolves auth via
+                // `loadAuth()`, and on every login via `setAuth()` (it only fires synchronously
+                // if auth was already set before the store initialized). Mirrors the legacy
+                // SiteService behavior. See `withUser` for full rationale.
                 loginService.watchUser(() => store.loadCurrentSite());
                 store.syncSiteOnSwitchEvent();
             }

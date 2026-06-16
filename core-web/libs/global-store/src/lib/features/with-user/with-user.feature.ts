@@ -87,11 +87,14 @@ export function withUser() {
              * because login navigates via the SPA router (no full page reload), the user
              * would stay `null` until a manual refresh.
              *
-             * `loginService.watchUser()` fires the callback immediately when a session
-             * already exists (e.g. on refresh, once the AuthGuard resolves auth via
-             * `loadAuth()`) and again on every login, so the user is loaded for both the
-             * initial login and subsequent re-logins. This mirrors the reactive pattern the
-             * legacy `SiteService` used (`loginService.watchUser(() => this.loadCurrentSite())`).
+             * `loginService.watchUser()` fires the callback synchronously only if auth was
+             * already established before the store initialized; otherwise it fires when
+             * `auth$` emits. In practice that means: on a hard refresh it fires once the
+             * AuthGuard resolves auth via `loadAuth()` (the store subscribes at bootstrap,
+             * before the guard runs), and on every login it fires when `setAuth()` emits — so
+             * the user is loaded for the initial login and subsequent re-logins alike. This
+             * mirrors the reactive pattern the legacy `SiteService` used
+             * (`loginService.watchUser(() => this.loadCurrentSite())`).
              */
             onInit() {
                 const loginService = inject(LoginService);

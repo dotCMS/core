@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import {
     DotCurrentUserService,
@@ -59,6 +59,10 @@ describe('GlobalStore', () => {
         // captures the correct subject by the time onInit subscribes to SWITCH_SITE.
         switchSiteSubject = new Subject<DotSite>();
         authCallbacks = [];
+        // Reset shared mock call counts each test so assertions don't depend on test order.
+        // clearAllMocks() clears recorded calls but preserves the mockReturnValue / jest.fn
+        // implementations declared in createServiceFactory.
+        jest.clearAllMocks();
         spectator = createService();
         store = spectator.service;
     });
@@ -98,8 +102,6 @@ describe('GlobalStore', () => {
 
         it('should reload state on every auth notification (e.g. re-login)', () => {
             const siteService = spectator.inject(DotSiteService);
-            // Reset call count: the getCurrentSite mock instance is shared across tests.
-            siteService.getCurrentSite.mockClear();
             siteService.getCurrentSite.mockReturnValue(of(mockSiteEntity));
 
             authCallbacks.forEach((cb) => cb());
@@ -107,6 +109,25 @@ describe('GlobalStore', () => {
 
             // getCurrentSite fires once per notification (2 notifications here).
             expect(siteService.getCurrentSite).toHaveBeenCalledTimes(2);
+        });
+
+        it('should keep loggedUser null when getCurrentUser fails after auth fires', () => {
+            const userService = spectator.inject(DotCurrentUserService);
+            userService.getCurrentUser.mockReturnValue(throwError(() => new Error('401')));
+
+            authCallbacks.forEach((cb) => cb());
+
+            // The pre-auth/failed-load scenario must degrade gracefully, not crash the store.
+            expect(store.loggedUser()).toBeNull();
+        });
+
+        it('should keep siteDetails null when getCurrentSite fails after auth fires', () => {
+            const siteService = spectator.inject(DotSiteService);
+            siteService.getCurrentSite.mockReturnValue(throwError(() => new Error('500')));
+
+            authCallbacks.forEach((cb) => cb());
+
+            expect(store.siteDetails()).toBeNull();
         });
     });
 
