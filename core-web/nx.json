@@ -9,7 +9,7 @@
         }
     },
     "cli": {
-        "packageManager": "yarn"
+        "packageManager": "pnpm"
     },
     "defaultProject": "dotcms-ui",
     "generators": {
@@ -239,7 +239,7 @@
     ],
     "release": {
         "version": {
-            "preVersionCommand": "yarn nx run-many -t build"
+            "preVersionCommand": "pnpm nx run-many -t build"
         }
     },
     "serve": {

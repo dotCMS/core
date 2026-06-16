@@ -56,8 +56,6 @@ test.describe('Binary field image editor — new editor', () => {
         }
     });
 
-    // The unified Binary field shows "Edit image" for image files. The new
-    // editor opens the legacy image editor JSP inside a PrimeNG dialog iframe.
     test('import image and Edit opens legacy image editor dialog @critical', async ({ page }) => {
         const formPage = new NewEditContentFormPage(page);
         await formPage.goToNew(contentTypeVariable);
