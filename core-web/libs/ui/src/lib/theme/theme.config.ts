@@ -45,9 +45,10 @@ export const CustomLaraPreset = definePreset(Lara, {
         chip: {
             // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
             // tall, vertically centered, with a small label. Applied to the base
-            // `.p-chip` so every chip (Content Status, locale, relationship, etc.)
-            // gets the size without per-template classes. PrimeNG has no chip size
-            // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
+            // `.p-chip` so every chip (locale, relationship, etc.) gets the size
+            // without per-template classes. PrimeNG has no chip size token, so this
+            // is expressed as CSS — same mechanism as card/confirmpopup. Content
+            // status badges use `p-tag` (see the `tag` block below), not chips.
             css: `
                 .p-chip {
                     height: calc(var(--spacing) * 7); /* 1.75rem */
@@ -74,8 +75,8 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `,
             // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
-            // {x.700}) instead of Lara's solid fills, so status tags read consistently and match
-            // the version-history chips (which use bg-{color}-100 / text-{color}-700) 1:1.
+            // {x.700}) instead of Lara's solid fills, so status tags read consistently across the
+            // app (status badges, version-history states, locale labels) per the design reference.
             // `secondary` is omitted — Lara already maps it to surface.100/surface.600 (soft gray).
             colorScheme: {
                 light: {
