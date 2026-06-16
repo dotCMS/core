@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -16,6 +16,7 @@ import {
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotHttpErrorManagerService,
     DotSiteService,
     DotSystemConfigService,
     DotWorkflowActionsFireService,
@@ -61,7 +62,11 @@ import {
     MOCK_SITES,
     MOCK_BASE_TYPES
 } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveDialog,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
@@ -76,6 +81,8 @@ describe('DotContentDriveShellComponent', () => {
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
+    // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
+    let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -117,7 +124,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({}))
-            })
+            }),
+            mockProvider(DotHttpErrorManagerService)
         ],
         componentProviders: [DotContentDriveStore],
         detectChanges: false
@@ -126,6 +134,7 @@ describe('DotContentDriveShellComponent', () => {
     beforeEach(() => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
+        dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
 
         spectator = createComponent({
             providers: [
@@ -155,7 +164,7 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
-                    dialog: jest.fn().mockReturnValue(undefined),
+                    dialog: dialogSignal,
                     setDialog: jest.fn(),
                     loadFolders: jest.fn(),
                     loadChildFolders: jest.fn(),
@@ -322,7 +331,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should have a dialog when dialog is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -337,7 +347,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should not have a dialog when dialog is not set', () => {
-            store.dialog.mockReturnValue(undefined);
+            dialogSignal.set(undefined);
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -351,8 +362,22 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should configure the dialog as closable and closeOnEscape', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.closable).toBe(true);
+            expect(dialogComponent.closeOnEscape).toBe(true);
+        });
+
         it('should show dialog-folder component when folder dialog type is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
@@ -530,16 +555,31 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('onHideDialog', () => {
-        it('should reset the dialog state', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+    describe('dialog close', () => {
+        it('should close the dialog in the store on a user-driven close (visibleChange false)', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
             spectator.detectComponentChanges();
 
-            const dialog = spectator.query('[data-testid="dialog"]');
-            dialog.dispatchEvent(new Event('visibleChange'));
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(false);
             spectator.detectComponentChanges();
 
             expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should not close the dialog in the store when it becomes visible', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectComponentChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(true);
+            spectator.detectComponentChanges();
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });
 

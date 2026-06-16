@@ -1,8 +1,8 @@
 <dot-editor-popover popoverId="image-properties">
     <div
         [attr.aria-label]="'dot.block.editor.dialog.image-properties.aria-label' | dm"
-        class="w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
-        <div class="p-4 flex flex-col gap-3" (keydown.enter)="$event.preventDefault(); onApply()">
+        class="w-lg max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+        <div class="flex flex-col gap-3 p-4" (keydown.enter)="$event.preventDefault(); onApply()">
             <div class="flex flex-col gap-1">
                 <label for="edit-img-url" class="text-sm font-medium text-gray-700">
                     {{ 'dot.block.editor.dialog.image-properties.field.url.label' | dm }}
@@ -16,14 +16,14 @@
                     [placeholder]="
                         'dot.block.editor.dialog.image-properties.field.url.placeholder' | dm
                     "
-                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
             <div class="flex flex-col gap-1">
                 <label for="edit-img-title" class="text-sm font-medium text-gray-700">
                     {{ 'dot.block.editor.dialog.image-properties.field.tooltip.label' | dm }}
                 </label>
-                <p id="edit-img-title-hint" class="text-xs text-gray-400 -mt-0.5">
+                <p id="edit-img-title-hint" class="-mt-0.5 text-xs text-gray-400">
                     {{ 'dot.block.editor.dialog.image-properties.field.tooltip.hint' | dm }}
                 </p>
                 <input
@@ -35,14 +35,14 @@
                         'dot.block.editor.dialog.image-properties.field.tooltip.placeholder' | dm
                     "
                     aria-describedby="edit-img-title-hint"
-                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
             <div class="flex flex-col gap-1">
                 <label for="edit-img-alt" class="text-sm font-medium text-gray-700">
                     {{ 'dot.block.editor.dialog.image-properties.field.alt.label' | dm }}
                 </label>
-                <p id="edit-img-alt-hint" class="text-xs text-gray-400 -mt-0.5">
+                <p id="edit-img-alt-hint" class="-mt-0.5 text-xs text-gray-400">
                     {{ 'dot.block.editor.dialog.image-properties.field.alt.hint' | dm }}
                 </p>
                 <input
@@ -54,21 +54,21 @@
                         'dot.block.editor.dialog.image-properties.field.alt.placeholder' | dm
                     "
                     aria-describedby="edit-img-alt-hint"
-                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                    class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
             <div class="flex justify-end gap-2">
                 <button
                     type="button"
                     (mousedown)="$event.preventDefault(); manager.close()"
-                    class="rounded border border-gray-300 px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    class="cursor-pointer rounded-sm border border-gray-300 px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50 focus:ring-2 focus:ring-gray-300 focus:outline-none">
                     {{ 'Cancel' | dm }}
                 </button>
                 <button
                     type="button"
                     (mousedown)="$event.preventDefault(); onApply()"
                     [disabled]="form.controls.src.invalid"
-                    class="rounded bg-indigo-500 px-4 py-1.5 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="cursor-pointer rounded-sm bg-indigo-500 px-4 py-1.5 text-sm text-white hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                     {{ 'Save' | dm }}
                 </button>
             </div>

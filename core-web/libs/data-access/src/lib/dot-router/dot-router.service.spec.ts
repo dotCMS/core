@@ -328,6 +328,14 @@ describe('DotRouterService', () => {
         expect(service.getPortletId('#/c/edit-page?url=test')).toBe('site-browser');
     });
 
+    it('should resolve velocity-playground URL slug to its backend portlet ID', () => {
+        expect(service.getPortletId('/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('/c/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('#/velocity-playground?test=value')).toBe(
+            'velocity_playground'
+        );
+    });
+
     it('should navigate replacing URL params', () => {
         const params = { id: 'content' };
         service.replaceQueryParams(params);

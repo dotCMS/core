@@ -1,9 +1,16 @@
 <!-- Activities List -->
-<section class="flex flex-col h-full min-h-0 relative" role="log" aria-label="Content Activities">
+<section class="relative flex h-full min-h-0 flex-col" role="log" aria-label="Content Activities">
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4">
+            <div class="sticky top-0 z-10 flex min-h-12 items-center bg-white px-2 pt-3">
+                <h2
+                    class="m-0 text-sm leading-none font-bold tracking-[0.08em] text-gray-500 lowercase first-letter:uppercase"
+                    data-testid="comments-title">
+                    {{ 'edit.content.sidebar.tab.comments' | dm }}
+                </h2>
+            </div>
             <p-dataview
                 #dv
                 [value]="$activities()"
@@ -20,7 +27,7 @@
                         ) {
                             <p-card
                                 #activityItem
-                                styleClass="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
+                                class="activity-item animate-[fadeIn_0.2s_ease-out] [&_.p-card-body]:p-3!"
                                 data-testid="activity-item">
                                 <div class="flex items-start gap-3">
                                     <p-avatar
@@ -28,22 +35,22 @@
                                         dotGravatar
                                         [email]="activity?.email"
                                         [pt]="avatarPt"
-                                        class="flex-shrink-0" />
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
+                                        class="shrink-0" />
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
                                             <span
-                                                class="text-sm font-semibold text-[var(--gray-900)]"
+                                                class="text-sm font-semibold text-gray-900"
                                                 data-testid="activity-user">
                                                 {{ activity.postedBy }}
                                             </span>
                                             <span
-                                                class="text-xs text-[var(--gray-600)] ml-auto shrink-0"
+                                                class="ml-auto shrink-0 text-xs text-gray-600"
                                                 data-testid="activity-date">
                                                 {{ activity.createdDate | dotRelativeDate }}
                                             </span>
                                         </div>
                                         <p
-                                            class="mt-1.5 text-sm text-[var(--gray-700)] leading-[1.4] break-words whitespace-pre-line"
+                                            class="mt-1.5 text-sm leading-[1.4] wrap-break-word whitespace-pre-line text-gray-700"
                                             data-testid="activity-description">
                                             {{ activity.commentDescription }}
                                         </p>
@@ -54,15 +61,15 @@
                     </div>
                 </ng-template>
                 <ng-template #emptymessage>
-                    <span class="block" data-testid="empty-state">
+                    <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
                         {{ 'edit.content.sidebar.activities.empty' | dm }}
-                    </span>
+                    </p>
                 </ng-template>
             </p-dataview>
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-[1] w-full px-4 py-3 border-t border-[var(--gray-200)]"
+                class="sticky bottom-0 z-1 w-full border-t border-gray-200 px-4 py-3"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"
@@ -80,12 +87,12 @@
 
                         <dot-field-validation-message
                             [field]="form.get('comment')"
-                            class="absolute bottom-[-0.75rem] left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
+                            class="absolute -bottom-3 left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
 
                         <!-- Character Counter -->
                         <div
-                            class="mt-1 text-xs text-[var(--gray-600)] text-left transition-colors"
-                            [class.text-[var(--color-palette-red)]!]="isAtMaxLength()"
+                            class="mt-1 text-left text-xs text-gray-600 transition-colors"
+                            [class.text-red-500!]="isAtMaxLength()"
                             data-testid="activities-char-counter">
                             @if (!isAtMaxLength()) {
                                 {{ commentLength() }}/{{ commentMaxLength }}

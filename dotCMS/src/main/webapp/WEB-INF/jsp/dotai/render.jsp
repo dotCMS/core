@@ -2,6 +2,7 @@
 <script>
     dojo.addOnLoad(function () {
         setUpValuesFromPreferences();
+        loadSitesDropdown();
         refreshIndexes()
             .then(() => {
                 writeIndexesToDropdowns();
@@ -189,7 +190,9 @@
                                 Site:
                             </th>
                             <td>
-                                <input type="text" value="" name="site"><br>
+                                <select name="site" id="siteFilterSelect" style="min-width:200px;">
+                                    <option value="">All sites</option>
+                                </select><br>
                                 Limit search to content on this site - leave blank for all.
                             </td>
                         </tr>
@@ -356,7 +359,10 @@
                                       placeholder="Image prompt"></textarea>
                         </td>
                     </tr>
-                    <input type="hidden" name="size" value="1024x1024">
+                    <tr>
+                        <th style="width:30%"><b>Size:</b></th>
+                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024 (widthxheight)" pattern="^[1-9][0-9]{1,3}x[1-9][0-9]{1,3}$" style="min-width:200px;"></td>
+                    </tr>
                     <tr>
                         <td colspan="2" style="text-align: center">
                             <div style="padding:10px;height:75px; text-align: center">

@@ -37,13 +37,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService,
-    Site,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
@@ -58,7 +52,6 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -75,7 +68,8 @@ import {
     MOCK_RESPONSE_HEADLESS,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
     PAGE_RESPONSE_URL_CONTENT_MAP,
-    PAYLOAD_MOCK
+    PAYLOAD_MOCK,
+    URL_CONTENT_MAP_MOCK
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -275,10 +269,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,
@@ -1010,6 +1000,24 @@ describe('DotEmaShellComponent', () => {
                 expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
+            it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
+                spectator.detectChanges();
+                const spyReload = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {}
+                    })
+                );
+
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'pageReload');
@@ -1036,6 +1044,22 @@ describe('DotEmaShellComponent', () => {
                 const reloadSpy = jest.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+
+            it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                        payload: { htmlPageReferer: '/index?com.dotmarketing.htmlpage.language=2' }
+                    })
+                );
+                spectator.detectChanges();
 
                 expect(reloadSpy).toHaveBeenCalled();
             });
@@ -1084,9 +1108,9 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        label: expect.any(String),
+                        label: 'hello world',
                         id: '123',
-                        url: 'index'
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1127,7 +1151,7 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'Other Page',
                         id: '456',
-                        url: '/other-page'
+                        url: expect.stringContaining('url=%2Fother-page')
                     })
                 );
             });
@@ -1140,7 +1164,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: INITIAL_PAGE_PARAMS.url
+                        url: expect.stringMatching(/^\/dotAdmin\/#.*url=index/)
                     })
                 );
             });
@@ -1161,45 +1185,101 @@ describe('DotEmaShellComponent', () => {
                 expect(() => spectator.detectChanges()).not.toThrow();
             });
 
-            it('should not update breadcrumb with stale data while page is loading, then update once loaded', async () => {
-                // Initialize with the first page fully loaded
+            it('should replace breadcrumb on navigation, not accumulate stale entries', async () => {
+                // Page A fully loaded
                 spectator.detectChanges();
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
-                // Hold the HTTP response so we can inspect state during LOADING
+                // Hold the response to inspect the LOADING window
                 const pendingRequest$ = new Subject<typeof MOCK_RESPONSE_HEADLESS>();
                 jest.spyOn(dotPageApiService, 'get').mockReturnValue(pendingRequest$);
 
-                // Navigate to a new page
-                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/new-page' });
+                store.pageLoad({ ...INITIAL_PAGE_PARAMS, url: '/page-b' });
                 spectator.detectChanges();
 
-                // While status is LOADING, stale pageAsset is present but breadcrumb must not be updated
+                // While LOADING, stale Page A data is present — breadcrumb must not fire
                 expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
 
-                // Resolve the HTTP response with the new page's data
-                const newPageResponse = {
+                // Resolve with Page B data
+                const pageBResponse = {
                     ...MOCK_RESPONSE_HEADLESS,
-                    page: {
-                        ...MOCK_RESPONSE_HEADLESS.page,
-                        title: 'New Page Title',
-                        identifier: '999'
-                    }
+                    page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Page B', identifier: '456' }
                 };
-                pendingRequest$.next(newPageResponse);
+                pendingRequest$.next(pageBResponse);
                 pendingRequest$.complete();
 
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
 
-                // After loading completes, breadcrumb must reflect the new page
+                // Called exactly once — with Page B data, never with stale Page A data
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledTimes(1);
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        label: 'New Page Title',
-                        id: '999',
-                        url: '/new-page'
+                        label: 'Page B',
+                        id: '456',
+                        url: expect.stringContaining('url=%2Fpage-b')
+                    })
+                );
+            });
+
+            it('should use urlContentMap title and identifier when present', async () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            title: 'Page Title',
+                            identifier: 'page-id'
+                        },
+                        urlContentMap: {
+                            ...URL_CONTENT_MAP_MOCK,
+                            title: 'Content Map Title',
+                            identifier: 'content-map-id'
+                        }
+                    })
+                );
+
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                store.pageLoad(INITIAL_PAGE_PARAMS);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Content Map Title',
+                        id: 'content-map-id',
+                        url: expect.stringContaining('url=index')
+                    })
+                );
+            });
+
+            it('should fall back to page title and identifier when urlContentMap is absent', async () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            title: 'Page Title',
+                            identifier: 'page-id'
+                        },
+                        urlContentMap: null
+                    })
+                );
+
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                store.pageLoad(INITIAL_PAGE_PARAMS);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Page Title',
+                        id: 'page-id',
+                        url: expect.stringContaining('url=index')
                     })
                 );
             });
@@ -1310,6 +1390,14 @@ describe('DotEmaShellComponent', () => {
 
                 expect(currentUrl).toMatch(/^\//);
             });
+
+            it('should use page hostname when clientHost is not present', () => {
+                const seoParams = spectator.component['$seoParams']();
+
+                expect(seoParams.requestHostName).toBe(
+                    `${window.location.protocol}//${MOCK_RESPONSE_HEADLESS.site.hostname}`
+                );
+            });
         });
 
         describe('$errorDisplay computed property', () => {
@@ -1410,8 +1498,60 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.component.handleScannerToolClick('a11y');
 
-                const { requestHostName, currentUrl } = spectator.component['$seoParams']();
-                expect(openSpy).toHaveBeenCalledWith('a11y', `${requestHostName}${currentUrl}`);
+                const { currentUrl, siteId } = spectator.component['$seoParams']();
+                const expectedUrl = new URL(currentUrl, window.location.origin);
+                if (siteId) {
+                    expectedUrl.searchParams.set('host_id', siteId);
+                }
+                expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
+            });
+
+            it('should scan the authoring instance origin, not the page content host', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).origin).toBe(window.location.origin);
+            });
+
+            it('should append the page site host_id so the scanner resolves the correct site on multisite', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: 'site-b-identifier',
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.get('host_id')).toBe('site-b-identifier');
+            });
+
+            it('should omit host_id when the page has no site identifier', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: undefined,
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.has('host_id')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {

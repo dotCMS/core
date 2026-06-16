@@ -100,6 +100,7 @@ node_modules/
 /core-web/dist
 /core-web/dist-lib
 /core-web/docs
+/core-web/documentation.json
 /core-web/tmp
 /core-web/out-tsc
 /core-web/karma_html

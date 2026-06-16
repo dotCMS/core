@@ -1,19 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Subject } from 'rxjs';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import {
-    DotcmsEventsServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
@@ -40,8 +43,22 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
-    const dotcmsEventsService = new DotcmsEventsServiceMock();
     let dotRouterService: DotRouterService;
+
+    let eventSubjects: Record<string, Subject<unknown>> = {};
+    const mockDotEventsSocket = {
+        on: jest.fn((eventType: string) => {
+            if (!eventSubjects[eventType]) {
+                eventSubjects[eventType] = new Subject<unknown>();
+            }
+            return eventSubjects[eventType].asObservable();
+        })
+    };
+
+    beforeEach(() => {
+        eventSubjects = {};
+        mockDotEventsSocket.on.mockClear();
+    });
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -59,7 +76,7 @@ describe('IframeComponent', () => {
                 IframeOverlayService,
                 DotIframeService,
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotcmsEventsService, useValue: dotcmsEventsService },
+                { provide: DotEventsSocket, useValue: mockDotEventsSocket },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 LoggerService,
@@ -107,18 +124,14 @@ describe('IframeComponent', () => {
         });
 
         it('should reload on DELETE_BUNDLE and on publishing-queue portlet websocket event', () => {
-            dotcmsEventsService.triggerSubscribeTo('DELETE_BUNDLE', {
-                name: 'DELETE_BUNDLE'
-            });
+            eventSubjects['DELETE_BUNDLE'].next({ name: 'DELETE_BUNDLE' });
             expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
                 'reload'
             );
         });
 
         it('should reload on PAGE_RELOAD websocket event', () => {
-            dotcmsEventsService.triggerSubscribeTo('PAGE_RELOAD', {
-                name: 'PAGE_RELOAD'
-            });
+            eventSubjects['PAGE_RELOAD'].next({ name: 'PAGE_RELOAD' });
             expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
                 'reload'
             );
@@ -300,9 +313,7 @@ describe('IframeComponent', () => {
                 }
             }
         };
-        dotcmsEventsService.triggerSubscribeTo('OSGI_BUNDLES_LOADED', {
-            name: 'OSGI_BUNDLES_LOADED'
-        });
+        eventSubjects['OSGI_BUNDLES_LOADED'].next(undefined);
         tick(4500);
         expect(comp.iframeElement.nativeElement.contentWindow.getBundlesData).toHaveBeenCalledTimes(
             1

@@ -85,8 +85,10 @@ jobs:
       id-token: write
       pull-requests: write
       issues: write
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
     with:
+      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       timeout_minutes: 30
       runner: ubuntu-latest
@@ -163,8 +165,8 @@ jobs:
 
         ### Sub-agent 3: Java Standards Reviewer
         Focus exclusively on Java syntax and code quality:
-        - Java 21+ syntax in core modules (text blocks, records, switch expressions)
-          — Java 11 syntax only, EXCEPT in tools/dotcms-cli
+        - Core modules target Java 25 (runtime + compile default); CLI tools may target
+          lower bytecode for portability — flag any code that won't compile at the module's target
         - Raw types: List, Map, Set without generics
         - Missing @Override on methods that override a parent
         - System.out.println — must use Logger.info/error/debug(this, msg)

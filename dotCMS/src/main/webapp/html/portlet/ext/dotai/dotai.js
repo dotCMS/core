@@ -418,6 +418,25 @@ const showClearPrompt = (idToClear) => {
 }
 
 
+const loadSitesDropdown = () => {
+    fetch("/api/v1/site?perPage=500&showSystem=false&showLive=true")
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById("siteFilterSelect");
+            if (!select) return;
+            (data.entity || [])
+                .filter(site => site.identifier && site.hostname)
+                .sort((a, b) => a.hostname.localeCompare(b.hostname))
+                .forEach(site => {
+                    const opt = document.createElement("option");
+                    opt.value = site.identifier;
+                    opt.textContent = site.hostname;
+                    select.appendChild(opt);
+                });
+        })
+        .catch(err => console.warn("Could not load sites for dropdown:", err));
+};
+
 const setUpValuesFromPreferences = () => {
     const prefs = preferences();
 
@@ -521,6 +540,9 @@ const loadPrompt = (num) =>{
 }
 
 const doImageJson = () => {
+    if (!document.getElementById("imageForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitImage").style.display = "none";
     document.getElementById("loaderImage").style.display = "block";
     setTimeout(function () {

@@ -311,6 +311,42 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Returns true when the Content Analytics app is configured for the given site and at least one
+     * of {@code contentImpression} or {@code contentClick} tracking is enabled.
+     *
+     * @param currentSite The site to check
+     * @return true if analytics content tracking is active for the site
+     */
+    public static boolean isContentTrackingEnabled(final Host currentSite) {
+        final String siteId = null != currentSite ? currentSite.getIdentifier() : "null";
+        final Map<String, Secret> secrets = getAppSecrets(currentSite);
+        if (secrets.isEmpty()) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': Content Analytics app has no secrets configured",
+                    siteId));
+            return false;
+        }
+        final Secret siteAuth = secrets.get("siteAuth");
+        if (siteAuth == null || !UtilMethods.isSet(siteAuth.getString())) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': 'siteAuth' is missing or blank (fromEnv=%s)",
+                    siteId, null != siteAuth && siteAuth.isFromEnv()));
+            return false;
+        }
+        final Secret contentImpression = secrets.get("contentImpression");
+        final Secret contentClick = secrets.get("contentClick");
+        final boolean impressionEnabled =
+                contentImpression != null && Boolean.parseBoolean(contentImpression.getString());
+        final boolean clickEnabled =
+                contentClick != null && Boolean.parseBoolean(contentClick.getString());
+        final boolean enabled = impressionEnabled || clickEnabled;
+        Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                "Content tracking for site '%s': enabled=%s (contentImpression=%s, contentClick=%s)",
+                siteId, enabled, impressionEnabled, clickEnabled));
+        return enabled;
+    }
+
+    /**
      * Extracts the site alias (domain) from the HTTP request.
      * First tries to get it from the Origin header, then falls back to the Referer header.
      * If a URL is found, it extracts just the host/domain part.

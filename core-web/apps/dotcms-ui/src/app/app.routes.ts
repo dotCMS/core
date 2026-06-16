@@ -48,9 +48,6 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'content-types-angular',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: {
-            reuseRoute: false
-        },
         loadChildren: () =>
             import('@portlets/dot-content-types/dot-content-types.routes').then(
                 (m) => m.dotContentTypesRoutes
@@ -180,6 +177,18 @@ const PORTLETS_ANGULAR: Route[] = [
         data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
+    },
+    {
+        path: 'velocity-playground',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: { isEnterprise: DotEnterpriseLicenseResolver },
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-velocity-playground/portlet').then(
+                (m) => m.dotVelocityPlaygroundRoutes
+            )
     },
     {
         path: 'plugins',

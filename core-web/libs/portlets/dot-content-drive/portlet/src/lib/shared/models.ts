@@ -5,6 +5,7 @@ import {
     DotSite
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
 import { DIALOG_TYPE } from './constants';
 
@@ -82,7 +83,15 @@ export interface DotContentDriveContextMenu {
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
-    payload?: DotContentDriveFolder;
+    payload?: DotContentDriveFolder | DotContentDriveContentTypeSelectorPayload;
+}
+
+/**
+ * Payload for the content-type selector dialog: the palette list type that
+ * encodes which base type(s) to show (e.g. ALL_CONTENT_TYPES or a single base type).
+ */
+export interface DotContentDriveContentTypeSelectorPayload {
+    listType: DotUVEPaletteListTypes;
 }
 
 export interface DotContentDrivePage {
@@ -120,6 +129,8 @@ export type DotKnownContentDriveFilters = {
     contentType: string[];
     title: string;
     languageId: string[];
+    // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
+    workflow: string[];
 };
 
 /**

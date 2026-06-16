@@ -17,9 +17,9 @@ function DotContentAnalyticsTracker({
     const analytics = useMemo(() => initializeAnalytics(config), [config]);
     const debug = Boolean(config.debug);
 
-    if (analytics) {
-        useRouterTracker(analytics, debug);
-    }
+    // autoPageView is opt-out: undefined/true enables tracking, only explicit false disables it.
+    // The hook is called unconditionally (analytics may be null; the hook handles that internally).
+    useRouterTracker(analytics, debug, config.autoPageView !== false);
 
     return null;
 }

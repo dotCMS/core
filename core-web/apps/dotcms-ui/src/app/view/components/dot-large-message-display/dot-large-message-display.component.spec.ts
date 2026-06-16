@@ -1,9 +1,9 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { Subject } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
+import { DotEventsSocket } from '@dotcms/data-access';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
 
@@ -11,29 +11,28 @@ import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-pa
 
 describe('DotLargeMessageDisplayComponent', () => {
     let spectator: Spectator<DotLargeMessageDisplayComponent>;
-    let dotcmsEventsServiceMock: DotcmsEventsServiceMock;
+    const largeMessageSubject = new Subject<unknown>();
+    const mockDotEventsSocket = {
+        on: jest.fn().mockReturnValue(largeMessageSubject.asObservable())
+    };
 
     const createComponent = createComponentFactory({
         component: DotLargeMessageDisplayComponent,
         detectChanges: false,
         imports: [],
         providers: [
-            { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
+            { provide: DotEventsSocket, useValue: mockDotEventsSocket },
             DotParseHtmlService
         ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
-        dotcmsEventsServiceMock = spectator.inject(
-            DotcmsEventsService
-        ) as unknown as DotcmsEventsServiceMock;
-        jest.spyOn(dotcmsEventsServiceMock, 'subscribeTo');
     });
 
     it('should create DotLargeMessageDisplayComponent', fakeAsync(() => {
         spectator.fixture.detectChanges(false); // run ngOnInit so component subscribes
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             height: '200',
             width: '1000',
@@ -50,7 +49,7 @@ describe('DotLargeMessageDisplayComponent', () => {
             true
         );
         expect(spectator.component.messages[0].code?.content).toBe('codeTest');
-        expect(dotcmsEventsServiceMock.subscribeTo).toHaveBeenCalledTimes(1);
+        expect(mockDotEventsSocket.on).toHaveBeenCalledWith('LARGE_MESSAGE');
 
         tick(0);
         spectator.fixture.detectChanges(false);
@@ -59,7 +58,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     it('should render script tag from body', fakeAsync(() => {
         spectator.fixture.detectChanges(false);
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             body: '<h1>Hello World</h1><script>console.log("abc")</script>'
         });
@@ -74,7 +73,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     it('should render script tag from script property', fakeAsync(() => {
         spectator.fixture.detectChanges(false);
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             body: '<h1>Hello World</h1><script>console.log("abc")</script>',
             script: 'console.log("script from prop")'
@@ -91,7 +90,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     it('should remove dialog when it is close', fakeAsync(() => {
         spectator.fixture.detectChanges(false);
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             body: '<h1>Hello World</h1><script>console.log("abc")</script>',
             script: 'console.log("script from prop")'
@@ -109,7 +108,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     it('should set default height and width', fakeAsync(() => {
         spectator.fixture.detectChanges(false);
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             body: 'bodyTest',
             code: { lang: 'eng', content: 'codeTest' }
@@ -126,7 +125,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
     it('should show two dialogs', fakeAsync(() => {
         spectator.fixture.detectChanges(false);
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test',
             body: 'bodyTest',
             code: { lang: 'eng', content: 'codeTest' }
@@ -136,7 +135,7 @@ describe('DotLargeMessageDisplayComponent', () => {
 
         expect(spectator.component.messages.length).toBe(1);
 
-        dotcmsEventsServiceMock.triggerSubscribeTo('LARGE_MESSAGE', {
+        largeMessageSubject.next({
             title: 'title Test 2',
             body: 'bodyTest 2',
             code: { lang: 'eng', content: 'codeTest 2' }

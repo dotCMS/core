@@ -8,15 +8,15 @@
 <p-popover #popover [pt]="popoverPt" (onShow)="$popoverOpen.set(true)" (onHide)="onPanelHide()">
     @if ($popoverOpen()) {
         <div
-            class="grid grid-cols-[repeat(2,1fr)] grid-rows-[min-content] w-160 overflow-hidden"
+            class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[min-content] overflow-hidden"
             [style.height]="POPOVER_MAX_HEIGHT"
             data-testid="content-type-filter-panel">
-            <div class="border-r border-slate-200 flex flex-col flex-1 bg-white">
-                <div class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">
+            <div class="flex flex-1 flex-col border-r border-slate-200 bg-white">
+                <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
                     {{ 'content-drive.type-filter.column.base-type' | dm }}
                 </div>
                 <p-listbox
-                    class="flex-1 min-h-0"
+                    class="min-h-0 flex-1"
                     [options]="$leftOptions()"
                     [ngModel]="$focusedBaseType()"
                     (ngModelChange)="onFocusChange($event)"
@@ -34,20 +34,21 @@
                                 CHIP_FILTER_LISTBOX_PT), without shrinking the content width
                                 and truncating the label.
                             -->
-                            <div class="relative flex items-center gap-2 w-full min-w-0">
+                            <div class="relative flex w-full min-w-0 items-center gap-2">
                                 <i class="pi pi-list text-sm text-slate-500"></i>
                                 <dot-filter-list-item [label]="item.label" />
                                 <span
-                                    class="pointer-events-none absolute bottom-0 -left-4 -right-4 h-px bg-slate-200"></span>
+                                    class="pointer-events-none absolute -inset-x-4 bottom-0 h-px bg-slate-200"></span>
                             </div>
                         } @else {
                             @let partial = isBaseTypePartial(item.name);
-                            <div class="flex items-center gap-2 w-full min-w-0">
+                            <div class="flex w-full min-w-0 items-center gap-2">
                                 <p-checkbox
                                     [ngModel]="isBaseTypeSelected(item.name)"
                                     [indeterminate]="partial"
                                     [pt]="partial ? partialCheckboxPt : null"
                                     (onChange)="onBaseTypeToggle(item.name)"
+                                    (mousedown)="$event.stopPropagation()"
                                     (click)="$event.stopPropagation()"
                                     [ngModelOptions]="{ standalone: true }"
                                     [binary]="true"
@@ -60,8 +61,8 @@
                 </p-listbox>
             </div>
 
-            <div class="flex flex-col flex-1 bg-white">
-                <div class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">
+            <div class="flex flex-1 flex-col bg-white">
+                <div class="px-4 py-3 text-xs font-bold tracking-wide text-slate-500 uppercase">
                     {{ 'content-drive.type-filter.column.content-type' | dm }}
                 </div>
                 <div class="px-3 pb-2">
@@ -80,7 +81,7 @@
                 </div>
                 @if ($showAllBanner()) {
                     <div
-                        class="flex items-center gap-2 px-4 bg-emerald-50 border-y border-emerald-100 text-emerald-800"
+                        class="flex items-center gap-2 border-y border-emerald-100 bg-emerald-50 px-4 text-emerald-800"
                         [style.height]="LISTBOX_BANNER_HEIGHT_PX"
                         data-testid="content-type-all-banner">
                         <i class="pi pi-check text-sm"></i>
@@ -91,7 +92,7 @@
                 }
                 <p-listbox
                     #contentTypeListbox
-                    class="flex-1 min-h-0"
+                    class="min-h-0 flex-1"
                     [ngModel]="$selectedContentTypes()"
                     (ngModelChange)="onContentTypeChange($event)"
                     [ngModelOptions]="{ standalone: true }"

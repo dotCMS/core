@@ -6,8 +6,8 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
@@ -34,12 +34,22 @@ import static org.mockito.Mockito.when;
 
 public class LangChain4jAIClientTest {
 
+    /**
+     * Given a null messages array,
+     * When toMessages is called,
+     * Then an empty list is returned.
+     */
     @Test
     public void test_toMessages_null_returnsEmptyList() {
         final List<ChatMessage> messages = LangChain4jAIClient.toMessages(null);
         assertTrue(messages.isEmpty());
     }
 
+    /**
+     * Given a messages array with a system-role entry,
+     * When toMessages is called,
+     * Then a SystemMessage with the correct text is returned.
+     */
     @Test
     public void test_toMessages_systemRole_producesSystemMessage() {
         final JSONArray array = new JSONArray();
@@ -52,6 +62,11 @@ public class LangChain4jAIClientTest {
         assertEquals("You are helpful.", ((SystemMessage) messages.get(0)).text());
     }
 
+    /**
+     * Given a messages array with an assistant-role entry,
+     * When toMessages is called,
+     * Then an AiMessage with the correct text is returned.
+     */
     @Test
     public void test_toMessages_assistantRole_producesAiMessage() {
         final JSONArray array = new JSONArray();
@@ -64,6 +79,11 @@ public class LangChain4jAIClientTest {
         assertEquals("I can help.", ((AiMessage) messages.get(0)).text());
     }
 
+    /**
+     * Given a messages array with a user-role entry,
+     * When toMessages is called,
+     * Then a UserMessage with the correct text is returned.
+     */
     @Test
     public void test_toMessages_userRole_producesUserMessage() {
         final JSONArray array = new JSONArray();
@@ -76,6 +96,11 @@ public class LangChain4jAIClientTest {
         assertEquals("Hello!", ((UserMessage) messages.get(0)).singleText());
     }
 
+    /**
+     * Given a messages array with an unrecognized role,
+     * When toMessages is called,
+     * Then the entry defaults to a UserMessage.
+     */
     @Test
     public void test_toMessages_unknownRole_defaultsToUserMessage() {
         final JSONArray array = new JSONArray();
@@ -87,6 +112,11 @@ public class LangChain4jAIClientTest {
         assertTrue(messages.get(0) instanceof UserMessage);
     }
 
+    /**
+     * Given a messages array with system, user, and assistant entries in order,
+     * When toMessages is called,
+     * Then three messages are returned in the original order with correct types.
+     */
     @Test
     public void test_toMessages_multipleRoles_preservesOrder() {
         final JSONArray array = new JSONArray();
@@ -102,6 +132,11 @@ public class LangChain4jAIClientTest {
         assertTrue(messages.get(2) instanceof AiMessage);
     }
 
+    /**
+     * Given a user message whose content field is a JSON array with a text part and an image_url part,
+     * When toMessages is called,
+     * Then a UserMessage with both TextContent and ImageContent is returned.
+     */
     @Test
     public void test_toMessages_multimodalContentArray_producesUserMessageWithImageAndText() {
         final JSONObject imagePart = new JSONObject();
@@ -135,6 +170,11 @@ public class LangChain4jAIClientTest {
         assertTrue(userMessage.contents().get(1) instanceof ImageContent);
     }
 
+    /**
+     * Given a user message whose content field is a JSON array containing an image_url entry,
+     * When toMessages is called,
+     * Then the content array is parsed as structured ImageContent rather than serialized to a plain string.
+     */
     @Test
     public void test_toMessages_contentArrayNotTreatedAsString() {
         // Regression: before the fix, JSONArray.optString() would serialize the array
@@ -165,6 +205,11 @@ public class LangChain4jAIClientTest {
         assertTrue(contents.get(0) instanceof ImageContent);
     }
 
+    /**
+     * Given a content array with an image_url entry whose URL is a data URI (data:image/webp;base64,...),
+     * When toMultimodalUserMessage is called,
+     * Then an ImageContent is produced with the correct MIME type and base64 data extracted.
+     */
     @Test
     public void test_toMultimodalUserMessage_dataUri_extractsMimeTypeAndBase64() {
         final JSONObject imagePart = new JSONObject();
@@ -184,6 +229,11 @@ public class LangChain4jAIClientTest {
         assertEquals("image/webp", imageContent.image().mimeType());
     }
 
+    /**
+     * Given a content array with an image_url entry whose URL is a plain HTTPS URL,
+     * When toMultimodalUserMessage is called,
+     * Then an ImageContent is produced with the URL preserved.
+     */
     @Test
     public void test_toMultimodalUserMessage_plainUrl_producesImageContentWithUrl() {
         final JSONObject imagePart = new JSONObject();
@@ -202,6 +252,11 @@ public class LangChain4jAIClientTest {
         assertEquals("https://example.com/photo.jpg", imageContent.image().url().toString());
     }
 
+    /**
+     * Given a content array with a text-type entry,
+     * When toMultimodalUserMessage is called,
+     * Then a TextContent with the correct text is produced.
+     */
     @Test
     public void test_toMultimodalUserMessage_textType_producesTextContent() {
         final JSONObject textPart = new JSONObject();
@@ -218,6 +273,11 @@ public class LangChain4jAIClientTest {
         assertEquals("What is in this image?", ((TextContent) msg.contents().get(0)).text());
     }
 
+    /**
+     * Given a ChatResponse with an assistant message and a model name,
+     * When toChatResponseJson is called,
+     * Then the resulting JSON has the correct OpenAI-compatible structure with role, content, and model.
+     */
     @Test
     public void test_toChatResponseJson_correctStructure() {
         final AiMessage aiMessage = new AiMessage("Test response content");
@@ -233,6 +293,11 @@ public class LangChain4jAIClientTest {
         assertEquals("gpt-4o-mini", json.getString(AiKeys.MODEL));
     }
 
+    /**
+     * Given an Embedding with three float values,
+     * When toEmbeddingResponseJson is called,
+     * Then the resulting JSON contains a data array with the values stored as doubles with correct precision.
+     */
     @Test
     public void test_toEmbeddingResponseJson_valuesStoredAsDoubles() {
         final Embedding embedding = Embedding.from(new float[]{0.1f, -0.2f, 0.3f});
@@ -249,6 +314,11 @@ public class LangChain4jAIClientTest {
         assertEquals(0.3, (Double) embeddingArray.get(2), 0.0001);
     }
 
+    /**
+     * Given an Image with a URL,
+     * When toImageResponseJson is called,
+     * Then the resulting JSON contains the URL in the data array.
+     */
     @Test
     public void test_toImageResponseJson_containsUrl() throws Exception {
         final Image image = Image.builder().url(new URI("https://example.com/image.png")).build();
@@ -259,6 +329,11 @@ public class LangChain4jAIClientTest {
         assertEquals("https://example.com/image.png", url);
     }
 
+    /**
+     * Given an Image with no URL set,
+     * When toImageResponseJson is called,
+     * Then the URL field in the data array is an empty string.
+     */
     @Test
     public void test_toImageResponseJson_nullUrl_returnsEmptyString() {
         final Image image = Image.builder().build();
@@ -282,9 +357,14 @@ public class LangChain4jAIClientTest {
     }
 
     private static Cache<String, String> freshCache() {
-        return CacheBuilder.newBuilder().build();
+        return Caffeine.newBuilder().build();
     }
 
+    /**
+     * Given a config with two models where the builder throws for the first,
+     * When executeWithFallback is called,
+     * Then the second model is used and its response is returned.
+     */
     @Test
     public void test_executeWithFallback_initFailure_fallsBackToNextModel() {
         final ProviderConfig config = configWithModels("bad-model,good-model");
@@ -304,6 +384,11 @@ public class LangChain4jAIClientTest {
         assertEquals("response-from-good-instance", result);
     }
 
+    /**
+     * Given a config with two models where the executor throws on the first invocation,
+     * When executeWithFallback is called,
+     * Then execution falls back to the second model and returns its response.
+     */
     @Test
     public void test_executeWithFallback_runtimeFailure_fallsBackToNextModel() {
         final ProviderConfig config = configWithModels("bad-model,good-model");
@@ -324,6 +409,11 @@ public class LangChain4jAIClientTest {
         assertEquals("response-from-good-model", result);
     }
 
+    /**
+     * Given a config with two models where the executor throws for both,
+     * When executeWithFallback is called,
+     * Then the exception from the last model is rethrown.
+     */
     @Test
     public void test_executeWithFallback_allModelsFail_rethrowsLastException() {
         final ProviderConfig config = configWithModels("model-a,model-b");
@@ -346,6 +436,11 @@ public class LangChain4jAIClientTest {
         assertEquals(secondException, thrown);
     }
 
+    /**
+     * Given a config with no model name set,
+     * When executeWithFallback is called,
+     * Then an IllegalArgumentException is thrown immediately without invoking the builder or executor.
+     */
     @Test
     public void test_executeWithFallback_noModelsConfigured_throwsImmediately() {
         final ProviderConfig config = configWithModels(null);
@@ -359,6 +454,11 @@ public class LangChain4jAIClientTest {
                         model -> "ignored"));
     }
 
+    /**
+     * Given a config with a single model that succeeds,
+     * When executeWithFallback is called,
+     * Then the response is returned without fallback.
+     */
     @Test
     public void test_executeWithFallback_singleModel_success() {
         final ProviderConfig config = configWithModels("gpt-4o");
@@ -376,6 +476,11 @@ public class LangChain4jAIClientTest {
     // effectiveModels — deploymentName fallback for Azure configs
     // -------------------------------------------------------------------------
 
+    /**
+     * Given an Azure config with only a deploymentName and no model,
+     * When executeWithFallback is called,
+     * Then the deploymentName is used as the model identifier.
+     */
     @Test
     public void test_executeWithFallback_deploymentNameOnly_usedAsModel() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
@@ -393,6 +498,11 @@ public class LangChain4jAIClientTest {
         assertEquals("response-from-my-azure-deployment", result);
     }
 
+    /**
+     * Given an Azure config with both model and deploymentName set,
+     * When executeWithFallback is called,
+     * Then the model field takes precedence over deploymentName.
+     */
     @Test
     public void test_executeWithFallback_modelTakesPrecedenceOverDeploymentName() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
@@ -411,6 +521,11 @@ public class LangChain4jAIClientTest {
         assertEquals("response-from-gpt-4o", result);
     }
 
+    /**
+     * Given an Azure config with neither model nor deploymentName set,
+     * When executeWithFallback is called,
+     * Then an IllegalArgumentException is thrown immediately.
+     */
     @Test
     public void test_executeWithFallback_noModelNoDeploymentName_throwsImmediately() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
@@ -431,6 +546,11 @@ public class LangChain4jAIClientTest {
     // applyRequestSize — image size override from request payload
     // -------------------------------------------------------------------------
 
+    /**
+     * Given a base config with a default size and a request payload that specifies a different size,
+     * When applyRequestSize is called,
+     * Then the resolved config uses the size from the payload.
+     */
     @Test
     public void test_applyRequestSize_sizeInPayload_overridesBaseConfig() {
         final ProviderConfig base = ImmutableProviderConfig.builder()
@@ -445,6 +565,11 @@ public class LangChain4jAIClientTest {
         assertEquals("1792x1024", resolved.size());
     }
 
+    /**
+     * Given a base config with a default size and a request payload that has no size field,
+     * When applyRequestSize is called,
+     * Then the resolved config keeps the base config size.
+     */
     @Test
     public void test_applyRequestSize_noSizeInPayload_keepsBaseConfig() {
         final ProviderConfig base = ImmutableProviderConfig.builder()
@@ -459,6 +584,11 @@ public class LangChain4jAIClientTest {
         assertEquals("1024x1024", resolved.size());
     }
 
+    /**
+     * Given a base config with a default size and a request payload with a blank size value,
+     * When applyRequestSize is called,
+     * Then the resolved config keeps the base config size.
+     */
     @Test
     public void test_applyRequestSize_blankSizeInPayload_keepsBaseConfig() {
         final ProviderConfig base = ImmutableProviderConfig.builder()
@@ -473,6 +603,11 @@ public class LangChain4jAIClientTest {
         assertEquals("1024x1024", resolved.size());
     }
 
+    /**
+     * Given an AppConfig where isEnabled() returns false,
+     * When sendRequest is called,
+     * Then a DotAIAppConfigDisabledException is thrown.
+     */
     @Test
     public void test_sendRequest_disabledConfig_throws() {
         final AppConfig disabledConfig = mock(AppConfig.class);

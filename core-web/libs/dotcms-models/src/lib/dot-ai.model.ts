@@ -49,7 +49,7 @@ export interface DotAIImageResponse {
 export interface AIImagePrompt {
     text: string;
     type: PromptType;
-    size: DotAIImageOrientation;
+    size: string;
 }
 
 /**
@@ -69,6 +69,8 @@ export interface DotGeneratedAIImage {
     response: DotAIImageContent | null;
     error?: string;
 }
+
+export const DEFAULT_IMAGE_SIZE = '1024x1024';
 
 /**
  * Represents the possible orientations of a Dot AI image.

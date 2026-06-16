@@ -1,7 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.viewtools.content.util.NodeTypes;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
+import com.dotcms.tiptap.TiptapMarkdown;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -114,7 +116,7 @@ public class StoryBlockMap implements Renderable, Serializable {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
                 final JSONObject jsonObjectItem = items.getJSONObject(i);
-                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem), this.context);
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, NodeTypes.typeKey(jsonObjectItem), this.context);
                 builder.append(renderable.toHtml());
             }
         } catch (final JSONException e) {
@@ -123,6 +125,17 @@ public class StoryBlockMap implements Renderable, Serializable {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Returns this Story Block's content as markdown. When the field holds raw HTML
+     * (no Tiptap JSON) it's returned unchanged.
+     */
+    public String toMarkdown() {
+        if (this.jsonContFieldValue == null) {
+            return UtilMethods.isSet(this.htmlContFieldValue) ? this.htmlContFieldValue : StringPool.BLANK;
+        }
+        return TiptapMarkdown.toMarkdown(this.jsonContFieldValue);
     }
 
     @Override
@@ -136,7 +149,7 @@ public class StoryBlockMap implements Renderable, Serializable {
             final JSONArray items = this.jsonContFieldValue.getJSONArray("content");
             for (int i = 0; i < items.length(); ++i) {
                 final JSONObject jsonObjectItem = items.getJSONObject(i);
-                final Renderable renderable = renderableFactory.create(jsonObjectItem, this.processType(jsonObjectItem), this.context);
+                final Renderable renderable = renderableFactory.create(jsonObjectItem, NodeTypes.typeKey(jsonObjectItem), this.context);
                 builder.append(renderable.toHtml(baseTemplatePath));
             }
         } catch (final JSONException e) {
@@ -154,13 +167,6 @@ public class StoryBlockMap implements Renderable, Serializable {
      */
     public JSONObject getJson() {
         return this.jsonContFieldValue;
-    }
-
-    private String processType(final JSONObject jsonObjectItem) throws JSONException {
-        // heading is a special composite case, type + level
-        final String type = jsonObjectItem.get("type").toString();
-        return type + ("heading".equalsIgnoreCase(type)?
-                jsonObjectItem.getJSONObject("attrs").get("level").toString(): StringPool.BLANK);
     }
 
     /**

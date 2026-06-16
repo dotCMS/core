@@ -1,3 +1,5 @@
+import { Subject, of } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -6,19 +8,35 @@ import {
     inject,
     input,
     signal,
-    untracked
+    untracked,
+    viewChild
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
+import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 
+import { catchError, switchMap } from 'rxjs/operators';
+
 import { Editor } from '@tiptap/core';
 
+import { DotContentSearchService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../config.utils';
+import { LINK_SELECTION_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorPopoverService } from '../../services/editor-popover.service';
-import { linkHrefValidator } from '../../utils/url.utils';
+import { EditorStore } from '../../store/editor.store';
+import { isValidHttpUrl, linkHrefValidator } from '../../utils/url.utils';
 import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
 
 /** Rel-attribute values exposed in the Advanced section's dropdown. */
@@ -31,17 +49,77 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'ugc', label: 'ugc' }
 ];
 
+/** Max page-search suggestions shown in the URL autocomplete. Mirrors the legacy editor. */
+const PAGE_SEARCH_LIMIT = 5;
+
+/** A single internal-page suggestion rendered in the URL autocomplete dropdown. */
+interface PageSearchResult {
+    /** Contentlet title — the primary line in the suggestion row. */
+    name: string;
+    /** The page URL/path written into the link `href` when selected. */
+    url: string;
+    hasTitleImage?: boolean;
+    inode?: string;
+}
+
+/** Narrow shape of the `/api/content/_search` response we consume. */
+interface ContentletSearchEntity {
+    jsonObjectView?: { contentlets?: DotCMSContentlet[] };
+}
+
 @Component({
     selector: 'dot-link-popover',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, InputTextModule, Select, EditorPopoverComponent, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        AutoCompleteModule,
+        InputTextModule,
+        Select,
+        EditorPopoverComponent,
+        DotMessagePipe
+    ],
     templateUrl: './link-popover.component.html'
 })
 export class LinkPopoverComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorPopoverService);
 
+    readonly #contentSearch = inject(DotContentSearchService);
+    readonly #store = inject(EditorStore);
+
     protected readonly relOptions = REL_OPTIONS;
+
+    /**
+     * Overlay options for the URL `<p-autoComplete>` and rel `<p-select>` panels, both of which
+     * append to `document.body`. Lifts them above the fullscreen editor shell's `z-[9998]`
+     * backdrop so the suggestion/dropdown panels stay clickable in fullscreen.
+     * See {@link FULLSCREEN_AWARE_OVERLAY_OPTIONS}.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
+
+    /** AutoComplete instance — used to force-hide the overlay when an external URL is typed. */
+    protected readonly autoComplete = viewChild<AutoComplete>(AutoComplete);
+
+    /**
+     * The autocomplete's `[ngModel]`. Holds the typed string while the user types and,
+     * momentarily, the selected {@link PageSearchResult} object on select — normalised back
+     * to its `url` string in {@link onSelectPage}. The reactive `href` control (not this
+     * signal) is the source of truth; it is kept in sync by an effect below.
+     */
+    protected readonly linkModel = signal<string | PageSearchResult>('');
+
+    /** Internal-page suggestions for the URL field, refreshed as the user types. */
+    protected readonly suggestions = signal<PageSearchResult[]>([]);
+
+    /**
+     * True when the current URL value parses as an http(s) URL. Suppresses the autocomplete
+     * overlay (incl. the empty message) so typing/pasting an external URL is never blocked.
+     */
+    protected readonly isExternalUrl = signal(false);
+
+    /** Debounced search queries; switchMap cancels in-flight requests as the user types. */
+    readonly #searchTerm$ = new Subject<string>();
 
     /**
      * PrimeNG passthrough config for the rel `<p-select>`. Mirrors the toolbar's block-type
@@ -77,15 +155,59 @@ export class LinkPopoverComponent {
         openInNewTab: new FormControl<boolean>(false, { nonNullable: true }),
         title: new FormControl<string>('', { nonNullable: true }),
         ariaLabel: new FormControl<string>('', { nonNullable: true }),
-        // Nullable: PrimeNG <p-select> with [showClear] resets the value to null on clear.
-        rel: new FormControl<string | null>('')
+        rel: new FormControl<string | null>(null)
     });
 
     protected toggleAdvanced(): void {
         this.advancedOpen.update((v) => !v);
     }
 
+    /**
+     * Handles the autocomplete's `ngModelChange`. Mirrors the value into the reactive `href`
+     * control synchronously (emitEvent:false keeps validation running without loops) so the
+     * Insert button's validity and an Enter-to-insert always see the current value. The model
+     * is a string while typing and, momentarily, the selected object on select.
+     */
+    protected onLinkModelChange(value: string | PageSearchResult): void {
+        this.linkModel.set(value);
+        const href = typeof value === 'string' ? value : (value?.url ?? '');
+        this.form.controls.href.setValue(href, { emitEvent: false });
+    }
+
     constructor() {
+        // Run page searches off the debounced term stream. switchMap cancels the previous
+        // request when a newer query arrives; catchError keeps the stream alive on failure.
+        this.#searchTerm$
+            .pipe(
+                switchMap((term) =>
+                    this.#contentSearch
+                        .get<ContentletSearchEntity>({
+                            query: this.#buildPageSearchQuery(term, this.#store.languageId()),
+                            sort: 'modDate desc',
+                            offset: 0,
+                            limit: PAGE_SEARCH_LIMIT
+                        })
+                        .pipe(catchError(() => of<ContentletSearchEntity>({})))
+                ),
+                takeUntilDestroyed()
+            )
+            .subscribe((entity) => {
+                const contentlets = entity?.jsonObjectView?.contentlets ?? [];
+                this.suggestions.set(
+                    contentlets
+                        .map((c) => ({
+                            // `path`/`urlMap` come from an untyped index — either may be absent.
+                            // Drop entries with no resolvable URL below so the field never gets
+                            // the string "undefined" written into `href`.
+                            name: c.title,
+                            url: c.path || c.urlMap || '',
+                            hasTitleImage: c.hasTitleImage,
+                            inode: c.inode
+                        }))
+                        .filter((result) => !!result.url)
+                );
+            });
+
         // Pre-populate the form when opened in edit mode.
         effect(() => {
             const payload = this.manager.linkPayload();
@@ -94,15 +216,21 @@ export class LinkPopoverComponent {
                 if (values) {
                     const title = values.title ?? '';
                     const ariaLabel = values.ariaLabel ?? '';
-                    const rel = values.rel ?? '';
-                    this.form.setValue({
-                        href: values.href ?? '',
-                        displayText: values.displayText ?? '',
-                        openInNewTab: values.target === '_blank',
-                        title,
-                        ariaLabel,
-                        rel
-                    });
+                    const rel = values.rel ?? null;
+                    const href = values.href ?? '';
+                    // emitEvent:false so prefilling an existing link doesn't fire a search.
+                    this.form.setValue(
+                        {
+                            href,
+                            displayText: values.displayText ?? '',
+                            openInNewTab: values.target === '_blank',
+                            title,
+                            ariaLabel,
+                            rel
+                        },
+                        { emitEvent: false }
+                    );
+                    this.linkModel.set(href);
                     // If any advanced field is populated, surface the section so the user
                     // can see what they previously set without hunting for the toggle.
                     this.advancedOpen.set(!!(title || ariaLabel || rel));
@@ -120,8 +248,11 @@ export class LinkPopoverComponent {
                         openInNewTab: false,
                         title: '',
                         ariaLabel: '',
-                        rel: ''
+                        rel: null
                     });
+                    this.linkModel.set('');
+                    this.suggestions.set([]);
+                    this.isExternalUrl.set(false);
                     this.advancedOpen.set(false);
                 });
             }
@@ -135,6 +266,86 @@ export class LinkPopoverComponent {
             linkEl.classList.add('link-editing');
             onCleanup(() => linkEl.classList.remove('link-editing'));
         });
+
+        // Insert mode (no `linkEl`): once the URL input takes focus the browser stops
+        // painting the editor's native selection, leaving the author with no hint of
+        // which text will become the link. Paint the exact range with a ProseMirror
+        // decoration that survives the blur; clear it when the popover closes.
+        effect((onCleanup) => {
+            if (!this.manager.isOpen('link')) return;
+            if (this.manager.linkPayload()?.linkEl) return;
+            const view = this.editor().view;
+            view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: true }));
+            onCleanup(() =>
+                view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: false }))
+            );
+        });
+    }
+
+    /**
+     * AutoComplete `completeMethod` handler. Debounced upstream by `[delay]`. Skips the
+     * search and hides the overlay when the value is a full http(s) URL (external link);
+     * otherwise pushes the term onto the search stream.
+     */
+    protected onComplete(event: { query: string }): void {
+        const query = (event.query ?? '').trim();
+
+        if (!query) {
+            this.isExternalUrl.set(false);
+            this.suggestions.set([]);
+            return;
+        }
+
+        if (isValidHttpUrl(query)) {
+            this.isExternalUrl.set(true);
+            this.suggestions.set([]);
+            // AutoComplete opens its overlay (with a loading state) as soon as the user types,
+            // before completeMethod runs — so clearing suggestions / showEmptyMessage isn't
+            // enough to keep an external URL from flashing a dropdown. Force it closed.
+            // NOTE: loading / overlayVisible / cd are NOT public PrimeNG API (verified against
+            // primeng 21.x); revisit this branch on PrimeNG upgrades.
+            const ac = this.autoComplete();
+            if (ac) {
+                ac.loading = false;
+                ac.overlayVisible = false;
+                ac.cd.markForCheck();
+            }
+            return;
+        }
+
+        this.isExternalUrl.set(false);
+        this.#searchTerm$.next(query);
+    }
+
+    /**
+     * Fills the URL field with the selected page's path. Normalises the autocomplete model
+     * back to a plain string (it briefly holds the selected object) and clears suggestions.
+     */
+    protected onSelectPage(event: AutoCompleteSelectEvent): void {
+        const url = (event.value as PageSearchResult)?.url ?? '';
+        // Set synchronously: AutoComplete's Enter handler does not stop propagation, so the
+        // container's Enter→onInsert may run in the same tick — href must already be current.
+        this.onLinkModelChange(url);
+        this.suggestions.set([]);
+    }
+
+    /**
+     * Escapes Lucene/ES query_string reserved characters in a user-typed term. Without this,
+     * typing a `:` or `/` — extremely likely when searching for URLs/paths — produces an
+     * invalid query that `catchError` swallows, surfacing as a silently empty dropdown.
+     */
+    #escapeLuceneTerm(term: string): string {
+        return term.replace(/([+\-!(){}[\]^"~*?:\\/]|&&|\|\|)/g, '\\$1');
+    }
+
+    /**
+     * Lucene query for internal-page search — pages (`basetype:5`) plus URL-mapped content,
+     * matched by title / path / urlmap prefix. Built inline at the call site (matching the
+     * slash-menu's `buildContentletByTypeQuery`); mirrors the legacy link popover.
+     */
+    #buildPageSearchQuery(term: string, languageId: number): string {
+        const safe = this.#escapeLuceneTerm(term);
+        return `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +(title:${safe}* OR path:*${safe}* OR urlmap:*${safe}*)`;
     }
 
     onInsert(): void {

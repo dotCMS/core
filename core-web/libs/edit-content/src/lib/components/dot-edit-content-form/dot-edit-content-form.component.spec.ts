@@ -19,7 +19,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tab, Tabs } from 'primeng/tabs';
-import { ToggleSwitch, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import {
     DotContentletService,
@@ -37,6 +36,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
@@ -44,10 +44,9 @@ import {
     DotContentletDepths
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
-    MOCK_MULTIPLE_WORKFLOW_ACTIONS,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockMatchMedia
 } from '@dotcms/utils-testing';
@@ -64,7 +63,7 @@ import {
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
-import { generatePreviewUrl } from '../../utils/functions.util';
+import { generatePageEditUrl, generatePreviewUrl } from '../../utils/functions.util';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -104,7 +103,6 @@ describe('DotFormComponent', () => {
             mockProvider(DotVersionableService),
             mockProvider(GlobalStore, {
                 loadCurrentSite: jest.fn(),
-                setCurrentSite: jest.fn(),
                 siteDetails: jest.fn().mockReturnValue(null),
                 addNewBreadcrumb: jest.fn()
             }),
@@ -348,16 +346,24 @@ describe('DotFormComponent', () => {
                 expect(appendArea).toBeTruthy();
             });
 
-            it('should render workflow actions and sidebar toggle in append area', () => {
+            it('should render the status tag, command bar actions and sidebar toggle in append area', () => {
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
                     sidebarToggle?.querySelector('button');
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                const statusTag = spectator.query(byTestId('content-status-tag'));
+                const commandBar = spectator.query(byTestId('command-bar-actions'));
 
-                expect(workflowActions).toBeTruthy();
+                expect(statusTag).toBeTruthy();
+                expect(commandBar).toBeTruthy();
                 expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
+            });
+
+            it('should not render the lock toggle or workflow actions in the append area', () => {
+                expect(spectator.query(byTestId('content-lock-controls'))).toBeFalsy();
+                expect(spectator.query(byTestId('content-lock-switch'))).toBeFalsy();
+                expect(spectator.query(byTestId('workflow-actions'))).toBeFalsy();
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
@@ -430,41 +436,18 @@ describe('DotFormComponent', () => {
             expect(editContentActions).toBeTruthy();
         });
 
-        describe('Workflow Actions Component', () => {
-            it('should show DotWorkflowActionsComponent when showWorkflowActions is true', () => {
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
-                );
-                store.initializeExistingContent({
-                    inode: 'inode',
-                    depth: DotContentletDepths.ONE
-                });
-                spectator.detectChanges();
+        // The workflow actions UI now lives in the sidebar; the form keeps the public
+        // fireWorkflowAction() method (called by the layout). These tests exercise it
+        // directly to preserve the parameter, wizard and validation regression coverage.
+        describe('fireWorkflowAction (programmatic)', () => {
+            const baseParams = {
+                inode: 'inode',
+                contentType: 'TestMock',
+                languageId: '1',
+                identifier: 'identifier'
+            };
 
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                expect(store.showWorkflowActions()).toBe(true);
-                expect(workflowActions).toBeTruthy();
-            });
-
-            it('should hide DotWorkflowActionsComponent when showWorkflowActions is false', () => {
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_MULTIPLE_WORKFLOW_ACTIONS) // Multiple workflow actions trigger the hide
-                );
-
-                store.initializeExistingContent({
-                    inode: 'inode',
-                    depth: DotContentletDepths.ONE
-                });
-                spectator.detectChanges();
-
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                expect(store.showWorkflowActions()).toBe(false);
-                expect(workflowActions).toBeFalsy();
-            });
-
-            it('should send the correct parameters when firing an action', () => {
-                const spy = jest.spyOn(store, 'fireWorkflowAction');
-
+            beforeEach(() => {
                 workflowActionsService.getWorkFlowActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
@@ -473,13 +456,19 @@ describe('DotFormComponent', () => {
                     depth: DotContentletDepths.ONE
                 });
                 spectator.detectChanges();
+            });
 
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                workflowActions.actionFired.emit({ id: '1' } as DotCMSWorkflowAction);
+            it('should fire the action on the store when it has no inputs', () => {
+                const spy = jest.spyOn(store, 'fireWorkflowAction');
+
+                component.fireWorkflowAction({
+                    workflow: { id: '1' } as DotCMSWorkflowAction,
+                    ...baseParams
+                });
 
                 expect(spy).toHaveBeenCalledWith({
                     actionId: '1',
-                    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
+                    inode: 'inode',
                     data: {
                         contentlet: {
                             contentType: 'TestMock',
@@ -488,88 +477,101 @@ describe('DotFormComponent', () => {
                             text2: 'content text 2',
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
-                            languageId: '',
-                            identifier: null,
+                            languageId: '1',
+                            identifier: 'identifier',
                             disabledWYSIWYG: ['wysiwygField1', 'wysiwygField2']
                         }
                     }
                 });
             });
 
-            it('should call the wizard service when the workflow action is fired', () => {
+            it('should call the wizard service when the workflow action has inputs', () => {
                 const wizardService = spectator.inject(DotWizardService);
 
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                store.initializeExistingContent({
-                    inode: 'inode',
-                    depth: DotContentletDepths.ONE
+                component.fireWorkflowAction({
+                    workflow: {
+                        id: '1',
+                        actionInputs: [{ id: 'move', body: {} }]
+                    } as DotCMSWorkflowAction,
+                    ...baseParams
                 });
-                spectator.detectChanges();
-
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                workflowActions.actionFired.emit({
-                    id: '1',
-                    actionInputs: [{ id: 'move', body: {} }]
-                } as DotCMSWorkflowAction);
 
                 expect(wizardService.open).toHaveBeenCalled();
             });
 
+            it('should validate and not fire when the form is invalid (regression)', () => {
+                const fireSpy = jest.spyOn(store, 'fireWorkflowAction');
+                const setFormStatusSpy = jest.spyOn(store, 'setFormStatus');
+                const markAllAsTouchedSpy = jest.spyOn(component.form, 'markAllAsTouched');
+
+                // Force the form invalid via a required control.
+                component.form.get('text1')?.setValidators(Validators.required);
+                component.form.get('text1')?.setValue('');
+                component.form.get('text1')?.updateValueAndValidity();
+                expect(component.form.invalid).toBe(true);
+
+                component.fireWorkflowAction({
+                    workflow: { id: '1' } as DotCMSWorkflowAction,
+                    ...baseParams
+                });
+
+                expect(markAllAsTouchedSpy).toHaveBeenCalled();
+                expect(setFormStatusSpy).toHaveBeenCalledWith('invalid');
+                expect(fireSpy).not.toHaveBeenCalled();
+            });
+
             describe('commentable and assignable dialog', () => {
                 let wizardService: DotWizardService;
-                let workflowActionsComponent: DotWorkflowActionsComponent;
 
                 beforeEach(() => {
-                    workflowActionsService.getWorkFlowActions.mockReturnValue(
-                        of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                    );
-                    store.initializeExistingContent({
-                        inode: 'inode',
-                        depth: DotContentletDepths.ONE
-                    });
-                    spectator.detectChanges();
-
                     wizardService = spectator.inject(DotWizardService);
-                    workflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
                     (wizardService.open as jest.Mock).mockClear();
                 });
 
                 it('should open wizard when action has commentable input', () => {
-                    workflowActionsComponent.actionFired.emit({
-                        id: '1',
-                        actionInputs: [{ id: 'commentable', body: {} }]
-                    } as DotCMSWorkflowAction);
+                    component.fireWorkflowAction({
+                        workflow: {
+                            id: '1',
+                            actionInputs: [{ id: 'commentable', body: {} }]
+                        } as DotCMSWorkflowAction,
+                        ...baseParams
+                    });
 
                     expect(wizardService.open).toHaveBeenCalled();
                 });
 
                 it('should open wizard when action has assignable input', () => {
-                    workflowActionsComponent.actionFired.emit({
-                        id: '1',
-                        actionInputs: [{ id: 'assignable', body: {} }]
-                    } as DotCMSWorkflowAction);
+                    component.fireWorkflowAction({
+                        workflow: {
+                            id: '1',
+                            actionInputs: [{ id: 'assignable', body: {} }]
+                        } as DotCMSWorkflowAction,
+                        ...baseParams
+                    });
 
                     expect(wizardService.open).toHaveBeenCalled();
                 });
 
                 it('should open wizard when action has both commentable and assignable inputs', () => {
-                    workflowActionsComponent.actionFired.emit({
-                        id: '1',
-                        actionInputs: [
-                            { id: 'commentable', body: {} },
-                            { id: 'assignable', body: {} }
-                        ]
-                    } as DotCMSWorkflowAction);
+                    component.fireWorkflowAction({
+                        workflow: {
+                            id: '1',
+                            actionInputs: [
+                                { id: 'commentable', body: {} },
+                                { id: 'assignable', body: {} }
+                            ]
+                        } as DotCMSWorkflowAction,
+                        ...baseParams
+                    });
 
                     expect(wizardService.open).toHaveBeenCalled();
                 });
 
                 it('should not open wizard when action has no inputs', () => {
-                    workflowActionsComponent.actionFired.emit({
-                        id: '1'
-                    } as DotCMSWorkflowAction);
+                    component.fireWorkflowAction({
+                        workflow: { id: '1' } as DotCMSWorkflowAction,
+                        ...baseParams
+                    });
 
                     expect(wizardService.open).not.toHaveBeenCalled();
                 });
@@ -674,6 +676,154 @@ describe('DotFormComponent', () => {
                 expect(previewButton).toBeFalsy();
             });
         });
+
+        describe('HTML Page', () => {
+            const pageContentlet = {
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+            } as DotCMSContentlet;
+
+            beforeEach(() => {
+                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_2_TABS)
+                );
+                dotEditContentService.getContentById.mockReturnValue(of(pageContentlet));
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+            });
+
+            it('should render the preview button for an HTML page', () => {
+                const previewButton = spectator.query(byTestId('preview-button'));
+                expect(previewButton).toBeTruthy();
+            });
+
+            it('should use generatePageEditUrl when showPreview runs for an HTML page', () => {
+                const expectedUrl = generatePageEditUrl(pageContentlet);
+                expect(expectedUrl).toBeTruthy();
+
+                component.showPreview();
+
+                expect(windowOpenSpy).toHaveBeenCalledWith(expectedUrl, '_blank');
+            });
+        });
+
+        describe('New content', () => {
+            beforeEach(() => {
+                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(MOCK_CONTENTTYPE_1_TAB)
+                );
+                workflowActionsService.getDefaultActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeNewContent('TestMock');
+                spectator.detectChanges();
+            });
+
+            it('should not render the preview button for new content', () => {
+                const previewButton = spectator.query(byTestId('preview-button'));
+                expect(previewButton).toBeFalsy();
+            });
+        });
+    });
+
+    describe('Command Bar', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+        });
+
+        it('should render the status tag for existing content', () => {
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            const statusTag = spectator.query(byTestId('content-status-tag'));
+            expect(statusTag).toBeTruthy();
+        });
+
+        it('should render the command bar actions for existing content', () => {
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+
+            const commandBar = spectator.query(byTestId('command-bar-actions'));
+            expect(commandBar).toBeTruthy();
+        });
+
+        it('should not render the command bar actions for new content', () => {
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
+
+            const commandBar = spectator.query(byTestId('command-bar-actions'));
+            expect(commandBar).toBeFalsy();
+        });
+
+        describe('status badge', () => {
+            it('should pass the contentlet as the badge state for existing content', () => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toEqual(store.contentlet());
+            });
+
+            it('should pass null as the badge state for new content', () => {
+                store.initializeNewContent('TestMock');
+                spectator.detectChanges();
+
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toBeNull();
+            });
+        });
     });
 
     describe('Lock functionality', () => {
@@ -725,18 +875,16 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should call lockContent when switch is turned on', () => {
-                const lockSwitch = spectator.query(ToggleSwitch);
-
-                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+            // The lock toggle UI moved out of this component; the form still reacts to
+            // lock-state changes coming from the store, so we drive those directly.
+            it('should call lockContent on the store when locking', () => {
+                store.lockContent();
 
                 expect(dotContentletService.lockContent).toHaveBeenCalled();
             });
 
-            it('should call unlockContent when switch is turned off', () => {
-                const lockSwitch = spectator.query(ToggleSwitch);
-
-                lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
+            it('should call unlockContent on the store when unlocking', () => {
+                store.unlockContent();
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
             });
@@ -747,8 +895,7 @@ describe('DotFormComponent', () => {
                     'initializeForm'
                 );
 
-                const lockSwitch = spectator.query(ToggleSwitch);
-                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                store.lockContent();
                 spectator.detectChanges();
 
                 // identifier/inode/modDate did not change — form must not rebuild,
@@ -757,10 +904,10 @@ describe('DotFormComponent', () => {
             });
         });
 
-        describe('cant lock', () => {
+        describe('lock controls UI', () => {
             beforeEach(() => {
                 dotContentletService.canLock.mockReturnValue(
-                    of({ canLock: false } as DotContentletCanLock)
+                    of({ canLock: true } as DotContentletCanLock)
                 );
 
                 store.initializeExistingContent({
@@ -771,10 +918,243 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should hide the lock switch when user can not lock', () => {
-                const lockSwitch = spectator.query(ToggleSwitch);
-                expect(lockSwitch).toBe(null);
+            it('should never render the lock toggle in the command bar', () => {
+                expect(spectator.query(byTestId('content-lock-controls'))).toBeFalsy();
+                expect(spectator.query(byTestId('content-lock-switch'))).toBeFalsy();
             });
+        });
+
+        describe('Form dirty state after lock toggle', () => {
+            // Mirrors the fallback timer in #scheduleMarkPristineAfterInit
+            // (race(appRef.isStable, timer(500))). Named so the coupling is explicit
+            // and breaks loudly here if the production debounce changes.
+            const PRISTINE_RESET_DEBOUNCE_MS = 500;
+
+            beforeEach(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                dotContentletService.lockContent.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
+                );
+
+                dotContentletService.unlockContent.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: false,
+                        lockedBy: null,
+                        lockedByName: null,
+                        lockedOn: null
+                    } as DotCMSContentlet)
+                );
+
+                // tick(500) triggers downstream effects (history feature loads versions)
+                // that hit dotEditContentService — mock these so the fakeAsync flush
+                // doesn't crash with "Cannot read properties of undefined".
+                dotEditContentService.getVersions.mockReturnValue(
+                    of({
+                        entity: [],
+                        pagination: null,
+                        errors: [],
+                        i18nMessagesMap: {},
+                        messages: [],
+                        permissions: []
+                    })
+                );
+                dotEditContentService.getPushPublishHistory.mockReturnValue(
+                    of({
+                        entity: [],
+                        pagination: null,
+                        errors: [],
+                        i18nMessagesMap: {},
+                        messages: [],
+                        permissions: []
+                    })
+                );
+            });
+
+            it('should keep the form pristine when content opens locked (AC1, AC2, AC7)', fakeAsync(() => {
+                dotEditContentService.getContentById.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                // Drain the 500ms fallback timer in #scheduleMarkPristineAfterInit
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.dirty).toBe(false);
+                expect(component.form.pristine).toBe(true);
+
+                flush();
+            }));
+
+            it('should not mark form dirty when the content is locked (AC2 regression guard)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                store.lockContent();
+                spectator.detectChanges();
+
+                // Locking patches the contentlet reference but must not dirty the form.
+                expect(dotContentletService.lockContent).toHaveBeenCalled();
+                expect(component.form.dirty).toBe(false);
+
+                flush();
+            }));
+
+            it('should mark form dirty when a real field is edited (AC5, AC8)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                // Real user edit routed through the rendered field input, so Angular's forms
+                // machinery (not a manual markAsDirty) is what dirties the control.
+                const input = spectator.query(byTestId('text2')) as HTMLInputElement;
+                spectator.typeInElement('edited via DOM', input);
+                spectator.detectChanges();
+
+                expect(component.form.get('text2')?.dirty).toBe(true);
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+
+            it('should mark form dirty when locked content is unlocked and then a field is edited (AC6)', fakeAsync(() => {
+                const lockedMock = {
+                    ...MOCK_CONTENTLET_1_OR_2_TABS,
+                    locked: true,
+                    lockedBy: 'dotcms.org.1',
+                    lockedByName: 'Admin User',
+                    lockedOn: new Date()
+                } as DotCMSContentlet;
+                dotEditContentService.getContentById.mockReturnValue(of(lockedMock));
+
+                store.initializeExistingContent({
+                    inode: lockedMock.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(PRISTINE_RESET_DEBOUNCE_MS); // drain #scheduleMarkPristineAfterInit timer
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+                expect(component.form.dirty).toBe(false);
+
+                store.unlockContent();
+
+                expect(dotContentletService.unlockContent).toHaveBeenCalled();
+
+                spectator.detectChanges();
+
+                // Real user edit routed through the rendered field input after unlocking.
+                const input = spectator.query(byTestId('text2')) as HTMLInputElement;
+                spectator.typeInElement('edited after unlock', input);
+                spectator.detectChanges();
+
+                expect(component.form.get('text2')?.dirty).toBe(true);
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+
+            it('should not re-enable the form when toggling lock so field CVAs do not re-emit (#35754, AC2)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.enabled).toBe(true);
+                expect(component.form.pristine).toBe(true);
+
+                const enableSpy = jest.spyOn(component.form, 'enable');
+
+                store.lockContent();
+                spectator.detectChanges();
+
+                expect(dotContentletService.lockContent).toHaveBeenCalled();
+
+                // The lock patch replaces the contentlet reference, so the enable/disable
+                // effect re-runs — but the form is already enabled, so the idempotent guard
+                // must skip enable(). A redundant enable() would make async field CVAs (e.g.
+                // the date field) re-emit and wrongly dirty the form.
+                expect(enableSpy).not.toHaveBeenCalled();
+                expect(component.form.dirty).toBe(false);
+                expect(component.form.pristine).toBe(true);
+
+                flush();
+            }));
+
+            it('should preserve a real unsaved edit when toggling lock (#35754, AC6 regression)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(PRISTINE_RESET_DEBOUNCE_MS);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                // Real user edit before locking.
+                const control = component.form.get('disabledWYSIWYG');
+                control?.setValue(['user-edit']);
+                control?.markAsDirty();
+                expect(component.form.dirty).toBe(true);
+
+                store.lockContent();
+                spectator.detectChanges();
+
+                // Locking must not clobber the user's real unsaved changes.
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
         });
     });
 
@@ -1071,18 +1451,18 @@ describe('DotFormComponent', () => {
         });
 
         describe('Historical Version UI Elements', () => {
-            it('should hide lock controls when viewing historical version', () => {
-                // Initially lock controls should be visible
-                const lockControls = spectator.query(byTestId('content-lock-controls'));
-                expect(lockControls).toBeTruthy();
+            it('should hide the status tag and command bar when viewing historical version', () => {
+                // Initially the normal-view command bar should be visible
+                expect(spectator.query(byTestId('content-status-tag'))).toBeTruthy();
+                expect(spectator.query(byTestId('command-bar-actions'))).toBeTruthy();
 
                 // Simulate loading a historical version using the store's public method
                 store.loadVersionContent('historical-inode');
                 spectator.detectChanges();
 
-                // Lock controls should be hidden
-                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
-                expect(lockControlsAfter).toBeFalsy();
+                // The status tag and command bar should be hidden
+                expect(spectator.query(byTestId('content-status-tag'))).toBeFalsy();
+                expect(spectator.query(byTestId('command-bar-actions'))).toBeFalsy();
             });
 
             it('should show restore button when viewing historical version', () => {
@@ -1101,20 +1481,6 @@ describe('DotFormComponent', () => {
                     byTestId('restore-historical-version-button')
                 );
                 expect(restoreButtonAfter).toBeTruthy();
-            });
-
-            it('should hide workflow actions when viewing historical version', () => {
-                // Initially workflow actions should be visible
-                const workflowActions = spectator.query(byTestId('workflow-actions'));
-                expect(workflowActions).toBeTruthy();
-
-                // Simulate loading a historical version using the store's public method
-                store.loadVersionContent('historical-inode');
-                spectator.detectChanges();
-
-                // Workflow actions should be hidden
-                const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
-                expect(workflowActionsAfter).toBeFalsy();
             });
         });
 
@@ -1162,14 +1528,14 @@ describe('DotFormComponent', () => {
                 expect(store.isViewingHistoricalVersion()).toBe(false);
                 //TODO: enable this when all fields have disable state expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query(byTestId('content-lock-controls'));
-                const workflowActions = spectator.query(byTestId('workflow-actions'));
+                const statusTag = spectator.query(byTestId('content-status-tag'));
+                const commandBar = spectator.query(byTestId('command-bar-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')
                 );
 
-                expect(lockControls).toBeTruthy();
-                expect(workflowActions).toBeTruthy();
+                expect(statusTag).toBeTruthy();
+                expect(commandBar).toBeTruthy();
                 expect(restoreButton).toBeFalsy();
 
                 // Simulate loading a historical version using the store's public method
@@ -1179,14 +1545,14 @@ describe('DotFormComponent', () => {
                 // Check historical view state
                 //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
 
-                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
-                const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
+                const statusTagAfter = spectator.query(byTestId('content-status-tag'));
+                const commandBarAfter = spectator.query(byTestId('command-bar-actions'));
                 const restoreButtonAfter = spectator.query(
                     byTestId('restore-historical-version-button')
                 );
 
-                expect(lockControlsAfter).toBeFalsy();
-                expect(workflowActionsAfter).toBeFalsy();
+                expect(statusTagAfter).toBeFalsy();
+                expect(commandBarAfter).toBeFalsy();
                 expect(restoreButtonAfter).toBeTruthy();
             });
 
@@ -1205,14 +1571,14 @@ describe('DotFormComponent', () => {
                 // Check normal view state
                 expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query(byTestId('content-lock-controls'));
-                const workflowActions = spectator.query(byTestId('workflow-actions'));
+                const statusTag = spectator.query(byTestId('content-status-tag'));
+                const commandBar = spectator.query(byTestId('command-bar-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')
                 );
 
-                expect(lockControls).toBeTruthy();
-                expect(workflowActions).toBeTruthy();
+                expect(statusTag).toBeTruthy();
+                expect(commandBar).toBeTruthy();
                 expect(restoreButton).toBeFalsy();
             });
         });

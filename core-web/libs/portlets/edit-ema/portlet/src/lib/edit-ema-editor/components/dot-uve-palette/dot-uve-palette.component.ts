@@ -1,17 +1,15 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
-import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import { DotUVEPaletteListTypes } from './models';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
@@ -32,7 +30,6 @@ interface TabHeaderConfig {
 @Component({
     selector: 'dot-uve-palette',
     imports: [
-        NgClass,
         TabsModule,
         TooltipModule,
         DotMessagePipe,
@@ -76,7 +73,8 @@ export class DotUvePaletteComponent {
      * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
      */
     readonly tabsPt = {
-        root: { class: 'h-full min-h-0' }
+        root: { class: 'h-full min-h-0' },
+        tablist: { class: 'bg-gray-100' }
     };
 
     /** Emits whenever the active tab in the palette changes. */
@@ -100,6 +98,8 @@ export class DotUvePaletteComponent {
     readonly $pagePath = computed(() => this.uveStore.pageURI());
     readonly $languageId = computed(() => this.uveStore.pageLanguageId());
     readonly $variantId = computed(() => this.uveStore.pageVariantId());
+    /** Content types allowed on the current page — passed to the palette list for favorites filtering. */
+    readonly $allowedContentTypes = computed(() => this.uveStore.$allowedContentTypes());
 
     /**
      * Standard templates use the dotCMS Template Builder and expose a row/column

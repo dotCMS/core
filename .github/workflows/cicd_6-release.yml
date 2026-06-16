@@ -49,6 +49,11 @@ on:
         type: boolean
         default: true
         required: false
+      update_latest:
+        description: 'Update the "latest" Docker tag (disable for back-patches of older release lines)'
+        type: boolean
+        default: true
+        required: false
       notify_slack:
         description: 'Notify Slack'
         type: boolean
@@ -71,9 +76,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Enforce that releases are only ever cut from main. The workflow_dispatch
+  # branch selector cannot be hidden, so we fail fast on any non-main ref.
+  verify-branch:
+    name: Verify Branch
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Fail if not triggered from main
+        if: github.ref_name != 'main'
+        run: |
+          echo "::error::The Release workflow must be run from the 'main' branch. Selected: ${{ github.ref_name }}"
+          exit 1
+
   # Initialize - standard initialization phase (always first)
   initialize:
     name: Initialize
+    needs: [ verify-branch ]
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     # Release builds everything - no change detection needed
     with:
@@ -82,7 +100,7 @@ jobs:
   # Release Prepare - validates version, creates release branch, sets version
   release-prepare:
     name: Release Prepare
-    needs: [ initialize ]
+    needs: [ verify-branch, initialize ]
     uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
     with:
       release_version: ${{ github.event.inputs.release_version }}
@@ -121,7 +139,7 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' }}
+      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' && github.event.inputs.update_latest == 'true' }}
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
