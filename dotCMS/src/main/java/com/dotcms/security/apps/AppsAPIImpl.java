@@ -974,14 +974,24 @@ public class AppsAPIImpl implements AppsAPI {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
-                        final Optional<AppSecrets> optional = getSecrets(appKey, site, user);
+                        // Resolve with the System Host tiers enabled so an app that is only counted
+                        // by `appKeysByHost` through a global env tier (e.g. System Host env) still
+                        // resolves here, instead of coming back empty and aborting the whole export.
+                        final Optional<AppSecrets> optional = getSecrets(appKey, true, site, user);
                         if (optional.isPresent()) {
                             final AppSecrets appSecrets = optional.get();
                             exportedSecrets
                                     .computeIfAbsent(siteId, list -> new LinkedList<>())
                                     .add(appSecrets);
                         } else {
-                            throw new IllegalArgumentException(String.format("Unable to find secret identified by key `%s` under site `%s` ",appKey, site.getIdentifier()));
+                            // Presence in the key listing does not guarantee an exportable blob:
+                            // env-backed apps are provisioned from the environment and are not
+                            // persisted, so they may legitimately resolve to nothing here. Skip
+                            // them rather than failing the export; the empty-result guard below
+                            // still catches the case where nothing at all could be collected.
+                            Logger.debug(AppsAPIImpl.class, () -> String.format(
+                                    "No exportable secret resolved for key `%s` under site `%s` ; skipping.",
+                                    appKey, site.getIdentifier()));
                         }
                     }
                 }
