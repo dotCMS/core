@@ -95,7 +95,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.AUTODOC_TOKEN }}
           path: dotcms-aios
 
       - name: Set up uv
