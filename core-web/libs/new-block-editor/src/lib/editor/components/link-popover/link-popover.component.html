@@ -24,6 +24,7 @@
                 <p-autoComplete
                     inputId="link-url"
                     appendTo="body"
+                    [overlayOptions]="overlayOptions"
                     optionLabel="url"
                     [size]="'small'"
                     [ngModel]="linkModel()"
@@ -156,6 +157,7 @@
                         <p-select
                             inputId="link-rel"
                             appendTo="body"
+                            [overlayOptions]="overlayOptions"
                             [size]="'small'"
                             [showClear]="true"
                             [options]="relOptions"
