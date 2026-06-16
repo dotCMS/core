@@ -426,6 +426,52 @@ public class LangChain4jModelFactoryTest {
         assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
     }
 
+    // ── Azure Foundry endpoint auto-detection ─────────────────────────────────
+
+    /**
+     * Given an Azure OpenAI config with a Foundry endpoint (services.ai.azure.com),
+     * When buildImageModel is called,
+     * Then an ImageModel is returned using the plain OpenAI-style path (no isMicrosoftFoundry routing).
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildImageModel(azureFoundryConfig("gpt-image-2")));
+    }
+
+    /**
+     * Given an Azure OpenAI Foundry config with optional size, timeout, and maxRetries,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-image-2")
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
+                .size("1024x1024")
+                .timeout(60)
+                .maxRetries(2)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    /**
+     * Given an Azure OpenAI Foundry config without model or deploymentName,
+     * When buildImageModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static ProviderConfig openAiConfig(final String model) {
@@ -466,6 +512,15 @@ public class LangChain4jModelFactoryTest {
                 .endpoint("https://my-company.openai.azure.com/")
                 .deploymentName(model)
                 .apiVersion("2024-02-01")
+                .build();
+    }
+
+    private static ProviderConfig azureFoundryConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model(model)
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
                 .build();
     }
 

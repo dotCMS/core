@@ -11,7 +11,12 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotContentletCanLock, DotCurrentUser } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotContentletCanLock,
+    DotCurrentUser
+} from '@dotcms/dotcms-models';
 
 import { withLock } from './lock.feature';
 
@@ -251,6 +256,57 @@ describe('LockFeature', () => {
             store.updateContent({ locked: false });
             expect(store.lockWarningMessage()).toBe(null);
         });
+
+        describe('isLockedByAnotherUser', () => {
+            it('should be true when locked by a different user', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.isLockedByAnotherUser()).toBe(true);
+            });
+
+            it('should be false when locked by the current user', () => {
+                store.updateCurrentUser({ userId: '123' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.isLockedByAnotherUser()).toBe(false);
+            });
+
+            it('should be false when content is not locked', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({ locked: false });
+
+                expect(store.isLockedByAnotherUser()).toBe(false);
+            });
+        });
+
+        describe('lockedByName', () => {
+            it('should return the locker name when locked by another user', () => {
+                store.updateCurrentUser({ userId: '456' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.lockedByName()).toBe('Anna García');
+            });
+
+            it('should return null when locked by the current user', () => {
+                store.updateCurrentUser({ userId: '123' });
+                store.updateContent({
+                    locked: true,
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                });
+
+                expect(store.lockedByName()).toBeNull();
+            });
+        });
     });
 
     describe('methods', () => {
@@ -280,6 +336,8 @@ describe('LockFeature', () => {
                 expect(dotContentletService.lockContent).toHaveBeenCalledWith('123');
                 expect(store.contentlet()).toEqual(lockedContentlet);
                 expect(store.lockError()).toBeNull();
+                expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
+                expect(store.isLocking()).toBe(false);
             }));
 
             it('should handle error when locking content', fakeAsync(() => {
@@ -304,6 +362,8 @@ describe('LockFeature', () => {
                 tick();
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+                expect(store.lockStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.isLocking()).toBe(false);
                 //expect(store.lockError()).toBe(mockError.error.message);
             }));
         });
@@ -335,6 +395,8 @@ describe('LockFeature', () => {
                 expect(dotContentletService.unlockContent).toHaveBeenCalledWith('123');
                 expect(store.contentlet()).toEqual(unlockedContentlet);
                 expect(store.lockError()).toBeNull();
+                expect(store.lockStatus()).toBe(ComponentStatus.LOADED);
+                expect(store.isLocking()).toBe(false);
             }));
 
             it('should handle error when unlocking content', fakeAsync(() => {
@@ -356,6 +418,8 @@ describe('LockFeature', () => {
                 tick();
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+                expect(store.lockStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.isLocking()).toBe(false);
                 //expect(store.lockError()).toBe(mockError.message);
             }));
         });

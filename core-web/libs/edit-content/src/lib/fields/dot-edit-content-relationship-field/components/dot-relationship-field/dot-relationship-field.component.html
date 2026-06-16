@@ -135,8 +135,7 @@
                         <td
                             class="w-32 max-w-32 min-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled">
-                            @let status = item | contentletStatus;
-                            <p-chip [class]="status.classes" [label]="status.label" />
+                            <dot-contentlet-status-badge [state]="item" />
                         </td>
                     }
                     @case ('image') {

@@ -1,3 +1,4 @@
+import { signalMethod } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -8,6 +9,7 @@ import {
     effect,
     ElementRef,
     inject,
+    OnInit,
     signal,
     untracked,
     viewChild
@@ -32,6 +34,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
@@ -41,8 +44,10 @@ import {
     DotFolderTreeNodeData,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
 import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
@@ -57,7 +62,12 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveContentTypeSelectorPayload,
+    DotContentDriveDialog,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters, isFolder } from '../utils/functions';
@@ -73,6 +83,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         ToastModule,
         DialogModule,
         DotContentDriveDialogFolderComponent,
+        DotContentDriveDialogContentTypeSelectorComponent,
         MessageModule,
         ButtonModule,
         DotMessagePipe,
@@ -86,7 +97,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent {
+export class DotContentDriveShellComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -106,9 +117,64 @@ export class DotContentDriveShellComponent {
 
     readonly $contextMenuData = this.#store.contextMenu;
 
-    readonly $dialog = this.#store.dialog;
-
     readonly DIALOG_TYPE = DIALOG_TYPE;
+
+    /** Drives `[visible]`: open/close state of the dialog. */
+    protected readonly $dialogVisible = signal(false);
+
+    /**
+     * The dialog currently rendered in the body. Held through PrimeNG's close animation
+     * (only cleared on `(onHide)`) so the body doesn't blank out before the dialog finishes
+     * animating away. Synced from the store by {@link #syncDialog}.
+     */
+    protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
+
+    /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
+    readonly $folderPayload = computed(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.FOLDER
+            ? (dialog.payload as DotContentDriveFolder)
+            : undefined;
+    });
+
+    /** List type for the content-type selector dialog (encodes which base types to show). */
+    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+            ? (dialog.payload as DotContentDriveContentTypeSelectorPayload).listType
+            : undefined;
+    });
+
+    /**
+     * Content-type selector: sized to fit ~4 UVE-width cards per row. No horizontal padding so
+     * the paginator/footer separators span edge-to-edge; the list and footer add their own inset.
+     */
+    readonly $dialogContentClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+            ? 'w-[min(92vw,38rem)] px-0! pt-0 pb-4'
+            : 'w-[43.75rem] pt-0 p-4'
+    );
+
+    /**
+     * Syncs the dialog open/close state from the store. Opening sets the body and visibility
+     * together (no blank-frame flash); closing flips visibility off but leaves the body mounted
+     * so PrimeNG can animate it out — the body is cleared later in {@link onDialogHidden}.
+     * `signalMethod` only tracks its input, so the writes here need no manual `untracked`.
+     */
+    readonly #syncDialog = signalMethod<DotContentDriveDialog | undefined>((dialog) => {
+        if (dialog) {
+            this.$activeDialog.set(dialog);
+            this.$dialogVisible.set(true);
+        } else {
+            this.$dialogVisible.set(false);
+        }
+    });
+
+    constructor() {
+        this.#syncDialog(this.#store.dialog);
+    }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
         equal: (a, b) => a === b
@@ -253,10 +319,20 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Handles dialog hide event to reset the dialog state
+     * Fired by PrimeNG when the dialog visibility changes. A user-driven close (X / ESC /
+     * mask) emits `false`; propagate it to the store so the dialog state stays consistent.
      */
-    protected onHideDialog() {
-        this.#store.closeDialog();
+    protected onVisibleChange(visible: boolean) {
+        if (!visible) {
+            this.#store.closeDialog();
+        }
+    }
+
+    /**
+     * Fired after the close animation completes — now safe to drop the rendered body.
+     */
+    protected onDialogHidden() {
+        this.$activeDialog.set(undefined);
     }
 
     /**
