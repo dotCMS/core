@@ -4,7 +4,7 @@
     {
       "label": "🏃🏽‍♂️‍➡️ - Nx Command",
       "type": "shell",
-      "command": "yarn nx ${input:nxCommand} ${input:nxProject}",
+      "command": "pnpm nx ${input:nxCommand} ${input:nxProject}",
       "problemMatcher": [],
       "presentation": {
         "echo": true,
@@ -17,7 +17,7 @@
     {
       "label": "🧪 - Test Specific File",
       "type": "shell",
-      "command": "yarn nx test ${input:nxProject} --testPathPattern=${input:testFile}",
+      "command": "pnpm nx test ${input:nxProject} --testPathPattern=${input:testFile}",
       "group": "test",
       "problemMatcher": [],
       "presentation": {
@@ -31,7 +31,7 @@
     {
       "label": "🧪 - Test Project",
       "type": "shell",
-      "command": "yarn nx test ${input:nxProject}",
+      "command": "pnpm nx test ${input:nxProject}",
       "group": "test",
       "problemMatcher": [],
       "presentation": {
