@@ -43,6 +43,11 @@ public class IndicesFactoryImpl implements IndicesFactory {
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
     private static final String COUNT_INDICES_BY_VERSION_SQL =
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
+    // Phase 3 cleanup: remove the legacy ES content-index pointers (NULL version) while
+    // preserving the still-unmigrated site_search pointer. OS rows carry a non-NULL version.
+    private static final String DELETE_LEGACY_CONTENT_INDICES_SQL =
+        "DELETE FROM indicies WHERE index_version IS NULL " +
+        "AND index_type IN ('live', 'working', 'reindex_live', 'reindex_working')";
 
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
@@ -165,6 +170,20 @@ public class IndicesFactoryImpl implements IndicesFactory {
         } catch (Exception e) {
             Logger.error(this, "Failed to remove version: " + version, e);
             throw new DotDataException("Failed to remove version: " + version, e);
+        }
+    }
+
+    @Override
+    public int removeLegacyContentIndices() throws DotDataException {
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            final int deletedRows = dotConnect.executeUpdate(DELETE_LEGACY_CONTENT_INDICES_SQL);
+            Logger.info(this, "Removed " + deletedRows
+                    + " legacy ES content-index row(s) from indicies (Phase 3 cleanup)");
+            return deletedRows;
+        } catch (Exception e) {
+            Logger.error(this, "Failed to remove legacy ES content-index rows", e);
+            throw new DotDataException("Failed to remove legacy ES content-index rows", e);
         }
     }
 

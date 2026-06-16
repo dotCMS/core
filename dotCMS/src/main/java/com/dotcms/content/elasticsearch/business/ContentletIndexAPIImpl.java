@@ -1092,10 +1092,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     "Error creating reindex indices for ts=" + ts + ": " + e.getMessage(), e);
         }
         // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
-        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers
-        pointES(null, null,
-                operationsES.toPhysicalName(reindexWorkingName),
-                operationsES.toPhysicalName(reindexLiveName));
+        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers.
+        // Skipped in Phase 3: ES is decommissioned, so writing ES reindex pointers here would only
+        // create orphan NULL-version rows that the OS-only switchover never cleans up (#36077).
+        if (!isMigrationComplete()) {
+            pointES(null, null,
+                    operationsES.toPhysicalName(reindexWorkingName),
+                    operationsES.toPhysicalName(reindexLiveName));
+        }
         // ── END LEGACY ES ─────────────────────────────────────────────────────
 
         // Persist OS reindex slots, preserving existing working/live pointers.
@@ -1313,6 +1317,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         existing.reindexWorking().ifPresent(osBuilder::working);
         existing.reindexLive().ifPresent(osBuilder::live);
         versionedIndicesAPI.saveIndices(osBuilder.build());
+
+        // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
+        // old live/working plus any transient reindex_live/reindex_working that predate Phase 3.
+        // ES is decommissioned, so these rows are pure orphans — without this the table would
+        // accumulate stale ES rows on every Phase-3 reindex (#36077). DB-only: never contacts the
+        // ES cluster (which may be down). Best-effort — the OS promotion above already succeeded
+        // and must not be undone by a housekeeping failure. Physical ES index deletion is left to
+        // the scheduled DeleteInactiveLiveWorkingIndicesJob.
+        try {
+            versionedIndicesAPI.removeLegacyContentIndices();
+        } catch (Exception cleanupEx) {
+            Logger.warn(this, "Phase 3 switchover: could not purge legacy ES indicies rows", cleanupEx);
+        }
 
         // Async: optimize the newly active OS indices (merge segments, adjust replicas).
         // reindexWorking/reindexLive presence was validated at the top of this method.

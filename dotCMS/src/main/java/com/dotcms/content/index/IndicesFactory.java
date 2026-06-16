@@ -133,6 +133,21 @@ public interface IndicesFactory {
             String version) throws DotDataException;
 
     /**
+     * Removes the legacy ElasticSearch content-index pointers (NULL {@code index_version})
+     * from the {@code indicies} table: the {@code live} / {@code working} pair and the transient
+     * {@code reindex_live} / {@code reindex_working} pair.
+     *
+     * <p>Intended for Phase 3 (OpenSearch-only) cleanup, where ES is decommissioned and these
+     * NULL-version rows are pure orphans. The {@code site_search} pointer — also stored
+     * NULL-versioned but NOT part of the content-index migration — is deliberately preserved.
+     * OS rows (which carry a non-NULL {@code index_version}) are never touched.</p>
+     *
+     * @return the number of rows removed
+     * @throws DotDataException if a SQL error occurs
+     */
+    int removeLegacyContentIndices() throws DotDataException;
+
+    /**
      * Validates that every present index name in {@code indicesInfo} carries the
      * {@link IndexTag#OS} marker ({@code .os} suffix) required for DB storage.
      *
