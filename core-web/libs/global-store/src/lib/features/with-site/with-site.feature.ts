@@ -11,7 +11,8 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { Observable, pipe } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 
@@ -138,6 +139,7 @@ export function withSite() {
         withHooks((store) => ({
             onInit() {
                 const loginService = inject(LoginService);
+                const destroyRef = inject(DestroyRef);
                 // Load the current site reactively from the authentication state instead of
                 // a one-shot bootstrap load. The GlobalStore is created at app startup
                 // (`provideAppInitializer`), before the session cookie is valid, so a one-shot
@@ -153,7 +155,11 @@ export function withSite() {
                         startWith(loginService.auth),
                         map((auth) => auth?.user?.userId ?? null),
                         filter((userId): userId is string => !!userId),
-                        distinctUntilChanged()
+                        distinctUntilChanged(),
+                        // Tie the subscription to the store's lifecycle so it is torn down if
+                        // the store is ever destroyed (e.g. if this feature is reused in a
+                        // non-root, scoped store). Harmless for the current root singleton.
+                        takeUntilDestroyed(destroyRef)
                     )
                     .subscribe(() => store.loadCurrentSite());
                 store.syncSiteOnSwitchEvent();

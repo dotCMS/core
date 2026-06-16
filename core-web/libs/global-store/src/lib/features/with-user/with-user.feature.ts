@@ -3,7 +3,8 @@ import { patchState, signalStoreFeature, withHooks, withMethods, withState } fro
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators';
 
@@ -98,12 +99,17 @@ export function withUser() {
              */
             onInit() {
                 const loginService = inject(LoginService);
+                const destroyRef = inject(DestroyRef);
                 loginService.auth$
                     .pipe(
                         startWith(loginService.auth),
                         map((auth) => auth?.user?.userId ?? null),
                         filter((userId): userId is string => !!userId),
-                        distinctUntilChanged()
+                        distinctUntilChanged(),
+                        // Tie the subscription to the store's lifecycle so it is torn down if
+                        // the store is ever destroyed (e.g. if this feature is reused in a
+                        // non-root, scoped store). Harmless for the current root singleton.
+                        takeUntilDestroyed(destroyRef)
                     )
                     .subscribe(() => store.loadLoggedUser());
             }
