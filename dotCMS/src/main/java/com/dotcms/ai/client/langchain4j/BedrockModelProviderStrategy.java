@@ -128,11 +128,11 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     public EmbeddingModel buildEmbeddingModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
         if (config.timeout() != null) {
-            Logger.warn(BedrockModelProviderStrategy.class,
+            Logger.debug(BedrockModelProviderStrategy.class,
                     "timeout is not supported for Bedrock embedding models and will be ignored");
         }
         if (config.maxRetries() != null) {
-            Logger.warn(BedrockModelProviderStrategy.class,
+            Logger.debug(BedrockModelProviderStrategy.class,
                     "maxRetries is not supported for Bedrock embedding models and will be ignored");
         }
         final String model = config.model();
