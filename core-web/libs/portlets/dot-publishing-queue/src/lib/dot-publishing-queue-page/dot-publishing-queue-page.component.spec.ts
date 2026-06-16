@@ -4,9 +4,13 @@ import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
+/* eslint-disable @nx/enforce-module-boundaries */
+
 import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingQueuePageComponent } from './dot-publishing-queue-page.component';
 import { DotPublishingQueueStore } from './store/dot-publishing-queue.store';
@@ -29,6 +33,8 @@ const buildJob = (overrides: Partial<PublishingJobView> = {}): PublishingJobView
 describe('DotPublishingQueuePageComponent', () => {
     let spectator: Spectator<DotPublishingQueuePageComponent>;
     let store: InstanceType<typeof DotPublishingQueueStore>;
+    let pushPublishDialog: jest.Mocked<DotPushPublishDialogService>;
+    let downloadBundleDialog: jest.Mocked<DotDownloadBundleDialogService>;
 
     const readyRows = signal<PublishingJobView[]>([buildJob()]);
     const progressRows = signal<PublishingJobView[]>([
@@ -50,16 +56,18 @@ describe('DotPublishingQueuePageComponent', () => {
                 rowsPerPage: jest.fn().mockReturnValue(10),
                 openAssetList: jest.fn(),
                 openDetail: jest.fn(),
-                openConfigureSend: jest.fn(),
                 retryBundles: jest.fn(),
                 deleteBundle: jest.fn(),
-                generateBundle: jest.fn(),
                 setReadyPage: jest.fn(),
                 setProgressPage: jest.fn()
             }),
             ConfirmationService
         ],
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }]
+        providers: [
+            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
+            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+        ]
     });
 
     beforeEach(() => {
@@ -69,6 +77,12 @@ describe('DotPublishingQueuePageComponent', () => {
         ]);
         spectator = createComponent();
         store = spectator.inject(DotPublishingQueueStore, true);
+        pushPublishDialog = spectator.inject(
+            DotPushPublishDialogService
+        ) as jest.Mocked<DotPushPublishDialogService>;
+        downloadBundleDialog = spectator.inject(
+            DotDownloadBundleDialogService
+        ) as jest.Mocked<DotDownloadBundleDialogService>;
         jest.clearAllMocks();
     });
 
@@ -87,10 +101,14 @@ describe('DotPublishingQueuePageComponent', () => {
         expect(store.openDetail).toHaveBeenCalledWith('B-Y');
     });
 
-    it('Send opens Configure & send for the bundle', () => {
-        const job = buildJob({ bundleId: 'B-Z' });
+    it('Send opens the project-wide push publish dialog with isBundle=true', () => {
+        const job = buildJob({ bundleId: 'B-Z', bundleName: 'Bundle Z' });
         spectator.component.onSend(job);
-        expect(store.openConfigureSend).toHaveBeenCalledWith(job);
+        expect(pushPublishDialog.open).toHaveBeenCalledWith({
+            assetIdentifier: 'B-Z',
+            title: 'Bundle Z',
+            isBundle: true
+        });
     });
 
     it('Retry calls retryBundles with the single bundle id', () => {
@@ -104,5 +122,29 @@ describe('DotPublishingQueuePageComponent', () => {
         expect(items.length).toBe(4);
         expect(items[2].separator).toBe(true);
         expect(items[3].styleClass).toContain('danger');
+    });
+
+    it('kebab "Configure & send" item opens the project-wide push publish dialog', () => {
+        const job = buildJob({ bundleId: 'B-K', bundleName: 'Bundle K' });
+        const items = spectator.component.readyKebabFor(job);
+        items[0].command?.({} as never);
+        expect(pushPublishDialog.open).toHaveBeenCalledWith({
+            assetIdentifier: 'B-K',
+            title: 'Bundle K',
+            isBundle: true
+        });
+    });
+
+    it('kebab "Generate / download" item opens the project-wide download bundle dialog', () => {
+        const job = buildJob({ bundleId: 'B-D' });
+        const items = spectator.component.readyKebabFor(job);
+        items[1].command?.({} as never);
+        expect(downloadBundleDialog.open).toHaveBeenCalledWith('B-D');
+    });
+
+    it('readyKebabFor returns a stable reference across calls (no .bind in template)', () => {
+        // Class arrow property → same reference forever. Critical for the list
+        // component's `kebabMenus` memoization to work.
+        expect(spectator.component.readyKebabFor).toBe(spectator.component.readyKebabFor);
     });
 });

@@ -6,7 +6,7 @@
         [total]="store.readyTotal()"
         [page]="store.readyPage()"
         [rowsPerPage]="store.rowsPerPage()"
-        [kebabBuilder]="readyKebabFor.bind(this)"
+        [kebabBuilder]="readyKebabFor"
         headerKey="publishing-queue.ready.title"
         [emptyConfig]="readyEmpty"
         (rowClick)="onRowClick($event, 'ready')"

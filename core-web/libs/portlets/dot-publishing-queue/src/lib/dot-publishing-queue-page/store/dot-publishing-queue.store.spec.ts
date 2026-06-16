@@ -54,8 +54,8 @@ const HISTORY_RESPONSE: PublishingJobsResponse = {
 };
 
 const MOCK_ASSETS: BundleAssetView[] = [
-    { id: 'a1', title: 'Asset 1', type: 'contentlet' },
-    { id: 'a2', title: 'Asset 2', type: 'template' }
+    { asset: 'a1', title: 'Asset 1', type: 'contentlet' },
+    { asset: 'a2', title: 'Asset 2', type: 'template' }
 ];
 
 const MOCK_DETAIL: PublishingJobDetailView = {
@@ -94,24 +94,12 @@ describe('DotPublishingQueueStore', () => {
                 getUnsendBundles: jest.fn().mockReturnValue(of(UNSENT_RESPONSE)),
                 getBundleAssets: jest.fn().mockReturnValue(of(MOCK_ASSETS)),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of(MOCK_DETAIL)),
-                getEnvironments: jest.fn().mockReturnValue(
-                    of([
-                        { id: 'env-1', name: 'Prod' },
-                        { id: 'env-2', name: 'Stage' }
-                    ])
-                ),
-                pushBundle: jest.fn().mockReturnValue(
-                    of({
-                        bundleId: 'b',
-                        operation: 'publish',
-                        environments: [],
-                        filterKey: 'k'
-                    })
-                ),
+                removeAssetsFromBundle: jest
+                    .fn()
+                    .mockReturnValue(of([{ assetId: 'a1', success: true, message: 'ok' }])),
                 retryBundles: jest.fn().mockReturnValue(of([])),
                 deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
                 deleteBundles: jest.fn().mockReturnValue(of({ message: 'ok', deleted: [] })),
-                generateBundle: jest.fn().mockReturnValue(of({})),
                 uploadBundle: jest
                     .fn()
                     .mockReturnValue(of({ bundleName: 'b', status: 'BUNDLE_REQUESTED' }))
@@ -285,55 +273,66 @@ describe('DotPublishingQueueStore', () => {
         });
     });
 
-    describe('openDetail / loadDetail / closeDetail', () => {
-        it('loads details when opened', () => {
-            store.openDetail('B-Y');
-            expect(service.getPublishingJobDetails).toHaveBeenCalledWith('B-Y');
-            expect(store.detail()).toEqual(MOCK_DETAIL);
-            expect(store.detailStatus()).toBe('loaded');
+    describe('removeBundleAsset', () => {
+        beforeEach(() => {
+            (service.removeAssetsFromBundle as jest.Mock).mockClear();
         });
 
-        it('closeDetail clears state', () => {
+        it('calls service.removeAssetsFromBundle with [assetId] and refetches assets', () => {
+            store.openAssetList('B-X');
+            (service.getBundleAssets as jest.Mock).mockClear();
+            store.removeBundleAsset('a1');
+            expect(service.removeAssetsFromBundle).toHaveBeenCalledWith('B-X', ['a1']);
+            // After success the store refetches the asset list
+            expect(service.getBundleAssets).toHaveBeenCalledWith('B-X');
+        });
+
+        it('is a no-op when no bundle is currently selected', () => {
+            store.removeBundleAsset('a1');
+            expect(service.removeAssetsFromBundle).not.toHaveBeenCalled();
+        });
+
+        it('error path → httpErrorManager.handle called', () => {
+            const error = new Error('boom');
+            (service.removeAssetsFromBundle as jest.Mock).mockReturnValueOnce(
+                throwError(() => error)
+            );
+            store.openAssetList('B-X');
+            store.removeBundleAsset('a1');
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+        });
+    });
+
+    describe('openDetail / loadDetail / closeDetail', () => {
+        it('loads details + assets when opened', () => {
+            store.openDetail('B-Y');
+            expect(service.getPublishingJobDetails).toHaveBeenCalledWith('B-Y');
+            expect(service.getBundleAssets).toHaveBeenCalledWith('B-Y');
+            expect(store.detail()).toEqual(MOCK_DETAIL);
+            expect(store.detailStatus()).toBe('loaded');
+            expect(store.detailAssets()).toEqual(MOCK_ASSETS);
+            expect(store.detailAssetsStatus()).toBe('loaded');
+        });
+
+        it('closeDetail clears state including detail assets', () => {
             store.openDetail('B-Y');
             store.closeDetail();
             expect(store.detailBundleId()).toBeNull();
             expect(store.detail()).toBeNull();
+            expect(store.detailAssets()).toEqual([]);
+            expect(store.detailAssetsStatus()).toBe('init');
+        });
+
+        it('loadDetailAssets error → handle + status reset to loaded', () => {
+            const error = new Error('boom');
+            (service.getBundleAssets as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            store.openDetail('B-Z');
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(store.detailAssetsStatus()).toBe('loaded');
         });
     });
 
-    describe('openConfigureSend / submitPush / closeConfigureSend', () => {
-        it('loads environments + sets target on open', () => {
-            store.openConfigureSend(buildJob({ bundleId: 'B-Z' }));
-            expect(store.pushBundleTarget()?.bundleId).toBe('B-Z');
-            expect(service.getEnvironments).toHaveBeenCalled();
-            expect(store.environments().length).toBeGreaterThan(0);
-        });
-
-        it('submitPush calls the service and clears the target on success', () => {
-            const onDone = jest.fn();
-            store.openConfigureSend(buildJob({ bundleId: 'B-Z' }));
-            store.submitPush(
-                'B-Z',
-                {
-                    operation: 'publish',
-                    environments: ['env-1'],
-                    filterKey: 'k'
-                },
-                onDone
-            );
-            expect(service.pushBundle).toHaveBeenCalled();
-            expect(store.pushBundleTarget()).toBeNull();
-            expect(onDone).toHaveBeenCalled();
-        });
-
-        it('closeConfigureSend clears the target', () => {
-            store.openConfigureSend(buildJob());
-            store.closeConfigureSend();
-            expect(store.pushBundleTarget()).toBeNull();
-        });
-    });
-
-    describe('retryBundles / deleteBundle / deleteBundlesBulk / generateBundle', () => {
+    describe('retryBundles / deleteBundle / deleteBundlesBulk', () => {
         it('retryBundles calls service and refreshes', () => {
             const onDone = jest.fn();
             store.retryBundles({ bundleIds: ['x'] }, onDone);
@@ -352,13 +351,6 @@ describe('DotPublishingQueueStore', () => {
             expect(service.deleteBundle).toHaveBeenCalledWith('a');
             expect(service.deleteBundle).toHaveBeenCalledWith('b');
             expect(store.historySelectedIds()).toEqual([]);
-        });
-
-        it('generateBundle calls service with bundleId + filterKey', () => {
-            const onDone = jest.fn();
-            store.generateBundle('x', 'force.yml', onDone);
-            expect(service.generateBundle).toHaveBeenCalledWith('x', 'force.yml');
-            expect(onDone).toHaveBeenCalled();
         });
     });
 

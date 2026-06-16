@@ -11,12 +11,10 @@ import {
     DotPublishingQueueService,
     PublishingSortDirection,
     PublishingSortField,
-    PushBundlePayload,
     RetryBundlesPayload
 } from '@dotcms/data-access';
 import {
     BundleAssetView,
-    DotEnvironment,
     IN_PROGRESS_STATUSES,
     PublishAuditStatus,
     PublishingJobDetailView,
@@ -78,12 +76,10 @@ interface DotPublishingQueueState {
     detailBundleId: string | null;
     detail: PublishingJobDetailView | null;
     detailStatus: LoadStatus;
-
-    environments: DotEnvironment[];
-    environmentsStatus: LoadStatus;
-
-    pushBundleTarget: PublishingJobView | null;
-    pushInFlight: boolean;
+    /** Asset list shown inside the Bundle Details modal (separate from the standalone
+     * Asset List modal's `selectedAssets` so the two modals don't fight over state). */
+    detailAssets: BundleAssetView[];
+    detailAssetsStatus: LoadStatus;
 
     uploadInFlight: boolean;
     uploadProgress: number;
@@ -122,12 +118,8 @@ const initialState: DotPublishingQueueState = {
     detailBundleId: null,
     detail: null,
     detailStatus: 'init',
-
-    environments: [],
-    environmentsStatus: 'init',
-
-    pushBundleTarget: null,
-    pushInFlight: false,
+    detailAssets: [],
+    detailAssetsStatus: 'init',
 
     uploadInFlight: false,
     uploadProgress: 0
@@ -308,27 +300,35 @@ export const DotPublishingQueueStore = signalStore(
                 });
         }
 
-        function loadEnvironments() {
-            if (
-                store.environmentsStatus() === 'loading' ||
-                store.environmentsStatus() === 'loaded'
-            ) {
+        /**
+         * Lazy-loads the assets that travelled in a bundle. Backed by the legacy
+         * `GET /api/bundle/{bundleId}/assets` (the only endpoint that returns the
+         * full list — `/api/v1/publishing/{bundleId}` only carries metadata +
+         * endpoints + a 3-item assetPreview).
+         */
+        function loadDetailAssets() {
+            const bundleId = store.detailBundleId();
+            if (!bundleId) {
                 return;
             }
-            patchState(store, { environmentsStatus: 'loading' });
+
+            patchState(store, { detailAssetsStatus: 'loading', detailAssets: [] });
             service
-                .getEnvironments()
+                .getBundleAssets(bundleId)
                 .pipe(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { environmentsStatus: 'error' });
+                        patchState(store, { detailAssetsStatus: 'loaded' });
 
                         return EMPTY;
                     })
                 )
-                .subscribe((environments) => {
-                    patchState(store, { environments, environmentsStatus: 'loaded' });
+                .subscribe((assets) => {
+                    patchState(store, {
+                        detailAssets: assets,
+                        detailAssetsStatus: 'loaded'
+                    });
                 });
         }
 
@@ -373,7 +373,6 @@ export const DotPublishingQueueStore = signalStore(
             loadHistory,
             loadAssets,
             loadDetail,
-            loadEnvironments,
             refresh,
             startPolling,
             stopPolling,
@@ -451,49 +450,56 @@ export const DotPublishingQueueStore = signalStore(
                 });
             },
 
+            /**
+             * Removes a single asset from the currently-open bundle and refetches
+             * the asset list so the row disappears. Backend returns 409 if the
+             * bundle is already in progress — surfaced via httpErrorManager toast.
+             */
+            removeBundleAsset(assetId: string, onDone?: () => void) {
+                const bundleId = store.selectedBundleId();
+                if (!bundleId) {
+                    return;
+                }
+                service
+                    .removeAssetsFromBundle(bundleId, [assetId])
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe(() => {
+                        // Refetch the asset list so the row disappears
+                        loadAssets();
+                        // Also refresh the READY column count, since assetCount changes
+                        refresh();
+                        onDone?.();
+                    });
+            },
+
             openDetail(bundleId: string) {
                 patchState(store, {
                     detailBundleId: bundleId,
                     detail: null,
-                    detailStatus: 'init'
+                    detailStatus: 'init',
+                    detailAssets: [],
+                    detailAssetsStatus: 'init'
                 });
                 loadDetail();
+                loadDetailAssets();
             },
+
+            loadDetailAssets,
 
             closeDetail() {
                 patchState(store, {
                     detailBundleId: null,
                     detail: null,
-                    detailStatus: 'init'
+                    detailStatus: 'init',
+                    detailAssets: [],
+                    detailAssetsStatus: 'init'
                 });
-            },
-
-            openConfigureSend(bundle: PublishingJobView) {
-                patchState(store, { pushBundleTarget: bundle });
-                loadEnvironments();
-            },
-
-            closeConfigureSend() {
-                patchState(store, { pushBundleTarget: null });
-            },
-
-            submitPush(bundleId: string, payload: PushBundlePayload, onDone: () => void) {
-                patchState(store, { pushInFlight: true });
-                service
-                    .pushBundle(bundleId, payload)
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { pushInFlight: false });
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe(() => {
-                        patchState(store, { pushInFlight: false, pushBundleTarget: null });
-                        refresh();
-                        onDone();
-                    });
             },
 
             retryBundles(payload: RetryBundlesPayload, onDone?: () => void) {
@@ -548,19 +554,6 @@ export const DotPublishingQueueStore = signalStore(
                         refresh();
                         onDone?.();
                     });
-            },
-
-            generateBundle(bundleId: string, filterKey: string, onDone?: () => void) {
-                service
-                    .generateBundle(bundleId, filterKey)
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe(() => onDone?.());
             },
 
             uploadBundle(file: File, onDone?: () => void) {

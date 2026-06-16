@@ -11,7 +11,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPublishingQueueToolbarComponent } from '../components/dot-publishing-queue-toolbar/dot-publishing-queue-toolbar.component';
 import { DotPublishingQueueAssetListDialogComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog.component';
 import { DotPublishingQueueBundleDetailsDialogComponent } from '../dialogs/dot-publishing-queue-bundle-details-dialog/dot-publishing-queue-bundle-details-dialog.component';
-import { DotPublishingQueueConfigureSendDialogComponent } from '../dialogs/dot-publishing-queue-configure-send-dialog/dot-publishing-queue-configure-send-dialog.component';
 import { DotPublishingQueueUploadDialogComponent } from '../dialogs/dot-publishing-queue-upload-dialog/dot-publishing-queue-upload-dialog.component';
 import { DotPublishingQueueHistoryComponent } from '../dot-publishing-queue-history/dot-publishing-queue-history.component';
 import { DotPublishingQueuePageComponent } from '../dot-publishing-queue-page/dot-publishing-queue-page.component';
@@ -39,7 +38,6 @@ export class DotPublishingQueueShellComponent {
     private readonly dotMessageService = inject(DotMessageService);
 
     private detailRef: DynamicDialogRef | null = null;
-    private configureRef: DynamicDialogRef | null = null;
     private uploadRef: DynamicDialogRef | null = null;
     private assetListRef: DynamicDialogRef | null = null;
 
@@ -54,11 +52,6 @@ export class DotPublishingQueueShellComponent {
         effect(() => {
             const bundleId = this.store.detailBundleId();
             untracked(() => this.syncDetail(bundleId));
-        });
-
-        effect(() => {
-            const target = this.store.pushBundleTarget();
-            untracked(() => this.syncConfigure(target !== null));
         });
     }
 
@@ -127,29 +120,6 @@ export class DotPublishingQueueShellComponent {
         } else if (!bundleId && this.detailRef) {
             this.detailRef.close();
             this.detailRef = null;
-        }
-    }
-
-    private syncConfigure(open: boolean): void {
-        if (open && !this.configureRef) {
-            this.configureRef = this.dialogService.open(
-                DotPublishingQueueConfigureSendDialogComponent,
-                {
-                    header: this.dotMessageService.get('publishing-queue.configure-send.title'),
-                    width: '720px',
-                    closable: true,
-                    closeOnEscape: true,
-                    draggable: false,
-                    position: 'center'
-                }
-            );
-            this.configureRef.onClose.pipe(take(1)).subscribe(() => {
-                this.configureRef = null;
-                this.store.closeConfigureSend();
-            });
-        } else if (!open && this.configureRef) {
-            this.configureRef.close();
-            this.configureRef = null;
         }
     }
 }

@@ -54,6 +54,13 @@ export interface PublishingJobDetailView {
     numTries: number;
 }
 
+/** Per-asset result of `DELETE /v1/bundles/{bundleId}/assets`. */
+export interface RemoveAssetResultView {
+    assetId: string;
+    success: boolean;
+    message: string;
+}
+
 /** Result of a single bundle retry. */
 export interface RetryBundleResultView {
     bundleId: string;
@@ -63,14 +70,4 @@ export interface RetryBundleResultView {
     operation: 'PUBLISH' | 'UNPUBLISH' | null;
     deliveryStrategy: 'ALL_ENDPOINTS' | 'FAILED_ENDPOINTS';
     assetCount: number | null;
-}
-
-/** Result of pushing a bundle to environments. */
-export interface PushBundleResultView {
-    bundleId: string;
-    operation: string;
-    publishDate: string | null;
-    expireDate: string | null;
-    environments: string[];
-    filterKey: string;
 }

@@ -5,14 +5,16 @@ import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+/* eslint-disable @nx/enforce-module-boundaries */
+
 import {
     DotCurrentUserService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotPublishingQueueService,
-    DotPushPublishFiltersService
+    DotPublishingQueueService
 } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingQueueShellComponent } from './dot-publishing-queue-shell.component';
 
@@ -37,28 +39,25 @@ describe('DotPublishingQueueShellComponent', () => {
         ],
         providers: [
             mockProvider(DotPublishingQueueService, {
-                listPublishingJobs: jest
-                    .fn()
-                    .mockReturnValue(
-                        of({
-                            entity: [],
-                            pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
-                        })
-                    ),
+                listPublishingJobs: jest.fn().mockReturnValue(
+                    of({
+                        entity: [],
+                        pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
+                    })
+                ),
                 getUnsendBundles: jest
                     .fn()
                     .mockReturnValue(
                         of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
                     ),
                 getBundleAssets: jest.fn().mockReturnValue(of([])),
-                getPublishingJobDetails: jest.fn().mockReturnValue(of({})),
-                getEnvironments: jest.fn().mockReturnValue(of([]))
+                getPublishingJobDetails: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'dotcms.org.1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotPushPublishFiltersService, { get: jest.fn().mockReturnValue(of([])) }),
+            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
@@ -93,17 +92,6 @@ describe('DotPublishingQueueShellComponent', () => {
     describe('detail dialog sync', () => {
         it('opens dialog when detailBundleId becomes set', () => {
             store.openDetail('B-2');
-            spectator.detectChanges();
-            expect(dialogService.open).toHaveBeenCalled();
-        });
-    });
-
-    describe('configure & send dialog sync', () => {
-        it('opens dialog when pushBundleTarget becomes set', () => {
-            store.openConfigureSend({
-                bundleId: 'B-3',
-                bundleName: 'Bundle 3'
-            } as Parameters<typeof store.openConfigureSend>[0]);
             spectator.detectChanges();
             expect(dialogService.open).toHaveBeenCalled();
         });

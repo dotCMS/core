@@ -79,7 +79,7 @@ describe('DotPublishingQueueService', () => {
     describe('getBundleAssets', () => {
         it('hits /api/bundle/{bundleId}/assets with limit=-1', () => {
             const mockAssets: BundleAssetView[] = [
-                { id: 'a1', title: 'Asset 1', type: 'contentlet' }
+                { asset: 'a1', title: 'Asset 1', type: 'contentlet' }
             ];
 
             service.getBundleAssets('bundle-123').subscribe((assets) => {
@@ -92,6 +92,28 @@ describe('DotPublishingQueueService', () => {
             expect(req.request.method).toBe('GET');
             expect(req.request.params.get('limit')).toBe('-1');
             req.flush(mockAssets);
+        });
+    });
+
+    describe('removeAssetsFromBundle', () => {
+        it('DELETEs /api/v1/bundles/{bundleId}/assets with assetIds body and unwraps entity', () => {
+            const results = [
+                { assetId: 'a1', success: true, message: 'ok' },
+                { assetId: 'a2', success: true, message: 'ok' }
+            ];
+
+            service
+                .removeAssetsFromBundle('bundle-123', ['a1', 'a2'])
+                .subscribe((response) => {
+                    expect(response).toEqual(results);
+                });
+
+            const req = httpMock.expectOne(
+                (request) => request.url === '/api/v1/bundles/bundle-123/assets'
+            );
+            expect(req.request.method).toBe('DELETE');
+            expect(req.request.body).toEqual({ assetIds: ['a1', 'a2'] });
+            req.flush({ entity: results });
         });
     });
 

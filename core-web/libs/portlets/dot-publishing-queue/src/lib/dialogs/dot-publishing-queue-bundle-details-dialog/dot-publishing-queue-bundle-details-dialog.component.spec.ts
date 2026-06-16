@@ -3,7 +3,11 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { signal } from '@angular/core';
 
 import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
-import { PublishAuditStatus, PublishingJobDetailView } from '@dotcms/dotcms-models';
+import {
+    BundleAssetView,
+    PublishAuditStatus,
+    PublishingJobDetailView
+} from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueBundleDetailsDialogComponent } from './dot-publishing-queue-bundle-details-dialog.component';
@@ -54,11 +58,20 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
 
     const detail = signal<PublishingJobDetailView | null>(null);
     const detailStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loading');
+    const detailAssets = signal<BundleAssetView[]>([]);
+    const detailAssetsStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loaded');
+    const detailBundleId = signal<string | null>(null);
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueBundleDetailsDialogComponent,
         providers: [
-            mockProvider(DotPublishingQueueStore, { detail, detailStatus }),
+            mockProvider(DotPublishingQueueStore, {
+                detail,
+                detailStatus,
+                detailAssets,
+                detailAssetsStatus,
+                detailBundleId
+            }),
             mockProvider(DotPublishingQueueService, {
                 getBundleDownloadUrl: jest.fn((id: string) => `/api/bundle/_download/${id}`)
             }),
@@ -69,6 +82,9 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
     beforeEach(() => {
         detail.set(null);
         detailStatus.set('loading');
+        detailAssets.set([]);
+        detailAssetsStatus.set('loaded');
+        detailBundleId.set(null);
         spectator = createComponent();
     });
 
@@ -110,5 +126,125 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
         detailStatus.set('error');
         spectator.detectChanges();
         expect(spectator.query(byTestId('pq-detail-error'))).toBeTruthy();
+    });
+
+    describe('assets section', () => {
+        it('reserves space (shell + table header) even while loading so the dialog does not jump', () => {
+            detail.set(detailFixture());
+            detailStatus.set('loaded');
+            detailAssetsStatus.set('loading');
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-assets-shell'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-assets-table'))).toBeTruthy();
+            expect(spectator.queryAll(byTestId('pq-detail-asset-skeleton')).length).toBe(5);
+            expect(spectator.query(byTestId('pq-detail-asset-row'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-detail-assets-empty'))).toBeFalsy();
+        });
+
+        it('renders the asset rows when items are loaded', () => {
+            detail.set(detailFixture());
+            detailStatus.set('loaded');
+            detailAssets.set([
+                { asset: 'a1', title: 'Page 1', type: 'contentlet' },
+                { asset: 'a2', title: 'Template 1', type: 'template' }
+            ]);
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-assets-shell'))).toBeTruthy();
+            expect(spectator.queryAll(byTestId('pq-detail-asset-row')).length).toBe(2);
+            expect(spectator.query(byTestId('pq-detail-asset-skeleton'))).toBeFalsy();
+        });
+
+        it('shows the empty placeholder inside the shell when loaded with no assets', () => {
+            detail.set(detailFixture());
+            detailStatus.set('loaded');
+            detailAssets.set([]);
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-assets-shell'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-assets-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-asset-row'))).toBeFalsy();
+        });
+    });
+
+    describe('assets search (visible only when assetCount > 10)', () => {
+        const manyAssets = Array.from({ length: 15 }, (_, i) => ({
+            id: `a${i}`,
+            title: i % 2 === 0 ? `Homepage ${i}` : `Template ${i}`,
+            type: i % 2 === 0 ? 'contentlet' : 'template'
+        }));
+
+        it('hides the search input when assetCount <= 10', () => {
+            detail.set(detailFixture({ assetCount: 4 }));
+            detailStatus.set('loaded');
+            detailAssets.set([{ asset: 'a1', title: 'Asset 1', type: 'contentlet' }]);
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-assets-search'))).toBeFalsy();
+        });
+
+        it('renders the search input when assetCount > 10', () => {
+            detail.set(detailFixture({ assetCount: 15 }));
+            detailStatus.set('loaded');
+            detailAssets.set(manyAssets);
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-assets-search'))).toBeTruthy();
+        });
+
+        it('filters rows by title or type when search is set', () => {
+            jest.useFakeTimers();
+            try {
+                detail.set(detailFixture({ assetCount: 15 }));
+                detailStatus.set('loaded');
+                detailAssets.set(manyAssets);
+                detailAssetsStatus.set('loaded');
+                spectator.detectChanges();
+                expect(spectator.queryAll(byTestId('pq-detail-asset-row')).length).toBe(15);
+
+                spectator.component.onSearch('template');
+                jest.advanceTimersByTime(300);
+                spectator.detectChanges();
+
+                // Half the assets have type 'template' (every odd index) — 7 of 15
+                const rows = spectator.queryAll(byTestId('pq-detail-asset-row'));
+                expect(rows.length).toBe(7);
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
+        it('shows the "no matches" message when search returns zero but bundle has assets', () => {
+            detail.set(detailFixture({ assetCount: 15 }));
+            detailStatus.set('loaded');
+            detailAssets.set(manyAssets);
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+
+            spectator.component.assetSearch.set('something-that-doesnt-exist');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-detail-assets-no-matches'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-assets-empty'))).toBeFalsy();
+        });
+
+        it('resets search when the dialog is reused for a different bundle', () => {
+            // Open the dialog on bundle A and let the init effect settle.
+            detailBundleId.set('A');
+            detail.set(detailFixture({ bundleId: 'A', assetCount: 15 }));
+            detailStatus.set('loaded');
+            detailAssetsStatus.set('loaded');
+            spectator.detectChanges();
+
+            // Set the search AFTER the effect has run with 'A'.
+            spectator.component.assetSearch.set('homepage');
+            spectator.detectChanges();
+            expect(spectator.component.assetSearch()).toBe('homepage');
+
+            // Switching to a different bundle id triggers the reset effect.
+            detailBundleId.set('B');
+            spectator.detectChanges();
+            expect(spectator.component.assetSearch()).toBe('');
+        });
     });
 });

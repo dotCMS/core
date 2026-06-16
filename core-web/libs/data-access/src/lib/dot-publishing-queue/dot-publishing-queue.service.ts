@@ -8,11 +8,10 @@ import { map } from 'rxjs/operators';
 import {
     BundleAssetView,
     DotCMSResponse,
-    DotEnvironment,
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobsResponse,
-    PushBundleResultView,
+    RemoveAssetResultView,
     RetryBundleResultView,
     UnsentBundlesResponse
 } from '@dotcms/dotcms-models';
@@ -29,16 +28,7 @@ export interface ListPublishingJobsParams {
     sortDirection?: PublishingSortDirection;
 }
 
-export type PushOperation = 'publish' | 'expire' | 'publishexpire';
 export type RetryDeliveryStrategy = 'ALL_ENDPOINTS' | 'FAILED_ENDPOINTS';
-
-export interface PushBundlePayload {
-    operation: PushOperation;
-    publishDate?: string;
-    expireDate?: string;
-    environments: string[];
-    filterKey: string;
-}
 
 export interface RetryBundlesPayload {
     bundleIds: string[];
@@ -52,18 +42,25 @@ export interface RetryBundlesPayload {
  * v1 endpoints (`com.dotcms.rest.api.v1.publishing.PublishingResource`):
  * - `GET /api/v1/publishing` — list bundles by status (sort/filter via params)
  * - `GET /api/v1/publishing/{bundleId}` — full bundle detail with endpoints
- * - `POST /api/v1/publishing/push/{bundleId}` — push bundle to environments
  * - `POST /api/v1/publishing/retry` — retry bundles (bulk)
  * - `DELETE /api/v1/publishing/{bundleId}` — delete single bundle
  * - `DELETE /api/v1/publishing` — bulk delete by id (added by #36046)
  *
  * Legacy endpoints (`com.dotcms.rest.BundleResource`) still used until #36048 lands:
  * - `GET /api/bundle/{bundleId}/assets` — asset list inside a bundle
- * - `POST /api/bundle/_generate` — async tar.gz generation
  * - `POST /api/bundle/sync` — synchronous .tar.gz upload (licensed)
  * - `GET /api/bundle/_download/{bundleId}` — bundle download (URL only)
  *
- * Environment list comes from `EnvironmentResource` (`GET /api/environment`).
+ * Push-to-environment flow is delegated to the project-wide push publish dialog
+ * (`DotPushPublishDialogService.open(...)` from `@dotcms/dotcms-js`), which hits
+ * the legacy `/DotAjaxDirector/.../cmd/pushBundle` endpoint via `PushPublishService`.
+ * No bespoke push endpoint lives here.
+ *
+ * Bundle generate-and-download is delegated to the project-wide download dialog
+ * (`DotDownloadBundleDialogService.open(bundleId)` from
+ * `@services/dot-download-bundle-dialog/...`), which posts to `/api/bundle/_generate`
+ * with the user-picked filter + operation and triggers a browser download.
+ * No bespoke generate endpoint lives here either.
  */
 @Injectable({
     providedIn: 'root'
@@ -102,14 +99,6 @@ export class DotPublishingQueueService {
             .pipe(map((response) => response.entity));
     }
 
-    pushBundle(bundleId: string, payload: PushBundlePayload): Observable<PushBundleResultView> {
-        return this.http
-            .post<
-                DotCMSResponse<PushBundleResultView>
-            >(`/api/v1/publishing/push/${bundleId}`, payload)
-            .pipe(map((response) => response.entity));
-    }
-
     retryBundles(payload: RetryBundlesPayload): Observable<RetryBundleResultView[]> {
         return this.http
             .post<DotCMSResponse<RetryBundleResultView[]>>('/api/v1/publishing/retry', payload)
@@ -130,14 +119,6 @@ export class DotPublishingQueueService {
             '/api/v1/publishing',
             { body: { bundleIds } }
         );
-    }
-
-    generateBundle(
-        bundleId: string,
-        filterKey: string,
-        operation: PushOperation = 'publish'
-    ): Observable<unknown> {
-        return this.http.post('/api/bundle/_generate', { bundleId, filterKey, operation });
     }
 
     uploadBundle(file: File): Observable<{ bundleName: string; status: string }> {
@@ -189,12 +170,21 @@ export class DotPublishingQueueService {
     }
 
     /**
-     * Lists Push-Publish environments visible to the current user.
-     * Backed by `EnvironmentResource#loadAllEnvironments` (role-filtered for non-admins).
+     * Removes one or more assets from an unsent bundle.
+     * Backed by `BundleManagementResource#removeAssetsFromBundle`
+     * (`DELETE /api/v1/bundles/{bundleId}/assets`).
+     *
+     * Backend returns 409 if the bundle is already in progress.
+     * Per-asset results live inside `entity[]` — some may fail while others succeed.
      */
-    getEnvironments(): Observable<DotEnvironment[]> {
+    removeAssetsFromBundle(
+        bundleId: string,
+        assetIds: string[]
+    ): Observable<RemoveAssetResultView[]> {
         return this.http
-            .get<DotCMSResponse<DotEnvironment[]>>('/api/environment')
+            .request<
+                DotCMSResponse<RemoveAssetResultView[]>
+            >('DELETE', `/api/v1/bundles/${bundleId}/assets`, { body: { assetIds } })
             .pipe(map((response) => response.entity));
     }
 }

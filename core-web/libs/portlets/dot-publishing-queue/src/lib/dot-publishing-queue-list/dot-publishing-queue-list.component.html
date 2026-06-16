@@ -59,10 +59,13 @@
                             [model]="kebabFor(job)"
                             [popup]="true"
                             appendTo="body"
+                            showTransitionOptions="0ms"
+                            hideTransitionOptions="0ms"
                             data-testid="pq-row-kebab-menu" />
                         <button
                             type="button"
                             class="p-button p-button-text p-button-rounded"
+                            (mousedown)="$event.stopPropagation()"
                             (click)="$event.stopPropagation(); kebab.toggle($event)"
                             [attr.aria-label]="'publishing-queue.row.actions' | dm"
                             data-testid="pq-row-kebab-btn">
