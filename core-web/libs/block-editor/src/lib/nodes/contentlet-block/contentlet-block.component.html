@@ -1,18 +1,18 @@
 @if (data(); as data) {
-    <p-card class="flex! flex-row! justify-start items-center">
+    <p-card class="flex! flex-row! items-center justify-start">
         <ng-template #header>
-            <div class="box-border p-4! pr-0! flex items-center h-full">
+            <div class="box-border flex h-full items-center p-4! pr-0!">
                 <dot-contentlet-thumbnail
                     [width]="94"
                     [height]="94"
                     [iconSize]="'72px'"
                     [contentlet]="data"
-                    class="block relative w-[94px] h-[94px]" />
+                    class="relative block h-[94px] w-[94px]" />
             </div>
         </ng-template>
 
         <ng-template #title>
-            <div class="overflow-hidden w-full m-0!">
+            <div class="m-0! w-full overflow-hidden">
                 <h3 class="m-0! overflow-hidden p-0! text-ellipsis whitespace-nowrap">
                     {{ data.title }}
                 </h3>
@@ -24,12 +24,12 @@
         </ng-template>
 
         <ng-template #footer>
-            <dot-contentlet-status-chip [state]="data | contentletState" />
+            <dot-contentlet-status-badge [state]="data | contentletState" />
         </ng-template>
     </p-card>
 } @else {
     <p-card>
-        <div class="h-[94px] flex justify-center items-center">
+        <div class="flex h-[94px] items-center justify-center">
             <dot-spinner />
         </div>
     </p-card>

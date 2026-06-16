@@ -118,7 +118,7 @@ just test-postman ai            # Shorter command
 cd core-web
 
 # Install dependencies first
-yarn install                    # Required before first test
+pnpm install                    # Required before first test
 
 # Run specific component tests (RECOMMENDED)
 nx run dotcms-ui:test --testNamePattern="ContentTypeComponent"
@@ -578,7 +578,7 @@ export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 source ~/.zshrc
 
 # Reinstall dependencies
-cd core-web && yarn install
+cd core-web && pnpm install
 ```
 
 ### Issue #6: Dependency Version Conflict
@@ -716,7 +716,7 @@ curl -X GET http://localhost:8080/api/v1/myresource/123
 cd core-web
 
 # 2. Install dependencies (first time only)
-yarn install
+pnpm install
 
 # 3. Start development server
 nx serve dotcms-ui
