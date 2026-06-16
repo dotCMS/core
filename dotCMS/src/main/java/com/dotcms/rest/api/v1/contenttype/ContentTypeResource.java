@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.rest.api.v1.contenttype.ContentTypeHelper.requestContainsKey;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 import static com.liferay.util.StringPool.COMMA;
@@ -17,7 +16,6 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
@@ -786,15 +784,8 @@ public class ContentTypeResource implements Serializable {
 			checkNotEmpty(contentType.id(), BadRequestException.class,
 					"Content Type 'id' attribute must be set");
 
-			// If 'metadata' was absent from the request body (not the same as "metadata": null),
-			// carry forward whatever is currently stored. Clients unaware of metadata won't wipe it
-			// inadvertently; sending "metadata": null still clears it explicitly.
-            if (contentType.metadata() == null && !requestContainsKey(form.getRequestJson(), "metadata")) {
-				final ContentType existing = contentTypeAPI.find(idOrVar);
-				if (existing.metadata() != null) {
-					contentType = ContentTypeBuilder.builder(contentType).metadata(existing.metadata()).build();
-				}
-			}
+			contentType = contentTypeHelper.preserveMetadataIfAbsent(
+					contentType, form.getRequestJson(), contentTypeAPI);
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,

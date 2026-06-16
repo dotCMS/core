@@ -1094,6 +1094,46 @@ public class ContentTypeHelper implements Serializable {
     }
 
     /**
+     * Preserves the existing Content Type metadata when the request body did not include a
+     * {@code metadata} key at all (i.e. the client is unaware of metadata and did not intend to
+     * clear it). Sending {@code "metadata": null} in the request body still clears it explicitly.
+     * <p>
+     * Because {@link ContentTypeBuilder#builder(ContentType)} does not copy the {@code innerFields}
+     * list (it is a plain private field, not an Immutables {@code @Value} property), this method
+     * re-attaches the field list via {@link ContentType#constructWithFields} after rebuilding the
+     * object so that the caller's field changes are not silently discarded.
+     *
+     * @param contentType    the Content Type produced from the request body, with fields already
+     *                       set via {@code constructWithFields}
+     * @param requestJson    the raw JSON body of the request, used to detect whether
+     *                       {@code metadata} was explicitly present
+     * @param contentTypeAPI the API instance used to fetch the current persisted state
+     * @return the original {@code contentType} if no metadata preservation was needed, or a new
+     *         instance with the existing metadata merged in (and the original fields re-attached)
+     * @throws DotDataException     if a database error occurs while fetching the existing type
+     * @throws DotSecurityException if the user lacks permission to read the existing type
+     */
+    public ContentType preserveMetadataIfAbsent(
+            final ContentType contentType,
+            final Object requestJson,
+            final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+
+        if (contentType.metadata() != null || requestContainsKey(requestJson, "metadata")) {
+            return contentType;
+        }
+        final ContentType existing = contentTypeAPI.find(contentType.id());
+        if (existing.metadata() == null) {
+            return contentType;
+        }
+        final List<Field> fields = contentType.fields();
+        final ContentType rebuilt = ContentTypeBuilder.builder(contentType)
+                .metadata(existing.metadata())
+                .build();
+        rebuilt.constructWithFields(fields);
+        return rebuilt;
+    }
+
+    /**
      * Returns {@code true} if the raw request JSON contains the given top-level key, regardless of
      * whether its value is {@code null} or a non-null object. Used to distinguish "key absent"
      * (preserve server-side value) from "key explicitly set to null" (clear server-side value).
