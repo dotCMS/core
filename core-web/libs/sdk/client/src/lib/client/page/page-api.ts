@@ -31,6 +31,10 @@ function logVerboseError(
     );
 }
 
+/**
+ * Removes undefined values so returned GraphQL metadata stays JSON-serializable
+ * for consumers such as Next.js Pages Router.
+ */
 function omitUndefinedValues(variables: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(
         Object.entries(variables).filter(([, value]) => value !== undefined)

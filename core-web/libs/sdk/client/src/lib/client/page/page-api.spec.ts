@@ -1227,6 +1227,9 @@ describe('PageClient', () => {
                     fireRules: false,
                     siteId: 'test-site'
                 });
+                expect(Object.values(result.graphql.variables).every((value) => value !== undefined)).toBe(
+                    true
+                );
                 expect(JSON.parse(JSON.stringify(result.graphql.variables))).toEqual(
                     result.graphql.variables
                 );
