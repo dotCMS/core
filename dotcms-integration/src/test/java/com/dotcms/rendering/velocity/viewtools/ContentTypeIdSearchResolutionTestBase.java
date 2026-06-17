@@ -46,21 +46,23 @@ import org.junit.Test;
  * field; on {@code $estool.search()} the records are {@code ContentMap}, which has no such getter and
  * resolves {@code .contentTypeId} through {@code ContentMap.get("contentTypeId")} = the field value.</p>
  *
- * <h3>One scenario, parameterized by phase</h3>
+ * <h3>One scenario, two backends</h3>
  * <p>This base holds the entire scenario (content type + contentlet + VTL + assertions); the
- * migration phase is the single hook, supplied by {@link #migrationPhase()}. The only concrete today
- * is {@code ContentTypeIdSearchResolutionESTest} (MainSuite1b), which runs it under phase 1
- * (dual-write, <b>ES reads</b>). The phase is abstracted so the same scenario can be re-run on a
- * read-from-OS phase once a suite supports a full content lifecycle against OpenSearch.</p>
+ * migration phase is the single hook, supplied by {@link #migrationPhase()}:</p>
+ * <ul>
+ *   <li>{@code ContentTypeIdSearchResolutionESTest} (MainSuite1b) → phase 1 (dual-write, <b>ES reads</b>).</li>
+ *   <li>{@code ContentTypeIdSearchResolutionOSTest} (OpenSearchUpgradeSuite) → phase 3 (<b>OpenSearch only</b>).</li>
+ * </ul>
  *
- * <p><b>Why a read-from-OS concrete is not added here:</b> the assertion outcome is phase-independent
- * because {@code search()} is DB-backed — both {@code ESSearchAPIImpl}/{@code OSSearchAPIImpl}
- * discover hit inodes from the index, then load the full {@link Contentlet}s via
- * {@code findContentlets(inodes)} — so {@code ContentMap}'s field resolution is identical regardless
- * of which store served the hit. The OpenSearch read path itself (the query finds the doc and returns
- * the correct inode) is covered by {@code OSSearchAPIImplIntegrationTest}. A high-level
- * publish → search round trip cannot run in the {@code OpenSearchUpgradeSuite} today because that
- * environment has no OS content-index bootstrap (write/read index resolution diverges — see #36054).</p>
+ * <p>The assertion outcome is phase-independent because {@code search()} is DB-backed — both
+ * {@code ESSearchAPIImpl}/{@code OSSearchAPIImpl} discover hit inodes from the index, then load the
+ * full {@link Contentlet}s via {@code findContentlets(inodes)} — so {@code ContentMap}'s field
+ * resolution is identical regardless of which store served the hit. Running it on both backends
+ * proves the full publish → index → search → resolve chain works end-to-end against each store.</p>
+ *
+ * <p><b>OpenSearch-suite caveat:</b> the read-from-OS round trip depends on the OS content indices
+ * being bootstrapped in {@code OpenSearchUpgradeSuite}; if the write/read index resolution diverges
+ * (see #36054) the high-level path resolves no index in {@code inferIndexToHit}.</p>
  */
 public abstract class ContentTypeIdSearchResolutionTestBase extends IntegrationTestBase {
 

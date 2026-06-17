@@ -11,6 +11,7 @@ import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
+import com.dotcms.rendering.velocity.viewtools.ContentTypeIdSearchResolutionOSTest;
 import com.dotcms.junit.MainBaseSuite;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -44,7 +45,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OSClientConfigTest.class,
         ContentletIndexAPIImplMigrationIntegrationTest.class,
         ContentletIndexAPIImplPhaseSwitchIntegrationTest.class,
-        OSSearchAPIImplIntegrationTest.class
+        OSSearchAPIImplIntegrationTest.class,
+        ContentTypeIdSearchResolutionOSTest.class
 })
 public class OpenSearchUpgradeSuite {
 }
