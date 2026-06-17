@@ -25,18 +25,6 @@ import { DotThemeComponent } from './dot-theme.component';
 
 import { DotSiteComponent } from '../dot-site/dot-site.component';
 
-jest.mock(
-    '@primeuix/motion',
-    () => ({
-        createMotion: () => ({
-            enter: jest.fn(),
-            leave: jest.fn().mockResolvedValue(undefined),
-            cancel: jest.fn()
-        })
-    }),
-    { virtual: true }
-);
-
 const mockThemes: DotTheme[] = [
     {
         identifier: 'theme1',
