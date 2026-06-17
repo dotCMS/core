@@ -989,7 +989,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache( permissionable.getPermissionId() );
         if (bitPermissionsList == null) {//Already in cache
             bitPermissionsList = loadPermissions( permissionable );
-            permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
+            if (bitPermissionsList!=null && !bitPermissionsList.isEmpty()) {
+                permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
+            }
         }
     }
 

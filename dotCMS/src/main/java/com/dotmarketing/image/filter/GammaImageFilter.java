@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.repackage.com.dotmarketing.jhlabs.image.GammaFilter;
 
@@ -18,7 +18,7 @@ public class GammaImageFilter extends ImageFilter {
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 		double g = parameters.get(getPrefix() + "g") != null ? Double.parseDouble(parameters.get(getPrefix() + "g")[0])
 				: 0.0;
-		float f = new Double(g).floatValue();
+		float f = Double.valueOf(g).floatValue();
 		
 		
 		File resultFile = getResultsFile(file, parameters);
@@ -36,9 +36,10 @@ public class GammaImageFilter extends ImageFilter {
 
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", resultFile);
-		} catch (IOException e) {
-			Logger.error(this.getClass(), e.getMessage());
-		}
+			dst.flush();
+	    } catch (Exception e) {
+	        throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
+	    }
 
 		return resultFile;
 	}

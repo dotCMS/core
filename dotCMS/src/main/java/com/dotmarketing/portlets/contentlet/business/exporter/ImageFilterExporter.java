@@ -1,13 +1,17 @@
 package com.dotmarketing.portlets.contentlet.business.exporter;
 
+import com.google.common.collect.ImmutableSet;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.image.ImageEngine;
 import com.dotmarketing.image.filter.ImageFilter;
+import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
@@ -16,17 +20,14 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 
-
-
 /**
- * 
- * A exporter that can take 1 or more filters in a chain
- * 
- * the chain is provided by the "filter=" parameter
- * You can chain filters so that you resize then crop to
- * produce the resulting image
- * 
- * 
+ *
+ * An exporter that can take 1 or more filters in a chain
+ * <p>
+ * the chain is provided by the "filter=" parameter You can chain filters so that you resize then
+ * crop to produce the resulting image
+ * <p>
+ *
  */
 
 public class ImageFilterExporter implements BinaryContentExporter {
@@ -35,29 +36,60 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
     private final Semaphore semaphore  = new Semaphore(allowedRequests);
 
+    private static final Set<String> VECTOR_EXTENSIONS = ImmutableSet.of("svg", "eps", "ai", "dxf");
 
 
-	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File, java.util.Map)
-	 */
-	public BinaryContentExporterData exportContent(File file, Map<String, String[]> parameters) throws BinaryContentExporterException {
+    /**
+     * Selects the image engine per the {@code IMAGE_API_USE_LIBVIPS} feature flag. The choice only
+     * affects which {@link ImageFilter} subclasses {@code resolveFilters} returns — the URL parameter
+     * contract is identical for both engines.
+     */
+    // package-visible for tests that pin the feature-flag selection behaviour
+    ImageFilterAPI imageFilterAPI() {
+        return ImageEngine.resolve();
+    }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see
+     * com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File,
+     * java.util.Map)
+     */
+    public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
+            throws BinaryContentExporterException {
 
-        Class<ImageFilter> errorClass = ImageFilter.class;
+        final String fileExtension = UtilMethods.getFileExtension(file.getName());
+        if (VECTOR_EXTENSIONS.contains(fileExtension)) {
+            Logger.info(this.getClass(), "Skipping vector image transformation for " + fileExtension);
+            return new BinaryContentExporterData(file);
+        }
+
+        Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
-            parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
-            parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
+            final Map<String,Class<? extends ImageFilter>> filters = imageFilterAPI().resolveFilters(parameters);
+            parameters.put("filter", filters.keySet().toArray(new String[0]));
+            parameters.put("filters", filters.keySet().toArray(new String[0]));
 
             // run pdf filter first (if a pdf)
-            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
-                file = new PDFImageFilter().runFilter(file, parameters);
+            if(!filters.isEmpty() && "pdf".equals(fileExtension) && !filters.containsKey("pdf")) {
+                file = runFilter(new PDFImageFilter(), file, parameters);
             }
 
-            for (final Class<ImageFilter> filter : filters.values()) {
+            Optional<File> tempFile = alreadyGenerated(filters.values(), file, parameters);
+
+            //short circuit if we already have it generated
+            if (tempFile.isPresent()) {
+                return new BinaryContentExporterData(tempFile.get());
+            }
+
+
+            for (final Class<? extends ImageFilter> filter : filters.values()) {
                 errorClass=filter;
-                file = runFilter(filter, file, parameters);
+                final ImageFilter imageFilter =  filter.getDeclaredConstructor().newInstance();
+
+                file = runFilter(imageFilter, file, parameters);
             }
 
             return new BinaryContentExporterData(file);
@@ -69,24 +101,28 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
     }
 
+    public class ImageNotReadyException extends Exception {
+        ImageNotReadyException(String message) {
+            super(message);
+        }
+    }
 
-    private File runFilter(Class<ImageFilter> clazz, final File fileIn,final Map<String, String[]> parameters) throws Exception {
+    private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters)
+            throws ImageNotReadyException {
 
         boolean canRun=false;
         try {
 
             canRun = semaphore.tryAcquire();
-            Logger.warn(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+            Logger.debug(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
 
             if(!canRun) {
                 Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
 
-                Try.run(()->{HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0");});
-
-                return fileIn;
+                throw new ImageNotReadyException("Image permits exhausted");
 
             }
-            final ImageFilter imageFilter =  clazz.getDeclaredConstructor().newInstance();
+
             return imageFilter.runFilter(fileIn, parameters);
         }
         finally {
@@ -96,21 +132,34 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
     }
 
+    private Optional<File> alreadyGenerated(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
+            final Map<String, String[]> parameters)  {
+
+        File fileToReturn = fileIn;
+
+        for (final Class<? extends ImageFilter> filter : clazzes) {
+            final ImageFilter imageFilter =  Try.of(()-> filter.getDeclaredConstructor().newInstance()).getOrElseThrow(DotRuntimeException::new);
+            fileToReturn  = imageFilter.getResultsFile(fileToReturn, parameters);
 
 
+        }
 
+        if (fileToReturn == null || ! fileToReturn.exists() ||  fileToReturn.length() < 50) {
+            return Optional.empty();
+        }
+        return Optional.of(fileToReturn);
+    }
 
+    public String getName() {
+        return "Image Filter Exporter";
+    }
 
-	public String getName() {
-		return "Image Filter Exporter";
-	}
+    public String getPathMapping() {
+        return "image";
+    }
 
-	public String getPathMapping() {
-		return "image";
-	}
-
-	public String getDescription() {
-		return "Specify filters to run a source image through";
-	}
+    public String getDescription() {
+        return "Specify filters to run a source image through";
+    }
 
 }

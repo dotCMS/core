@@ -30,7 +30,7 @@ public class PDFImageFilter extends ImageFilter {
         float dpi = parameters.get(getPrefix() + "dpi") != null ? Float.parseFloat(parameters.get(getPrefix() + "dpi")[0]) : 72f;
 
         float scale = dpi / 72f;
-
+        
         final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp.png");
 
         try (PDDocument document = PDDocument.load(file, MemoryUsageSetting.setupMixed(PDF_RENDERER_MAX_MEMORY_BYTES))) {
@@ -50,8 +50,8 @@ public class PDFImageFilter extends ImageFilter {
 
 
 
-
+        
     }
-
+  
 
 }
