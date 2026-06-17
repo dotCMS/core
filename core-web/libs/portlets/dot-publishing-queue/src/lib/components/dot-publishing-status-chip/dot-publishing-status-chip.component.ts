@@ -63,5 +63,5 @@ export class DotPublishingStatusChipComponent {
         return s ? publishingStatusBucket(s) : null;
     });
 
-    readonly labelKey = computed<string>(() => `publishing-queue.status.${this.status()}`);
+    readonly labelKey = computed<string>(() => `publisher_status_${this.status()}`);
 }
