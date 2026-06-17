@@ -288,7 +288,7 @@ def test_admin_untaint_with_env_vars_returns_zero(mock_list_tags, mock_login, mo
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "untaint", "--version", "26.06.02-01"]
+         "--action", "untaint", "--version", "26.06.02-01", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 0
@@ -304,7 +304,7 @@ def test_admin_untaint_missing_docker_username_returns_2(mock_list_tags, monkeyp
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "untaint", "--version", "26.06.02-01"]
+         "--action", "untaint", "--version", "26.06.02-01", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 2
@@ -318,7 +318,7 @@ def test_admin_untaint_missing_docker_token_returns_2(mock_list_tags, monkeypatc
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "untaint", "--version", "26.06.02-01"]
+         "--action", "untaint", "--version", "26.06.02-01", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 2
@@ -332,10 +332,28 @@ def test_admin_untaint_missing_both_env_vars_returns_2(mock_list_tags, monkeypat
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "untaint", "--version", "26.06.02-01"]
+         "--action", "untaint", "--version", "26.06.02-01", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 2
+
+
+@patch("evergreen_tracks.cli.delete_tag")
+@patch("evergreen_tracks.cli.hub_login")
+@patch("evergreen_tracks.cli.list_tags")
+def test_admin_untaint_dry_run_needs_no_creds(mock_list_tags, mock_login, mock_delete, monkeypatch):
+    """Dry-run (no --apply) must not require creds or hit Hub login."""
+    monkeypatch.delenv("DOCKER_USERNAME", raising=False)
+    monkeypatch.delenv("DOCKER_TOKEN", raising=False)
+    mock_list_tags.return_value = _tags_for_promote()
+    args = build_parser().parse_args(
+        ["admin", "--repo", "dotcms/dotcms-test",
+         "--action", "untaint", "--version", "26.06.02-01"]
+    )
+    rc = cmd_admin(args)
+    assert rc == 0
+    mock_login.assert_not_called()
+    mock_delete.assert_called_once()  # called with apply=False -> logs the dry-run
 
 
 # ---------------------------------------------------------------------------
@@ -423,7 +441,7 @@ def test_admin_release_hold_with_env_vars_returns_zero(mock_list_tags, mock_logi
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "release-hold", "--track", "standard"]
+         "--action", "release-hold", "--track", "standard", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 0
@@ -439,7 +457,7 @@ def test_admin_release_hold_missing_docker_token_returns_2(mock_list_tags, monke
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "release-hold", "--track", "standard"]
+         "--action", "release-hold", "--track", "standard", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 2
@@ -452,10 +470,28 @@ def test_admin_release_hold_missing_docker_username_returns_2(mock_list_tags, mo
     mock_list_tags.return_value = _tags_for_promote()
     args = build_parser().parse_args(
         ["admin", "--repo", "dotcms/dotcms-test",
-         "--action", "release-hold", "--track", "standard"]
+         "--action", "release-hold", "--track", "standard", "--apply"]
     )
     rc = cmd_admin(args)
     assert rc == 2
+
+
+@patch("evergreen_tracks.cli.delete_tag")
+@patch("evergreen_tracks.cli.hub_login")
+@patch("evergreen_tracks.cli.list_tags")
+def test_admin_release_hold_dry_run_needs_no_creds(mock_list_tags, mock_login, mock_delete, monkeypatch):
+    """release-hold dry-run (no --apply) must not require creds or hit Hub login."""
+    monkeypatch.delenv("DOCKER_USERNAME", raising=False)
+    monkeypatch.delenv("DOCKER_TOKEN", raising=False)
+    mock_list_tags.return_value = _tags_for_promote()
+    args = build_parser().parse_args(
+        ["admin", "--repo", "dotcms/dotcms-test",
+         "--action", "release-hold", "--track", "standard"]
+    )
+    rc = cmd_admin(args)
+    assert rc == 0
+    mock_login.assert_not_called()
+    mock_delete.assert_called_once()
 
 
 @patch("evergreen_tracks.cli.list_tags")

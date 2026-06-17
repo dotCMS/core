@@ -84,6 +84,20 @@ def cmd_promote(args: argparse.Namespace) -> int:
     return 0
 
 
+def _delete_marker(repo: str, marker: str, *, apply: bool) -> int:
+    """Delete a marker tag. Only logs into Hub when applying, so dry-runs need no creds."""
+    token = ""
+    if apply:
+        username = os.environ.get("DOCKER_USERNAME")
+        token_val = os.environ.get("DOCKER_TOKEN")
+        if not username or not token_val:
+            log.error("DOCKER_USERNAME and DOCKER_TOKEN must be set to apply this action")
+            return 2
+        token = hub_login(username, token_val)
+    delete_tag(repo, marker, token, apply=apply)
+    return 0
+
+
 def cmd_admin(args: argparse.Namespace) -> int:
     releases, tainted, held, digests = _state(args.repo)
 
@@ -98,13 +112,7 @@ def cmd_admin(args: argparse.Namespace) -> int:
                 return 2
             point_tag(args.repo, marker, digests[args.version], apply=args.apply)
         else:
-            username = os.environ.get("DOCKER_USERNAME")
-            token_val = os.environ.get("DOCKER_TOKEN")
-            if not username or not token_val:
-                log.error("DOCKER_USERNAME and DOCKER_TOKEN must be set for untaint")
-                return 2
-            token = hub_login(username, token_val)
-            delete_tag(args.repo, marker, token, apply=args.apply)
+            return _delete_marker(args.repo, marker, apply=args.apply)
         return 0
 
     if args.action in ("hold", "release-hold"):
@@ -123,13 +131,7 @@ def cmd_admin(args: argparse.Namespace) -> int:
             point_tag(args.repo, marker, digests[args.version], apply=args.apply)
             point_tag(args.repo, args.track, digests[args.version], apply=args.apply)
         else:
-            username = os.environ.get("DOCKER_USERNAME")
-            token_val = os.environ.get("DOCKER_TOKEN")
-            if not username or not token_val:
-                log.error("DOCKER_USERNAME and DOCKER_TOKEN must be set for release-hold")
-                return 2
-            token = hub_login(username, token_val)
-            delete_tag(args.repo, marker, token, apply=args.apply)
+            return _delete_marker(args.repo, marker, apply=args.apply)
         return 0
 
     log.error("unknown action: %s", args.action)
