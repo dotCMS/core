@@ -1,3 +1,74 @@
+// STYLE EXCEPTION — dot-edit-content-file-field
+// Project standard: prefer Tailwind utilities in templates.
+// This feature is the documented exception: it ships as a legacy web component
+// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
+// here so styles are always embedded with the component in both Angular and Dojo.
+
+.dot-form-file-editor__form {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.dot-form-file-editor__name-field {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-form-file-editor__error-slot {
+    display: flex;
+    min-height: 1.5rem;
+    justify-content: flex-start;
+}
+
+.dot-form-file-editor__editor-section {
+    display: flex;
+    width: 100%;
+    flex: 1 1 0%;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-form-file-editor__editor {
+    position: relative;
+    display: block;
+    min-height: 30rem;
+    width: 100%;
+    flex: 1 1 0%;
+    overflow: auto;
+    border-radius: 0.375rem;
+    border: 1px solid #9ca3af;
+}
+
+.dot-form-file-editor__editor--disabled {
+    background-color: #e5e7eb;
+    opacity: 0.5;
+}
+
+.dot-form-file-editor__mime-type {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.dot-form-file-editor__mime-type--hidden {
+    visibility: hidden;
+}
+
+.dot-form-file-editor__actions {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
 // Monaco editor internals – cannot be styled with Tailwind (third-party DOM)
 :host ::ng-deep {
     .editor-container {

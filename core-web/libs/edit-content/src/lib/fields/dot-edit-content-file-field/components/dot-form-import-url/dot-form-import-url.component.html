@@ -1,9 +1,9 @@
 <form
     (ngSubmit)="onSubmit()"
     [formGroup]="form"
-    class="flex flex-col gap-3 justify-center items-start"
+    class="dot-form-import-url__form"
     data-testid="form">
-    <div class="w-full flex flex-col gap-2">
+    <div class="dot-form-import-url__field">
         <label for="url-input">{{ 'dot.file.field.action.import.from.url' | dm }}</label>
         <input
             id="url-input"
@@ -14,7 +14,7 @@
             placeholder="https://www.dotcms.com/image.png"
             aria-label="URL input field"
             data-testid="url-input" />
-        <div class="min-h-6">
+        <div class="dot-form-import-url__error-slot">
             @let error = store.error();
             @if (error) {
                 <small class="p-invalid" data-testid="error-msg">
@@ -28,7 +28,7 @@
             }
         </div>
     </div>
-    <div class="w-full flex gap-2 items-center justify-end">
+    <div class="dot-form-import-url__actions">
         <p-button
             (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"
@@ -36,7 +36,7 @@
             type="button"
             aria-label="Cancel button"
             data-testid="cancel-button" />
-        <div class="w-28">
+        <div class="dot-form-import-url__import-btn-wrap">
             @if (store.isLoading()) {
                 <p-button
                     [icon]="'pi pi-spin pi-spinner'"

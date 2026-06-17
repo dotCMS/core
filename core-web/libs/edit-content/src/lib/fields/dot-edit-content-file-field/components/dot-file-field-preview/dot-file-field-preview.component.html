@@ -2,20 +2,16 @@
 @let metadata = fileInfo.metadata;
 
 <div
-    class="@container/preview relative flex size-full items-start justify-center gap-2 only:gap-0"
+    class="dot-file-field-preview__root"
     [class.preview-container--fade]="metadata?.editableAsText">
     @if (metadata?.editableAsText) {
-        <div
-            class="preview-code_container relative flex max-h-[14.4rem] w-full items-start justify-start overflow-hidden select-none"
-            data-testId="code-preview">
-            <code
-                class="w-full overflow-hidden bg-white leading-normal whitespace-pre-wrap text-primary-500">
+        <div class="preview-code_container dot-file-field-preview__code" data-testId="code-preview">
+            <code class="dot-file-field-preview__code-content">
                 {{ fileInfo.content }}
             </code>
         </div>
     } @else {
-        <div
-            class="flex size-full items-center justify-center overflow-hidden bg-gray-200 @min-[500px]/preview:max-w-70">
+        <div class="dot-file-field-preview__thumbnail">
             @if (fileInfo.source === 'temp') {
                 <dot-temp-file-thumbnail
                     [tempFile]="fileInfo.file"
@@ -30,14 +26,15 @@
                     data-testId="contentlet-thumbnail" />
             }
         </div>
-        <div
-            class="flex min-w-[150px] grow flex-col gap-3 overflow-hidden p-2 pr-10 max-[499px]/preview:hidden [&_span]:truncate">
+        <div class="dot-file-field-preview__metadata">
             @if (metadata) {
-                <span data-testId="metadata-title" class="m-0 text-sm font-medium text-color">
+                <span
+                    data-testId="metadata-title"
+                    class="dot-file-field-preview__metadata-title text-color">
                     {{ metadata.title }}
                 </span>
                 @if (metadata.width && metadata.height) {
-                    <div class="flex items-center justify-start gap-1">
+                    <div class="dot-file-field-preview__metadata-row">
                         <i class="pi pi-arrows-alt"></i>
                         <span data-testId="metadata-dimensions">
                             {{ metadata.width }} x {{ metadata.height }}
@@ -45,7 +42,7 @@
                     </div>
                 }
                 @if (metadata.fileSize) {
-                    <div class="flex items-center justify-start gap-1">
+                    <div class="dot-file-field-preview__metadata-row">
                         <i class="pi pi-file"></i>
                         <span data-testId="metadata-file-size">
                             {{ metadata.fileSize | dotFileSizeFormat }}
@@ -57,8 +54,7 @@
     }
 
     <!-- Actions -->
-    <div
-        class="absolute top-2 right-2 z-100 flex flex-col items-center gap-2 max-[499px]/preview:hidden">
+    <div class="dot-file-field-preview__actions">
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
@@ -105,7 +101,7 @@
             icon="pi pi-trash" />
     </div>
     <!-- Actions in small screens -->
-    <div class="absolute right-2 bottom-2 z-100 flex flex-col gap-2 @min-[500px]/preview:hidden">
+    <div class="dot-file-field-preview__actions dot-file-field-preview__actions--responsive">
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"
@@ -156,30 +152,27 @@
     [header]="metadata.title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
-    <div class="flex flex-col divide-y divide-gray-200">
-        <div class="file-info__item flex flex-col items-start justify-center gap-1 py-2">
-            <span class="text-xs font-semibold">{{ 'Size' | dm }}:</span>
-            <div class="flex min-h-8 w-full items-center gap-2 text-xs">
+    <div class="dot-file-field-preview__dialog-list">
+        <div class="file-info__item">
+            <span class="file-info__label">{{ 'Size' | dm }}:</span>
+            <div class="file-info__value-row">
                 @if (metadata.width && metadata.height) {
-                    <div class="flex items-center gap-1" data-testId="file-resolution">
+                    <div class="file-info__value-group" data-testId="file-resolution">
                         <i class="pi pi-arrows-alt"></i>
                         <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
                     </div>
                 }
-                <div class="flex items-center gap-1">
+                <div class="file-info__value-group">
                     <i class="pi pi-file"></i>
                     <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
                 </div>
             </div>
         </div>
         @for (sourceLink of $resourceLinks(); track $index) {
-            <div class="file-info__item flex flex-col items-start justify-center gap-1 py-2">
-                <span class="text-xs font-semibold">{{ sourceLink.key | dm }}:</span>
-                <div class="flex min-h-8 w-full items-center gap-2 text-xs">
-                    <a
-                        class="flex-1 text-color no-underline"
-                        [href]="sourceLink.value"
-                        target="_blank">
+            <div class="file-info__item">
+                <span class="file-info__label">{{ sourceLink.key | dm }}:</span>
+                <div class="file-info__value-row">
+                    <a class="file-info__link text-color" [href]="sourceLink.value" target="_blank">
                         {{ sourceLink.value || ('dot.file.field.no.link.found' | dm) }}
                     </a>
                     <dot-copy-button [copy]="sourceLink.value" />

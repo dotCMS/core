@@ -1,3 +1,9 @@
+// STYLE EXCEPTION — dot-edit-content-file-field
+// Project standard: prefer Tailwind utilities in templates.
+// This feature is the documented exception: it ships as a legacy web component
+// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
+// here so styles are always embedded with the component in both Angular and Dojo.
+
 :host {
     display: block;
     container-type: inline-size;
@@ -7,11 +13,39 @@
 .dot-file-field__container {
     // Fallback hex values: legacy web components (e.g. dotcms-binary-field-builder) inject
     // PrimeNG theme tokens lazily on first dialog/component use, so vars are undefined on first paint.
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 12.5rem;
+    height: 14.4rem;
+    padding: 0.5rem;
     border: 1px solid var(--p-inputtext-border-color, #d1d4db);
     border-radius: var(--p-inputtext-border-radius, 0.375rem);
     transition:
         border-color var(--p-inputtext-transition-duration, 0.2s),
         box-shadow var(--p-inputtext-transition-duration, 0.2s);
+
+    @media (min-width: 306px) {
+        flex-direction: row;
+    }
+}
+
+.dot-file-field__container--vertical {
+    @media (min-width: 306px) {
+        flex-direction: column;
+    }
+}
+
+.dot-file-field__container--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.dot-file-field__container--uploading {
+    border-style: dashed;
 }
 
 .dot-file-field__container:hover:not(.border-color-error) {
@@ -24,7 +58,61 @@
 
 .dot-file-field__drop-zone {
     height: 100%;
+    min-height: 0;
     flex: 1;
+    overflow: auto;
+    margin-bottom: 0.5rem;
+    border: 1px dashed #9ca3af;
+    border-radius: 0.375rem;
+
+    @media (min-width: 306px) {
+        margin-right: 0.5rem;
+        margin-bottom: 0;
+    }
+}
+
+.dot-file-field__drop-zone--active {
+    border-color: #3b82f6;
+    background-color: #fff;
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.dot-file-field__drop-zone--disabled {
+    pointer-events: none;
+}
+
+.dot-file-field__file-input {
+    display: none;
+}
+
+.dot-file-field__choose-file-btn {
+    cursor: pointer;
+    border: 0;
+    background: transparent;
+    padding: 0 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #2563eb;
+    text-decoration: underline;
+
+    &:disabled {
+        cursor: not-allowed;
+        color: #9ca3af;
+    }
+}
+
+.dot-file-field__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.dot-file-field__ai-btn-wrap {
+    pointer-events: auto;
 }
 
 /* Container query: stack drop zone and actions vertically on narrow widths */

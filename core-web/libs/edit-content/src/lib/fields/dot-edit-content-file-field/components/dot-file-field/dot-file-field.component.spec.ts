@@ -59,17 +59,16 @@ describe('DotFileFieldComponent', () => {
     describe('vertical layout', () => {
         it('should use horizontal layout by default', () => {
             spectator.detectChanges();
-            const container =
-                spectator.query('[data-testid="file-field-container"]') ??
-                spectator.element.querySelector('div');
-            expect(container?.className).toContain('min-[306px]:flex-row');
+            const container = spectator.query('[data-testid="file-field-container"]');
+            expect(container).toHaveClass('dot-file-field__container');
+            expect(container).not.toHaveClass('dot-file-field__container--vertical');
         });
 
         it('should use vertical layout when vertical input is true', () => {
             spectator.setInput('vertical' as never, true);
             spectator.detectChanges();
-            const container = spectator.element.querySelector('div');
-            expect(container?.className).not.toContain('min-[306px]:flex-row');
+            const container = spectator.query('[data-testid="file-field-container"]');
+            expect(container).toHaveClass('dot-file-field__container--vertical');
         });
     });
 });

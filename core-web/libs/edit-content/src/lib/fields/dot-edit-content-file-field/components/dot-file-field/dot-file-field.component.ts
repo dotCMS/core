@@ -1,6 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -69,8 +68,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule,
-        NgClass
+        TooltipModule
     ],
     providers: [
         DotFileFieldUploadService,

@@ -2,7 +2,14 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { firstValueFrom } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { DoBootstrap, inject, Injector, NgModule, provideAppInitializer, Type } from '@angular/core';
+import {
+    DoBootstrap,
+    inject,
+    Injector,
+    NgModule,
+    provideAppInitializer,
+    Type
+} from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -31,11 +38,7 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
 
 @NgModule({
     declarations: [AppComponent],
-    imports: [
-        BrowserModule,
-        DotBinaryFieldCeBridgeComponent,
-        MonacoEditorModule
-    ],
+    imports: [BrowserModule, DotBinaryFieldCeBridgeComponent, MonacoEditorModule],
     providers: [
         provideHttpClient(),
         provideAnimations(),

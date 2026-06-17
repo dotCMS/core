@@ -31,13 +31,13 @@ type LegacyImageEditorDialogConfig = { data: DotLegacyImageEditorDialogData };
     template: `
         <iframe
             [src]="$iframeUrl() | safeUrl"
-            class="block size-full border-0"
+            class="dot-legacy-image-editor-dialog__iframe"
             data-testid="legacy-image-editor-iframe"
             frameborder="0"
             title="Image editor"></iframe>
     `,
+    styleUrl: './dot-legacy-image-editor-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block h-full w-full' },
     standalone: true,
     imports: [SafeUrlPipe]
 })

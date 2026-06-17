@@ -353,11 +353,11 @@ describe('DotFileFieldComponent', () => {
 
                 const container = spectator.query('.dot-file-field__container');
 
-                expect(container).not.toHaveClass('opacity-50');
+                expect(container).not.toHaveClass('dot-file-field__container--disabled');
 
                 spectator.component.setDisabledState(true);
                 spectator.detectChanges();
-                expect(container).toHaveClass('opacity-50');
+                expect(container).toHaveClass('dot-file-field__container--disabled');
             });
         });
     });
