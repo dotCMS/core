@@ -75,10 +75,12 @@ public final class StaticUnpublishMarker {
         // Defend against path traversal / tar-slip: the host and asset path segments are not
         // validated against ".." at save time, so normalize and reject anything that escapes the
         // bundle /live/ subtree before it can reach the bundle output (filesystem or tar entry).
+        // This is the second line of defence — callers that compose the path (writeContentMarkers)
+        // also reject traversal up front, but this guard protects any direct caller of this method.
         final String safePath = safeLivePath(liveUnpublishPath);
         if (safePath == null) {
             Logger.warn(StaticUnpublishMarker.class, "Skipping un-publish marker whose path escapes "
-                    + "the bundle /live/ root (possible traversal): " + liveUnpublishPath);
+                    + "the bundle /live/ root (possible traversal): " + sanitizeForLog(liveUnpublishPath));
             return true;
         }
         // Record the canonical /live/ path (contents irrelevant) so the static publisher knows which
@@ -105,6 +107,21 @@ public final class StaticUnpublishMarker {
     }
 
     /**
+     * Sanitizes an attacker-influenced value before logging: strips CR/LF (prevents log-forging via
+     * injected line breaks) and caps the length.
+     *
+     * @param value the value to log
+     * @return a single-line, length-capped representation safe to log
+     */
+    private static String sanitizeForLog(final String value) {
+        if (value == null) {
+            return "null";
+        }
+        final String oneLine = value.replaceAll("[\\r\\n]", "_");
+        return oneLine.length() > 128 ? oneLine.substring(0, 128) + "..." : oneLine;
+    }
+
+    /**
      * Writes {@code /live/} path markers for a single un-published content asset, one per language,
      * so the static publisher can delete the matching artifacts from the endpoint. Does nothing for
      * non static-unpublish bundles or when the asset cannot be located.
@@ -123,11 +140,17 @@ public final class StaticUnpublishMarker {
                 || assetPath == null || assetPath.isBlank()) {
             return;
         }
-        // Defense-in-depth: reject a hostname that could escape the bundle root before composing the
-        // path (safeLivePath is the downstream backstop). A valid hostname has no path separators.
+        // Defense-in-depth: reject a hostname or asset path that could escape the bundle root before
+        // composing the path. safeLivePath (in writeMarkerIfNeeded) is the downstream backstop; these
+        // up-front checks give an explicit, symmetric rejection at the composition point.
         if (hostname.contains(File.separator) || hostname.contains("/") || hostname.contains("..")) {
             Logger.warn(StaticUnpublishMarker.class, "Skipping un-publish markers for a hostname that "
-                    + "contains path separators or traversal sequences: " + hostname);
+                    + "contains path separators or traversal sequences: " + sanitizeForLog(hostname));
+            return;
+        }
+        if (assetPath.contains("..")) {
+            Logger.warn(StaticUnpublishMarker.class, "Skipping un-publish markers for an asset path that "
+                    + "contains traversal sequences: " + sanitizeForLog(assetPath));
             return;
         }
         for (final String languageId : languageIds) {

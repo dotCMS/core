@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 public class StaticDependencyBundler implements IBundler {
@@ -101,8 +100,9 @@ public class StaticDependencyBundler implements IBundler {
         Set<String> languages = config.getLanguages();
         Set<String> folders = config.getFolders();
         if (languages == null || languages.isEmpty()) {
+            languages = new HashSet<>();
             for (Language l : languageAPI.getLanguages()) {
-                languages.add(l.getId() + "");
+                languages.add(String.valueOf(l.getId()));
             }
         }
 
@@ -187,7 +187,7 @@ public class StaticDependencyBundler implements IBundler {
                         // language_id=1), so derive the languages from the content's own versions
                         // rather than the bundle languages. See issue #35365.
                         StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
-                                nonLiveLanguages(id.getId(), cons), contentPath);
+                                nonLiveLanguages(id.getId()), contentPath);
                     }
                 }
             }
@@ -204,18 +204,18 @@ public class StaticDependencyBundler implements IBundler {
      * that need an un-publish marker. Languages where a live version exists are rendered by the
      * content bundlers and removed by the publisher's delete branch, so they are excluded.
      *
+     * <p>Uses a single cache-backed {@code findContentletVersionInfos(identifier)} lookup that
+     * returns every language version at once, rather than one query per language.</p>
+     *
      * @param identifierId the content identifier
-     * @param versions     the content versions found for the identifier (one or more languages)
      * @return the language ids (as strings) with no live version
      */
-    private Collection<String> nonLiveLanguages(final String identifierId, final List<Contentlet> versions) {
+    private Collection<String> nonLiveLanguages(final String identifierId) throws DotDataException {
         final Set<String> nonLive = new LinkedHashSet<>();
-        for (final Contentlet version : versions) {
-            final long languageId = version.getLanguageId();
-            final Optional<ContentletVersionInfo> versionInfo =
-                    APILocator.getVersionableAPI().getContentletVersionInfo(identifierId, languageId);
-            if (versionInfo.isEmpty() || !UtilMethods.isSet(versionInfo.get().getLiveInode())) {
-                nonLive.add(String.valueOf(languageId));
+        for (final ContentletVersionInfo versionInfo :
+                APILocator.getVersionableAPI().findContentletVersionInfos(identifierId)) {
+            if (!UtilMethods.isSet(versionInfo.getLiveInode())) {
+                nonLive.add(String.valueOf(versionInfo.getLang()));
             }
         }
         return nonLive;
