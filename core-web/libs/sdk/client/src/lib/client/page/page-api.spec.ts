@@ -169,10 +169,7 @@ describe('PageClient', () => {
                         mode: 'LIVE',
                         languageId: '1',
                         fireRules: false,
-                        siteId: 'test-site',
-                        personaId: undefined,
-                        publishDate: undefined,
-                        variantName: undefined
+                        siteId: 'test-site'
                     }
                 }
             });
@@ -355,10 +352,7 @@ describe('PageClient', () => {
                         mode: 'LIVE',
                         languageId: '1',
                         fireRules: false,
-                        siteId: 'test-site',
-                        personaId: undefined,
-                        publishDate: undefined,
-                        variantName: undefined
+                        siteId: 'test-site'
                     });
                 }
             }
@@ -591,7 +585,6 @@ describe('PageClient', () => {
                         fireRules: false,
                         siteId: 'test-site',
                         personaId: 'test-persona',
-                        publishDate: undefined,
                         variantName: 'test-variant',
                         customVar: 'customValue'
                     });
@@ -920,10 +913,7 @@ describe('PageClient', () => {
                     mode: 'LIVE',
                     languageId: '1',
                     fireRules: false,
-                    siteId: 'test-site',
-                    personaId: undefined,
-                    publishDate: undefined,
-                    variantName: undefined
+                    siteId: 'test-site'
                 });
             });
 
@@ -1220,6 +1210,26 @@ describe('PageClient', () => {
                 const result = await pageClient.get('/home', { languageId: '3' });
 
                 expect(result.graphql.variables).toEqual(getRequestBody().variables);
+            });
+
+            it('omits undefined optional variables from the returned graphql.variables', async () => {
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
+                const result = await pageClient.get('/home');
+
+                expect(result.graphql.variables).toEqual({
+                    url: '/home',
+                    mode: 'LIVE',
+                    languageId: '1',
+                    fireRules: false,
+                    siteId: 'test-site'
+                });
+                expect(JSON.parse(JSON.stringify(result.graphql.variables))).toEqual(
+                    result.graphql.variables
+                );
             });
 
             it('result.errors is undefined when response has no errors', async () => {
