@@ -815,6 +815,13 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
                 esWorking, esLive, esReindexWk, esReindexLv, esSiteSrch, osWorking, osLive);
 
         try {
+            // Clear the content-index slots first so the seeded orphan state is deterministic.
+            // Bootstrap already populated (working|live, NULL) and (working|live, 3.X) rows; the
+            // OS seeds below reuse those (index_type, index_version) pairs and would otherwise hit
+            // the uq_index_type_version UNIQUE constraint. The @After restores the saved ES/OS
+            // indices state, so removing these rows mid-test is safe.
+            clearContentIndiciesRows();
+
             insertIndiciesRow(esWorking,   "working",         null);
             insertIndiciesRow(esLive,      "live",            null);
             insertIndiciesRow(esReindexWk, "reindex_working", null);
@@ -847,6 +854,19 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * Removes every content-index pointer row (both legacy ES NULL-version rows and OS 3.X rows)
+     * so a test can seed a controlled {@code indicies} state without colliding with the bootstrap
+     * rows on the {@code uq_index_type_version} UNIQUE constraint. {@code site_search} is included
+     * for completeness. The caller is responsible for restoring state (handled by {@code @After}).
+     */
+    private static void clearContentIndiciesRows() throws DotDataException {
+        new DotConnect()
+                .setSQL("DELETE FROM indicies WHERE index_type IN "
+                        + "('working','live','reindex_working','reindex_live','site_search')")
+                .loadResult();
+    }
 
     private static void insertIndiciesRow(final String indexName, final String indexType,
             final String version) throws DotDataException {
