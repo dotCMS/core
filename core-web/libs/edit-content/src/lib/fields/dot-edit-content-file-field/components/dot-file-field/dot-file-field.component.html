@@ -5,14 +5,14 @@
     [class.border-color-error]="$hasError()"
     [class]="
         $vertical()
-            ? 'dot-file-field__container relative flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2'
-            : 'dot-file-field__container relative flex min-h-[14.4rem] w-full min-w-50 flex-col items-center justify-center gap-2 p-2 min-[306px]:flex-row'
+            ? 'dot-file-field__container relative flex h-[14.4rem] w-full min-w-50 flex-col items-stretch gap-2 p-2'
+            : 'dot-file-field__container relative flex h-[14.4rem] w-full min-w-50 flex-col items-stretch gap-2 p-2 min-[306px]:flex-row'
     ">
     @switch (store.fileStatus()) {
         @case ('init') {
             <div
                 [ngClass]="store.dropZoneActive() ? 'border-blue-500 bg-white shadow-lg' : ''"
-                class="mb-2 size-full flex-1 overflow-auto rounded-md border border-dashed border-gray-400 min-[306px]:mr-2 min-[306px]:mb-0"
+                class="dot-file-field__drop-zone mb-2 h-full min-h-0 flex-1 overflow-auto rounded-md border border-dashed border-gray-400 min-[306px]:mr-2 min-[306px]:mb-0"
                 [class.pointer-events-none]="$isDisabled()">
                 <input
                     #inputFile

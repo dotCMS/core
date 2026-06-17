@@ -5,35 +5,37 @@
 }
 
 .dot-file-field__container {
-    border: 1px solid var(--p-inputtext-border-color);
-    border-radius: var(--p-inputtext-border-radius);
+    // Fallback hex values: legacy web components (e.g. dotcms-binary-field-builder) inject
+    // PrimeNG theme tokens lazily on first dialog/component use, so vars are undefined on first paint.
+    border: 1px solid var(--p-inputtext-border-color, #d1d4db);
+    border-radius: var(--p-inputtext-border-radius, 0.375rem);
     transition:
-        border-color var(--p-inputtext-transition-duration),
-        box-shadow var(--p-inputtext-transition-duration);
+        border-color var(--p-inputtext-transition-duration, 0.2s),
+        box-shadow var(--p-inputtext-transition-duration, 0.2s);
 }
 
 .dot-file-field__container:hover:not(.border-color-error) {
-    border-color: var(--p-inputtext-hover-border-color);
+    border-color: var(--p-inputtext-hover-border-color, #426bf0);
 }
 
 .border-color-error {
-    border-color: var(--p-inputtext-invalid-border-color);
+    border-color: var(--p-inputtext-invalid-border-color, #f65446);
+}
+
+.dot-file-field__drop-zone {
+    height: 100%;
+    flex: 1;
 }
 
 /* Container query: stack drop zone and actions vertically on narrow widths */
 @container dotFileField (max-width: 500px) {
-    .dot-file-field__root--preview,
-    .dot-file-field__root--empty {
+    .dot-file-field__container {
+        height: auto;
         flex-direction: column;
-        justify-content: center;
         align-items: flex-start;
     }
 
-    .dot-file-field__root--empty {
-        height: auto;
-    }
-
-    .dot-file-field__root--empty .dot-file-field__drop-zone {
+    .dot-file-field__drop-zone {
         width: 100%;
         margin-right: 0;
         margin-bottom: 0.5rem;
