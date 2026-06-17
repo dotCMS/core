@@ -2,7 +2,7 @@
 @let metadata = fileInfo.metadata;
 
 <div
-    class="@container/preview flex size-full items-start justify-center gap-2 only:gap-0"
+    class="@container/preview relative flex size-full items-start justify-center gap-2 only:gap-0"
     [class.preview-container--fade]="metadata?.editableAsText">
     @if (metadata?.editableAsText) {
         <div
@@ -31,7 +31,7 @@
             }
         </div>
         <div
-            class="hidden min-w-[150px] grow flex-col gap-3 overflow-hidden p-2 pr-10 @min-[500px]/preview:flex [&_span]:truncate">
+            class="flex min-w-[150px] grow flex-col gap-3 overflow-hidden p-2 pr-10 max-[499px]/preview:hidden [&_span]:truncate">
             @if (metadata) {
                 <span data-testId="metadata-title" class="m-0 text-sm font-medium text-color">
                     {{ metadata.title }}
@@ -58,7 +58,7 @@
 
     <!-- Actions -->
     <div
-        class="absolute top-2 right-2 z-100 hidden flex-col items-center gap-2 @min-[500px]/preview:flex">
+        class="absolute top-2 right-2 z-100 flex flex-col items-center gap-2 max-[499px]/preview:hidden">
         <p-button
             (click)="toggleShowDialog()"
             [disabled]="$disabled()"

@@ -9,6 +9,7 @@ import {
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
+import { INPUT_TYPES } from '../../../../models/dot-edit-content-file.model';
 import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.component';
 
 /**
@@ -44,7 +45,7 @@ export class DotBinaryFieldCeBridgeComponent {
     /** Content type field definition (set imperatively by the legacy JSP). */
     @Input({ required: true })
     set field(value: DotCMSContentTypeField) {
-        this.$field.set(value);
+        this.$field.set({ ...value, fieldType: INPUT_TYPES.Binary });
     }
 
     /** Current contentlet (set imperatively by the legacy JSP). */

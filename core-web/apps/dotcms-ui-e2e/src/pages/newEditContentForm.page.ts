@@ -6,12 +6,44 @@ export class NewEditContentFormPage {
     constructor(private page: Page) {}
 
     /**
+     * True when the shell is on an Angular content route (edit/new), not the Dojo listing.
+     */
+    private isOnAngularContentRoute(): boolean {
+        const url = this.page.url();
+
+        return /#\/content\//.test(url) && !/#\/c\/content/.test(url);
+    }
+
+    /** Waits for the Dojo content listing iframe and its widgets to be ready. */
+    private async waitForContentListingReady() {
+        const frame = getLegacyFrame(this.page);
+
+        await frame
+            .locator('.dijitDropDownButton')
+            .first()
+            .waitFor({ state: 'visible', timeout: 20000 });
+
+        await frame
+            .locator('dot-data-view-button.hydrated')
+            .waitFor({ state: 'visible', timeout: 20000 });
+    }
+
+    /**
      * Navigates to the Content portlet filtered by content type.
      * URL: /dotAdmin/#/c/content?filter=ContentTypeName
      */
     async goToContentList(contentTypeVariable: string) {
-        await this.page.goto(`${Portlet.Content}?filter=${contentTypeVariable}`);
+        const listingUrl = `${Portlet.Content}?filter=${contentTypeVariable}`;
+
+        // Hash-only navigation from Angular edit routes does not re-init the Dojo iframe.
+        if (this.isOnAngularContentRoute()) {
+            await this.page.goto('/dotAdmin/');
+            await this.page.waitForLoadState('domcontentloaded');
+        }
+
+        await this.page.goto(listingUrl);
         await this.page.waitForLoadState('domcontentloaded');
+        await this.waitForContentListingReady();
     }
 
     /**
@@ -21,20 +53,19 @@ export class NewEditContentFormPage {
     async clickNewContentFromList() {
         const frame = getLegacyFrame(this.page);
 
-        // Wait for the Dojo iframe to fully load and widgets to initialize
-        await frame
-            .locator('.dijitDropDownButton')
-            .first()
-            .waitFor({ state: 'visible', timeout: 15000 });
-
-        // Click the Dojo "+" dropdown button
         const addButton = frame.locator('.dijitDropDownButton [role="button"]').first();
-        await addButton.waitFor({ state: 'visible', timeout: 10000 });
-        await addButton.click();
+        const addNewOption = frame.getByRole('menuitem', { name: 'Add New Content' });
 
-        const addNewOption = frame.locator('.dijitMenuItemLabel', { hasText: 'Add New Content' });
-        await addNewOption.waitFor({ state: 'visible', timeout: 10000 });
-        await addNewOption.click();
+        await addButton.waitFor({ state: 'visible', timeout: 10000 });
+
+        // Open the dropdown and select the item atomically. The Dojo menu auto-closes
+        // and the listing portlet can re-render after a hash navigation, so retry the
+        // whole open+click rather than just the visibility check.
+        await expect(async () => {
+            await addButton.click();
+            await expect(addNewOption).toBeVisible({ timeout: 2000 });
+            await addNewOption.click({ timeout: 2000 });
+        }).toPass({ timeout: 20000 });
 
         // Wait for the Angular form to render (replaces networkidle which is unreliable in SPAs)
         await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });

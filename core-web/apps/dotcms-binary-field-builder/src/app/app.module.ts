@@ -1,12 +1,17 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { firstValueFrom } from 'rxjs';
 
-import { HttpClientModule } from '@angular/common/http';
-import { DoBootstrap, Injector, NgModule, Type } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { DoBootstrap, inject, Injector, NgModule, provideAppInitializer, Type } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
-import { DotMessageService, DotUploadService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotUploadService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotBinaryFieldCeBridgeComponent } from '@dotcms/edit-content';
 import { provideDotCMSTheme } from '@dotcms/ui';
 
@@ -28,12 +33,22 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
     declarations: [AppComponent],
     imports: [
         BrowserModule,
-        BrowserAnimationsModule,
-        HttpClientModule,
         DotBinaryFieldCeBridgeComponent,
         MonacoEditorModule
     ],
-    providers: [DotMessageService, DotUploadService, provideDotCMSTheme()]
+    providers: [
+        provideHttpClient(),
+        provideAnimations(),
+        DotMessageService,
+        DotUploadService,
+        DotWorkflowActionsFireService,
+        provideDotCMSTheme(),
+        provideAppInitializer(() => {
+            const dotMessageService = inject(DotMessageService);
+
+            return firstValueFrom(dotMessageService.init());
+        })
+    ]
 })
 export class AppModule implements DoBootstrap {
     constructor(private readonly injector: Injector) {}
