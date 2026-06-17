@@ -1,4 +1,6 @@
-<dot-publishing-queue-toolbar (uploadClick)="openUpload()" />
+<dot-publishing-queue-toolbar
+    (uploadClick)="openUpload()"
+    (deleteClick)="openDeleteBundles()" />
 
 <p-tabs
     [value]="store.activeTab()"
@@ -24,3 +26,5 @@
         </p-tabpanel>
     </p-tabpanels>
 </p-tabs>
+
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

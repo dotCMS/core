@@ -43,10 +43,13 @@ export interface RetryBundlesPayload {
  * - `GET /api/v1/publishing` — list bundles by status (sort/filter via params)
  * - `GET /api/v1/publishing/{bundleId}` — full bundle detail with endpoints
  * - `POST /api/v1/publishing/retry` — retry bundles (bulk)
- * - `DELETE /api/v1/publishing/{bundleId}` — delete single bundle
- * - `DELETE /api/v1/publishing` — bulk delete by id (added by #36046)
+ * - `DELETE /api/v1/publishing/{bundleId}` — delete single bundle (synchronous)
+ * - `DELETE /api/v1/publishing/purge?status=...` — bulk delete by status (async,
+ *    WebSocket-notified; omit `status` to use safe defaults = ALL terminal/queued)
  *
  * Legacy endpoints (`com.dotcms.rest.BundleResource`) still used until #36048 lands:
+ * - `DELETE /api/bundle/ids` — bulk delete by bundle id (async, WebSocket-notified;
+ *    same endpoint the legacy JSP uses for "SELECTED" in the delete-bundles dialog)
  * - `GET /api/bundle/{bundleId}/assets` — asset list inside a bundle
  * - `POST /api/bundle/sync` — synchronous .tar.gz upload (licensed)
  * - `GET /api/bundle/_download/{bundleId}` — bundle download (URL only)
@@ -110,15 +113,32 @@ export class DotPublishingQueueService {
     }
 
     /**
-     * Bulk delete bundles by id (BE endpoint added in #36046). Falls back to per-id loops
-     * on the consumer side if the endpoint returns 404.
+     * Bulk delete bundles by id — fire-and-forget. The BE acks immediately with a
+     * `ResponseEntityView<string>` message; the actual deletion runs on a background
+     * thread and notifies the user via WebSocket system message when finished.
+     *
+     * Uses the legacy `DELETE /api/bundle/ids` (same endpoint as the JSP) until the
+     * v1 consolidation work (#36048) ships an equivalent under `/api/v1/publishing`.
      */
-    deleteBundles(bundleIds: string[]): Observable<{ message: string; deleted: string[] }> {
-        return this.http.request<{ message: string; deleted: string[] }>(
-            'DELETE',
-            '/api/v1/publishing',
-            { body: { bundleIds } }
-        );
+    deleteBundles(bundleIds: string[]): Observable<unknown> {
+        return this.http.request<unknown>('DELETE', '/api/bundle/ids', {
+            body: { identifiers: bundleIds }
+        });
+    }
+
+    /**
+     * Bulk-purges bundles by status — fire-and-forget. Mirrors the legacy
+     * `/api/bundle/all{,/success,/fail}` endpoints behind a single v1 path. Omit
+     * `statuses` to use the BE's safe defaults (all terminal + queued; in-progress
+     * statuses are rejected with 400). BE acks immediately; result is delivered via
+     * WebSocket system message.
+     */
+    purgeBundles(statuses?: readonly PublishAuditStatus[]): Observable<unknown> {
+        const params =
+            statuses && statuses.length > 0
+                ? new HttpParams().set('status', statuses.join(','))
+                : new HttpParams();
+        return this.http.delete<unknown>('/api/v1/publishing/purge', { params });
     }
 
     uploadBundle(file: File): Observable<{ bundleName: string; status: string }> {

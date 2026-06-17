@@ -1,9 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 
@@ -25,7 +23,6 @@ import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-
     imports: [
         DatePipe,
         ButtonModule,
-        ConfirmDialogModule,
         SkeletonModule,
         TableModule,
         DotCopyButtonComponent,
@@ -33,14 +30,12 @@ import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-
         DotMessagePipe,
         DotPublishingStatusChipComponent
     ],
-    providers: [ConfirmationService],
     templateUrl: './dot-publishing-queue-history.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 flex-1' }
 })
 export class DotPublishingQueueHistoryComponent {
     readonly store = inject(DotPublishingQueueStore);
-    private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
 
     readonly first = computed(() => (this.store.historyPage() - 1) * this.store.rowsPerPage());
@@ -70,8 +65,6 @@ export class DotPublishingQueueHistoryComponent {
         return this.store.historyRows().filter((row) => selectedIds.has(row.bundleId));
     });
 
-    readonly hasSelection = computed(() => this.store.historySelectedIds().length > 0);
-
     onLazyLoad(event: TableLazyLoadEvent): void {
         const rows = (event.rows as number) ?? this.store.rowsPerPage();
         const first = (event.first as number) ?? 0;
@@ -99,28 +92,5 @@ export class DotPublishingQueueHistoryComponent {
 
     onRowClick(row: PublishingJobView): void {
         this.store.openDetail(row.bundleId);
-    }
-
-    onBulkRetry(): void {
-        this.store.retryBundles({ bundleIds: this.store.historySelectedIds() });
-    }
-
-    onBulkRemove(): void {
-        const count = this.store.historySelectedIds().length;
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.history.bulk-remove.header'),
-            message: this.dotMessageService.get(
-                'publishing-queue.history.bulk-remove.message',
-                `${count}`
-            ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            accept: () => this.store.deleteBundlesBulk(this.store.historySelectedIds())
-        });
     }
 }

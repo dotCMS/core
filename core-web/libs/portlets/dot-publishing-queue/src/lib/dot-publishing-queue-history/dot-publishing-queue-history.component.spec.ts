@@ -2,8 +2,6 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 
 import { signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -32,7 +30,6 @@ const row = (
 describe('DotPublishingQueueHistoryComponent', () => {
     let spectator: Spectator<DotPublishingQueueHistoryComponent>;
     let store: ReturnType<typeof makeStoreStub>;
-    let confirmationService: jest.Mocked<ConfirmationService>;
 
     const historyRows = signal<PublishingJobView[]>([]);
     const historyStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loaded');
@@ -57,19 +54,14 @@ describe('DotPublishingQueueHistoryComponent', () => {
             cycleHistorySort: jest.fn(),
             setHistorySelection: jest.fn((ids: string[]) => historySelectedIds.set(ids)),
             clearHistorySelection: jest.fn(() => historySelectedIds.set([])),
-            openDetail: jest.fn(),
-            retryBundles: jest.fn(),
-            deleteBundlesBulk: jest.fn()
+            openDetail: jest.fn()
         };
     }
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueHistoryComponent,
         componentProviders: [mockProvider(DotPublishingQueueStore, makeStoreStub())],
-        providers: [
-            ConfirmationService,
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
-        ]
+        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }]
     });
 
     beforeEach(() => {
@@ -83,13 +75,6 @@ describe('DotPublishingQueueHistoryComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof makeStoreStub
         >;
-        confirmationService = spectator.inject(
-            ConfirmationService
-        ) as jest.Mocked<ConfirmationService>;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
-            cfg.accept?.();
-            return confirmationService;
-        });
         jest.clearAllMocks();
     });
 
@@ -133,33 +118,9 @@ describe('DotPublishingQueueHistoryComponent', () => {
         expect(cells[0].querySelector('[data-testid="pq-history-bundle-id-copy"]')).toBeTruthy();
     });
 
-    it('shows the bulk action buttons only when there is a selection', () => {
-        expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeFalsy();
-        expect(spectator.query(byTestId('pq-history-bulk-remove'))).toBeFalsy();
-
-        historySelectedIds.set(['b1']);
-        spectator.detectChanges();
-
-        expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeTruthy();
-        expect(spectator.query(byTestId('pq-history-bulk-remove'))).toBeTruthy();
-    });
-
     it('row click opens the detail dialog', () => {
         spectator.component.onRowClick(row('b1'));
         expect(store.openDetail).toHaveBeenCalledWith('b1');
-    });
-
-    it('bulk retry calls retryBundles with the selected ids', () => {
-        historySelectedIds.set(['b1', 'b2']);
-        spectator.component.onBulkRetry();
-        expect(store.retryBundles).toHaveBeenCalledWith({ bundleIds: ['b1', 'b2'] });
-    });
-
-    it('bulk remove opens confirmation, then calls deleteBundlesBulk on accept', () => {
-        historySelectedIds.set(['b1', 'b2']);
-        spectator.component.onBulkRemove();
-        expect(confirmationService.confirm).toHaveBeenCalled();
-        expect(store.deleteBundlesBulk).toHaveBeenCalledWith(['b1', 'b2']);
     });
 
     it('renders a dot-publishing-status-chip per row', () => {

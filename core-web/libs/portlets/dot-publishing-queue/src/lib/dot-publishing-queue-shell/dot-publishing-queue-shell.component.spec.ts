@@ -3,6 +3,7 @@ import { Subject, of } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 /* eslint-disable @nx/enforce-module-boundaries */
@@ -23,18 +24,22 @@ import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-
 describe('DotPublishingQueueShellComponent', () => {
     let spectator: Spectator<DotPublishingQueueShellComponent>;
     let dialogService: jest.Mocked<DialogService>;
+    let confirmationService: jest.Mocked<ConfirmationService>;
     let store: InstanceType<typeof DotPublishingQueueStore>;
 
-    const onCloseSubject = new Subject<unknown>();
+    let onCloseSubject = new Subject<unknown>();
     const dialogRef = {
         close: jest.fn(),
-        onClose: onCloseSubject
+        get onClose() {
+            return onCloseSubject;
+        }
     } as unknown as DynamicDialogRef;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueShellComponent,
         componentProviders: [
             DotPublishingQueueStore,
+            ConfirmationService,
             mockProvider(DialogService, { open: jest.fn().mockReturnValue(dialogRef) })
         ],
         providers: [
@@ -65,8 +70,14 @@ describe('DotPublishingQueueShellComponent', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        onCloseSubject = new Subject<unknown>();
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true) as jest.Mocked<DialogService>;
+        confirmationService = spectator.inject(
+            ConfirmationService,
+            true
+        ) as jest.Mocked<ConfirmationService>;
+        jest.spyOn(confirmationService, 'confirm');
         store = spectator.inject(DotPublishingQueueStore, true);
     });
 
@@ -110,6 +121,88 @@ describe('DotPublishingQueueShellComponent', () => {
             expect(store.activeTab()).toBe('history');
             spectator.component.onTabChange('queue');
             expect(store.activeTab()).toBe('queue');
+        });
+    });
+
+    describe('delete bundles dialog', () => {
+        function openAndCloseWith(scope: 'selected' | 'all' | 'success' | 'failed' | undefined) {
+            spectator.component.openDeleteBundles();
+            expect(dialogService.open).toHaveBeenCalled();
+            onCloseSubject.next(scope);
+        }
+
+        it('opens the delete dialog when openDeleteBundles is called', () => {
+            spectator.component.openDeleteBundles();
+            expect(dialogService.open).toHaveBeenCalled();
+        });
+
+        it('does nothing when the dialog closes with no scope (X / ESC / overlay)', () => {
+            jest.spyOn(store, 'deleteBundlesBulk');
+            jest.spyOn(store, 'purgeBundles');
+            openAndCloseWith(undefined);
+            expect(store.deleteBundlesBulk).not.toHaveBeenCalled();
+            expect(store.purgeBundles).not.toHaveBeenCalled();
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+
+        it('SELECTED → store.deleteBundlesBulk with current selected ids', () => {
+            store.setHistorySelection(['b1', 'b2']);
+            const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
+            openAndCloseWith('selected');
+            expect(spy).toHaveBeenCalledWith(['b1', 'b2']);
+        });
+
+        it('SUCCESS → store.purgeBundles with the SUCCESS status list', () => {
+            const spy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
+            openAndCloseWith('success');
+            expect(spy).toHaveBeenCalled();
+            const statuses = spy.mock.calls[0][0] as readonly string[];
+            expect(statuses).toEqual(expect.arrayContaining(['SUCCESS', 'SUCCESS_WITH_WARNINGS']));
+        });
+
+        it('FAILED → store.purgeBundles with the legacy 5-status FAILED list', () => {
+            const spy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
+            openAndCloseWith('failed');
+            expect(spy).toHaveBeenCalled();
+            const statuses = spy.mock.calls[0][0] as readonly string[];
+            expect(statuses).toEqual(
+                expect.arrayContaining([
+                    'FAILED_TO_SEND_TO_ALL_GROUPS',
+                    'FAILED_TO_SEND_TO_SOME_GROUPS',
+                    'FAILED_TO_BUNDLE',
+                    'FAILED_TO_SENT',
+                    'FAILED_TO_PUBLISH'
+                ])
+            );
+            // Must NOT include the 3 newer statuses (per legacy /api/bundle/all/fail)
+            expect(statuses).toEqual(
+                expect.not.arrayContaining([
+                    'FAILED_INTEGRITY_CHECK',
+                    'INVALID_TOKEN',
+                    'LICENSE_REQUIRED'
+                ])
+            );
+        });
+
+        it('ALL → confirmation dialog; purgeBundles() with no statuses on accept', () => {
+            const purgeSpy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
+            confirmationService.confirm.mockImplementation((cfg) => {
+                cfg.accept?.();
+                return confirmationService;
+            });
+            openAndCloseWith('all');
+            expect(confirmationService.confirm).toHaveBeenCalled();
+            expect(purgeSpy).toHaveBeenCalledWith();
+        });
+
+        it('ALL → no purge if the user rejects the confirmation', () => {
+            const purgeSpy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
+            confirmationService.confirm.mockImplementation((cfg) => {
+                cfg.reject?.();
+                return confirmationService;
+            });
+            openAndCloseWith('all');
+            expect(purgeSpy).not.toHaveBeenCalled();
         });
     });
 });

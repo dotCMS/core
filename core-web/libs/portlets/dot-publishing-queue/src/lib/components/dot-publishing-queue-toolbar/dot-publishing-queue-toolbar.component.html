@@ -14,6 +14,30 @@
         </p-iconField>
 
         <div class="ml-auto flex items-center gap-2">
+            @if (showRetry()) {
+                <span class="text-color-secondary text-sm" data-testid="pq-bulk-count">
+                    {{ store.historySelectedIds().length }}
+                    {{ 'publishing-queue.selected' | dm }}
+                </span>
+                <p-button
+                    [label]="'publishing-queue.retry-send' | dm"
+                    icon="pi pi-replay"
+                    [outlined]="true"
+                    size="small"
+                    (onClick)="onBulkRetry()"
+                    data-testid="pq-history-bulk-retry" />
+            }
+            @if (showDelete()) {
+                <p-button
+                    [label]="'publishing-queue.delete-bundles' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    size="small"
+                    (onClick)="deleteClick.emit()"
+                    data-testid="pq-history-delete-bundles" />
+                <span class="mx-1 h-6 w-px bg-surface-200" aria-hidden="true"></span>
+            }
             <p-button
                 [label]="'publishing-queue.refresh' | dm"
                 icon="pi pi-refresh"

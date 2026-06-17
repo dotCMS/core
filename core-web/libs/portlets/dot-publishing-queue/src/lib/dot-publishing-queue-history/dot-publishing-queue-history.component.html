@@ -1,31 +1,3 @@
-@if (hasSelection()) {
-    <div
-        class="flex items-center gap-2 border-b border-surface-200 px-3 py-2"
-        data-testid="pq-history-bulk-bar">
-        <span class="text-color-secondary text-sm">
-            {{ store.historySelectedIds().length }}
-            {{ 'publishing-queue.selected' | dm }}
-        </span>
-        <div class="ml-auto flex gap-2">
-            <p-button
-                [label]="'publishing-queue.retry-send' | dm"
-                icon="pi pi-replay"
-                [outlined]="true"
-                size="small"
-                (onClick)="onBulkRetry()"
-                data-testid="pq-history-bulk-retry" />
-            <p-button
-                [label]="'publishing-queue.remove' | dm"
-                icon="pi pi-trash"
-                severity="danger"
-                [outlined]="true"
-                size="small"
-                (onClick)="onBulkRemove()"
-                data-testid="pq-history-bulk-remove" />
-        </div>
-    </div>
-}
-
 <!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-history-table-wrapper">
     <p-table
@@ -169,5 +141,3 @@
         </ng-template>
     </p-table>
 </div>
-
-<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

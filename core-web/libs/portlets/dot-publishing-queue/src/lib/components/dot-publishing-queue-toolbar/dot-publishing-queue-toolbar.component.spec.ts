@@ -1,5 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
+import { signal } from '@angular/core';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -9,24 +11,37 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
 
 describe('DotPublishingQueueToolbarComponent', () => {
     let spectator: Spectator<DotPublishingQueueToolbarComponent>;
-    let store: InstanceType<typeof DotPublishingQueueStore>;
+    let store: ReturnType<typeof makeStoreStub>;
+
+    const activeTab = signal<'queue' | 'history'>('queue');
+    const historySelectedIds = signal<string[]>([]);
+    const historyTotal = signal<number>(0);
+
+    function makeStoreStub() {
+        return {
+            search: jest.fn().mockReturnValue(''),
+            setSearch: jest.fn(),
+            refresh: jest.fn(),
+            activeTab,
+            historySelectedIds,
+            historyTotal,
+            retryBundles: jest.fn()
+        };
+    }
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueToolbarComponent,
-        componentProviders: [
-            mockProvider(DotPublishingQueueStore, {
-                search: jest.fn().mockReturnValue(''),
-                setSearch: jest.fn(),
-                refresh: jest.fn()
-            })
-        ],
+        componentProviders: [mockProvider(DotPublishingQueueStore, makeStoreStub())],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'publishing-queue.search.placeholder': 'Search bundles',
                     'publishing-queue.refresh': 'Refresh',
-                    'publishing-queue.upload-bundle': 'Upload Bundle'
+                    'publishing-queue.upload-bundle': 'Upload Bundle',
+                    'publishing-queue.retry-send': 'Retry Send',
+                    'publishing-queue.delete-bundles': 'Delete Bundles',
+                    'publishing-queue.selected': 'selected'
                 })
             }
         ]
@@ -34,8 +49,13 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
     beforeEach(() => {
         jest.useFakeTimers();
+        activeTab.set('queue');
+        historySelectedIds.set([]);
+        historyTotal.set(0);
         spectator = createComponent();
-        store = spectator.inject(DotPublishingQueueStore, true);
+        store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
+            typeof makeStoreStub
+        >;
         jest.clearAllMocks();
     });
 
@@ -98,6 +118,80 @@ describe('DotPublishingQueueToolbarComponent', () => {
             expect(refreshBtn).toBeTruthy();
             spectator.click(refreshBtn as HTMLButtonElement);
             expect(store.refresh).toHaveBeenCalled();
+        });
+    });
+
+    describe('Retry Send (selection-gated)', () => {
+        it('is hidden on the queue tab even with a selection', () => {
+            activeTab.set('queue');
+            historySelectedIds.set(['b1']);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-bulk-count'))).toBeFalsy();
+        });
+
+        it('is hidden on the history tab when nothing is selected', () => {
+            activeTab.set('history');
+            historySelectedIds.set([]);
+            historyTotal.set(5);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeFalsy();
+        });
+
+        it('shows the retry button + selected-count on the history tab with selection', () => {
+            activeTab.set('history');
+            historySelectedIds.set(['b1', 'b2']);
+            historyTotal.set(5);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-bulk-retry'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-bulk-count'))?.textContent).toContain('2');
+        });
+
+        it('clicking retry calls retryBundles with the selected ids', () => {
+            activeTab.set('history');
+            historySelectedIds.set(['b1', 'b2']);
+            historyTotal.set(5);
+            spectator.detectChanges();
+            const btn = spectator.query(byTestId('pq-history-bulk-retry'))?.querySelector('button');
+            spectator.click(btn as HTMLButtonElement);
+            expect(store.retryBundles).toHaveBeenCalledWith({ bundleIds: ['b1', 'b2'] });
+        });
+    });
+
+    describe('Delete Bundles (always visible on history when rows exist)', () => {
+        it('is hidden on the queue tab', () => {
+            activeTab.set('queue');
+            historyTotal.set(5);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
+        });
+
+        it('is hidden on the history tab when the table is empty', () => {
+            activeTab.set('history');
+            historyTotal.set(0);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
+        });
+
+        it('shows on the history tab when there is at least one row (with no selection)', () => {
+            activeTab.set('history');
+            historyTotal.set(2);
+            historySelectedIds.set([]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeTruthy();
+        });
+
+        it('emits deleteClick when clicked', () => {
+            activeTab.set('history');
+            historyTotal.set(2);
+            spectator.detectChanges();
+            const emit = jest.fn();
+            spectator.component.deleteClick.subscribe(emit);
+            const btn = spectator
+                .query(byTestId('pq-history-delete-bundles'))
+                ?.querySelector('button');
+            spectator.click(btn as HTMLButtonElement);
+            expect(emit).toHaveBeenCalled();
         });
     });
 });

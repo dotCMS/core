@@ -99,7 +99,8 @@ describe('DotPublishingQueueStore', () => {
                     .mockReturnValue(of([{ assetId: 'a1', success: true, message: 'ok' }])),
                 retryBundles: jest.fn().mockReturnValue(of([])),
                 deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
-                deleteBundles: jest.fn().mockReturnValue(of({ message: 'ok', deleted: [] })),
+                deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
+                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } })),
                 uploadBundle: jest
                     .fn()
                     .mockReturnValue(of({ bundleName: 'b', status: 'BUNDLE_REQUESTED' }))
@@ -332,7 +333,7 @@ describe('DotPublishingQueueStore', () => {
         });
     });
 
-    describe('retryBundles / deleteBundle / deleteBundlesBulk', () => {
+    describe('retryBundles / deleteBundle / deleteBundlesBulk / purgeBundles', () => {
         it('retryBundles calls service and refreshes', () => {
             const onDone = jest.fn();
             store.retryBundles({ bundleIds: ['x'] }, onDone);
@@ -345,12 +346,35 @@ describe('DotPublishingQueueStore', () => {
             expect(service.deleteBundle).toHaveBeenCalledWith('x');
         });
 
-        it('deleteBundlesBulk loops per-id (until #36046 lands) and clears selection', () => {
+        it('deleteBundlesBulk hits the bulk service in one call and clears selection', () => {
             store.setHistorySelection(['a', 'b']);
             store.deleteBundlesBulk(['a', 'b']);
-            expect(service.deleteBundle).toHaveBeenCalledWith('a');
-            expect(service.deleteBundle).toHaveBeenCalledWith('b');
+            expect(service.deleteBundles).toHaveBeenCalledTimes(1);
+            expect(service.deleteBundles).toHaveBeenCalledWith(['a', 'b']);
             expect(store.historySelectedIds()).toEqual([]);
+        });
+
+        it('deleteBundlesBulk is a no-op when given an empty list', () => {
+            jest.clearAllMocks();
+            const onDone = jest.fn();
+            store.deleteBundlesBulk([], onDone);
+            expect(service.deleteBundles).not.toHaveBeenCalled();
+            expect(onDone).toHaveBeenCalled();
+        });
+
+        it('purgeBundles forwards the status list and clears selection', () => {
+            store.setHistorySelection(['a']);
+            const statuses = [PublishAuditStatus.SUCCESS, PublishAuditStatus.SUCCESS_WITH_WARNINGS];
+            store.purgeBundles(statuses);
+            expect(service.purgeBundles).toHaveBeenCalledWith(statuses);
+            expect(store.historySelectedIds()).toEqual([]);
+        });
+
+        it('purgeBundles calls service without statuses for the "ALL" scope', () => {
+            const onDone = jest.fn();
+            store.purgeBundles(undefined, onDone);
+            expect(service.purgeBundles).toHaveBeenCalledWith(undefined);
+            expect(onDone).toHaveBeenCalled();
         });
     });
 

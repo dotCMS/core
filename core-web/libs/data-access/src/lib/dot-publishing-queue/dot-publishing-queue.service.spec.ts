@@ -117,6 +117,49 @@ describe('DotPublishingQueueService', () => {
         });
     });
 
+    describe('deleteBundles', () => {
+        it('DELETEs /api/bundle/ids with { identifiers } body', () => {
+            service.deleteBundles(['b1', 'b2', 'b3']).subscribe();
+
+            const req = httpMock.expectOne((r) => r.url === '/api/bundle/ids');
+            expect(req.request.method).toBe('DELETE');
+            expect(req.request.body).toEqual({ identifiers: ['b1', 'b2', 'b3'] });
+            req.flush({ entity: 'Removing bundles in a separated process' });
+        });
+    });
+
+    describe('purgeBundles', () => {
+        it('DELETEs /api/v1/publishing/purge with no status param when statuses is omitted', () => {
+            service.purgeBundles().subscribe();
+
+            const req = httpMock.expectOne((r) => r.url === '/api/v1/publishing/purge');
+            expect(req.request.method).toBe('DELETE');
+            expect(req.request.params.has('status')).toBe(false);
+            req.flush({ entity: { message: 'Purge started' } });
+        });
+
+        it('DELETEs /api/v1/publishing/purge with comma-joined status param when statuses are provided', () => {
+            service
+                .purgeBundles([
+                    PublishAuditStatus.SUCCESS,
+                    PublishAuditStatus.SUCCESS_WITH_WARNINGS
+                ])
+                .subscribe();
+
+            const req = httpMock.expectOne((r) => r.url === '/api/v1/publishing/purge');
+            expect(req.request.method).toBe('DELETE');
+            expect(req.request.params.get('status')).toBe('SUCCESS,SUCCESS_WITH_WARNINGS');
+            req.flush({ entity: { message: 'Purge started' } });
+        });
+
+        it('omits the status param when statuses is an empty array', () => {
+            service.purgeBundles([]).subscribe();
+            const req = httpMock.expectOne((r) => r.url === '/api/v1/publishing/purge');
+            expect(req.request.params.has('status')).toBe(false);
+            req.flush({ entity: { message: 'Purge started' } });
+        });
+    });
+
     describe('getUnsendBundles', () => {
         it('hits /api/bundle/getunsendbundles/userid/{userId} with name + start + count', () => {
             const mockResponse = {

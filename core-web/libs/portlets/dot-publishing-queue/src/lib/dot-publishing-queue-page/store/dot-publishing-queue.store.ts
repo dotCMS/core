@@ -1,5 +1,5 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY, Observable, forkJoin, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { DestroyRef, effect, inject, untracked } from '@angular/core';
 
@@ -36,6 +36,24 @@ const HISTORY_STATUSES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.FAILED_INTEGRITY_CHECK,
     PublishAuditStatus.INVALID_TOKEN,
     PublishAuditStatus.LICENSE_REQUIRED
+];
+
+/** Statuses targeted by the dialog's "SUCCESS" scope — matches legacy
+ * `BundleResource#deleteAllSuccess`. */
+export const PURGE_SUCCESS_STATUSES: readonly PublishAuditStatus[] = [
+    PublishAuditStatus.SUCCESS,
+    PublishAuditStatus.SUCCESS_WITH_WARNINGS
+];
+
+/** Statuses targeted by the dialog's "FAILED" scope — exact 5 statuses from
+ * legacy `BundleResource#deleteAllFail` (does NOT include the newer
+ * FAILED_INTEGRITY_CHECK / INVALID_TOKEN / LICENSE_REQUIRED to match the JSP). */
+export const PURGE_FAILED_STATUSES: readonly PublishAuditStatus[] = [
+    PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
+    PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS,
+    PublishAuditStatus.FAILED_TO_BUNDLE,
+    PublishAuditStatus.FAILED_TO_SENT,
+    PublishAuditStatus.FAILED_TO_PUBLISH
 ];
 
 const POLL_INTERVAL_MS = 15000;
@@ -534,21 +552,47 @@ export const DotPublishingQueueStore = signalStore(
                     });
             },
 
+            /**
+             * Fire-and-forget bulk delete. The BE acks immediately and runs the
+             * delete on a background thread (WebSocket-notified on completion), so
+             * `refresh()` here only reflects the immediate state — the user may need
+             * to refresh again after the system message arrives.
+             */
             deleteBundlesBulk(bundleIds: string[], onDone?: () => void) {
-                // Fans out per-id until BE adds the bulk DELETE in #36046.
-                // Uses forkJoin so we refresh once after every id resolves (success or skip).
-                forkJoin(
-                    bundleIds.map((id) =>
-                        service.deleteBundle(id).pipe(
-                            take(1),
-                            catchError((error) => {
-                                httpErrorManager.handle(error);
-                                return EMPTY;
-                            })
-                        )
+                if (bundleIds.length === 0) {
+                    onDone?.();
+                    return;
+                }
+                service
+                    .deleteBundles(bundleIds)
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            return EMPTY;
+                        })
                     )
-                )
-                    .pipe(take(1))
+                    .subscribe(() => {
+                        patchState(store, { historySelectedIds: [] });
+                        refresh();
+                        onDone?.();
+                    });
+            },
+
+            /**
+             * Fire-and-forget bulk purge by status. Omit `statuses` to use the BE's
+             * safe defaults (all terminal/queued — equivalent of the JSP "ALL" button).
+             */
+            purgeBundles(statuses?: readonly PublishAuditStatus[], onDone?: () => void) {
+                service
+                    .purgeBundles(statuses)
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            return EMPTY;
+                        })
+                    )
                     .subscribe(() => {
                         patchState(store, { historySelectedIds: [] });
                         refresh();
