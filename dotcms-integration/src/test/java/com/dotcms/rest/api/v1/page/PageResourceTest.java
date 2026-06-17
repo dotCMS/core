@@ -749,6 +749,87 @@ public class PageResourceTest {
         assertEquals(pageView.getNumberContents(), 1);
     }
 
+    /**
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * Given Scenario: A page has a container with a single contentlet, and that contentlet is then
+     *                 archived. Archiving keeps the working version (it only sets deleted=true on the
+     *                 version info), so a showLive=false lookup still resolves it in EDIT/PREVIEW mode.
+     * Expected Result: The archived contentlet must NOT be rendered on the page in EDIT or PREVIEW mode,
+     *                 consistent with LIVE-mode behavior. See issue #35993.
+     */
+    @Test
+    public void testArchivedContentNotRenderedInEditAndPreviewMode()
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withStructure(structure, "")
+                .friendlyName("container-archived-friendly-name").title("container-archived-title")
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier())
+                .nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(languageId).nextPersisted();
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(),
+                contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+
+        // Baseline: while the contentlet is live/working it must render in PREVIEW mode.
+        // This proves the test setup actually places the content on the page.
+        final int previewCountBeforeArchive = renderAndCountContents(PageMode.PREVIEW_MODE);
+        assertEquals("Content should render in PREVIEW mode before archiving", 1,
+                previewCountBeforeArchive);
+
+        // Archive the contentlet placed in the container
+        APILocator.getContentletAPI().archive(contentlet, systemUser, false);
+        assertTrue("Contentlet should be archived", contentlet.isArchived());
+
+        // PREVIEW_MODE: archived content must not render
+        assertEquals("Archived content must not render in PREVIEW mode", 0,
+                renderAndCountContents(PageMode.PREVIEW_MODE));
+
+        // EDIT_MODE: archived content must not render
+        assertEquals("Archived content must not render in EDIT mode", 0,
+                renderAndCountContents(PageMode.EDIT_MODE));
+    }
+
+    /**
+     * Renders {@code pagePath} in the given {@link PageMode} via {@link PageResource#loadJson} and
+     * returns the number of contentlets placed in the page's containers.
+     */
+    private int renderAndCountContents(final PageMode mode)
+            throws DotDataException, DotSecurityException {
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, mode.name(), null, "1", null, null);
+        RestUtilTest.verifySuccessResponse(response);
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        return pageView.getNumberContents();
+    }
+
     @Test
     public void shouldReturnPageByURLPattern()
             throws DotDataException, DotSecurityException, InterruptedException, SystemException, PortalException {

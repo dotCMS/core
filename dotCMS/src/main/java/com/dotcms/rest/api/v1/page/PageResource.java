@@ -1038,6 +1038,17 @@ public class PageResource {
             for (final String contentletId : contentletIdList) {
                 final Contentlet contentlet;
                 try {
+                    // Archived content no longer resolves via the standard lookup below (it excludes
+                    // deleted versions) and would otherwise fail the save with a 400. A page that
+                    // still references archived content (e.g. a stale editor model) must remain
+                    // saveable so the content can be removed. Skip archived contentlets.
+                    final Contentlet anyVersion = APILocator.getContentletAPI()
+                            .findContentletByIdentifierAnyLanguage(contentletId, true);
+                    if (null != anyVersion && anyVersion.isArchived()) {
+                        Logger.warn(this, "Skipping archived contentlet in page content save: " + contentletId);
+                        continue;
+                    }
+
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
                     if (null == contentlet) {
 
@@ -1048,7 +1059,7 @@ public class PageResource {
 
                         throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
                     }
-                } catch (DotDataException e) {
+                } catch (final DotDataException | DotSecurityException e) {
 
                     throw new BadRequestException(e, e.getMessage());
                 }

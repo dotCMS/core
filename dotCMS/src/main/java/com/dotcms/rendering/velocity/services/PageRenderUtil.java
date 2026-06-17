@@ -296,6 +296,21 @@ public class PageRenderUtil implements Serializable {
                         continue;
                     }
 
+                    // Archived (deleted) content keeps its working version, so a showLive=false
+                    // lookup (EDIT/PREVIEW modes) still resolves it. Skip it in every mode so that
+                    // archived content never renders on the page, consistent with LIVE-mode behavior.
+                    try {
+                        if (nonHydratedContentlet.isArchived()) {
+                            Logger.debug(this, () -> "Skipping archived contentlet: "
+                                    + nonHydratedContentlet.getIdentifier());
+                            continue;
+                        }
+                    } catch (final DotStateException | DotDataException | DotSecurityException e) {
+                        Logger.warn(this, "Could not determine archived state for contentlet '"
+                                + nonHydratedContentlet.getIdentifier() + "'; skipping it", e);
+                        continue;
+                    }
+
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
