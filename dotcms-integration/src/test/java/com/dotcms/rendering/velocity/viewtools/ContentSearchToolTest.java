@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -389,6 +391,98 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         assertNotNull("nested top_hits sub-aggregation must be preserved", topContent);
         assertNotNull("top_hits must carry a SearchHits", topContent.getHits());
         assertFalse("top_hits must carry at least one hit", topContent.getHits().getHits().isEmpty());
+    }
+
+    /**
+     * Customer regression dotCMS #37870 (follow-up to #36026), driven through {@code $estool.search()}.
+     *
+     * <p>The customer has a <b>custom</b> field whose velocity var name is {@code contentTypeId}
+     * (an integer they use for their own categorization — not dotCMS's internal content-type id).
+     * They read it per record as {@code $!{record.contentTypeId}}. After the ES→OS migration that
+     * lookup started returning a 32-char hash (the content type's internal inode) instead of their
+     * field value, and the working workaround became {@code $!{record.map.contentTypeId}}.</p>
+     *
+     * <p>That collision only happens when the iterated record is a <b>raw {@link Contentlet}</b>
+     * (e.g. via the deprecated {@code $estool.esSearch()}): Velocity resolves {@code .contentTypeId}
+     * to the built-in {@code Contentlet#getContentTypeId()} getter, which returns
+     * {@code map.get("stInode")} — the type inode — shadowing the custom field of the same name.</p>
+     *
+     * <p>{@code $estool.search()} instead returns {@link com.dotcms.rendering.velocity.viewtools.content.ContentMap}
+     * records. {@code ContentMap} has no {@code getContentTypeId()} getter, so Velocity resolves
+     * {@code .contentTypeId} through {@code ContentMap.get("contentTypeId")}, which finds the custom
+     * field and returns its value. This test locks that guarantee: through {@code search()} the
+     * customer's verbatim {@code $!{record.contentTypeId}} lookup returns the field value
+     * ({@code "10"}), never the content type inode — no {@code .map} workaround required.</p>
+     *
+     * <h3>Migration phase</h3>
+     * <p>The test pins {@code FEATURE_FLAG_OPEN_SEARCH_PHASE=0} (ES write + ES read) explicitly, the
+     * only phase this ES-suite test can exercise (the ES 7.10.2 client cannot index against the
+     * OpenSearch container, which is why this class lives in {@code MainSuite1b} and not the OS
+     * upgrade suite). <b>The phase does not affect this assertion's outcome:</b> {@code search()} is
+     * DB-backed in every phase — both {@code ESSearchAPIImpl.search()} and
+     * {@code OSSearchAPIImpl.search()} discover hit inodes from the index and then load the full
+     * {@link Contentlet}s via {@code APILocator.getContentletAPIImpl().findContentlets(inodes)}. The
+     * {@code contentTypeId} value therefore comes from the database, not from the ES/OS {@code _source},
+     * so {@code ContentMap}'s field resolution is identical regardless of which store served the hit.
+     * The OS read-path "does the query find the doc" guarantee is covered separately in
+     * {@code OSSearchAPIImplIntegrationTest} (OpenSearch upgrade suite).</p>
+     */
+    @Test
+    public void searchContentMap_resolvesCustomContentTypeIdField_notTheTypeInode() throws Exception {
+        // A content type whose custom field collides by name with Contentlet#getContentTypeId().
+        final Field customContentTypeId = new FieldDataGen()
+                .name("contentTypeId").velocityVarName("contentTypeId")
+                .type(TextField.class).indexed(true).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .name("ContentTypeIdCollision QA " + System.currentTimeMillis())
+                .host(defaultHost)
+                .field(customContentTypeId)
+                .nextPersisted();
+
+        // Pin the migration phase deterministically (PHASE_0 = ES write + ES read). See the javadoc:
+        // search() is DB-backed in all phases, so the contentTypeId value is phase-independent; this
+        // only removes the implicit dependency on the harness default and matches the ES suite env.
+        final String previousPhase = Config.getStringProperty(FLAG_KEY, null);
+        Config.setProperty(FLAG_KEY, "0");
+        try {
+            final Contentlet contentlet = new ContentletDataGen(contentType)
+                    .host(defaultHost)
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("contentTypeId", "10")
+                    .nextPersisted();
+            ContentletDataGen.publish(contentlet);
+            APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+
+            // The customer reads $!{record.contentTypeId} verbatim. Query is lowercased by search(),
+            // so the camelCase contentType var folds to the physical `contenttype` index field.
+            final String customerVtl = """
+                    #set($esQuery = '{
+                        "query": { "query_string": { "query": "+contentType:%s +live:true" } },
+                        "size": 5
+                    }')
+                    #set($results = $estool.search($esQuery))
+                    totalResults: $!{results.totalResults}
+                    #foreach($record in $results)
+                      id: $!{record.identifier} ctid: $!{record.contentTypeId}
+                    #end
+                    """.formatted(contentType.variable());
+
+            final String output = VelocityUtil.eval(customerVtl, velocityContext());
+            Logger.info(this, "\n===== #37870 search() VTL output =====\n" + output + "\n================================");
+
+            assertTrue("The search() result loop must run (the customer's content must be found)",
+                    Pattern.compile("ctid:\\s*\\S").matcher(output).find());
+            assertTrue("FIX/RECOMMENDATION (#37870): through search()/ContentMap, $record.contentTypeId "
+                            + "must resolve to the custom field value '10'",
+                    Pattern.compile("ctid:\\s*10\\b").matcher(output).find());
+            assertFalse("$record.contentTypeId must NOT return a 32-char content-type inode hash "
+                            + "(the raw-Contentlet getter-shadowing bug)",
+                    Pattern.compile("ctid:\\s*[0-9a-fA-F]{32}\\b").matcher(output).find());
+            assertFalse("$record.contentTypeId must NOT return the actual content type inode",
+                    output.contains("ctid: " + contentType.id()));
+        } finally {
+            Config.setProperty(FLAG_KEY, previousPhase);
+        }
     }
 
     /**
