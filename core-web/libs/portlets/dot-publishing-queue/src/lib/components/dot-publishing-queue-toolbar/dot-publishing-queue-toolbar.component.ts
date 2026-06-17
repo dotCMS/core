@@ -46,16 +46,12 @@ export class DotPublishingQueueToolbarComponent {
     private readonly destroyRef = inject(DestroyRef);
     private searchSubject = new Subject<string>();
 
-    /** Retry only makes sense for rows the user has explicitly checked. */
-    readonly showRetry = computed(
+    /** Bulk actions appear only when the user has explicitly checked one or more rows.
+     * The Delete-Bundles dialog still offers ALL/SUCCESS/FAILED scopes (which don't
+     * strictly need a selection), but exposing them only after a selection keeps the
+     * top bar quiet and matches the rest of the bulk-action UI. */
+    readonly hasBulkActions = computed(
         () => this.store.activeTab() === 'history' && this.store.historySelectedIds().length > 0
-    );
-
-    /** The Delete-Bundles button opens a scope picker (SELECTED / ALL / SUCCESS / FAILED),
-     * three of which work without any row selection, so the button is visible whenever
-     * the history tab has any data at all. */
-    readonly showDelete = computed(
-        () => this.store.activeTab() === 'history' && this.store.historyTotal() > 0
     );
 
     constructor() {

@@ -14,7 +14,7 @@
         </p-iconField>
 
         <div class="ml-auto flex items-center gap-2">
-            @if (showRetry()) {
+            @if (hasBulkActions()) {
                 <span class="text-color-secondary text-sm" data-testid="pq-bulk-count">
                     {{ store.historySelectedIds().length }}
                     {{ 'publishing-queue.selected' | dm }}
@@ -26,8 +26,6 @@
                     size="small"
                     (onClick)="onBulkRetry()"
                     data-testid="pq-history-bulk-retry" />
-            }
-            @if (showDelete()) {
                 <p-button
                     [label]="'publishing-queue.delete-bundles' | dm"
                     icon="pi pi-trash"

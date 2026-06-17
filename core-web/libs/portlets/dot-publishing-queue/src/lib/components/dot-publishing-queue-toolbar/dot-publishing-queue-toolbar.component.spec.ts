@@ -158,32 +158,32 @@ describe('DotPublishingQueueToolbarComponent', () => {
         });
     });
 
-    describe('Delete Bundles (always visible on history when rows exist)', () => {
-        it('is hidden on the queue tab', () => {
+    describe('Delete Bundles (selection-gated)', () => {
+        it('is hidden on the queue tab even with a selection', () => {
             activeTab.set('queue');
+            historySelectedIds.set(['b1']);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
+        });
+
+        it('is hidden on the history tab when nothing is selected', () => {
+            activeTab.set('history');
             historyTotal.set(5);
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
-        });
-
-        it('is hidden on the history tab when the table is empty', () => {
-            activeTab.set('history');
-            historyTotal.set(0);
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
-        });
-
-        it('shows on the history tab when there is at least one row (with no selection)', () => {
-            activeTab.set('history');
-            historyTotal.set(2);
             historySelectedIds.set([]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeFalsy();
+        });
+
+        it('shows on the history tab when there is a selection', () => {
+            activeTab.set('history');
+            historySelectedIds.set(['b1']);
             spectator.detectChanges();
             expect(spectator.query(byTestId('pq-history-delete-bundles'))).toBeTruthy();
         });
 
         it('emits deleteClick when clicked', () => {
             activeTab.set('history');
-            historyTotal.set(2);
+            historySelectedIds.set(['b1']);
             spectator.detectChanges();
             const emit = jest.fn();
             spectator.component.deleteClick.subscribe(emit);
