@@ -39,7 +39,7 @@ class OpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .apiKey(config.apiKey())
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl,
-                ignored -> Logger.warn(OpenAiModelProviderStrategy.class,
+                ignored -> Logger.debug(OpenAiModelProviderStrategy.class,
                         "maxRetries is not supported by OpenAiStreamingChatModel and will be ignored"),
                 builder::timeout);
         if (config.temperature() != null) builder.temperature(config.temperature());
