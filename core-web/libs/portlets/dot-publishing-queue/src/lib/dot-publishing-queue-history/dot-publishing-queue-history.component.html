@@ -50,6 +50,9 @@
                 <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
+                <th data-testid="pq-history-col-bundle-name">
+                    {{ 'publishing-queue.column.bundle-name' | dm }}
+                </th>
                 <th data-testid="pq-history-col-bundle-id">
                     {{ 'publishing-queue.column.bundle-id' | dm }}
                 </th>
@@ -79,6 +82,11 @@
                     <td [style.width]="'3rem'" class="pl-4">
                         <span class="flex h-full items-center justify-center">
                             <p-skeleton height="1.5rem" width="2rem" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="60%" />
                         </span>
                     </td>
                     <td>
@@ -115,6 +123,11 @@
                     <td (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="row" />
                     </td>
+                    <td data-testid="pq-history-bundle-name">
+                        <span class="truncate text-sm font-medium text-color">
+                            {{ row.bundleName || '—' }}
+                        </span>
+                    </td>
                     <td data-testid="pq-history-bundle-id">
                         <div class="flex items-center gap-1">
                             <span class="font-mono text-xs">{{ row.bundleId }}</span>
@@ -143,7 +156,7 @@
 
         <ng-template pTemplate="emptymessage">
             <tr class="h-full hover:bg-transparent!">
-                <td colspan="6" class="h-full border-none p-6 text-center">
+                <td colspan="7" class="h-full border-none p-6 text-center">
                     <div
                         class="flex h-full items-center justify-center"
                         data-testid="pq-history-empty">

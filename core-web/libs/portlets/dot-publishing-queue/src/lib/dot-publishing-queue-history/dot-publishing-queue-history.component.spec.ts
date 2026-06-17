@@ -97,12 +97,22 @@ describe('DotPublishingQueueHistoryComponent', () => {
         expect(spectator.query(byTestId('pq-history-table'))).toBeTruthy();
     });
 
-    it('renders all five column headers (Filter, Bundle Id, Status, Data Entered, Last Update)', () => {
-        expect(spectator.query(byTestId('pq-history-col-filter'))).toBeTruthy();
+    it('renders all six column headers (Bundle Name, Bundle Id, Filter, Status, Data Entered, Last Update)', () => {
+        expect(spectator.query(byTestId('pq-history-col-bundle-name'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-history-col-bundle-id'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-history-col-filter'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-history-col-status'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-history-col-created'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-history-col-modified'))).toBeTruthy();
+    });
+
+    it('renders Bundle Name cell with the row name (falls back to "—" when null)', () => {
+        historyRows.set([row('b1'), { ...row('b2'), bundleName: null }]);
+        spectator.detectChanges();
+        const cells = spectator.queryAll(byTestId('pq-history-bundle-name'));
+        expect(cells.length).toBe(2);
+        expect(cells[0].textContent?.trim()).toBe('Bundle b1');
+        expect(cells[1].textContent?.trim()).toBe('—');
     });
 
     it('renders rows with status chips', () => {
