@@ -15,11 +15,6 @@ class Tag:
     digest: str
 
 
-def _split_repo(repo: str) -> tuple[str, str]:
-    namespace, name = repo.split("/", 1)
-    return namespace, name
-
-
 def _digest_of(result: dict) -> str | None:
     if result.get("digest"):
         return result["digest"]
@@ -31,7 +26,7 @@ def _digest_of(result: dict) -> str | None:
 
 def list_tags(repo: str) -> list[Tag]:
     """All tags in the repo with their manifest digests, following pagination."""
-    namespace, name = _split_repo(repo)
+    namespace, name = repo.split("/", 1)
     url = f"{_HUB}/namespaces/{namespace}/repositories/{name}/tags?page_size=100"
     out: list[Tag] = []
     while url:
@@ -44,8 +39,3 @@ def list_tags(repo: str) -> list[Tag]:
                 out.append(Tag(name=result["name"], digest=digest))
         url = body.get("next")
     return out
-
-
-def tag_digests(repo: str) -> dict[str, str]:
-    """Map of tag name -> manifest digest."""
-    return {t.name: t.digest for t in list_tags(repo)}

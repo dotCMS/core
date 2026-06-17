@@ -10,7 +10,7 @@ import logging
 import os
 import sys
 
-from .calver import parse_release
+from .calver import newest, parse_release
 from .executor import delete_tag, hub_login, point_tag
 from .markers import TRACKS, held_tracks, hold_tag, tainted_versions, taint_tag
 from .planner import TrackState, plan
@@ -36,7 +36,7 @@ def _current_version(track: str, digests: dict[str, str], releases) -> str | Non
     matches = [r for r in releases if digests.get(r.version) == track_digest]
     if not matches:
         return None
-    return max(matches, key=lambda r: r.sort_key).version
+    return newest(matches).version
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
