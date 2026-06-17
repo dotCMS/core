@@ -1,7 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { Observable, throwError } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,7 +18,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -211,20 +210,8 @@ export class DotStyleEditorBuilderComponent {
 
         patchState(this.#state, { saving: true });
         this.#http
-            .patch<DotCMSResponse>(
-                `/api/v1/contenttype/id/${contentType.id}/metadata`,
-                metadataPatch
-            )
-            .pipe(
-                take(1),
-                catchError((err: HttpErrorResponse) =>
-                    // N-1 backend fallback: PATCH endpoint didn't exist yet, fall back to a full PUT
-                    err.status === 404
-                        ? this.#putMetadataFallback(contentType, metadataPatch)
-                        : throwError(() => err)
-                ),
-                takeUntilDestroyed(this.#destroyRef)
-            )
+            .patch<DotCMSResponse>(`v1/contenttype/id/${contentType.id}/metadata`, metadataPatch)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
                     patchState(this.#state, { saving: false });
@@ -247,34 +234,6 @@ export class DotStyleEditorBuilderComponent {
     }
 
     /**
-     * N-1 backend fallback for {@link save}: when the PATCH metadata endpoint returns 404 (backend
-     * was rolled back before the endpoint existed), fall back to a full PUT that includes the
-     * merged metadata so the schema is not lost. The PUT endpoint has existed since before this
-     * feature, so it is guaranteed to be present on any N-1 backend.
-     */
-    #putMetadataFallback(
-        contentType: DotCMSContentType,
-        patch: Record<string, string | null>
-    ): Observable<unknown> {
-        const merged: Record<string, string | number | boolean> = {
-            ...(contentType.metadata ?? {})
-        };
-        for (const [k, v] of Object.entries(patch)) {
-            if (v === null) {
-                delete merged[k];
-            } else {
-                merged[k] = v;
-            }
-        }
-
-        return this.#http.put(`/api/v1/contenttype/id/${contentType.id}`, {
-            ...contentType,
-            metadata: merged,
-            workflow: contentType.workflows.map((w) => w.id)
-        });
-    }
-
-    /**
      * Parses the raw JSON schema stored in the content type metadata and
      * populates the builder state, also setting the baseline snapshot.
      *
@@ -282,7 +241,7 @@ export class DotStyleEditorBuilderComponent {
      */
     #loadFromMetadata(contentType: DotCMSContentType): void {
         const raw = contentType.metadata?.[STYLE_EDITOR_SCHEMA_KEY];
-        if (raw == null) {
+        if (!raw) {
             return;
         }
         if (typeof raw !== 'string') {
