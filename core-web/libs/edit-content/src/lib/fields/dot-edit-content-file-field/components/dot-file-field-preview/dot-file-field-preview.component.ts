@@ -44,9 +44,15 @@ type FileInfo = UploadedFile & {
     contentType: string;
     /** Binary inline field variable when hydrated from contentlet metadata. */
     fieldVariable: string;
-    downloadLink: string;
+    downloadLink: string | null;
     content: string | null;
     metadata: DotFileMetadata;
+};
+
+const buildTempDownloadLink = (referenceUrl: string): string => {
+    const separator = referenceUrl.includes('?') ? '&' : '?';
+
+    return `${referenceUrl}${separator}force_download=true`;
 };
 
 @Component({
@@ -138,14 +144,16 @@ export class DotFileFieldPreviewComponent implements OnInit {
             };
         }
 
+        const file = previewFile.file;
+
         return {
             source: previewFile.source,
-            file: previewFile.file,
-            content: previewFile.file.content ?? null,
+            file,
+            content: file.content ?? null,
             contentType: DEFAULT_CONTENT_TYPE,
             fieldVariable: DEFAULT_CONTENT_TYPE,
-            downloadLink: null,
-            metadata: previewFile.file.metadata
+            downloadLink: file.referenceUrl ? buildTempDownloadLink(file.referenceUrl) : null,
+            metadata: file.metadata
         };
     });
 

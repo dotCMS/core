@@ -37,6 +37,10 @@
     @media (min-width: 306px) {
         flex-direction: column;
     }
+
+    .dot-file-field__actions {
+        width: auto;
+    }
 }
 
 .dot-file-field__container--disabled {
@@ -109,6 +113,12 @@
     align-items: flex-start;
     justify-content: center;
     gap: 1rem;
+
+    @media (min-width: 306px) {
+        flex: 0 0 auto;
+        flex-shrink: 0;
+        width: 12.5rem;
+    }
 }
 
 .dot-file-field__ai-btn-wrap {
@@ -127,5 +137,9 @@
         width: 100%;
         margin-right: 0;
         margin-bottom: 0.5rem;
+    }
+
+    .dot-file-field__actions {
+        width: auto;
     }
 }

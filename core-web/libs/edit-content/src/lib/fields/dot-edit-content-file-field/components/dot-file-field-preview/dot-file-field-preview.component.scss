@@ -93,7 +93,7 @@
     gap: 0.25rem;
 }
 
-.dot-file-field-preview__actions {
+.dot-file-field-preview__actions:not(.dot-file-field-preview__actions--responsive) {
     display: none;
     position: absolute;
     top: 0.5rem;

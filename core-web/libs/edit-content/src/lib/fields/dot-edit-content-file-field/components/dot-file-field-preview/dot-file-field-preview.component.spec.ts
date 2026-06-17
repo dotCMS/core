@@ -60,6 +60,34 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.detectChanges();
             expect(spectator.component).toBeTruthy();
         });
+
+        it('should show download button for temp preview file', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('download-btn'))).toBeTruthy();
+        });
+
+        it('should call downloadAsset when click on the download btn', () => {
+            const spyWindowOpen = jest.spyOn(window, 'open');
+            spyWindowOpen.mockImplementation(jest.fn());
+
+            const expectedUrl = `${TEMP_FILE_MOCK.referenceUrl}?force_download=true`;
+
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('download-btn')));
+            expect(spyWindowOpen).toHaveBeenCalledWith(expectedUrl, '_self');
+        });
+
+        it('should not show download button when referenceUrl is missing', () => {
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, referenceUrl: '' }
+            } as unknown);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
+        });
     });
 
     describe('contentlet without content preview file', () => {
