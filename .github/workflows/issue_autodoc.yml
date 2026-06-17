@@ -118,7 +118,9 @@ jobs:
             --repo "$REPO" \
             --prompt burlap \
             --aios-dir ../dotcms-aios \
-          | claude --print --allowedTools Bash,Write
+            > /tmp/eval_context.md
+
+          claude --print --allowedTools Bash,Write < /tmp/eval_context.md
 
       - name: Run finalize (apply + post comment + commit)
         working-directory: autodoc
