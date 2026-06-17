@@ -47,7 +47,7 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
 import { resolutionValue } from './dot-edit-content-form-resolutions';
@@ -103,6 +103,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotContentletStatusBadgeComponent,
         TabViewInsertDirective,
         DotMessagePipe,
+        DotRelativeDatePipe,
         DotEditContentCommandBarActionsComponent,
         MessageModule,
         NgTemplateOutlet

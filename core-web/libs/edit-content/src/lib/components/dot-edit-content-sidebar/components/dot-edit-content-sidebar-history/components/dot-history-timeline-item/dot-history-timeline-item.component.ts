@@ -31,7 +31,6 @@ import {
     DotHistoryTimelineItemAction,
     DotHistoryTimelineItemActionType
 } from '../../../../../../models/dot-edit-content.model';
-
 /**
  * Component that displays a single history timeline item with version details and actions.
  * Shows version information, user details, status tags, and provides action menu.
@@ -101,6 +100,8 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      */
     readonly $versionMenu = viewChild<Menu>('versionMenu');
 
+    readonly $isMenuOpen = signal(false);
+
     /**
      * Signal for cached translations map
      * Contains static translations for menu labels
@@ -124,8 +125,8 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     /**
      * Computed signal that generates menu items for version actions based on
      * the version's status:
-     * - Draft (working && !live): no actions
-     * - Published (live): Restore + Compare
+     * - Working (any live state): no actions
+     * - Published (live && !working): Restore + Compare
      * - Historical (!working && !live): Restore + Compare + Delete
      *
      * Note: "Restore" is intentionally exposed on the live version per the
@@ -138,12 +139,11 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     readonly $menuItems = computed<MenuItem[]>(() => {
         const labels = this.$labels();
         const item = this.$item();
-        const isDraft = item.working && !item.live;
-        const isPublished = item.live;
-
-        if (isDraft) {
+        if (item.working) {
             return [];
         }
+
+        const isPublished = item.live;
 
         const items: MenuItem[] = [
             {
@@ -182,6 +182,10 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
                     });
                 }
             });
+        }
+
+        if (items.length > 1) {
+            items.splice(items.length - 1, 0, { separator: true });
         }
 
         return items;
@@ -233,6 +237,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * menu closing.
      */
     protected onMenuShown(): void {
+        this.$isMenuOpen.set(true);
         const overlay = this.#getMenuOverlayElement();
         if (!overlay) {
             return;
@@ -244,6 +249,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     }
 
     protected onMenuHidden(): void {
+        this.$isMenuOpen.set(false);
         this.cancelHideMenu();
         this.#detachOverlayListeners();
     }

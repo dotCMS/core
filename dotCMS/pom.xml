@@ -526,6 +526,11 @@
             <artifactId>langchain4j-azure-open-ai</artifactId>
         </dependency>
         <dependency>
+            <!-- LangChain4J Amazon Bedrock provider: Chat and Embedding models via AWS Bedrock Runtime -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-bedrock</artifactId>
+        </dependency>
+        <dependency>
             <!-- LangChain4J official OpenAI SDK provider: Image model via gpt-image-1 on Azure (Microsoft Foundry) -->
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-official</artifactId>
