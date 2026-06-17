@@ -3,10 +3,11 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import {
     E2E_IMPORT_URL,
     REQUIRED_FIELD_ERROR,
+    createTestPngFile,
     createTestTextFile
 } from '../../helpers/file-test-data';
 
-export { E2E_IMPORT_URL, createTestTextFile };
+export { E2E_IMPORT_URL, createTestPngFile, createTestTextFile };
 
 const AI_DISABLED_TOOLTIP = 'Please configure dotAI to enable this feature';
 
@@ -24,6 +25,8 @@ export class BinaryField {
     readonly generateWithAiBtn: Locator;
     readonly preview: Locator;
     readonly requiredError: Locator;
+    readonly editButton: Locator;
+    readonly editButtonResponsive: Locator;
 
     constructor(
         private page: Page,
@@ -38,6 +41,8 @@ export class BinaryField {
         this.generateWithAiBtn = this.root.getByTestId('action-ai-btn');
         this.preview = this.root.getByTestId('preview');
         this.requiredError = this.root.locator('.error-message small');
+        this.editButton = this.root.getByTestId('edit-button');
+        this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');
     }
 
     async expectVisible() {
@@ -46,6 +51,22 @@ export class BinaryField {
 
     async uploadFile(
         file: { name: string; mimeType: string; buffer: Buffer } = createTestTextFile()
+    ) {
+        const uploadResponse = this.page.waitForResponse(
+            (response) =>
+                response.url().includes('/api/v1/temp') &&
+                !response.url().includes('/byUrl') &&
+                response.request().method() === 'POST' &&
+                response.status() === 200
+        );
+
+        await this.fileInput.setInputFiles(file);
+        await uploadResponse;
+        await this.expectPreviewVisible();
+    }
+
+    async uploadImage(
+        file: { name: string; mimeType: string; buffer: Buffer } = createTestPngFile()
     ) {
         const uploadResponse = this.page.waitForResponse(
             (response) =>
@@ -130,5 +151,35 @@ export class BinaryField {
 
     async isAiButtonEnabled(): Promise<boolean> {
         return this.generateWithAiBtn.getByRole('button').isEnabled();
+    }
+
+    async expectEditButtonVisible() {
+        await expect(this.editButton.or(this.editButtonResponsive).first()).toBeVisible({
+            timeout: 15000
+        });
+    }
+
+    async clickEditImage() {
+        await this.editButton.or(this.editButtonResponsive).first().click();
+    }
+
+    /** New editor: PrimeNG dialog + standalone JSP iframe */
+    async expectNewEditorImageEditorOpen() {
+        const dialog = this.page.getByRole('dialog');
+        await expect(dialog).toBeVisible({ timeout: 15000 });
+
+        const iframe = dialog.getByTestId('legacy-image-editor-iframe');
+        await expect(iframe).toBeVisible();
+
+        const editorFrame = this.page.frameLocator('[data-testid="legacy-image-editor-iframe"]');
+        await expect(editorFrame.locator('#dotImageDialog, #imageToolIframe').first()).toBeVisible({
+            timeout: 30000
+        });
+    }
+
+    async openImageEditorInNewEditor() {
+        await this.expectEditButtonVisible();
+        await this.clickEditImage();
+        await this.expectNewEditorImageEditorOpen();
     }
 }

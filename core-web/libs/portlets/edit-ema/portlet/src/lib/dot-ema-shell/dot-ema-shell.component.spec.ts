@@ -38,7 +38,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
@@ -1498,8 +1498,134 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.component.handleScannerToolClick('a11y');
 
-                const { requestHostName, currentUrl } = spectator.component['$seoParams']();
-                expect(openSpy).toHaveBeenCalledWith('a11y', `${requestHostName}${currentUrl}`);
+                const { currentUrl, siteId } = spectator.component['$seoParams']();
+                const params = store.pageParams();
+                const expectedUrl = new URL(currentUrl, window.location.origin);
+                if (siteId) {
+                    expectedUrl.searchParams.set('host_id', siteId);
+                }
+                // The scanner re-renders with the editor's page-resolving params
+                if (params?.language_id) {
+                    expectedUrl.searchParams.set('language_id', params.language_id);
+                }
+                if (params?.mode) {
+                    expectedUrl.searchParams.set('mode', params.mode);
+                }
+                expect(openSpy).toHaveBeenCalledWith('a11y', expectedUrl.toString());
+            });
+
+            it('should scan the authoring instance origin, not the page content host', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).origin).toBe(window.location.origin);
+            });
+
+            it('should append the page site host_id so the scanner resolves the correct site on multisite', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: 'site-b-identifier',
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.get('host_id')).toBe('site-b-identifier');
+            });
+
+            it('should omit host_id when the page has no site identifier', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+                jest.spyOn(spectator.component, '$seoParams' as never).mockReturnValue({
+                    currentUrl: '/my-page',
+                    requestHostName: 'https://content-site.example.com',
+                    siteId: undefined,
+                    languageId: 1
+                } as never);
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                expect(new URL(calledUrl).searchParams.has('host_id')).toBe(false);
+            });
+
+            it('should forward all page-resolving params (language, persona, variant, mode, time machine) so the scanner re-renders the same page', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                patchState(store, {
+                    pageParams: {
+                        url: 'my-page',
+                        language_id: '2',
+                        [PERSONA_KEY]: 'persona-123',
+                        variantName: 'my-variant',
+                        mode: UVE_MODE.LIVE,
+                        publishDate: '2026-06-15',
+                        clientHost: 'https://headless.example.com',
+                        depth: '2'
+                    }
+                });
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                const params = new URL(calledUrl).searchParams;
+
+                expect(params.get('language_id')).toBe('2');
+                // The scanner is a backend page render, so persona uses the backend
+                // request param key (WebKeys.CMS_PERSONA_PARAMETER), not personaId
+                expect(params.get(PERSONA_KEY)).toBe('persona-123');
+                expect(params.has('personaId')).toBe(false);
+                expect(params.get('variantName')).toBe('my-variant');
+                expect(params.get('mode')).toBe(UVE_MODE.LIVE);
+                expect(params.get('publishDate')).toBe('2026-06-15');
+
+                // Editor-fetch concerns must not leak to the public scanner
+                expect(params.has('clientHost')).toBe(false);
+                expect(params.has('depth')).toBe(false);
+                expect(params.has('url')).toBe(false);
+            });
+
+            it('should omit the default variant from the scanned URL', () => {
+                const openSpy = jest.fn();
+                spectator.component['pageScanner'] = {
+                    open: openSpy
+                } as unknown as DotPageScannerReportComponent;
+
+                patchState(store, {
+                    pageParams: {
+                        url: 'my-page',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                        variantName: DEFAULT_VARIANT_ID,
+                        mode: UVE_MODE.EDIT
+                    }
+                });
+
+                spectator.component.handleScannerToolClick('a11y');
+
+                const calledUrl = openSpy.mock.calls[0][1] as string;
+                const params = new URL(calledUrl).searchParams;
+
+                expect(params.has('variantName')).toBe(false);
+                // Default persona is implicit and dropped from the scanned URL
+                expect(params.has(PERSONA_KEY)).toBe(false);
+                expect(params.has('personaId')).toBe(false);
             });
 
             it('should pass geo type to the page scanner', () => {

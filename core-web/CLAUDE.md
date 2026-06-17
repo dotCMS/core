@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Overview
 
-DotCMS Core-Web monorepo — Angular + Nx. Uses **Yarn** as package manager. Nx is not installed globally — always use `yarn nx`.
+DotCMS Core-Web monorepo — Angular + Nx. Uses **pnpm** as package manager. Nx is not installed globally — always use `pnpm nx`.
 
 ### MCP Servers
 
@@ -17,14 +17,14 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 ## Essential Commands
 
 ```bash
-yarn nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
-yarn nx build dotcms-ui                    # Build
-yarn nx test {project}                     # Test specific project
-yarn nx test {project} --testPathPattern=  # Test specific file
-yarn nx lint {project}                     # Lint
-yarn nx affected:test                      # Test only changed projects
-yarn run test:dotcms                       # Test all
-yarn run lint:dotcms                       # Lint all
+pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
+pnpm nx build dotcms-ui                    # Build
+pnpm nx test {project}                     # Test specific project
+pnpm nx test {project} --testPathPattern=  # Test specific file
+pnpm nx lint {project}                     # Lint
+pnpm nx affected:test                      # Test only changed projects
+pnpm run test:dotcms                       # Test all
+pnpm run lint:dotcms                       # Lint all
 ```
 
 ## Architecture

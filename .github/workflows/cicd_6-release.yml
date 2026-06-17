@@ -49,6 +49,11 @@ on:
         type: boolean
         default: true
         required: false
+      update_latest:
+        description: 'Update the "latest" Docker tag (disable for back-patches of older release lines)'
+        type: boolean
+        default: true
+        required: false
       notify_slack:
         description: 'Notify Slack'
         type: boolean
@@ -136,7 +141,8 @@ jobs:
       artifact-run-id: ${{ github.run_id }}
       # `latest` is no longer moved here. evergreen-tracks is the single controller
       # of the floating latest/standard/trailing tags; the promote-latest job below
-      # repoints `latest` on-demand once the release images are published.
+      # repoints `latest` on-demand once the release images are published (and honors
+      # the `update_latest` opt-out for back-patches of older release lines).
       latest: false
       deploy-cli: true
       deploy-dev-image: true
@@ -170,6 +176,7 @@ jobs:
       needs.release-prepare.outputs.is_latest == 'true'
       && github.ref_name == 'main'
       && github.repository == 'dotcms/core'
+      && github.event.inputs.update_latest == 'true'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read

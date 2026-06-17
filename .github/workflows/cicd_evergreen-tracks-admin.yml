@@ -37,9 +37,6 @@ concurrency:
 jobs:
   admin:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -52,6 +49,10 @@ jobs:
       - name: Run admin action
         working-directory: cicd/evergreen-tracks
         env:
+          # Scope Docker Hub creds to this step only (the CLI's untaint/release-hold
+          # delete calls read them); other steps/actions don't need them.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
           REPO: ${{ github.event.inputs.repo }}
           ACTION: ${{ github.event.inputs.action }}
           VERSION: ${{ github.event.inputs.version }}

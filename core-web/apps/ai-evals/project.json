@@ -42,7 +42,7 @@
             "executor": "@nx/js:prune-lockfile",
             "outputs": [
                 "{workspaceRoot}/dist/apps/ai-evals/package.json",
-                "{workspaceRoot}/dist/apps/ai-evals/yarn.lock"
+                "{workspaceRoot}/dist/apps/ai-evals/pnpm-lock.yaml"
             ],
             "options": {
                 "buildTarget": "build"
