@@ -234,6 +234,16 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     @WrapInTransaction
     @Override
     public int removeLegacyContentIndices() throws DotDataException {
+        // Defense in depth: this purges the legacy ES content-index pointers (NULL version) and is
+        // only safe once ES is decommissioned (Phase 3). The sole caller (fullReindexSwitchoverOS)
+        // already runs only in Phase 3, but guard here too so a stray call in an earlier phase can
+        // never delete the still-active ES live/working rows.
+        if (!IndexConfigHelper.isMigrationComplete()) {
+            Logger.warn(this, "removeLegacyContentIndices() called outside Phase 3 "
+                    + "(PHASE_3_OPENSEARCH_ONLY); skipping — the legacy ES live/working rows are "
+                    + "still active in this phase.");
+            return 0;
+        }
         final int removed = indicesFactory.removeLegacyContentIndices();
         // Flush all index-related caches so no stale legacy names survive the deletion:
         // 1. VersionedIndicesCache — our own versioned-index cache
