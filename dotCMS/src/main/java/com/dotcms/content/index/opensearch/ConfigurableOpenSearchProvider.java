@@ -5,6 +5,7 @@ import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.net.URI;
 import org.apache.hc.client5.http.auth.AuthScope;
@@ -112,13 +113,13 @@ class ConfigurableOpenSearchProvider {
 
         final String authSummary;
         if (config.jwtToken().isPresent()) {
-            authSummary = "JWT (token=" + maskSecret(config.jwtToken().get()) + ")";
+            authSummary = "JWT (token=" + StringUtils.maskSecret(config.jwtToken().get()) + ")";
         } else if (config.clientCertPath().isPresent() || config.clientKeyPath().isPresent()) {
             authSummary = "CERT (clientCert=" + config.clientCertPath().orElse("(not set)")
                     + ", clientKey=" + config.clientKeyPath().orElse("(not set)") + ")";
         } else if (config.username().isPresent() || config.password().isPresent()) {
             authSummary = "BASIC (user=" + config.username().orElse("(not set)")
-                    + ", password=" + maskSecret(config.password().orElse(null)) + ")";
+                    + ", password=" + StringUtils.maskSecret(config.password().orElse(null)) + ")";
         } else {
             authSummary = "NONE — connecting ANONYMOUSLY (no username/password/token resolved)";
         }
@@ -134,23 +135,6 @@ class ConfigurableOpenSearchProvider {
                 "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
                 "  (connectivity + OS version are verified separately at startup)",
                 "================================================================="));
-    }
-
-    /**
-     * Masks a sensitive value for logging: returns a fixed-width mask plus the final character so
-     * the value can be sanity-checked against the source without exposing it
-     * (e.g. {@code "s3cret"} → {@code "****t"}). The fixed-width mask intentionally does not reveal
-     * the secret's real length. A single-character secret is masked entirely, and an unset value is
-     * rendered as {@code "(not set)"}.
-     */
-    private static String maskSecret(final String value) {
-        if (!UtilMethods.isSet(value)) {
-            return "(not set)";
-        }
-        if (value.length() == 1) {
-            return "****";
-        }
-        return "****" + value.charAt(value.length() - 1);
     }
 
     /**
