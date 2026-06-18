@@ -5,7 +5,6 @@ import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.net.URI;
 import org.apache.hc.client5.http.auth.AuthScope;
@@ -67,7 +66,7 @@ class ConfigurableOpenSearchProvider {
      */
     private void buildClient() {
         try {
-            OSClientConfig config = loadConfigurationFromProperties();
+            OSClientConfig config = configFromProperties();
             buildClient(config);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client from properties", e);
@@ -83,7 +82,10 @@ class ConfigurableOpenSearchProvider {
             transport = createTransport(config);
             client = new OpenSearchClient(transport);
 
-            logConfigSummary(config);
+            // The human-readable, masked configuration banner is logged once at startup by
+            // IndexStartupValidator (alongside the connection outcome). Here we keep only a quiet
+            // DEBUG line so runtime (re)builds remain observable without duplicating the banner.
+            Logger.debug(this.getClass(), "OpenSearch client built for endpoints: " + config.endpoints());
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client", e);
             throw new DotRuntimeException("Failed to build OpenSearch client", e);
@@ -91,56 +93,12 @@ class ConfigurableOpenSearchProvider {
     }
 
     /**
-     * Emits an easy-to-locate, single-block summary of the OpenSearch migration parameters that
-     * were actually resolved for this client — migration phase, endpoints, the effective
-     * authentication mode, and the TLS flags. Sensitive values (password, JWT token) are masked
-     * via {@link #maskSecret(String)} so they are safe to leave in the logs.
-     *
-     * <p>Two things this banner makes explicit on purpose, because their absence was confusing
-     * during QA:</p>
-     * <ul>
-     *   <li>When no credentials are resolved (e.g. only an endpoint URL was provided) the auth mode
-     *       is reported as {@code NONE — connecting ANONYMOUSLY}. dotCMS will still connect if the
-     *       OpenSearch cluster does not enforce security, so this line is the signal that no
-     *       credentials were applied — it is not an error by itself.</li>
-     *   <li>Building the client does <strong>not</strong> open a connection. Reachability and the OS
-     *       version are verified separately at startup by {@code IndexStartupValidator}; that is
-     *       where a success/fallback outcome is logged.</li>
-     * </ul>
+     * Resolves an {@link OSClientConfig} from dotCMS properties. Package-private and {@code static}
+     * so {@link IndexStartupValidator} (same package) can re-resolve the exact configuration the
+     * client is built from — for the startup banner — without exposing any configuration accessor
+     * outside this package or widening the {@link OSClientProvider} contract.
      */
-    private void logConfigSummary(final OSClientConfig config) {
-        final String phase = IndexConfigHelper.MigrationPhase.current().name();
-
-        final String authSummary;
-        if (config.jwtToken().isPresent()) {
-            authSummary = "JWT (token=" + StringUtils.maskSecret(config.jwtToken().get()) + ")";
-        } else if (config.clientCertPath().isPresent() || config.clientKeyPath().isPresent()) {
-            authSummary = "CERT (clientCert=" + config.clientCertPath().orElse("(not set)")
-                    + ", clientKey=" + config.clientKeyPath().orElse("(not set)") + ")";
-        } else if (config.username().isPresent() || config.password().isPresent()) {
-            authSummary = "BASIC (user=" + config.username().orElse("(not set)")
-                    + ", password=" + StringUtils.maskSecret(config.password().orElse(null)) + ")";
-        } else {
-            authSummary = "NONE — connecting ANONYMOUSLY (no username/password/token resolved)";
-        }
-
-        Logger.info(this.getClass(), System.lineSeparator() + String.join(System.lineSeparator(),
-                "========== OpenSearch Migration — client configuration ==========",
-                "  Migration phase   : " + phase,
-                "  OS endpoints      : " + config.endpoints(),
-                "  Authentication    : " + authSummary,
-                "  TLS enabled       : " + config.tlsEnabled(),
-                "  TLS cert required : " + config.certRequired(),
-                "  TLS trust selfsign: " + config.trustSelfSigned(),
-                "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
-                "  (connectivity + OS version are verified separately at startup)",
-                "================================================================="));
-    }
-
-    /**
-     * Load configuration from dotCMS properties
-     */
-    private OSClientConfig loadConfigurationFromProperties() {
+    static OSClientConfig configFromProperties() {
         Builder builder = OSClientConfig.builder();
 
         // Load endpoints
@@ -198,7 +156,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Get default endpoints if not configured
      */
-    private String[] getDefaultEndpoints() {
+    private static String[] getDefaultEndpoints() {
         String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
         String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, HTTPS_PROTOCOL);
         int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);

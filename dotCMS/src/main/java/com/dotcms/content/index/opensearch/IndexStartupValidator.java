@@ -1,11 +1,11 @@
-package com.dotcms.content.index;
+package com.dotcms.content.index.opensearch;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.index.opensearch.OSClientProvider;
-import com.dotcms.content.index.opensearch.OSIndexProperty;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -74,10 +74,81 @@ public class IndexStartupValidator {
     /**
      * Runs all validations. Throws {@link DotRuntimeException} on the first failure
      * so the application startup is aborted with a clear error message.
+     *
+     * <p>Begins by logging an easy-to-locate banner with the resolved OpenSearch migration
+     * parameters (phase, endpoints, effective authentication mode, TLS), so the configuration and
+     * the success/fallback outcome appear together as a single startup story under one logger.</p>
      */
     public void validate() {
+        logConfigSummary(resolveConfig());
         validateOSVersion();
         validateEndpointSeparation();
+    }
+
+    // -------------------------------------------------------------------------
+    // Configuration summary banner
+    // -------------------------------------------------------------------------
+
+    /**
+     * Re-resolves the OpenSearch client configuration from properties using the same
+     * package-private resolution path the client itself is built from, so the banner reflects
+     * exactly what the client uses with no duplicated resolution logic. A resolution failure
+     * (e.g. an invalid/conflicting auth combination) is surfaced as a {@link DotRuntimeException}
+     * so it flows through the same uniform halt path as every other startup failure.
+     */
+    private OSClientConfig resolveConfig() {
+        try {
+            return ConfigurableOpenSearchProvider.configFromProperties();
+        } catch (Exception e) {
+            throw new DotRuntimeException("Invalid OpenSearch configuration: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Emits an easy-to-locate, single-block summary of the OpenSearch migration parameters that
+     * were resolved — migration phase, endpoints, the effective authentication mode, and the TLS
+     * flags. Sensitive values (password, JWT token) are masked via
+     * {@link StringUtils#maskSecret(String)} so the banner is safe to leave in the logs.
+     *
+     * <p>Two things this banner makes explicit on purpose, because their absence was confusing
+     * during QA:</p>
+     * <ul>
+     *   <li>When no credentials are resolved (e.g. only an endpoint URL was provided) the auth mode
+     *       is reported as {@code NONE — connecting ANONYMOUSLY}. dotCMS will still connect if the
+     *       OpenSearch cluster does not enforce security, so this line is the signal that no
+     *       credentials were applied — it is not an error by itself.</li>
+     *   <li>This banner reflects the resolved configuration; reachability and the OS version are
+     *       verified by the checks that follow — a printed config is not yet a confirmed
+     *       connection.</li>
+     * </ul>
+     */
+    private void logConfigSummary(final OSClientConfig config) {
+        final String phase = IndexConfigHelper.MigrationPhase.current().name();
+
+        final String authSummary;
+        if (config.jwtToken().isPresent()) {
+            authSummary = "JWT (token=" + StringUtils.maskSecret(config.jwtToken().get()) + ")";
+        } else if (config.clientCertPath().isPresent() || config.clientKeyPath().isPresent()) {
+            authSummary = "CERT (clientCert=" + config.clientCertPath().orElse("(not set)")
+                    + ", clientKey=" + config.clientKeyPath().orElse("(not set)") + ")";
+        } else if (config.username().isPresent() || config.password().isPresent()) {
+            authSummary = "BASIC (user=" + config.username().orElse("(not set)")
+                    + ", password=" + StringUtils.maskSecret(config.password().orElse(null)) + ")";
+        } else {
+            authSummary = "NONE — connecting ANONYMOUSLY (no username/password/token resolved)";
+        }
+
+        Logger.info(this, System.lineSeparator() + String.join(System.lineSeparator(),
+                "========== OpenSearch Migration — client configuration ==========",
+                "  Migration phase   : " + phase,
+                "  OS endpoints      : " + config.endpoints(),
+                "  Authentication    : " + authSummary,
+                "  TLS enabled       : " + config.tlsEnabled(),
+                "  TLS cert required : " + config.certRequired(),
+                "  TLS trust selfsign: " + config.trustSelfSigned(),
+                "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
+                "  (connectivity + OS version are verified by the checks that follow)",
+                "================================================================="));
     }
 
     // -------------------------------------------------------------------------
