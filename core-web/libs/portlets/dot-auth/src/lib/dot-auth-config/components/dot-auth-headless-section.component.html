@@ -98,7 +98,7 @@
                             [pTooltip]="'dotauth.tooltip.clampToIdpExp' | dm"
                             tooltipPosition="top"></i>
                     </label>
-                    <div class="flex items-center gap-2.5 toggle-row">
+                    <div class="toggle-row flex items-center gap-2.5">
                         <p-toggleswitch
                             [ngModel]="headless().clampToIdpExp"
                             (ngModelChange)="onChange('clampToIdpExp', $event)" />
@@ -197,7 +197,7 @@
             <div class="flex items-center gap-2">
                 <a
                     href="/dotAdmin/#/c/system-events?query=dotAuth"
-                    class="text-(--primary-500) text-sm no-underline">
+                    class="text-sm text-(--primary-500) no-underline">
                     {{ 'dotauth.action.audit-log' | dm }}
                 </a>
                 <p-button
