@@ -63,7 +63,11 @@ public class IndexStartupValidator {
                     "OpenSearch startup validation PASSED — connected to OS successfully; migration phase "
                     + IndexConfigHelper.MigrationPhase.current().name() + " is active.");
             return true;
-        } catch (DotRuntimeException e) {
+        } catch (Exception e) {
+            // Catch broadly (not only DotRuntimeException): any failure here MUST funnel through
+            // this single FAILED-and-fallback path so the outcome is always logged and the caller
+            // reaches haltMigration()/Phase-3 abort, instead of an unexpected exception escaping to
+            // a generic FATAL that skips the ES-only fallback.
             Logger.error(IndexStartupValidator.class,
                     "OpenSearch startup validation FAILED — halting OS migration; dotCMS falls back to"
                     + " ES-only (PHASE_0_MIGRATION_NOT_STARTED): " + e.getMessage(), e);
