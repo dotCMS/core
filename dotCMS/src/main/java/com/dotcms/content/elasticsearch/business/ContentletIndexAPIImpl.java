@@ -554,6 +554,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } catch (Exception e) {
             Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(),e);
 
+            // During an active OpenSearch migration a half-initialised index store is worse
+            // than a hard stop: the read provider would serve an unfinished or missing index
+            // (surfacing downstream as "all shards failed"), and a Phase 3 validation failure
+            // intentionally throws above (line ~530) only to be swallowed here. Fail loudly so
+            // the operator restores connectivity/config and restarts, rather than silently
+            // coming up broken. Legacy ES-only installs (migration not started) keep the
+            // historical best-effort behaviour and still boot.
+            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+                throw new DotRuntimeException(
+                        "Index initialization failed during OpenSearch migration; aborting startup"
+                        + " to avoid serving an unfinished index store. Cause: " + e.getMessage(), e);
+            }
         }
     }
 
