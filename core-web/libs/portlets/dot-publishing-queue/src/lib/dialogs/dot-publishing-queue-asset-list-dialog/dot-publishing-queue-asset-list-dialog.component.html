@@ -30,7 +30,9 @@
                 <tr>
                     <th>{{ 'publishing-queue.column.name' | dm }}</th>
                     <th>{{ 'publishing-queue.column.type' | dm }}</th>
-                    <th style="width: 3rem"></th>
+                    @if (allowRemove) {
+                        <th style="width: 3rem"></th>
+                    }
                 </tr>
             </ng-template>
 
@@ -39,7 +41,9 @@
                     <tr data-testid="pq-asset-list-skeleton">
                         <td><p-skeleton height="1rem" width="80%" /></td>
                         <td><p-skeleton height="1rem" width="50%" /></td>
-                        <td><p-skeleton height="1rem" width="1rem" /></td>
+                        @if (allowRemove) {
+                            <td><p-skeleton height="1rem" width="1rem" /></td>
+                        }
                     </tr>
                 }
             </ng-template>
@@ -48,26 +52,30 @@
                 <tr class="group" data-testid="pq-asset-list-row">
                     <td data-testid="pq-asset-name">{{ asset.title }}</td>
                     <td data-testid="pq-asset-type">{{ asset.type }}</td>
-                    <td class="text-right">
-                        <p-button
-                            icon="pi pi-trash"
-                            severity="danger"
-                            [text]="true"
-                            [rounded]="true"
-                            size="small"
-                            styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                            [pTooltip]="'publishing-queue.asset-list.remove' | dm"
-                            tooltipPosition="left"
-                            [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
-                            (onClick)="onRemoveAsset(asset)"
-                            data-testid="pq-asset-remove-btn" />
-                    </td>
+                    @if (allowRemove) {
+                        <td class="text-right">
+                            <p-button
+                                icon="pi pi-trash"
+                                severity="danger"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                [pTooltip]="'publishing-queue.asset-list.remove' | dm"
+                                tooltipPosition="left"
+                                [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
+                                (onClick)="onRemoveAsset(asset)"
+                                data-testid="pq-asset-remove-btn" />
+                        </td>
+                    }
                 </tr>
             </ng-template>
 
             <ng-template pTemplate="emptymessage">
                 <tr class="hover:bg-transparent!">
-                    <td colspan="3" class="text-color-secondary p-6 text-center">
+                    <td
+                        [attr.colspan]="allowRemove ? 3 : 2"
+                        class="text-color-secondary p-6 text-center">
                         @if (hasNoMatches()) {
                             <span data-testid="pq-asset-list-no-matches">
                                 {{ 'publishing-queue.detail.assets-no-matches' | dm }}

@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -59,6 +60,13 @@ export class DotPublishingQueueAssetListDialogComponent {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
+    /** Optional — present only when opened via DialogService. */
+    private readonly dialogConfig = inject(DynamicDialogConfig, { optional: true });
+
+    /** When opened from the History tab the bundle is already in `publish_audit`
+     * and assets can no longer be removed — the dialog renders as read-only.
+     * Default true so existing call sites (Queue/Ready) keep their edit UX. */
+    readonly allowRemove = (this.dialogConfig?.data?.allowRemove ?? true) as boolean;
 
     /** Skeleton rows for the loading state. Length chosen so the placeholder fills
      * the reserved 384px (h-96) and the dialog stays stable on load + after deletes. */

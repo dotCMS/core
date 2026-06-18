@@ -3,6 +3,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView } from '@dotcms/dotcms-models';
@@ -204,5 +205,51 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             spectator.detectChanges();
             expect(spectator.component.assetSearch()).toBe('');
         });
+    });
+});
+
+describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=false)', () => {
+    let spectator: Spectator<DotPublishingQueueAssetListDialogComponent>;
+
+    const selectedAssets = signal<BundleAssetView[]>(ASSETS);
+    const assetListStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loaded');
+    const selectedBundleId = signal<string | null>('B-1');
+
+    const createComponent = createComponentFactory({
+        component: DotPublishingQueueAssetListDialogComponent,
+        componentProviders: [
+            mockProvider(DotPublishingQueueStore, {
+                selectedAssets,
+                assetListStatus,
+                selectedBundleId,
+                removeBundleAsset: jest.fn()
+            })
+        ],
+        providers: [
+            ConfirmationService,
+            { provide: DynamicDialogConfig, useValue: { data: { allowRemove: false } } },
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+        ]
+    });
+
+    beforeEach(() => {
+        selectedAssets.set(ASSETS);
+        assetListStatus.set('loaded');
+        selectedBundleId.set('B-1');
+        spectator = createComponent();
+    });
+
+    it('reads allowRemove=false from DynamicDialogConfig.data', () => {
+        expect(spectator.component.allowRemove).toBe(false);
+    });
+
+    it('renders only Name + Type columns (no trash action column)', () => {
+        const headers = spectator.queryAll('th');
+        expect(headers.length).toBe(2);
+    });
+
+    it('does NOT render any trash buttons in rows', () => {
+        expect(spectator.query(byTestId('pq-asset-remove-btn'))).toBeFalsy();
+        expect(spectator.queryAll(byTestId('pq-asset-list-row')).length).toBe(2);
     });
 });

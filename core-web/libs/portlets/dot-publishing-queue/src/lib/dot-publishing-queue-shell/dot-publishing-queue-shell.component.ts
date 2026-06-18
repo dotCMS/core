@@ -150,6 +150,10 @@ export class DotPublishingQueueShellComponent {
 
     private syncAssetList(bundleId: string | null): void {
         if (bundleId && !this.assetListRef) {
+            // History bundles are already in `publish_audit` — assets are
+            // read-only there. Only the Queue tab (drafts/in-progress) allows
+            // removal.
+            const allowRemove = this.store.activeTab() === 'queue';
             this.assetListRef = this.dialogService.open(
                 DotPublishingQueueAssetListDialogComponent,
                 {
@@ -158,7 +162,8 @@ export class DotPublishingQueueShellComponent {
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,
-                    position: 'center'
+                    position: 'center',
+                    data: { allowRemove }
                 }
             );
             this.assetListRef.onClose.pipe(take(1)).subscribe(() => {
