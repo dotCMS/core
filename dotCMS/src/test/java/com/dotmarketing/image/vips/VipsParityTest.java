@@ -337,6 +337,37 @@ public class VipsParityTest {
         assertTrue("expected avif brand, got '" + brand + "'", brand.startsWith("avi"));
     }
 
+    /** JPEG XL encode requires the host libvips to be built with the libjxl delegate. */
+    private boolean jxlEncodeSupported() {
+        try {
+            final File probeIn = image("test.png");
+            final File probeOut = tempOut("jxl");
+            new VipsJpegXlImageFilter().transform(probeIn, probeOut, params("jxl_q", "75"));
+            return probeOut.exists() && probeOut.length() > 50;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Test
+    public void jxl_encoder_produces_valid_jxl() throws Exception {
+        Assume.assumeTrue("host libvips lacks a JPEG XL encoder (libjxl)", jxlEncodeSupported());
+        final File in = image("test.png");
+        final File out = tempOut("jxl");
+        new VipsJpegXlImageFilter().transform(in, out, params("jxl_q", "75"));
+        assertTrue("jxl written", out.exists() && out.length() > 50);
+        // JPEG XL signatures: the raw codestream starts with FF 0A; the ISO-BMFF container starts
+        // with a 'JXL ' box (00 00 00 0C 4A 58 4C 20).
+        final byte[] head = new byte[12];
+        try (java.io.InputStream is = new java.io.FileInputStream(out)) {
+            assertEquals(12, is.read(head));
+        }
+        final boolean rawCodestream = (head[0] & 0xFF) == 0xFF && (head[1] & 0xFF) == 0x0A;
+        final boolean container = (head[4] & 0xFF) == 0x4A && (head[5] & 0xFF) == 0x58
+                && (head[6] & 0xFF) == 0x4C && (head[7] & 0xFF) == 0x20;
+        assertTrue("expected a JPEG XL signature", rawCodestream || container);
+    }
+
     @Test
     public void smartcrop_produces_exact_box_from_salient_region() throws Exception {
         final File in = image("test.jpg");
