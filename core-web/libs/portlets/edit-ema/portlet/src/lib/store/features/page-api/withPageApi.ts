@@ -287,12 +287,14 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             // DOES exist, the dropdown stays on PREVIEW — the user
                                             // must explicitly choose Draft to re-enable editing,
                                             // making the state transition visible and intentional.
-                                            const currentLanguageId = pageAsset.viewAs?.language?.id;
+                                            const currentLanguageId =
+                                                pageAsset.viewAs?.language?.id;
                                             const currentLang = languages.find(
                                                 (lang) => lang.id === currentLanguageId
                                             );
                                             const isMissingTranslation =
-                                                currentLang !== undefined && !currentLang.translated;
+                                                currentLang !== undefined &&
+                                                !currentLang.translated;
 
                                             // Both writes land in the same synchronous tap.
                                             // Angular batches them before flushing effects, so
