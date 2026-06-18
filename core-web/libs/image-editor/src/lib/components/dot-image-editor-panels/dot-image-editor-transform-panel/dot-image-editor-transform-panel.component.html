@@ -1,0 +1,84 @@
+<div class="ie-transform">
+    <div class="ie-field">
+        <div class="ie-field__header">
+            <label>{{ 'edit.content.image-editor.transform.scale' | dm }}</label>
+            <span class="ie-field__value">{{ store.transform().scale }}%</span>
+        </div>
+        <p-slider
+            [ngModel]="store.transform().scale"
+            [min]="1"
+            [max]="400"
+            data-testid="image-editor-scale-slider"
+            (onSlideEnd)="scaleChanged($event)" />
+    </div>
+
+    <div class="ie-field">
+        <div class="ie-field__header">
+            <label>{{ 'edit.content.image-editor.transform.rotate' | dm }}</label>
+            <span class="ie-field__value">{{ store.transform().rotateDeg }}°</span>
+        </div>
+        <p-slider
+            [ngModel]="store.transform().rotateDeg"
+            [min]="-180"
+            [max]="180"
+            data-testid="image-editor-rotate-slider"
+            (onSlideEnd)="rotateChanged($event)" />
+    </div>
+
+    <div class="ie-field">
+        <label>{{ 'edit.content.image-editor.transform.flip' | dm }}</label>
+        <div class="ie-transform__flip">
+            <p-toggleButton
+                [ngModel]="store.transform().flipH"
+                [onLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
+                [offLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
+                data-testid="image-editor-flip-horizontal-btn"
+                (onChange)="flipHToggled()" />
+            <p-toggleButton
+                [ngModel]="store.transform().flipV"
+                [onLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
+                [offLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
+                data-testid="image-editor-flip-vertical-btn"
+                (onChange)="flipVToggled()" />
+        </div>
+    </div>
+
+    <div class="ie-field">
+        <label>{{ 'edit.content.image-editor.transform.dimensions' | dm }}</label>
+        <div class="ie-transform__dimensions">
+            <div class="ie-transform__dimension">
+                <p-inputNumber
+                    [ngModel]="store.outputDimensions().width"
+                    [min]="1"
+                    [useGrouping]="false"
+                    data-testid="image-editor-output-width-input"
+                    (onInput)="outputWidthChanged($event.value)"
+                    (onBlur)="outputWidthChanged(store.outputDimensions().width)" />
+                @if (widthError()) {
+                    <small
+                        class="ie-transform__error"
+                        data-testid="image-editor-output-width-error">
+                        {{ 'edit.content.image-editor.transform.dimensions.error.min' | dm }}
+                    </small>
+                }
+            </div>
+            <span class="ie-transform__dimension-separator">×</span>
+            <div class="ie-transform__dimension">
+                <p-inputNumber
+                    [ngModel]="store.outputDimensions().height"
+                    [min]="1"
+                    [useGrouping]="false"
+                    data-testid="image-editor-output-height-input"
+                    (onInput)="outputHeightChanged($event.value)"
+                    (onBlur)="outputHeightChanged(store.outputDimensions().height)" />
+                @if (heightError()) {
+                    <small
+                        class="ie-transform__error"
+                        data-testid="image-editor-output-height-error">
+                        {{ 'edit.content.image-editor.transform.dimensions.error.min' | dm }}
+                    </small>
+                }
+            </div>
+        </div>
+    </div>
+</div>

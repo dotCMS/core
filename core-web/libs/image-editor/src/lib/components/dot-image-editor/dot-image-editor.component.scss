@@ -1,0 +1,11 @@
+:host {
+    display: block;
+    height: 100%;
+}
+
+// Respect the user's motion preference: disable the scale/fade entrance.
+@media (prefers-reduced-motion: reduce) {
+    :host {
+        animation: none !important;
+    }
+}

@@ -1,0 +1,18 @@
+<div class="flex h-full flex-col overflow-hidden bg-white" data-testid="image-editor-root">
+    <header class="shrink-0 border-b border-gray-200 px-4 py-3">
+        <dot-image-editor-header (close)="requestClose()" />
+    </header>
+
+    <div class="flex min-h-0 flex-1">
+        <dot-image-editor-canvas class="min-w-0 flex-1" />
+        <aside class="w-80 shrink-0 overflow-y-auto border-l border-gray-200">
+            <dot-image-editor-panels />
+        </aside>
+    </div>
+
+    <footer class="shrink-0 border-t border-gray-200 px-4 py-3">
+        <dot-image-editor-footer (cancel)="requestClose()" />
+    </footer>
+</div>
+
+<p-confirmDialog [style]="{ width: '500px' }" />

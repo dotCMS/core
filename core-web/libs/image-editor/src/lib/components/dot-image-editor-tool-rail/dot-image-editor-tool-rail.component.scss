@@ -1,0 +1,14 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: rgba(28, 30, 38, 0.92);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.tool-rail__button {
+    width: 2.5rem;
+    height: 2.5rem;
+}

@@ -1,0 +1,63 @@
+:host {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+}
+
+.focal-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+.focal-surface {
+    position: absolute;
+    inset: 0;
+    cursor: crosshair;
+    pointer-events: auto;
+}
+
+.focal-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--surface-0, #ffffff);
+    border-radius: 9999px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+    cursor: grab;
+    pointer-events: auto;
+    outline: none;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        transform: translate(-50%, -50%);
+        background-color: var(--primary-color, #426bf0);
+        border-radius: 9999px;
+    }
+
+    &:focus-visible {
+        border-color: var(--primary-color, #426bf0);
+    }
+}
+
+.focal-pill {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--surface-900, #1f2937);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    pointer-events: auto;
+}

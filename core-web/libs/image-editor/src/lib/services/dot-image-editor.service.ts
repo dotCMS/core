@@ -1,0 +1,169 @@
+import { Observable, forkJoin, of, throwError } from 'rxjs';
+
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+
+import { catchError, map } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
+
+import { FocalPointState, ImageEditorAssetContext } from '../models/image-editor.models';
+
+/** Shape of the save endpoint JSON response used to build a {@link DotCMSTempFile}. */
+interface SaveEditedImageResponse {
+    id: string;
+    fileName: string;
+    length: number;
+    metadata?: DotCMSTempFile['metadata'];
+}
+
+/** Natural pixel dimensions of an image resolved from the browser. */
+interface NaturalDimensions {
+    naturalWidth: number;
+    naturalHeight: number;
+}
+
+/** Metadata resolved for an asset before editing begins. */
+interface AssetMeta {
+    naturalWidth: number;
+    naturalHeight: number;
+    originalBytes: number | null;
+    focalPoint?: FocalPointState;
+}
+
+/**
+ * Data-access service for the image editor: resolves asset metadata, queries
+ * file sizes, persists the saved/edited image and the focal point, and triggers
+ * client-side downloads. All read-only/metadata calls are non-fatal and never
+ * throw; only {@link saveEditedImage} rethrows so the store can keep the modal
+ * open on failure.
+ */
+@Injectable()
+export class DotImageEditorService {
+    readonly #http = inject(HttpClient);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    /**
+     * Resolves the byte size of a remote asset via a HEAD request.
+     * @param url - The asset URL to inspect
+     * @returns The `Content-Length` as a number, or `0` when missing or on error
+     */
+    getFileSize(url: string): Observable<number> {
+        return this.#http.head(url, { observe: 'response', responseType: 'text' }).pipe(
+            map((res) => Number(res.headers.get('Content-Length')) || 0),
+            catchError(() => of(0))
+        );
+    }
+
+    /**
+     * Persists the edited image to a temp file by hitting the filter URL with
+     * the save tokens appended.
+     * @param filterUrl - The fully-built filter/preview URL for the edited image
+     * @param variable - The binary field id the saved file should target
+     * @returns The resulting temp file
+     * @throws Rethrows the original error after surfacing it, so callers can keep
+     * the editor open on failure
+     */
+    saveEditedImage(filterUrl: string, variable: string): Observable<DotCMSTempFile> {
+        const separator = filterUrl.includes('?') ? '&' : '?';
+        const url = `${filterUrl}${separator}binaryFieldId=${encodeURIComponent(variable)}&_imageToolSaveFile=true`;
+
+        return this.#http.get<SaveEditedImageResponse>(url).pipe(
+            map((res) => this.#toTempFile(res)),
+            catchError((error: HttpErrorResponse) => {
+                this.#httpErrorManager.handle(error);
+
+                return throwError(() => error);
+            })
+        );
+    }
+
+    /**
+     * Persists the focal point for an asset so it is honored by future renders.
+     * @param originalUrl - The base URL of the unfiltered original asset
+     * @param fp - Normalized focal point coordinates
+     * @returns Completes with `void`; non-fatal and never throws
+     */
+    persistFocalPoint(originalUrl: string, fp: { x: number; y: number }): Observable<void> {
+        const url = `${originalUrl}/filter/FocalPoint/fp/${fp.x},${fp.y}/?overwrite=${Date.now()}`;
+
+        return this.#http.get(url, { responseType: 'text' }).pipe(
+            map(() => void 0),
+            catchError(() => of(void 0))
+        );
+    }
+
+    /**
+     * Resolves the metadata needed to seed the editor: natural dimensions and
+     * the original byte size. Always emits a safe default on error and never
+     * throws.
+     * @param ctx - Resolved asset context providing the original URL
+     * @returns The natural dimensions, original byte size and optional focal point
+     */
+    loadAssetMeta(ctx: ImageEditorAssetContext): Observable<AssetMeta> {
+        return forkJoin({
+            dimensions: this.#resolveNaturalDimensions(ctx.originalUrl),
+            originalBytes: this.getFileSize(ctx.originalUrl)
+        }).pipe(
+            map(({ dimensions, originalBytes }) => ({
+                naturalWidth: dimensions.naturalWidth,
+                naturalHeight: dimensions.naturalHeight,
+                originalBytes
+            })),
+            catchError(() =>
+                of<AssetMeta>({ naturalWidth: 0, naturalHeight: 0, originalBytes: null })
+            )
+        );
+    }
+
+    /**
+     * Triggers a browser download of the given URL using a transient anchor.
+     * @param url - The URL of the resource to download
+     * @param fileName - The suggested file name for the download
+     */
+    triggerDownload(url: string, fileName: string): void {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.rel = 'noopener';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    #resolveNaturalDimensions(url: string): Observable<NaturalDimensions> {
+        return new Observable<NaturalDimensions>((subscriber) => {
+            const image = new Image();
+
+            image.onload = () => {
+                subscriber.next({
+                    naturalWidth: image.naturalWidth,
+                    naturalHeight: image.naturalHeight
+                });
+                subscriber.complete();
+            };
+
+            image.onerror = () => {
+                subscriber.next({ naturalWidth: 0, naturalHeight: 0 });
+                subscriber.complete();
+            };
+
+            image.src = url;
+        });
+    }
+
+    #toTempFile(res: SaveEditedImageResponse): DotCMSTempFile {
+        return {
+            id: res.id,
+            fileName: res.fileName,
+            length: res.length,
+            metadata: res.metadata,
+            folder: '',
+            image: true,
+            mimeType: res.metadata?.contentType ?? '',
+            referenceUrl: '',
+            thumbnailUrl: ''
+        };
+    }
+}

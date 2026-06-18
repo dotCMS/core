@@ -1,0 +1,43 @@
+@if (isActive() && imageRect()) {
+    <div class="crop-overlay" @imageEditorOverlayEnterLeave>
+        <div
+            class="crop-box"
+            tabindex="0"
+            role="group"
+            [attr.aria-label]="'edit.content.image-editor.crop.box.aria' | dm"
+            [style.left]="boxStyle().left"
+            [style.top]="boxStyle().top"
+            [style.width]="boxStyle().width"
+            [style.height]="boxStyle().height"
+            (pointerdown)="onBoxPointerDown($event)"
+            (keydown)="onBoxKeydown($event)"
+            data-testid="image-editor-crop-box">
+            <div class="crop-grid">
+                <span class="crop-grid__line crop-grid__line--v1"></span>
+                <span class="crop-grid__line crop-grid__line--v2"></span>
+                <span class="crop-grid__line crop-grid__line--h1"></span>
+                <span class="crop-grid__line crop-grid__line--h2"></span>
+            </div>
+
+            @for (handle of handles; track handle) {
+                <span
+                    class="crop-handle crop-handle--{{ handle }}"
+                    (pointerdown)="onHandlePointerDown($event, handle)"
+                    [attr.data-testid]="'image-editor-crop-handle-' + handle"></span>
+            }
+        </div>
+
+        <div class="crop-pill">
+            <p-button
+                [text]="true"
+                severity="secondary"
+                [label]="'edit.content.image-editor.crop.cancel' | dm"
+                (onClick)="cancel()"
+                data-testid="image-editor-crop-cancel-btn" />
+            <p-button
+                [label]="'edit.content.image-editor.crop.apply' | dm"
+                (onClick)="apply()"
+                data-testid="image-editor-crop-apply-btn" />
+        </div>
+    </div>
+}

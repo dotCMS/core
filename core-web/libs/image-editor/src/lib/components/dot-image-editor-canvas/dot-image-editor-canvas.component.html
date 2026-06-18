@@ -1,0 +1,69 @@
+<div class="canvas" data-testid="image-editor-canvas">
+    <dot-image-editor-address-bar
+        class="canvas__address-bar"
+        [zoomLevel]="zoomLevel()"
+        (zoomIn)="zoomIn()"
+        (zoomOut)="zoomOut()"
+        (fit)="fit()" />
+
+    <div class="canvas__viewport">
+        <dot-image-editor-tool-rail class="canvas__tool-rail" />
+
+        <div #stage class="canvas__stage" [style.transform]="stageScale()">
+            @if (store.previewStatus() === 'idle' && !displayedUrl()) {
+                <p-skeleton
+                    class="canvas__skeleton"
+                    width="60%"
+                    height="60%"
+                    data-testid="image-editor-skeleton" />
+            }
+
+            <!-- Layer A: last successfully-loaded preview, never blanked. -->
+            <img
+                #displayImg
+                class="canvas__img canvas__img--displayed"
+                [src]="displayedUrl()"
+                [hidden]="!displayedUrl()"
+                alt=""
+                (load)="onDisplayLoaded()"
+                data-testid="image-editor-display-img" />
+
+            <!-- Layer B: queued preview, crossfaded in once it loads. -->
+            @if (pendingUrl(); as pending) {
+                <img
+                    class="canvas__img canvas__img--pending"
+                    [src]="pending"
+                    alt=""
+                    aria-hidden="true"
+                    (load)="onPendingLoaded(pending)"
+                    (error)="onPendingError()"
+                    data-testid="image-editor-pending-img" />
+            }
+
+            <dot-image-editor-crop-overlay [imageRect]="imageRect()" />
+            <dot-image-editor-focal-overlay [imageRect]="imageRect()" />
+        </div>
+
+        @if (store.previewStatus() === 'loading') {
+            <div class="canvas__loading" aria-live="polite" data-testid="image-editor-loading">
+                <p-progressSpinner
+                    strokeWidth="4"
+                    [style]="{ width: '2.5rem', height: '2.5rem' }" />
+            </div>
+        }
+
+        @if (store.previewStatus() === 'error') {
+            <div class="canvas__error" role="alert" data-testid="image-editor-error">
+                <i class="pi pi-exclamation-triangle canvas__error-icon" aria-hidden="true"></i>
+                <p class="canvas__error-message">
+                    {{ 'edit.content.image-editor.canvas.error.message' | dm }}
+                </p>
+                <p-button
+                    icon="pi pi-refresh"
+                    [label]="'edit.content.image-editor.canvas.error.retry' | dm"
+                    (onClick)="retry()"
+                    data-testid="image-editor-retry-btn" />
+            </div>
+        }
+    </div>
+</div>

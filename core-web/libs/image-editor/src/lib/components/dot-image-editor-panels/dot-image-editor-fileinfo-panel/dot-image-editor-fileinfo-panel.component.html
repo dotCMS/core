@@ -1,0 +1,40 @@
+<div class="ie-fileinfo">
+    <div class="ie-field">
+        <label>{{ 'edit.content.image-editor.fileinfo.compression' | dm }}</label>
+        <p-selectButton
+            [options]="compressionOptions"
+            [ngModel]="store.fileInfo().compression"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            data-testid="image-editor-compression-select"
+            (onChange)="compressionChanged($event.value)"
+            (onOptionClick)="compressionChanged($event.option.value)">
+            <ng-template #item let-option>
+                {{ option.label | dm }}
+            </ng-template>
+        </p-selectButton>
+    </div>
+
+    @if (isCompressing()) {
+        <div class="ie-field">
+            <div class="ie-field__header">
+                <label>{{ 'edit.content.image-editor.fileinfo.quality' | dm }}</label>
+                <span class="ie-field__value">{{ store.fileInfo().quality }}</span>
+            </div>
+            <p-slider
+                [ngModel]="store.fileInfo().quality"
+                [min]="0"
+                [max]="100"
+                data-testid="image-editor-quality-slider"
+                (onSlideEnd)="qualityChanged($event)" />
+        </div>
+    }
+
+    <div class="ie-field ie-field--inline">
+        <label>{{ 'edit.content.image-editor.fileinfo.filesize' | dm }}</label>
+        <span class="ie-field__value" data-testid="image-editor-filesize-value">
+            {{ fileSize() }}
+        </span>
+    </div>
+</div>

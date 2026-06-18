@@ -1,0 +1,57 @@
+<div class="ie-adjust">
+    <div class="ie-field">
+        <div class="ie-field__header">
+            <label>{{ 'edit.content.image-editor.adjust.brightness' | dm }}</label>
+            <span class="ie-field__value">{{ brightness() }}</span>
+        </div>
+        <p-slider
+            [ngModel]="store.adjust().brightness"
+            [min]="-100"
+            [max]="100"
+            data-testid="image-editor-brightness-slider"
+            (onChange)="onBrightnessChange($event)"
+            (onSlideEnd)="onBrightnessSlideEnd($event)" />
+    </div>
+
+    <div class="ie-field">
+        <div class="ie-field__header">
+            <label>{{ 'edit.content.image-editor.adjust.hue' | dm }}</label>
+            <span class="ie-field__value">{{ hue() }}</span>
+        </div>
+        <p-slider
+            styleClass="ie-slider--hue"
+            [ngModel]="store.adjust().hue"
+            [min]="-100"
+            [max]="100"
+            data-testid="image-editor-hue-slider"
+            (onChange)="onHueChange($event)"
+            (onSlideEnd)="onHueSlideEnd($event)" />
+    </div>
+
+    <div class="ie-field">
+        <div class="ie-field__header">
+            <label>{{ 'edit.content.image-editor.adjust.saturation' | dm }}</label>
+            <span class="ie-field__value">{{ saturation() }}</span>
+        </div>
+        <p-slider
+            styleClass="ie-slider--saturation"
+            [ngModel]="store.adjust().saturation"
+            [min]="-100"
+            [max]="100"
+            data-testid="image-editor-saturation-slider"
+            (onChange)="onSaturationChange($event)"
+            (onSlideEnd)="onSaturationSlideEnd($event)" />
+    </div>
+
+    <div class="ie-field ie-field--inline">
+        <p-checkbox
+            inputId="image-editor-grayscale"
+            [binary]="true"
+            [ngModel]="store.adjust().grayscale"
+            data-testid="image-editor-grayscale-checkbox"
+            (onChange)="onGrayscaleToggle($event)" />
+        <label for="image-editor-grayscale">
+            {{ 'edit.content.image-editor.adjust.grayscale' | dm }}
+        </label>
+    </div>
+</div>

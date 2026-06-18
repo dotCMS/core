@@ -1,0 +1,33 @@
+<div class="ie-history">
+    @if (store.appliedEdits().length) {
+        <ul class="ie-history__list">
+            @for (entry of store.appliedEdits(); track entry.id) {
+                <li class="ie-history__entry" data-testid="image-editor-history-entry">
+                    <span class="ie-history__label">
+                        {{ 'edit.content.image-editor.history.category.' + entry.category | dm }}
+                        {{ entry.label }}
+                    </span>
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        icon="pi pi-times"
+                        [attr.aria-label]="'edit.content.image-editor.history.remove.aria' | dm"
+                        (onClick)="onRemove(entry.id)"
+                        data-testid="image-editor-history-remove" />
+                </li>
+            }
+        </ul>
+
+        <p-button
+            [text]="true"
+            icon="pi pi-trash"
+            [label]="'edit.content.image-editor.history.reset' | dm"
+            (onClick)="onReset()"
+            data-testid="image-editor-history-reset" />
+    } @else {
+        <p class="ie-history__empty" data-testid="image-editor-history-empty">
+            {{ 'edit.content.image-editor.history.empty' | dm }}
+        </p>
+    }
+</div>

@@ -14,6 +14,7 @@ module.exports = {
         '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/edit-content/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/image-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/ui/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/portlets/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],

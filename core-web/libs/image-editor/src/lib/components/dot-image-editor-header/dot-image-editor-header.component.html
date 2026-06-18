@@ -1,0 +1,11 @@
+<div class="flex items-center justify-between" data-testid="image-editor-header">
+    <h2 class="m-0 text-lg font-semibold">{{ 'edit.content.image-editor.title' | dm }}</h2>
+
+    <p-button
+        [text]="true"
+        [rounded]="true"
+        icon="pi pi-times"
+        [attr.aria-label]="'edit.content.image-editor.close.aria' | dm"
+        (onClick)="close.emit()"
+        data-testid="image-editor-close-btn" />
+</div>

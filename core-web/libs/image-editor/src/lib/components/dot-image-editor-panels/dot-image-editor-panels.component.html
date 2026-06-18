@@ -1,0 +1,80 @@
+<p-accordion
+    [multiple]="true"
+    [value]="['adjust', 'transform', 'fileinfo', 'history']"
+    transitionOptions="200ms cubic-bezier(0.86, 0, 0.07, 1)">
+    <p-accordion-panel value="adjust" data-testid="image-editor-panel-adjust">
+        <p-accordion-header>
+            <span class="flex items-center gap-2">
+                <i class="pi pi-sliders-h"></i>
+                <span class="flex flex-col">
+                    <span class="font-semibold">
+                        {{ 'edit.content.image-editor.panel.adjust.title' | dm }}
+                    </span>
+                    <span class="text-color-secondary text-sm">
+                        {{ 'edit.content.image-editor.panel.adjust.subtitle' | dm }}
+                    </span>
+                </span>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-adjust-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="transform" data-testid="image-editor-panel-transform">
+        <p-accordion-header>
+            <span class="flex items-center gap-2">
+                <i class="pi pi-arrows-alt"></i>
+                <span class="flex flex-col">
+                    <span class="font-semibold">
+                        {{ 'edit.content.image-editor.panel.transform.title' | dm }}
+                    </span>
+                    <span class="text-color-secondary text-sm">
+                        {{ 'edit.content.image-editor.panel.transform.subtitle' | dm }}
+                    </span>
+                </span>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-transform-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="fileinfo" data-testid="image-editor-panel-fileinfo">
+        <p-accordion-header>
+            <span class="flex items-center gap-2">
+                <i class="pi pi-file"></i>
+                <span class="flex flex-col">
+                    <span class="font-semibold">
+                        {{ 'edit.content.image-editor.panel.fileinfo.title' | dm }}
+                    </span>
+                    <span class="text-color-secondary text-sm">
+                        {{ 'edit.content.image-editor.panel.fileinfo.subtitle' | dm }}
+                    </span>
+                </span>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-fileinfo-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+
+    <p-accordion-panel value="history" data-testid="image-editor-panel-history">
+        <p-accordion-header>
+            <span class="flex items-center gap-2">
+                <i class="pi pi-history"></i>
+                <span class="flex flex-col">
+                    <span class="font-semibold">
+                        {{ 'edit.content.image-editor.panel.history.title' | dm }}
+                    </span>
+                    <span class="text-color-secondary text-sm">
+                        {{ 'edit.content.image-editor.panel.history.subtitle' | dm }}
+                    </span>
+                </span>
+            </span>
+        </p-accordion-header>
+        <p-accordion-content>
+            <dot-image-editor-history-panel />
+        </p-accordion-content>
+    </p-accordion-panel>
+</p-accordion>

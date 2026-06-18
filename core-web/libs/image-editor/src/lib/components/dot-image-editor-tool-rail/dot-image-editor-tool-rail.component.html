@@ -1,0 +1,17 @@
+@for (tool of tools; track tool.id) {
+    <button
+        pButton
+        type="button"
+        class="tool-rail__button"
+        [icon]="tool.icon"
+        [rounded]="true"
+        [text]="store.activeTool() !== tool.id"
+        [severity]="store.activeTool() === tool.id ? 'primary' : 'secondary'"
+        [attr.aria-label]="tool.label | dm"
+        [attr.aria-pressed]="store.activeTool() === tool.id"
+        [attr.tabindex]="store.activeTool() === tool.id ? 0 : -1"
+        [pTooltip]="tool.label | dm"
+        tooltipPosition="right"
+        [attr.data-testid]="tool.testId"
+        (click)="selectTool(tool.id)"></button>
+}

@@ -1,0 +1,78 @@
+<div class="address-bar__group">
+    <i class="pi pi-link address-bar__link-icon" aria-hidden="true"></i>
+    <input
+        pInputText
+        type="text"
+        readonly
+        class="address-bar__field truncate font-mono"
+        [value]="store.previewUrl()"
+        data-testid="image-editor-address-field" />
+    <button
+        pButton
+        type="button"
+        icon="pi pi-copy"
+        [text]="true"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.address.copy.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.address.copy.aria' | dm"
+        data-testid="image-editor-copy-url-btn"
+        (click)="copyUrl()"></button>
+</div>
+
+<div class="address-bar__group">
+    <button
+        pButton
+        type="button"
+        icon="pi pi-minus"
+        [text]="true"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.zoom.out.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.zoom.out.aria' | dm"
+        data-testid="image-editor-zoom-out-btn"
+        (click)="zoomOut.emit()"></button>
+    <span class="address-bar__zoom-value" data-testid="image-editor-zoom-value">
+        {{ zoomLevel() }}%
+    </span>
+    <button
+        pButton
+        type="button"
+        icon="pi pi-plus"
+        [text]="true"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.zoom.in.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.zoom.in.aria' | dm"
+        data-testid="image-editor-zoom-in-btn"
+        (click)="zoomIn.emit()"></button>
+    <button
+        pButton
+        type="button"
+        icon="pi pi-window-maximize"
+        [text]="true"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.zoom.fit.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.zoom.fit.aria' | dm"
+        data-testid="image-editor-fit-btn"
+        (click)="fit.emit()"></button>
+    <button
+        pButton
+        type="button"
+        icon="pi pi-undo"
+        [text]="true"
+        severity="secondary"
+        [disabled]="!store.canUndo()"
+        [attr.aria-label]="'edit.content.image-editor.undo.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.undo.aria' | dm"
+        data-testid="image-editor-undo-btn"
+        (click)="undo()"></button>
+    <button
+        pButton
+        type="button"
+        icon="pi pi-refresh"
+        [text]="true"
+        severity="secondary"
+        [disabled]="!store.canRedo()"
+        [attr.aria-label]="'edit.content.image-editor.redo.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.redo.aria' | dm"
+        data-testid="image-editor-redo-btn"
+        (click)="redo()"></button>
+</div>

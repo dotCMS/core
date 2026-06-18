@@ -1,0 +1,33 @@
+@if (isActive() && imageRect()) {
+    <div class="focal-overlay">
+        <div
+            class="focal-surface"
+            (pointerdown)="onSurfacePointerDown($event)"
+            data-testid="image-editor-focal-surface"></div>
+
+        <span
+            class="focal-marker"
+            tabindex="0"
+            role="button"
+            [@focalPointPop]
+            [attr.aria-label]="'edit.content.image-editor.focal.marker.aria' | dm"
+            [style.left]="markerStyle().left"
+            [style.top]="markerStyle().top"
+            (pointerdown)="onSurfacePointerDown($event)"
+            (keydown)="onMarkerKeydown($event)"
+            data-testid="image-editor-focal-marker"></span>
+
+        <div class="focal-pill">
+            <p-button
+                [text]="true"
+                severity="secondary"
+                [label]="'edit.content.image-editor.focal.cancel' | dm"
+                (onClick)="cancel()"
+                data-testid="image-editor-focal-cancel-btn" />
+            <p-button
+                [label]="'edit.content.image-editor.focal.set' | dm"
+                (onClick)="set()"
+                data-testid="image-editor-focal-set-btn" />
+        </div>
+    </div>
+}

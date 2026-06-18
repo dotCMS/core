@@ -1,0 +1,48 @@
+.ie-transform {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.ie-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ie-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ie-field__value {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-color-secondary);
+}
+
+.ie-transform__flip {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ie-transform__dimensions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.ie-transform__dimension {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ie-transform__dimension-separator {
+    padding-top: 0.5rem;
+    color: var(--text-color-secondary);
+}
+
+.ie-transform__error {
+    color: var(--red-500);
+}

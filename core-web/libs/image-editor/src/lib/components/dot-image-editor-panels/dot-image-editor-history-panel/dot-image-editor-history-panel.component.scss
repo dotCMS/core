@@ -1,0 +1,32 @@
+.ie-history {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ie-history__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ie-history__entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.ie-history__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ie-history__empty {
+    margin: 0;
+    color: var(--text-color-secondary);
+}

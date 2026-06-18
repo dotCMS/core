@@ -38,6 +38,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSTempFile,
+    DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
@@ -58,10 +59,11 @@ import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-import { getUiMessage } from './utils/binary-field-utils';
+import { getFileMetadata, getUiMessage } from './utils/binary-field-utils';
 
 import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
+import { AngularImageEditorLauncher, IMAGE_EDITOR_LAUNCHER } from '../shared/image-editor-launcher';
 
 export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     ...DEFAULT_MONACO_CONFIG,
@@ -97,6 +99,7 @@ type SystemOptionsType = {
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
+        { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -118,6 +121,7 @@ export class DotEditContentBinaryFieldComponent
     readonly #dotAiService = inject(DotAiService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER);
 
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
@@ -389,14 +393,32 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Open Image Editor
      *
+     * Launches the editor through the {@link IMAGE_EDITOR_LAUNCHER} seam and applies
+     * the edited image back to the field via the binary field store.
+     *
      * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
-        this.#dotBinaryFieldEditImageService.openImageEditor({
-            inode: this.contentlet?.inode,
-            tempId: this.tempId,
-            variable: this.variable
-        });
+        const inode = this.contentlet?.inode;
+        const metadata = this.contentlet
+            ? (getFileMetadata(this.contentlet) as Partial<DotFileMetadata>)
+            : null;
+
+        this.#imageEditorLauncher
+            .open({
+                inode,
+                tempId: this.tempId,
+                variable: this.variable,
+                fieldName: this.$field()?.name,
+                byInode: !!inode,
+                fileName: this.contentlet?.fileName ?? metadata?.name,
+                mimeType: metadata?.contentType
+            })
+            .pipe(
+                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((tempFile) => this.#dotBinaryFieldStore.setFileFromTemp(tempFile));
     }
 
     /**

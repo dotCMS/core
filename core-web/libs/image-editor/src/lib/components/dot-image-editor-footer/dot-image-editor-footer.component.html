@@ -1,0 +1,24 @@
+<div class="flex items-center justify-end gap-2">
+    <p-button
+        [text]="true"
+        [label]="'edit.content.image-editor.footer.cancel' | dm"
+        (onClick)="cancel.emit()"
+        data-testid="image-editor-cancel-btn" />
+
+    <p-button
+        severity="secondary"
+        icon="pi pi-download"
+        [label]="'edit.content.image-editor.footer.download' | dm"
+        [attr.aria-label]="'edit.content.image-editor.footer.download.aria' | dm"
+        [disabled]="store.isBusy()"
+        (onClick)="onDownload()"
+        data-testid="image-editor-download-btn" />
+
+    <p-splitButton
+        [label]="saveLabel()"
+        [icon]="saveIcon()"
+        [model]="saveMenuItems"
+        [disabled]="!store.canSave()"
+        (onClick)="onSave()"
+        data-testid="image-editor-save-btn" />
+</div>

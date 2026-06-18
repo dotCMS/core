@@ -1,0 +1,116 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.canvas {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background-color: #11131a;
+    color: var(--surface-0, #ffffff);
+}
+
+.canvas__address-bar {
+    flex: 0 0 auto;
+    display: block;
+}
+
+.canvas__viewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.canvas__tool-rail {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 2;
+}
+
+.canvas__stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    max-height: 100%;
+    transform-origin: center center;
+    transition: transform 150ms ease-out;
+}
+
+.canvas__img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+}
+
+// Stack the two layers so the pending image crossfades over the displayed one.
+.canvas__img--pending {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    opacity: 1;
+    transition: opacity 200ms ease-in-out;
+}
+
+.canvas__skeleton {
+    display: block;
+}
+
+.canvas__loading {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    background-color: rgba(28, 30, 38, 0.92);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.canvas__error {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: rgba(17, 19, 26, 0.85);
+}
+
+.canvas__error-icon {
+    font-size: 2.5rem;
+    color: var(--yellow-500, #f5a623);
+}
+
+.canvas__error-message {
+    margin: 0;
+    max-width: 24rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__stage,
+    .canvas__img--pending {
+        transition: none;
+    }
+}
