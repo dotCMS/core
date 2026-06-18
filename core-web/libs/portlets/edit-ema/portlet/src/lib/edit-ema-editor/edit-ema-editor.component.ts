@@ -60,12 +60,7 @@ import {
 import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import {
-    DotCMSPage,
-    DotCMSURLContentMap,
-    DotCMSUVEAction,
-    UVE_MODE
-} from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';

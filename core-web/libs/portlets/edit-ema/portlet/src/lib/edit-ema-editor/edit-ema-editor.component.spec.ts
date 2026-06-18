@@ -2144,7 +2144,6 @@ describe('EditEmaEditorComponent', () => {
                         language_id: '2'
                     });
                 });
-
             });
 
             describe('handleOpenFullEditor', () => {
