@@ -98,9 +98,6 @@ interface DotPublishingQueueState {
      * Asset List modal's `selectedAssets` so the two modals don't fight over state). */
     detailAssets: BundleAssetView[];
     detailAssetsStatus: LoadStatus;
-
-    uploadInFlight: boolean;
-    uploadProgress: number;
 }
 
 const initialState: DotPublishingQueueState = {
@@ -137,10 +134,7 @@ const initialState: DotPublishingQueueState = {
     detail: null,
     detailStatus: 'init',
     detailAssets: [],
-    detailAssetsStatus: 'init',
-
-    uploadInFlight: false,
-    uploadProgress: 0
+    detailAssetsStatus: 'init'
 };
 
 export const DotPublishingQueueStore = signalStore(
@@ -595,25 +589,6 @@ export const DotPublishingQueueStore = signalStore(
                     )
                     .subscribe(() => {
                         patchState(store, { historySelectedIds: [] });
-                        refresh();
-                        onDone?.();
-                    });
-            },
-
-            uploadBundle(file: File, onDone?: () => void) {
-                patchState(store, { uploadInFlight: true, uploadProgress: 0 });
-                service
-                    .uploadBundle(file)
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { uploadInFlight: false, uploadProgress: 0 });
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe(() => {
-                        patchState(store, { uploadInFlight: false, uploadProgress: 100 });
                         refresh();
                         onDone?.();
                     });

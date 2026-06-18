@@ -100,10 +100,7 @@ describe('DotPublishingQueueStore', () => {
                 retryBundles: jest.fn().mockReturnValue(of([])),
                 deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
                 deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
-                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } })),
-                uploadBundle: jest
-                    .fn()
-                    .mockReturnValue(of({ bundleName: 'b', status: 'BUNDLE_REQUESTED' }))
+                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotCurrentUserService, {
@@ -378,17 +375,6 @@ describe('DotPublishingQueueStore', () => {
         });
     });
 
-    describe('uploadBundle', () => {
-        it('toggles uploadInFlight and refreshes on success', () => {
-            const onDone = jest.fn();
-            const file = new File(['x'], 'b.tar.gz');
-            store.uploadBundle(file, onDone);
-            expect(service.uploadBundle).toHaveBeenCalledWith(file);
-            expect(store.uploadInFlight()).toBe(false);
-            expect(onDone).toHaveBeenCalled();
-        });
-    });
-
     describe('polling', () => {
         it('startPolling / stopPolling do not throw', () => {
             store.stopPolling();
@@ -422,14 +408,6 @@ describe('DotPublishingQueueStore', () => {
             store.openDetail('y');
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.detailStatus()).toBe('error');
-        });
-
-        it('uploadBundle error → handle + uploadInFlight reset', () => {
-            const error = new Error('boom');
-            (service.uploadBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
-            store.uploadBundle(new File(['x'], 'b.tar.gz'));
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(store.uploadInFlight()).toBe(false);
         });
     });
 });

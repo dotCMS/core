@@ -1,43 +1,80 @@
-<div class="flex h-full flex-col gap-4" data-testid="pq-upload-dialog">
-    <p-message
-        severity="info"
-        [text]="'publishing-queue.upload.hint' | dm"
-        data-testid="pq-upload-hint" />
-
-    <p-fileUpload
-        mode="basic"
-        chooseLabel="{{ 'publishing-queue.upload.choose' | dm }}"
-        accept=".tar.gz,.tgz,application/gzip,application/x-tar"
-        [maxFileSize]="1073741824"
-        [auto]="false"
-        [customUpload]="true"
-        (onSelect)="onSelect($event)"
-        (onClear)="onClear()"
-        data-testid="pq-upload-input" />
-
-    @if (selectedFile(); as file) {
-        <div class="rounded-md border border-surface-200 p-3 text-sm" data-testid="pq-upload-file">
-            <strong>{{ file.name }}</strong>
-            <span class="text-color-secondary ml-2">
-                {{ (file.size / 1024 / 1024).toFixed(2) }} MB
-            </span>
-        </div>
+<div class="flex h-full flex-col" data-testid="pq-upload-dialog">
+    @if (errorMessage()) {
+        <p-message
+            severity="error"
+            icon="pi pi-times-circle"
+            class="-mx-6 mb-4"
+            [pt]="{ root: { class: '!rounded-none' } }"
+            data-testid="pq-upload-error">
+            {{ errorMessage() }}
+        </p-message>
     }
 
-    @if (store.uploadInFlight()) {
-        <p-progressBar mode="indeterminate" styleClass="h-1" data-testid="pq-upload-progress" />
-    }
+    <p class="mb-4 text-lg">{{ 'publishing-queue.upload.hint' | dm }}</p>
 
-    <div class="mt-auto flex justify-end gap-2 pt-2">
+    <div class="min-h-0 flex-1">
+        <p-fileupload
+            #fileUpload
+            mode="advanced"
+            chooseIcon="pi pi-upload"
+            [showUploadButton]="false"
+            [showCancelButton]="false"
+            [multiple]="false"
+            [auto]="false"
+            [customUpload]="true"
+            accept=".tar.gz,.tgz,application/gzip,application/x-tar"
+            styleClass="w-full h-full"
+            (onSelect)="onFileSelect($event)"
+            (onClear)="onFileClear()"
+            [pt]="{
+                header: { style: { padding: '0', border: '0' } },
+                root: { class: 'h-full flex flex-col' },
+                content: { class: 'flex-1 min-h-0' }
+            }"
+            data-testid="pq-upload-input">
+            <ng-template #header />
+            <ng-template #content>
+                <div
+                    class="group flex size-full cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border border-surface-200 bg-surface-100 p-8 text-center"
+                    (click)="fileUpload.choose()">
+                    <div
+                        class="flex size-24 items-center justify-center rounded-full bg-primary-100 text-primary transition-colors group-hover:bg-primary-200">
+                        <i class="pi pi-upload text-4xl!"></i>
+                    </div>
+
+                    <p class="text-2xl font-semibold text-color">
+                        {{ 'publishing-queue.upload.dropzone.prefix' | dm }}
+                        <span class="text-primary hover:underline">
+                            {{ 'publishing-queue.upload.choose' | dm }}
+                        </span>
+                        {{ 'publishing-queue.upload.dropzone.suffix' | dm }}
+                    </p>
+
+                    <div class="text-color-secondary text-base">
+                        {{ 'publishing-queue.upload.file-types' | dm }}
+                    </div>
+
+                    @if (selectedFile(); as file) {
+                        <span class="text-sm font-medium text-color" data-testid="pq-upload-file">
+                            {{ file.name }}
+                        </span>
+                    }
+                </div>
+            </ng-template>
+        </p-fileupload>
+    </div>
+
+    <div class="mt-4 flex justify-end gap-2">
         <p-button
             [label]="'publishing-queue.cancel' | dm"
-            [text]="true"
+            text
+            [disabled]="uploading()"
             (onClick)="onCancel()"
             data-testid="pq-upload-cancel" />
         <p-button
             [label]="'publishing-queue.upload.submit' | dm"
-            [disabled]="!selectedFile() || store.uploadInFlight()"
-            [loading]="store.uploadInFlight()"
+            [disabled]="!selectedFile()"
+            [loading]="uploading()"
             (onClick)="onSubmit()"
             data-testid="pq-upload-submit" />
     </div>

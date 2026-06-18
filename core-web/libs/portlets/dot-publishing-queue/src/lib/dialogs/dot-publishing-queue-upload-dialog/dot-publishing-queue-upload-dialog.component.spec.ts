@@ -1,10 +1,11 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueUploadDialogComponent } from './dot-publishing-queue-upload-dialog.component';
@@ -14,69 +15,136 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
 describe('DotPublishingQueueUploadDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueUploadDialogComponent>;
     let dialogRef: jest.Mocked<DynamicDialogRef>;
-    let store: ReturnType<typeof storeFactory>;
-
-    const uploadInFlight = signal(false);
-
-    function storeFactory() {
-        return {
-            uploadInFlight,
-            uploadBundle: jest.fn((_file: File, cb?: () => void) => cb?.())
-        };
-    }
+    let service: jest.Mocked<DotPublishingQueueService>;
+    let store: jest.Mocked<{ refresh: jest.Mock }>;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueUploadDialogComponent,
         providers: [
-            mockProvider(DotPublishingQueueStore, storeFactory()),
+            mockProvider(DotPublishingQueueStore, { refresh: jest.fn() }),
+            mockProvider(DotPublishingQueueService, {
+                uploadBundle: jest
+                    .fn()
+                    .mockReturnValue(of({ bundleName: 'b.tar.gz', status: 'BUNDLE_REQUESTED' }))
+            }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ]
     });
 
+    function bundleFile(name = 'bundle.tar.gz'): File {
+        return new File(['x'], name, { type: 'application/gzip' });
+    }
+
     beforeEach(() => {
-        uploadInFlight.set(false);
         spectator = createComponent();
         dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
-        store = spectator.inject(DotPublishingQueueStore) as unknown as ReturnType<
-            typeof storeFactory
-        >;
+        service = spectator.inject(
+            DotPublishingQueueService
+        ) as jest.Mocked<DotPublishingQueueService>;
+        store = spectator.inject(DotPublishingQueueStore) as unknown as jest.Mocked<{
+            refresh: jest.Mock;
+        }>;
         jest.clearAllMocks();
     });
 
-    it('disables submit until a file is selected', () => {
-        expect(spectator.component.selectedFile()).toBeNull();
+    describe('file selection', () => {
+        it('accepts a .tar.gz file', () => {
+            const file = bundleFile('my.tar.gz');
+            spectator.component.onFileSelect({ files: [file] } as never);
+            expect(spectator.component.selectedFile()).toBe(file);
+        });
+
+        it('accepts a .tgz file', () => {
+            const file = bundleFile('legacy.tgz');
+            spectator.component.onFileSelect({ files: [file] } as never);
+            expect(spectator.component.selectedFile()).toBe(file);
+        });
+
+        it('rejects files with a non-bundle extension', () => {
+            const file = new File(['x'], 'image.png', { type: 'image/png' });
+            spectator.component.onFileSelect({ files: [file] } as never);
+            expect(spectator.component.selectedFile()).toBeNull();
+        });
+
+        it('clears the file (and any previous error) on clear', () => {
+            spectator.component.onFileSelect({ files: [bundleFile()] } as never);
+            spectator.component['errorMessage'].set('previous error');
+            spectator.component.onFileClear();
+            expect(spectator.component.selectedFile()).toBeNull();
+            expect(spectator.component.errorMessage()).toBeNull();
+        });
     });
 
-    it('stores the selected file', () => {
-        const file = new File(['x'], 'bundle.tar.gz', { type: 'application/gzip' });
-        spectator.component.onSelect({ files: [file] } as never);
-        expect(spectator.component.selectedFile()).toBe(file);
+    describe('submit', () => {
+        it('is a no-op when nothing is selected', () => {
+            spectator.component.onSubmit();
+            expect(service.uploadBundle).not.toHaveBeenCalled();
+        });
+
+        it('calls service.uploadBundle, refreshes the store, and closes with uploaded:true', () => {
+            const file = bundleFile();
+            spectator.component.onFileSelect({ files: [file] } as never);
+            spectator.component.onSubmit();
+            expect(service.uploadBundle).toHaveBeenCalledWith(file);
+            expect(store.refresh).toHaveBeenCalled();
+            expect(dialogRef.close).toHaveBeenCalledWith({ uploaded: true });
+            expect(spectator.component.uploading()).toBe(false);
+        });
     });
 
-    it('clears file on onClear', () => {
-        spectator.component.onSelect({
-            files: [new File(['x'], 'b.tar.gz')]
-        } as never);
-        spectator.component.onClear();
-        expect(spectator.component.selectedFile()).toBeNull();
+    describe('error handling (inline, not toast)', () => {
+        function makeError(body: unknown, status = 400): HttpErrorResponse {
+            return new HttpErrorResponse({ error: body, status, statusText: 'Bad Request' });
+        }
+
+        function submitWithError(error: HttpErrorResponse): void {
+            (service.uploadBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            spectator.component.onFileSelect({ files: [bundleFile()] } as never);
+            spectator.component.onSubmit();
+        }
+
+        it('surfaces `body.message` inside the dialog (does NOT close)', () => {
+            submitWithError(makeError({ message: 'License required to upload' }));
+            expect(spectator.component.errorMessage()).toBe('License required to upload');
+            expect(dialogRef.close).not.toHaveBeenCalled();
+            expect(store.refresh).not.toHaveBeenCalled();
+            expect(spectator.component.uploading()).toBe(false);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-upload-error'))?.textContent).toContain(
+                'License required to upload'
+            );
+        });
+
+        it('surfaces the first entry of `body.errors[]`', () => {
+            submitWithError(makeError({ errors: [{ message: 'Invalid bundle archive' }] }));
+            expect(spectator.component.errorMessage()).toBe('Invalid bundle archive');
+        });
+
+        it('surfaces the first entry when the body itself is an array', () => {
+            submitWithError(makeError([{ error: 'Unauthorized' }], 401));
+            expect(spectator.component.errorMessage()).toBe('Unauthorized');
+        });
+
+        it('falls back to a plain-string body', () => {
+            submitWithError(makeError('Upload failed: disk full', 500));
+            expect(spectator.component.errorMessage()).toBe('Upload failed: disk full');
+        });
+
+        it('clears the previous error before retrying', () => {
+            submitWithError(makeError({ message: 'first error' }));
+            expect(spectator.component.errorMessage()).toBe('first error');
+            (service.uploadBundle as jest.Mock).mockReturnValueOnce(
+                of({ bundleName: 'b.tar.gz', status: 'BUNDLE_REQUESTED' })
+            );
+            spectator.component.onSubmit();
+            expect(spectator.component.errorMessage()).toBeNull();
+            expect(dialogRef.close).toHaveBeenCalledWith({ uploaded: true });
+        });
     });
 
-    it('submit calls store.uploadBundle + closes the dialog with uploaded:true', () => {
-        const file = new File(['x'], 'bundle.tar.gz');
-        spectator.component.onSelect({ files: [file] } as never);
-        spectator.component.onSubmit();
-        expect(store.uploadBundle).toHaveBeenCalledWith(file, expect.any(Function));
-        expect(dialogRef.close).toHaveBeenCalledWith({ uploaded: true });
-    });
-
-    it('submit is a no-op when no file is selected', () => {
-        spectator.component.onSubmit();
-        expect(store.uploadBundle).not.toHaveBeenCalled();
-    });
-
-    it('cancel closes the dialog', () => {
+    it('cancel closes the dialog without a result', () => {
         spectator.component.onCancel();
-        expect(dialogRef.close).toHaveBeenCalled();
+        expect(dialogRef.close).toHaveBeenCalledWith();
     });
 });
