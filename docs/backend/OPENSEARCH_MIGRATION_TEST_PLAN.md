@@ -10,6 +10,36 @@
 
 ---
 
+## Abstract
+
+**Purpose.** This plan verifies the ElasticSearch → OpenSearch migration introduced by PR #35632: that
+dotCMS **dual-writes** content to both engines, that it **degrades safely** when OpenSearch is missing or
+misconfigured (it falls back to ES, never crashing or hanging), and that the index lifecycle (create /
+delete / reindex) and the `/v1/esindex` REST API stay correct and in sync with the `indicies` DB table.
+It is written for a tester who works **from the outside** — admin UI, REST API, startup log, Kibana /
+OpenSearch Dashboards, and SQL — without reading source code.
+
+**Minimum setup.** Bring up the migration stack with one command
+(`docker compose -f docker/docker-compose-examples/os-migration/docker-compose.yml up -d`), which gives you
+ES 7.10 + Kibana and OpenSearch 3.x + OS Dashboards on one network; wait for both engines' health checks to
+pass, then start dotCMS (`http://localhost:8082`, `admin:admin`) pointed at that stack. The full table of
+services and ports is in **Environment**; the limited-user (non-admin OS) variant is in **Group 16**.
+
+**Required environment variables** (set in `dotmarketing-config.properties`):
+
+| Variable | Purpose |
+|---|---|
+| `FEATURE_FLAG_OPEN_SEARCH_PHASE` | Selects how far the migration runs: `0` = ES only, `1` = dual-write / ES reads, `2` = dual-write / OS reads, `3` = OS only. This is the switch most cases toggle. |
+| `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster, e.g. `http://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
+| `OS_AUTH_TYPE` | Authentication scheme dotCMS uses to talk to OpenSearch (`BASIC` for these cases). |
+| `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials for OpenSearch. With the open dev stack these are `admin` / `admin`; the limited-user stack (Group 16) uses the restricted `dotcms-es-user`. |
+| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
+
+> A phase change is read at startup **and** on each routing decision, so it takes effect without a restart —
+> but every cluster node must carry the same value. See **Environment** for the multi-node layout (Group 3).
+
+---
+
 ## 1. Objective
 
 Validate that the ES → OpenSearch migration pipeline delivers:
