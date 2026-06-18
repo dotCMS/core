@@ -124,7 +124,7 @@
                              copy button right next to the text instead of
                              floating at the far edge of the column. -->
                         <div class="inline-flex items-center gap-1">
-                            <span [title]="row.bundleId">
+                            <span class="text-xs" [title]="row.bundleId">
                                 {{ truncateBundleId(row.bundleId) }}
                             </span>
                             <p-button
@@ -148,12 +148,12 @@
                         <dot-publishing-status-chip [status]="row.status" />
                     </td>
                     <td
-                        class="text-color-secondary whitespace-nowrap"
+                        class="text-color-secondary text-xs whitespace-nowrap"
                         data-testid="pq-history-created">
                         {{ (row.createDate | date: 'medium') || '—' }}
                     </td>
                     <td
-                        class="text-color-secondary whitespace-nowrap"
+                        class="text-color-secondary text-xs whitespace-nowrap"
                         data-testid="pq-history-modified">
                         {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
                     </td>

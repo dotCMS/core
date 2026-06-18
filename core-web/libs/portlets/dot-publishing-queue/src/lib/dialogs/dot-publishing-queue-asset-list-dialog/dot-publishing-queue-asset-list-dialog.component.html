@@ -1,6 +1,8 @@
 <div class="flex flex-col gap-2" data-testid="pq-asset-list-dialog">
     @if (showAssetSearch()) {
-        <div class="flex justify-end" data-testid="pq-asset-list-search-bar">
+        <!-- mt-1 reserves room for the focus ring; without it the ring clips
+             against the dialog header when the input gets keyboard focus. -->
+        <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
                 <input
