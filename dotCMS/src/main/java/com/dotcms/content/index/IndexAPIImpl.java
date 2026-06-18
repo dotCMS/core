@@ -139,6 +139,9 @@ public class IndexAPIImpl implements IndexAPI {
         // the exact Phase 2 optimize misrouting reported against the /optimize endpoint.
         // Force-merge each provider only with the names it actually holds; skip a provider
         // when its subset is empty so Phase 0 never contacts OS and Phase 3 never contacts ES.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return true;
+        }
         final Map<IndexTag, List<String>> byVendor = indexNames.stream()
                 .collect(Collectors.groupingBy(IndexTag::resolve));
         boolean result = true;
