@@ -268,7 +268,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         } finally {
             tempDir.delete();
             if (site != null && site.getIdentifier() != null) {
-                hostAPI.unarchive(site, user, false);
+                hostAPI.archive(site, user, false);
                 hostAPI.delete(site, user, false);
             }
         }
@@ -343,7 +343,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         } finally {
             tempDir.delete();
             if (!siteDeleted && site != null && site.getIdentifier() != null) {
-                hostAPI.unarchive(site, user, false);
+                hostAPI.archive(site, user, false);
                 hostAPI.delete(site, user, false);
             }
         }
