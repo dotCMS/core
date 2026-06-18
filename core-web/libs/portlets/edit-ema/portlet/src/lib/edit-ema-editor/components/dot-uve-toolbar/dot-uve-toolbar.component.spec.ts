@@ -260,7 +260,8 @@ const baseUVEState = {
         ogTags: null,
         styleSchemas: []
     }),
-    setPaletteOpen: jest.fn()
+    setPaletteOpen: jest.fn(),
+    $isMissingTranslation: signal(false)
 };
 
 /** Creates lock options for tests. Defaults to unlocked state; pass overrides for locked/disabled cases. */
