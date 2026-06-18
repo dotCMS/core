@@ -22,27 +22,40 @@
                 <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
-                <th data-testid="pq-history-col-bundle-name">
+                <th style="width: 14rem" data-testid="pq-history-col-bundle-name">
                     {{ 'publishing-queue.column.bundle-name' | dm }}
                 </th>
-                <th data-testid="pq-history-col-bundle-id">
+                <th style="width: 16rem" data-testid="pq-history-col-bundle-id">
                     {{ 'publishing-queue.column.bundle-id' | dm }}
                 </th>
-                <th data-testid="pq-history-col-filter">
+                <th style="width: 14rem" data-testid="pq-history-col-filter">
                     {{ 'publishing-queue.column.filter' | dm }}
                 </th>
-                <th pSortableColumn="status" data-testid="pq-history-col-status">
+                <th
+                    pSortableColumn="status"
+                    style="width: 16rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-history-col-status">
                     {{ 'publishing-queue.column.status' | dm }}
                     <p-sortIcon field="status" />
                 </th>
-                <th pSortableColumn="created" data-testid="pq-history-col-created">
+                <th
+                    pSortableColumn="created"
+                    style="width: 11rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-history-col-created">
                     {{ 'publishing-queue.column.data-entered' | dm }}
                     <p-sortIcon field="created" />
                 </th>
-                <th pSortableColumn="modified" data-testid="pq-history-col-modified">
+                <th
+                    pSortableColumn="modified"
+                    style="width: 11rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-history-col-modified">
                     {{ 'publishing-queue.column.last-update' | dm }}
                     <p-sortIcon field="modified" />
                 </th>
+                <th style="width: 3rem" data-testid="pq-history-col-actions"></th>
             </tr>
         </ng-template>
 
@@ -86,6 +99,11 @@
                             <p-skeleton height="1.5rem" width="70%" />
                         </span>
                     </td>
+                    <td>
+                        <span class="flex h-full items-center justify-center">
+                            <p-skeleton height="1.5rem" width="1rem" />
+                        </span>
+                    </td>
                 </tr>
             } @else {
                 <tr
@@ -96,31 +114,70 @@
                         <p-tableCheckbox [value]="row" />
                     </td>
                     <td data-testid="pq-history-bundle-name">
-                        <span class="truncate text-sm font-medium text-color">
+                        <div class="truncate text-sm font-medium text-color">
                             {{ row.bundleName || '—' }}
-                        </span>
+                        </div>
                     </td>
                     <td data-testid="pq-history-bundle-id">
-                        <div class="flex items-center gap-1">
-                            <span class="font-mono text-xs">{{ row.bundleId }}</span>
-                            <dot-copy-button
-                                [copy]="row.bundleId"
-                                tooltipText="{{ 'publishing-queue.copy-bundle-id' | dm }}"
-                                customClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded-full"
+                        <!-- inline-flex so the row collapses to the natural
+                             width of (truncated id + copy icon) — keeps the
+                             copy button right next to the text instead of
+                             floating at the far edge of the column. -->
+                        <div class="inline-flex items-center gap-1">
+                            <span class="text-xs" [title]="row.bundleId">
+                                {{ truncateBundleId(row.bundleId) }}
+                            </span>
+                            <p-button
+                                text
+                                size="small"
+                                icon="pi pi-copy"
+                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                [pTooltip]="'publishing-queue.copy-bundle-id' | dm"
+                                tooltipPosition="top"
+                                [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
+                                (onClick)="$event.stopPropagation(); copyToClipboard(row.bundleId)"
                                 data-testid="pq-history-bundle-id-copy" />
                         </div>
                     </td>
                     <td data-testid="pq-history-filter">
-                        {{ row.filterName || row.filterKey || '—' }}
+                        <div class="truncate">
+                            {{ row.filterName || row.filterKey || '—' }}
+                        </div>
                     </td>
-                    <td data-testid="pq-history-status">
+                    <td class="whitespace-nowrap" data-testid="pq-history-status">
                         <dot-publishing-status-chip [status]="row.status" />
                     </td>
-                    <td class="text-color-secondary text-xs" data-testid="pq-history-created">
+                    <td
+                        class="text-color-secondary text-xs whitespace-nowrap"
+                        data-testid="pq-history-created">
                         {{ (row.createDate | date: 'medium') || '—' }}
                     </td>
-                    <td class="text-color-secondary text-xs" data-testid="pq-history-modified">
+                    <td
+                        class="text-color-secondary text-xs whitespace-nowrap"
+                        data-testid="pq-history-modified">
                         {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
+                    </td>
+                    <td class="text-right" (click)="$event.stopPropagation()">
+                        <p-menu
+                            #kebab
+                            [model]="kebabFor(row)"
+                            [popup]="true"
+                            appendTo="body"
+                            showTransitionOptions="0ms"
+                            hideTransitionOptions="0ms"
+                            data-testid="pq-history-kebab-menu" />
+                        <div
+                            class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                            <p-button
+                                icon="pi pi-ellipsis-v"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                severity="secondary"
+                                (onClick)="kebab.toggle($event)"
+                                [attr.aria-label]="'publishing-queue.row.actions' | dm"
+                                data-testid="pq-history-kebab-btn" />
+                        </div>
                     </td>
                 </tr>
             }
@@ -128,7 +185,7 @@
 
         <ng-template pTemplate="emptymessage">
             <tr class="h-full hover:bg-transparent!">
-                <td colspan="7" class="h-full border-none p-6 text-center">
+                <td colspan="8" class="h-full border-none p-6 text-center">
                     <div
                         class="flex h-full items-center justify-center"
                         data-testid="pq-history-empty">
@@ -141,3 +198,5 @@
         </ng-template>
     </p-table>
 </div>
+
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

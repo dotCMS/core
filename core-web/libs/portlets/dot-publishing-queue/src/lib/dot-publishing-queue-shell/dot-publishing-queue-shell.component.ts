@@ -127,11 +127,13 @@ export class DotPublishingQueueShellComponent {
                 break;
             case 'all':
                 this.confirmationService.confirm({
-                    header: this.dotMessageService.get('bundle.delete.title'),
+                    header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
                     message: this.dotMessageService.get('bundle.delete.all.confirmation'),
-                    acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
+                    acceptLabel: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
                     rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
-                    acceptButtonStyleClass: 'p-button-danger',
+                    // Delete = primary, Cancel = tertiary (text) — consistent
+                    // with the per-row delete confirm in history.
+                    acceptButtonStyleClass: 'p-button-primary',
                     rejectButtonStyleClass: 'p-button-text',
                     defaultFocus: 'reject',
                     closable: true,
