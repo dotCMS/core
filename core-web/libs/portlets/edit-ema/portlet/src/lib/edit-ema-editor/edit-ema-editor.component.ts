@@ -424,9 +424,19 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on freshly-loaded state.
+        // - When the editor component is recreated (e.g. after visiting the Pages list and
+        //   opening a different page), the store may still hold stale data from the previous
+        //   page while the new pageLoad() is in flight. The tap in pageLoad sets
+        //   uveStatus = LOADING synchronously, so by the time this effect flushes (microtask),
+        //   status is already LOADING — preventing a false dialog on stale translated:false data.
+        // - untracked: createNewTranslation calls confirmationService.confirm which may read
+        //   PrimeNG-internal signals; tracking those would cause spurious re-fires when
+        //   dialog state changes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
