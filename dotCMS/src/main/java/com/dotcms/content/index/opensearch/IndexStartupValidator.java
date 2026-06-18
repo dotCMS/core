@@ -80,9 +80,10 @@ public class IndexStartupValidator {
      * the success/fallback outcome appear together as a single startup story under one logger.</p>
      */
     public void validate() {
-        logConfigSummary(resolveConfig());
+        final OSClientConfig config = resolveConfig();
+        logConfigSummary(config);
         validateOSVersion();
-        validateEndpointSeparation();
+        validateEndpointSeparation(config);
     }
 
     // -------------------------------------------------------------------------
@@ -90,11 +91,18 @@ public class IndexStartupValidator {
     // -------------------------------------------------------------------------
 
     /**
-     * Re-resolves the OpenSearch client configuration from properties using the same
-     * package-private resolution path the client itself is built from, so the banner reflects
-     * exactly what the client uses with no duplicated resolution logic. A resolution failure
-     * (e.g. an invalid/conflicting auth combination) is surfaced as a {@link DotRuntimeException}
-     * so it flows through the same uniform halt path as every other startup failure.
+     * Re-resolves the OpenSearch configuration from properties through the same package-private
+     * resolution path the client is built from ({@link ConfigurableOpenSearchProvider#configFromProperties()}).
+     *
+     * <p><strong>This is a fresh re-resolution, not the live client's stored config.</strong> It is
+     * deterministic from the same properties, so at startup it matches what the client was built
+     * with; it would only diverge if properties changed at runtime without the client being rebuilt.
+     * The banner is therefore a faithful report of the resolved configuration, not a readback of the
+     * connected client's state.</p>
+     *
+     * <p>A resolution failure (e.g. an invalid/conflicting auth combination) is surfaced as a
+     * {@link DotRuntimeException} so it flows through the same uniform halt path as every other
+     * startup failure.</p>
      */
     private OSClientConfig resolveConfig() {
         try {
@@ -195,16 +203,20 @@ public class IndexStartupValidator {
      * Resolves the effective ES and OS endpoint sets and asserts they do not share
      * any {@code host:port} pair.
      *
-     * <p><strong>Best-effort:</strong> both sides are resolved from config strings through
-     * the same {@link #normalizeEndpoint} path, making the comparison consistent.
-     * Two configs that refer to the same host via different forms (e.g. {@code "127.0.0.1"}
-     * vs {@code "localhost"}) will not be detected as overlapping.</p>
+     * <p>The OS side comes from the already-resolved {@link OSClientConfig#endpoints()} (the very
+     * endpoints the client is built with), and the ES side is read from config; both are passed
+     * through the same {@link #normalizeEndpoint} path so the comparison is consistent.</p>
+     *
+     * <p><strong>Best-effort:</strong> two configs that refer to the same host via different forms
+     * (e.g. {@code "127.0.0.1"} vs {@code "localhost"}) will not be detected as overlapping.</p>
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
-    private void validateEndpointSeparation() {
+    private void validateEndpointSeparation(final OSClientConfig config) {
         final Set<String> esEndpoints = resolveESEndpoints();
-        final Set<String> osEndpoints = resolveOSEndpoints();
+        final Set<String> osEndpoints = config.endpoints().stream()
+                .map(IndexStartupValidator::normalizeEndpoint)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         final Set<String> overlap = new LinkedHashSet<>(esEndpoints);
         overlap.retainAll(osEndpoints);
@@ -221,8 +233,8 @@ public class IndexStartupValidator {
     }
 
     /**
-     * Resolves ES endpoints from configuration, using the same normalisation path as
-     * {@link #resolveOSEndpoints()} so both sides can be compared consistently.
+     * Resolves ES endpoints from configuration, passing them through the same
+     * {@link #normalizeEndpoint} path used for the OS side so both can be compared consistently.
      *
      * <p>Reads {@code ES_ENDPOINTS} (full URL array) when present; otherwise synthesises
      * a single entry from {@code ES_HOSTNAME} / {@code ES_PORT}, defaulting to
@@ -237,29 +249,6 @@ public class IndexStartupValidator {
         }
         final String host = Config.getStringProperty("ES_HOSTNAME", "localhost");
         final int    port = Config.getIntProperty("ES_PORT", 9200);
-        return Set.of(host + ":" + port);
-    }
-
-    /**
-     * Resolves OS endpoints from configuration with the same fallback chain that
-     * {@link IndexConfigHelper} applies:
-     * {@code OS_ENDPOINTS} → {@code OS_HOSTNAME}/{@code OS_PORT} →
-     * {@code ES_HOSTNAME}/{@code ES_PORT} → {@code localhost:9200}.
-     *
-     * <p>Uses {@code OS_ENDPOINTS} (full URL array) when present; otherwise
-     * synthesises a single entry from the individual host/port/protocol properties.</p>
-     */
-    private Set<String> resolveOSEndpoints() {
-        final String[] rawEndpoints = Config.getStringArrayProperty("OS_ENDPOINTS", null);
-        if (rawEndpoints != null && rawEndpoints.length > 0) {
-            return Arrays.stream(rawEndpoints)
-                    .map(IndexStartupValidator::normalizeEndpoint)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-        }
-
-        // Fall back to individual host/port properties (mirrors ConfigurableOpenSearchProvider)
-        final String host = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
-        final int    port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
         return Set.of(host + ":" + port);
     }
 

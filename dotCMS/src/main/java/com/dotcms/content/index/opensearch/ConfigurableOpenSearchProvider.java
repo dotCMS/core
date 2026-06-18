@@ -94,9 +94,13 @@ class ConfigurableOpenSearchProvider {
 
     /**
      * Resolves an {@link OSClientConfig} from dotCMS properties. Package-private and {@code static}
-     * so {@link IndexStartupValidator} (same package) can re-resolve the exact configuration the
-     * client is built from — for the startup banner — without exposing any configuration accessor
-     * outside this package or widening the {@link OSClientProvider} contract.
+     * so {@link IndexStartupValidator} (same package) can re-resolve the configuration from the same
+     * properties — for the startup banner and the endpoint-separation check — without exposing any
+     * configuration accessor outside this package or widening the {@link OSClientProvider} contract.
+     *
+     * <p>Resolution is deterministic from properties: the validator's re-resolution matches what the
+     * client is built with at startup. It is a re-resolution, not a readback of the live client's
+     * stored config; the two could only differ if properties changed without a client rebuild.</p>
      */
     static OSClientConfig configFromProperties() {
         Builder builder = OSClientConfig.builder();
