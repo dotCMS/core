@@ -15,6 +15,7 @@
         "build": {
             "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
+            "dependsOn": ["generate-spec"],
             "options": {
                 "outputPath": "dist/libs/agentic-tools",
                 "tsConfig": "libs/agentic-tools/tsconfig.lib.json",
@@ -36,6 +37,7 @@
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "dependsOn": ["generate-spec"],
             "options": {
                 "jestConfig": "libs/agentic-tools/jest.config.ts",
                 "passWithNoTests": true

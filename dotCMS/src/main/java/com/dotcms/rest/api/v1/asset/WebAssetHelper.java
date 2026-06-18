@@ -911,7 +911,7 @@ public class WebAssetHelper {
      * @param defaultLangFallback if true, it will return the default language if the language param is not found
      * @return
      */
-    Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
+    public Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method,
                     //So here I'm preparing for both cases

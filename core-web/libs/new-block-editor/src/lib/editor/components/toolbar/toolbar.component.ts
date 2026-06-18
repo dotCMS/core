@@ -22,6 +22,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditorToolbarStore } from './editor-toolbar.store';
 
+import {
+    FULLSCREEN_AWARE_OVERLAY_OPTIONS,
+    OVERLAY_ABOVE_FULLSCREEN_Z_INDEX
+} from '../../config.utils';
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorModalService } from '../../services/editor-modal.service';
@@ -68,8 +72,19 @@ export class ToolbarComponent implements OnDestroy {
      */
     protected readonly overlayTooltipOptions = computed(
         (): TooltipOptions =>
-            this.isFullscreen() ? { tooltipZIndex: '10050' } : { tooltipZIndex: 'auto' }
+            this.isFullscreen()
+                ? { tooltipZIndex: `${OVERLAY_ABOVE_FULLSCREEN_Z_INDEX}` }
+                : { tooltipZIndex: 'auto' }
     );
+
+    /**
+     * Overlay options for the block-type `<p-select>` panel, which appends to `document.body`.
+     * Like the tooltips above, its default base z-index (≈1000) would be painted under the
+     * fullscreen shell's `z-[9998]` backdrop, leaving the dropdown invisible/unclickable in
+     * fullscreen. An open dropdown anchored to its trigger should sit on top in either mode, so
+     * it is lifted unconditionally — the single rule every body-portaled editor overlay follows.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
 
     readonly fullscreenToggle = output<void>();
     readonly contentletEdit = output<ContentletEditEvent>();
