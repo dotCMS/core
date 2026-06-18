@@ -82,11 +82,75 @@ class ConfigurableOpenSearchProvider {
             transport = createTransport(config);
             client = new OpenSearchClient(transport);
 
-            Logger.info(this.getClass(), "OpenSearch client initialized successfully with endpoints: " + config.endpoints());
+            logConfigSummary(config);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client", e);
             throw new DotRuntimeException("Failed to build OpenSearch client", e);
         }
+    }
+
+    /**
+     * Emits an easy-to-locate, single-block summary of the OpenSearch migration parameters that
+     * were actually resolved for this client — migration phase, endpoints, the effective
+     * authentication mode, and the TLS flags. Sensitive values (password, JWT token) are masked
+     * via {@link #maskSecret(String)} so they are safe to leave in the logs.
+     *
+     * <p>Two things this banner makes explicit on purpose, because their absence was confusing
+     * during QA:</p>
+     * <ul>
+     *   <li>When no credentials are resolved (e.g. only an endpoint URL was provided) the auth mode
+     *       is reported as {@code NONE — connecting ANONYMOUSLY}. dotCMS will still connect if the
+     *       OpenSearch cluster does not enforce security, so this line is the signal that no
+     *       credentials were applied — it is not an error by itself.</li>
+     *   <li>Building the client does <strong>not</strong> open a connection. Reachability and the OS
+     *       version are verified separately at startup by {@code IndexStartupValidator}; that is
+     *       where a success/fallback outcome is logged.</li>
+     * </ul>
+     */
+    private void logConfigSummary(final OSClientConfig config) {
+        final String phase = IndexConfigHelper.MigrationPhase.current().name();
+
+        final String authSummary;
+        if (config.jwtToken().isPresent()) {
+            authSummary = "JWT (token=" + maskSecret(config.jwtToken().get()) + ")";
+        } else if (config.clientCertPath().isPresent() || config.clientKeyPath().isPresent()) {
+            authSummary = "CERT (clientCert=" + config.clientCertPath().orElse("(not set)")
+                    + ", clientKey=" + config.clientKeyPath().orElse("(not set)") + ")";
+        } else if (config.username().isPresent() || config.password().isPresent()) {
+            authSummary = "BASIC (user=" + config.username().orElse("(not set)")
+                    + ", password=" + maskSecret(config.password().orElse(null)) + ")";
+        } else {
+            authSummary = "NONE — connecting ANONYMOUSLY (no username/password/token resolved)";
+        }
+
+        Logger.info(this.getClass(), System.lineSeparator() + String.join(System.lineSeparator(),
+                "========== OpenSearch Migration — client configuration ==========",
+                "  Migration phase   : " + phase,
+                "  OS endpoints      : " + config.endpoints(),
+                "  Authentication    : " + authSummary,
+                "  TLS enabled       : " + config.tlsEnabled(),
+                "  TLS cert required : " + config.certRequired(),
+                "  TLS trust selfsign: " + config.trustSelfSigned(),
+                "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
+                "  (connectivity + OS version are verified separately at startup)",
+                "================================================================="));
+    }
+
+    /**
+     * Masks a sensitive value for logging: returns a fixed-width mask plus the final character so
+     * the value can be sanity-checked against the source without exposing it
+     * (e.g. {@code "s3cret"} → {@code "****t"}). The fixed-width mask intentionally does not reveal
+     * the secret's real length. A single-character secret is masked entirely, and an unset value is
+     * rendered as {@code "(not set)"}.
+     */
+    private static String maskSecret(final String value) {
+        if (!UtilMethods.isSet(value)) {
+            return "(not set)";
+        }
+        if (value.length() == 1) {
+            return "****";
+        }
+        return "****" + value.charAt(value.length() - 1);
     }
 
     /**

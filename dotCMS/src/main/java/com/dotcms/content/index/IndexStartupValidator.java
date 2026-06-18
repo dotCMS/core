@@ -59,11 +59,14 @@ public class IndexStartupValidator {
     public static boolean validateIndexingConfig() {
         try {
             new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
+            Logger.info(IndexStartupValidator.class,
+                    "OpenSearch startup validation PASSED — connected to OS successfully; migration phase "
+                    + IndexConfigHelper.MigrationPhase.current().name() + " is active.");
             return true;
         } catch (DotRuntimeException e) {
             Logger.error(IndexStartupValidator.class,
-                    "OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: "
-                    + e.getMessage(), e);
+                    "OpenSearch startup validation FAILED — halting OS migration; dotCMS falls back to"
+                    + " ES-only (PHASE_0_MIGRATION_NOT_STARTED): " + e.getMessage(), e);
             return false;
         }
     }
