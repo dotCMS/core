@@ -35,6 +35,7 @@
 <p-select
     inputId="toolbar-block-type"
     appendTo="body"
+    [overlayOptions]="overlayOptions"
     [size]="'small'"
     [options]="blockTypeOptions()"
     [ngModel]="blockTypeValue()"

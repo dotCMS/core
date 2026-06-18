@@ -71,6 +71,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
+        com.dotcms.rest.api.v1.page.PageRenderSourcesResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.content.ContentResourceIntegrationTest.class,

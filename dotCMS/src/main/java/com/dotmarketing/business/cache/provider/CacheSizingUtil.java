@@ -3,6 +3,7 @@ package com.dotmarketing.business.cache.provider;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.base.UnsafeAccess;
+import net.bytebuddy.agent.ByteBuddyAgent;
 
 
 public class CacheSizingUtil {
@@ -26,7 +28,24 @@ public class CacheSizingUtil {
     final int maxRecusionDepth = 10;
     
     final boolean useCompressedOops = true;
-    
+
+    /**
+     * Authoritative object sizer, used when a byte-buddy {@code -javaagent} is present (the dotCMS
+     * container preloads one; the dotcms-core surefire run does too). We only read an
+     * ALREADY-installed agent via {@link ByteBuddyAgent#getInstrumentation()} and NEVER call
+     * {@link ByteBuddyAgent#install()} — its self-attach fallback can hang on JDK 21+ in containers.
+     * When no agent is present, sizing falls back to the {@code Unsafe} estimate below.
+     */
+    private static final Instrumentation INSTRUMENTATION = resolveInstrumentationOrNull();
+
+    private static Instrumentation resolveInstrumentationOrNull() {
+        try {
+            return ByteBuddyAgent.getInstrumentation();
+        } catch (Throwable noAgentPreloaded) { // IllegalStateException when not preloaded
+            return null;
+        }
+    }
+
     public String averageSizePretty(final Map<String, Object> cacheMap) {
 
         return UtilMethods.prettyByteify(averageSize(cacheMap));
@@ -129,49 +148,58 @@ public class CacheSizingUtil {
 
 
 
-    public int retainedSize(Object obj) {
+    public long retainedSize(Object obj) {
         return retainedSize(obj, new HashMap<>(), 0);
     }
 
-
-
+    /**
+     * Shallow size of a single object: the authoritative {@link Instrumentation#getObjectSize(Object)}
+     * when a byte-buddy agent is present, otherwise an {@code Unsafe}-based estimate from live field
+     * offsets. Both reflect the actual object layout (compact object headers, compressed oops), so the
+     * recursive retained size adapts automatically.
+     */
+    private long shallowSize(final Object obj, final Class<?> cls) {
+        if (INSTRUMENTATION != null) {
+            return INSTRUMENTATION.getObjectSize(obj);
+        }
+        if (cls.isArray()) {
+            return (long) UnsafeAccess.UNSAFE.arrayBaseOffset(cls)
+                    + (long) UnsafeAccess.UNSAFE.arrayIndexScale(cls) * Array.getLength(obj);
+        }
+        return sizeof(cls);
+    }
 
     @SuppressWarnings("restriction")
-    private int retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
-        Object ref = null;
+    private long retainedSize(Object obj, HashMap<Object, Object> calculated, final int depth) {
         try {
-            if (obj == null)
+            if (obj == null) {
                 throw new NullPointerException();
+            }
             calculated.put(obj, obj);
-            Class<?> cls = obj.getClass();
+            final Class<?> cls = obj.getClass();
+            long size = shallowSize(obj, cls);
             if (cls.isArray()) {
-                int arraysize = UnsafeAccess.UNSAFE.arrayBaseOffset(cls)
-                                + UnsafeAccess.UNSAFE.arrayIndexScale(cls) * Array.getLength(obj);
                 if (!cls.getComponentType().isPrimitive()) {
-                    Object[] arr = (Object[]) obj;
-                    for (Object comp : arr) {
+                    for (Object comp : (Object[]) obj) {
                         if (comp != null && !isCalculated(calculated, comp) && depth < maxRecusionDepth) {
-                            arraysize += retainedSize(comp, calculated, depth + 1);
+                            size += retainedSize(comp, calculated, depth + 1);
                         }
                     }
                 }
-                return arraysize;
-            } else {
-                int objectsize = sizeof(cls);
-                for (Field f : getAllNonStaticFields(obj.getClass())) {
-                    Class<?> fcls = f.getType();
-                    if (fcls.isPrimitive())
-                        continue;
-                    f.setAccessible(true);
-                    ref = f.get(obj);
-                    if (ref != null && !isCalculated(calculated, ref) && depth < maxRecusionDepth) {
-                        calculated.put(ref, ref);
-                        int referentSize = retainedSize(ref, calculated, depth + 1);
-                        objectsize += referentSize;
-                    }
-                }
-                return objectsize;
+                return size;
             }
+            for (Field f : getAllNonStaticFields(cls)) {
+                if (f.getType().isPrimitive()) {
+                    continue;
+                }
+                f.setAccessible(true);
+                final Object ref = f.get(obj);
+                if (ref != null && !isCalculated(calculated, ref) && depth < maxRecusionDepth) {
+                    calculated.put(ref, ref);
+                    size += retainedSize(ref, calculated, depth + 1);
+                }
+            }
+            return size;
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -203,7 +231,7 @@ public class CacheSizingUtil {
             int offset = (int) UnsafeAccess.UNSAFE.objectFieldOffset(f);
             if (offset > lastOffset) {
                 lastOffset = offset;
-                lastClass = f.getClass();
+                lastClass = f.getType();
             }
         }
         if (lastOffset > 0) {

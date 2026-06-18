@@ -14,7 +14,7 @@ import java.util.List;
  * To add a new provider, create a class that implements {@link ModelProviderStrategy}
  * and add an instance to {@link #STRATEGIES}. No other class needs to change.
  *
- * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code vertex_ai}
+ * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}
  * <p>Note: {@code vertex_ai} supports chat only; embeddings and image are not available via LangChain4J.
  */
 public class LangChain4jModelFactory {
@@ -22,6 +22,7 @@ public class LangChain4jModelFactory {
     static final List<ModelProviderStrategy> STRATEGIES = List.of(
             new OpenAiModelProviderStrategy(),
             new AzureOpenAiModelProviderStrategy(),
+            new BedrockModelProviderStrategy(),
             new VertexAiModelProviderStrategy()
     );
 

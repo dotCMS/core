@@ -1,11 +1,11 @@
-import { createComponentFactory, Spectator, mockProvider, byTestId } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
@@ -44,7 +44,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         imports: [
             AvatarModule,
             ButtonModule,
-            ChipModule,
+            TagModule,
             MenuModule,
             TooltipModule,
             DotGravatarDirective,
@@ -112,25 +112,35 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Conditional Rendering', () => {
-        it('should show live chip for published content', () => {
-            expect(spectator.query(byTestId('state-live'))).toBeTruthy();
+        it('should show a success live tag with the published label for published content', () => {
+            const liveTag = spectator.query(byTestId('state-live'));
+            expect(liveTag).toBeTruthy();
+            expect(liveTag?.textContent?.trim()).toBe('Published');
+            expect(liveTag?.classList.contains('p-tag-success')).toBe(true);
             expect(spectator.query(byTestId('state-draft'))).toBeFalsy();
         });
 
-        it('should show draft chip for working content', () => {
+        it('should show a warn draft tag with the draft label for working content', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
+            spectator.detectChanges();
 
+            const draftTag = spectator.query(byTestId('state-draft'));
             expect(spectator.query(byTestId('state-live'))).toBeFalsy();
-            expect(spectator.query(byTestId('state-draft'))).toBeTruthy();
+            expect(draftTag).toBeTruthy();
+            expect(draftTag?.textContent?.trim()).toBe('Draft');
+            expect(draftTag?.classList.contains('p-tag-warn')).toBe(true);
         });
 
-        it('should show variant chip when experimentVariant is true', () => {
+        it('should show an info variant tag when experimentVariant is true', () => {
             spectator.setInput('item', { ...mockVersionItem, experimentVariant: true });
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('state-variant'))).toBeTruthy();
+            const variantTag = spectator.query(byTestId('state-variant'));
+            expect(variantTag).toBeTruthy();
+            expect(variantTag?.classList.contains('p-tag-info')).toBe(true);
         });
 
-        it('should hide variant chip when experimentVariant is false', () => {
+        it('should hide variant tag when experimentVariant is false', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
 
@@ -152,33 +162,59 @@ describe('DotHistoryTimelineItemComponent', () => {
     });
 
     describe('Menu Items by Status', () => {
-        it('should expose no actions for draft items (working && !live)', () => {
+        it('should expose no actions for working items (working && !live)', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: true });
             spectator.detectChanges();
 
-            const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(0);
+            expect(spectator.component.$menuItems()).toHaveLength(0);
         });
 
-        it('should expose restore and compare for published items (live)', () => {
+        it('should expose no actions for the current published version (working && live)', () => {
+            spectator.setInput('item', { ...mockVersionItem, live: true, working: true });
+            spectator.detectChanges();
+
+            expect(spectator.component.$menuItems()).toHaveLength(0);
+        });
+
+        it('should expose restore, separator and compare for published items (live)', () => {
             // Default item is live: true, working: false
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(2);
+            expect(menuItems).toHaveLength(3);
             expect(menuItems[0].id).toBe('restore');
             expect(menuItems[0].label).toBe('Restore');
-            expect(menuItems[1].id).toBe('compare');
-            expect(menuItems[1].label).toBe('Compare');
+            expect(menuItems[1].separator).toBe(true);
+            expect(menuItems[2].id).toBe('compare');
+            expect(menuItems[2].label).toBe('Compare');
         });
 
-        it('should expose restore, compare and delete for historical items (!working && !live)', () => {
+        it('should expose restore, compare, separator and delete for historical items (!working && !live)', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
             spectator.detectChanges();
 
             const menuItems = spectator.component.$menuItems();
-            expect(menuItems).toHaveLength(3);
+            expect(menuItems).toHaveLength(4);
             expect(menuItems[0].id).toBe('restore');
             expect(menuItems[1].id).toBe('compare');
-            expect(menuItems[2].id).toBe('delete');
+            expect(menuItems[2].separator).toBe(true);
+            expect(menuItems[3].id).toBe('delete');
+        });
+
+        it('should always place separator before the last non-separator item', () => {
+            // Published: [restore, separator, compare] — separator before last (compare)
+            const publishedItems = spectator.component.$menuItems();
+            const lastPublished = publishedItems[publishedItems.length - 1];
+            const secondToLastPublished = publishedItems[publishedItems.length - 2];
+            expect(lastPublished.separator).toBeFalsy();
+            expect(secondToLastPublished.separator).toBe(true);
+
+            // Historical: [restore, compare, separator, delete] — separator before last (delete)
+            spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
+            spectator.detectChanges();
+            const historicalItems = spectator.component.$menuItems();
+            const lastHistorical = historicalItems[historicalItems.length - 1];
+            const secondToLastHistorical = historicalItems[historicalItems.length - 2];
+            expect(lastHistorical.separator).toBeFalsy();
+            expect(secondToLastHistorical.separator).toBe(true);
         });
     });
 
@@ -254,6 +290,33 @@ describe('DotHistoryTimelineItemComponent', () => {
                 type: DotHistoryTimelineItemActionType.DELETE,
                 item: { ...mockVersionItem, live: false, working: false }
             });
+        });
+    });
+
+    describe('Menu Open State ($isMenuOpen)', () => {
+        it('should initialize $isMenuOpen as false', () => {
+            expect(spectator.component.$isMenuOpen()).toBe(false);
+        });
+
+        it('should show the menu button wrapper as fully visible when $isMenuOpen is true', () => {
+            spectator.component.$isMenuOpen.set(true);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-100')).toBe(true);
+        });
+
+        it('should show the menu button wrapper as hover-only when $isMenuOpen is false', () => {
+            spectator.component.$isMenuOpen.set(false);
+            spectator.detectChanges();
+
+            const menuWrapper = spectator
+                .query('[data-testid="version-menu-button"]')
+                ?.closest('div');
+            expect(menuWrapper?.classList.contains('opacity-0')).toBe(true);
+            expect(menuWrapper?.classList.contains('group-hover:opacity-100')).toBe(true);
         });
     });
 

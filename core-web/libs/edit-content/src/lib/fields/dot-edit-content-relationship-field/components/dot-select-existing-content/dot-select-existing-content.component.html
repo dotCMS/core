@@ -163,8 +163,7 @@
                         <p class="truncate-text">{{ item.language | language }}</p>
                     </td>
                     <td class="w-24 min-w-24">
-                        @let status = item | contentletStatus;
-                        <p-chip [class]="status.classes" [label]="status.label" />
+                        <dot-contentlet-status-badge [state]="item" />
                     </td>
                     <td class="w-44 min-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>

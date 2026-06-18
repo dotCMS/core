@@ -41,21 +41,17 @@ import {
     DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
-    DotContentletDepths,
-    DotContentState
+    DotContentletDepths
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotContentletStatusPipe } from '@dotcms/ui';
+import { DotContentletStatusBadgeComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockMatchMedia
 } from '@dotcms/utils-testing';
 
-import {
-    contentStatusSeverity,
-    DotEditContentFormComponent
-} from './dot-edit-content-form.component';
+import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
@@ -806,33 +802,26 @@ describe('DotFormComponent', () => {
             expect(commandBar).toBeFalsy();
         });
 
-        describe('contentStatusSeverity', () => {
-            it('should map status labels to PrimeNG severities', () => {
-                expect(contentStatusSeverity('Published')).toBe('success');
-                expect(contentStatusSeverity('Archived')).toBe('danger');
-                expect(contentStatusSeverity('Revision')).toBe('info');
-                expect(contentStatusSeverity('Draft')).toBe('warn');
-                expect(contentStatusSeverity('New')).toBe('info');
+        describe('status badge', () => {
+            it('should pass the contentlet as the badge state for existing content', () => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toEqual(store.contentlet());
             });
 
-            // Guards the coupling between DotContentletStatusPipe's output strings and the
-            // severity switch: if the pipe ever changes a label, this fails instead of silently
-            // falling back to 'warn'.
-            it('should map every DotContentletStatusPipe output to its intended severity', () => {
-                const pipe = new DotContentletStatusPipe();
-                const cases: { state: DotContentState; severity: string }[] = [
-                    {
-                        state: { live: true, working: true, hasLiveVersion: true },
-                        severity: 'success'
-                    },
-                    { state: { archived: true }, severity: 'danger' },
-                    { state: { live: false, hasLiveVersion: true }, severity: 'info' },
-                    { state: { working: true }, severity: 'warn' }
-                ] as { state: DotContentState; severity: string }[];
+            it('should pass null as the badge state for new content', () => {
+                store.initializeNewContent('TestMock');
+                spectator.detectChanges();
 
-                cases.forEach(({ state, severity }) => {
-                    expect(contentStatusSeverity(pipe.transform(state))).toBe(severity);
-                });
+                const badge = spectator.query(DotContentletStatusBadgeComponent);
+                expect(badge).toBeTruthy();
+                expect(badge?.state()).toBeNull();
             });
         });
     });
@@ -1476,60 +1465,18 @@ describe('DotFormComponent', () => {
                 expect(spectator.query(byTestId('command-bar-actions'))).toBeFalsy();
             });
 
-            it('should show restore button when viewing historical version', () => {
-                // Initially restore button should not be visible
-                const restoreButton = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
-                expect(restoreButton).toBeFalsy();
+            it('should show previewing label when viewing historical version', () => {
+                // Initially previewing label should not be visible
+                const previewingLabel = spectator.query(byTestId('previewing-label'));
+                expect(previewingLabel).toBeFalsy();
 
                 // Simulate loading a historical version using the store's public method
                 store.loadVersionContent('historical-inode');
                 spectator.detectChanges();
 
-                // Restore button should be visible
-                const restoreButtonAfter = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
-                expect(restoreButtonAfter).toBeTruthy();
-            });
-        });
-
-        describe('Restore Functionality', () => {
-            it('should call restoreCurrentHistoricalVersion when restore button is clicked', () => {
-                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
-
-                // Simulate loading a historical version using the store's public method
-                store.loadVersionContent('historical-inode');
-                spectator.detectChanges();
-
-                const restoreButton = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
-                expect(restoreButton).toBeTruthy();
-
-                // Click restore button
-                spectator.click(restoreButton);
-
-                expect(restoreSpy).toHaveBeenCalled();
-            });
-
-            it('should display correct text on restore button', () => {
-                // Mock the DotMessageService to return a translation
-                const dotMessageService = spectator.inject(DotMessageService);
-                jest.spyOn(dotMessageService, 'get').mockReturnValue('Restore');
-
-                // Simulate loading a historical version using the store's public method
-                store.loadVersionContent('historical-inode');
-                spectator.detectChanges();
-
-                const restoreButton = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
-                expect(restoreButton).toBeTruthy();
-
-                // Check that the button contains some text (translation may not work in tests)
-                expect(restoreButton.textContent?.trim().length).toBeGreaterThan(0);
+                // Previewing label should be visible (restore/close live in the sidebar banner)
+                const previewingLabelAfter = spectator.query(byTestId('previewing-label'));
+                expect(previewingLabelAfter).toBeTruthy();
             });
         });
 
@@ -1541,13 +1488,11 @@ describe('DotFormComponent', () => {
 
                 const statusTag = spectator.query(byTestId('content-status-tag'));
                 const commandBar = spectator.query(byTestId('command-bar-actions'));
-                const restoreButton = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
+                const previewingLabel = spectator.query(byTestId('previewing-label'));
 
                 expect(statusTag).toBeTruthy();
                 expect(commandBar).toBeTruthy();
-                expect(restoreButton).toBeFalsy();
+                expect(previewingLabel).toBeFalsy();
 
                 // Simulate loading a historical version using the store's public method
                 store.loadVersionContent('historical-inode');
@@ -1558,13 +1503,11 @@ describe('DotFormComponent', () => {
 
                 const statusTagAfter = spectator.query(byTestId('content-status-tag'));
                 const commandBarAfter = spectator.query(byTestId('command-bar-actions'));
-                const restoreButtonAfter = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
+                const previewingLabelAfter = spectator.query(byTestId('previewing-label'));
 
                 expect(statusTagAfter).toBeFalsy();
                 expect(commandBarAfter).toBeFalsy();
-                expect(restoreButtonAfter).toBeTruthy();
+                expect(previewingLabelAfter).toBeTruthy();
             });
 
             it('should properly transition from historical to normal view', () => {
@@ -1573,7 +1516,7 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
 
                 //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
-                expect(spectator.query(byTestId('restore-historical-version-button'))).toBeTruthy();
+                expect(spectator.query(byTestId('previewing-label'))).toBeTruthy();
 
                 // Transition back to normal view using the store's public method
                 store.exitHistoricalView();
@@ -1584,13 +1527,11 @@ describe('DotFormComponent', () => {
 
                 const statusTag = spectator.query(byTestId('content-status-tag'));
                 const commandBar = spectator.query(byTestId('command-bar-actions'));
-                const restoreButton = spectator.query(
-                    byTestId('restore-historical-version-button')
-                );
+                const previewingLabel = spectator.query(byTestId('previewing-label'));
 
                 expect(statusTag).toBeTruthy();
                 expect(commandBar).toBeTruthy();
-                expect(restoreButton).toBeFalsy();
+                expect(previewingLabel).toBeFalsy();
             });
         });
     });

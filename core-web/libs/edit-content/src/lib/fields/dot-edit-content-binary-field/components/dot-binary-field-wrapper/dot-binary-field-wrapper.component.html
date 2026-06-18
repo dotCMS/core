@@ -13,6 +13,7 @@
             [formControlName]="field.variable"
             [contentlet]="$contentlet()"
             [field]="field"
+            [imageEditor]="true"
             (valueUpdated)="valueUpdated.emit($event)"
             [attr.data-testId]="'field-' + field.variable" />
     </dot-card-field-content>

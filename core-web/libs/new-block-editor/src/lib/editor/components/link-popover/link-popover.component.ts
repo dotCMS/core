@@ -32,6 +32,7 @@ import { DotContentSearchService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../config.utils';
 import { LINK_SELECTION_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
@@ -88,6 +89,14 @@ export class LinkPopoverComponent {
     readonly #store = inject(EditorStore);
 
     protected readonly relOptions = REL_OPTIONS;
+
+    /**
+     * Overlay options for the URL `<p-autoComplete>` and rel `<p-select>` panels, both of which
+     * append to `document.body`. Lifts them above the fullscreen editor shell's `z-[9998]`
+     * backdrop so the suggestion/dropdown panels stay clickable in fullscreen.
+     * See {@link FULLSCREEN_AWARE_OVERLAY_OPTIONS}.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
 
     /** AutoComplete instance — used to force-hide the overlay when an external URL is typed. */
     protected readonly autoComplete = viewChild<AutoComplete>(AutoComplete);
