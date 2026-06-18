@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, HostListener, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -10,7 +10,10 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { imageEditorModalScaleFade } from '../../animations/image-editor.animations';
 import { ImageEditorOpenParams } from '../../models/image-editor.models';
-import { imageEditorLifecycleEvents } from '../../store/image-editor.events';
+import {
+    imageEditorHistoryEvents,
+    imageEditorLifecycleEvents
+} from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorCanvasComponent } from '../dot-image-editor-canvas/dot-image-editor-canvas.component';
 import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-image-editor-footer.component';
@@ -56,6 +59,7 @@ export class DotImageEditorComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
+    readonly #historyDispatch = injectDispatch(imageEditorHistoryEvents);
 
     constructor() {
         this.#dispatch.assetRequested(this.#config.data as ImageEditorOpenParams);
@@ -68,6 +72,34 @@ export class DotImageEditorComponent {
                 this.#dialogRef.close(savedTempFile);
             }
         });
+    }
+
+    /**
+     * Handles the standard undo/redo shortcuts while the editor is focused:
+     * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo. Skipped when a
+     * text field has focus so its native text undo keeps working.
+     */
+    @HostListener('keydown', ['$event'])
+    protected onKeydown(event: KeyboardEvent): void {
+        if (!(event.metaKey || event.ctrlKey) || this.#isEditableTarget(event.target)) {
+            return;
+        }
+
+        const key = event.key.toLowerCase();
+        const isUndo = key === 'z' && !event.shiftKey;
+        const isRedo = key === 'y' || (key === 'z' && event.shiftKey);
+
+        if (!isUndo && !isRedo) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (isUndo && this.store.canUndo()) {
+            this.#historyDispatch.undoRequested();
+        } else if (isRedo && this.store.canRedo()) {
+            this.#historyDispatch.redoRequested();
+        }
     }
 
     /** Closes the editor, confirming first when there are unsaved edits. */
@@ -85,5 +117,21 @@ export class DotImageEditorComponent {
             rejectLabel: this.#dotMessageService.get('edit.content.image-editor.discard.reject'),
             accept: () => this.#dialogRef.close(null)
         });
+    }
+
+    /** Whether the event originated from an editable control (keeps its native undo). */
+    #isEditableTarget(target: EventTarget | null): boolean {
+        const el = target as HTMLElement | null;
+
+        if (!el) {
+            return false;
+        }
+
+        return (
+            el.tagName === 'INPUT' ||
+            el.tagName === 'TEXTAREA' ||
+            el.tagName === 'SELECT' ||
+            el.isContentEditable
+        );
     }
 }

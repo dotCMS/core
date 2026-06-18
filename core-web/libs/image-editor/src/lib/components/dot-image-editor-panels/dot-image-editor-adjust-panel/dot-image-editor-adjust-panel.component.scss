@@ -22,7 +22,74 @@
     justify-content: space-between;
 }
 
+// Inline editable value: a borderless number field that reveals a border on
+// hover and a focus ring on focus, mirroring the design's `.iem-value-input`.
+// Native spinners are hidden to keep it compact and aligned with the slider.
 .ie-field__value {
+    width: 3rem;
+    padding: 1px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    text-align: right;
     font-variant-numeric: tabular-nums;
-    color: var(--text-color-secondary);
+    -moz-appearance: textfield;
+    appearance: textfield;
+
+    &:hover {
+        border-color: var(--surface-200, #e2e8f0);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-color, #6366f1);
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+// Gradient slider tracks matching the design. The styleClass lands on the `.p-slider`
+// track; we paint the gradient on it and make the filled range transparent so the
+// full gradient shows. `:host ::ng-deep` scopes these to this panel's sliders.
+:host ::ng-deep {
+    .ie-slider--brightness,
+    .ie-slider--brightness .p-slider {
+        background: linear-gradient(to right, #14151f, #f3eeb0);
+    }
+
+    .ie-slider--hue,
+    .ie-slider--hue .p-slider {
+        background: linear-gradient(
+            to right,
+            hsl(0deg 90% 65%),
+            hsl(45deg 95% 60%),
+            hsl(120deg 60% 55%),
+            hsl(190deg 85% 55%),
+            hsl(240deg 80% 65%),
+            hsl(290deg 75% 65%),
+            hsl(360deg 90% 65%)
+        );
+    }
+
+    .ie-slider--saturation,
+    .ie-slider--saturation .p-slider {
+        background: linear-gradient(to right, #9aa3b2, #1e2a78);
+    }
+
+    // Let the gradient show through PrimeNG's filled range.
+    .p-slider-range {
+        background: transparent;
+    }
+
+    // White handle with a dark ring so it reads on every gradient.
+    .p-slider-handle {
+        background: #ffffff;
+        border: 2px solid #1e2a5e;
+    }
 }

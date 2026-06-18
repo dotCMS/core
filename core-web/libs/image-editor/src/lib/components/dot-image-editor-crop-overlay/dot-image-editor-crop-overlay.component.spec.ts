@@ -48,9 +48,8 @@ describe('DotImageEditorCropOverlayComponent', () => {
         });
     });
 
-    it('should dispatch cropApplied with a natural-pixel rect when applying', () => {
-        const applyBtn = spectator.query(byTestId('image-editor-crop-apply-btn'));
-        spectator.click(applyBtn!.querySelector('button')!);
+    it('should dispatch cropApplied with a natural-pixel rect when applyCrop is called', () => {
+        spectator.component.applyCrop();
 
         // The default selection covers the whole image, so scaling 400x300 CSS px
         // up to 800x600 natural px yields the full natural rectangle.
@@ -62,9 +61,8 @@ describe('DotImageEditorCropOverlayComponent', () => {
         );
     });
 
-    it('should dispatch cropCancelled when cancelling', () => {
-        const cancelBtn = spectator.query(byTestId('image-editor-crop-cancel-btn'));
-        spectator.click(cancelBtn!.querySelector('button')!);
+    it('should dispatch cropCancelled when cancelCrop is called', () => {
+        spectator.component.cancelCrop();
 
         expect(dispatcher.dispatch).toHaveBeenCalledWith(
             expect.objectContaining({ type: expect.stringContaining('cropCancelled') }),
@@ -94,6 +92,43 @@ describe('DotImageEditorCropOverlayComponent', () => {
         spectator.detectChanges();
 
         expect(box!.style.left).toEqual('1px');
+    });
+
+    it('should lock the crop to its aspect ratio when dragging a corner with Shift', () => {
+        const box = spectator.query<HTMLElement>(byTestId('image-editor-crop-box'));
+        const brHandle = spectator.query<HTMLElement>(byTestId('image-editor-crop-handle-br'));
+
+        // The box starts at the full 400x300 image (4:3). Drag the bottom-right
+        // corner inward with Shift held; the locked resize must keep the 4:3 ratio
+        // and stay anchored at the opposite (top-left) corner.
+        brHandle!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 400, clientY: 300 }));
+        window.dispatchEvent(
+            new MouseEvent('pointermove', { clientX: 300, clientY: 200, shiftKey: true })
+        );
+        window.dispatchEvent(new MouseEvent('pointerup', { clientX: 300, clientY: 200 }));
+        spectator.detectChanges();
+
+        expect(parseFloat(box!.style.width) / parseFloat(box!.style.height)).toBeCloseTo(
+            400 / 300,
+            5
+        );
+        expect(box!.style.left).toEqual('0px');
+        expect(box!.style.top).toEqual('0px');
+    });
+
+    it('should resize a corner freely (ignoring aspect) without Shift', () => {
+        const box = spectator.query<HTMLElement>(byTestId('image-editor-crop-box'));
+        const brHandle = spectator.query<HTMLElement>(byTestId('image-editor-crop-handle-br'));
+
+        // The same inward corner drag without Shift is free-form: width and height
+        // follow the pointer independently (400→300, 300→200), breaking the ratio.
+        brHandle!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 400, clientY: 300 }));
+        window.dispatchEvent(new MouseEvent('pointermove', { clientX: 300, clientY: 200 }));
+        window.dispatchEvent(new MouseEvent('pointerup', { clientX: 300, clientY: 200 }));
+        spectator.detectChanges();
+
+        expect(box!.style.width).toEqual('300px');
+        expect(box!.style.height).toEqual('200px');
     });
 
     it('should stop propagation and dispatch cropCancelled on Escape', () => {

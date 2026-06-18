@@ -5,7 +5,9 @@
     gap: 1rem;
     padding: 0.5rem 0.75rem;
     background-color: rgba(28, 30, 38, 0.92);
-    color: var(--surface-0, #ffffff);
+    // Slightly-less-than-white text, matching the design's dark-chrome treatment
+    // (resting elements at 78% white; full white is reserved for hover/active).
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .address-bar__group {
@@ -17,13 +19,14 @@
 
 .address-bar__link-icon {
     flex: 0 0 auto;
-    opacity: 0.7;
 }
 
 .address-bar__field {
     flex: 1 1 auto;
     min-width: 0;
     max-width: 28rem;
+    color: inherit;
+    font-size: 0.8125rem;
 }
 
 .address-bar__zoom-value {

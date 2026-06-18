@@ -1,8 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
-import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
-import { Dispatcher, Events, on, withReducer } from '@ngrx/signals/events';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { signalStore, withComputed, withState } from '@ngrx/signals';
+import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
+import { EMPTY } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -21,10 +20,12 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
+    imageEditorAdjustEvents,
+    imageEditorFileInfoEvents,
     imageEditorHistoryEvents,
     imageEditorLifecycleEvents,
-    imageEditorPanelEvents,
-    imageEditorToolEvents
+    imageEditorToolEvents,
+    imageEditorTransformEvents
 } from './image-editor.events';
 import {
     ImageEditorState,
@@ -134,7 +135,9 @@ function slicesAtIndex(history: ImageEditorHistoryEntry[], index: number): Edita
 
 /** Produces the asset context for a freshly requested asset. */
 function contextFromParams(params: ImageEditorOpenParams): ImageEditorAssetContext {
-    const idOrTempId = params.tempId ?? params.inode ?? '';
+    // Use `||` (not `??`) so an empty-string tempId falls through to the inode — callers
+    // such as the binary field default tempId to '' when no upload has happened.
+    const idOrTempId = params.tempId || params.inode || '';
     const byInode = params.byInode ?? false;
 
     return {
@@ -145,11 +148,13 @@ function contextFromParams(params: ImageEditorOpenParams): ImageEditorAssetConte
         fieldName: params.fieldName,
         fileName: params.fileName ?? '',
         mimeType: params.mimeType ?? '',
-        isTempFile: params.tempId != null,
+        isTempFile: !!params.tempId,
         byInode,
         naturalWidth: 0,
         naturalHeight: 0,
-        originalUrl: `/contentAsset/image/${idOrTempId}/${params.fieldName}`
+        // The /contentAsset/image/ path segment is the field VARIABLE (the canonical id
+        // the server resolves), not the display name.
+        originalUrl: `/contentAsset/image/${idOrTempId}/${params.variable}`
     };
 }
 
@@ -161,43 +166,45 @@ const COMPRESSION_LABELS: Record<CompressionMode, string> = {
 };
 
 /**
- * NgRx SignalStore for the image editor. Built entirely on the events API: every
- * synchronous state transition is folded by `withReducer`, derived state is
- * exposed through `withComputed`, and asynchronous side effects (asset loading,
- * debounced size resolution, save and download) react to the dispatched events
- * stream inside `withHooks.onInit` via `rxMethod`. The store is NOT provided in
- * root — the editor dialog component supplies it so each editor instance is
- * isolated.
+ * NgRx SignalStore for the image editor. Built entirely on the events API:
+ * synchronous state transitions are folded by `withReducer` — one block per event
+ * group (adjust, transform, file info, tools, history, lifecycle) — derived state
+ * is exposed through `withComputed`, and asynchronous side effects (asset loading,
+ * debounced size resolution, save and download) are declared as `withEventHandlers`
+ * that react to the dispatched events stream. The store is NOT provided in root —
+ * the editor dialog component supplies it so each editor instance is isolated.
  */
 export const ImageEditorStore = signalStore(
     withState(initialImageEditorState),
+    // Adjust panel: color & light.
     withReducer(
-        // --- Panel: color adjustments ---
-        on(imageEditorPanelEvents.brightnessChanged, ({ payload }, state) => {
+        on(imageEditorAdjustEvents.brightnessChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.brightness.min, RANGES.brightness.max);
             const adjust: AdjustState = { ...state.adjust, brightness: value };
 
             return adjustPatch(state, adjust, 'adjust', `Brightness ${value}`);
         }),
-        on(imageEditorPanelEvents.hueChanged, ({ payload }, state) => {
+        on(imageEditorAdjustEvents.hueChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.hue.min, RANGES.hue.max);
             const adjust: AdjustState = { ...state.adjust, hue: value };
 
             return adjustPatch(state, adjust, 'adjust', `Hue ${value}`);
         }),
-        on(imageEditorPanelEvents.saturationChanged, ({ payload }, state) => {
+        on(imageEditorAdjustEvents.saturationChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.saturation.min, RANGES.saturation.max);
             const adjust: AdjustState = { ...state.adjust, saturation: value };
 
             return adjustPatch(state, adjust, 'adjust', `Saturation ${value}`);
         }),
-        on(imageEditorPanelEvents.grayscaleToggled, ({ payload }, state) => {
+        on(imageEditorAdjustEvents.grayscaleToggled, ({ payload }, state) => {
             const adjust: AdjustState = { ...state.adjust, grayscale: payload };
 
             return adjustPatch(state, adjust, 'grayscale', `Grayscale ${payload ? 'on' : 'off'}`);
-        }),
-        // --- Panel: transform ---
-        on(imageEditorPanelEvents.scaleChanged, ({ payload }, state) => {
+        })
+    ),
+    // Transform panel: scale, rotate, flip, output size.
+    withReducer(
+        on(imageEditorTransformEvents.scaleChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.scale.min, RANGES.scale.max);
             // Resizing supersedes crop, mirroring the filter-chain rule.
             const transform: TransformState = { ...state.transform, scale: value };
@@ -205,23 +212,23 @@ export const ImageEditorStore = signalStore(
 
             return transformPatch(state, transform, crop, 'adjust', `Scale ${value}%`);
         }),
-        on(imageEditorPanelEvents.rotateChanged, ({ payload }, state) => {
+        on(imageEditorTransformEvents.rotateChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.rotate.min, RANGES.rotate.max);
             const transform: TransformState = { ...state.transform, rotateDeg: value };
 
             return transformPatch(state, transform, state.crop, 'rotate', `Rotate ${value}°`);
         }),
-        on(imageEditorPanelEvents.flipHToggled, (_event, state) => {
+        on(imageEditorTransformEvents.flipHToggled, (_event, state) => {
             const transform: TransformState = { ...state.transform, flipH: !state.transform.flipH };
 
             return transformPatch(state, transform, state.crop, 'flip', 'Flip horizontal');
         }),
-        on(imageEditorPanelEvents.flipVToggled, (_event, state) => {
+        on(imageEditorTransformEvents.flipVToggled, (_event, state) => {
             const transform: TransformState = { ...state.transform, flipV: !state.transform.flipV };
 
             return transformPatch(state, transform, state.crop, 'flip', 'Flip vertical');
         }),
-        on(imageEditorPanelEvents.outputDimsChanged, ({ payload }, state) => {
+        on(imageEditorTransformEvents.outputDimsChanged, ({ payload }, state) => {
             const transform: TransformState = {
                 ...state.transform,
                 outputWidth: payload.width,
@@ -231,9 +238,11 @@ export const ImageEditorStore = signalStore(
             const crop = isResizing ? initialCropState : state.crop;
 
             return transformPatch(state, transform, crop, 'adjust', 'Resize');
-        }),
-        // --- Panel: compression ---
-        on(imageEditorPanelEvents.compressionChanged, ({ payload }, state) => {
+        })
+    ),
+    // File info panel: compression & quality.
+    withReducer(
+        on(imageEditorFileInfoEvents.compressionChanged, ({ payload }, state) => {
             const fileInfo: FileInfoState = { ...state.fileInfo, compression: payload };
 
             return fileInfoPatch(
@@ -243,13 +252,15 @@ export const ImageEditorStore = signalStore(
                 `Compression ${COMPRESSION_LABELS[payload]}`
             );
         }),
-        on(imageEditorPanelEvents.qualityChanged, ({ payload }, state) => {
+        on(imageEditorFileInfoEvents.qualityChanged, ({ payload }, state) => {
             const value = clamp(payload, RANGES.quality.min, RANGES.quality.max);
             const fileInfo: FileInfoState = { ...state.fileInfo, quality: value };
 
             return fileInfoPatch(state, fileInfo, 'compression', `Quality ${value}`);
-        }),
-        // --- Tools ---
+        })
+    ),
+    // Canvas tools: move / crop / focal.
+    withReducer(
         on(imageEditorToolEvents.toolSelected, ({ payload }, state) => ({
             ...state,
             activeTool: payload
@@ -306,8 +317,10 @@ export const ImageEditorStore = signalStore(
             focalPoint: initialFocalPointState,
             previewStatus: 'loading' as const,
             cacheBust: state.cacheBust + 1
-        })),
-        // --- History ---
+        }))
+    ),
+    // Applied-edits history: remove / undo / redo / reset.
+    withReducer(
         on(imageEditorHistoryEvents.editRemoved, ({ payload }, state) => {
             const removedIdx = state.history.findIndex((entry) => entry.id === payload.id);
             const history = state.history.filter((entry) => entry.id !== payload.id);
@@ -356,8 +369,10 @@ export const ImageEditorStore = signalStore(
             historyIndex: -1,
             previewStatus: 'loading' as const,
             cacheBust: state.cacheBust + 1
-        })),
-        // --- Lifecycle ---
+        }))
+    ),
+    // Editor lifecycle: load, preview, size, download, save.
+    withReducer(
         on(imageEditorLifecycleEvents.assetRequested, ({ payload }, _state) => ({
             ...initialImageEditorState,
             assetContext: contextFromParams(payload),
@@ -468,76 +483,75 @@ export const ImageEditorStore = signalStore(
             )
         };
     }),
-    withHooks({
-        onInit(store) {
-            const events = inject(Events);
-            const dispatcher = inject(Dispatcher);
-            const service = inject(DotImageEditorService);
-            const httpErrorManager = inject(DotHttpErrorManagerService);
+    // Asynchronous side effects, declared as event handlers: each returned
+    // observable reacts to the dispatched event stream (or a derived signal) and
+    // dispatches result events. The store subscribes to them for its lifetime.
+    withEventHandlers((store) => {
+        const events = inject(Events);
+        const dispatcher = inject(Dispatcher);
+        const service = inject(DotImageEditorService);
+        const httpErrorManager = inject(DotHttpErrorManagerService);
 
+        // Save the edited image and dispatch the outcome.
+        const saveEditedImage$ = () =>
+            service.saveEditedImage(store.previewUrl(), store.assetContext().variable).pipe(
+                tapResponse({
+                    next: (tempFile: DotCMSTempFile) =>
+                        dispatcher.dispatch(imageEditorLifecycleEvents.saveSucceeded(tempFile)),
+                    error: (error: HttpErrorResponse) => {
+                        // Surface the error but keep the editor open for retry.
+                        httpErrorManager.handle(error);
+                        dispatcher.dispatch(imageEditorLifecycleEvents.saveFailed(error));
+                    }
+                }),
+                // Swallow the rethrown error so the effect stream stays alive.
+                catchError(() => EMPTY)
+            );
+
+        return {
             // Load asset metadata whenever a new asset is requested.
-            const loadAsset = rxMethod<unknown>(
-                pipe(
-                    switchMap(() =>
-                        service.loadAssetMeta(store.assetContext()).pipe(
-                            tapResponse({
-                                next: (meta) =>
-                                    dispatcher.dispatch(
-                                        imageEditorLifecycleEvents.assetLoaded(meta)
-                                    ),
-                                error: (error) =>
-                                    dispatcher.dispatch(
-                                        imageEditorLifecycleEvents.assetLoadFailed(error)
-                                    )
-                            })
-                        )
+            loadAsset$: events.on(imageEditorLifecycleEvents.assetRequested).pipe(
+                switchMap(() =>
+                    service.loadAssetMeta(store.assetContext()).pipe(
+                        tapResponse({
+                            next: (meta) =>
+                                dispatcher.dispatch(imageEditorLifecycleEvents.assetLoaded(meta)),
+                            error: (error) =>
+                                dispatcher.dispatch(
+                                    imageEditorLifecycleEvents.assetLoadFailed(error)
+                                )
+                        })
                     )
                 )
-            );
-            loadAsset(events.on(imageEditorLifecycleEvents.assetRequested));
+            ),
 
             // Resolve the edited preview size, debounced against rapid edits.
-            const resolveSize = rxMethod<string>(
-                pipe(
-                    debounceTime(250),
-                    distinctUntilChanged(),
-                    switchMap((url) =>
-                        service
-                            .getFileSize(url)
-                            .pipe(
-                                tap((bytes) =>
-                                    dispatcher.dispatch(
-                                        imageEditorLifecycleEvents.previewSizeResolved(bytes)
-                                    )
+            resolveSize$: toObservable(store.previewUrl).pipe(
+                debounceTime(250),
+                distinctUntilChanged(),
+                switchMap((url) =>
+                    service
+                        .getFileSize(url)
+                        .pipe(
+                            tap((bytes) =>
+                                dispatcher.dispatch(
+                                    imageEditorLifecycleEvents.previewSizeResolved(bytes)
                                 )
                             )
-                    )
+                        )
                 )
-            );
-            resolveSize(toObservable(store.previewUrl));
-
-            // Save the edited image and dispatch the outcome.
-            const saveEditedImage$ = () =>
-                service.saveEditedImage(store.previewUrl(), store.assetContext().variable).pipe(
-                    tapResponse({
-                        next: (tempFile: DotCMSTempFile) =>
-                            dispatcher.dispatch(imageEditorLifecycleEvents.saveSucceeded(tempFile)),
-                        error: (error: HttpErrorResponse) => {
-                            // Surface the error but keep the editor open for retry.
-                            httpErrorManager.handle(error);
-                            dispatcher.dispatch(imageEditorLifecycleEvents.saveFailed(error));
-                        }
-                    }),
-                    // Swallow the rethrown error so the effect stream stays alive.
-                    catchError(() => EMPTY)
-                );
+            ),
 
             // Persist the focal point first (when active), then save the image.
             // `exhaustMap` ignores new save triggers while one is in flight: a
             // destructive write must not be cancelled mid-flight, which would
             // strand `saveStatus: 'saving'` with no terminal event.
-            const save = rxMethod<unknown>(
-                pipe(
+            save$: events
+                .on(
+                    imageEditorLifecycleEvents.saveRequested,
+                    imageEditorLifecycleEvents.saveAsRequested
+                )
+                .pipe(
                     exhaustMap(() => {
                         const focalPoint = store.focalPoint();
 
@@ -552,26 +566,17 @@ export const ImageEditorStore = signalStore(
                             })
                             .pipe(switchMap(() => saveEditedImage$()));
                     })
-                )
-            );
-
-            save(
-                events.on(
-                    imageEditorLifecycleEvents.saveRequested,
-                    imageEditorLifecycleEvents.saveAsRequested
-                )
-            );
+                ),
 
             // Trigger a client-side download of the current preview.
-            const download = rxMethod<unknown>(
-                pipe(
+            download$: events
+                .on(imageEditorLifecycleEvents.downloadRequested)
+                .pipe(
                     tap(() =>
                         service.triggerDownload(store.previewUrl(), store.assetContext().fileName)
                     )
                 )
-            );
-            download(events.on(imageEditorLifecycleEvents.downloadRequested));
-        }
+        };
     })
 );
 

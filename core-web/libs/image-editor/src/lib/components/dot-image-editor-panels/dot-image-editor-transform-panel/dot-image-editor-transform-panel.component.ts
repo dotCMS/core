@@ -9,14 +9,14 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { imageEditorPanelEvents } from '../../../store/image-editor.events';
+import { imageEditorTransformEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 
 /**
  * Geometric transform panel. Binds scale and rotate sliders, horizontal/vertical
  * flip toggles and explicit output dimension inputs to the {@link ImageEditorStore}
  * `transform`/`outputDimensions` slices, dispatching the matching
- * {@link imageEditorPanelEvents} on user input. Sliders dispatch their committed
+ * {@link imageEditorTransformEvents} on user input. Sliders dispatch their committed
  * value on `onSlideEnd`, letting the store own debouncing of the resulting preview.
  */
 @Component({
@@ -31,7 +31,7 @@ export class DotImageEditorTransformPanelComponent {
     protected readonly store = inject(ImageEditorStore);
 
     /** Panel event dispatcher for transform changes. */
-    protected readonly dispatch = injectDispatch(imageEditorPanelEvents);
+    protected readonly dispatch = injectDispatch(imageEditorTransformEvents);
 
     /** Whether the last edited width is below the allowed minimum, for the inline error. */
     protected readonly widthError = signal(false);

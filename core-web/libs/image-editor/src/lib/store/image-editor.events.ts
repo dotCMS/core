@@ -11,19 +11,33 @@ import {
     ImageEditorOpenParams
 } from '../models/image-editor.models';
 
-/** Events emitted by the adjustment/transform/compression control panel. */
-export const imageEditorPanelEvents = eventGroup({
-    source: 'Image Editor Panel',
+/** Events emitted by the Adjust panel (color & light). */
+export const imageEditorAdjustEvents = eventGroup({
+    source: 'Image Editor Adjust',
     events: {
         brightnessChanged: type<number>(),
         hueChanged: type<number>(),
         saturationChanged: type<number>(),
-        grayscaleToggled: type<boolean>(),
+        grayscaleToggled: type<boolean>()
+    }
+});
+
+/** Events emitted by the Transform panel (scale, rotate, flip, output size). */
+export const imageEditorTransformEvents = eventGroup({
+    source: 'Image Editor Transform',
+    events: {
         scaleChanged: type<number>(),
         rotateChanged: type<number>(),
         flipHToggled: type<void>(),
         flipVToggled: type<void>(),
-        outputDimsChanged: type<{ width: number | null; height: number | null }>(),
+        outputDimsChanged: type<{ width: number | null; height: number | null }>()
+    }
+});
+
+/** Events emitted by the File info panel (compression & quality). */
+export const imageEditorFileInfoEvents = eventGroup({
+    source: 'Image Editor File Info',
+    events: {
         compressionChanged: type<CompressionMode>(),
         qualityChanged: type<number>()
     }

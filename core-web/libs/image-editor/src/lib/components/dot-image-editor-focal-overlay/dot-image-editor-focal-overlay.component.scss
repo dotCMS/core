@@ -46,18 +46,3 @@
         border-color: var(--primary-color, #426bf0);
     }
 }
-
-.focal-pill {
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 0.5rem;
-    border-radius: 9999px;
-    background-color: var(--surface-900, #1f2937);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    pointer-events: auto;
-}

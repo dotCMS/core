@@ -12,8 +12,6 @@ import {
     signal
 } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { focalPointPop } from '../../animations/image-editor.animations';
@@ -50,7 +48,7 @@ const NUDGE_STEP_LARGE = 0.05;
 @Component({
     selector: 'dot-image-editor-focal-overlay',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     templateUrl: './dot-image-editor-focal-overlay.component.html',
     styleUrl: './dot-image-editor-focal-overlay.component.scss',
     animations: [focalPointPop()]
@@ -122,21 +120,28 @@ export class DotImageEditorFocalOverlayComponent {
                 break;
             case 'Enter':
                 event.preventDefault();
-                this.set();
+                this.setFocalPoint();
                 break;
             default:
                 break;
         }
     }
 
-    /** Confirms the focal point, dispatching the normalized 0..1 coordinates. */
-    protected set(): void {
+    /**
+     * Confirms the focal point, dispatching the normalized 0..1 coordinates.
+     * Invoked by the canvas footer's "Set focal point" action and by the Enter
+     * key while the marker is focused.
+     */
+    setFocalPoint(): void {
         const { x, y } = this.point();
         this.#dispatch.focalPointSet({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
     }
 
-    /** Cancels focal placement and restores the move tool. */
-    protected cancel(): void {
+    /**
+     * Cancels focal placement and restores the move tool. Invoked by the canvas
+     * footer's "Cancel" action and by the Escape key.
+     */
+    cancelFocalPoint(): void {
         this.#dispatch.focalPointCleared();
     }
 
@@ -151,7 +156,7 @@ export class DotImageEditorFocalOverlayComponent {
         }
 
         event.stopPropagation();
-        this.cancel();
+        this.cancelFocalPoint();
     }
 
     /** Converts a client-space pointer position into a normalized focal point. */

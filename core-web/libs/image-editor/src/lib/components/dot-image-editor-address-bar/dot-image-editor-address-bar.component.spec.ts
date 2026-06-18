@@ -63,9 +63,7 @@ describe('DotImageEditorAddressBarComponent', () => {
     });
 
     it('should render the preview URL in the address field', () => {
-        const field = spectator.query<HTMLInputElement>(byTestId('image-editor-address-field'));
-
-        expect(field?.value).toBe(PREVIEW_URL);
+        expect(spectator.query(byTestId('image-editor-address-field'))).toHaveText(PREVIEW_URL);
     });
 
     it('should render the zoom level from the zoomLevel input', () => {
@@ -74,10 +72,10 @@ describe('DotImageEditorAddressBarComponent', () => {
         expect(spectator.query(byTestId('image-editor-zoom-value'))).toHaveText('125%');
     });
 
-    it('should copy the preview URL to the clipboard when the copy button is clicked', () => {
+    it('should copy the full (absolute) preview URL to the clipboard when the copy button is clicked', () => {
         spectator.click(byTestId('image-editor-copy-url-btn'));
 
-        expect(writeText).toHaveBeenCalledWith(PREVIEW_URL);
+        expect(writeText).toHaveBeenCalledWith(document.location.origin + PREVIEW_URL);
     });
 
     it('should dispatch undoRequested when undo is clicked', () => {

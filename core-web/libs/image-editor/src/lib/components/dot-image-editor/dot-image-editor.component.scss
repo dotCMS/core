@@ -3,6 +3,41 @@
     height: 100%;
 }
 
+// Two-dimensional shell: header and footer span both columns; the middle row holds
+// the canvas (fluid) and the panels (fixed). minmax(0, …) lets the canvas contain and
+// the panels scroll instead of forcing the tracks to grow.
+.image-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 23rem;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+        "header header"
+        "canvas panels"
+        "footer footer";
+    height: 100%;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.image-editor__header {
+    grid-area: header;
+}
+
+.image-editor__canvas {
+    grid-area: canvas;
+    min-width: 0;
+    min-height: 0;
+}
+
+.image-editor__panels {
+    grid-area: panels;
+    min-height: 0;
+}
+
+.image-editor__footer {
+    grid-area: footer;
+}
+
 // Respect the user's motion preference: disable the scale/fade entrance.
 @media (prefers-reduced-motion: reduce) {
     :host {

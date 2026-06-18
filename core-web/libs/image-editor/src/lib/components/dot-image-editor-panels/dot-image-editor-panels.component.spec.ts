@@ -11,6 +11,8 @@ import { DotImageEditorHistoryPanelComponent } from './dot-image-editor-history-
 import { DotImageEditorPanelsComponent } from './dot-image-editor-panels.component';
 import { DotImageEditorTransformPanelComponent } from './dot-image-editor-transform-panel/dot-image-editor-transform-panel.component';
 
+import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../../utils/panel-state.storage';
+
 describe('DotImageEditorPanelsComponent', () => {
     let spectator: Spectator<DotImageEditorPanelsComponent>;
 
@@ -47,14 +49,41 @@ describe('DotImageEditorPanelsComponent', () => {
         ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent();
+    afterEach(() => {
+        localStorage.clear();
     });
 
     it('should render the four accordion sections in order', () => {
+        spectator = createComponent();
+
         expect(spectator.query(byTestId('image-editor-panel-adjust'))).toExist();
         expect(spectator.query(byTestId('image-editor-panel-transform'))).toExist();
         expect(spectator.query(byTestId('image-editor-panel-fileinfo'))).toExist();
         expect(spectator.query(byTestId('image-editor-panel-history'))).toExist();
+    });
+
+    it('should start with every section collapsed by default', () => {
+        spectator = createComponent();
+
+        expect(spectator.component['openPanels']()).toEqual([]);
+    });
+
+    it('should seed the open sections from localStorage', () => {
+        localStorage.setItem(IMAGE_EDITOR_PANEL_STATE_KEY, JSON.stringify(['transform']));
+
+        spectator = createComponent();
+
+        expect(spectator.component['openPanels']()).toEqual(['transform']);
+    });
+
+    it('should persist the open sections to localStorage when they change', () => {
+        spectator = createComponent();
+
+        spectator.component['onOpenPanelsChange'](['adjust', 'history']);
+        spectator.detectChanges();
+
+        expect(localStorage.getItem(IMAGE_EDITOR_PANEL_STATE_KEY)).toBe(
+            JSON.stringify(['adjust', 'history'])
+        );
     });
 });

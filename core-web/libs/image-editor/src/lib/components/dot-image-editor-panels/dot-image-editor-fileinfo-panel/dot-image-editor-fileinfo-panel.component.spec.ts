@@ -11,7 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotImageEditorFileInfoPanelComponent } from './dot-image-editor-fileinfo-panel.component';
 
 import { FileInfoState } from '../../../models/image-editor.models';
-import { imageEditorPanelEvents } from '../../../store/image-editor.events';
+import { imageEditorFileInfoEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 
 const FILE_INFO: FileInfoState = {
@@ -51,7 +51,7 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
         const select = spectator.query(SelectButton);
         select!.onChange.emit({ originalEvent: new Event('click'), value: 'webp' });
 
-        const event = dispatchedEvent(imageEditorPanelEvents.compressionChanged.type);
+        const event = dispatchedEvent(imageEditorFileInfoEvents.compressionChanged.type);
         expect(event).toBeDefined();
         expect(event!.payload).toBe('webp');
     });

@@ -9,6 +9,43 @@
 }
 
 .tool-rail__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 0.625rem;
+    appearance: none;
+    cursor: pointer;
+    // Light glyph so the icon is clearly visible on the dark rail.
+    color: rgba(255, 255, 255, 0.75);
+    background-color: transparent;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+
+    &:hover {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--p-primary-color, #6366f1);
+        outline-offset: 2px;
+    }
+}
+
+// Active tool: filled indigo rounded square with a white icon.
+.tool-rail__button--active,
+.tool-rail__button--active:hover {
+    color: #ffffff;
+    background-color: var(--p-primary-color, #6366f1);
+}
+
+// Inline SVG glyphs inherit the button color via `stroke="currentColor"`.
+.tool-rail__icon {
+    width: 1.25rem;
+    height: 1.25rem;
 }

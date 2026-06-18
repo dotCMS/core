@@ -39,7 +39,7 @@ interface AssetMeta {
  * throw; only {@link saveEditedImage} rethrows so the store can keep the modal
  * open on failure.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotImageEditorService {
     readonly #http = inject(HttpClient);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);

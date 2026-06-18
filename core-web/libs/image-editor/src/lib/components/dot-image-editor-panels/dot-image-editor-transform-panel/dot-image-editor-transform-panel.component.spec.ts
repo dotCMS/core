@@ -11,7 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotImageEditorTransformPanelComponent } from './dot-image-editor-transform-panel.component';
 
 import { TransformState } from '../../../models/image-editor.models';
-import { imageEditorPanelEvents } from '../../../store/image-editor.events';
+import { imageEditorTransformEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 
 const TRANSFORM: TransformState = {
@@ -55,7 +55,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
         const slider = sliderAt('image-editor-scale-slider');
         slider.onSlideEnd.emit({ originalEvent: new Event('mouseup'), value: 250 });
 
-        const event = dispatchedEvent(imageEditorPanelEvents.scaleChanged.type);
+        const event = dispatchedEvent(imageEditorTransformEvents.scaleChanged.type);
         expect(event).toBeDefined();
         expect(event!.payload).toBe(250);
     });
@@ -64,7 +64,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
         const slider = sliderAt('image-editor-rotate-slider');
         slider.onSlideEnd.emit({ originalEvent: new Event('mouseup'), value: -90 });
 
-        const event = dispatchedEvent(imageEditorPanelEvents.rotateChanged.type);
+        const event = dispatchedEvent(imageEditorTransformEvents.rotateChanged.type);
         expect(event).toBeDefined();
         expect(event!.payload).toBe(-90);
     });
@@ -75,7 +75,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
             originalEvent: new Event('click')
         });
 
-        expect(dispatchedEvent(imageEditorPanelEvents.flipHToggled.type)).toBeDefined();
+        expect(dispatchedEvent(imageEditorTransformEvents.flipHToggled.type)).toBeDefined();
     });
 
     it('should dispatch flipVToggled when toggling vertical flip', () => {
@@ -84,14 +84,14 @@ describe('DotImageEditorTransformPanelComponent', () => {
             originalEvent: new Event('click')
         });
 
-        expect(dispatchedEvent(imageEditorPanelEvents.flipVToggled.type)).toBeDefined();
+        expect(dispatchedEvent(imageEditorTransformEvents.flipVToggled.type)).toBeDefined();
     });
 
     it('should render the width input and dispatch outputDimsChanged with the new width', () => {
         expect(spectator.query(byTestId('image-editor-output-width-input'))).toExist();
         spectator.component['outputWidthChanged'](1024);
 
-        const event = dispatchedEvent(imageEditorPanelEvents.outputDimsChanged.type);
+        const event = dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type);
         expect(event).toBeDefined();
         expect(event!.payload).toEqual({ width: 1024, height: null });
     });
@@ -99,7 +99,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
     it('should dispatch outputDimsChanged with the new height on height input', () => {
         spectator.component['outputHeightChanged'](768);
 
-        const event = dispatchedEvent(imageEditorPanelEvents.outputDimsChanged.type);
+        const event = dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type);
         expect(event).toBeDefined();
         expect(event!.payload).toEqual({ width: null, height: 768 });
     });
@@ -109,10 +109,12 @@ describe('DotImageEditorTransformPanelComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('image-editor-output-width-error'))).toExist();
-        expect(dispatchedEvent(imageEditorPanelEvents.outputDimsChanged.type)!.payload).toEqual({
-            width: null,
-            height: null
-        });
+        expect(dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type)!.payload).toEqual(
+            {
+                width: null,
+                height: null
+            }
+        );
     });
 
     /** Resolves the PrimeNG Slider instance rendered under the given test id. */

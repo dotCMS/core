@@ -1,10 +1,10 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
+import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -24,7 +24,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
     selector: 'dot-image-editor-address-bar',
     templateUrl: './dot-image-editor-address-bar.component.html',
     styleUrl: './dot-image-editor-address-bar.component.scss',
-    imports: [ButtonModule, InputTextModule, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotImageEditorAddressBarComponent {
@@ -32,6 +32,7 @@ export class DotImageEditorAddressBarComponent {
     readonly #dispatch = injectDispatch(imageEditorHistoryEvents);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #document = inject(DOCUMENT);
 
     /** Current canvas zoom percentage to display; owned and updated by the canvas. */
     zoomLevel = input<number>(100);
@@ -46,7 +47,7 @@ export class DotImageEditorAddressBarComponent {
     /** Copies the current preview URL to the clipboard, surfacing a toast. */
     protected async copyUrl(): Promise<void> {
         try {
-            await navigator.clipboard.writeText(this.store.previewUrl());
+            await navigator.clipboard.writeText(this.#absoluteUrl());
             this.#messageService.add({
                 severity: 'success',
                 detail: this.#dotMessageService.get(
@@ -60,6 +61,17 @@ export class DotImageEditorAddressBarComponent {
                 detail: this.#dotMessageService.get('edit.content.image-editor.address.copy.error')
             });
         }
+    }
+
+    /**
+     * Resolves the store's root-relative preview URL against the current origin so the
+     * copied value is a complete, shareable URL rather than just the path.
+     */
+    #absoluteUrl(): string {
+        const url = this.store.previewUrl();
+        const origin = this.#document.location?.origin ?? '';
+
+        return /^https?:\/\//.test(url) ? url : `${origin}${url}`;
     }
 
     /** Steps back one entry in the edit history. */

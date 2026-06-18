@@ -26,18 +26,5 @@
                     [attr.data-testid]="'image-editor-crop-handle-' + handle"></span>
             }
         </div>
-
-        <div class="crop-pill">
-            <p-button
-                [text]="true"
-                severity="secondary"
-                [label]="'edit.content.image-editor.crop.cancel' | dm"
-                (onClick)="cancel()"
-                data-testid="image-editor-crop-cancel-btn" />
-            <p-button
-                [label]="'edit.content.image-editor.crop.apply' | dm"
-                (onClick)="apply()"
-                data-testid="image-editor-crop-apply-btn" />
-        </div>
     </div>
 }

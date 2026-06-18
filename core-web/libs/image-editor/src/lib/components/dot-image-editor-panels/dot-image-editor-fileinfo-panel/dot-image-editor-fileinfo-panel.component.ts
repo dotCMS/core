@@ -9,7 +9,7 @@ import { SliderModule, SliderSlideEndEvent } from 'primeng/slider';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { CompressionMode } from '../../../models/image-editor.models';
-import { imageEditorPanelEvents } from '../../../store/image-editor.events';
+import { imageEditorFileInfoEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 
 /** A selectable compression option shown in the compression select button. */
@@ -25,7 +25,7 @@ const BYTES_PER_KB = 1024;
  * File info / compression panel. Lets the user pick a compression strategy and,
  * when compression is active, tune its quality, while surfacing the current
  * preview file size. Binds to the {@link ImageEditorStore} `fileInfo` slice and
- * dispatches the matching {@link imageEditorPanelEvents} on user input; the
+ * dispatches the matching {@link imageEditorFileInfoEvents} on user input; the
  * quality slider dispatches its committed value on `onSlideEnd`.
  */
 @Component({
@@ -40,7 +40,7 @@ export class DotImageEditorFileInfoPanelComponent {
     protected readonly store = inject(ImageEditorStore);
 
     /** Panel event dispatcher for compression and quality changes. */
-    protected readonly dispatch = injectDispatch(imageEditorPanelEvents);
+    protected readonly dispatch = injectDispatch(imageEditorFileInfoEvents);
 
     /** Selectable compression strategies. */
     protected readonly compressionOptions: CompressionOption[] = [

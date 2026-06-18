@@ -42,9 +42,8 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         expect(spectator.query(byTestId('image-editor-focal-marker'))).toExist();
     });
 
-    it('should dispatch focalPointSet with normalized 0..1 coordinates when setting', () => {
-        const setBtn = spectator.query(byTestId('image-editor-focal-set-btn'));
-        spectator.click(setBtn!.querySelector('button')!);
+    it('should dispatch focalPointSet with normalized 0..1 coordinates when setFocalPoint is called', () => {
+        spectator.component.setFocalPoint();
 
         // `injectDispatch` forwards a `{ scope: 'self' }` options argument, so the
         // dispatched event is read from the first call argument directly.
@@ -60,9 +59,8 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         expect(y).toBeLessThanOrEqual(1);
     });
 
-    it('should dispatch focalPointCleared when cancelling', () => {
-        const cancelBtn = spectator.query(byTestId('image-editor-focal-cancel-btn'));
-        spectator.click(cancelBtn!.querySelector('button')!);
+    it('should dispatch focalPointCleared when cancelFocalPoint is called', () => {
+        spectator.component.cancelFocalPoint();
 
         expect(dispatchedEvent('focalPointCleared')).toBeDefined();
     });

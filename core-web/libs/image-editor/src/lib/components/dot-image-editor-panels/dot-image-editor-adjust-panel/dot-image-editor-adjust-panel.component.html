@@ -2,9 +2,18 @@
     <div class="ie-field">
         <div class="ie-field__header">
             <label>{{ 'edit.content.image-editor.adjust.brightness' | dm }}</label>
-            <span class="ie-field__value">{{ brightness() }}</span>
+            <input
+                type="number"
+                class="ie-field__value"
+                [min]="-100"
+                [max]="100"
+                [value]="brightness()"
+                [attr.aria-label]="'edit.content.image-editor.adjust.brightness' | dm"
+                (change)="onBrightnessInput($event)"
+                data-testid="image-editor-brightness-value" />
         </div>
         <p-slider
+            styleClass="ie-slider--brightness"
             [ngModel]="store.adjust().brightness"
             [min]="-100"
             [max]="100"
@@ -16,7 +25,15 @@
     <div class="ie-field">
         <div class="ie-field__header">
             <label>{{ 'edit.content.image-editor.adjust.hue' | dm }}</label>
-            <span class="ie-field__value">{{ hue() }}</span>
+            <input
+                type="number"
+                class="ie-field__value"
+                [min]="-100"
+                [max]="100"
+                [value]="hue()"
+                [attr.aria-label]="'edit.content.image-editor.adjust.hue' | dm"
+                (change)="onHueInput($event)"
+                data-testid="image-editor-hue-value" />
         </div>
         <p-slider
             styleClass="ie-slider--hue"
@@ -31,7 +48,15 @@
     <div class="ie-field">
         <div class="ie-field__header">
             <label>{{ 'edit.content.image-editor.adjust.saturation' | dm }}</label>
-            <span class="ie-field__value">{{ saturation() }}</span>
+            <input
+                type="number"
+                class="ie-field__value"
+                [min]="-100"
+                [max]="100"
+                [value]="saturation()"
+                [attr.aria-label]="'edit.content.image-editor.adjust.saturation' | dm"
+                (change)="onSaturationInput($event)"
+                data-testid="image-editor-saturation-value" />
         </div>
         <p-slider
             styleClass="ie-slider--saturation"

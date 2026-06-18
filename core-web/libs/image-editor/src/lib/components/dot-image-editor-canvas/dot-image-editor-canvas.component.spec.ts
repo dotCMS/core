@@ -187,6 +187,53 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(dispatchedEvent('retryRequested')).toBeDefined();
     });
 
+    describe('footer band', () => {
+        it('should render no action buttons when the move tool is active', () => {
+            activeTool.set('move');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('image-editor-canvas-footer'))).toExist();
+            expect(spectator.query(byTestId('image-editor-crop-apply-btn'))).not.toExist();
+            expect(spectator.query(byTestId('image-editor-crop-cancel-btn'))).not.toExist();
+            expect(spectator.query(byTestId('image-editor-focal-set-btn'))).not.toExist();
+            expect(spectator.query(byTestId('image-editor-focal-cancel-btn'))).not.toExist();
+        });
+
+        it('should invoke the crop overlay apply/cancel from the footer when cropping', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            const cropOverlay = spectator.query(DotImageEditorCropOverlayComponent)!;
+            const applySpy = jest.spyOn(cropOverlay, 'applyCrop');
+            const cancelSpy = jest.spyOn(cropOverlay, 'cancelCrop');
+
+            const applyBtn = spectator.query(byTestId('image-editor-crop-apply-btn'));
+            spectator.click(applyBtn!.querySelector('button')!);
+            expect(applySpy).toHaveBeenCalled();
+
+            const cancelBtn = spectator.query(byTestId('image-editor-crop-cancel-btn'));
+            spectator.click(cancelBtn!.querySelector('button')!);
+            expect(cancelSpy).toHaveBeenCalled();
+        });
+
+        it('should invoke the focal overlay set/cancel from the footer when placing a focal point', () => {
+            activeTool.set('focal');
+            spectator.detectChanges();
+
+            const focalOverlay = spectator.query(DotImageEditorFocalOverlayComponent)!;
+            const setSpy = jest.spyOn(focalOverlay, 'setFocalPoint');
+            const cancelSpy = jest.spyOn(focalOverlay, 'cancelFocalPoint');
+
+            const setBtn = spectator.query(byTestId('image-editor-focal-set-btn'));
+            spectator.click(setBtn!.querySelector('button')!);
+            expect(setSpy).toHaveBeenCalled();
+
+            const cancelBtn = spectator.query(byTestId('image-editor-focal-cancel-btn'));
+            spectator.click(cancelBtn!.querySelector('button')!);
+            expect(cancelSpy).toHaveBeenCalled();
+        });
+    });
+
     /** Finds the first dispatched event whose type matches the given suffix. */
     function dispatchedEvent(typeSuffix: string): { type: string; payload?: unknown } | undefined {
         const call = (dispatcher.dispatch as jest.Mock).mock.calls.find(([dispatched]) =>

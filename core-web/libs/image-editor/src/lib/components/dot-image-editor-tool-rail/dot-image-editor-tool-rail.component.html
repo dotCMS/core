@@ -1,17 +1,64 @@
 @for (tool of tools; track tool.id) {
     <button
-        pButton
         type="button"
         class="tool-rail__button"
-        [icon]="tool.icon"
-        [rounded]="true"
-        [text]="store.activeTool() !== tool.id"
-        [severity]="store.activeTool() === tool.id ? 'primary' : 'secondary'"
+        [class.tool-rail__button--active]="store.activeTool() === tool.id"
         [attr.aria-label]="tool.label | dm"
         [attr.aria-pressed]="store.activeTool() === tool.id"
         [attr.tabindex]="store.activeTool() === tool.id ? 0 : -1"
         [pTooltip]="tool.label | dm"
         tooltipPosition="right"
         [attr.data-testid]="tool.testId"
-        (click)="selectTool(tool.id)"></button>
+        (click)="selectTool(tool.id)">
+        @switch (tool.id) {
+            @case ('move') {
+                <svg
+                    class="tool-rail__icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2" />
+                    <path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2" />
+                    <path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8" />
+                    <path
+                        d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+                </svg>
+            }
+            @case ('crop') {
+                <svg
+                    class="tool-rail__icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+                    <path d="M18 22V8a2 2 0 0 0-2-2H2" />
+                </svg>
+            }
+            @case ('focal') {
+                <svg
+                    class="tool-rail__icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                </svg>
+            }
+        }
+    </button>
 }

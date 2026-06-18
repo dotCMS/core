@@ -1,0 +1,124 @@
+:host {
+    display: block;
+}
+
+// Accordion section styling, aligned to the Claude Design "Edit image" spec:
+// header title 600/13px, subtitle 400/11px muted, a 26px rounded icon chip that
+// turns primary when the section is open, and the design's 14/18px density.
+// Scoped to this component's subtree via :host; pierces PrimeNG internals with
+// ::ng-deep since the header content is projected into <p-accordion-header>.
+:host ::ng-deep {
+    // Header button: density padding + subtle hover, matching `.iem-acc-head`.
+    .p-accordionheader {
+        padding: 14px 18px;
+        gap: 10px;
+    }
+
+    .p-accordionheader:hover {
+        background: var(--p-surface-50, #f8fafc);
+    }
+
+    // Body padding on all four sides (the sub-panels carry none of their own).
+    .p-accordioncontent-content {
+        padding: 1rem;
+    }
+
+    // Per-section divider, last one removed (`.iem-acc` border-bottom).
+    .p-accordionpanel {
+        border-bottom: 1px solid var(--p-surface-100, #f1f5f9);
+    }
+
+    .p-accordionpanel:last-child {
+        border-bottom: 0;
+    }
+
+    .ie-panel-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    // 26px rounded icon chip; muted while collapsed.
+    .ie-panel-head__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: var(--p-surface-100, #f1f5f9);
+        color: var(--p-text-muted-color, #64748b);
+        flex-shrink: 0;
+    }
+
+    .ie-panel-head__icon .pi {
+        font-size: 14px;
+    }
+
+    // Open section: chip turns primary (`.iem-acc.open .iem-acc-icon`).
+    .p-accordionpanel-active .ie-panel-head__icon {
+        background: var(--p-primary-50, #eef2ff);
+        color: var(--p-primary-700, #4338ca);
+    }
+
+    .ie-panel-head__titles {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: left;
+    }
+
+    .ie-panel-head__title {
+        font-family: var(--p-font-family);
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.2;
+        color: var(--p-text-color, #334155);
+    }
+
+    .ie-panel-head__subtitle {
+        font-family: var(--p-font-family);
+        font-weight: 400;
+        font-size: 11px;
+        line-height: 1.3;
+        color: var(--p-text-muted-color, #64748b);
+    }
+}
+
+// Constrain the PrimeNG controls in every sub-panel to the (narrow) panel column
+// so nothing overflows horizontally. Scoped to this component's subtree via :host.
+:host ::ng-deep {
+    // Sliders fill the available width.
+    .p-slider {
+        width: 100%;
+    }
+
+    // Output-dimension number inputs fill their half of the row instead of using
+    // their intrinsic width (which overflowed the column).
+    .ie-transform__dimension {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .p-inputnumber {
+        width: 100%;
+    }
+
+    .p-inputnumber-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    // Flip toggle pair and the compression segmented control share the row evenly.
+    .ie-transform__flip,
+    .p-selectbutton {
+        display: flex;
+        width: 100%;
+    }
+
+    .ie-transform__flip .p-togglebutton,
+    .p-selectbutton .p-togglebutton {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

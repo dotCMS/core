@@ -20,7 +20,10 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
 import { ImageEditorOpenParams } from '../../models/image-editor.models';
-import { imageEditorLifecycleEvents } from '../../store/image-editor.events';
+import {
+    imageEditorHistoryEvents,
+    imageEditorLifecycleEvents
+} from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorCanvasComponent } from '../dot-image-editor-canvas/dot-image-editor-canvas.component';
 import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-image-editor-footer.component';
@@ -48,6 +51,8 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
         const savedTempFile = signal<DotCMSTempFile | null>(null);
         const isDirty = signal(false);
+        const canUndo = signal(false);
+        const canRedo = signal(false);
 
         const createComponent = createComponentFactory({
             component: DotImageEditorComponent,
@@ -64,7 +69,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // mocking only the store.
             componentProviders: [
                 ConfirmationService,
-                mockProvider(ImageEditorStore, { savedTempFile, isDirty })
+                mockProvider(ImageEditorStore, { savedTempFile, isDirty, canUndo, canRedo })
             ],
             // Isolate the shell from the children's own store/dispatch wiring.
             overrideComponents: [
@@ -99,6 +104,8 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             jest.clearAllMocks();
             savedTempFile.set(null);
             isDirty.set(false);
+            canUndo.set(false);
+            canRedo.set(false);
 
             // Spy before creation so the constructor's assetRequested dispatch is
             // captured (injectDispatch dispatches through Dispatcher.prototype).
@@ -169,6 +176,75 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             confirmation.accept?.();
 
             expect(dialogRef.close).toHaveBeenCalledWith(null);
+        });
+
+        describe('undo/redo shortcuts', () => {
+            it('should dispatch undoRequested on Ctrl/Cmd+Z when undo is available', () => {
+                canUndo.set(true);
+
+                spectator.element.dispatchEvent(
+                    new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })
+                );
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    imageEditorHistoryEvents.undoRequested(),
+                    { scope: 'self' }
+                );
+            });
+
+            it('should dispatch redoRequested on Ctrl/Cmd+Shift+Z when redo is available', () => {
+                canRedo.set(true);
+
+                spectator.element.dispatchEvent(
+                    new KeyboardEvent('keydown', { key: 'z', metaKey: true, shiftKey: true })
+                );
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    imageEditorHistoryEvents.redoRequested(),
+                    { scope: 'self' }
+                );
+            });
+
+            it('should dispatch redoRequested on Ctrl+Y when redo is available', () => {
+                canRedo.set(true);
+
+                spectator.element.dispatchEvent(
+                    new KeyboardEvent('keydown', { key: 'y', ctrlKey: true })
+                );
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    imageEditorHistoryEvents.redoRequested(),
+                    { scope: 'self' }
+                );
+            });
+
+            it('should not dispatch undo when there is nothing to undo', () => {
+                canUndo.set(false);
+
+                spectator.element.dispatchEvent(
+                    new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })
+                );
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalledWith(
+                    imageEditorHistoryEvents.undoRequested(),
+                    { scope: 'self' }
+                );
+            });
+
+            it('should ignore the shortcut while a text field has focus', () => {
+                canUndo.set(true);
+
+                const input = document.createElement('input');
+                spectator.element.appendChild(input);
+                input.dispatchEvent(
+                    new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true })
+                );
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalledWith(
+                    imageEditorHistoryEvents.undoRequested(),
+                    { scope: 'self' }
+                );
+            });
         });
     });
 }

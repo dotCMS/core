@@ -11,8 +11,6 @@ import {
     signal
 } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { imageEditorOverlayEnterLeave } from '../../animations/image-editor.animations';
@@ -60,7 +58,7 @@ const HANDLES: readonly HandlePosition[] = ['tl', 't', 'tr', 'r', 'br', 'b', 'bl
 @Component({
     selector: 'dot-image-editor-crop-overlay',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [DotMessagePipe],
     templateUrl: './dot-image-editor-crop-overlay.component.html',
     styleUrl: './dot-image-editor-crop-overlay.component.scss',
     animations: [imageEditorOverlayEnterLeave()]
@@ -122,8 +120,8 @@ export class DotImageEditorCropOverlayComponent {
         event.stopPropagation();
         const start = this.cropRect();
 
-        this.#trackPointer(event, (dx, dy) => {
-            this.#resize(start, position, dx, dy);
+        this.#trackPointer(event, (dx, dy, shiftKey) => {
+            this.#resize(start, position, dx, dy, shiftKey);
         });
     }
 
@@ -151,15 +149,19 @@ export class DotImageEditorCropOverlayComponent {
                 break;
             case 'Enter':
                 event.preventDefault();
-                this.apply();
+                this.applyCrop();
                 break;
             default:
                 break;
         }
     }
 
-    /** Applies the crop by converting the selection to natural image pixels. */
-    protected apply(): void {
+    /**
+     * Applies the current crop selection, converting it from rendered CSS px to
+     * natural image pixels before dispatching. Invoked by the canvas footer's
+     * "Apply crop" action and by the Enter key while the box is focused.
+     */
+    applyCrop(): void {
         const rect = this.imageRect();
 
         if (!rect || rect.width === 0 || rect.height === 0) {
@@ -181,8 +183,11 @@ export class DotImageEditorCropOverlayComponent {
         });
     }
 
-    /** Cancels cropping and restores the move tool. */
-    protected cancel(): void {
+    /**
+     * Cancels cropping and restores the move tool. Invoked by the canvas footer's
+     * "Cancel" action and by the Escape key.
+     */
+    cancelCrop(): void {
         this.#dispatch.cropCancelled();
     }
 
@@ -197,7 +202,7 @@ export class DotImageEditorCropOverlayComponent {
         }
 
         event.stopPropagation();
-        this.cancel();
+        this.cancelCrop();
     }
 
     /** Moves the box to a new local origin, clamped within the rendered image. */
@@ -216,11 +221,31 @@ export class DotImageEditorCropOverlayComponent {
         });
     }
 
-    /** Resizes the box from a handle, constrained within the rendered image. */
-    #resize(start: LocalRect, position: HandlePosition, dx: number, dy: number): void {
+    /**
+     * Resizes the box from a handle, constrained within the rendered image.
+     * Holding Shift while dragging a corner locks the selection to its starting
+     * aspect ratio (the common "shift to keep proportions" behavior); edge handles
+     * and unmodified drags remain free-form.
+     */
+    #resize(
+        start: LocalRect,
+        position: HandlePosition,
+        dx: number,
+        dy: number,
+        lockAspect = false
+    ): void {
         const rect = this.imageRect();
 
         if (!rect) {
+            return;
+        }
+
+        // Corner handles carry both an horizontal and a vertical edge ('tl', etc.).
+        const isCorner = position.length === 2;
+
+        if (lockAspect && isCorner && start.height > 0) {
+            this.cropRect.set(this.#resizeLockedAspect(start, position, dx, dy, rect));
+
             return;
         }
 
@@ -249,13 +274,78 @@ export class DotImageEditorCropOverlayComponent {
         this.cropRect.set({ x, y, width, height });
     }
 
-    /** Tracks pointer movement until release, reporting the delta to `onMove`. */
-    #trackPointer(start: PointerEvent, onMove: (dx: number, dy: number) => void): void {
+    /**
+     * Corner resize that preserves the selection's starting aspect ratio. The
+     * corner opposite the dragged handle stays anchored; the dominant pointer axis
+     * drives the size and the other dimension follows the locked ratio. When a box
+     * edge is reached, both dimensions scale down together so the ratio holds.
+     */
+    #resizeLockedAspect(
+        start: LocalRect,
+        position: HandlePosition,
+        dx: number,
+        dy: number,
+        rect: ImageRect
+    ): LocalRect {
+        const aspect = start.width / start.height;
+
+        // The dragged handle grows the box left/up (sign -1) or right/down (+1)
+        // from the opposite, anchored corner.
+        const growLeft = position.includes('l');
+        const growUp = position.includes('t');
+        const anchorX = growLeft ? start.x + start.width : start.x;
+        const anchorY = growUp ? start.y + start.height : start.y;
+
+        // Free-form proposed size from the pointer delta.
+        const proposedWidth = Math.max(MIN_CROP_SIZE, start.width + (growLeft ? -dx : dx));
+        const proposedHeight = Math.max(MIN_CROP_SIZE, start.height + (growUp ? -dy : dy));
+
+        // Drive by whichever axis moved more, relative to the starting box.
+        let width: number;
+        let height: number;
+        if (proposedWidth / start.width >= proposedHeight / start.height) {
+            width = proposedWidth;
+            height = width / aspect;
+        } else {
+            height = proposedHeight;
+            width = height * aspect;
+        }
+
+        // Keep the box inside the image from the anchor, preserving the ratio.
+        const maxWidth = growLeft ? anchorX : rect.width - anchorX;
+        const maxHeight = growUp ? anchorY : rect.height - anchorY;
+
+        if (width > maxWidth) {
+            width = maxWidth;
+            height = width / aspect;
+        }
+
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * aspect;
+        }
+
+        return {
+            x: growLeft ? anchorX - width : anchorX,
+            y: growUp ? anchorY - height : anchorY,
+            width,
+            height
+        };
+    }
+
+    /**
+     * Tracks pointer movement until release, reporting the delta and the live
+     * Shift-key state to `onMove` (Shift toggles aspect-ratio locking mid-drag).
+     */
+    #trackPointer(
+        start: PointerEvent,
+        onMove: (dx: number, dy: number, shiftKey: boolean) => void
+    ): void {
         const originX = start.clientX;
         const originY = start.clientY;
 
         const move = (event: PointerEvent) =>
-            onMove(event.clientX - originX, event.clientY - originY);
+            onMove(event.clientX - originX, event.clientY - originY, event.shiftKey);
         const up = () => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);

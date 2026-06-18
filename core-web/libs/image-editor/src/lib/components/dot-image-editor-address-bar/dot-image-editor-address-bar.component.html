@@ -1,12 +1,12 @@
 <div class="address-bar__group">
     <i class="pi pi-link address-bar__link-icon" aria-hidden="true"></i>
-    <input
-        pInputText
-        type="text"
-        readonly
+    <!-- Read-only, server-generated URL — plain text, not an editable input. -->
+    <span
         class="address-bar__field truncate font-mono"
-        [value]="store.previewUrl()"
-        data-testid="image-editor-address-field" />
+        [title]="store.previewUrl()"
+        data-testid="image-editor-address-field">
+        {{ store.previewUrl() }}
+    </span>
     <button
         pButton
         type="button"

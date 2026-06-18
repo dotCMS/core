@@ -84,6 +84,28 @@ describe('DotImageEditorAdjustPanelComponent', () => {
         expect(event!.payload).toBe(75);
     });
 
+    it('should dispatch brightnessChanged with the value typed into the number field', () => {
+        const input = spectator.query<HTMLInputElement>(byTestId('image-editor-brightness-value'))!;
+        input.value = '55';
+        spectator.dispatchFakeEvent(input, 'change');
+
+        const event = dispatchedEvent('brightnessChanged');
+        expect(event).toBeDefined();
+        expect(event!.payload).toBe(55);
+    });
+
+    it('should clamp a typed value to the slider range', () => {
+        const input = spectator.query<HTMLInputElement>(byTestId('image-editor-hue-value'))!;
+        input.value = '150';
+        spectator.dispatchFakeEvent(input, 'change');
+
+        const event = dispatchedEvent('hueChanged');
+        expect(event).toBeDefined();
+        expect(event!.payload).toBe(100);
+        // The field is corrected to the clamped value.
+        expect(input.value).toBe('100');
+    });
+
     it('should dispatch grayscaleToggled when the checkbox changes', () => {
         spectator.triggerEventHandler(
             '[data-testid="image-editor-grayscale-checkbox"]',

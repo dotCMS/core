@@ -36,7 +36,7 @@ describe('AngularImageEditorLauncher', () => {
         expect(spectator.service.isAvailable()).toBe(true);
     });
 
-    it('should open the DotImageEditorComponent with a closable, escapable dialog', () => {
+    it('should open the DotImageEditorComponent with a headerless, closable, escapable dialog', () => {
         spectator.service.open(params).subscribe();
 
         expect(spectator.inject(DialogService).open).toHaveBeenCalledWith(
@@ -44,6 +44,8 @@ describe('AngularImageEditorLauncher', () => {
             expect.objectContaining({
                 data: params,
                 modal: true,
+                // The editor renders its own header; PrimeNG's chrome header is hidden.
+                showHeader: false,
                 closable: true,
                 closeOnEscape: true
             })

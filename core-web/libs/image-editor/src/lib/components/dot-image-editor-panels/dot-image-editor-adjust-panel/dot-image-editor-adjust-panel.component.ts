@@ -8,16 +8,22 @@ import { SliderChangeEvent, SliderModule, SliderSlideEndEvent } from 'primeng/sl
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { imageEditorPanelEvents } from '../../../store/image-editor.events';
+import { imageEditorAdjustEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
+import { clamp } from '../../../utils/dimensions.util';
+
+/** Inclusive range shared by every adjustment slider and its number field. */
+const ADJUST_MIN = -100;
+const ADJUST_MAX = 100;
 
 /**
  * Color & light adjustment panel. Binds brightness, hue and saturation sliders
  * plus a grayscale checkbox to the {@link ImageEditorStore} `adjust` slice and
- * dispatches the matching {@link imageEditorPanelEvents} on user input. Sliders
+ * dispatches the matching {@link imageEditorAdjustEvents} on user input. Sliders
  * update their displayed value optimistically on `onChange` and dispatch the
  * committed value on `onSlideEnd`, letting the store own debouncing of the
- * resulting preview.
+ * resulting preview. Each value also doubles as an inline number field: typing a
+ * value commits it (clamped to the slider range) just like releasing the slider.
  */
 @Component({
     selector: 'dot-image-editor-adjust-panel',
@@ -31,7 +37,7 @@ export class DotImageEditorAdjustPanelComponent {
     protected readonly store = inject(ImageEditorStore);
 
     /** Panel event dispatcher for color adjustment changes. */
-    protected readonly dispatch = injectDispatch(imageEditorPanelEvents);
+    protected readonly dispatch = injectDispatch(imageEditorAdjustEvents);
 
     /** Optimistic brightness value shown while the slider is being dragged. */
     protected readonly brightness = signal(0);
@@ -61,6 +67,13 @@ export class DotImageEditorAdjustPanelComponent {
         this.dispatch.brightnessChanged(event.value ?? 0);
     }
 
+    /** Commits a brightness value typed into the inline number field. */
+    protected onBrightnessInput(event: Event): void {
+        const value = this.commitTypedValue(event, this.brightness());
+        this.brightness.set(value);
+        this.dispatch.brightnessChanged(value);
+    }
+
     /** Updates the optimistic hue label as the slider moves. */
     protected onHueChange(event: SliderChangeEvent): void {
         this.hue.set(this.singleValue(event.value));
@@ -69,6 +82,13 @@ export class DotImageEditorAdjustPanelComponent {
     /** Dispatches the final hue value once the slider drag ends. */
     protected onHueSlideEnd(event: SliderSlideEndEvent): void {
         this.dispatch.hueChanged(event.value ?? 0);
+    }
+
+    /** Commits a hue value typed into the inline number field. */
+    protected onHueInput(event: Event): void {
+        const value = this.commitTypedValue(event, this.hue());
+        this.hue.set(value);
+        this.dispatch.hueChanged(value);
     }
 
     /** Updates the optimistic saturation label as the slider moves. */
@@ -81,6 +101,13 @@ export class DotImageEditorAdjustPanelComponent {
         this.dispatch.saturationChanged(event.value ?? 0);
     }
 
+    /** Commits a saturation value typed into the inline number field. */
+    protected onSaturationInput(event: Event): void {
+        const value = this.commitTypedValue(event, this.saturation());
+        this.saturation.set(value);
+        this.dispatch.saturationChanged(value);
+    }
+
     /** Dispatches the grayscale toggle state. */
     protected onGrayscaleToggle(event: CheckboxChangeEvent): void {
         this.dispatch.grayscaleToggled(Boolean(event.checked));
@@ -89,5 +116,23 @@ export class DotImageEditorAdjustPanelComponent {
     /** Narrows the slider's number-or-range value to a single number. */
     private singleValue(value: SliderChangeEvent['value']): number {
         return Array.isArray(value) ? (value[0] ?? 0) : (value ?? 0);
+    }
+
+    /**
+     * Parses a value typed into an inline number field: reverts to `fallback`
+     * when empty/invalid, rounds, and clamps to the slider range. Writes the
+     * resolved value back to the field so an out-of-range entry shows corrected.
+     */
+    private commitTypedValue(event: Event, fallback: number): number {
+        const input = event.target as HTMLInputElement;
+        const raw = input.valueAsNumber;
+        const value = clamp(
+            Math.round(Number.isFinite(raw) ? raw : fallback),
+            ADJUST_MIN,
+            ADJUST_MAX
+        );
+        input.value = String(value);
+
+        return value;
     }
 }

@@ -32,10 +32,15 @@ export class AngularImageEditorLauncher implements DotImageEditorLauncher {
      */
     open(params: ImageEditorOpenParams): Observable<DotCMSTempFile | null> {
         const ref = this.#dialogService.open(DotImageEditorComponent, {
-            header: undefined,
+            // The editor renders its own header (title + close ✕), so hide PrimeNG's
+            // chrome header to avoid a duplicate. Closing is handled by the internal ✕
+            // (DotImageEditorHeaderComponent) and the Esc key (closeOnEscape).
+            showHeader: false,
             data: params,
-            width: 'min(92vw, 75rem)',
-            height: '90%',
+            // Large landscape dialog: wider than tall. Generous caps keep it big on wide
+            // screens while staying within the viewport on smaller ones.
+            width: 'min(96vw, 90rem)',
+            height: 'min(96vh, 60rem)',
             modal: true,
             draggable: false,
             resizable: false,

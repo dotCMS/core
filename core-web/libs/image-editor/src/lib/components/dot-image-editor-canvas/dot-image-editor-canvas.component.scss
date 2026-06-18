@@ -17,8 +17,12 @@
 }
 
 .canvas__address-bar {
+    // Don't set `display` here — let the address bar's own `:host { display: flex }`
+    // lay the URL (left) and zoom controls (right) out on a single row.
     flex: 0 0 auto;
-    display: block;
+    // Shared band height with the footer so the top/bottom frames match and the image
+    // reads as vertically centered (the footer is empty in 'move' mode).
+    min-height: 3.5rem;
 }
 
 .canvas__viewport {
@@ -29,59 +33,100 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    padding: 1.5rem;
+}
+
+// Bottom band mirroring `.canvas__address-bar`: same dark background and padding,
+// always present so the stage has symmetric top and bottom bands. Hosts the
+// active tool's actions, right-aligned.
+.canvas__footer {
+    flex: 0 0 auto;
+    // Match the address bar's band height (top/bottom symmetry).
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(28, 30, 38, 0.92);
+    color: var(--surface-0, #ffffff);
 }
 
 .canvas__tool-rail {
     position: absolute;
-    top: 1rem;
+    top: 50%;
     left: 1rem;
+    transform: translateY(-50%);
     z-index: 2;
+    // Hidden until the user hovers the canvas (or tabs into a tool, for keyboard a11y).
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+}
+
+.canvas__viewport:hover .canvas__tool-rail,
+.canvas__tool-rail:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__tool-rail {
+        transition: none;
+    }
 }
 
 .canvas__stage {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 100%;
-    max-height: 100%;
+    // Grid + centered items: stack both image layers in one cell and center them with
+    // equal margins on every side (so the black bars top and bottom match), while
+    // giving the images a definite box to contain against.
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     transform-origin: center center;
     transition: transform 150ms ease-out;
 }
 
+// Both image layers occupy the same grid cell so they overlay pixel-for-pixel and stay
+// centered. min-* lets them shrink to fit (an in-flow flex <img> doesn't honor
+// max-height reliably, which clipped the new frame).
 .canvas__img {
-    display: block;
+    grid-area: 1 / 1;
     max-width: 100%;
     max-height: 100%;
+    min-width: 0;
+    min-height: 0;
     object-fit: contain;
     user-select: none;
+    transition: opacity 200ms ease-in-out;
 }
 
-// Stack the two layers so the pending image crossfades over the displayed one.
+// Dim the current frame while a new preview renders so loading reads clearly.
+.canvas__img--loading {
+    opacity: 0.35;
+}
+
+// The incoming frame sits above the current one until it is promoted.
 .canvas__img--pending {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    opacity: 1;
-    transition: opacity 200ms ease-in-out;
+    z-index: 1;
 }
 
 .canvas__skeleton {
     display: block;
 }
 
+// Centered, non-blocking loading indicator over the dimmed image.
 .canvas__loading {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    inset: 0;
     z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem;
-    border-radius: 0.75rem;
-    background-color: rgba(28, 30, 38, 0.92);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
 }
 
 .canvas__error {

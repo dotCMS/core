@@ -10,10 +10,12 @@ import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-acce
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
+    imageEditorAdjustEvents,
+    imageEditorFileInfoEvents,
     imageEditorHistoryEvents,
     imageEditorLifecycleEvents,
-    imageEditorPanelEvents,
-    imageEditorToolEvents
+    imageEditorToolEvents,
+    imageEditorTransformEvents
 } from './image-editor.events';
 import { ImageEditorStore } from './image-editor.store';
 
@@ -46,7 +48,9 @@ describe('ImageEditorStore', () => {
     let injector: Injector;
 
     // Self-dispatching event groups, resolved within the injection context.
-    let panel: ReturnType<typeof injectDispatch<typeof imageEditorPanelEvents>>;
+    let adjust: ReturnType<typeof injectDispatch<typeof imageEditorAdjustEvents>>;
+    let transform: ReturnType<typeof injectDispatch<typeof imageEditorTransformEvents>>;
+    let fileInfo: ReturnType<typeof injectDispatch<typeof imageEditorFileInfoEvents>>;
     let tool: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
     let history: ReturnType<typeof injectDispatch<typeof imageEditorHistoryEvents>>;
     let lifecycle: ReturnType<typeof injectDispatch<typeof imageEditorLifecycleEvents>>;
@@ -85,7 +89,9 @@ describe('ImageEditorStore', () => {
         ) as SpyObject<DotHttpErrorManagerService>;
 
         runInInjectionContext(injector, () => {
-            panel = injectDispatch(imageEditorPanelEvents);
+            adjust = injectDispatch(imageEditorAdjustEvents);
+            transform = injectDispatch(imageEditorTransformEvents);
+            fileInfo = injectDispatch(imageEditorFileInfoEvents);
             tool = injectDispatch(imageEditorToolEvents);
             history = injectDispatch(imageEditorHistoryEvents);
             lifecycle = injectDispatch(imageEditorLifecycleEvents);
@@ -110,7 +116,7 @@ describe('ImageEditorStore', () => {
 
     describe('panel edits', () => {
         it('should clamp and patch brightness and append a history entry', () => {
-            panel.brightnessChanged(150);
+            adjust.brightnessChanged(150);
 
             expect(store.adjust().brightness).toBe(100);
             expect(store.history()).toHaveLength(1);
@@ -122,9 +128,9 @@ describe('ImageEditorStore', () => {
         });
 
         it('should coalesce rapid same-category edits into a single entry', () => {
-            panel.brightnessChanged(10);
-            panel.brightnessChanged(20);
-            panel.saturationChanged(30);
+            adjust.brightnessChanged(10);
+            adjust.brightnessChanged(20);
+            adjust.saturationChanged(30);
 
             expect(store.adjust().brightness).toBe(20);
             expect(store.adjust().saturation).toBe(30);
@@ -133,8 +139,8 @@ describe('ImageEditorStore', () => {
         });
 
         it('should append a new entry when the category changes', () => {
-            panel.brightnessChanged(10);
-            panel.rotateChanged(90);
+            adjust.brightnessChanged(10);
+            transform.rotateChanged(90);
 
             expect(store.history()).toHaveLength(2);
             expect(store.history()[0].category).toBe('adjust');
@@ -144,15 +150,15 @@ describe('ImageEditorStore', () => {
 
         it('should clamp scale and reset crop (resize XOR crop)', () => {
             tool.cropApplied({ x: 0, y: 0, w: 100, h: 100, active: false, aspect: null });
-            panel.scaleChanged(500);
+            transform.scaleChanged(500);
 
             expect(store.transform().scale).toBe(400);
             expect(store.crop().active).toBe(false);
         });
 
         it('should toggle flip flags under the flip category', () => {
-            panel.flipHToggled();
-            panel.flipVToggled();
+            transform.flipHToggled();
+            transform.flipVToggled();
 
             expect(store.transform().flipH).toBe(true);
             expect(store.transform().flipV).toBe(true);
@@ -160,7 +166,7 @@ describe('ImageEditorStore', () => {
         });
 
         it('should set compression under the compression category', () => {
-            panel.compressionChanged('jpeg');
+            fileInfo.compressionChanged('jpeg');
 
             expect(store.fileInfo().compression).toBe('jpeg');
             expect(store.history()[0].category).toBe('compression');
@@ -176,7 +182,7 @@ describe('ImageEditorStore', () => {
         });
 
         it('should apply a crop, reset resize and add a crop entry', () => {
-            panel.scaleChanged(50);
+            transform.scaleChanged(50);
             tool.cropApplied({ x: 10, y: 10, w: 200, h: 150, active: false, aspect: null });
 
             expect(store.crop()).toEqual({
@@ -214,8 +220,8 @@ describe('ImageEditorStore', () => {
 
     describe('history', () => {
         it('should remove a specific edit and recompute slices', () => {
-            panel.brightnessChanged(20);
-            panel.rotateChanged(45);
+            adjust.brightnessChanged(20);
+            transform.rotateChanged(45);
             const rotateId = store.history()[1].id;
 
             history.editRemoved({ id: rotateId });
@@ -226,9 +232,9 @@ describe('ImageEditorStore', () => {
         });
 
         it('should keep the head on the correct entry when a middle edit is removed', () => {
-            panel.brightnessChanged(20);
-            panel.rotateChanged(45);
-            panel.saturationChanged(30);
+            adjust.brightnessChanged(20);
+            transform.rotateChanged(45);
+            adjust.saturationChanged(30);
 
             // Step the head back to the rotate entry, then remove the older
             // brightness entry so the removed index sits before the head.
@@ -252,8 +258,8 @@ describe('ImageEditorStore', () => {
         });
 
         it('should undo and redo edits', () => {
-            panel.brightnessChanged(20);
-            panel.rotateChanged(45);
+            adjust.brightnessChanged(20);
+            transform.rotateChanged(45);
 
             history.undoRequested();
             expect(store.historyIndex()).toBe(0);
@@ -270,7 +276,7 @@ describe('ImageEditorStore', () => {
         });
 
         it('should not undo past the start nor redo past the end', () => {
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
 
             history.undoRequested();
             history.undoRequested();
@@ -282,8 +288,8 @@ describe('ImageEditorStore', () => {
         });
 
         it('should reset everything', () => {
-            panel.brightnessChanged(20);
-            panel.rotateChanged(45);
+            adjust.brightnessChanged(20);
+            transform.rotateChanged(45);
 
             history.resetRequested();
 
@@ -299,7 +305,7 @@ describe('ImageEditorStore', () => {
             expect(store.canUndo()).toBe(false);
             expect(store.canRedo()).toBe(false);
 
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             expect(store.canUndo()).toBe(true);
             expect(store.canRedo()).toBe(false);
 
@@ -310,13 +316,13 @@ describe('ImageEditorStore', () => {
 
         it('isDirty becomes true only with a non-empty filter chain', () => {
             expect(store.isDirty()).toBe(false);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             expect(store.isDirty()).toBe(true);
         });
 
         it('isBusy reflects loading/saving status', () => {
             expect(store.isBusy()).toBe(false);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             expect(store.isBusy()).toBe(true);
 
             lifecycle.previewLoaded();
@@ -326,7 +332,7 @@ describe('ImageEditorStore', () => {
         it('canSave requires loaded preview, not saving and dirty', () => {
             expect(store.canSave()).toBe(false);
 
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             expect(store.canSave()).toBe(false); // still loading
 
             lifecycle.previewLoaded();
@@ -356,7 +362,7 @@ describe('ImageEditorStore', () => {
             lifecycle.assetRequested(OPEN_PARAMS);
             const before = store.previewUrl();
 
-            panel.brightnessChanged(40);
+            adjust.brightnessChanged(40);
             const after = store.previewUrl();
 
             expect(after).not.toBe(before);
@@ -370,8 +376,8 @@ describe('ImageEditorStore', () => {
             service.getFileSize.mockClear();
             service.getFileSize.mockReturnValue(of(4242));
 
-            panel.brightnessChanged(10);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(10);
+            adjust.brightnessChanged(20);
 
             jest.advanceTimersByTime(250);
 
@@ -396,7 +402,7 @@ describe('ImageEditorStore', () => {
     describe('save', () => {
         it('success sets the saved temp file and saved status', () => {
             lifecycle.assetRequested(OPEN_PARAMS);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             lifecycle.saveRequested();
 
             expect(service.saveEditedImage).toHaveBeenCalled();
@@ -418,7 +424,7 @@ describe('ImageEditorStore', () => {
 
         it('does not persist the focal point when inactive', () => {
             lifecycle.assetRequested(OPEN_PARAMS);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             lifecycle.saveRequested();
 
             expect(service.persistFocalPoint).not.toHaveBeenCalled();
@@ -429,7 +435,7 @@ describe('ImageEditorStore', () => {
             service.saveEditedImage.mockReturnValue(throwError(() => error));
 
             lifecycle.assetRequested(OPEN_PARAMS);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
             lifecycle.saveRequested();
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
@@ -442,7 +448,7 @@ describe('ImageEditorStore', () => {
             service.saveEditedImage.mockReturnValue(inFlight.asObservable());
 
             lifecycle.assetRequested(OPEN_PARAMS);
-            panel.brightnessChanged(20);
+            adjust.brightnessChanged(20);
 
             lifecycle.saveRequested();
             expect(store.saveStatus()).toBe('saving');

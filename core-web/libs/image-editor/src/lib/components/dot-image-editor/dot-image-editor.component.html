@@ -1,16 +1,15 @@
-<div class="flex h-full flex-col overflow-hidden bg-white" data-testid="image-editor-root">
-    <header class="shrink-0 border-b border-gray-200 px-4 py-3">
+<div class="image-editor" data-testid="image-editor-root">
+    <header class="image-editor__header border-b border-gray-200 px-4 py-3">
         <dot-image-editor-header (close)="requestClose()" />
     </header>
 
-    <div class="flex min-h-0 flex-1">
-        <dot-image-editor-canvas class="min-w-0 flex-1" />
-        <aside class="w-80 shrink-0 overflow-y-auto border-l border-gray-200">
-            <dot-image-editor-panels />
-        </aside>
-    </div>
+    <dot-image-editor-canvas class="image-editor__canvas" />
 
-    <footer class="shrink-0 border-t border-gray-200 px-4 py-3">
+    <aside class="image-editor__panels overflow-y-auto border-l border-gray-200">
+        <dot-image-editor-panels />
+    </aside>
+
+    <footer class="image-editor__footer border-t border-gray-200 px-4 py-3">
         <dot-image-editor-footer (cancel)="requestClose()" />
     </footer>
 </div>

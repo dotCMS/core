@@ -1,16 +1,19 @@
 <p-accordion
     [multiple]="true"
-    [value]="['adjust', 'transform', 'fileinfo', 'history']"
+    [value]="openPanels()"
+    (valueChange)="onOpenPanelsChange($event)"
     transitionOptions="200ms cubic-bezier(0.86, 0, 0.07, 1)">
     <p-accordion-panel value="adjust" data-testid="image-editor-panel-adjust">
         <p-accordion-header>
-            <span class="flex items-center gap-2">
-                <i class="pi pi-sliders-h"></i>
-                <span class="flex flex-col">
-                    <span class="font-semibold">
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="pi pi-sliders-h"></i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
                         {{ 'edit.content.image-editor.panel.adjust.title' | dm }}
                     </span>
-                    <span class="text-color-secondary text-sm">
+                    <span class="ie-panel-head__subtitle">
                         {{ 'edit.content.image-editor.panel.adjust.subtitle' | dm }}
                     </span>
                 </span>
@@ -23,13 +26,15 @@
 
     <p-accordion-panel value="transform" data-testid="image-editor-panel-transform">
         <p-accordion-header>
-            <span class="flex items-center gap-2">
-                <i class="pi pi-arrows-alt"></i>
-                <span class="flex flex-col">
-                    <span class="font-semibold">
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="pi pi-arrows-alt"></i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
                         {{ 'edit.content.image-editor.panel.transform.title' | dm }}
                     </span>
-                    <span class="text-color-secondary text-sm">
+                    <span class="ie-panel-head__subtitle">
                         {{ 'edit.content.image-editor.panel.transform.subtitle' | dm }}
                     </span>
                 </span>
@@ -42,13 +47,15 @@
 
     <p-accordion-panel value="fileinfo" data-testid="image-editor-panel-fileinfo">
         <p-accordion-header>
-            <span class="flex items-center gap-2">
-                <i class="pi pi-file"></i>
-                <span class="flex flex-col">
-                    <span class="font-semibold">
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="pi pi-file"></i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
                         {{ 'edit.content.image-editor.panel.fileinfo.title' | dm }}
                     </span>
-                    <span class="text-color-secondary text-sm">
+                    <span class="ie-panel-head__subtitle">
                         {{ 'edit.content.image-editor.panel.fileinfo.subtitle' | dm }}
                     </span>
                 </span>
@@ -61,13 +68,15 @@
 
     <p-accordion-panel value="history" data-testid="image-editor-panel-history">
         <p-accordion-header>
-            <span class="flex items-center gap-2">
-                <i class="pi pi-history"></i>
-                <span class="flex flex-col">
-                    <span class="font-semibold">
+            <span class="ie-panel-head">
+                <span class="ie-panel-head__icon">
+                    <i class="pi pi-history"></i>
+                </span>
+                <span class="ie-panel-head__titles">
+                    <span class="ie-panel-head__title">
                         {{ 'edit.content.image-editor.panel.history.title' | dm }}
                     </span>
-                    <span class="text-color-secondary text-sm">
+                    <span class="ie-panel-head__subtitle">
                         {{ 'edit.content.image-editor.panel.history.subtitle' | dm }}
                     </span>
                 </span>

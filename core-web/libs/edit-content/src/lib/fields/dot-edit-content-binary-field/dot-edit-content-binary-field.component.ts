@@ -63,7 +63,7 @@ import { getFileMetadata, getUiMessage } from './utils/binary-field-utils';
 
 import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-import { AngularImageEditorLauncher, IMAGE_EDITOR_LAUNCHER } from '../shared/image-editor-launcher';
+import { IMAGE_EDITOR_LAUNCHER } from '../shared/image-editor-launcher';
 
 export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     ...DEFAULT_MONACO_CONFIG,
@@ -99,7 +99,6 @@ type SystemOptionsType = {
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
-        { provide: IMAGE_EDITOR_LAUNCHER, useClass: AngularImageEditorLauncher },
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -121,7 +120,10 @@ export class DotEditContentBinaryFieldComponent
     readonly #dotAiService = inject(DotAiService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER);
+    // Optional: the launcher is provided by the Angular edit-content shell, so the new
+    // image editor only activates there. When absent (e.g. a non-Angular host), or when
+    // isAvailable() is false, `onEditImage()` safely no-ops.
+    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
 
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
@@ -399,12 +401,18 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
+        const launcher = this.#imageEditorLauncher;
+
+        if (!launcher?.isAvailable()) {
+            return;
+        }
+
         const inode = this.contentlet?.inode;
         const metadata = this.contentlet
             ? (getFileMetadata(this.contentlet) as Partial<DotFileMetadata>)
             : null;
 
-        this.#imageEditorLauncher
+        launcher
             .open({
                 inode,
                 tempId: this.tempId,

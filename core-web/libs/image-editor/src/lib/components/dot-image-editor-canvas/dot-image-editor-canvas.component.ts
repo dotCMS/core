@@ -38,11 +38,13 @@ const ZOOM_DEFAULT = 100;
 
 /**
  * Dark stage that renders the live image preview at the center of the editor.
- * Hosts the address sub-bar, the floating tool rail and the crop/focal overlays,
- * and owns three pieces of local UI state the store does not: a two-layer image
- * crossfade between successive previews, the rendered image's bounding rect
- * (measured for the overlays), and the display-only zoom level. Preview loading
- * outcomes are reported back to the store via {@link imageEditorLifecycleEvents}.
+ * Hosts the top address sub-bar, the floating tool rail, the crop/focal overlays,
+ * and a persistent bottom footer band that mirrors the address bar and surfaces
+ * the active tool's actions (apply/cancel for crop, set/cancel for focal). Owns
+ * three pieces of local UI state the store does not: a two-layer image crossfade
+ * between successive previews, the rendered image's bounding rect (measured for
+ * the overlays), and the display-only zoom level. Preview loading outcomes are
+ * reported back to the store via {@link imageEditorLifecycleEvents}.
  */
 @Component({
     selector: 'dot-image-editor-canvas',
@@ -69,6 +71,11 @@ export class DotImageEditorCanvasComponent {
     protected readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
     /** The currently displayed image, observed to recompute its rendered rect. */
     protected readonly displayImg = viewChild<ElementRef<HTMLImageElement>>('displayImg');
+
+    /** The crop overlay, so the footer can apply or cancel the active crop. */
+    protected readonly cropOverlay = viewChild(DotImageEditorCropOverlayComponent);
+    /** The focal overlay, so the footer can set or cancel the active focal point. */
+    protected readonly focalOverlay = viewChild(DotImageEditorFocalOverlayComponent);
 
     /** URL of the last successfully loaded preview, shown on the bottom layer. */
     protected readonly displayedUrl = signal<string>('');
@@ -129,6 +136,26 @@ export class DotImageEditorCanvasComponent {
     /** Requests a fresh preview after a render error. */
     protected retry(): void {
         this.#dispatch.retryRequested();
+    }
+
+    /** Applies the active crop via the crop overlay from the footer action. */
+    protected applyCrop(): void {
+        this.cropOverlay()?.applyCrop();
+    }
+
+    /** Cancels the active crop via the crop overlay from the footer action. */
+    protected cancelCrop(): void {
+        this.cropOverlay()?.cancelCrop();
+    }
+
+    /** Sets the active focal point via the focal overlay from the footer action. */
+    protected setFocalPoint(): void {
+        this.focalOverlay()?.setFocalPoint();
+    }
+
+    /** Cancels the active focal point via the focal overlay from the footer action. */
+    protected cancelFocalPoint(): void {
+        this.focalOverlay()?.cancelFocalPoint();
     }
 
     /** Increases the zoom by one step, clamped to the maximum. */

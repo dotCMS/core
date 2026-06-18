@@ -22,6 +22,7 @@
             <img
                 #displayImg
                 class="canvas__img canvas__img--displayed"
+                [class.canvas__img--loading]="store.previewStatus() === 'loading'"
                 [src]="displayedUrl()"
                 [hidden]="!displayedUrl()"
                 alt=""
@@ -64,6 +65,36 @@
                     (onClick)="retry()"
                     data-testid="image-editor-retry-btn" />
             </div>
+        }
+    </div>
+
+    <!-- Bottom band mirroring the top address bar; hosts the active tool's actions. -->
+    <div class="canvas__footer" data-testid="image-editor-canvas-footer">
+        @switch (store.activeTool()) {
+            @case ('crop') {
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [label]="'edit.content.image-editor.crop.cancel' | dm"
+                    (onClick)="cancelCrop()"
+                    data-testid="image-editor-crop-cancel-btn" />
+                <p-button
+                    [label]="'edit.content.image-editor.crop.apply' | dm"
+                    (onClick)="applyCrop()"
+                    data-testid="image-editor-crop-apply-btn" />
+            }
+            @case ('focal') {
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [label]="'edit.content.image-editor.focal.cancel' | dm"
+                    (onClick)="cancelFocalPoint()"
+                    data-testid="image-editor-focal-cancel-btn" />
+                <p-button
+                    [label]="'edit.content.image-editor.focal.set' | dm"
+                    (onClick)="setFocalPoint()"
+                    data-testid="image-editor-focal-set-btn" />
+            }
         }
     </div>
 </div>
