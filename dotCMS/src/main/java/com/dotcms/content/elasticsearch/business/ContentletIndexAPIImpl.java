@@ -640,22 +640,50 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     /**
-     * Create an index exclusively in one of the SE Providers
-     * @param indexName
-     * @param shards
-     * @param tag
-     * @return
-     * @throws IOException
+     * Create an index exclusively in one of the SE Providers.
+     *
+     * <p><b>Idempotent bootstrap.</b> If the physical index already exists in the target
+     * cluster it is reused instead of issuing a create. This guards against an orphaned
+     * cluster index — present in the cluster but missing from the index store — left behind
+     * when a previous bootstrap created the index but never committed its store pointer
+     * (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted startup).
+     * Without this guard the restart re-derives the same logical name, the create fails with
+     * {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts — leaving
+     * the instance half-initialised. The custom mapping is (re)applied either way
+     * ({@code putMapping} is additive/idempotent), so a previously unmapped orphan is repaired,
+     * and the caller's {@code point()} re-registers the index in the store.</p>
+     *
+     * @param indexName logical index name (no cluster prefix, no vendor tag)
+     * @param shards    number of shards to create with (ignored when the index already exists)
+     * @param tag       target provider ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @return {@code true} when the index exists (reused) or was created successfully
+     * @throws IOException on a hard creation failure
      */
     private boolean createContentIndex(final String indexName, final int shards, IndexTag tag)
             throws IOException {
         final MappingHelper helper = MappingHelper.getInstance();
+        final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
 
         ContentletIndexOperations ops = router.esImpl();
+        IndexAPI providerApi = impl.esImpl();
         if(tag == IndexTag.OS) {
            ops = router.osImpl();
+           providerApi = impl.osImpl();
         }
         final String physicalName = ops.toPhysicalName(indexName);
+
+        // Reuse an orphaned cluster index rather than failing the create (see method javadoc).
+        final IndexAPI finalProviderApi = providerApi;
+        final boolean alreadyExists = Try.of(() -> finalProviderApi.indexExists(physicalName))
+                .getOrElse(false);
+        if (alreadyExists) {
+            Logger.info(this, String.format(
+                    "Bootstrap: %s index already exists, reusing and re-asserting mapping: %s",
+                    tag, physicalName));
+            helper.addCustomMapping(List.of(indexName), tag);
+            return true;
+        }
+
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
         if (contentIndex) {
             helper.addCustomMapping(List.of(indexName), tag);
