@@ -30,11 +30,14 @@ import type { Element } from 'domhandler';
 const COLOR_PROPS = new Set(['color', 'background', 'background-color', 'border-color', 'fill']);
 
 /**
- * Dynamic pseudo-classes and pseudo-elements a lone element can't satisfy.
- * Stripped before the match test, but KEPT in the returned selector string.
+ * State pseudo-classes and pseudo-elements that represent a NON-resting state.
+ * A selector containing any of these is EXCLUDED from attribution: the scanner
+ * measures contrast in the element's default/resting state, so `a:focus`,
+ * `.btn:hover`, `::before` etc. are not the rule that produced the flagged
+ * value. (Matching them was the bug — `a:focus` outranked the real resting `a`.)
  */
-const DYNAMIC_PSEUDOS =
-    /::?(hover|focus|active|visited|focus-within|focus-visible|before|after)\b(\([^)]*\))?/g;
+const STATE_OR_PSEUDO_ELEMENT =
+    /::?(hover|focus|active|visited|focus-within|focus-visible|target|before|after|placeholder|selection|first-line|first-letter|link)\b/i;
 
 /** A single color-related CSS rule (one selector, split from comma groups). */
 export interface CssRule {
@@ -116,12 +119,9 @@ function hasCombinator(selector: string): boolean {
     return /[\s>+~]/.test(stripped.trim());
 }
 
-/**
- * Normalize for matching: drop dynamic pseudos a lone element can't satisfy
- * (`:hover/:focus/:active/::before` …), keeping the rest of the structure.
- */
-function matchable(selector: string): string {
-    return selector.replace(DYNAMIC_PSEUDOS, '').trim();
+/** True if the selector targets a non-resting state (so it's not what axe flagged). */
+function isStateSelector(selector: string): boolean {
+    return STATE_OR_PSEUDO_ELEMENT.test(selector);
 }
 
 /**
@@ -143,12 +143,13 @@ export function attribute(elementHtml: string, rules: CssRule[]): CssRule[] {
         if (hasCombinator(r.selector)) {
             return false;
         }
-        const sel = matchable(r.selector);
-        if (!sel) {
-            return false; // was purely a pseudo (e.g. "::before") — skip
+        // Exclude non-resting-state rules (:hover/:focus/::before …): the scanner
+        // measures the resting state, so these are not the flagged rule.
+        if (isStateSelector(r.selector)) {
+            return false;
         }
         try {
-            return cssIs(el, sel);
+            return cssIs(el, r.selector);
         } catch {
             return false; // unsupported selector syntax
         }

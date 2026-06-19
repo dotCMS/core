@@ -88,16 +88,19 @@ describe('css-attribution — deterministic color-rule attribution (no LLM)', ()
             expect(matched.map((r) => r.selector)).toEqual(['.button-primary']);
         });
 
-        it('strips dynamic pseudos for matching but keeps them in the selector', () => {
-            const css = `.button-primary:focus { color: #fff; }`;
-            const matched = attribute('<a class="button-primary">x</a>', parseColorRules(css));
-
-            expect(matched).toHaveLength(1);
-            // :focus stripped only for the match test — the returned selector is intact.
-            expect(matched[0].selector).toBe('.button-primary:focus');
+        it('EXCLUDES state-pseudo rules (the scanner measures the resting state)', () => {
+            // :focus/:hover/:active are not the resting state axe flagged — they must
+            // NOT be attributed (this was the bug: a:focus outranked the resting a).
+            const css = `
+                a:focus { color: #fff; }
+                a:hover { color: #111; }
+                a { color: #e76300; }
+            `;
+            const matched = attribute('<a class="btn">x</a>', parseColorRules(css));
+            expect(matched.map((r) => r.selector)).toEqual(['a']); // only the resting rule
         });
 
-        it('skips selectors that are purely a pseudo-element', () => {
+        it('skips pseudo-element selectors (::before/::after)', () => {
             const css = `::before { color: #fff; } .button-primary { color: #000; }`;
             const matched = attribute('<a class="button-primary">x</a>', parseColorRules(css));
 
