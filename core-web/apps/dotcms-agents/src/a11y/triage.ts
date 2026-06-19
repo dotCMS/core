@@ -152,6 +152,7 @@ Decide fixability, the target file (a candidate path or null), whether the offen
 
     const { output, usage } = await generateText({
         model,
+        maxOutputTokens: 2048, // a triage decision is small; cap to stop runaway generation
         output: Output.object({ schema: TriageDecisionSchema }),
         system: TRIAGE_SYSTEM,
         messages: [
@@ -241,6 +242,7 @@ Produce the minimal edited file that clears this violation.`;
 
     const { output, usage } = await generateText({
         model,
+        maxOutputTokens: 8192, // returns the full edited file; generous but bounded
         output: Output.object({ schema: FixOutputSchema }),
         system: FIX_SYSTEM,
         prompt
@@ -298,6 +300,7 @@ Change the "${input.property}" value (currently ${input.currentValue}) to clear 
 
     const { output, usage } = await generateText({
         model,
+        maxOutputTokens: 2048, // just {oldValue,newValue,property,…}; tight cap (Kimi over-generated to 24k)
         output: Output.object({ schema: ColorFixSchema }),
         system: COLOR_FIX_SYSTEM,
         prompt

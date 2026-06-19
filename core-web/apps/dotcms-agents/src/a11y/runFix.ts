@@ -176,8 +176,44 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     const results: FixResult[] = [];
     const editedPaths = new Set<string>();
 
+    // A single CSS edit (a shared rule/token) often clears MANY violations at once.
+    // So we skip any violation that a previous edit already resolved: after each
+    // successful edit we re-scan, and a finding whose (code+selector) no longer
+    // appears in the fresh EDIT_MODE scan is counted as cleared — no second edit,
+    // no wasted re-scan. `liveSignatures` tracks what's still failing.
+    const sig = (f: ScanFinding) => `${f.code}|${f.selector}`;
+    let liveSignatures = new Set(violations.map(sig));
+    // Running EDIT_MODE baseline — drops as edits clear violations, so each fix's
+    // revert guard compares against the current state, not the original page.
+    let runningBaseline = countViolations(baselineScan);
+    // Rule codes we have actually edited a source for. A collateral clear is only
+    // CREDIBLE for the SAME code (a contrast edit can clear other contrast
+    // violations via a shared rule, but it cannot fix heading-order/link-name —
+    // those disappearing between scans is scan variance, not our doing).
+    const editedCodes = new Set<string>();
+
     for (const finding of violations) {
-        const res = await processViolation({
+        // No longer present in the latest re-scan. Only credit it as fixed if we
+        // edited a source for this SAME rule code; otherwise it vanished for
+        // reasons we can't claim (scan variance) → report honestly.
+        if (!liveSignatures.has(sig(finding))) {
+            if (editedCodes.has(finding.code)) {
+                results.push({
+                    ruleId: finding.code,
+                    status: 'fixed-to-working',
+                    reason: 'Cleared by an earlier fix to a shared rule/variable.'
+                });
+            } else {
+                results.push({
+                    ruleId: finding.code,
+                    status: 'reported',
+                    reason: 'No longer detected after fixes (not attributable to an edit; scan variance).'
+                });
+            }
+            continue;
+        }
+
+        const ctx: ProcessCtx = {
             finding,
             req,
             deps,
@@ -187,9 +223,22 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             editedPaths,
             caps,
             editModeUrl: editMode,
-            baselineViolations: countViolations(baselineScan)
-        });
+            baselineViolations: runningBaseline
+        };
+        const res = await processViolation(ctx);
         results.push(res);
+
+        // An applied edit already triggered ONE re-scan inside saveAndRescan
+        // (the revert guard). Reuse THAT scan — no extra scan — to refresh which
+        // violations remain (so a shared-rule edit that cleared many is reflected)
+        // and to carry the new baseline forward.
+        if (res.status === 'fixed-to-working' && res.file && ctx.lastScan) {
+            editedCodes.add(finding.code);
+            liveSignatures = new Set(
+                ctx.lastScan.findings.items.filter(isViolation).map(sig)
+            );
+            runningBaseline = countViolations(ctx.lastScan);
+        }
     }
 
     // Final re-scan for the human-facing "after" — one EDIT_MODE scan after all edits.
@@ -234,6 +283,10 @@ interface ProcessCtx {
     caps: RunFixCaps;
     editModeUrl: string;
     baselineViolations: number;
+    /** Set by saveAndRescan: the fresh EDIT_MODE scan taken after the edit (kept or
+     * reverted). The main loop reuses it to refresh which violations remain — so a
+     * shared-rule edit that clears many violations costs ONE re-scan, not N. */
+    lastScan?: ScanResult;
 }
 
 /** Route a violation to the deterministic CSS path or the LLM-driven VTL path. */
@@ -494,6 +547,7 @@ async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult
             };
         }
         ctx.baselineViolations = after;
+        ctx.lastScan = rescan; // main loop reuses this to skip collateral-cleared violations
     } catch (e) {
         return {
             ...base,
