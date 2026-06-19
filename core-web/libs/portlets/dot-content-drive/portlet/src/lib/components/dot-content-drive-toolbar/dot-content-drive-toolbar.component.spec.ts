@@ -266,9 +266,9 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
         });
 
-        it('should emit addNewDotAsset when the upload button is clicked', () => {
+        it('should emit upload when the upload button is clicked', () => {
             const emitSpy = jest.fn();
-            spectator.component.$addNewDotAsset.subscribe(emitSpy);
+            spectator.component.$upload.subscribe(emitSpy);
 
             const uploadButton = spectator
                 .query(byTestId('upload-asset-button'))

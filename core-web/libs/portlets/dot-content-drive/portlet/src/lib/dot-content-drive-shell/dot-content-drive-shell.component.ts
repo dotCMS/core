@@ -49,6 +49,7 @@ import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } fro
 
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -66,7 +67,9 @@ import {
     DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
     DotContentDriveSortOrder,
-    DotContentDriveStatus
+    DotContentDriveStatus,
+    DotContentDriveUploadSelection,
+    DotContentDriveUploadSelectorPayload
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
@@ -84,6 +87,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         DialogModule,
         DotContentDriveDialogFolderComponent,
         DotContentDriveDialogContentTypeSelectorComponent,
+        DotContentDriveDialogUploadSelectorComponent,
         MessageModule,
         ButtonModule,
         DotMessagePipe,
@@ -147,15 +151,37 @@ export class DotContentDriveShellComponent implements OnInit {
             : undefined;
     });
 
+    /** Payload (target folder + optional dropped files) for the upload-type selector dialog. */
+    readonly $uploadSelectorPayload = computed<DotContentDriveUploadSelectorPayload | undefined>(
+        () => {
+            const dialog = this.$activeDialog();
+
+            return dialog?.type === DIALOG_TYPE.UPLOAD_SELECTOR
+                ? (dialog.payload as DotContentDriveUploadSelectorPayload)
+                : undefined;
+        }
+    );
+
+    /**
+     * Holds the selection emitted by the upload dialog while the OS file picker is open (Upload-button
+     * flow only). The dropped-files flow uploads immediately and never sets this.
+     */
+    readonly $activeSelection = signal<DotContentDriveUploadSelection | undefined>(undefined);
+
     /**
      * Content-type selector: sized to fit ~4 UVE-width cards per row. No horizontal padding so
      * the paginator/footer separators span edge-to-edge; the list and footer add their own inset.
      */
-    readonly $dialogContentClass = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
-            ? 'w-[min(92vw,38rem)] px-0! pt-0 pb-4'
-            : 'w-[43.75rem] pt-0 p-4'
-    );
+    readonly $dialogContentClass = computed(() => {
+        switch (this.$activeDialog()?.type) {
+            case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
+                return 'w-[min(92vw,38rem)] px-0! pt-0 pb-4';
+            case DIALOG_TYPE.UPLOAD_SELECTOR:
+                return 'w-[min(92vw,31.25rem)] pt-0 p-4';
+            default:
+                return 'w-[43.75rem] pt-0 p-4';
+        }
+    });
 
     /**
      * Syncs the dialog open/close state from the store. Opening sets the body and visibility
@@ -347,26 +373,72 @@ export class DotContentDriveShellComponent implements OnInit {
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
-    protected onAddNewDotAsset() {
+    /**
+     * Upload-button flow: prompt for the asset type first; the OS file picker opens later, once the
+     * user confirms a type in {@link onUploadTypeSelected}.
+     */
+    protected onUpload() {
+        this.openUploadSelector({ targetFolder: this.#store.selectedNode()?.data });
+    }
+
+    /**
+     * Drag-and-drop / sidebar flow: the files are already known, so prompt for the asset type and
+     * carry the files into the dialog payload to upload right after the user confirms.
+     */
+    protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+        this.openUploadSelector({ targetFolder, files });
+    }
+
+    /**
+     * Opens the upload-type selector dialog (Asset vs File).
+     */
+    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload) {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.UPLOAD_SELECTOR,
+            header: this.#dotMessageService.get('content-drive.dialog.upload-selector.header'),
+            payload
+        });
+    }
+
+    /**
+     * Handles the asset-type choice emitted by the upload selector dialog.
+     * - Drag-and-drop: the files are already in the selection, so upload immediately.
+     * - Upload button: stash the selection and open the OS file picker; {@link onFileChange}
+     *   completes the upload once files are chosen.
+     */
+    protected onUploadTypeSelected(selection: DotContentDriveUploadSelection) {
+        this.#store.closeDialog();
+
+        if (selection.files?.length) {
+            this.resolveFilesUpload(selection);
+
+            return;
+        }
+
+        this.$activeSelection.set(selection);
         this.$fileInput().nativeElement.click();
     }
 
     /**
-     * Handles file change event
+     * Handles file change event (Upload-button flow): merges the chosen files into the pending
+     * selection and triggers the upload with the previously chosen content type.
      * @param event The event that triggered the file change
      */
     protected onFileChange(event: Event) {
         const input = event.target as HTMLInputElement;
 
         const files = input.files;
+        const selection = this.$activeSelection();
 
-        if (!files || files.length === 0) {
+        // Always reset so a cancelled/re-opened picker can't reuse a stale selection.
+        this.$activeSelection.set(undefined);
+        input.value = '';
+
+        if (!files || files.length === 0 || !selection) {
             return;
         }
 
-        const targetFolder = this.#store.selectedNode()?.data;
-
-        this.resolveFilesUpload({ files, targetFolder });
+        this.resolveFilesUpload({ ...selection, files });
     }
 
     /**
@@ -386,26 +458,34 @@ export class DotContentDriveShellComponent implements OnInit {
 
     /**
      * Resolves the upload of multiple files or a single file
-     * @param files The files to upload
+     * @param selection The chosen content type, target folder and files to upload
      */
-    protected resolveFilesUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected resolveFilesUpload({
+        files,
+        targetFolder,
+        contentType
+    }: DotContentDriveUploadSelection) {
+        if (!files?.length) {
+            return;
+        }
+
         if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder });
+            this.uploadFiles({ files, targetFolder, contentType });
 
             return;
         }
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolder, contentType });
     }
 
     /**
      * Shows a warning message when multiple files are uploaded
      *
      * @protected
-     * @param {FileList} files
+     * @param {DotContentDriveUploadSelection} selection
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFiles({ files, targetFolder, contentType }: DotContentDriveUploadSelection) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -413,38 +493,46 @@ export class DotContentDriveShellComponent implements OnInit {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolder, contentType });
     }
 
     /**
      * Uploads a file to the content drive
-     * @param file The file to upload
+     * @param selection The chosen content type, target folder and files to upload
      */
-    protected uploadFile({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFile({ files, targetFolder, contentType }: DotContentDriveUploadSelection) {
+        if (!files?.length) {
+            return;
+        }
+
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        this.uploadDotAsset(files[0], targetFolder);
+        this.uploadDotAsset(files[0], targetFolder, contentType);
     }
 
     /**
-     * Uploads a file to the content drive
+     * Uploads a file to the content drive as the given content type (`dotAsset` or `FileAsset`).
      *
      * @protected
      * @param {File} file
-     * @param {string} hostFolder
+     * @param {DotFolderTreeNodeData} [hostFolder]
+     * @param {string} [contentType]
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadDotAsset(file: File, hostFolder: DotFolderTreeNodeData) {
+    protected uploadDotAsset(file: File, hostFolder?: DotFolderTreeNodeData, contentType?: string) {
         this.#fileService
-            .uploadDotAsset(file, {
-                baseType: 'dotAsset',
-                hostFolder: hostFolder?.id,
-                indexPolicy: 'WAIT_FOR'
-            })
+            .uploadDotAsset(
+                file,
+                {
+                    hostFolder: hostFolder?.id ?? '',
+                    indexPolicy: 'WAIT_FOR'
+                },
+                contentType
+            )
             .subscribe({
                 next: ({ title, contentType }) => {
                     this.#messageService.add({
