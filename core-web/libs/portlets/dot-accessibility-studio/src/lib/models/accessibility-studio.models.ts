@@ -29,6 +29,8 @@ export interface StudioPageRow {
     /** Content type / base type label, e.g. "htmlpageasset", "Blog". */
     type: string;
     languageId: number;
+    /** Host identifier — used as `host_id` to disambiguate the page render. */
+    hostId: string;
     hostName: string;
     /** Human-formatted last-edited date. */
     modDate: string;
