@@ -299,13 +299,15 @@ public class PageRenderUtil implements Serializable {
                     // Archived (deleted) content keeps its working version, so a showLive=false
                     // lookup (EDIT/PREVIEW modes) still resolves it. Skip it in every mode so that
                     // archived content never renders on the page, consistent with LIVE-mode behavior.
+                    // A DotSecurityException here is a genuine access-control failure and must NOT be
+                    // swallowed as "probably archived" -- let it propagate to the caller.
                     try {
                         if (nonHydratedContentlet.isArchived()) {
                             Logger.debug(this, () -> "Skipping archived contentlet: "
                                     + nonHydratedContentlet.getIdentifier());
                             continue;
                         }
-                    } catch (final DotStateException | DotDataException | DotSecurityException e) {
+                    } catch (final DotStateException | DotDataException e) {
                         Logger.warn(this, "Could not determine archived state for contentlet '"
                                 + nonHydratedContentlet.getIdentifier() + "'; skipping it", e);
                         continue;
