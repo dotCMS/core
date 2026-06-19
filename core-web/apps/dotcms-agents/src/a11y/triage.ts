@@ -161,7 +161,15 @@ Decide fixability, the target file (a candidate path or null), whether the offen
                     {
                         type: 'text',
                         text: filesContext,
-                        providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } }
+                        // Anthropic prompt caching only — the `anthropic`-namespaced option is
+                        // meaningless (and can trip the parser) on other providers like OpenRouter.
+                        ...(DEFAULT_PROVIDER === 'anthropic'
+                            ? {
+                                  providerOptions: {
+                                      anthropic: { cacheControl: { type: 'ephemeral' as const } }
+                                  }
+                              }
+                            : {})
                     }
                 ]
             },
