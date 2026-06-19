@@ -16,7 +16,23 @@
    force font-size 0.875rem on many controls. Tailwind v4 emits prose +
    utilities inside @layer, so unlayered author CSS beats them regardless of
    specificity. These (unlayered) rules match that priority, then revert-layer
-   falls back to prose/utilities. */
+   falls back to prose/utilities.
+
+   PrimeNG widgets are excluded: PrimeNG's theme is injected UNLAYERED (no
+   `cssLayer` configured), so `.p-button` (0,1,0) already out-specifies JSP's
+   `button` (0,0,1) and wins on its own. It never needed this defense — and
+   reverting its padding/margin/font-size would roll back to Tailwind preflight
+   (0) and strip its design tokens. `[class~="p-component"]` is PrimeNG's host
+   marker on every widget root; the `, [class~="p-component"] *` also excludes
+   everything inside it (labels, icons, inner controls). A token match (`~=`)
+   avoids the `[class*="p-"]` trap of also matching Tailwind's `p-4` utility.
+
+   SPECIFICITY IS LOAD-BEARING: the exclusion is wrapped in `:where()` (which
+   contributes ZERO specificity) so the whole rule stays at (0,1,1) — high enough
+   to beat JSP's element selectors (0,0,1), but BELOW this file's own component
+   rules like `.tiptap { padding }` (0,2,0). Without `:where()`, each bare
+   `:not([class~=…])` would add (0,1,0), pushing the rule past our own styles and
+   reverting the editor's own padding/spacing to nothing. */
 :host(dotcms-block-editor) {
     display: block;
     font-family:
@@ -32,7 +48,9 @@
     color: #1f2937;
 }
 
-:host(dotcms-block-editor) ::ng-deep * {
+:host(dotcms-block-editor)
+    ::ng-deep
+    *:not(:where([class~='p-component'], [class~='p-component'] *)) {
     margin: revert-layer;
     padding: revert-layer;
     font-size: revert-layer;
