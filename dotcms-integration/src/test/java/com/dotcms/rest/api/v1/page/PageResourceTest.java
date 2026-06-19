@@ -780,11 +780,11 @@ public class PageResourceTest {
         APILocator.getVersionableAPI().setWorking(newTemplate);
         APILocator.getVersionableAPI().setLive(newTemplate);
 
-        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageAsset.getInode(), systemUser, false);
+        final Contentlet checkout = APILocator.getContentletAPI().checkout(pageAsset.getInode(), systemUser, false);
         checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
-        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+        APILocator.getContentletAPI().checkin(checkout, systemUser, false);
 
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());

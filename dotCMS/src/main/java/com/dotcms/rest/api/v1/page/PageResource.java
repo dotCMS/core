@@ -87,6 +87,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -1036,32 +1037,43 @@ public class PageResource {
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
             final List<String> contentletIdList = containerEntry.getContentIds();
             for (final String contentletId : contentletIdList) {
+
+                if (!UtilMethods.isSet(contentletId)) {
+                    throw new BadRequestException("A contentlet identifier is required for the container");
+                }
+
                 final Contentlet contentlet;
                 try {
-                    // Archived content no longer resolves via the standard lookup below (it excludes
-                    // deleted versions) and would otherwise fail the save with a 400. A page that
-                    // still references archived content (e.g. a stale editor model) must remain
-                    // saveable so the content can be removed. Skip archived contentlets.
-                    final Contentlet anyVersion = APILocator.getContentletAPI()
-                            .findContentletByIdentifierAnyLanguage(contentletId, true);
-                    if (null != anyVersion && anyVersion.isArchived()) {
-                        Logger.warn(this, "Skipping archived contentlet in page content save: " + contentletId);
-                        continue;
-                    }
-
+                    // This lookup excludes deleted (archived) versions, so it throws for archived
+                    // content. We treat "archived" and "does not exist" identically -- both are
+                    // skipped silently -- so a page that still references archived content stays
+                    // saveable (the archived content is simply not persisted) and we avoid leaking
+                    // whether a given identifier exists. See issue #35993.
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
-                    if (null == contentlet) {
+                } catch (final DotContentletStateException e) {
+                    Logger.warn(this, String.format(
+                            "Skipping contentlet '%s' on page content save (archived or not found): %s",
+                            contentletId, e.getMessage()));
+                    continue;
+                } catch (final DotDataException e) {
+                    // Full details are logged server-side only; the client gets a generic message
+                    // so internal identifiers / SQL fragments are not leaked in the response.
+                    Logger.error(this, String.format(
+                            "Error validating contentlet '%s' on page content save: %s",
+                            contentletId, e.getMessage()), e);
+                    throw new BadRequestException("Error validating contentlet: " + contentletId);
+                }
 
-                        throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
-                    }
+                if (null == contentlet) {
+                    Logger.warn(this, "Skipping contentlet '" + contentletId
+                            + "' on page content save: working version not found");
+                    continue;
+                }
 
-                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
-
-                        throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
-                    }
-                } catch (final DotDataException | DotSecurityException e) {
-
-                    throw new BadRequestException(e, e.getMessage());
+                if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT)
+                        && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+                    throw new BadRequestException("The content type assigned to contentlet '"
+                            + contentletId + "' is not valid for the container");
                 }
             }
         }
