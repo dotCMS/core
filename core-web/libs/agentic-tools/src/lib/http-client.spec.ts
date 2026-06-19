@@ -24,20 +24,26 @@ function getRequestMethod(adapter: Adapter): AdapterMethod {
 /** Build a Response-like stub backed by a fixed body buffer. */
 function makeResponse(
     body: Buffer | string,
-    { contentType, ok = true, status = 200, statusText = 'OK' }: {
+    { contentType, ok = true, status = 200, statusText = 'OK', contentLength }: {
         contentType: string;
         ok?: boolean;
         status?: number;
         statusText?: string;
+        // Override the Content-Length header independently of the actual body —
+        // lets us simulate a server that advertises an oversized response.
+        contentLength?: string;
     }
 ): Response {
-    const buffer =
-        typeof body === 'string' ? Buffer.from(body, 'utf-8') : body;
+    const buffer = typeof body === 'string' ? Buffer.from(body, 'utf-8') : body;
+    const headerValues: Record<string, string | null> = {
+        'content-type': contentType,
+        'content-length': contentLength ?? String(buffer.byteLength)
+    };
     return {
         ok,
         status,
         statusText,
-        headers: { get: (name: string) => (name.toLowerCase() === 'content-type' ? contentType : null) },
+        headers: { get: (name: string) => headerValues[name.toLowerCase()] ?? null },
         json: async () => JSON.parse(buffer.toString('utf-8')),
         text: async () => buffer.toString('utf-8'),
         arrayBuffer: async () =>
@@ -133,5 +139,61 @@ describe('createApiAdapter response parsing', () => {
         await expect(getRequestMethod(adapter).execute({ path: '/dA/missing' })).rejects.toThrow(
             'HTTP 404 Not Found: <html>Not Found</html>'
         );
+    });
+
+    it('rejects an oversized binary response via Content-Length before buffering', async () => {
+        const oversized = String(26 * 1024 * 1024); // 26MB > 25MB cap
+        const arrayBuffer = jest.fn();
+        fetchMock.mockResolvedValue({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                get: (name: string) =>
+                    name.toLowerCase() === 'content-type'
+                        ? 'application/octet-stream'
+                        : name.toLowerCase() === 'content-length'
+                          ? oversized
+                          : null
+            },
+            arrayBuffer
+        } as unknown as Response);
+
+        const adapter = createApiAdapter(CONFIG);
+        await expect(getRequestMethod(adapter).execute({ path: '/dA/huge' })).rejects.toThrow(
+            'exceeds the'
+        );
+        // The body must never be buffered when Content-Length already exceeds the cap.
+        expect(arrayBuffer).not.toHaveBeenCalled();
+    });
+
+    describe('isBinaryResponseEnvelope', () => {
+        it('accepts a fully-formed envelope', () => {
+            expect(
+                isBinaryResponseEnvelope({
+                    __dotcmsBinary: true,
+                    contentType: 'image/png',
+                    base64: 'AA==',
+                    byteLength: 1
+                })
+            ).toBe(true);
+        });
+
+        it('rejects an envelope missing contentType or byteLength', () => {
+            expect(isBinaryResponseEnvelope({ __dotcmsBinary: true, base64: 'AA==' })).toBe(false);
+            expect(
+                isBinaryResponseEnvelope({
+                    __dotcmsBinary: true,
+                    base64: 'AA==',
+                    contentType: 'image/png'
+                })
+            ).toBe(false);
+        });
+
+        it('rejects non-envelope values', () => {
+            expect(isBinaryResponseEnvelope(null)).toBe(false);
+            expect(isBinaryResponseEnvelope('string')).toBe(false);
+            expect(isBinaryResponseEnvelope({ hello: 'world' })).toBe(false);
+        });
     });
 });

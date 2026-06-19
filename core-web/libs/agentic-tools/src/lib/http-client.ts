@@ -65,11 +65,15 @@ export interface BinaryResponseEnvelope {
  * a binary body and `Buffer.from(envelope.base64, 'base64')` to recover the bytes.
  */
 export function isBinaryResponseEnvelope(value: unknown): value is BinaryResponseEnvelope {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+    const obj = value as Record<string, unknown>;
     return (
-        typeof value === 'object' &&
-        value !== null &&
-        (value as Record<string, unknown>).__dotcmsBinary === true &&
-        typeof (value as Record<string, unknown>).base64 === 'string'
+        obj.__dotcmsBinary === true &&
+        typeof obj.base64 === 'string' &&
+        typeof obj.contentType === 'string' &&
+        typeof obj.byteLength === 'number'
     );
 }
 
@@ -97,6 +101,15 @@ async function readBinaryResponse(
     response: Response,
     contentType: string
 ): Promise<BinaryResponseEnvelope> {
+    // Reject early via Content-Length so we never buffer an oversized body into
+    // memory. The header can be absent or lie, so the post-read check below stays
+    // as the authoritative backstop.
+    const declaredLength = Number(response.headers.get('content-length'));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_BINARY_RESPONSE_BYTES) {
+        throw new Error(
+            `Binary response (${declaredLength} bytes) exceeds the ${MAX_BINARY_RESPONSE_BYTES}-byte limit`
+        );
+    }
     const buffer = await response.arrayBuffer();
     if (buffer.byteLength > MAX_BINARY_RESPONSE_BYTES) {
         throw new Error(
