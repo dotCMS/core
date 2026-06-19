@@ -146,8 +146,10 @@ describe('runFix loop guards (plan §5)', () => {
             scans: [
                 makeScan(12, [makeFinding(), makeFinding({ code: 'link-name' })]), // live: 2 violations
                 makeScan(12), // baseline
-                makeScan(11), // re-scan after fix 1
-                makeScan(10), // re-scan after fix 2
+                // re-scan after fix 1 still shows the 2nd (link-name) violation, so the
+                // loop does NOT treat it as collateral-cleared and proceeds to fix it.
+                makeScan(11, [makeFinding({ code: 'link-name' })]),
+                makeScan(10, [makeFinding({ code: 'link-name' })]), // re-scan after fix 2
                 makeScan(10) // final
             ]
         });
