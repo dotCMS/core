@@ -1,0 +1,139 @@
+<div class="mx-auto w-full max-w-[1120px] px-8 py-12">
+    <!-- Header -->
+    <header class="mb-6 flex items-center gap-3">
+        <span
+            class="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-contrast">
+            <i class="pi pi-eye text-2xl!" aria-hidden="true"></i>
+        </span>
+        <div>
+            <h1 class="m-0 text-xl font-extrabold tracking-tight text-gray-900">
+                {{ 'accessibility.studio.title' | dm }}
+            </h1>
+            <p class="m-0 mt-0.5 text-sm text-gray-500">
+                {{ 'accessibility.studio.picker.subtitle' | dm }}
+            </p>
+        </div>
+    </header>
+
+    <!-- Search -->
+    <p-iconField iconPosition="left" class="block">
+        <p-inputIcon styleClass="pi pi-search" />
+        <input
+            pInputText
+            type="text"
+            [ngModel]="store.filter()"
+            (ngModelChange)="onSearch($event)"
+            [placeholder]="'accessibility.studio.picker.search.placeholder' | dm"
+            [attr.aria-label]="'accessibility.studio.picker.search.placeholder' | dm"
+            data-testid="studio-search-input"
+            class="h-13 w-full" />
+    </p-iconField>
+
+    <!-- Result count -->
+    <div class="mt-4 mb-2.5 flex items-center gap-2 px-0.5">
+        <span class="text-xs font-semibold text-gray-500" data-testid="studio-result-count">
+            {{
+                'accessibility.studio.picker.count'
+                    | dm: [store.pages().length.toString(), store.totalRecords().toString()]
+            }}
+        </span>
+        <span class="ml-auto inline-flex items-center gap-1.5 text-xs text-gray-400">
+            <i class="pi pi-sort-amount-down text-sm!" aria-hidden="true"></i>
+            {{ 'accessibility.studio.picker.sorted' | dm }}
+        </span>
+    </div>
+
+    <!-- Pages table -->
+    <div
+        class="overflow-hidden rounded-2xl border border-surface-200"
+        data-testid="studio-pages-wrapper">
+        <p-table
+            [value]="store.pages()"
+            [lazy]="true"
+            (onLazyLoad)="onLazyLoad($event)"
+            [paginator]="store.totalRecords() > store.rows()"
+            [rows]="store.rows()"
+            [totalRecords]="store.totalRecords()"
+            [first]="(store.page() - 1) * store.rows()"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [rowHover]="true"
+            [pt]="$ptConfig()"
+            dataKey="identifier"
+            data-testid="studio-pages-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="w-[26%]">{{ 'accessibility.studio.picker.col.title' | dm }}</th>
+                    <th class="w-[28%]">{{ 'accessibility.studio.picker.col.url' | dm }}</th>
+                    <th class="w-[16%]">{{ 'accessibility.studio.picker.col.type' | dm }}</th>
+                    <th class="w-[12%]">{{ 'accessibility.studio.picker.col.status' | dm }}</th>
+                    <th class="w-[18%]">
+                        {{ 'accessibility.studio.picker.col.edited' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-row>
+                @if (store.pickerStatus() === 'loading') {
+                    <tr data-testid="studio-loading-row" class="h-14 hover:bg-transparent!">
+                        <td><p-skeleton height="1.25rem" width="80%" /></td>
+                        <td><p-skeleton height="1.25rem" width="90%" /></td>
+                        <td><p-skeleton height="1.25rem" width="60%" /></td>
+                        <td><p-skeleton height="1.25rem" width="70%" /></td>
+                        <td><p-skeleton height="1.25rem" width="60%" /></td>
+                    </tr>
+                } @else {
+                    <tr
+                        data-testid="studio-page-row"
+                        class="cursor-pointer"
+                        (click)="openPage(row)">
+                        <td
+                            class="truncate font-semibold text-gray-900"
+                            data-testid="studio-page-title">
+                            {{ row.title }}
+                        </td>
+                        <td class="truncate text-gray-500">{{ row.path }}</td>
+                        <td class="truncate text-gray-500">{{ row.type }}</td>
+                        <td>
+                            @if (row.live) {
+                                <p-tag
+                                    [value]="'accessibility.studio.picker.status.published' | dm"
+                                    severity="success"
+                                    [rounded]="true" />
+                            } @else {
+                                <p-tag
+                                    [value]="'accessibility.studio.picker.status.draft' | dm"
+                                    severity="warn"
+                                    [rounded]="true" />
+                            }
+                        </td>
+                        <td class="text-gray-500">{{ row.modDate }}</td>
+                    </tr>
+                }
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+                <tr class="hover:bg-transparent!">
+                    <td colspan="5" class="border-none p-12 text-center">
+                        <div
+                            class="mx-auto flex max-w-100 flex-col items-center gap-3"
+                            data-testid="studio-empty-state">
+                            <i
+                                class="pi pi-search text-5xl! text-surface-400"
+                                aria-hidden="true"></i>
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'accessibility.studio.picker.empty.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-base leading-6 text-gray-500">
+                                {{ 'accessibility.studio.picker.empty.description' | dm }}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <p class="mt-4 text-center text-xs text-gray-400">
+        {{ 'accessibility.studio.picker.hint' | dm }}
+    </p>
+</div>

@@ -1,5 +1,6 @@
 .env
-/libs/agentic-tools/src/generated
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+.angular
