@@ -661,20 +661,39 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private boolean createContentIndex(final String indexName, final int shards, IndexTag tag)
             throws IOException {
-        final MappingHelper helper = MappingHelper.getInstance();
         final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
 
-        ContentletIndexOperations ops = router.esImpl();
-        IndexAPI providerApi = impl.esImpl();
-        if(tag == IndexTag.OS) {
-           ops = router.osImpl();
-           providerApi = impl.osImpl();
-        }
+        final ContentletIndexOperations ops = tag == IndexTag.OS ? router.osImpl() : router.esImpl();
+        final IndexAPI providerApi = tag == IndexTag.OS ? impl.osImpl() : impl.esImpl();
+
+        return createContentIndex(indexName, shards, tag, ops, providerApi,
+                MappingHelper.getInstance());
+    }
+
+    /**
+     * Idempotent-bootstrap core of {@link #createContentIndex(String, int, IndexTag)}, with the
+     * provider collaborators injected so the orphan-reuse decision can be unit-tested without a
+     * running cluster or the {@link MappingHelper} singleton. See the public-facing overload's
+     * javadoc for the behaviour contract.
+     *
+     * @param indexName   logical index name (no cluster prefix, no vendor tag)
+     * @param shards      number of shards to create with (ignored when the index already exists)
+     * @param tag         target provider ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param ops         vendor write operations for {@code tag} (creation + physical-name mapping)
+     * @param providerApi vendor index API for {@code tag} (existence probe)
+     * @param helper      mapping helper used to (re)assert the custom mapping
+     * @return {@code true} when the index exists (reused) or was created successfully
+     * @throws IOException on a hard creation failure
+     */
+    boolean createContentIndex(final String indexName, final int shards, final IndexTag tag,
+            final ContentletIndexOperations ops, final IndexAPI providerApi,
+            final MappingHelper helper) throws IOException {
         final String physicalName = ops.toPhysicalName(indexName);
 
         // Reuse an orphaned cluster index rather than failing the create (see method javadoc).
-        final IndexAPI finalProviderApi = providerApi;
-        final boolean alreadyExists = Try.of(() -> finalProviderApi.indexExists(physicalName))
+        // The existence probe is best-effort: any failure is treated as "does not exist" so we
+        // fall through to the create path rather than aborting bootstrap on a transient error.
+        final boolean alreadyExists = Try.of(() -> providerApi.indexExists(physicalName))
                 .getOrElse(false);
         if (alreadyExists) {
             Logger.info(this, String.format(
