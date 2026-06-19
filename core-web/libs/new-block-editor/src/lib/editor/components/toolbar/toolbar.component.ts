@@ -52,7 +52,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStore);
     protected readonly store = inject(EditorStore);
-    private readonly popovers = inject(EditorPopoverService);
+    protected readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentletEditUrl = inject(ContentletEditUrlService);
     private readonly confirmationService = inject(ConfirmationService);
