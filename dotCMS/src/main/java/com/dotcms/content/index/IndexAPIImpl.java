@@ -131,7 +131,29 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public boolean optimize(final List<String> indexNames) {
-        return router.read(impl -> impl.optimize(indexNames));
+        // Tag-dispatch: each index name declares its owning provider via its vendor tag
+        // (OS names carry the .os suffix; untagged names are legacy ES). The list handed in
+        // comes from getIndices(), which in dual-write phases aggregates BOTH providers, so a
+        // mixed list (ES bare names + OS .os-tagged names) routed to a single provider via
+        // router.read() would hit index_not_found_exception on the foreign-tagged names —
+        // the exact Phase 2 optimize misrouting reported against the /optimize endpoint.
+        // Force-merge each provider only with the names it actually holds; skip a provider
+        // when its subset is empty so Phase 0 never contacts OS and Phase 3 never contacts ES.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return true;
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        boolean result = true;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            result &= router.esImpl().optimize(esNames);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            result &= router.osImpl().optimize(osNames);
+        }
+        return result;
     }
 
     @Override
