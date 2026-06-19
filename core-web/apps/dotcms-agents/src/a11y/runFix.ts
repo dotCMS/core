@@ -78,12 +78,14 @@ function scanUrls(req: FixRequest): { live: string; editMode: string } {
     return { live, editMode };
 }
 
-/** Candidate source refs from /_render-sources: theme VTL/CSS/JS + container VTLs. */
+/** Candidate source refs from /_render-sources: theme VTL/CSS + container VTLs.
+ * JS is intentionally excluded for now — the agent does not edit JavaScript, and
+ * theme JS bundles are large and dominate token cost. JS-injected DOM issues are
+ * handled via report-only triage. */
 function collectCandidates(sources: RenderSources): SourceRef[] {
     const refs: SourceRef[] = [
         ...(sources.theme?.vtls ?? []),
-        ...(sources.theme?.css ?? []),
-        ...(sources.theme?.js ?? []),
+        ...(sources.theme?.css ?? [])
     ];
     for (const container of Object.values(sources.containers ?? {})) {
         for (const ct of container.contentTypes ?? []) {
