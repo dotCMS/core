@@ -9,7 +9,7 @@
     <p-card class="flex-1">
         <div class="mb-1 flex items-center justify-between">
             <p class="m-0 text-2xl font-bold text-red-700">
-                {{ a11yData().findings?.byType?.errors ?? 0 }}
+                {{ errorCount() }}
             </p>
             <span class="material-symbols-outlined text-red-500">cancel</span>
         </div>
@@ -18,20 +18,11 @@
     <p-card class="flex-1">
         <div class="mb-1 flex items-center justify-between">
             <p class="m-0 text-2xl font-bold text-yellow-600">
-                {{ a11yData().findings?.byType?.warnings ?? 0 }}
+                {{ warningCount() }}
             </p>
             <span class="material-symbols-outlined text-yellow-500">warning</span>
         </div>
         <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.warnings' | dm }}</p>
-    </p-card>
-    <p-card class="flex-1">
-        <div class="mb-1 flex items-center justify-between">
-            <p class="m-0 text-2xl font-bold text-blue-700">
-                {{ a11yData().findings?.byType?.notices ?? 0 }}
-            </p>
-            <span class="material-symbols-outlined text-blue-500">info</span>
-        </div>
-        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.notices' | dm }}</p>
     </p-card>
 </div>
 
@@ -50,21 +41,9 @@
                         <div class="flex w-full items-center justify-between gap-2 pr-4">
                             <div class="flex items-center gap-4">
                                 <dot-color-icon
-                                    [color]="
-                                        group.type === 'error'
-                                            ? 'red'
-                                            : group.type === 'warning'
-                                              ? 'yellow'
-                                              : 'blue'
-                                    ">
+                                    [color]="group.type === 'error' ? 'red' : 'yellow'">
                                     <span class="material-symbols-outlined">
-                                        {{
-                                            group.type === 'error'
-                                                ? 'cancel'
-                                                : group.type === 'warning'
-                                                  ? 'warning'
-                                                  : 'info'
-                                        }}
+                                        {{ group.type === 'error' ? 'cancel' : 'warning' }}
                                     </span>
                                 </dot-color-icon>
 
@@ -72,35 +51,38 @@
                                     <span class="text-lg font-semibold text-gray-900">
                                         {{ group.code }}
                                     </span>
-                                    <p-chip
-                                        [pt]="{
-                                            label: 'text-sm font-normal text-gray-700'
-                                        }"
-                                        [dt]="{
-                                            root: {
-                                                paddingX: '0.5rem',
-                                                paddingY: '0.1rem'
-                                            }
-                                        }"
-                                        [style]="
-                                            group.impact === 'critical' ||
-                                            group.impact === 'serious'
-                                                ? {
-                                                      '--p-chip-background': 'var(--p-red-100)',
-                                                      '--p-chip-color': 'var(--p-red-700)'
-                                                  }
-                                                : group.impact === 'moderate'
-                                                  ? {
-                                                        '--p-chip-background':
-                                                            'var(--p-yellow-100)',
-                                                        '--p-chip-color': 'var(--p-yellow-700)'
-                                                    }
-                                                  : {
-                                                        '--p-chip-background': 'var(--p-blue-100)',
-                                                        '--p-chip-color': 'var(--p-blue-700)'
-                                                    }
-                                        "
-                                        [label]="group.impact" />
+                                    @if (group.impact) {
+                                        <p-chip
+                                            [pt]="{
+                                                label: 'text-sm font-normal text-gray-700'
+                                            }"
+                                            [dt]="{
+                                                root: {
+                                                    paddingX: '0.5rem',
+                                                    paddingY: '0.1rem'
+                                                }
+                                            }"
+                                            [style]="
+                                                group.impact === 'critical' ||
+                                                group.impact === 'serious'
+                                                    ? {
+                                                          '--p-chip-background': 'var(--p-red-100)',
+                                                          '--p-chip-color': 'var(--p-red-700)'
+                                                      }
+                                                    : group.impact === 'moderate'
+                                                      ? {
+                                                            '--p-chip-background':
+                                                                'var(--p-yellow-100)',
+                                                            '--p-chip-color': 'var(--p-yellow-700)'
+                                                        }
+                                                      : {
+                                                            '--p-chip-background':
+                                                                'var(--p-blue-100)',
+                                                            '--p-chip-color': 'var(--p-blue-700)'
+                                                        }
+                                            "
+                                            [label]="group.impact" />
+                                    }
                                 </div>
                             </div>
                             <span class="text-sm font-normal text-gray-700">
