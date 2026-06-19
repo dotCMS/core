@@ -11,11 +11,15 @@ import type { ScanFinding, SourceRef } from './dotcms-client';
  *   1. triage + attribution — classify a violation and pick the source file
  *   2. minimal-diff generation — rewrite that file to clear the violation
  *
- * The model is injected (default Anthropic Opus) so it's mockable in tests and
+ * The model is injected (default Anthropic Sonnet) so it's mockable in tests and
  * the provider stays swappable per plan §3 (Azure/Bedrock/dotAI later).
+ *
+ * Cost note: triage classification + minimal diffs do NOT need a frontier model.
+ * Opus cost ~$12 for a single page in testing; Sonnet is the default. Override
+ * per-deploy with A11Y_AGENT_MODEL (any Anthropic model id) without code changes.
  */
 
-export const DEFAULT_MODEL = 'claude-opus-4-8';
+export const DEFAULT_MODEL = process.env.A11Y_AGENT_MODEL ?? 'claude-sonnet-4-6';
 
 export function defaultModel(): LanguageModel {
     return anthropic(DEFAULT_MODEL);
@@ -69,7 +73,13 @@ export async function triageViolation(
         })
         .join('\n\n');
 
-    const prompt = `Violation (axe rule "${input.finding.code}", impact ${
+    // The candidate-files block is identical for every violation in a run, so we
+    // mark it ephemeral-cacheable: Anthropic prompt caching makes the repeated
+    // (and large — full CSS/VTL) prefix ~10x cheaper after the first call. The
+    // per-violation details go in a separate, uncached user message.
+    const filesContext = `Candidate source files for the page being fixed:\n\n${candidatesBlock}`;
+
+    const violationPrompt = `Violation (axe rule "${input.finding.code}", impact ${
         input.finding.runnerExtras?.impact ?? 'unknown'
     }):
 - message: ${input.finding.message}
@@ -78,16 +88,25 @@ export async function triageViolation(
 
 skipCss is ${input.skipCss ? 'TRUE — treat CSS/contrast issues as report-only' : 'false'}.
 
-Candidate source files:
-${candidatesBlock}
-
 Decide fixability, the target file (a candidate path or null), whether the offending markup is actually present in that file (evidenceFound), and a short reason.`;
 
     const { output } = await generateText({
         model,
         output: Output.object({ schema: TriageDecisionSchema }),
         system: TRIAGE_SYSTEM,
-        prompt
+        messages: [
+            {
+                role: 'user',
+                content: [
+                    {
+                        type: 'text',
+                        text: filesContext,
+                        providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } }
+                    }
+                ]
+            },
+            { role: 'user', content: violationPrompt }
+        ]
     });
 
     // Deterministic guard: honor skipCss even if the model ignored it.
