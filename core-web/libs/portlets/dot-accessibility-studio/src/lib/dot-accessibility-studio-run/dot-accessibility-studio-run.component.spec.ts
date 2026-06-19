@@ -15,6 +15,7 @@ const MOCK_PAGE: StudioPageRow = {
     path: '/about-us',
     type: 'htmlpageasset',
     languageId: 1,
+    hostId: 'host-id-1',
     hostName: 'demo.dotcms.com',
     modDate: '04/09/2026',
     modUserName: 'Admin User',
@@ -169,11 +170,12 @@ describe('DotAccessibilityStudioRunComponent', () => {
     describe('preview pane', () => {
         beforeEach(() => render('ready'));
 
-        it('renders the preview iframe with a preview-mode URL', () => {
+        it('renders the preview iframe with a /dot-page edit-mode URL', () => {
             const iframe = spectator.query(byTestId('studio-preview-iframe'));
             expect(iframe).toBeTruthy();
-            expect(iframe?.getAttribute('src')).toContain('/about-us');
-            expect(iframe?.getAttribute('src')).toContain('mode=PREVIEW_MODE');
+            expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
+            expect(iframe?.getAttribute('src')).toContain('host_id=host-id-1');
+            expect(iframe?.getAttribute('src')).toContain('mode=EDIT_MODE');
         });
     });
 

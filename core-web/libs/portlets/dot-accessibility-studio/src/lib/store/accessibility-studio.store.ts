@@ -87,6 +87,7 @@ function toPageRow(content: DotCMSContentlet): StudioPageRow {
         path: content.url ?? content['urlMap'] ?? '',
         type: content.contentType,
         languageId: content.languageId,
+        hostId: content.host,
         hostName: content.hostName,
         modDate: content.modDate,
         modUserName: content.modUserName,

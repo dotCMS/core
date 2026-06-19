@@ -178,14 +178,21 @@ export class DotAccessibilityStudioRunComponent {
         }
     });
 
-    /** Preview URL for the iframe — the page path in preview mode (read-only render). */
+    /**
+     * Preview URL for the iframe — the page rendered in EDIT_MODE (§8.2).
+     * Prefixed with the `/dot-page` sentinel so it loads same-origin: in dev the
+     * proxy strips the prefix and forwards to the BE page renderer (see
+     * apps/dotcms-ui/proxy-dev.conf.mjs); in prod the portlet is served from the
+     * BE origin so the proxy rewrite is equivalent. `host_id` disambiguates which
+     * site's copy renders; EDIT_MODE is the working-version render the agent re-scans.
+     */
     readonly previewUrl = computed(() => {
         const page = this.store.selected();
         if (!page) {
             return '';
         }
         const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
-        return `${path}?language_id=${page.languageId}&mode=PREVIEW_MODE`;
+        return `/dot-page${path}?host_id=${page.hostId}&language_id=${page.languageId}&mode=EDIT_MODE`;
     });
 
     backToPicker(): void {
