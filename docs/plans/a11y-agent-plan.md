@@ -157,10 +157,14 @@ JSON response instead of SSE — see §8 naming note.*
      if not (deep nesting, JS-injected DOM, cascade ambiguity) → report, don't guess-edit.
 4. **READ** — `GET /api/v2/assets?path=...` (PR #36112) → raw VTL **or CSS** (`.css`/
    `.dotsass`) for each source ref tied to a fixable violation.
-5. **FIX-TO-WORKING** — **refuse-if-dirty first:** if the asset's working version already
-   differs from live (someone has unpublished edits), **skip it and report `skipped`** —
-   don't clobber in-progress work (§12). Otherwise model produces a minimal diff;
-   `PUT /api/v2/assets/save` (working only). Verify persisted `fileSize`. **Never `/publish`.**
+5. **FIX-TO-WORKING** — model produces a minimal diff; `PUT /api/v2/assets/save` (working
+   only). Verify persisted `fileSize`. **Never `/publish`.** The agent does **not** guard
+   against pre-existing unpublished edits — the goal is to fix the a11y issue, and working-
+   save is non-destructive (dotCMS keeps per-asset version history, §3), so overwriting an
+   in-progress working edit is acceptable and recoverable. (An earlier "refuse-if-dirty"
+   guard was **removed** — it misfired on the agent's *own* in-run edits: the second
+   violation in a file saw working≠live from the first fix and skipped. The loop now keeps
+   one progressively-improved working copy per file; later violations build on earlier edits.)
    Do **not fabricate semantic content** — generic alt/ARIA can pass axe while being poor
    a11y; report instead.
    For **contrast**: nudge the *existing* color to clear the WCAG threshold (AA 4.5:1 normal
@@ -211,7 +215,8 @@ JSON response instead of SSE — see §8 naming note.*
 
 `status` values: `fixed-to-working` | `reported` | `skipped` | `regressed` | `failed`.
 A `regressed` edit (proven worse by re-scan) is **auto-reverted** to its prior version
-(§5 step 6) — it never lingers on working. `skipped` includes refuse-if-dirty (§5 step 5).
+(§5 step 6) — it never lingers on working. `skipped` is reserved for violations the loop
+chooses not to act on (e.g. cap reached); the refuse-if-dirty use of it was removed (§5 step 5).
 
 ---
 
@@ -585,18 +590,22 @@ Undecided contracts and behaviors the build hits immediately. Each names where t
 Understood, deliberately not built in v1. **Not** open questions (we know the problem) and
 **not** permanent decisions — they are known debt to address before wider rollout.
 
-- **Full concurrency safety — partly in v1, rest MUST FIX before GA.** dotCMS keeps one
-  *working* version per asset per language — a **shared slot**, not a per-run draft. The
-  agent's read→fix→save can **silently clobber** an in-progress human edit or another run
-  (last-write-wins), and the report would still say "fixed." Invisible in a demo; likely in
-  production, since a11y fixes cluster on shared templates — and worse with no rollback (§3).
-  - **In v1 (§5 step 5):** **refuse-if-dirty** — skip + report any asset whose working
-    already differs from live. This neutralizes the scariest case (clobbering a human's
-    unpublished edit) with one cheap pre-write check.
+- **Full concurrency safety — MUST FIX before GA.** dotCMS keeps one *working* version per
+  asset per language — a **shared slot**, not a per-run draft. The agent's read→fix→save can
+  **silently clobber** an in-progress human edit or another run (last-write-wins), and the
+  report would still say "fixed." Invisible in a demo; likely in production, since a11y fixes
+  cluster on shared templates.
+  - **In v1:** explicitly **accepted** — the agent does not guard against pre-existing
+    unpublished edits. Working-save is non-destructive (per-asset version history, §3), so the
+    worst case is recoverable. The earlier "refuse-if-dirty" guard was **removed** because it
+    misfired on the agent's own in-run edits (the second violation in a file saw working≠live
+    from the first fix and skipped), defeating multi-fix files; correctly distinguishing a
+    *human's* edit from the *agent's own* prior edit needs version tracking we don't have in v1.
   - **Deferred (must fix before GA):** the *race* between the agent's own read and write
     (optimistic lock — record the read version, abort + report `failed` if working changed
-    since) and **two concurrent agent runs** on the same shared asset. Until built, **document
-    "don't run concurrent runs."**
+    since), distinguishing a foreign working edit from the agent's own, and **two concurrent
+    agent runs** on the same shared asset. Until built, **document "don't run concurrent runs"
+    and "the agent may overwrite unpublished working edits."**
 
 ---
 

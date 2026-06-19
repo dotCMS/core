@@ -53,7 +53,14 @@ export interface ContainerSource {
 export interface RenderSources {
     containers: Record<string, ContainerSource>;
     page: { identifier: string; languageId: number; uri: string };
-    theme: { folderPath: string; id: string; name: string; vtls: SourceRef[] };
+    theme: {
+        folderPath: string;
+        id: string;
+        name: string;
+        vtls: SourceRef[];
+        css: SourceRef[];
+        js: SourceRef[];
+    };
     widgets: Array<{ contentTypeVar?: string; identifier?: string; path?: string; source?: string }>;
 }
 
