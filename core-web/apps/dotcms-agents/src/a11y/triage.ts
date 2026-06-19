@@ -16,24 +16,25 @@ import type { ScanFinding, SourceRef } from './dotcms-client';
  * env-selectable per plan §3 (provider not locked) — no loop rewrite to swap.
  *
  * Provider/model via env (no code change to retune):
- *   A11Y_AGENT_PROVIDER = "anthropic" (default) | "openrouter"
- *   A11Y_AGENT_MODEL    = model id for that provider
- *                         (default "claude-sonnet-4-6"; for openrouter use a
- *                          fully-qualified id e.g. "anthropic/claude-sonnet-4.5")
+ *   A11Y_AGENT_PROVIDER = "openrouter" (default) | "anthropic"
+ *   A11Y_AGENT_MODEL    = model id for that provider (default depends on provider)
  *   OPENROUTER_KEY / OPENROUTER_API_KEY = key when provider=openrouter
  *
  * Cost note: triage classification + minimal diffs do NOT need a frontier model.
- * Opus cost ~$12 for a single page in testing; Sonnet is the default.
+ * Opus cost ~$12 for a single page in testing. Default is OpenRouter +
+ * moonshotai/kimi-k2.7-code (structured output works; ~11x cheaper than Sonnet).
  */
 
 export type AgentProvider = 'anthropic' | 'openrouter';
 
+// Default to OpenRouter + Kimi K2.7 Code — structured output works and it's ~11x
+// cheaper than Sonnet on the triage/diff calls. Override per-deploy via env.
 export const DEFAULT_PROVIDER: AgentProvider =
-    (process.env.A11Y_AGENT_PROVIDER as AgentProvider) || 'anthropic';
+    (process.env.A11Y_AGENT_PROVIDER as AgentProvider) || 'openrouter';
 
 export const DEFAULT_MODEL =
     process.env.A11Y_AGENT_MODEL ??
-    (DEFAULT_PROVIDER === 'openrouter' ? 'anthropic/claude-sonnet-4.5' : 'claude-sonnet-4-6');
+    (DEFAULT_PROVIDER === 'openrouter' ? 'moonshotai/kimi-k2.7-code' : 'claude-sonnet-4-6');
 
 export function defaultModel(): LanguageModel {
     if (DEFAULT_PROVIDER === 'openrouter') {
