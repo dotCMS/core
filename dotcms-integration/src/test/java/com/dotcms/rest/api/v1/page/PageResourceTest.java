@@ -764,8 +764,8 @@ public class PageResourceTest {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final long languageId = 1L;
 
-        final Structure structure = new StructureDataGen().nextPersisted();
-        final Container localContainer = new ContainerDataGen().withStructure(structure, "")
+        final ContentType containerContentType = new ContentTypeDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withContentType(containerContentType, "")
                 .friendlyName("container-archived-friendly-name").title("container-archived-title")
                 .nextPersisted();
 
