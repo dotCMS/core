@@ -16,6 +16,12 @@ interface RequestOptions {
     body?: unknown;
     formData?: Record<string, FormDataFieldValue>;
     headers?: Record<string, string>;
+    // How to decode the response body. Defaults to content-type auto-detection:
+    // JSON content types are parsed; textual types come back as strings; everything
+    // else (images, fonts, etc.) comes back as a base64 binary envelope so the bytes
+    // survive the JSON.stringify boundary in the consuming sandbox. Set 'base64' to
+    // force the binary path regardless of the declared content-type.
+    responseType?: 'auto' | 'base64';
 }
 
 function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
@@ -34,6 +40,76 @@ function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
 const MAX_REMOTE_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
 // Timeout (ms) for the remote fetch, so a slow/hanging URL cannot stall the host.
 const REMOTE_FILE_FETCH_TIMEOUT_MS = 15000;
+
+// Max size (bytes) for a binary response body returned as a base64 envelope.
+// base64 inflates the payload ~33% and the whole thing flows through
+// JSON.stringify in the consuming sandbox, so large assets can blow up memory
+// and model context — cap it like the upload side already does.
+const MAX_BINARY_RESPONSE_BYTES = 25 * 1024 * 1024; // 25 MB
+
+/**
+ * Tagged envelope returned for non-textual response bodies. The raw bytes are
+ * base64-encoded so they survive the `JSON.stringify` serialization boundary in
+ * `execute.ts` intact — `response.text()` would corrupt any non-UTF-8 byte into
+ * the U+FFFD replacement char. Consumers detect `__dotcmsBinary` and decode.
+ */
+export interface BinaryResponseEnvelope {
+    __dotcmsBinary: true;
+    contentType: string;
+    base64: string;
+    byteLength: number;
+}
+
+/**
+ * Type guard for the binary response envelope. Consumers can use this to detect
+ * a binary body and `Buffer.from(envelope.base64, 'base64')` to recover the bytes.
+ */
+export function isBinaryResponseEnvelope(value: unknown): value is BinaryResponseEnvelope {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        (value as Record<string, unknown>).__dotcmsBinary === true &&
+        typeof (value as Record<string, unknown>).base64 === 'string'
+    );
+}
+
+/**
+ * Decide whether a content-type should be decoded as text. Everything that is
+ * not JSON (handled separately) and not in this textual set is treated as
+ * binary and returned as a base64 envelope.
+ */
+function isTextualContentType(contentType: string): boolean {
+    const ct = contentType.toLowerCase();
+    return (
+        ct.startsWith('text/') ||
+        ct.includes('application/xml') ||
+        ct.includes('application/javascript') ||
+        ct.includes('application/x-www-form-urlencoded') ||
+        ct.includes('+json') ||
+        ct.includes('+xml')
+    );
+}
+
+/**
+ * Read a response body as a base64 binary envelope, enforcing the size cap.
+ */
+async function readBinaryResponse(
+    response: Response,
+    contentType: string
+): Promise<BinaryResponseEnvelope> {
+    const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > MAX_BINARY_RESPONSE_BYTES) {
+        throw new Error(
+            `Binary response (${buffer.byteLength} bytes) exceeds the ${MAX_BINARY_RESPONSE_BYTES}-byte limit`
+        );
+    }
+    return {
+        __dotcmsBinary: true,
+        contentType,
+        base64: Buffer.from(buffer).toString('base64'),
+        byteLength: buffer.byteLength
+    };
+}
 
 /**
  * Validates a user-supplied file URL before fetching it, to mitigate SSRF.
@@ -216,23 +292,30 @@ export function createApiAdapter(config: ApiAdapterConfig): Adapter {
 
             const response = await fetch(url.toString(), fetchOptions);
 
-            // Parse response
+            // Parse response.
             const contentType = response.headers.get('content-type') || '';
-            let data: unknown;
 
-            if (contentType.includes('application/json')) {
-                data = await response.json();
-            } else {
-                data = await response.text();
-            }
-
+            // On error, always read the body as text regardless of the declared
+            // content-type — dotCMS errors come back as HTML/text and we want a
+            // readable message, not a base64 envelope of the error page.
             if (!response.ok) {
+                const errorBody = await response.text();
                 throw new Error(
-                    `HTTP ${response.status} ${response.statusText}: ${typeof data === 'string' ? data : JSON.stringify(data)}`
+                    `HTTP ${response.status} ${response.statusText}: ${errorBody}`
                 );
             }
 
-            return data;
+            const forceBinary = options.responseType === 'base64';
+
+            if (!forceBinary && contentType.includes('application/json')) {
+                return await response.json();
+            }
+            if (!forceBinary && isTextualContentType(contentType)) {
+                return await response.text();
+            }
+            // Non-JSON, non-textual (or explicitly requested): return a base64
+            // envelope so the raw bytes survive JSON.stringify intact.
+            return await readBinaryResponse(response, contentType);
         }
     };
 
