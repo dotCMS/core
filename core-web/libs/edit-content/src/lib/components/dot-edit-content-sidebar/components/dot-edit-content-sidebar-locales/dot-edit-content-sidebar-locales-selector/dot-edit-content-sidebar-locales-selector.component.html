@@ -90,8 +90,9 @@
         <!-- Tabs + Search header -->
         <div class="flex flex-col gap-2 rounded-t-xl bg-surface-100 p-2">
             <!-- SelectButton tabs -->
+
             <p-selectButton
-                styleClass="justify-center  mx-auto!"
+                styleClass="mx-auto"
                 [ngModel]="$activeTab()"
                 (ngModelChange)="setTab($event)"
                 [options]="tabDefs"
@@ -99,7 +100,7 @@
                 data-testid="locale-tabs">
                 <ng-template pTemplate="item" let-item>
                     <div
-                        class="flex items-center justify-center gap-1"
+                        class="flex items-center justify-center gap-2.5"
                         [attr.data-testid]="'tab-' + item.value">
                         <span class="text-sm">{{ item.label | dm }}</span>
                         <p-badge
