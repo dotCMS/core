@@ -521,7 +521,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public synchronized void checkAndInitializeIndex() {
         try {
-            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+            if (isMigrationStarted()) {
                 if (!IndexStartupValidator.validateIndexingConfig()) {
                     if (isMigrationComplete()) {
                         // Phase 3: ES is decommissioned. Rolling back to Phase 0 would route
@@ -561,7 +561,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // the operator restores connectivity/config and restarts, rather than silently
             // coming up broken. Legacy ES-only installs (migration not started) keep the
             // historical best-effort behaviour and still boot.
-            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+            if (isMigrationStarted()) {
                 throw new DotRuntimeException(
                         "Index initialization failed during OpenSearch migration; aborting startup"
                         + " to avoid serving an unfinished index store. Cause: " + e.getMessage(), e);
