@@ -347,102 +347,104 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).' };
     }
 
-    // Find the matched decl whose value == fgColor (editable=fg) or == bgColor
-    // (editable=bg). Ranked by specificity (matches already sorted), first hit wins.
+    // Candidate edits: the decl whose value == fgColor (nudge it against bg) and
+    // the decl whose value == bgColor (nudge against fg). We try BOTH and keep the
+    // first that yields a real fix — so when one side can't be nudged (e.g. white
+    // text against a light bg), we fall back to editing the OTHER side (the bg).
     const sameColor = (a: ReturnType<typeof parseColor>, b: ReturnType<typeof parseColor>) =>
         !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b;
-    let winning: CssRule | undefined;
-    let decl: { prop: string; value: string } | undefined;
-    let counterpart: ReturnType<typeof parseColor> | null = null;
-    outer: for (const rule of matches) {
+    interface Candidate {
+        rule: CssRule;
+        decl: { prop: string; value: string };
+        counterpart: NonNullable<ReturnType<typeof parseColor>>;
+    }
+    const candidates: Candidate[] = [];
+    for (const rule of matches) {
         for (const d of rule.decls) {
             const v = parseColor(d.value);
-            if (sameColor(v, fg)) {
-                winning = rule;
-                decl = d;
-                counterpart = bg;
-                break outer;
-            }
-            if (sameColor(v, bg)) {
-                winning = rule;
-                decl = d;
-                counterpart = fg;
-                break outer;
+            if (sameColor(v, fg) && bg) {
+                candidates.push({ rule, decl: d, counterpart: bg });
+            } else if (sameColor(v, bg) && fg) {
+                candidates.push({ rule, decl: d, counterpart: fg });
             }
         }
     }
-    if (!winning || !decl || !counterpart) {
+    if (candidates.length === 0) {
         return {
             ...base,
             reason: `No matched CSS rule's color equals axe's flagged fg(${data.fgColor})/bg(${data.bgColor}) — the failing color isn't in an attributable rule (likely inherited/inline/computed); reported.`
         };
     }
-    const editable = parseColor(decl.value);
 
-    // Resolve the chosen decl's value position → its SCSS source (via the sourcemap;
-    // lands on the $variable when the value comes from one).
-    const declNode = findNamedColorDeclNode(winning.node, decl.prop, decl.value);
     const map = extractInlineSourceMap(css);
-    const declPos = declNode?.source?.start;
-    if (!map || !declNode || !declPos) {
-        return { ...base, reason: 'No sourcemap / declaration position; cannot locate the SCSS source to edit.' };
-    }
-    const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
-    if (!resolved || resolved.content === undefined) {
-        return { ...base, reason: `Could not map the compiled rule (${winning.selector}) back to its SCSS source.` };
-    }
-
-    const sourcePath = resolveSourcePath(resolved.source, stylesheets[0]);
-    const sourceValue = colorTokenAt(resolved.content, resolved.line, resolved.column);
-    if (!sourceValue) {
-        return { ...base, file: sourcePath, reason: `Resolved ${shortName(sourcePath)}:${resolved.line} but found no color token to edit (indirection); reported.` };
-    }
-
-    if (!editedPaths.has(sourcePath) && editedPaths.size >= caps.maxFiles) {
-        return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
-    }
-
-    // DETERMINISTIC contrast fix — nudge the editable color against its counterpart.
-    step('fix', `Fixing ${finding.code} → ${winning.selector} in ${shortName(sourcePath)}`);
-    if (!editable) {
-        return { ...base, file: sourcePath, reason: `Could not parse the editable color ${decl.value}; reported.` };
+    if (!map) {
+        return { ...base, reason: 'No sourcemap on the stylesheet; cannot locate the SCSS source to edit.' };
     }
     const targetRatio = parseTargetRatio(data.expectedContrastRatio);
-    const fix = nudgeToClear(editable, counterpart, targetRatio);
-    if (!fix) {
-        return {
-            ...base,
-            file: sourcePath,
-            reason: `Cannot reach ${targetRatio}:1 against the counterpart color by nudging ${sourceValue} (needs a design decision); reported.`
-        };
-    }
 
-    // Read the ONE source file (lazy; prefer the sourcemap's embedded content), edit, save.
-    let original = ctx.currentContent[sourcePath] ?? resolved.content;
-    if (ctx.currentContent[sourcePath] === undefined && resolved.content === undefined) {
-        try {
-            original = await client.read(sourcePath);
-        } catch (e) {
-            return { ...base, status: 'failed', file: sourcePath, reason: `read source failed: ${errMsg(e)}` };
+    // Try each candidate; the first that resolves to source AND yields a nudge wins.
+    let lastReason = 'No candidate could be fixed.';
+    for (const cand of candidates) {
+        const editable = parseColor(cand.decl.value);
+        const fix = editable ? nudgeToClear(editable, cand.counterpart, targetRatio) : null;
+        if (!fix) {
+            lastReason = `Cannot reach ${targetRatio}:1 by nudging ${cand.decl.value} (${cand.decl.prop}); trying the counterpart.`;
+            continue; // this side is unfixable (e.g. white) — try the other
         }
-    }
-    if (!original.includes(sourceValue)) {
-        return { ...base, file: sourcePath, reason: `Source value ${sourceValue} not found in ${shortName(sourcePath)}; reported.` };
-    }
-    const edited = replaceFirst(original, sourceValue, fix.newColor);
-    if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
-        return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
+
+        // Resolve this decl's value position → its SCSS source.
+        const declNode = findNamedColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
+        const declPos = declNode?.source?.start;
+        if (!declNode || !declPos) {
+            lastReason = `No declaration position for ${cand.decl.prop}; trying the counterpart.`;
+            continue;
+        }
+        const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
+        if (!resolved || resolved.content === undefined) {
+            lastReason = `Could not map ${cand.rule.selector} (${cand.decl.prop}) to its SCSS source; trying the counterpart.`;
+            continue;
+        }
+        const sourcePath = resolveSourcePath(resolved.source, stylesheets[0]);
+        const sourceValue = colorTokenAt(resolved.content, resolved.line, resolved.column);
+        if (!sourceValue) {
+            lastReason = `Found no editable color token at ${shortName(sourcePath)}:${resolved.line}; trying the counterpart.`;
+            continue;
+        }
+        if (!editedPaths.has(sourcePath) && editedPaths.size >= caps.maxFiles) {
+            return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
+        }
+
+        // Read the ONE source file (lazy; prefer the sourcemap's embedded content).
+        let original = ctx.currentContent[sourcePath] ?? resolved.content;
+        if (ctx.currentContent[sourcePath] === undefined && resolved.content === undefined) {
+            try {
+                original = await client.read(sourcePath);
+            } catch (e) {
+                return { ...base, status: 'failed', file: sourcePath, reason: `read source failed: ${errMsg(e)}` };
+            }
+        }
+        if (!original.includes(sourceValue)) {
+            lastReason = `Source value ${sourceValue} not found in ${shortName(sourcePath)}; trying the counterpart.`;
+            continue;
+        }
+
+        step('fix', `Fixing ${finding.code} → ${cand.rule.selector} (${cand.decl.prop}) in ${shortName(sourcePath)}`);
+        const edited = replaceFirst(original, sourceValue, fix.newColor);
+        if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
+            return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
+        }
+        const diff = `- ${cand.decl.prop}: ${sourceValue}\n+ ${cand.decl.prop}: ${fix.newColor}  (${cand.rule.selector}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
+        return saveAndRescan(ctx, {
+            path: sourcePath,
+            original,
+            edited,
+            diff,
+            blastRadius: 'token',
+            review: `CSS color edit in ${shortName(sourcePath)} — may affect every element using this rule/variable`
+        });
     }
 
-    const diff = `- ${decl.prop}: ${sourceValue}\n+ ${decl.prop}: ${fix.newColor}  (${winning.selector}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
-    return saveAndRescan(ctx, {
-        path: sourcePath,
-        original,
-        edited,
-        diff,
-        blastRadius: 'token',
-        review: `CSS color edit in ${shortName(sourcePath)} — may affect every element using this rule/variable`
-    });
+    return { ...base, reason: `${lastReason} (needs a design decision); reported.` };
 }
 
 /**
