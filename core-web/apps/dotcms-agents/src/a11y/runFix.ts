@@ -1,4 +1,6 @@
 
+import { attribute, parseColorRules, type CssRule } from './css-attribution';
+import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
 import {
     DotcmsClient,
     type RenderSources,
@@ -7,8 +9,11 @@ import {
     type SourceRef
 } from './dotcms-client';
 import {
+    generateColorFix,
     generateFix,
     triageViolation,
+    type ColorFix,
+    type ColorFixInput,
     type FixInput,
     type FixOutput,
     type TriageDecision,
@@ -59,8 +64,10 @@ export interface RunFixDeps {
     onStep?: (phase: string, message: string) => void;
     /** Override the LLM triage call (tests / alternate strategies). */
     triage?: (input: TriageInput, model?: LanguageModel) => Promise<TriageDecision>;
-    /** Override the LLM fix-generation call. */
+    /** Override the LLM (VTL) fix-generation call. */
     fix?: (input: FixInput, model?: LanguageModel) => Promise<FixOutput>;
+    /** Override the LLM color-fix call (CSS path). */
+    colorFix?: (input: ColorFixInput, model?: LanguageModel) => Promise<ColorFix>;
 }
 
 const noop = () => undefined;
@@ -79,18 +86,16 @@ function scanUrls(req: FixRequest): { live: string; editMode: string } {
 }
 
 /**
- * Editable theme source extensions the agent will consider fixing. The theme block
- * returns ALL files; we keep markup (vtl) and stylesheets (css and its preprocessors)
- * and skip everything else. JS is intentionally excluded — the agent does not edit
- * JavaScript and theme JS bundles dominate token cost; JS-injected DOM issues are
- * handled via report-only triage. Images/fonts/etc. are not text-editable.
+ * VTL candidate refs from /_render-sources: theme VTLs + container VTLs only.
+ * This is a SMALL set (~10) — markup the agent may edit for VTL-level violations
+ * (missing alt/aria/lang/labels, heading order). We deliberately do NOT include
+ * stylesheets here: CSS goes through the lazy deterministic path (attribute the
+ * one compiled stylesheet + sourcemap → edit one SCSS source), so the 150+ SCSS
+ * partials are never read or sent to the model (plan §5 READ, S1.5).
  */
-const EDITABLE_THEME_EXTENSIONS = new Set(['vtl', 'css', 'scss', 'sass', 'dotsass', 'less']);
-
-/** Candidate source refs from /_render-sources: editable theme files + container VTLs. */
-function collectCandidates(sources: RenderSources): SourceRef[] {
-    const refs: SourceRef[] = (sources.theme?.files ?? []).filter((f) =>
-        EDITABLE_THEME_EXTENSIONS.has((f.extension ?? '').toLowerCase())
+function collectVtlCandidates(sources: RenderSources): SourceRef[] {
+    const refs: SourceRef[] = (sources.theme?.files ?? []).filter(
+        (f) => (f.extension ?? '').toLowerCase() === 'vtl'
     );
     for (const container of Object.values(sources.containers ?? {})) {
         for (const ct of container.contentTypes ?? []) {
@@ -102,6 +107,27 @@ function collectCandidates(sources: RenderSources): SourceRef[] {
     // De-dup by path.
     const seen = new Set<string>();
     return refs.filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true)));
+}
+
+/** axe rule ids that are governed by CSS (contrast etc.) → the deterministic CSS path. */
+const CSS_RULE_CODES = new Set(['color-contrast', 'color-contrast-enhanced']);
+
+/** Pick the compiled dotCMS stylesheet(s) the page actually loaded (same-origin). */
+function applicableStylesheets(scan: ScanResult, dotcmsBaseUrl: string): string[] {
+    const origin = (() => {
+        try {
+            return new URL(dotcmsBaseUrl).origin;
+        } catch {
+            return '';
+        }
+    })();
+    return (scan.stylesheets ?? []).filter((u) => {
+        try {
+            return new URL(u).origin === origin;
+        } catch {
+            return false;
+        }
+    });
 }
 
 const isViolation = (f: ScanFinding) => f.resultType === 'violation' || f.type === 'error';
@@ -130,25 +156,18 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     step('scan', 'Scanning working baseline');
     const baselineScan = await client.scan(editMode);
 
-    // 2. LOCATE
+    // 2. LOCATE. VTL candidates are a small set (theme + container VTLs); the SCSS
+    // tree is NOT collected — CSS uses the lazy deterministic path (S1.5).
     step('locate', 'Locating page sources');
     const sources = await client.locate(req.page.uri, req.page.hostId);
-    const candidates = collectCandidates(sources);
+    const vtlCandidates = collectVtlCandidates(sources);
+    const stylesheets = applicableStylesheets(liveScan, req.dotcmsBaseUrl);
 
-    // 3. READ candidate sources once. `currentContent` is the single working copy
-    // we progressively improve: each fix builds on the previous edit to the same
-    // file (and triage/fix always see the latest content). We do NOT guard against
-    // pre-existing unpublished edits — the goal is to fix the a11y issue; working-
-    // save is non-destructive (dotCMS keeps per-asset version history, plan §3).
-    step('read', `Reading ${candidates.length} source files`);
+    // `currentContent` is the single progressively-improved working copy per file
+    // (a later violation on the same file builds on the earlier edit). Files are
+    // read LAZILY on first touch — never bulk-read up front. We do not guard
+    // against pre-existing unpublished edits (working-save is non-destructive; §3).
     const currentContent: Record<string, string> = {};
-    for (const ref of candidates) {
-        try {
-            currentContent[ref.path] = await client.read(ref.path);
-        } catch {
-            // Unreadable candidate — skip; triage will treat it as (not read).
-        }
-    }
 
     const violations = liveScan.findings.items
         .filter(isViolation)
@@ -162,7 +181,8 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             finding,
             req,
             deps,
-            candidates,
+            vtlCandidates,
+            stylesheets,
             currentContent,
             editedPaths,
             caps,
@@ -207,7 +227,8 @@ interface ProcessCtx {
     finding: ScanFinding;
     req: FixRequest;
     deps: RunFixDeps;
-    candidates: SourceRef[];
+    vtlCandidates: SourceRef[];
+    stylesheets: string[];
     currentContent: Record<string, string>;
     editedPaths: Set<string>;
     caps: RunFixCaps;
@@ -215,94 +236,251 @@ interface ProcessCtx {
     baselineViolations: number;
 }
 
-/** One violation through triage → guards → fix → save → re-scan → revert. */
+/** Route a violation to the deterministic CSS path or the LLM-driven VTL path. */
 async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
-    const { finding, deps, candidates, currentContent, editedPaths, caps } = ctx;
+    const { finding } = ctx;
+    const isCss = CSS_RULE_CODES.has(finding.code);
+    if (isCss) {
+        if (ctx.req.options.skipCss) {
+            return {
+                ruleId: finding.code,
+                status: 'reported',
+                reason: 'CSS fix skipped per run option (skipCss).'
+            };
+        }
+        return processCssViolation(ctx);
+    }
+    return processVtlViolation(ctx);
+}
+
+/**
+ * CSS path (deterministic, S1.5): attribute against the ONE compiled stylesheet,
+ * map the winning rule's value back to its SCSS source via the sourcemap, edit
+ * only that one source file. The LLM sees only the matched rule (~100 tokens) —
+ * the 150+ SCSS partials are never read or sent.
+ */
+async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
+    const { finding, deps, stylesheets, editedPaths, caps } = ctx;
     const client = deps.client;
     const step = deps.onStep ?? noop;
+    const colorFixFn = deps.colorFix ?? generateColorFix;
     const base: FixResult = { ruleId: finding.code, status: 'reported' };
 
+    if (stylesheets.length === 0) {
+        return { ...base, reason: 'No same-origin stylesheet found on the page to attribute against.' };
+    }
+
+    // Attribute the offending element to a winning rule across the applied sheets.
+    let winning: CssRule | undefined;
+    let css = '';
+    for (const sheet of stylesheets) {
+        try {
+            css = await client.fetchStylesheet(sheet);
+        } catch (e) {
+            return { ...base, status: 'failed', reason: `fetch stylesheet failed: ${errMsg(e)}` };
+        }
+        const matches = attribute(finding.context, parseColorRules(css));
+        if (matches.length) {
+            winning = matches[0];
+            break;
+        }
+    }
+    if (!winning) {
+        return { ...base, reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).' };
+    }
+
+    // The failing color declaration — find the actual postcss decl NODE so we can
+    // use ITS value position (the rule/selector position resolves to the wrong place
+    // through mixins; only the value column traces back to the source $variable).
+    const declNode = findColorDeclNode(winning.node);
+    const decl = winning.decls.find((d) => /color/i.test(d.prop)) ?? winning.decls[0];
+    const ruleText = `${winning.selector} { ${winning.decls.map((d) => `${d.prop}: ${d.value}`).join('; ')} }`;
+
+    const map = extractInlineSourceMap(css);
+    const declPos = declNode?.source?.start;
+    if (!map || !declNode || !declPos) {
+        return { ...base, reason: 'No sourcemap / declaration position; cannot locate the SCSS source to edit.' };
+    }
+    // Map the VALUE position → the SCSS source (lands on the $variable definition
+    // when the value comes from one, e.g. `$primary: #E76300`).
+    const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
+    if (!resolved || resolved.content === undefined) {
+        return { ...base, reason: `Could not map the compiled rule (${winning.selector}) back to its SCSS source.` };
+    }
+
+    const sourcePath = resolveSourcePath(resolved.source, stylesheets[0]);
+
+    // Extract the ACTUAL color token written at the resolved source position — this
+    // is what we replace (e.g. `#E76300`, case/format may differ from the compiled
+    // value `#e76300`). The LLM is told this real source value.
+    const sourceValue = colorTokenAt(resolved.content, resolved.line, resolved.column);
+    if (!sourceValue) {
+        return { ...base, file: sourcePath, reason: `Resolved ${shortName(sourcePath)}:${resolved.line} but found no color token to edit (indirection); reported.` };
+    }
+
+    if (!editedPaths.has(sourcePath) && editedPaths.size >= caps.maxFiles) {
+        return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
+    }
+
+    // The LLM chooses the new color — it sees ONLY the matched rule + the source value.
+    step('fix', `Fixing ${finding.code} → ${winning.selector} in ${shortName(sourcePath)}`);
+    let colorFix: ColorFix;
+    try {
+        const input: ColorFixInput = {
+            finding,
+            rule: ruleText,
+            property: decl.prop,
+            currentValue: sourceValue
+        };
+        colorFix = await colorFixFn(input, deps.model);
+    } catch (e) {
+        return { ...base, status: 'failed', file: sourcePath, reason: `color fix failed: ${errMsg(e)}` };
+    }
+    if (!colorFix.applied) {
+        return { ...base, file: sourcePath, reason: colorFix.reason };
+    }
+
+    // Read the ONE source file (lazy; prefer the sourcemap's embedded content), edit, save.
+    let original = ctx.currentContent[sourcePath] ?? resolved.content;
+    if (ctx.currentContent[sourcePath] === undefined && resolved.content === undefined) {
+        try {
+            original = await client.read(sourcePath);
+        } catch (e) {
+            return { ...base, status: 'failed', file: sourcePath, reason: `read source failed: ${errMsg(e)}` };
+        }
+    }
+    // Replace the real source token (not the compiled value). Guard on the LLM
+    // echoing back the right oldValue.
+    const toReplace = original.includes(sourceValue) ? sourceValue : colorFix.oldValue;
+    if (!original.includes(toReplace)) {
+        return { ...base, file: sourcePath, reason: `Source value ${sourceValue} not found in ${shortName(sourcePath)}; reported.` };
+    }
+    colorFix = { ...colorFix, oldValue: toReplace };
+    const edited = replaceFirst(original, colorFix.oldValue, colorFix.newValue);
+    if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
+        return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
+    }
+
+    const diff = `- ${decl.prop}: ${colorFix.oldValue}\n+ ${decl.prop}: ${colorFix.newValue}  (${winning.selector})`;
+    return saveAndRescan(ctx, {
+        path: sourcePath,
+        original,
+        edited,
+        diff,
+        blastRadius: 'token',
+        review: `CSS color edit in ${shortName(sourcePath)} — may affect every element using this rule/variable`
+    });
+}
+
+/**
+ * VTL path (LLM-driven): the small VTL candidate set is read lazily; the model
+ * triages + attributes, gated on evidence, then produces a minimal file diff.
+ */
+async function processVtlViolation(ctx: ProcessCtx): Promise<FixResult> {
+    const { finding, deps, vtlCandidates, currentContent, editedPaths, caps } = ctx;
+    const client = deps.client;
+    const step = deps.onStep ?? noop;
     const triageFn = deps.triage ?? triageViolation;
     const fixFn = deps.fix ?? generateFix;
+    const base: FixResult = { ruleId: finding.code, status: 'reported' };
 
-    // TRIAGE + ATTRIBUTE
+    // Lazily read the (small) VTL candidate set for this violation's triage.
+    for (const ref of vtlCandidates) {
+        if (currentContent[ref.path] === undefined) {
+            try {
+                currentContent[ref.path] = await client.read(ref.path);
+            } catch {
+                // skip unreadable candidate
+            }
+        }
+    }
+
     let decision: TriageDecision;
     try {
         decision = await triageFn(
-            { finding, candidates, fileContents: currentContent, skipCss: ctx.req.options.skipCss },
+            { finding, candidates: vtlCandidates, fileContents: currentContent, skipCss: ctx.req.options.skipCss },
             deps.model
         );
     } catch (e) {
         return { ...base, status: 'failed', reason: `triage failed: ${errMsg(e)}` };
     }
 
-    if (decision.fixability === 'report-only' || !decision.targetPath) {
-        return { ...base, status: 'reported', reason: decision.reason };
+    if (decision.fixability !== 'vtl' || !decision.targetPath) {
+        return { ...base, reason: decision.reason };
     }
-
-    // Attribution evidence gate (§5/§9): don't guess-edit.
     if (!decision.evidenceFound) {
-        return {
-            ...base,
-            status: 'reported',
-            reason: `Attribution not provable in source: ${decision.reason}`
-        };
+        return { ...base, reason: `Attribution not provable in source: ${decision.reason}` };
     }
 
     const path = decision.targetPath;
-    const ref = candidates.find((c) => c.path === path);
-
-    // Per-run file cap.
+    const ref = vtlCandidates.find((c) => c.path === path);
     if (!editedPaths.has(path) && editedPaths.size >= caps.maxFiles) {
-        return { ...base, status: 'reported', file: path, reason: 'Per-run file cap reached' };
+        return { ...base, file: path, reason: 'Per-run file cap reached' };
     }
 
-    // The current working copy of this file (the original live read, or the result
-    // of a previous in-run edit to the same file). A regression reverts to exactly
-    // this — the state immediately before this fix.
     const original = currentContent[path] ?? '';
-
-    // GENERATE FIX
-    step('fix', `Fixing ${finding.code} in ${path}`);
+    step('fix', `Fixing ${finding.code} in ${shortName(path)}`);
     let fix: FixOutput;
     try {
         fix = await fixFn(
-            { finding, targetPath: path, originalContent: original, fixability: decision.fixability },
+            { finding, targetPath: path, originalContent: original, fixability: 'vtl' },
             deps.model
         );
     } catch (e) {
         return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: `fix generation failed: ${errMsg(e)}` };
     }
-
     if (!fix.applied) {
-        return { ...base, status: 'reported', file: path, identifier: ref?.identifier, reason: fix.reason };
+        return { ...base, file: path, identifier: ref?.identifier, reason: fix.reason };
     }
     if (Buffer.byteLength(fix.newContent, 'utf-8') > caps.maxFileBytes) {
         return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: 'Edited file exceeds byte cap' };
     }
 
-    // SAVE-WORKING
+    return saveAndRescan(ctx, {
+        path,
+        original,
+        edited: fix.newContent,
+        diff: fix.diff,
+        identifier: ref?.identifier
+    });
+}
+
+interface SaveSpec {
+    path: string;
+    original: string;
+    edited: string;
+    diff: string;
+    identifier?: string;
+    blastRadius?: 'element-scoped' | 'shared-rule' | 'token';
+    review?: string;
+}
+
+/** Save-working, verify bytes, re-scan EDIT_MODE, auto-revert on regression. Shared by both paths. */
+async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult> {
+    const { deps, editedPaths, currentContent } = ctx;
+    const client = deps.client;
+    const step = deps.onStep ?? noop;
+    const base: FixResult = { ruleId: ctx.finding.code, status: 'reported' };
+    const { path, original, edited } = spec;
+
     let saved;
     try {
-        saved = await client.saveWorking(path, fix.newContent, saveMime(path));
+        saved = await client.saveWorking(path, edited, saveMime(path));
     } catch (e) {
-        return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: `save failed: ${errMsg(e)}` };
+        return { ...base, status: 'failed', file: path, identifier: spec.identifier, reason: `save failed: ${errMsg(e)}` };
     }
-    // Verify persisted bytes (§5 step 5).
     if (!saved || saved.fileSize <= 0) {
-        return { ...base, status: 'failed', file: path, identifier: saved?.identifier ?? ref?.identifier, reason: 'save returned 0 bytes; not applied' };
+        return { ...base, status: 'failed', file: path, identifier: saved?.identifier ?? spec.identifier, reason: 'save returned 0 bytes; not applied' };
     }
     editedPaths.add(path);
-    currentContent[path] = fix.newContent; // later violations on this file build on this edit
+    currentContent[path] = edited;
 
-    // RE-SCAN (EDIT_MODE) → auto-revert if worse.
-    step('rescan', `Re-scanning after ${finding.code}`);
+    step('rescan', `Re-scanning after ${ctx.finding.code}`);
     try {
         const rescan = await client.scan(ctx.editModeUrl);
         const after = countViolations(rescan);
         if (after > ctx.baselineViolations) {
-            // Regression — revert this asset to its prior (live) content.
-            step('fix', `Reverting ${path} (re-scan worse)`);
+            step('fix', `Reverting ${shortName(path)} (re-scan worse)`);
             await client.saveWorking(path, original, saveMime(path));
             editedPaths.delete(path);
             currentContent[path] = original;
@@ -315,32 +493,75 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
                 reason: `Re-scan showed +${after - ctx.baselineViolations} violations — reverted to prior version`
             };
         }
-        // Improvement becomes the new baseline for subsequent violations.
         ctx.baselineViolations = after;
     } catch (e) {
-        // Re-scan failure is not a regression proof; keep the edit but note it.
         return {
             ...base,
             status: 'fixed-to-working',
             file: path,
             identifier: saved.identifier,
-            diff: fix.diff,
+            diff: spec.diff,
+            ...(spec.blastRadius ? { blastRadius: spec.blastRadius } : {}),
+            ...(spec.review ? { review: spec.review } : {}),
             reason: `Saved; re-scan could not confirm (${errMsg(e)})`
         };
     }
 
-    const result: FixResult = {
+    return {
         ...base,
         status: 'fixed-to-working',
         file: path,
         identifier: saved.identifier,
-        diff: fix.diff
+        diff: spec.diff,
+        ...(spec.blastRadius ? { blastRadius: spec.blastRadius } : {}),
+        ...(spec.review ? { review: spec.review } : {})
     };
-    if (decision.fixability === 'css') {
-        result.blastRadius = 'shared-rule';
-        result.review = 'CSS edit — may affect other pages using this rule';
+}
+
+/** Resolve a sourcemap `sources[]` entry (theme-relative) to a dotCMS asset path. */
+function resolveSourcePath(source: string, stylesheetUrl: string): string {
+    // The stylesheet lives at …/themes/<theme>/css/<sheet>; sources are relative
+    // to that css/ dir (e.g. "custom-styles/_variables-custom.scss"). Resolve against
+    // the stylesheet's directory, then return the host-qualified //host/path form.
+    try {
+        const sheet = new URL(stylesheetUrl);
+        const cssDir = sheet.pathname.slice(0, sheet.pathname.lastIndexOf('/') + 1);
+        const abs = new URL(source, 'http://h' + cssDir).pathname; // normalize ../ segments
+        return `//${sheet.host}${abs}`;
+    } catch {
+        return source;
     }
-    return result;
+}
+
+const shortName = (p: string) => p.split('/').pop() ?? p;
+
+/** The first color-affecting declaration node on a rule (for its value position). */
+function findColorDeclNode(
+    rule: CssRule['node']
+): { prop: string; value: string; source?: { start?: { line: number; column: number } } } | undefined {
+    const decls = rule.nodes.filter(
+        (n): n is import('postcss').Declaration => n.type === 'decl' && /color/i.test(n.prop)
+    );
+    return decls[0] ?? rule.nodes.find((n): n is import('postcss').Declaration => n.type === 'decl');
+}
+
+/** Extract a CSS color token (hex / rgb()/rgba() / name) at or near a source position. */
+function colorTokenAt(content: string, line: number, column: number): string | null {
+    const lineText = content.split('\n')[line - 1];
+    if (!lineText) {
+        return null;
+    }
+    // Search from the resolved column onward (then the whole line) for a color literal.
+    const COLOR = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/;
+    const fromCol = lineText.slice(Math.max(0, column));
+    const m = fromCol.match(COLOR) ?? lineText.match(COLOR);
+    return m ? m[0] : null;
+}
+
+/** Replace only the first occurrence of `needle` (literal) in `haystack`. */
+function replaceFirst(haystack: string, needle: string, replacement: string): string {
+    const i = haystack.indexOf(needle);
+    return i === -1 ? haystack : haystack.slice(0, i) + replacement + haystack.slice(i + needle.length);
 }
 
 function errMsg(e: unknown): string {
