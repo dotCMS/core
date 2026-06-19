@@ -1,4 +1,5 @@
 
+import { nudgeToClear, parseColor, parseTargetRatio } from './contrast';
 import { attribute, parseColorRules, type CssRule } from './css-attribution';
 import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
 import {
@@ -9,11 +10,8 @@ import {
     type SourceRef
 } from './dotcms-client';
 import {
-    generateColorFix,
     generateFix,
     triageViolation,
-    type ColorFix,
-    type ColorFixInput,
     type FixInput,
     type FixOutput,
     type TriageDecision,
@@ -66,8 +64,6 @@ export interface RunFixDeps {
     triage?: (input: TriageInput, model?: LanguageModel) => Promise<TriageDecision>;
     /** Override the LLM (VTL) fix-generation call. */
     fix?: (input: FixInput, model?: LanguageModel) => Promise<FixOutput>;
-    /** Override the LLM color-fix call (CSS path). */
-    colorFix?: (input: ColorFixInput, model?: LanguageModel) => Promise<ColorFix>;
 }
 
 const noop = () => undefined;
@@ -316,7 +312,6 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     const { finding, deps, stylesheets, editedPaths, caps } = ctx;
     const client = deps.client;
     const step = deps.onStep ?? noop;
-    const colorFixFn = deps.colorFix ?? generateColorFix;
     const base: FixResult = { ruleId: finding.code, status: 'reported' };
 
     if (stylesheets.length === 0) {
@@ -347,7 +342,6 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     // through mixins; only the value column traces back to the source $variable).
     const declNode = findColorDeclNode(winning.node);
     const decl = winning.decls.find((d) => /color/i.test(d.prop)) ?? winning.decls[0];
-    const ruleText = `${winning.selector} { ${winning.decls.map((d) => `${d.prop}: ${d.value}`).join('; ')} }`;
 
     const map = extractInlineSourceMap(css);
     const declPos = declNode?.source?.start;
@@ -375,22 +369,32 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
     }
 
-    // The LLM chooses the new color — it sees ONLY the matched rule + the source value.
+    // DETERMINISTIC contrast fix — no LLM. axe's `data` gives the exact failing
+    // pair (fgColor/bgColor) + the target ratio; we nudge the editable color (the
+    // attributed declaration) against its fixed counterpart until it clears.
     step('fix', `Fixing ${finding.code} → ${winning.selector} in ${shortName(sourcePath)}`);
-    let colorFix: ColorFix;
-    try {
-        const input: ColorFixInput = {
-            finding,
-            rule: ruleText,
-            property: decl.prop,
-            currentValue: sourceValue
+    const data = finding.data;
+    const isBg = /background/i.test(decl.prop);
+    // The color we can edit is the attributed declaration's value (sourceValue).
+    // Its counterpart is the OTHER member of axe's measured pair.
+    const editable = parseColor(sourceValue);
+    const counterpartStr = isBg ? data?.fgColor : data?.bgColor;
+    const counterpart = counterpartStr ? parseColor(counterpartStr) : null;
+    if (!editable || !counterpart || !data) {
+        return {
+            ...base,
+            file: sourcePath,
+            reason: `Insufficient color data to compute a deterministic fix (have data=${!!data}, editable=${!!editable}, counterpart=${!!counterpart}); reported.`
         };
-        colorFix = await colorFixFn(input, deps.model);
-    } catch (e) {
-        return { ...base, status: 'failed', file: sourcePath, reason: `color fix failed: ${errMsg(e)}` };
     }
-    if (!colorFix.applied) {
-        return { ...base, file: sourcePath, reason: colorFix.reason };
+    const targetRatio = parseTargetRatio(data.expectedContrastRatio);
+    const fix = nudgeToClear(editable, counterpart, targetRatio);
+    if (!fix) {
+        return {
+            ...base,
+            file: sourcePath,
+            reason: `Cannot reach ${targetRatio}:1 against ${counterpartStr} by nudging ${sourceValue} (needs a design decision); reported.`
+        };
     }
 
     // Read the ONE source file (lazy; prefer the sourcemap's embedded content), edit, save.
@@ -402,19 +406,15 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
             return { ...base, status: 'failed', file: sourcePath, reason: `read source failed: ${errMsg(e)}` };
         }
     }
-    // Replace the real source token (not the compiled value). Guard on the LLM
-    // echoing back the right oldValue.
-    const toReplace = original.includes(sourceValue) ? sourceValue : colorFix.oldValue;
-    if (!original.includes(toReplace)) {
+    if (!original.includes(sourceValue)) {
         return { ...base, file: sourcePath, reason: `Source value ${sourceValue} not found in ${shortName(sourcePath)}; reported.` };
     }
-    colorFix = { ...colorFix, oldValue: toReplace };
-    const edited = replaceFirst(original, colorFix.oldValue, colorFix.newValue);
+    const edited = replaceFirst(original, sourceValue, fix.newColor);
     if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
         return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
     }
 
-    const diff = `- ${decl.prop}: ${colorFix.oldValue}\n+ ${decl.prop}: ${colorFix.newValue}  (${winning.selector})`;
+    const diff = `- ${decl.prop}: ${sourceValue}\n+ ${decl.prop}: ${fix.newColor}  (${winning.selector}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
     return saveAndRescan(ctx, {
         path: sourcePath,
         original,
