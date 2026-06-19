@@ -1104,11 +1104,14 @@ public class PageResource {
                     .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
-        } catch (DotDataException | DotSecurityException | DoesNotExistException e) {
-            // Includes DoesNotExistException (thrown above with the containerId in its message):
-            // it is unchecked and would otherwise reach the JAX-RS mapper, leaking the id. Log full
-            // detail server-side; return a generic message so internal identifiers / SQL fragments
-            // are not leaked in the response.
+        } catch (DotDataException | DotSecurityException e) {
+            // Log full detail server-side; return a generic message so internal identifiers /
+            // SQL fragments are not leaked in the response.
+            //
+            // DoesNotExistException is intentionally NOT caught here: a missing container must
+            // surface as a 404 carrying its message. The id in that message is the caller's own
+            // input (not sensitive), and the 404 + message is an established API contract verified
+            // by the Define_Contentlets_StyleProperties postman test.
             Logger.error(this, "Error retrieving content types for container '" + containerId + "'", e);
             throw new BadRequestException("Error retrieving content types for the container");
         }
