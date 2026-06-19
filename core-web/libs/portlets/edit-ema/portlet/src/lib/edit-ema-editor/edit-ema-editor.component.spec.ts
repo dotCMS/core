@@ -2214,8 +2214,7 @@ describe('EditEmaEditorComponent', () => {
                     });
                     spectator.detectChanges();
 
-                    // translatePage calls this.dialog.translatePage internally.
-                    // Mock the implementation so it doesn't fail when $showDialogs = false.
+                    // Spy on translatePage to assert it was called with the right args.
                     const translatePageSpy = jest
                         .spyOn(spectator.component, 'translatePage')
                         .mockImplementation(jest.fn());

@@ -270,13 +270,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
-    // Component builds its own editor props locally
-    protected readonly $showDialogs = computed<boolean>(() => {
-        const canEditPage = this.uveStore.editorCanEditContent();
-        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
-        return canEditPage && isEditState;
-    });
-
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
