@@ -534,14 +534,16 @@ export class DotContentDriveShellComponent implements OnInit {
                 contentType
             )
             .subscribe({
-                next: ({ title, contentType }) => {
+                // `contentType` here is the created contentlet's resolved type (from the response),
+                // distinct from the requested `contentType` parameter above.
+                next: ({ title, contentType: uploadedContentType }) => {
                     this.#messageService.add({
                         severity: 'success',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-success-detail',
                             title,
-                            contentType
+                            uploadedContentType
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });

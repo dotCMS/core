@@ -16,7 +16,10 @@ import { DotFolderTreeNodeData } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { UPLOAD_SELECTOR_OPTIONS } from '../../../shared/constants';
-import { DotContentDriveUploadSelection } from '../../../shared/models';
+import {
+    DotContentDriveUploadContentType,
+    DotContentDriveUploadSelection
+} from '../../../shared/models';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 /**
@@ -49,7 +52,9 @@ export class DotContentDriveDialogUploadSelectorComponent {
     protected readonly options = UPLOAD_SELECTOR_OPTIONS;
 
     /** Currently selected content type variable. Defaults to the first (recommended) option. */
-    protected readonly $selectedType = signal<string>(UPLOAD_SELECTOR_OPTIONS[0].contentType);
+    protected readonly $selectedType = signal<DotContentDriveUploadContentType>(
+        UPLOAD_SELECTOR_OPTIONS[0].contentType
+    );
     protected readonly $canContinue = computed(() => !!this.$selectedType());
 
     protected onContinue(): void {
