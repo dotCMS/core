@@ -13,7 +13,7 @@
                 "platform": "node",
                 "outputPath": "dist/apps/dotcms-agents",
                 "format": ["cjs"],
-                "bundle": false,
+                "bundle": true,
                 "main": "apps/dotcms-agents/src/main.ts",
                 "tsConfig": "apps/dotcms-agents/tsconfig.app.json",
                 "assets": ["apps/dotcms-agents/src/assets"],
