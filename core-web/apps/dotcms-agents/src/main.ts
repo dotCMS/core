@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
+import { createA11yRoutes } from './a11y/routes';
+
 /**
  * dotcms-agents — host service for dotCMS agent capabilities.
  *
@@ -12,6 +14,9 @@ import { Hono } from 'hono';
 const app = new Hono();
 
 app.get('/health', (c) => c.json({ ok: true, service: 'dotcms-agents' }));
+
+// The a11y-fix agent: POST /a11y/fix, GET /a11y/active-run.
+app.route('/a11y', createA11yRoutes());
 
 const port = Number(process.env.PORT ?? 3001);
 
