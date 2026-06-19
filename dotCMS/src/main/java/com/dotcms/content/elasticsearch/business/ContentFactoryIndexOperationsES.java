@@ -106,18 +106,22 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             if (failures != null && failures.length > 0) {
                 final int shown = Math.min(failures.length, MAX_SHARD_FAILURES_LOGGED);
                 for (int i = 0; i < shown; i++) {
-                    sb.append(System.lineSeparator())
+                    sb.append('\n')
                       .append("  shard[").append(i).append("]: ").append(failures[i].reason());
                 }
                 if (failures.length > shown) {
-                    sb.append(System.lineSeparator())
+                    sb.append('\n')
                       .append("  ... and ").append(failures.length - shown).append(" more shard failure(s)");
                 }
             }
         }
 
         for (final Throwable suppressed : e.getSuppressed()) {
-            sb.append(System.lineSeparator()).append("  caused by: ").append(suppressed.getMessage());
+            // A suppressed Throwable may carry a null message (e.g. a bare NPE); fall back to
+            // its toString() so the line never renders the literal "null".
+            final String suppressedMsg = suppressed.getMessage();
+            sb.append('\n').append("  caused by: ")
+              .append(null != suppressedMsg ? suppressedMsg : suppressed.toString());
         }
         return sb.toString();
     }
