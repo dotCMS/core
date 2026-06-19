@@ -318,48 +318,81 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, reason: 'No same-origin stylesheet found on the page to attribute against.' };
     }
 
-    // Attribute the offending element to a winning rule across the applied sheets.
-    let winning: CssRule | undefined;
+    // axe's data is the SOURCE OF TRUTH for which colors are in play.
+    const data = finding.data;
+    const fg = data?.fgColor ? parseColor(data.fgColor) : null;
+    const bg = data?.bgColor ? parseColor(data.bgColor) : null;
+    if (!data || (!fg && !bg)) {
+        return { ...base, reason: 'Scanner did not provide fg/bg color data for this contrast violation; reported.' };
+    }
+
+    // Gather candidate rules that match the element, then pick the (rule, decl)
+    // whose VALUE equals axe's flagged fgColor or bgColor — that decl is provably
+    // the one axe measured. We do NOT trust specificity ranking to guess the decl;
+    // the color identity decides. The OTHER color of the pair is the counterpart.
     let css = '';
+    let matches: CssRule[] = [];
     for (const sheet of stylesheets) {
         try {
             css = await client.fetchStylesheet(sheet);
         } catch (e) {
             return { ...base, status: 'failed', reason: `fetch stylesheet failed: ${errMsg(e)}` };
         }
-        const matches = attribute(finding.context, parseColorRules(css));
+        matches = attribute(finding.context, parseColorRules(css));
         if (matches.length) {
-            winning = matches[0];
             break;
         }
     }
-    if (!winning) {
+    if (!matches.length) {
         return { ...base, reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).' };
     }
 
-    // The failing color declaration — find the actual postcss decl NODE so we can
-    // use ITS value position (the rule/selector position resolves to the wrong place
-    // through mixins; only the value column traces back to the source $variable).
-    const declNode = findColorDeclNode(winning.node);
-    const decl = winning.decls.find((d) => /color/i.test(d.prop)) ?? winning.decls[0];
+    // Find the matched decl whose value == fgColor (editable=fg) or == bgColor
+    // (editable=bg). Ranked by specificity (matches already sorted), first hit wins.
+    const sameColor = (a: ReturnType<typeof parseColor>, b: ReturnType<typeof parseColor>) =>
+        !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b;
+    let winning: CssRule | undefined;
+    let decl: { prop: string; value: string } | undefined;
+    let counterpart: ReturnType<typeof parseColor> | null = null;
+    outer: for (const rule of matches) {
+        for (const d of rule.decls) {
+            const v = parseColor(d.value);
+            if (sameColor(v, fg)) {
+                winning = rule;
+                decl = d;
+                counterpart = bg;
+                break outer;
+            }
+            if (sameColor(v, bg)) {
+                winning = rule;
+                decl = d;
+                counterpart = fg;
+                break outer;
+            }
+        }
+    }
+    if (!winning || !decl || !counterpart) {
+        return {
+            ...base,
+            reason: `No matched CSS rule's color equals axe's flagged fg(${data.fgColor})/bg(${data.bgColor}) — the failing color isn't in an attributable rule (likely inherited/inline/computed); reported.`
+        };
+    }
+    const editable = parseColor(decl.value);
 
+    // Resolve the chosen decl's value position → its SCSS source (via the sourcemap;
+    // lands on the $variable when the value comes from one).
+    const declNode = findNamedColorDeclNode(winning.node, decl.prop, decl.value);
     const map = extractInlineSourceMap(css);
     const declPos = declNode?.source?.start;
     if (!map || !declNode || !declPos) {
         return { ...base, reason: 'No sourcemap / declaration position; cannot locate the SCSS source to edit.' };
     }
-    // Map the VALUE position → the SCSS source (lands on the $variable definition
-    // when the value comes from one, e.g. `$primary: #E76300`).
     const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
     if (!resolved || resolved.content === undefined) {
         return { ...base, reason: `Could not map the compiled rule (${winning.selector}) back to its SCSS source.` };
     }
 
     const sourcePath = resolveSourcePath(resolved.source, stylesheets[0]);
-
-    // Extract the ACTUAL color token written at the resolved source position — this
-    // is what we replace (e.g. `#E76300`, case/format may differ from the compiled
-    // value `#e76300`). The LLM is told this real source value.
     const sourceValue = colorTokenAt(resolved.content, resolved.line, resolved.column);
     if (!sourceValue) {
         return { ...base, file: sourcePath, reason: `Resolved ${shortName(sourcePath)}:${resolved.line} but found no color token to edit (indirection); reported.` };
@@ -369,23 +402,10 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
     }
 
-    // DETERMINISTIC contrast fix — no LLM. axe's `data` gives the exact failing
-    // pair (fgColor/bgColor) + the target ratio; we nudge the editable color (the
-    // attributed declaration) against its fixed counterpart until it clears.
+    // DETERMINISTIC contrast fix — nudge the editable color against its counterpart.
     step('fix', `Fixing ${finding.code} → ${winning.selector} in ${shortName(sourcePath)}`);
-    const data = finding.data;
-    const isBg = /background/i.test(decl.prop);
-    // The color we can edit is the attributed declaration's value (sourceValue).
-    // Its counterpart is the OTHER member of axe's measured pair.
-    const editable = parseColor(sourceValue);
-    const counterpartStr = isBg ? data?.fgColor : data?.bgColor;
-    const counterpart = counterpartStr ? parseColor(counterpartStr) : null;
-    if (!editable || !counterpart || !data) {
-        return {
-            ...base,
-            file: sourcePath,
-            reason: `Insufficient color data to compute a deterministic fix (have data=${!!data}, editable=${!!editable}, counterpart=${!!counterpart}); reported.`
-        };
+    if (!editable) {
+        return { ...base, file: sourcePath, reason: `Could not parse the editable color ${decl.value}; reported.` };
     }
     const targetRatio = parseTargetRatio(data.expectedContrastRatio);
     const fix = nudgeToClear(editable, counterpart, targetRatio);
@@ -393,7 +413,7 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         return {
             ...base,
             file: sourcePath,
-            reason: `Cannot reach ${targetRatio}:1 against ${counterpartStr} by nudging ${sourceValue} (needs a design decision); reported.`
+            reason: `Cannot reach ${targetRatio}:1 against the counterpart color by nudging ${sourceValue} (needs a design decision); reported.`
         };
     }
 
@@ -589,14 +609,21 @@ function resolveSourcePath(source: string, stylesheetUrl: string): string {
 
 const shortName = (p: string) => p.split('/').pop() ?? p;
 
-/** The first color-affecting declaration node on a rule (for its value position). */
-function findColorDeclNode(
-    rule: CssRule['node']
+/** The postcss declaration node matching `prop` + `value` on a rule (for its
+ * value position; a rule may have several color decls, so match the exact one). */
+function findNamedColorDeclNode(
+    rule: CssRule['node'],
+    prop: string,
+    value: string
 ): { prop: string; value: string; source?: { start?: { line: number; column: number } } } | undefined {
     const decls = rule.nodes.filter(
-        (n): n is import('postcss').Declaration => n.type === 'decl' && /color/i.test(n.prop)
+        (n): n is import('postcss').Declaration => n.type === 'decl'
     );
-    return decls[0] ?? rule.nodes.find((n): n is import('postcss').Declaration => n.type === 'decl');
+    return (
+        decls.find((d) => d.prop === prop && d.value === value) ??
+        decls.find((d) => d.value === value) ??
+        decls.find((d) => /color/i.test(d.prop))
+    );
 }
 
 /** Extract a CSS color token (hex / rgb()/rgba() / name) at or near a source position. */
