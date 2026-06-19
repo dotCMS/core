@@ -18,6 +18,8 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -508,25 +510,110 @@ public class OSIndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * Waits for the OpenSearch cluster to become reachable, retrying up to
+     * {@code OS_CONNECTION_ATTEMPTS} times (falling back to {@code ES_CONNECTION_ATTEMPTS},
+     * default 24) with a {@code OS_CONNECTION_RETRY_SLEEP_SECONDS} (default 5s) pause between
+     * attempts. Used as the OpenSearch startup connection gate (issue #36244).
+     *
+     * <h2>Active probe — not the swallowing {@code getClusterStats()}</h2>
+     * <p>Connectivity is verified with {@code client.info()}, which round-trips to the cluster
+     * and <strong>propagates</strong> any transport / TLS / auth failure. This is deliberate:
+     * {@link #getClusterStats()} catches every exception and returns an empty result, so a retry
+     * loop built on it can never observe a failure — the gate would always pass and the real
+     * error would only surface much later, deep inside {@code createContentIndex} (the opaque
+     * late crash this gate exists to prevent).</p>
+     *
+     * <h2>Phase-aware outcome on exhaustion</h2>
+     * <ul>
+     *   <li><strong>Phase 3 (OS only)</strong> — OS is the primary store and ES is decommissioned,
+     *       so there is no safe fallback: log a FATAL actionable message and abort the JVM via
+     *       {@link com.dotcms.shutdown.SystemExitManager#immediateExit(int, String)} (same as ES
+     *       does today).</li>
+     *   <li><strong>Phase 1 / 2 (shadow)</strong> — OS is not yet primary; ES still holds the
+     *       authoritative state. Instead of killing the server, halt the migration
+     *       ({@link IndexConfigHelper#haltMigration()} resets the phase to
+     *       {@code PHASE_0_MIGRATION_NOT_STARTED}) so dotCMS falls back to ES-only, log an ERROR
+     *       explaining the fallback, and return {@code false}.</li>
+     * </ul>
+     *
+     * @return {@code true} when OS is reachable; {@code false} when OS was unreachable in a
+     *         shadow phase and the migration was halted (ES-only fallback). In Phase 3 this method
+     *         never returns {@code false} — it aborts the JVM instead.
+     */
     @Override
     public boolean waitUtilIndexReady() {
-        ClusterStats stats = null;
         final int attempts = IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_ATTEMPTS, 24);
+        final long sleepMs =
+                IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_RETRY_SLEEP_SECONDS, 5) * 1000L;
+        Exception lastError = null;
         for (int i = 0; i < attempts; i++) {
             try {
-                stats = getClusterStats();
-                break;
+                // Active probe: info() round-trips to the cluster and throws on any failure.
+                clientProvider.getClient().info();
+                return true;
             } catch (Exception e) {
-                Logger.error(this.getClass(),
-                    "OpenSearch Connection Attempt #" + (i + 1) + ": " + e.getMessage());
+                lastError = e;
+                Logger.error(this.getClass(), "OpenSearch Connection Attempt #" + (i + 1)
+                        + " of " + attempts + ": " + e.getMessage());
             }
-            DateUtil.sleep(IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_RETRY_SLEEP_SECONDS, 5) * 1000L);
+            DateUtil.sleep(sleepMs);
         }
-        if (stats == null) {
-            Logger.fatal(this.getClass(), "Cannot connect to OpenSearch, giving up.");
-            com.dotcms.shutdown.SystemExitManager.immediateExit(1, "OpenSearch connection failed");
+        return handleConnectionExhausted(attempts, lastError);
+    }
+
+    /**
+     * Phase-aware handler invoked once the OS connection retries are exhausted.
+     *
+     * @param attempts  the number of attempts that were made (for the log message)
+     * @param lastError the last connection error observed, or {@code null}
+     * @return {@code false} after halting the migration in a shadow phase; never returns in Phase 3
+     *         (the JVM is terminated).
+     */
+    private boolean handleConnectionExhausted(final int attempts, final Exception lastError) {
+        final MigrationPhase phase = MigrationPhase.current();
+        final String cause = lastError != null ? lastError.getMessage() : "unknown";
+        final String detail = "OpenSearch is not reachable after " + attempts + " attempt(s)."
+                + " phase=" + phase.name()
+                + ", endpoints=" + resolveEndpointsForLogging()
+                + ", cause=" + cause;
+
+        if (phase.isMigrationComplete()) {
+            // Phase 3: OS is primary and ES is decommissioned — no fallback is possible.
+            Logger.fatal(this.getClass(), detail
+                    + " — OS is the primary store in " + phase.name() + "; cannot fall back to ES."
+                    + " Verify OS_ENDPOINTS, OS_PROTOCOL/OS_TLS_ENABLED (scheme must match the"
+                    + " server), and credentials, then restart dotCMS.");
+            com.dotcms.shutdown.SystemExitManager.immediateExit(1,
+                    "OpenSearch connection failed in PHASE_3_OPENSEARCH_ONLY");
+            return false; // unreachable — immediateExit terminates the JVM
         }
-        return true;
+
+        // Phase 1 / 2 (shadow): ES still holds the authoritative state. Fall back to ES-only
+        // instead of killing the server.
+        Logger.error(this.getClass(), detail
+                + " — OS is a shadow store in " + phase.name() + "; falling back to ES-only"
+                + " (resetting FEATURE_FLAG_OPEN_SEARCH_PHASE to 0 via haltMigration)."
+                + " Fix OS connectivity and re-enable the migration phase when ready.");
+        IndexConfigHelper.haltMigration();
+        return false;
+    }
+
+    /**
+     * Resolves the configured OpenSearch endpoints for an actionable log message, mirroring
+     * {@code ConfigurableOpenSearchProvider} resolution: the explicit {@code OS_ENDPOINTS} array
+     * when set, otherwise a single {@code protocol://host:port} synthesised from the OS connection
+     * properties (with ES fallback).
+     */
+    private static String resolveEndpointsForLogging() {
+        final String[] endpoints = Config.getStringArrayProperty("OS_ENDPOINTS", null);
+        if (endpoints != null && endpoints.length > 0) {
+            return Arrays.toString(endpoints);
+        }
+        final String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, "https");
+        final String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
+        final int    port     = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
+        return protocol + "://" + hostname + ":" + port;
     }
 
 

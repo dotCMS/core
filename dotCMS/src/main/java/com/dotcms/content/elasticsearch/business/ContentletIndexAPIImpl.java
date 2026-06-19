@@ -873,6 +873,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
+
+        // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
+        // This is the single chokepoint for all OS index creation (fresh-install bootstrap and
+        // migration catchup), so both startup paths — populated-DB (InitServlet) and empty-DB
+        // (Task00004LoadStarter) — pass through the same phase-aware gate instead of failing
+        // late and opaquely with a transport exception deep inside createContentIndex.
+        //
+        // operationsOS.indexAPI() is the OS-specific IndexAPI, so the gate always probes OS
+        // regardless of the current read provider (in Phase 1 the read provider is ES). The
+        // phase-aware outcome lives in OSIndexAPIImpl.waitUtilIndexReady(): Phase 3 aborts the
+        // JVM with an actionable message; Phase 1/2 halts the migration (ES-only fallback) and
+        // returns false — in which case we must NOT create OS indices.
+        if (!operationsOS.indexAPI().waitUtilIndexReady()) {
+            Logger.warn(this.getClass(),
+                    "Skipping OpenSearch index bootstrap (working=" + workingName
+                    + ", live=" + liveName + "): OS was unreachable and the migration was halted"
+                    + " (now ES-only). OS indices will be created on a later restart once OS is"
+                    + " reachable and the migration phase is re-enabled.");
+            return;
+        }
+
         boolean result;
         try {
             // Targeted: executed directly against this provider only. No phase fan-out here.
