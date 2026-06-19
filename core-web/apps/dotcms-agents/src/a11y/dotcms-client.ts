@@ -15,6 +15,18 @@ import { withAllowlist } from './allowlist';
 
 // ── Response shapes (from S0 captures) ──────────────────────────────────────
 
+/** axe check `data` — for color-contrast it carries the exact colors + ratio,
+ * which makes the fix deterministic (no LLM needed to discover the value). */
+export interface AxeCheckData {
+    fgColor?: string;
+    bgColor?: string;
+    contrastRatio?: number;
+    expectedContrastRatio?: string; // e.g. "4.5:1"
+    fontSize?: string;
+    fontWeight?: string;
+    [k: string]: unknown;
+}
+
 export interface ScanFinding {
     code: string; // axe rule id, e.g. "color-contrast"
     type: string; // "error" | "warning" | "notice"
@@ -25,6 +37,7 @@ export interface ScanFinding {
     runner: string; // "axe"
     resultType: string; // "violation" | "needsReview" | ...
     runnerExtras?: { impact?: string; help?: string; helpUrl?: string; description?: string };
+    data?: AxeCheckData; // the failing check's data (fgColor/bgColor/ratio for contrast)
 }
 
 export interface ScanResult {
@@ -43,6 +56,43 @@ export interface ScanResult {
     // — filter to same-origin dotCMS assets to find the compiled CSS to attribute
     // against (CSS-attribution path, S1.5). External (CDN/fonts) are included too.
     stylesheets?: string[];
+}
+
+// ── Raw axe response (what the scanner returns; agent normalizes it) ─────────
+// The scanner is "pure axe" — it returns the axe result verbatim under `axe`
+// (+ `stylesheets`). The agent's scan() maps it to ScanResult; the rest of the
+// loop never sees raw axe.
+
+interface AxeCheck {
+    id?: string;
+    data?: AxeCheckData;
+}
+interface AxeNode {
+    target?: string[];
+    html?: string;
+    impact?: string;
+    any?: AxeCheck[];
+    all?: AxeCheck[];
+    none?: AxeCheck[];
+}
+interface AxeRule {
+    id: string;
+    impact?: string;
+    description?: string;
+    help?: string;
+    helpUrl?: string;
+    nodes: AxeNode[];
+}
+export interface RawScanResponse {
+    ok?: boolean;
+    documentTitle?: string;
+    stylesheets?: string[];
+    axe?: {
+        violations?: AxeRule[];
+        incomplete?: AxeRule[];
+        passes?: AxeRule[];
+        inapplicable?: AxeRule[];
+    };
 }
 
 export interface SourceRef {
@@ -79,6 +129,75 @@ export interface SavedAsset {
     name: string;
     path: string;
     working: boolean;
+}
+
+/** The failing check's data on an axe node (any/all/none, first one carrying data). */
+function nodeData(node: AxeNode): AxeCheckData | undefined {
+    for (const bucket of [node.none, node.any, node.all]) {
+        for (const chk of bucket ?? []) {
+            if (chk.data && typeof chk.data === 'object') {
+                return chk.data;
+            }
+        }
+    }
+    return undefined;
+}
+
+/** Flatten one axe rule's nodes into ScanFinding[] with the given resultType. */
+function findingsFromRule(
+    rule: AxeRule,
+    resultType: string,
+    type: string,
+    typeCode: number
+): ScanFinding[] {
+    return (rule.nodes ?? []).map((node) => ({
+        code: rule.id,
+        type,
+        typeCode,
+        message: rule.help ?? rule.description ?? rule.id,
+        context: node.html ?? '',
+        selector: Array.isArray(node.target) ? node.target.join(' ') : String(node.target ?? ''),
+        runner: 'axe',
+        resultType,
+        runnerExtras: {
+            impact: node.impact ?? rule.impact,
+            help: rule.help,
+            helpUrl: rule.helpUrl,
+            description: rule.description
+        },
+        data: nodeData(node)
+    }));
+}
+
+/**
+ * Normalize the scanner's raw axe response into the internal ScanResult the loop
+ * uses. The scanner is "pure axe" (returns axe verbatim under `axe` + the applied
+ * `stylesheets`); this adapter is the one place that knows the axe node shape.
+ * Each axe violation RULE expands to one finding per flagged NODE (so a contrast
+ * rule with 14 nodes = 14 findings). `incomplete` becomes needs-review notices.
+ */
+export function normalizeAxe(raw: RawScanResponse): ScanResult {
+    const axe = raw.axe ?? {};
+    const violationItems = (axe.violations ?? []).flatMap((r) =>
+        findingsFromRule(r, 'violation', 'error', 1)
+    );
+    const needsReviewItems = (axe.incomplete ?? []).flatMap((r) =>
+        findingsFromRule(r, 'needsReview', 'warning', 2)
+    );
+    const items = [...violationItems, ...needsReviewItems];
+    return {
+        ok: raw.ok ?? true,
+        documentTitle: raw.documentTitle,
+        totalIssues: items.length,
+        counts: { errors: violationItems.length, warnings: needsReviewItems.length, notices: 0 },
+        findings: {
+            total: items.length,
+            violations: violationItems.length,
+            needsReview: needsReviewItems.length,
+            items
+        },
+        stylesheets: raw.stylesheets
+    };
 }
 
 // ── Client ──────────────────────────────────────────────────────────────────
@@ -118,13 +237,14 @@ export class DotcmsClient {
         return result.value as T;
     }
 
-    /** SCAN / RE-SCAN — POST { url } to the page-scanner proxy. */
-    scan(url: string): Promise<ScanResult> {
-        return this.request<ScanResult>({
+    /** SCAN / RE-SCAN — POST { url } to the page-scanner proxy, normalize raw axe. */
+    async scan(url: string): Promise<ScanResult> {
+        const raw = await this.request<RawScanResponse>({
             method: 'POST',
             path: '/api/v1/page-scanner/a11y/check',
             body: { url }
         });
+        return normalizeAxe(raw);
     }
 
     /** LOCATE — GET /api/v1/page/_render-sources/{uri}?host_id=. */
