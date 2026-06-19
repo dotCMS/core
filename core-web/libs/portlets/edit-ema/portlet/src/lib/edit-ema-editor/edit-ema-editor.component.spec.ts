@@ -2156,6 +2156,79 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('create translation dialog ($translatePageEffect)', () => {
+                let confirmSpy: jest.SpyInstance;
+
+                beforeEach(() => {
+                    confirmSpy = jest.spyOn(confirmationService, 'confirm');
+                });
+
+                it('should open the confirm dialog when loading an untranslated language', () => {
+                    store.pageLoad({
+                        url: 'index',
+                        language_id: '2', // Italian, translated: false in mockLanguageArray
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            key: 'shell-confirm-dialog',
+                            rejectIcon: 'hidden',
+                            acceptIcon: 'hidden'
+                        })
+                    );
+                });
+
+                it('should not open the confirm dialog when loading a translated language', () => {
+                    store.pageLoad({
+                        url: 'index',
+                        language_id: '1', // English, translated: true
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).not.toHaveBeenCalled();
+                });
+
+                it('should not navigate when user declines to create a translation', () => {
+                    store.pageLoad({
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                    const { reject } = confirmSpy.mock.calls[0][0] as Confirmation;
+                    reject();
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                it('should call translatePage with the target language when user accepts', () => {
+                    store.pageLoad({
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+
+                    // translatePage calls this.dialog.translatePage internally.
+                    // Mock the implementation so it doesn't fail when $showDialogs = false.
+                    const translatePageSpy = jest
+                        .spyOn(spectator.component, 'translatePage')
+                        .mockImplementation(jest.fn());
+
+                    const { accept } = confirmSpy.mock.calls[0][0] as Confirmation;
+                    accept();
+
+                    expect(translatePageSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ newLanguage: 2 })
+                    );
+                });
+            });
+
             describe('handleOpenFullEditor', () => {
                 afterEach(() => {
                     jest.restoreAllMocks();
