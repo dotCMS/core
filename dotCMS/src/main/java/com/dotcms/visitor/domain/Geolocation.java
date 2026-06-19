@@ -15,7 +15,7 @@ public class Geolocation implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private final double latitude, longitude;
-    private final String country,countryCode, city, continent, continentCode, company, timezone, subdivision,subdivisionCode, ipAddress;
+    private final String country,countryCode, city, continent, continentCode, company, timezone, subdivision,subdivisionCode, postal, ipAddress;
 
     public static long getSerialversionuid() {
         return serialVersionUID;
@@ -40,6 +40,7 @@ public class Geolocation implements Serializable {
         result = prime * result + (int) (temp ^ (temp >>> 32));
         result = prime * result + ((subdivision == null) ? 0 : subdivision.hashCode());
         result = prime * result + ((subdivisionCode == null) ? 0 : subdivisionCode.hashCode());
+        result = prime * result + ((postal == null) ? 0 : postal.hashCode());
         result = prime * result + ((timezone == null) ? 0 : timezone.hashCode());
         return result;
     }
@@ -102,6 +103,11 @@ public class Geolocation implements Serializable {
             if (other.subdivisionCode != null)
                 return false;
         } else if (!subdivisionCode.equals(other.subdivisionCode))
+            return false;
+        if (postal == null) {
+            if (other.postal != null)
+                return false;
+        } else if (!postal.equals(other.postal))
             return false;
         if (timezone == null) {
             if (other.timezone != null)
@@ -167,6 +173,11 @@ public class Geolocation implements Serializable {
     }
 
 
+    public String getPostal() {
+        return postal;
+    }
+
+
     public String getIpAddress() {
         return ipAddress;
     }
@@ -181,6 +192,7 @@ public class Geolocation implements Serializable {
         this.company = builder.company;
         this.timezone = builder.timezone;
         this.subdivision = builder.subdivision;
+        this.postal = builder.postal;
         this.ipAddress = builder.ipAddress;
         this.country = builder.country;
         this.subdivisionCode = builder.subdivisionCode;
@@ -217,7 +229,7 @@ public class Geolocation implements Serializable {
      */
     public static final class Builder {
         private  double latitude, longitude;
-        private  String country,countryCode, city, continent, continentCode, company, timezone, subdivision,subdivisionCode, ipAddress;
+        private  String country,countryCode, city, continent, continentCode, company, timezone, subdivision,subdivisionCode, postal, ipAddress;
 
         public Builder() {}
 
@@ -230,6 +242,7 @@ public class Geolocation implements Serializable {
             this.company = geolocation.company;
             this.timezone = geolocation.timezone;
             this.subdivision = geolocation.subdivision;
+            this.postal = geolocation.postal;
             this.ipAddress = geolocation.ipAddress;
             this.country = geolocation.country;
             this.subdivisionCode = geolocation.subdivisionCode;
@@ -293,6 +306,10 @@ public class Geolocation implements Serializable {
 
         public Builder withSubdivision(@Nonnull String subdivision) {
             this.subdivision = subdivision;
+            return this;
+        }
+        public Builder withPostal(@Nonnull String postal) {
+            this.postal = postal;
             return this;
         }
 

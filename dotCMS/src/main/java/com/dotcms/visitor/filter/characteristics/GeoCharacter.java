@@ -1,6 +1,7 @@
 package com.dotcms.visitor.filter.characteristics;
 
 import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 
 public class GeoCharacter extends AbstractCharacter {
@@ -21,11 +22,13 @@ public class GeoCharacter extends AbstractCharacter {
             try {
                 String ipAddress = visitor.getIpAddress().getHostAddress();
                 GeoIp2CityDbUtil geo = GeoIp2CityDbUtil.getInstance();
+                final String postalCode = geo.getPostalCode(ipAddress);
                 m = new ImmutableMap.Builder<String, String>().put("g.latLong", geo.getLocationAsString(ipAddress))
                     .put("g.countryCode", geo.getCountryIsoCode(ipAddress))
                     .put("g.cityName", geo.getCityName(ipAddress))
                     .put("g.continent", geo.getContinent(ipAddress))
                     .put("g.company", geo.getCompany())
+                    .put("g.postalCode", UtilMethods.isSet(postalCode) ? postalCode : "")
                     .build();
             } catch (Exception e) {
                 m = ImmutableMap.of("g.ip", "ukn");

@@ -49,6 +49,7 @@ public class GeoIp2CityDbUtilTest {
         assertEquals(geo.getTimezone(),"America/New_York");
         assertEquals(geo.getSubdivision(), "Massachusetts");
         assertEquals(geo.getSubdivisionCode(), "MA");
+        assertEquals(geo.getPostal(), "01810");
         assertEquals(geo.getIpAddress(), ipAddress);
     }
 
