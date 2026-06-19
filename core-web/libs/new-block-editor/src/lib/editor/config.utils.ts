@@ -53,7 +53,7 @@ export function buildBrowserSelectorConfig(opts: {
         modal: true,
         width: '90%',
         style: { 'max-width': '1040px', overflow: 'hidden' },
-        contentStyle: { overflow: 'auto', height: 'min(45rem, 80vh)' },
+        contentStyle: { overflow: 'auto', 'min-height': 'min(45rem, 80vh)' },
         data: {
             mimeTypes: opts.mimeTypes,
             showLinks: false,
