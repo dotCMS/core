@@ -87,6 +87,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1059,10 +1060,12 @@ public class PageResource {
                     // than silently dropping the contentlet. See issue #35993.
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
                 } catch (final DotContentletStateException e) {
-                    if (e.getCause() instanceof NotFoundInDbException) {
-                        // Expected/benign case (archived or non-existent). Logged without the
-                        // exception so we don't emit a stack trace -- or the wrapped lookup
-                        // message -- on every page save that references archived content.
+                    if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                        // Expected/benign case (archived or non-existent). Checks the full cause
+                        // chain (not just the direct cause) so an added intermediate wrapper does
+                        // not silently turn this into a client error. Logged without the exception
+                        // so we don't emit a stack trace -- or the wrapped lookup message -- on
+                        // every page save that references archived content.
                         Logger.warn(this, "Skipping contentlet '" + contentletId
                                 + "' on page content save: archived or not found");
                         continue;
@@ -1091,7 +1094,11 @@ public class PageResource {
 
                 if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT)
                         && !contentTypeSet.contains(contentlet.getContentType().variable())) {
-                    throw new BadRequestException("The content type assigned to a contentlet is not valid for the container");
+                    // The content-type variable is public schema metadata (already exposed via the
+                    // Content Types API), so it is safe to include and helps the caller identify the
+                    // offending content.
+                    throw new BadRequestException("Content type '" + contentlet.getContentType().variable()
+                            + "' is not allowed in this container");
                 }
             }
         }
@@ -1104,7 +1111,13 @@ public class PageResource {
                     .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (final DotSecurityException e) {
+            // The system user lacking read permission on the container is a server-side
+            // misconfiguration, not a client bad request -- surface it as 403 (generic message;
+            // full detail logged server-side) rather than 400.
+            Logger.error(this, "No permission to read container '" + containerId + "'", e);
+            throw new ForbiddenException(e, "Not allowed to read the container");
+        } catch (final DotDataException e) {
             // Log full detail server-side; return a generic message so internal identifiers /
             // SQL fragments are not leaked in the response.
             //
