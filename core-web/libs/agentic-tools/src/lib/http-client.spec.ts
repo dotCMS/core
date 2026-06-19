@@ -24,7 +24,13 @@ function getRequestMethod(adapter: Adapter): AdapterMethod {
 /** Build a Response-like stub backed by a fixed body buffer. */
 function makeResponse(
     body: Buffer | string,
-    { contentType, ok = true, status = 200, statusText = 'OK', contentLength }: {
+    {
+        contentType,
+        ok = true,
+        status = 200,
+        statusText = 'OK',
+        contentLength
+    }: {
         contentType: string;
         ok?: boolean;
         status?: number;

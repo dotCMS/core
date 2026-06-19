@@ -313,9 +313,7 @@ export function createApiAdapter(config: ApiAdapterConfig): Adapter {
             // readable message, not a base64 envelope of the error page.
             if (!response.ok) {
                 const errorBody = await response.text();
-                throw new Error(
-                    `HTTP ${response.status} ${response.statusText}: ${errorBody}`
-                );
+                throw new Error(`HTTP ${response.status} ${response.statusText}: ${errorBody}`);
             }
 
             const forceBinary = options.responseType === 'base64';
