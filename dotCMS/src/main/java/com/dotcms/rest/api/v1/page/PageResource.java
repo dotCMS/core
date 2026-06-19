@@ -1030,7 +1030,7 @@ public class PageResource {
         }
     }
 
-    protected void validateContainerEntries(final List<ContainerEntry> containerEntries) throws DotDataException {
+    protected void validateContainerEntries(final List<ContainerEntry> containerEntries) {
         final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
         for (final ContainerEntry containerEntry : containerEntries) {
 
@@ -1060,13 +1060,24 @@ public class PageResource {
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
                 } catch (final DotContentletStateException e) {
                     if (e.getCause() instanceof NotFoundInDbException) {
+                        // Expected/benign case (archived or non-existent). Logged without the
+                        // exception so we don't emit a stack trace -- or the wrapped lookup
+                        // message -- on every page save that references archived content.
                         Logger.warn(this, "Skipping contentlet '" + contentletId
-                                + "' on page content save (archived or not found)", e);
+                                + "' on page content save: archived or not found");
                         continue;
                     }
                     // Genuine lookup/DB failure wrapped as DotContentletStateException: log full
                     // detail server-side and return a generic message so internal identifiers /
                     // SQL fragments are not leaked in the response.
+                    Logger.error(this, "Error validating contentlet '" + contentletId
+                            + "' on page content save", e);
+                    throw new BadRequestException("Error validating one or more contentlets for the page");
+                } catch (final DotDataException e) {
+                    // findContentletByIdentifierAnyLanguageAnyVariant declares this checked
+                    // exception (in practice it wraps failures in DotContentletStateException,
+                    // handled above). Handle it the same way so this method throws only unchecked
+                    // exceptions and never forwards a raw message to the client.
                     Logger.error(this, "Error validating contentlet '" + contentletId
                             + "' on page content save", e);
                     throw new BadRequestException("Error validating one or more contentlets for the page");
@@ -1094,8 +1105,10 @@ public class PageResource {
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
         } catch (DotDataException | DotSecurityException e) {
-
-            throw new BadRequestException(e, e.getMessage());
+            // Log full detail server-side; return a generic message so internal identifiers /
+            // SQL fragments are not leaked in the response.
+            Logger.error(this, "Error retrieving content types for container '" + containerId + "'", e);
+            throw new BadRequestException("Error retrieving content types for the container");
         }
     }
 

@@ -299,8 +299,11 @@ public class PageRenderUtil implements Serializable {
                     // Archived (deleted) content keeps its working version, so a showLive=false
                     // lookup (EDIT/PREVIEW modes) still resolves it. Skip it in every mode so that
                     // archived content never renders on the page, consistent with LIVE-mode behavior.
-                    // A DotSecurityException here is a genuine access-control failure and must NOT be
-                    // swallowed as "probably archived" -- let it propagate to the caller.
+                    // isArchived() declares DotSecurityException, but VersionableAPI.isDeleted() does
+                    // not throw it via this path (it is declared for forward-compatibility). Should a
+                    // DotSecurityException ever surface, it is a genuine access-control failure and
+                    // must NOT be swallowed as "probably archived" -- so it is intentionally left
+                    // uncaught and propagates to the caller.
                     try {
                         if (nonHydratedContentlet.isArchived()) {
                             Logger.debug(this, () -> "Skipping archived contentlet: "
