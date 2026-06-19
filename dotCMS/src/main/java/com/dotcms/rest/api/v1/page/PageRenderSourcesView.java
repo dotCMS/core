@@ -28,7 +28,7 @@ public class PageRenderSourcesView {
             + "and uri is the originally requested URI (host-qualified).")
     private final PageSourceRefView page;
 
-    @Schema(description = "Theme folder and its VTL files")
+    @Schema(description = "Theme folder and the files that compose it (VTL, CSS and JS)")
     private final ThemeSourceView theme;
 
     @Schema(description = "Containers referenced by the page template, keyed by container identifier "

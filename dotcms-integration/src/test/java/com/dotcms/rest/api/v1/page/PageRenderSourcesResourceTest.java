@@ -582,7 +582,8 @@ public class PageRenderSourcesResourceTest {
                 .name(themeName)
                 .nextPersisted();
 
-        // Create a test VTL file in the theme folder
+        // A theme is composed of VTL, CSS and JS files — create one of each so the response
+        // splits them into the matching lists.
         final File tempVtl = File.createTempFile("header", ".vtl");
         Files.writeString(tempVtl.toPath(), "#* test vtl *#");
         final Contentlet vtlContentlet = new FileAssetDataGen(themeFolder, tempVtl)
@@ -590,6 +591,22 @@ public class PageRenderSourcesResourceTest {
                 .nextPersisted();
         vtlContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(vtlContentlet, adminUser, false);
+
+        final File tempCss = File.createTempFile("styles", ".css");
+        Files.writeString(tempCss.toPath(), "body { color: #000; }");
+        final Contentlet cssContentlet = new FileAssetDataGen(themeFolder, tempCss)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        cssContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(cssContentlet, adminUser, false);
+
+        final File tempJs = File.createTempFile("script", ".js");
+        Files.writeString(tempJs.toPath(), "console.log('test');");
+        final Contentlet jsContentlet = new FileAssetDataGen(themeFolder, tempJs)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        jsContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(jsContentlet, adminUser, false);
 
         // Create a template that uses this theme. The template stores the theme folder's
         // identifier (ThemeAPI.findThemeById resolves it via FolderAPI.find), not its path.
@@ -621,6 +638,22 @@ public class PageRenderSourcesResourceTest {
         assertNotNull(view.getTheme().getFolderPath());
         assertTrue("folderPath should start with //",
                 view.getTheme().getFolderPath().startsWith("//"));
+
+        // Each file type lands in its own list.
+        assertTrue("VTL file should be returned in vtls",
+                view.getTheme().getVtls().stream()
+                        .anyMatch(f -> f.getPath().endsWith(".vtl")));
+        assertTrue("CSS file should be returned in css",
+                view.getTheme().getCss().stream()
+                        .anyMatch(f -> f.getPath().endsWith(".css")));
+        assertTrue("JS file should be returned in js",
+                view.getTheme().getJs().stream()
+                        .anyMatch(f -> f.getPath().endsWith(".js")));
+        // .js must not swallow .json — none of our files are .json, so js holds exactly the one.
+        assertTrue("css list must not contain non-css files",
+                view.getTheme().getCss().stream().allMatch(f -> f.getPath().endsWith(".css")));
+        assertTrue("js list must not contain non-js files",
+                view.getTheme().getJs().stream().allMatch(f -> f.getPath().endsWith(".js")));
     }
 
     // -----------------------------------------------------------------------
