@@ -43,6 +43,7 @@ export interface ScanResult {
 export interface SourceRef {
     identifier: string;
     path: string; // host-qualified, e.g. //demo.dotcms.com/application/themes/travel/header.vtl
+    extension?: string; // lowercased, no dot, e.g. "vtl", "css", "scss"; present on theme files
 }
 
 export interface ContainerSource {
@@ -57,9 +58,9 @@ export interface RenderSources {
         folderPath: string;
         id: string;
         name: string;
-        vtls: SourceRef[];
-        css: SourceRef[];
-        js: SourceRef[];
+        // Every file under the theme folder; filter by `extension`. Open-ended set
+        // (vtl, css, scss, sass, dotsass, js, ...) — the API does not whitelist types.
+        files: SourceRef[];
     };
     widgets: Array<{ contentTypeVar?: string; identifier?: string; path?: string; source?: string }>;
 }

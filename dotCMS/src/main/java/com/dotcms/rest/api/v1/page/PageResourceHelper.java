@@ -1251,46 +1251,25 @@ public class PageResourceHelper implements Serializable {
             folders.addAll(APILocator.getFolderAPI()
                     .findSubFoldersRecursively(theme, user, false));
 
-            // A theme is composed of more than VTLs — CSS and JS files participate in how a
-            // page renders, so collect every file once and split it by extension.
-            final List<FileAsset> themeFiles = folders.stream()
+            // A theme is composed of more than VTLs — CSS/SCSS/SASS, JS, images, etc. all
+            // participate in how a page renders, and the set of relevant extensions is open
+            // (.scss, .sass, .dotsass, ...). So return every file and let the consumer filter
+            // by the per-file extension rather than whitelisting types here.
+            final List<FileRefView> files = folders.stream()
                     .flatMap(folder -> Try.of(() -> APILocator.getFileAssetAPI()
                                     .findFileAssetsByFolder(folder, null, false, user, false))
                             .getOrElse(Collections.emptyList()).stream())
                     .filter(f -> UtilMethods.isSet(f.getFileName()))
+                    .map(f -> toFileRef(f, host))
                     .collect(Collectors.toList());
 
-            final List<FileRefView> vtls =
-                    themeFilesWithExtension(themeFiles, Constants.VELOCITY_FILE_EXTENSION, host);
-            final List<FileRefView> css =
-                    themeFilesWithExtension(themeFiles, ".css", host);
-            final List<FileRefView> js =
-                    themeFilesWithExtension(themeFiles, ".js", host);
-
-            return new ThemeSourceView(theme.getIdentifier(), theme.getName(), folderPath,
-                    vtls, css, js);
+            return new ThemeSourceView(theme.getIdentifier(), theme.getName(), folderPath, files);
         } catch (final Exception e) {
             Logger.warn(this, "Could not build theme view: " + e.getMessage());
             return null;
         }
     }
 
-    /**
-     * Filters the given theme file assets to those whose file name ends with {@code extension}
-     * (case-insensitive) and maps them to host-qualified {@link FileRefView} references.
-     */
-    private List<FileRefView> themeFilesWithExtension(final List<FileAsset> themeFiles,
-            final String extension, final Host host) {
-        // getFileExtension returns the extension lowercased and without the leading dot.
-        final String ext = extension.startsWith(".") ? extension.substring(1) : extension;
-        return themeFiles.stream()
-                // endsWith(".js") would also catch ".json"; compare on the real extension.
-                .filter(f -> ext.equalsIgnoreCase(UtilMethods.getFileExtension(f.getFileName())))
-                .map(f -> new FileRefView(
-                        buildHostQualifiedPath(f.getPath() + f.getFileName(), host),
-                        f.getIdentifier()))
-                .collect(Collectors.toList());
-    }
 
     /**
      * Returns a {@link LinkedHashMap} keyed by the container reference (UUID for DB containers,
@@ -1521,7 +1500,9 @@ public class PageResourceHelper implements Serializable {
     private FileRefView toFileRef(final FileAsset fa, final Host host) {
         return new FileRefView(
                 buildHostQualifiedPath(fa.getPath() + fa.getFileName(), host),
-                fa.getIdentifier());
+                fa.getIdentifier(),
+                // Lowercased, no leading dot; empty when the file name has no extension.
+                UtilMethods.getFileExtension(fa.getFileName()));
     }
 
     /**

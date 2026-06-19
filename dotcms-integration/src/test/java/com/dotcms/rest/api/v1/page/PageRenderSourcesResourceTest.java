@@ -60,7 +60,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -582,8 +584,9 @@ public class PageRenderSourcesResourceTest {
                 .name(themeName)
                 .nextPersisted();
 
-        // A theme is composed of VTL, CSS and JS files — create one of each so the response
-        // splits them into the matching lists.
+        // A theme is composed of many file types (VTL, CSS, CSS preprocessors, JS, ...);
+        // create a representative spread so we can prove the response returns every file
+        // with its extension rather than a whitelisted subset.
         final File tempVtl = File.createTempFile("header", ".vtl");
         Files.writeString(tempVtl.toPath(), "#* test vtl *#");
         final Contentlet vtlContentlet = new FileAssetDataGen(themeFolder, tempVtl)
@@ -607,6 +610,16 @@ public class PageRenderSourcesResourceTest {
                 .nextPersisted();
         jsContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(jsContentlet, adminUser, false);
+
+        // A CSS preprocessor file — proves the response is not limited to a known set of
+        // extensions and that .scss comes back like any other file.
+        final File tempScss = File.createTempFile("main", ".scss");
+        Files.writeString(tempScss.toPath(), "$c: #000; body { color: $c; }");
+        final Contentlet scssContentlet = new FileAssetDataGen(themeFolder, tempScss)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        scssContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(scssContentlet, adminUser, false);
 
         // Create a template that uses this theme. The template stores the theme folder's
         // identifier (ThemeAPI.findThemeById resolves it via FolderAPI.find), not its path.
@@ -639,21 +652,22 @@ public class PageRenderSourcesResourceTest {
         assertTrue("folderPath should start with //",
                 view.getTheme().getFolderPath().startsWith("//"));
 
-        // Each file type lands in its own list.
-        assertTrue("VTL file should be returned in vtls",
-                view.getTheme().getVtls().stream()
-                        .anyMatch(f -> f.getPath().endsWith(".vtl")));
-        assertTrue("CSS file should be returned in css",
-                view.getTheme().getCss().stream()
-                        .anyMatch(f -> f.getPath().endsWith(".css")));
-        assertTrue("JS file should be returned in js",
-                view.getTheme().getJs().stream()
-                        .anyMatch(f -> f.getPath().endsWith(".js")));
-        // .js must not swallow .json — none of our files are .json, so js holds exactly the one.
-        assertTrue("css list must not contain non-css files",
-                view.getTheme().getCss().stream().allMatch(f -> f.getPath().endsWith(".css")));
-        assertTrue("js list must not contain non-js files",
-                view.getTheme().getJs().stream().allMatch(f -> f.getPath().endsWith(".js")));
+        // Every file the theme contains is returned in a single list, each carrying its
+        // extension — no type is dropped, including the .scss preprocessor file.
+        final List<FileRefView> files = view.getTheme().getFiles();
+        final Set<String> extensions = files.stream()
+                .map(FileRefView::getExtension)
+                .collect(Collectors.toSet());
+        assertTrue("VTL file should be returned", extensions.contains("vtl"));
+        assertTrue("CSS file should be returned", extensions.contains("css"));
+        assertTrue("JS file should be returned", extensions.contains("js"));
+        assertTrue("SCSS file should be returned (not whitelisted away)",
+                extensions.contains("scss"));
+
+        // The extension always matches the path's real extension.
+        assertTrue("extension must match the file's path",
+                files.stream().allMatch(f ->
+                        f.getPath().toLowerCase().endsWith("." + f.getExtension())));
     }
 
     // -----------------------------------------------------------------------

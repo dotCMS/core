@@ -78,15 +78,20 @@ function scanUrls(req: FixRequest): { live: string; editMode: string } {
     return { live, editMode };
 }
 
-/** Candidate source refs from /_render-sources: theme VTL/CSS + container VTLs.
- * JS is intentionally excluded for now — the agent does not edit JavaScript, and
- * theme JS bundles are large and dominate token cost. JS-injected DOM issues are
- * handled via report-only triage. */
+/**
+ * Editable theme source extensions the agent will consider fixing. The theme block
+ * returns ALL files; we keep markup (vtl) and stylesheets (css and its preprocessors)
+ * and skip everything else. JS is intentionally excluded — the agent does not edit
+ * JavaScript and theme JS bundles dominate token cost; JS-injected DOM issues are
+ * handled via report-only triage. Images/fonts/etc. are not text-editable.
+ */
+const EDITABLE_THEME_EXTENSIONS = new Set(['vtl', 'css', 'scss', 'sass', 'dotsass', 'less']);
+
+/** Candidate source refs from /_render-sources: editable theme files + container VTLs. */
 function collectCandidates(sources: RenderSources): SourceRef[] {
-    const refs: SourceRef[] = [
-        ...(sources.theme?.vtls ?? []),
-        ...(sources.theme?.css ?? [])
-    ];
+    const refs: SourceRef[] = (sources.theme?.files ?? []).filter((f) =>
+        EDITABLE_THEME_EXTENSIONS.has((f.extension ?? '').toLowerCase())
+    );
     for (const container of Object.values(sources.containers ?? {})) {
         for (const ct of container.contentTypes ?? []) {
             if (ct.path) {
@@ -100,6 +105,15 @@ function collectCandidates(sources: RenderSources): SourceRef[] {
 }
 
 const isViolation = (f: ScanFinding) => f.resultType === 'violation' || f.type === 'error';
+
+const STYLESHEET_EXTENSIONS = ['.css', '.scss', '.sass', '.dotsass', '.less'];
+
+/** Content type used when saving an edited working copy. Stylesheets (including CSS
+ * preprocessors) save as text/css; everything else as text/plain. */
+function saveMime(path: string): string {
+    const lower = path.toLowerCase();
+    return STYLESHEET_EXTENSIONS.some((ext) => lower.endsWith(ext)) ? 'text/css' : 'text/plain';
+}
 
 export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixReport> {
     const { client } = deps;
@@ -270,8 +284,7 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
     // SAVE-WORKING
     let saved;
     try {
-        const mime = path.endsWith('.css') ? 'text/css' : 'text/plain';
-        saved = await client.saveWorking(path, fix.newContent, mime);
+        saved = await client.saveWorking(path, fix.newContent, saveMime(path));
     } catch (e) {
         return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: `save failed: ${errMsg(e)}` };
     }
@@ -290,7 +303,7 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
         if (after > ctx.baselineViolations) {
             // Regression — revert this asset to its prior (live) content.
             step('fix', `Reverting ${path} (re-scan worse)`);
-            await client.saveWorking(path, original, path.endsWith('.css') ? 'text/css' : 'text/plain');
+            await client.saveWorking(path, original, saveMime(path));
             editedPaths.delete(path);
             currentContent[path] = original;
             return {

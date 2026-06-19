@@ -4,10 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * Theme metadata — folder reference plus the files that compose the theme (VTL, CSS and JS),
- * each split into its own list.  No file content is included.
- * To list all files under the theme folder use:
- * {@code GET /api/v1/folder/sitename/{site}/uri/{uri}}
+ * Theme metadata — folder reference plus every file that composes the theme.
+ * No file content is included; each file carries its extension so consumers can
+ * filter by type (vtl, css, scss, sass, js, ...) without the API whitelisting them.
  */
 public class ThemeSourceView {
 
@@ -20,24 +19,16 @@ public class ThemeSourceView {
     @Schema(description = "Host-qualified path to the theme folder, e.g. //demo.dotcms.com/application/themes/travel/")
     private final String folderPath;
 
-    @Schema(description = "VTL files found anywhere under the theme folder (searched recursively)")
-    private final List<FileRefView> vtls;
-
-    @Schema(description = "CSS files found anywhere under the theme folder (searched recursively)")
-    private final List<FileRefView> css;
-
-    @Schema(description = "JS files found anywhere under the theme folder (searched recursively)")
-    private final List<FileRefView> js;
+    @Schema(description = "Every file found anywhere under the theme folder (searched recursively), "
+            + "regardless of type. Each entry carries its extension so consumers can filter.")
+    private final List<FileRefView> files;
 
     public ThemeSourceView(final String id, final String name, final String folderPath,
-            final List<FileRefView> vtls, final List<FileRefView> css,
-            final List<FileRefView> js) {
+            final List<FileRefView> files) {
         this.id         = id;
         this.name       = name;
         this.folderPath = folderPath;
-        this.vtls       = vtls;
-        this.css        = css;
-        this.js         = js;
+        this.files      = files;
     }
 
     public String getId() {
@@ -52,15 +43,7 @@ public class ThemeSourceView {
         return folderPath;
     }
 
-    public List<FileRefView> getVtls() {
-        return vtls;
-    }
-
-    public List<FileRefView> getCss() {
-        return css;
-    }
-
-    public List<FileRefView> getJs() {
-        return js;
+    public List<FileRefView> getFiles() {
+        return files;
     }
 }

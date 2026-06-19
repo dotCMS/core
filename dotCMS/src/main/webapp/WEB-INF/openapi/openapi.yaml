@@ -26834,8 +26834,13 @@ components:
             type: string
     FileRefView:
       type: object
-      description: JS files found anywhere under the theme folder (searched recursively)
+      description: "Every file found anywhere under the theme folder (searched recursively),\
+        \ regardless of type. Each entry carries its extension so consumers can filter."
       properties:
+        extension:
+          type: string
+          description: "Lowercased file extension without the leading dot, e.g. vtl,\
+            \ css, scss, js"
         identifier:
           type: string
           description: File asset identifier
@@ -36310,11 +36315,13 @@ components:
             type: string
     ThemeSourceView:
       type: object
-      description: "Theme folder and the files that compose it (VTL, CSS and JS)"
+      description: Theme folder and every file that composes it
       properties:
-        css:
+        files:
           type: array
-          description: CSS files found anywhere under the theme folder (searched recursively)
+          description: "Every file found anywhere under the theme folder (searched\
+            \ recursively), regardless of type. Each entry carries its extension so\
+            \ consumers can filter."
           items:
             $ref: "#/components/schemas/FileRefView"
         folderPath:
@@ -36323,19 +36330,9 @@ components:
         id:
           type: string
           description: Theme folder identifier
-        js:
-          type: array
-          description: JS files found anywhere under the theme folder (searched recursively)
-          items:
-            $ref: "#/components/schemas/FileRefView"
         name:
           type: string
           description: Theme folder name
-        vtls:
-          type: array
-          description: VTL files found anywhere under the theme folder (searched recursively)
-          items:
-            $ref: "#/components/schemas/FileRefView"
     ThemeView:
       type: object
       properties:
