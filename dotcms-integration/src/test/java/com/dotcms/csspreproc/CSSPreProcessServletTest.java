@@ -130,6 +130,53 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
     }
 
     /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link CSSPreProcessServlet#doGet(HttpServletRequest, HttpServletResponse)}</li>
+     *     <li><b>Given Scenario:</b> Compiling a valid SCSS file with the {@code sourcemap=true} request parameter.</li>
+     *     <li><b>Expected Result:</b> The compiled CSS is returned with an inline (embedded) source map appended as a
+     *     {@code sourceMappingURL} data URI. The map is base64-encoded and, because {@code --embed-sources} is used,
+     *     carries the original SCSS source contents.</li>
+     * </ul>
+     */
+    @Test
+    public void testCompileScssFileWithSourceMap() {
+        final String cssCode = executeSourceMapTest(inputSimpleScssFile);
+        Assert.assertTrue(String.format("Expected an inline sourceMappingURL data URI in the output, but got: %s",
+                cssCode), cssCode.contains("/*# sourceMappingURL=data:application/json;base64,"));
+        // The compiled rule body must still be present alongside the map.
+        Assert.assertTrue("Expected the compiled CSS body to be present alongside the source map.",
+                cssCode.contains("Helvetica"));
+    }
+
+    /**
+     * Compiles the given SCSS file through the servlet with {@code sourcemap=true} and returns the raw response body.
+     *
+     * @param inputScssFile The SCSS file to compile.
+     *
+     * @return The full response body (compiled CSS plus the inline source map).
+     */
+    private String executeSourceMapTest(final FileAsset inputScssFile) {
+        try {
+            final HttpServletRequest mockRequest = hydrateMockedRequest(inputScssFile);
+            ((com.dotcms.mock.request.DotCMSMockRequest) mockRequest).setParameterMap(
+                    java.util.Map.of("sourcemap", new String[]{"true"}));
+            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse()) {
+                @Override
+                public PrintWriter getWriter() {
+                    return new MockPrintWriter(getOutputStream());
+                }
+            };
+            final CSSPreProcessServlet servlet = new CSSPreProcessServlet();
+            servlet.doGet(mockRequest, mockResponse);
+            return new String(mockResponse.getBytes(), StandardCharsets.UTF_8);
+        } catch (final ServletException | IOException | DotDataException | DotSecurityException e) {
+            Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s' with a source map. " +
+                    "Aborting test execution...", inputScssFile));
+            return StringPool.BLANK;
+        }
+    }
+
+    /**
      * Utility method used to create the SCSS files in dotCMS.
      *
      * @param testScssFilePath The location of the test SCSS file inside the integration-test project.

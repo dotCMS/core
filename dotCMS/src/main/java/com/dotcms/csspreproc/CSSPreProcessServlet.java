@@ -68,6 +68,11 @@ public class CSSPreProcessServlet extends HttpServlet {
             // Check for dotsass=true query parameter to enable SASS compilation for non-standard URLs
             final String dotsassParam = req.getParameter("dotsass");
             final boolean isDotsassParam = "true".equalsIgnoreCase(dotsassParam);
+
+            // Per-request opt-in for an inline (embedded) source map. When on, the compiled CSS carries a
+            // `sourceMappingURL` data URI pointing back to the source SCSS. Off by default, so the regular
+            // stylesheet-serving path is completely unaffected.
+            final boolean sourceMap = "true".equalsIgnoreCase(req.getParameter("sourcemap"));
             
             String fileUri;
             if (isDotsassParam) {
@@ -114,7 +119,7 @@ public class CSSPreProcessServlet extends HttpServlet {
             
             Logger.debug(this, String.format("-> Original URI = %s", originalURI));
             Logger.debug(this, String.format("-> File URI     = %s", fileUri));
-            final DotLibSassCompiler compiler = new DotLibSassCompiler(currentSite, fileUri, live, req);
+            final DotLibSassCompiler compiler = new DotLibSassCompiler(currentSite, fileUri, live, sourceMap, req);
             
             // Check if the asset exists
             actualUri = fileUri;
@@ -157,8 +162,16 @@ public class CSSPreProcessServlet extends HttpServlet {
                 }
             }
             
+            // Source map requests are served fresh and never touch the shared CSS cache: caching is keyed by
+            // (site, uri, live) only, so storing the heavier map-embedded output would leak it to normal requests
+            // (and vice versa). This keeps the default path byte-identical while letting callers opt into the map.
+            if (sourceMap) {
+                serveWithSourceMap(req, resp, compiler, currentSite, fileUri, actualUri, userHasEditPerms);
+                return;
+            }
+
             CachedCSS cache = CacheLocator.getCSSCache().get(currentSite.getIdentifier(), actualUri, live, user);
-            
+
             byte[] responseData=null;
             Date cacheMaxDate=null;
             CachedCSS cacheObject=null;
@@ -315,6 +328,65 @@ public class CSSPreProcessServlet extends HttpServlet {
             } catch (final DotHibernateException e) {
                 Logger.warn(this, "Exception while hibernate session close",e);
             }
+        }
+    }
+
+    /**
+     * Compiles the requested SCSS file with an inline (embedded) source map and serves the result directly, bypassing
+     * the CSS cache. The compiled CSS carries a {@code /*# sourceMappingURL=data:application/json;base64,... *}{@code /}
+     * comment whose map includes column-level mappings and the original SCSS source contents (via
+     * {@code --embed-sources}), so callers can trace a compiled rule back to its source {@code .scss} file and position.
+     * <p>This path is intentionally uncached: the shared CSS cache is keyed only by {@code (site, uri, live)}, so it
+     * cannot distinguish a map-embedded response from the regular one. Serving fresh keeps the default (non-map) output
+     * byte-identical to today's behavior.</p>
+     *
+     * @param req              The current {@link HttpServletRequest}.
+     * @param resp             The current {@link HttpServletResponse}.
+     * @param compiler         The {@link DotLibSassCompiler} already configured to emit a source map.
+     * @param site             The {@link Host} the SCSS file belongs to.
+     * @param fileUri          The requested file URI (used for logging and the {@code Content-Disposition} name).
+     * @param actualUri        The resolved {@code .scss} URI being compiled.
+     * @param userHasEditPerms Whether the current user may edit the file (controls whether compile errors are shown).
+     */
+    private void serveWithSourceMap(final HttpServletRequest req, final HttpServletResponse resp,
+            final DotLibSassCompiler compiler, final Host site, final String fileUri, final String actualUri,
+            final boolean userHasEditPerms) throws Exception {
+        Logger.debug(this, String.format("Compiling file '%s:%s' with an inline source map (uncached) ...", site,
+                fileUri));
+        try {
+            compiler.compile();
+        } catch (final Throwable ex) {
+            Throwable throwable = ex;
+            Logger.error(this, String.format("An error occurred when compiling the SCSS file '%s:%s' with a source " +
+                    "map: %s", site, fileUri, ExceptionUtil.getErrorMessage(ex)), ex);
+            if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true) && userHasEditPerms) {
+                throwable = (throwable.getCause() != null) ? throwable.getCause() : throwable;
+                resp.getWriter().print("<html><body><h2>Error compiling sass</h2><p>(this only shows if you are an " +
+                        "editor in dotCMS)</p><pre>");
+                throwable.printStackTrace(resp.getWriter());
+                resp.getWriter().print("</pre></body></html>");
+            }
+            throw new Exception(throwable);
+        }
+
+        final byte[] responseData = compiler.getOutput();
+        if (responseData == null) {
+            Logger.error(this, String.format("The SASS Compiler generated a null output for file '%s:%s'", site,
+                    fileUri));
+            sendError(resp, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+        resp.setContentType("text/css");
+        resp.setHeader("Content-Disposition",
+                "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/')) + "\"");
+        // The map reflects the file's current state at compile time; don't let intermediaries cache it.
+        resp.setHeader("Cache-Control", "no-store");
+        try {
+            resp.getOutputStream().write(responseData);
+        } catch (final IOException io) {
+            Logger.error(CSSPreProcessServlet.class, String.format("Failed to write source-map response for file " +
+                    "'%s:%s': %s", site, actualUri, ExceptionUtil.getErrorMessage(io)), io);
         }
     }
 
