@@ -693,7 +693,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Reuse an orphaned cluster index rather than failing the create (see method javadoc).
         // The existence probe is best-effort: any failure is treated as "does not exist" so we
         // fall through to the create path rather than aborting bootstrap on a transient error.
+        // The failure is logged at DEBUG so a real connectivity/config problem (which would then
+        // also surface on the create attempt) stays traceable instead of being silently swallowed.
         final boolean alreadyExists = Try.of(() -> providerApi.indexExists(physicalName))
+                .onFailure(e -> Logger.debug(this,
+                        "Bootstrap existence probe failed for " + physicalName
+                        + " — treating as 'does not exist' and attempting create: "
+                        + e.getMessage(), e))
                 .getOrElse(false);
         if (alreadyExists) {
             Logger.info(this, String.format(
