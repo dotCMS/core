@@ -1,0 +1,186 @@
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotAccessibilityStudioRunComponent } from './dot-accessibility-studio-run.component';
+
+import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
+import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+
+const MOCK_PAGE: StudioPageRow = {
+    identifier: 'id-1',
+    title: 'About Us',
+    path: '/about-us',
+    type: 'htmlpageasset',
+    languageId: 1,
+    hostName: 'demo.dotcms.com',
+    modDate: '04/09/2026',
+    modUserName: 'Admin User',
+    live: true
+};
+
+describe('DotAccessibilityStudioRunComponent', () => {
+    let spectator: Spectator<DotAccessibilityStudioRunComponent>;
+
+    const runScan = jest.fn();
+    const startFix = jest.fn();
+    const publish = jest.fn();
+    const discard = jest.fn();
+    const backToPicker = jest.fn();
+    const setSkipCss = jest.fn();
+
+    // Mutable per-test state read by the store mock's reactive getters.
+    let phase: StudioPhase = 'ready';
+    let report: FixReport | null = null;
+
+    const storeMock = {
+        phase: () => phase,
+        report: () => report,
+        selected: () => MOCK_PAGE,
+        skipCss: () => false,
+        isReady: () => phase === 'ready',
+        isScanning: () => phase === 'scanning',
+        isScanned: () => phase === 'scanned',
+        isFixing: () => phase === 'fixing',
+        isDone: () => phase === 'done',
+        isPublished: () => phase === 'published',
+        isWorking: () => phase === 'scanning' || phase === 'fixing',
+        scanned: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
+        beforeCount: () => report?.scan.before.violations ?? 0,
+        afterCount: () => report?.scan.after.violations ?? 0,
+        fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
+        reportedResults: () =>
+            report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
+        fixedCount: () =>
+            report?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0,
+        reportedCount: () =>
+            report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
+        runScan,
+        startFix,
+        publish,
+        discard,
+        backToPicker,
+        setSkipCss
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotAccessibilityStudioRunComponent,
+        componentProviders: [{ provide: AccessibilityStudioStore, useValue: storeMock }],
+        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }]
+    });
+
+    function render(nextPhase: StudioPhase, nextReport: FixReport | null = null) {
+        phase = nextPhase;
+        report = nextReport;
+        spectator = createComponent();
+        spectator.detectChanges();
+    }
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        phase = 'ready';
+        report = null;
+    });
+
+    describe('ready phase', () => {
+        beforeEach(() => render('ready'));
+
+        it('shows the scan button', () => {
+            expect(spectator.query(byTestId('studio-scan-btn'))).toBeTruthy();
+        });
+
+        it('shows the skip-css toggle', () => {
+            expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeTruthy();
+        });
+
+        it('shows a dash in the score ring before scanning', () => {
+            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('–');
+        });
+
+        it('triggers runScan on click', () => {
+            const btn = spectator.query(byTestId('studio-scan-btn'))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(runScan).toHaveBeenCalled();
+        });
+    });
+
+    describe('scanned phase', () => {
+        beforeEach(() => render('scanned', MOCK_FIX_REPORT));
+
+        it('shows the fix button', () => {
+            expect(spectator.query(byTestId('studio-fix-btn'))).toBeTruthy();
+        });
+
+        it('shows the before-count in the ring', () => {
+            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('12');
+        });
+
+        it('triggers startFix on click', () => {
+            const btn = spectator.query(byTestId('studio-fix-btn'))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(startFix).toHaveBeenCalled();
+        });
+    });
+
+    describe('done phase', () => {
+        beforeEach(() => render('done', MOCK_FIX_REPORT));
+
+        it('shows publish + discard buttons', () => {
+            expect(spectator.query(byTestId('studio-publish-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-discard-btn'))).toBeTruthy();
+        });
+
+        it('shows the after-count in the ring', () => {
+            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
+        });
+
+        it('renders a recipe step per result plus scan/locate/rescan framing', () => {
+            // 7 fixed + 5 reported + 3 framing steps (scan, locate, rescan)
+            expect(spectator.queryAll(byTestId('studio-recipe-step')).length).toBe(15);
+        });
+
+        it('triggers publish on click', () => {
+            const btn = spectator
+                .query(byTestId('studio-publish-btn'))
+                ?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(publish).toHaveBeenCalled();
+        });
+
+        it('triggers discard on click', () => {
+            const btn = spectator
+                .query(byTestId('studio-discard-btn'))
+                ?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(discard).toHaveBeenCalled();
+        });
+    });
+
+    describe('published phase', () => {
+        beforeEach(() => render('published', MOCK_FIX_REPORT));
+
+        it('shows the all-pages button', () => {
+            expect(spectator.query(byTestId('studio-allpages-btn'))).toBeTruthy();
+        });
+    });
+
+    describe('preview pane', () => {
+        beforeEach(() => render('ready'));
+
+        it('renders the preview iframe with a preview-mode URL', () => {
+            const iframe = spectator.query(byTestId('studio-preview-iframe'));
+            expect(iframe).toBeTruthy();
+            expect(iframe?.getAttribute('src')).toContain('/about-us');
+            expect(iframe?.getAttribute('src')).toContain('mode=PREVIEW_MODE');
+        });
+    });
+
+    it('triggers backToPicker from the back button', () => {
+        render('ready');
+        const btn = spectator.query(byTestId('studio-back-btn'))?.querySelector('button');
+        spectator.click(btn as HTMLElement);
+        expect(backToPicker).toHaveBeenCalled();
+    });
+});
