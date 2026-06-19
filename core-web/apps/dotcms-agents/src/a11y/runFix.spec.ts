@@ -59,7 +59,9 @@ const SOURCES: RenderSources = {
         folderPath: '/themes/travel',
         id: 't1',
         name: 'travel',
-        vtls: [{ identifier: 'a56e', path: HEADER_VTL }]
+        vtls: [{ identifier: 'a56e', path: HEADER_VTL }],
+        css: [],
+        js: []
     },
     widgets: []
 };
@@ -78,18 +80,12 @@ const savedOk = (over: Partial<SavedAsset> = {}): SavedAsset => ({
 
 /**
  * A fake client. `scans` is a queue consumed in call order (live, baseline,
- * per-fix re-scans, final). `liveText`/`workingText` back read(). save() records
- * calls and returns savedOk by default.
+ * per-fix re-scans, final). `liveText` backs read(). save() records calls and
+ * returns savedOk by default.
  */
-function makeClient(opts: {
-    scans: ScanResult[];
-    liveText?: string;
-    workingText?: string;
-    save?: jest.Mock;
-}) {
+function makeClient(opts: { scans: ScanResult[]; liveText?: string; save?: jest.Mock }) {
     const scanQueue = [...opts.scans];
     const live = opts.liveText ?? '<img src="x.png">';
-    const working = opts.workingText ?? live;
     const save =
         opts.save ??
         jest.fn(async (path: string, _content?: string, _mime?: string) =>
@@ -98,7 +94,7 @@ function makeClient(opts: {
     return {
         scan: jest.fn(async () => scanQueue.shift() ?? makeScan(0)),
         locate: jest.fn(async () => SOURCES),
-        read: jest.fn(async (_path: string, mode?: string) => (mode === 'EDIT_MODE' ? working : live)),
+        read: jest.fn(async (_path: string) => live),
         saveWorking: save
     } as unknown as RunFixDeps['client'] & { saveWorking: jest.Mock; scan: jest.Mock };
 }
@@ -140,21 +136,34 @@ describe('runFix loop guards (plan §5)', () => {
         expect(client.saveWorking).toHaveBeenCalledTimes(1);
     });
 
-    it('refuse-if-dirty: skips when working differs from live, never saving', async () => {
+    it('fixes the same file twice — the second fix builds on the first edit', async () => {
+        // Two violations both attributed to header.vtl. The second generateFix call
+        // must receive the FIRST fix's output as its originalContent (not the live
+        // original) — we no longer guard against in-run edits to the same file.
+        const fix: jest.Mock = jest
+            .fn()
+            .mockResolvedValueOnce({ newContent: 'v1', diff: 'd1', applied: true, reason: '' })
+            .mockResolvedValueOnce({ newContent: 'v2', diff: 'd2', applied: true, reason: '' });
         const client = makeClient({
-            scans: [makeScan(12, [makeFinding()]), makeScan(12), makeScan(12)],
-            liveText: '<img src="x.png">',
-            workingText: '<img src="x.png"><!-- someone edited -->'
+            scans: [
+                makeScan(12, [makeFinding(), makeFinding({ code: 'link-name' })]), // live: 2 violations
+                makeScan(12), // baseline
+                makeScan(11), // re-scan after fix 1
+                makeScan(10), // re-scan after fix 2
+                makeScan(10) // final
+            ]
         });
         const report = await runFix(makeRequest(), {
             client,
             triage: triageFixable,
-            fix: fixApplied
+            fix
         });
 
-        expect(report.results[0].status).toBe('skipped');
-        expect(report.results[0].reason).toMatch(/differs from live/i);
-        expect(client.saveWorking).not.toHaveBeenCalled();
+        expect(report.results.every((r) => r.status === 'fixed-to-working')).toBe(true);
+        // First fix saw the live original; second fix saw the first fix's output.
+        expect(fix.mock.calls[0][0].originalContent).toBe('<img src="x.png">');
+        expect(fix.mock.calls[1][0].originalContent).toBe('v1');
+        expect(client.saveWorking).toHaveBeenCalledTimes(2);
     });
 
     it('auto-revert: re-scan worse → reverts the asset and reports regressed', async () => {

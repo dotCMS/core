@@ -22,11 +22,11 @@ import type { LanguageModel } from 'ai';
  * The loop (plan §5), shape (B): a deterministic skeleton that calls the LLM
  * only for triage/attribution and minimal-diff generation. All sequencing,
  * guards, caps, and report assembly are plain code here so the guards
- * (refuse-if-dirty, attribution-evidence gate, auto-revert-on-regression) are
- * real, testable code paths.
+ * (attribution-evidence gate, auto-revert-on-regression) are real, testable
+ * code paths.
  *
  *   SCAN(live) → SCAN(EDIT_MODE baseline) → LOCATE → READ candidates
- *   → per violation: TRIAGE → (evidence + dirty gates) → FIX → SAVE-WORKING
+ *   → per violation: TRIAGE → evidence gate → FIX → SAVE-WORKING
  *   → RE-SCAN(EDIT_MODE) → auto-revert if worse → REPORT
  *
  * Re-scan basis is EDIT_MODE-before vs EDIT_MODE-after (S0: EDIT_MODE chrome
@@ -78,9 +78,13 @@ function scanUrls(req: FixRequest): { live: string; editMode: string } {
     return { live, editMode };
 }
 
-/** Candidate source refs from /_render-sources: theme VTLs + container VTLs. */
+/** Candidate source refs from /_render-sources: theme VTL/CSS/JS + container VTLs. */
 function collectCandidates(sources: RenderSources): SourceRef[] {
-    const refs: SourceRef[] = [...(sources.theme?.vtls ?? [])];
+    const refs: SourceRef[] = [
+        ...(sources.theme?.vtls ?? []),
+        ...(sources.theme?.css ?? []),
+        ...(sources.theme?.js ?? []),
+    ];
     for (const container of Object.values(sources.containers ?? {})) {
         for (const ct of container.contentTypes ?? []) {
             if (ct.path) {
@@ -115,14 +119,16 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     const sources = await client.locate(req.page.uri, req.page.hostId);
     const candidates = collectCandidates(sources);
 
-    // 3. READ candidate sources once (shared across triage of all violations).
+    // 3. READ candidate sources once. `currentContent` is the single working copy
+    // we progressively improve: each fix builds on the previous edit to the same
+    // file (and triage/fix always see the latest content). We do NOT guard against
+    // pre-existing unpublished edits — the goal is to fix the a11y issue; working-
+    // save is non-destructive (dotCMS keeps per-asset version history, plan §3).
     step('read', `Reading ${candidates.length} source files`);
-    const liveContent: Record<string, string> = {};
-    const workingContent: Record<string, string> = {};
+    const currentContent: Record<string, string> = {};
     for (const ref of candidates) {
         try {
-            liveContent[ref.path] = await client.read(ref.path);
-            workingContent[ref.path] = await client.read(ref.path, 'EDIT_MODE');
+            currentContent[ref.path] = await client.read(ref.path);
         } catch {
             // Unreadable candidate — skip; triage will treat it as (not read).
         }
@@ -141,8 +147,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             req,
             deps,
             candidates,
-            liveContent,
-            workingContent,
+            currentContent,
             editedPaths,
             caps,
             editModeUrl: editMode,
@@ -187,8 +192,7 @@ interface ProcessCtx {
     req: FixRequest;
     deps: RunFixDeps;
     candidates: SourceRef[];
-    liveContent: Record<string, string>;
-    workingContent: Record<string, string>;
+    currentContent: Record<string, string>;
     editedPaths: Set<string>;
     caps: RunFixCaps;
     editModeUrl: string;
@@ -197,7 +201,7 @@ interface ProcessCtx {
 
 /** One violation through triage → guards → fix → save → re-scan → revert. */
 async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
-    const { finding, deps, candidates, liveContent, workingContent, editedPaths, caps } = ctx;
+    const { finding, deps, candidates, currentContent, editedPaths, caps } = ctx;
     const client = deps.client;
     const step = deps.onStep ?? noop;
     const base: FixResult = { ruleId: finding.code, status: 'reported' };
@@ -209,7 +213,7 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
     let decision: TriageDecision;
     try {
         decision = await triageFn(
-            { finding, candidates, fileContents: liveContent, skipCss: ctx.req.options.skipCss },
+            { finding, candidates, fileContents: currentContent, skipCss: ctx.req.options.skipCss },
             deps.model
         );
     } catch (e) {
@@ -237,21 +241,10 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, status: 'reported', file: path, reason: 'Per-run file cap reached' };
     }
 
-    // refuse-if-dirty (§5 step 5): working differs from live → someone has
-    // unpublished edits; skip rather than clobber.
-    const liveText = liveContent[path];
-    const workingText = workingContent[path];
-    if (liveText !== undefined && workingText !== undefined && liveText !== workingText) {
-        return {
-            ...base,
-            status: 'skipped',
-            file: path,
-            identifier: ref?.identifier,
-            reason: 'Working version already differs from live (unpublished edits); not clobbered.'
-        };
-    }
-
-    const original = liveText ?? '';
+    // The current working copy of this file (the original live read, or the result
+    // of a previous in-run edit to the same file). A regression reverts to exactly
+    // this — the state immediately before this fix.
+    const original = currentContent[path] ?? '';
 
     // GENERATE FIX
     step('fix', `Fixing ${finding.code} in ${path}`);
@@ -285,7 +278,7 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
         return { ...base, status: 'failed', file: path, identifier: saved?.identifier ?? ref?.identifier, reason: 'save returned 0 bytes; not applied' };
     }
     editedPaths.add(path);
-    workingContent[path] = fix.newContent; // keep cache consistent for later violations
+    currentContent[path] = fix.newContent; // later violations on this file build on this edit
 
     // RE-SCAN (EDIT_MODE) → auto-revert if worse.
     step('rescan', `Re-scanning after ${finding.code}`);
@@ -297,7 +290,7 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
             step('fix', `Reverting ${path} (re-scan worse)`);
             await client.saveWorking(path, original, path.endsWith('.css') ? 'text/css' : 'text/plain');
             editedPaths.delete(path);
-            workingContent[path] = original;
+            currentContent[path] = original;
             return {
                 ...base,
                 status: 'regressed',
