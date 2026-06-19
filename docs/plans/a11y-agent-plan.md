@@ -1,6 +1,7 @@
 # dotCMS Accessibility-Fix Agent + Accessibility Studio — Plan
 
-> **Status:** Design locked, not yet implemented.
+> **Status:** S0 (spike) + S1 (headless agent loop) implemented; S1.5 (CSS attribution)
+> spiked & validated, build pending; S2+ not started.
 > **Date:** 2026-06
 > **Owner:** Freddy Montes
 > **North-star framing:** a11y is the **wedge**, not the destination. The long-term
@@ -81,6 +82,7 @@ service is a second, independent consumer** — not built on the MCP server.
 | **Autonomy** | Auto-fix to **working**, never publish | Matches #36112 working-save contract. Human publishes. |
 | **Rollback / undo** | **Out of scope** — no batch undo; rely on dotCMS version history | No snapshots/manifests/Discard in v1. The agent only writes *working* (never live), so the worst case is reverting working versions via dotCMS's per-asset version history (every `save-working` creates a new version). The report still flags **`failed`/`regressed`** results (§6) so nothing publishes blind. |
 | **Fix scope** | Triage everything; **fix VTL *and* CSS** (incl. contrast) | Auto-fix source-VTL issues **and CSS contrast** — contrast is the most common violation class, so punting on CSS punts on most of the real work. CSS edits go to the same `/api/v2/assets` working version. **Per-run "skip CSS" opt-out** for users who don't want visual changes. Shared-rule/token changes fan out site-wide — **by design** (a theme-level issue should be fixed everywhere); the report flags the fan-out (`blastRadius`, §9) so the human sees scope before publishing. Still report-only: content-field / third-party / JS-injected / ambiguous. |
+| **CSS attribution** | **Deterministic (parse in code), NOT LLM-sent**; edit **SCSS source**, not compiled | Whole stylesheets are too large/expensive to send to the model (demo theme ≈34K tokens of compiled CSS *per triage*; doesn't scale to many SCSS files). Instead the agent **parses CSS in code** (postcss) and uses **css-select + specificity** to find the rule(s) that style the offending element, sending the LLM only those few rules (spike: 34,007 → ~106 tokens, 99.7%; scale-independent). Sound matching = **pure compound selectors only** (the scan gives the element, not its ancestors). Fixes land in the **SCSS source** (`_render-sources` now returns the full `theme.files[]` tree) — editing the **compiled** artifact (`styles_precompiled.css`) is futile (regenerated on compile). Built in **S1.5** (spike validated). |
 | **LLM brain** | **Vercel AI SDK** (`ai`) + `@ai-sdk/anthropic` *(v1)* | Claude Opus/Sonnet 4.x for v1. **The provider is not locked** — production may use a different model/provider (Azure, Bedrock, dotAI-backed). The SDK is chosen precisely so that swap needs no loop rewrite; only the v1 default + Anthropic key are committed here. |
 | **Agent loop** | `generateText` + `tools` + `maxSteps` | Built-in agentic tool-use loop. |
 | **Tool surface** | **3 stages: prompt-guard (solo spike) → path allowlist (MVP) → typed tools (pre-GA)** | Every dotCMS call is an `api.request(...)` through the `@dotcms/agentic-tools` sandbox. The minted token is short-*lived* but not short-*scoped* — it carries the user's full permissions (can publish/delete), so the **boundary is what the agent can call, not the token**. Three stages: **(A) solo spike** — raw `execute` + system prompt + non-dotCMS-origin guard (fine because it's only us). **(B) MVP** — keep raw `execute` but the adapter interceptor enforces a **path allowlist**: permit only `page-scanner/a11y/check`, `_render-sources` GET, `/api/v2/assets` GET + `/save`; **hard-reject** publish/delete/workflow/config at the wire. Cheap (one function at the chokepoint), structural (blocks prompt-injection → destructive call), forward-compatible. **(C) pre-GA** — wrap in ~4 typed tools (`scanA11y`, `locateSources`, `readAsset`, `saveWorking`) so destructive calls aren't even *expressible*. The allowlist (B) is the spec for (C). |
@@ -151,12 +153,20 @@ JSON response instead of SSE — see §8 naming note.*
    - **CSS contrast** (a stylesheet rule or a `--token`) → fix path *unless the run opted
      out of CSS*. Estimate/flag blast radius (element-scoped vs shared rule vs token).
    - **content-field / third-party / JS-injected / ambiguous** → report-only with guidance.
-   - **attribution** — `/_render-sources` gives candidate source refs and experiments show the
-     model maps axe selector/HTML → the right file reliably (§9). **Gate on evidence:** confirm
+   - **attribution (VTL)** — `/_render-sources` gives candidate source refs and experiments show
+     the model maps axe selector/HTML → the right file reliably (§9). **Gate on evidence:** confirm
      the READ file (step 4) actually contains the offending markup/selector before editing;
      if not (deep nesting, JS-injected DOM, cascade ambiguity) → report, don't guess-edit.
-4. **READ** — `GET /api/v2/assets?path=...` (PR #36112) → raw VTL **or CSS** (`.css`/
-   `.dotsass`) for each source ref tied to a fixable violation.
+   - **attribution (CSS) — deterministic, in code (S1.5).** For contrast (and CSS-governed
+     violations), the agent does **not** send stylesheets to the model. It parses the CSS
+     (postcss), matches the offending element against rule selectors (css-select), ranks by
+     specificity, and passes the LLM only the **winning color rule(s)** (§3 CSS attribution, §9).
+     Match soundly = **pure compound selectors only** (the scan gives the element, not ancestors).
+4. **READ** — `GET /api/v2/assets?path=...` (PR #36112) → raw VTL **or CSS/SCSS** for each
+   source ref tied to a fixable violation. `_render-sources` returns the full theme
+   `files[]` tree (incl. the SCSS partials), so CSS fixes can target **source**, not the
+   compiled artifact (§3 CSS attribution). Match against compiled CSS (what actually applies),
+   then map the winning rule back to its **SCSS source** file to edit (S1.5).
 5. **FIX-TO-WORKING** — model produces a minimal diff; `PUT /api/v2/assets/save` (working
    only). Verify persisted `fileSize`. **Never `/publish`.** The agent does **not** guard
    against pre-existing unpublished edits — the goal is to fix the a11y issue, and working-
@@ -170,6 +180,11 @@ JSON response instead of SSE — see §8 naming note.*
    For **contrast**: nudge the *existing* color to clear the WCAG threshold (AA 4.5:1 normal
    / 3:1 large), don't invent a new brand color; if the threshold can't be met without a
    design decision, report. Flag shared-rule/token edits (wide blast radius) in the report.
+   The edit targets the **SCSS source** (the rule attributed in step 3), never the compiled
+   artifact — and note SCSS indirection: the literal color may live in a variable
+   (`_variables-custom.scss`), not next to the selector. If the source rule can't be located
+   confidently → report (S1.5). (The contrast ratio + minimal nudge can also be computed in
+   code, leaving the LLM only ambiguous cases — S1.5.)
 6. **RE-SCAN (working)** — scan `…?host_id=<id>&mode=EDIT_MODE` (§8.2) → confirm the
    violation cleared; compute before/after delta. Axe-pass is necessary but **not
    sufficient** — also confirm the VTL still parses/renders (a non-error working render is the
@@ -460,6 +475,19 @@ Unknowns that could still break — not restatements of the §3 decisions.
   markup/selector before writing; if it can't, → report, don't guess-edit. *Caveat:*
   validated on the pages/violation types tried so far, not proven universal (deep nesting,
   JS-injected DOM are the long tail).
+- **CSS contrast attribution — VALIDATED in a spike (was a cost+scale blocker).** Sending
+  whole stylesheets to the LLM cost ~$1–12/page and doesn't scale (many SCSS files overflow
+  context). Resolved by **deterministic attribution** (postcss parse → css-select match →
+  specificity rank), sending only the winning rule(s): spike cut the demo theme from 34,007 →
+  ~106 tokens (99.7%), scale-independent. **Two residual constraints, not blockers:**
+  (a) **sound matching is pure-compound-only** — the scan finding carries the element but
+  **not its ancestors**, so descendant selectors (`.x .y a`) can't be verified and are
+  excluded (trades recall for precision; the rightmost-compound fallback false-positives).
+  Recovering that recall needs the scanner to pass ancestor HTML — a later enhancement.
+  (b) **compiled-vs-source** — matching runs on the *compiled* CSS (what applies), but the
+  fix must edit the **SCSS source** (editing the compiled artifact is wiped on next compile);
+  mapping a winning rule back to its `.scss` file (and through SCSS variables) is the open
+  build step (S1.5). Spike: `core-web/scratch/SPIKE-css-attribution.md`.
 - **VTL edit quality + semantic over-reach (now the top remaining risk).** Beyond
   correct/minimal diffs (no template breakage): generic alt/ARIA/heading fixes can *pass axe
   yet be bad accessibility*. Needs the "don't fabricate semantic content" policy (§5) —
@@ -531,6 +559,12 @@ system. Three phases: **prove → thread → polish.** All endpoints are merged 
 3. **Lock the report schema + tests (§6)** — proxy and Studio both depend on it; freezing
    it unblocks parallel work.
 4. Expose as a plain HTTP endpoint (`POST /fix` → JSON). No SSE yet.
+4b. **CSS attribution (S1.5).** Replace "send whole CSS to the LLM" with deterministic
+   attribution (postcss + css-select + specificity → only the winning rule(s)), and map the
+   compiled rule back to its **SCSS source** so contrast fixes land in source, not the
+   artifact. Spike validated (§3 CSS attribution, §9); this is what makes contrast — the most
+   common violation class — affordable and correct. Does not touch the §6 report, so it
+   doesn't block S2/S3, but contrast fixes aren't real until it lands.
 
 ### Phase 2 — Thread through dotCMS (still no streaming)
 
