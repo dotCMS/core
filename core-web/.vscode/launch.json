@@ -47,6 +47,24 @@
                 "${workspaceFolder}/apps/ai-evals/dist/**/*.(m|c|)js",
                 "!**/node_modules/**"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug dotcms-agents with Nx",
+            "runtimeExecutable": "pnpm exec",
+            "runtimeArgs": ["nx", "serve", "dotcms-agents"],
+            "env": {
+                "NODE_OPTIONS": "--inspect=9230"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": ["<node_internals>/**"],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/apps/dotcms-agents/dist/**/*.(m|c|)js",
+                "!**/node_modules/**"
+            ]
         }
     ]
 }
