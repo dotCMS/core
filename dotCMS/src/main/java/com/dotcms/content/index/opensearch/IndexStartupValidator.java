@@ -1,11 +1,11 @@
-package com.dotcms.content.index;
+package com.dotcms.content.index.opensearch;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.index.opensearch.OSClientProvider;
-import com.dotcms.content.index.opensearch.OSIndexProperty;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -59,11 +59,18 @@ public class IndexStartupValidator {
     public static boolean validateIndexingConfig() {
         try {
             new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
+            Logger.info(IndexStartupValidator.class,
+                    "OpenSearch startup validation PASSED — connected to OS successfully; migration phase "
+                    + IndexConfigHelper.MigrationPhase.current().name() + " is active.");
             return true;
-        } catch (DotRuntimeException e) {
+        } catch (Exception e) {
+            // Catch broadly (not only DotRuntimeException): any failure here MUST funnel through
+            // this single FAILED-and-fallback path so the outcome is always logged and the caller
+            // reaches haltMigration()/Phase-3 abort, instead of an unexpected exception escaping to
+            // a generic FATAL that skips the ES-only fallback.
             Logger.error(IndexStartupValidator.class,
-                    "OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: "
-                    + e.getMessage(), e);
+                    "OpenSearch startup validation FAILED — halting OS migration; dotCMS falls back to"
+                    + " ES-only (PHASE_0_MIGRATION_NOT_STARTED): " + e.getMessage(), e);
             return false;
         }
     }
@@ -71,10 +78,89 @@ public class IndexStartupValidator {
     /**
      * Runs all validations. Throws {@link DotRuntimeException} on the first failure
      * so the application startup is aborted with a clear error message.
+     *
+     * <p>Begins by logging an easy-to-locate banner with the resolved OpenSearch migration
+     * parameters (phase, endpoints, effective authentication mode, TLS), so the configuration and
+     * the success/fallback outcome appear together as a single startup story under one logger.</p>
      */
     public void validate() {
+        final OSClientConfig config = resolveConfig();
+        logConfigSummary(config);
         validateOSVersion();
-        validateEndpointSeparation();
+        validateEndpointSeparation(config);
+    }
+
+    // -------------------------------------------------------------------------
+    // Configuration summary banner
+    // -------------------------------------------------------------------------
+
+    /**
+     * Re-resolves the OpenSearch configuration from properties through the same package-private
+     * resolution path the client is built from ({@link ConfigurableOpenSearchProvider#configFromProperties()}).
+     *
+     * <p><strong>This is a fresh re-resolution, not the live client's stored config.</strong> It is
+     * deterministic from the same properties, so at startup it matches what the client was built
+     * with; it would only diverge if properties changed at runtime without the client being rebuilt.
+     * The banner is therefore a faithful report of the resolved configuration, not a readback of the
+     * connected client's state.</p>
+     *
+     * <p>A resolution failure (e.g. an invalid/conflicting auth combination) is surfaced as a
+     * {@link DotRuntimeException} so it flows through the same uniform halt path as every other
+     * startup failure.</p>
+     */
+    private OSClientConfig resolveConfig() {
+        try {
+            return ConfigurableOpenSearchProvider.configFromProperties();
+        } catch (Exception e) {
+            throw new DotRuntimeException("Invalid OpenSearch configuration: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Emits an easy-to-locate, single-block summary of the OpenSearch migration parameters that
+     * were resolved — migration phase, endpoints, the effective authentication mode, and the TLS
+     * flags. Sensitive values (password, JWT token) are masked via
+     * {@link StringUtils#maskSecret(String)} so the banner is safe to leave in the logs.
+     *
+     * <p>Two things this banner makes explicit on purpose, because their absence was confusing
+     * during QA:</p>
+     * <ul>
+     *   <li>When no credentials are resolved (e.g. only an endpoint URL was provided) the auth mode
+     *       is reported as {@code NONE — connecting ANONYMOUSLY}. dotCMS will still connect if the
+     *       OpenSearch cluster does not enforce security, so this line is the signal that no
+     *       credentials were applied — it is not an error by itself.</li>
+     *   <li>This banner reflects the resolved configuration; reachability and the OS version are
+     *       verified by the checks that follow — a printed config is not yet a confirmed
+     *       connection.</li>
+     * </ul>
+     */
+    private void logConfigSummary(final OSClientConfig config) {
+        final String phase = IndexConfigHelper.MigrationPhase.current().name();
+
+        final String authSummary;
+        if (config.jwtToken().isPresent()) {
+            authSummary = "JWT (token=" + StringUtils.maskSecret(config.jwtToken().get()) + ")";
+        } else if (config.clientCertPath().isPresent() || config.clientKeyPath().isPresent()) {
+            authSummary = "CERT (clientCert=" + config.clientCertPath().orElse("(not set)")
+                    + ", clientKey=" + config.clientKeyPath().orElse("(not set)") + ")";
+        } else if (config.username().isPresent() || config.password().isPresent()) {
+            authSummary = "BASIC (user=" + config.username().orElse("(not set)")
+                    + ", password=" + StringUtils.maskSecret(config.password().orElse(null)) + ")";
+        } else {
+            authSummary = "NONE — connecting ANONYMOUSLY (no username/password/token resolved)";
+        }
+
+        Logger.info(this, System.lineSeparator() + String.join(System.lineSeparator(),
+                "========== OpenSearch Migration — client configuration ==========",
+                "  Migration phase   : " + phase,
+                "  OS endpoints      : " + config.endpoints(),
+                "  Authentication    : " + authSummary,
+                "  TLS enabled       : " + config.tlsEnabled(),
+                "  TLS cert required : " + config.certRequired(),
+                "  TLS trust selfsign: " + config.trustSelfSigned(),
+                "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
+                "  (connectivity + OS version are verified by the checks that follow)",
+                "================================================================="));
     }
 
     // -------------------------------------------------------------------------
@@ -121,16 +207,20 @@ public class IndexStartupValidator {
      * Resolves the effective ES and OS endpoint sets and asserts they do not share
      * any {@code host:port} pair.
      *
-     * <p><strong>Best-effort:</strong> both sides are resolved from config strings through
-     * the same {@link #normalizeEndpoint} path, making the comparison consistent.
-     * Two configs that refer to the same host via different forms (e.g. {@code "127.0.0.1"}
-     * vs {@code "localhost"}) will not be detected as overlapping.</p>
+     * <p>The OS side comes from the already-resolved {@link OSClientConfig#endpoints()} (the very
+     * endpoints the client is built with), and the ES side is read from config; both are passed
+     * through the same {@link #normalizeEndpoint} path so the comparison is consistent.</p>
+     *
+     * <p><strong>Best-effort:</strong> two configs that refer to the same host via different forms
+     * (e.g. {@code "127.0.0.1"} vs {@code "localhost"}) will not be detected as overlapping.</p>
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
-    private void validateEndpointSeparation() {
+    private void validateEndpointSeparation(final OSClientConfig config) {
         final Set<String> esEndpoints = resolveESEndpoints();
-        final Set<String> osEndpoints = resolveOSEndpoints();
+        final Set<String> osEndpoints = config.endpoints().stream()
+                .map(IndexStartupValidator::normalizeEndpoint)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         final Set<String> overlap = new LinkedHashSet<>(esEndpoints);
         overlap.retainAll(osEndpoints);
@@ -147,8 +237,8 @@ public class IndexStartupValidator {
     }
 
     /**
-     * Resolves ES endpoints from configuration, using the same normalisation path as
-     * {@link #resolveOSEndpoints()} so both sides can be compared consistently.
+     * Resolves ES endpoints from configuration, passing them through the same
+     * {@link #normalizeEndpoint} path used for the OS side so both can be compared consistently.
      *
      * <p>Reads {@code ES_ENDPOINTS} (full URL array) when present; otherwise synthesises
      * a single entry from {@code ES_HOSTNAME} / {@code ES_PORT}, defaulting to
@@ -163,29 +253,6 @@ public class IndexStartupValidator {
         }
         final String host = Config.getStringProperty("ES_HOSTNAME", "localhost");
         final int    port = Config.getIntProperty("ES_PORT", 9200);
-        return Set.of(host + ":" + port);
-    }
-
-    /**
-     * Resolves OS endpoints from configuration with the same fallback chain that
-     * {@link IndexConfigHelper} applies:
-     * {@code OS_ENDPOINTS} → {@code OS_HOSTNAME}/{@code OS_PORT} →
-     * {@code ES_HOSTNAME}/{@code ES_PORT} → {@code localhost:9200}.
-     *
-     * <p>Uses {@code OS_ENDPOINTS} (full URL array) when present; otherwise
-     * synthesises a single entry from the individual host/port/protocol properties.</p>
-     */
-    private Set<String> resolveOSEndpoints() {
-        final String[] rawEndpoints = Config.getStringArrayProperty("OS_ENDPOINTS", null);
-        if (rawEndpoints != null && rawEndpoints.length > 0) {
-            return Arrays.stream(rawEndpoints)
-                    .map(IndexStartupValidator::normalizeEndpoint)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-        }
-
-        // Fall back to individual host/port properties (mirrors ConfigurableOpenSearchProvider)
-        final String host = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
-        final int    port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
         return Set.of(host + ":" + port);
     }
 
