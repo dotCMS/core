@@ -59,9 +59,7 @@ const SOURCES: RenderSources = {
         folderPath: '/themes/travel',
         id: 't1',
         name: 'travel',
-        vtls: [{ identifier: 'a56e', path: HEADER_VTL }],
-        css: [],
-        js: []
+        files: [{ identifier: 'a56e', path: HEADER_VTL, extension: 'vtl' }]
     },
     widgets: []
 };
