@@ -788,7 +788,7 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
      *                 {@code reindex_live}/{@code reindex_working} pair (all NULL version),
      *                 alongside the promoted OS {@code .os} (version 3.X) {@code live}/{@code working}
      *                 pair — and an unrelated {@code site_search} pointer (also NULL version).
-     * When : {@link VersionedIndicesAPI#removeLegacyContentIndices()} runs (the cleanup step the
+     * When : {@link VersionedIndicesAPI#removeLegacyIndices()} runs (the cleanup step the
      *        Phase-3 switchover now invokes).
      * Then : the four legacy ES content rows are gone; the {@code site_search} row is preserved
      *        (it is NOT part of the content-index migration); and the OS rows are preserved
@@ -800,7 +800,7 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
      * {@code IndiciesAPI.point(savedEsInfo)}.</p>
      */
     @Test
-    public void test_phase3_removeLegacyContentIndices_purgesEsRowsPreservesSiteSearchAndOs()
+    public void test_phase3_removeLegacyIndices_purgesEsRowsPreservesSiteSearchAndOs()
             throws DotDataException {
         setPhase(3);
 
@@ -830,7 +830,7 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
             insertIndiciesRow(osWorking,   "working",         VersionedIndices.OPENSEARCH_3X);
             insertIndiciesRow(osLive,      "live",            VersionedIndices.OPENSEARCH_3X);
 
-            final int removed = APILocator.getVersionedIndicesAPI().removeLegacyContentIndices();
+            final int removed = APILocator.getVersionedIndicesAPI().removeLegacyIndices();
 
             assertTrue("Cleanup must remove at least our 4 seeded ES content rows",
                     removed >= 4);

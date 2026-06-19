@@ -117,7 +117,7 @@ public interface VersionedIndicesAPI {
      * @return the number of rows removed
      * @throws DotDataException if a SQL error occurs
      */
-    int removeLegacyContentIndices() throws DotDataException;
+    int removeLegacyIndices() throws DotDataException;
 
     /**
      * Clears all cached indices data.

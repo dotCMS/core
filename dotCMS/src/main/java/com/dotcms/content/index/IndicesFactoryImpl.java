@@ -174,7 +174,7 @@ public class IndicesFactoryImpl implements IndicesFactory {
     }
 
     @Override
-    public int removeLegacyContentIndices() throws DotDataException {
+    public int removeLegacyIndices() throws DotDataException {
         try {
             final DotConnect dotConnect = new DotConnect();
             final int deletedRows = dotConnect.executeUpdate(DELETE_LEGACY_CONTENT_INDICES_SQL);

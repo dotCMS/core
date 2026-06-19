@@ -145,7 +145,7 @@ public interface IndicesFactory {
      * @return the number of rows removed
      * @throws DotDataException if a SQL error occurs
      */
-    int removeLegacyContentIndices() throws DotDataException;
+    int removeLegacyIndices() throws DotDataException;
 
     /**
      * Validates that every present index name in {@code indicesInfo} carries the

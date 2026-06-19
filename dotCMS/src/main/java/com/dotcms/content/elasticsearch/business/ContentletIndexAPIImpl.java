@@ -1331,7 +1331,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // and must not be undone by a housekeeping failure. Physical ES index deletion is left to
         // the scheduled DeleteInactiveLiveWorkingIndicesJob.
         try {
-            versionedIndicesAPI.removeLegacyContentIndices();
+            versionedIndicesAPI.removeLegacyIndices();
         } catch (Exception cleanupEx) {
             Logger.warn(this, "Phase 3 switchover: could not purge legacy ES indicies rows", cleanupEx);
         }
