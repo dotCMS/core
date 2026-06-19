@@ -216,6 +216,7 @@ const baseUVEState = {
     $urlContentMap: urlContentMapSignal, // Mutable for tests
     $lockOptions: toggleLockOptionsSignal, // Mutable for tests
     $lockFeatureEnabled: $lockFeatureEnabledSignal,
+    $isMissingTranslation: signal(false),
     pageReload: jest.fn(),
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
@@ -260,8 +261,7 @@ const baseUVEState = {
         ogTags: null,
         styleSchemas: []
     }),
-    setPaletteOpen: jest.fn(),
-    $isMissingTranslation: signal(false)
+    setPaletteOpen: jest.fn()
 };
 
 /** Creates lock options for tests. Defaults to unlocked state; pass overrides for locked/disabled cases. */

@@ -2078,6 +2078,16 @@ describe('EditEmaEditorComponent', () => {
                         language_id: '2',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
+                    // language 2 has translated: false — our store forces mode to PREVIEW and
+                    // editorHasAccessToEditMode returns false, hiding the dialog.
+                    // Simulate the page being translated so the dialog is accessible.
+                    patchState(store, {
+                        pageLanguages: store.pageLanguages().map((lang) => ({
+                            ...lang,
+                            translated: true
+                        })),
+                        pageParams: { ...store.pageParams(), mode: UVE_MODE.EDIT }
+                    });
 
                     const pageLoadSpy = jest.spyOn(store, 'pageLoad');
 

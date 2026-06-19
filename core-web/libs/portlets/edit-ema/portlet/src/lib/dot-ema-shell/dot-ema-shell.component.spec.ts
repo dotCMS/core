@@ -642,6 +642,7 @@ describe('DotEmaShellComponent', () => {
 
                 const userParams = {
                     ...baseParams,
+                    mode: UVE_MODE.PREVIEW, // language 2 has translated: false, store forces mode to PREVIEW
                     personaId: 'SomeCoolDude'
                 };
 

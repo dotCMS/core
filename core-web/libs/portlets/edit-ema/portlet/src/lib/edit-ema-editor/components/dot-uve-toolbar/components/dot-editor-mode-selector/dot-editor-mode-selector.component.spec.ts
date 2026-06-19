@@ -137,43 +137,6 @@ describe('DotEditorModeSelectorComponent', () => {
                 document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)
             ).toBeTruthy();
         });
-
-        describe('when page has no version in the selected language', () => {
-            beforeEach(() => {
-                store.$isMissingTranslation.set(true);
-                store.pageParams.set({ mode: UVE_MODE.PREVIEW });
-                spectator.detectChanges();
-            });
-
-            it('should show only Preview — Draft and Published are hidden', () => {
-                openSelectOverlay();
-
-                expect(
-                    document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)
-                ).toBeNull();
-                expect(
-                    document.querySelector(`[data-testId="${UVE_MODE.PREVIEW}-menu-item"]`)
-                ).toBeTruthy();
-                expect(
-                    document.querySelector(`[data-testId="${UVE_MODE.LIVE}-menu-item"]`)
-                ).toBeNull();
-            });
-
-            it('should hide Draft even when lock feature is enabled', () => {
-                store.$lockFeatureEnabled.set(true);
-                spectator.detectChanges();
-
-                openSelectOverlay();
-
-                expect(
-                    document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)
-                ).toBeNull();
-            });
-
-            it('should set the selected option to Preview via $syncSelectedMode effect', () => {
-                expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.PREVIEW);
-            });
-        });
     });
 
     describe('mode changes', () => {
@@ -240,6 +203,37 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(store.trackUVEModeChange).not.toHaveBeenCalled();
             expect(store.pageLoad).not.toHaveBeenCalled();
             expect(store.viewClearDeviceAndSocialMedia).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('missing translation state', () => {
+        beforeEach(() => {
+            store.$isMissingTranslation.set(true);
+            store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+            spectator.detectChanges();
+        });
+
+        it('should show only Preview when page has no translation', () => {
+            openSelectOverlay();
+
+            expect(document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)).toBeNull();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.PREVIEW}-menu-item"]`)
+            ).toBeTruthy();
+            expect(document.querySelector(`[data-testId="${UVE_MODE.LIVE}-menu-item"]`)).toBeNull();
+        });
+
+        it('should hide Draft even when lock feature is enabled', () => {
+            store.$lockFeatureEnabled.set(true);
+            spectator.detectChanges();
+
+            openSelectOverlay();
+
+            expect(document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)).toBeNull();
+        });
+
+        it('should sync selected mode to Preview', () => {
+            expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.PREVIEW);
         });
     });
 
