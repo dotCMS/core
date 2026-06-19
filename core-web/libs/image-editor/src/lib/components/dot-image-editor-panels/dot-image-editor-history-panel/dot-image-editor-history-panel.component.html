@@ -3,10 +3,7 @@
         <ul class="ie-history__list">
             @for (entry of store.appliedEdits(); track entry.id) {
                 <li class="ie-history__entry" data-testid="image-editor-history-entry">
-                    <span class="ie-history__label">
-                        {{ 'edit.content.image-editor.history.category.' + entry.category | dm }}
-                        {{ entry.label }}
-                    </span>
+                    <span class="ie-history__label">{{ entry.label }}</span>
                     <p-button
                         [text]="true"
                         [rounded]="true"
@@ -26,7 +23,7 @@
             (onClick)="onReset()"
             data-testid="image-editor-history-reset" />
     } @else {
-        <p class="ie-history__empty" data-testid="image-editor-history-empty">
+        <p class="m-0 text-sm text-gray-500" data-testid="image-editor-history-empty">
             {{ 'edit.content.image-editor.history.empty' | dm }}
         </p>
     }

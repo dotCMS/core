@@ -17,7 +17,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { imageEditorLifecycleEvents } from '../../store/image-editor.events';
+import { imageEditorLifecycleEvents, imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import {
@@ -65,7 +65,18 @@ const ZOOM_DEFAULT = 100;
 export class DotImageEditorCanvasComponent {
     protected readonly store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
+    readonly #toolDispatch = injectDispatch(imageEditorToolEvents);
     readonly #destroyRef = inject(DestroyRef);
+
+    /** Aspect-ratio presets for the focal-point-centered crop, shown in the focal bar. */
+    protected readonly aspectPresets = [
+        { key: 'square', label: '1:1', aspect: 1 },
+        { key: 'wide', label: '16:9', aspect: 16 / 9 },
+        { key: 'standard', label: '4:3', aspect: 4 / 3 }
+    ];
+
+    /** The aspect preset currently selected in the focal crop bar. */
+    protected readonly selectedAspect = signal(this.aspectPresets[0]);
 
     /** The image stage, used as the origin for the rendered image rect. */
     protected readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
@@ -116,13 +127,33 @@ export class DotImageEditorCanvasComponent {
      * exists, the `pendingUrl` computed keeps Layer B mounted for that newer URL.
      * @param loadedUrl - The URL of the pending image that finished loading
      */
-    protected onPendingLoaded(loadedUrl: string): void {
-        this.displayedUrl.set(loadedUrl);
-        this.#measureImageRect();
-        this.#dispatch.previewLoaded();
+    protected onPendingLoaded(loadedUrl: string, event: Event): void {
+        const img = event.target as HTMLImageElement;
+
+        // `load` already implies fetched + decoded, but `decode()` confirms the
+        // bitmap is paint-ready and rejects on a corrupt/partial image; we also
+        // require real dimensions. Any failure reports to the store, which owns
+        // the retry policy (silent retry, then the error UI).
+        img.decode()
+            .then(() => {
+                if (!img.naturalWidth || !img.naturalHeight) {
+                    this.#dispatch.previewErrored();
+
+                    return;
+                }
+
+                this.displayedUrl.set(loadedUrl);
+                this.#measureImageRect();
+                this.#dispatch.previewLoaded();
+            })
+            .catch(() => this.#dispatch.previewErrored());
     }
 
-    /** Reports a failed pending load, keeping the last good frame visible. */
+    /**
+     * Reports a failed pending load, keeping the last good frame visible. The store
+     * owns the retry policy: it silently retries a transient failure before
+     * surfacing the error UI (see the `previewErrored` reducer).
+     */
     protected onPendingError(): void {
         this.#dispatch.previewErrored();
     }
@@ -148,14 +179,10 @@ export class DotImageEditorCanvasComponent {
         this.cropOverlay()?.cancelCrop();
     }
 
-    /** Sets the active focal point via the focal overlay from the footer action. */
-    protected setFocalPoint(): void {
-        this.focalOverlay()?.setFocalPoint();
-    }
-
-    /** Cancels the active focal point via the focal overlay from the footer action. */
-    protected cancelFocalPoint(): void {
-        this.focalOverlay()?.cancelFocalPoint();
+    /** Crops to the selected aspect, centered on the focal point (then exits the tool). */
+    protected applyFocalCrop(): void {
+        const { aspect, label } = this.selectedAspect();
+        this.#toolDispatch.aspectCropApplied({ aspect, label });
     }
 
     /** Increases the zoom by one step, clamped to the maximum. */

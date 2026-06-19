@@ -117,6 +117,35 @@ describe('DotImageEditorTransformPanelComponent', () => {
         );
     });
 
+    it('should dispatch scaleChanged with the value typed into the scale field', () => {
+        const input = spectator.query<HTMLInputElement>(byTestId('image-editor-scale-value'))!;
+        input.value = '250';
+        spectator.dispatchFakeEvent(input, 'change');
+
+        const event = dispatchedEvent(imageEditorTransformEvents.scaleChanged.type);
+        expect(event).toBeDefined();
+        expect(event!.payload).toBe(250);
+    });
+
+    it('should clamp a typed scale value to its range', () => {
+        const input = spectator.query<HTMLInputElement>(byTestId('image-editor-scale-value'))!;
+        input.value = '900';
+        spectator.dispatchFakeEvent(input, 'change');
+
+        expect(dispatchedEvent(imageEditorTransformEvents.scaleChanged.type)!.payload).toBe(400);
+        expect(input.value).toBe('400');
+    });
+
+    it('should dispatch rotateChanged with the value typed into the rotate field', () => {
+        const input = spectator.query<HTMLInputElement>(byTestId('image-editor-rotate-value'))!;
+        input.value = '-90';
+        spectator.dispatchFakeEvent(input, 'change');
+
+        const event = dispatchedEvent(imageEditorTransformEvents.rotateChanged.type);
+        expect(event).toBeDefined();
+        expect(event!.payload).toBe(-90);
+    });
+
     /** Resolves the PrimeNG Slider instance rendered under the given test id. */
     function sliderAt(testId: string): Slider {
         const debugEl = spectator.fixture.debugElement.query(

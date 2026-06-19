@@ -56,6 +56,13 @@ export class DotImageEditorFileInfoPanelComponent {
     /** Human-readable current preview size, or an em dash when unknown. */
     protected readonly fileSize = computed(() => formatBytes(this.store.fileInfo().currentBytes));
 
+    /** Original (source) image dimensions, or an em dash before the asset loads. */
+    protected readonly originalSize = computed(() => {
+        const { naturalWidth, naturalHeight } = this.store.assetContext();
+
+        return naturalWidth && naturalHeight ? `${naturalWidth} × ${naturalHeight} px` : '—';
+    });
+
     /** Dispatches the selected compression strategy. */
     protected compressionChanged(value: CompressionMode): void {
         this.dispatch.compressionChanged(value);

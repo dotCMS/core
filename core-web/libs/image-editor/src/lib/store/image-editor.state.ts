@@ -39,6 +39,8 @@ export interface ImageEditorState {
     activeTool: ActiveTool;
     /** Loading lifecycle of the preview image. */
     previewStatus: PreviewStatus;
+    /** Consecutive silent retries of the current failing preview (reset on success). */
+    previewRetries: number;
     /** Lifecycle of the current save / save-as operation. */
     saveStatus: SaveStatus;
     /** Temp file produced by the last successful save, or `null`. */
@@ -140,6 +142,7 @@ export const initialImageEditorState: ImageEditorState = {
     zoom: initialZoomState,
     activeTool: 'move',
     previewStatus: 'idle',
+    previewRetries: 0,
     saveStatus: 'idle',
     savedTempFile: null,
     error: null,

@@ -16,9 +16,46 @@
     justify-content: space-between;
 }
 
+// Editable value (number field + unit), mirroring the Adjust panel: borderless
+// until hover/focus, right-aligned, native spinners hidden.
+.ie-field__value-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+
 .ie-field__value {
+    width: 2.75rem;
+    padding: 1px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    text-align: right;
     font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+    appearance: textfield;
+
+    &:hover {
+        border-color: var(--surface-200, #e2e8f0);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-color, #6366f1);
+    }
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+.ie-field__unit {
     color: var(--text-color-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 .ie-transform__flip {

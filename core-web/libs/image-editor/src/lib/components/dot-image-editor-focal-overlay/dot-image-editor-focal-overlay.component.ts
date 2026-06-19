@@ -89,14 +89,21 @@ export class DotImageEditorFocalOverlayComponent {
         });
     }
 
-    /** Places the focal point at the clicked location on the image surface. */
+    /**
+     * Places the focal point at the clicked location and tracks the drag, then
+     * commits it on release — the marker IS the focal point, so positioning it
+     * sets it (no separate confirm step).
+     */
     protected onSurfacePointerDown(event: PointerEvent): void {
         event.preventDefault();
         this.#setFromClient(event.clientX, event.clientY);
-        this.#trackPointer((clientX, clientY) => this.#setFromClient(clientX, clientY));
+        this.#trackPointer(
+            (clientX, clientY) => this.#setFromClient(clientX, clientY),
+            () => this.setFocalPoint()
+        );
     }
 
-    /** Moves or confirms/cancels the focal point in response to keyboard input. */
+    /** Moves (and commits) or finishes the focal point in response to keyboard input. */
     protected onMarkerKeydown(event: KeyboardEvent): void {
         const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
         const current = this.point();
@@ -105,49 +112,46 @@ export class DotImageEditorFocalOverlayComponent {
             case 'ArrowLeft':
                 event.preventDefault();
                 this.#moveTo(current.x - step, current.y);
+                this.setFocalPoint();
                 break;
             case 'ArrowRight':
                 event.preventDefault();
                 this.#moveTo(current.x + step, current.y);
+                this.setFocalPoint();
                 break;
             case 'ArrowUp':
                 event.preventDefault();
                 this.#moveTo(current.x, current.y - step);
+                this.setFocalPoint();
                 break;
             case 'ArrowDown':
                 event.preventDefault();
                 this.#moveTo(current.x, current.y + step);
+                this.setFocalPoint();
                 break;
             case 'Enter':
                 event.preventDefault();
-                this.setFocalPoint();
+                this.done();
                 break;
             default:
                 break;
         }
     }
 
-    /**
-     * Confirms the focal point, dispatching the normalized 0..1 coordinates.
-     * Invoked by the canvas footer's "Set focal point" action and by the Enter
-     * key while the marker is focused.
-     */
+    /** Commits the current marker position as the focal point (normalized 0..1). */
     setFocalPoint(): void {
         const { x, y } = this.point();
         this.#dispatch.focalPointSet({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
     }
 
-    /**
-     * Cancels focal placement and restores the move tool. Invoked by the canvas
-     * footer's "Cancel" action and by the Escape key.
-     */
-    cancelFocalPoint(): void {
-        this.#dispatch.focalPointCleared();
+    /** Leaves the focal tool (back to move), keeping the placed focal point. */
+    done(): void {
+        this.#dispatch.toolSelected('move');
     }
 
     /**
-     * Intercepts Escape so the host dialog does not close while placing the
-     * focal point; the keypress instead clears the focal selection.
+     * Intercepts Escape so the host dialog does not close while placing the focal
+     * point; the keypress instead leaves the focal tool (the point stays set).
      */
     @HostListener('keydown.escape', ['$event'])
     protected onEscape(event: KeyboardEvent): void {
@@ -156,7 +160,7 @@ export class DotImageEditorFocalOverlayComponent {
         }
 
         event.stopPropagation();
-        this.cancelFocalPoint();
+        this.done();
     }
 
     /** Converts a client-space pointer position into a normalized focal point. */
@@ -178,12 +182,13 @@ export class DotImageEditorFocalOverlayComponent {
         this.point.set({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
     }
 
-    /** Tracks pointer movement until release, reporting the client position. */
-    #trackPointer(onMove: (clientX: number, clientY: number) => void): void {
+    /** Tracks pointer movement until release, reporting position and a release hook. */
+    #trackPointer(onMove: (clientX: number, clientY: number) => void, onUp: () => void): void {
         const move = (event: PointerEvent) => onMove(event.clientX, event.clientY);
         const up = () => {
             window.removeEventListener('pointermove', move);
             window.removeEventListener('pointerup', up);
+            onUp();
         };
 
         window.addEventListener('pointermove', move);

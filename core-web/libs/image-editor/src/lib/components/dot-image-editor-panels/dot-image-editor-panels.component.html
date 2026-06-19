@@ -2,6 +2,8 @@
     [multiple]="true"
     [value]="openPanels()"
     (valueChange)="onOpenPanelsChange($event)"
+    expandIcon=" "
+    collapseIcon=" "
     transitionOptions="200ms cubic-bezier(0.86, 0, 0.07, 1)">
     <p-accordion-panel value="adjust" data-testid="image-editor-panel-adjust">
         <p-accordion-header>
@@ -17,6 +19,7 @@
                         {{ 'edit.content.image-editor.panel.adjust.subtitle' | dm }}
                     </span>
                 </span>
+                <i class="pi pi-chevron-down ie-panel-head__chevron" aria-hidden="true"></i>
             </span>
         </p-accordion-header>
         <p-accordion-content>
@@ -38,6 +41,7 @@
                         {{ 'edit.content.image-editor.panel.transform.subtitle' | dm }}
                     </span>
                 </span>
+                <i class="pi pi-chevron-down ie-panel-head__chevron" aria-hidden="true"></i>
             </span>
         </p-accordion-header>
         <p-accordion-content>
@@ -59,6 +63,7 @@
                         {{ 'edit.content.image-editor.panel.fileinfo.subtitle' | dm }}
                     </span>
                 </span>
+                <i class="pi pi-chevron-down ie-panel-head__chevron" aria-hidden="true"></i>
             </span>
         </p-accordion-header>
         <p-accordion-content>
@@ -80,6 +85,7 @@
                         {{ 'edit.content.image-editor.panel.history.subtitle' | dm }}
                     </span>
                 </span>
+                <i class="pi pi-chevron-down ie-panel-head__chevron" aria-hidden="true"></i>
             </span>
         </p-accordion-header>
         <p-accordion-content>

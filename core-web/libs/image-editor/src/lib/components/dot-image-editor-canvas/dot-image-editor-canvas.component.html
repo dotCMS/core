@@ -36,7 +36,7 @@
                     [src]="pending"
                     alt=""
                     aria-hidden="true"
-                    (load)="onPendingLoaded(pending)"
+                    (load)="onPendingLoaded(pending, $event)"
                     (error)="onPendingError()"
                     data-testid="image-editor-pending-img" />
             }
@@ -84,16 +84,22 @@
                     data-testid="image-editor-crop-apply-btn" />
             }
             @case ('focal') {
+                <div class="canvas__aspects" role="group">
+                    @for (preset of aspectPresets; track preset.key) {
+                        <button
+                            type="button"
+                            class="canvas__aspect"
+                            [class.canvas__aspect--active]="selectedAspect().key === preset.key"
+                            (click)="selectedAspect.set(preset)"
+                            [attr.data-testid]="'image-editor-aspect-' + preset.key">
+                            {{ preset.label }}
+                        </button>
+                    }
+                </div>
                 <p-button
-                    [text]="true"
-                    severity="secondary"
-                    [label]="'edit.content.image-editor.focal.cancel' | dm"
-                    (onClick)="cancelFocalPoint()"
-                    data-testid="image-editor-focal-cancel-btn" />
-                <p-button
-                    [label]="'edit.content.image-editor.focal.set' | dm"
-                    (onClick)="setFocalPoint()"
-                    data-testid="image-editor-focal-set-btn" />
+                    [label]="'edit.content.image-editor.focal.crop' | dm"
+                    (onClick)="applyFocalCrop()"
+                    data-testid="image-editor-focal-crop-btn" />
             }
         }
     </div>

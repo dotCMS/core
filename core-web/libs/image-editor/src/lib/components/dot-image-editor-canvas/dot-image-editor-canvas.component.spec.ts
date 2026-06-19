@@ -32,6 +32,22 @@ Object.defineProperty(window, 'ResizeObserver', {
     value: MockResizeObserver
 });
 
+// jsdom implements neither HTMLImageElement.decode() nor real natural dimensions;
+// stub them so the canvas's decode()-based completeness check resolves with a
+// valid, sized image. Individual tests override decode() to simulate failures.
+HTMLImageElement.prototype.decode = jest.fn().mockResolvedValue(undefined);
+Object.defineProperty(HTMLImageElement.prototype, 'naturalWidth', {
+    configurable: true,
+    get: () => 800
+});
+Object.defineProperty(HTMLImageElement.prototype, 'naturalHeight', {
+    configurable: true,
+    get: () => 600
+});
+
+/** Flushes the microtask queue so a resolved/rejected `decode()` promise settles. */
+const flushDecode = () => new Promise<void>((resolve) => setTimeout(resolve));
+
 describe('DotImageEditorCanvasComponent', () => {
     let spectator: Spectator<DotImageEditorCanvasComponent>;
     let dispatcher: Dispatcher;
@@ -89,6 +105,7 @@ describe('DotImageEditorCanvasComponent', () => {
         previewStatus.set('idle');
         zoom.set({ level: 100, fitToScreen: true });
         activeTool.set('move');
+        (HTMLImageElement.prototype.decode as jest.Mock).mockResolvedValue(undefined);
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
@@ -120,8 +137,9 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(spectator.query(byTestId('image-editor-display-img'))).toExist();
     });
 
-    it('should promote the pending image and dispatch previewLoaded on load', () => {
+    it('should promote the pending image and dispatch previewLoaded on load', async () => {
         spectator.dispatchFakeEvent(byTestId('image-editor-pending-img'), 'load');
+        await flushDecode();
 
         expect(dispatchedEvent('previewLoaded')).toBeDefined();
         // Once promoted, the displayed URL matches the preview so no pending layer remains.
@@ -129,11 +147,13 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(spectator.query(byTestId('image-editor-pending-img'))).not.toExist();
     });
 
-    it('should promote the URL that loaded, not the live store URL, under rapid edits', () => {
+    it('should promote the URL that loaded, not the live store URL, under rapid edits', async () => {
         // The store has already advanced to a newer preview by the time the
         // earlier pending image fires its load event.
         previewUrl.set(NEXT_PREVIEW_URL);
-        spectator.component['onPendingLoaded'](PREVIEW_URL);
+        const img = document.createElement('img');
+        spectator.component['onPendingLoaded'](PREVIEW_URL, { target: img } as unknown as Event);
+        await flushDecode();
         spectator.detectChanges();
 
         // Layer A promotes the URL that actually loaded.
@@ -150,18 +170,31 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(dispatchedEvent('previewLoaded')).toBeDefined();
     });
 
-    it('should dispatch previewErrored when the pending image fails to load', () => {
+    it('should report a failed pending load to the store (which owns the retry policy)', () => {
         spectator.dispatchFakeEvent(byTestId('image-editor-pending-img'), 'error');
 
         expect(dispatchedEvent('previewErrored')).toBeDefined();
     });
 
-    it('should render the pending image only when the preview URL differs from the displayed one', () => {
+    it('should report previewErrored when the loaded image fails to decode', async () => {
+        (HTMLImageElement.prototype.decode as jest.Mock).mockRejectedValueOnce(
+            new Error('decode failed')
+        );
+
+        spectator.dispatchFakeEvent(byTestId('image-editor-pending-img'), 'load');
+        await flushDecode();
+
+        expect(dispatchedEvent('previewErrored')).toBeDefined();
+        expect(dispatchedEvent('previewLoaded')).toBeUndefined();
+    });
+
+    it('should render the pending image only when the preview URL differs from the displayed one', async () => {
         // No displayed frame yet, so the current preview is pending.
         expect(spectator.query(byTestId('image-editor-pending-img'))).toExist();
 
         // Promote the current preview, then advance the store to a new URL.
         spectator.dispatchFakeEvent(byTestId('image-editor-pending-img'), 'load');
+        await flushDecode();
         previewUrl.set(NEXT_PREVIEW_URL);
         spectator.detectChanges();
 
@@ -195,8 +228,7 @@ describe('DotImageEditorCanvasComponent', () => {
             expect(spectator.query(byTestId('image-editor-canvas-footer'))).toExist();
             expect(spectator.query(byTestId('image-editor-crop-apply-btn'))).not.toExist();
             expect(spectator.query(byTestId('image-editor-crop-cancel-btn'))).not.toExist();
-            expect(spectator.query(byTestId('image-editor-focal-set-btn'))).not.toExist();
-            expect(spectator.query(byTestId('image-editor-focal-cancel-btn'))).not.toExist();
+            expect(spectator.query(byTestId('image-editor-focal-crop-btn'))).not.toExist();
         });
 
         it('should invoke the crop overlay apply/cancel from the footer when cropping', () => {
@@ -216,21 +248,18 @@ describe('DotImageEditorCanvasComponent', () => {
             expect(cancelSpy).toHaveBeenCalled();
         });
 
-        it('should invoke the focal overlay set/cancel from the footer when placing a focal point', () => {
+        it('should crop to the selected aspect from the focal bar', () => {
             activeTool.set('focal');
             spectator.detectChanges();
 
-            const focalOverlay = spectator.query(DotImageEditorFocalOverlayComponent)!;
-            const setSpy = jest.spyOn(focalOverlay, 'setFocalPoint');
-            const cancelSpy = jest.spyOn(focalOverlay, 'cancelFocalPoint');
+            // Select 16:9, then crop.
+            spectator.click(spectator.query(byTestId('image-editor-aspect-wide'))!);
+            const cropBtn = spectator.query(byTestId('image-editor-focal-crop-btn'));
+            spectator.click(cropBtn!.querySelector('button')!);
 
-            const setBtn = spectator.query(byTestId('image-editor-focal-set-btn'));
-            spectator.click(setBtn!.querySelector('button')!);
-            expect(setSpy).toHaveBeenCalled();
-
-            const cancelBtn = spectator.query(byTestId('image-editor-focal-cancel-btn'));
-            spectator.click(cancelBtn!.querySelector('button')!);
-            expect(cancelSpy).toHaveBeenCalled();
+            const event = dispatchedEvent('aspectCropApplied');
+            expect(event).toBeDefined();
+            expect(event!.payload).toEqual({ aspect: 16 / 9, label: '16:9' });
         });
     });
 

@@ -216,6 +216,21 @@ describe('ImageEditorStore', () => {
 
             expect(store.focalPoint()).toEqual({ x: 0.5, y: 0.5, active: false });
         });
+
+        it('should apply an aspect crop centered on the focal point', () => {
+            lifecycle.assetRequested(OPEN_PARAMS);
+            lifecycle.assetLoaded({ naturalWidth: 1000, naturalHeight: 800, originalBytes: 5000 });
+            tool.focalPointSet({ x: 0.8, y: 0.5 });
+
+            tool.aspectCropApplied({ aspect: 1, label: '1:1' });
+
+            // 1:1 in a 1000×800 image → an 800×800 region; centered on x=0.8 (=800px)
+            // it wants x=400 but clamps to the right edge (1000−800=200), y centers at 0.
+            expect(store.crop()).toEqual({ x: 200, y: 0, w: 800, h: 800, active: true, aspect: 1 });
+            expect(store.transform().scale).toBe(100);
+            expect(store.activeTool()).toBe('move');
+            expect(store.history().at(-1)?.category).toBe('crop');
+        });
     });
 
     describe('history', () => {
@@ -250,11 +265,25 @@ describe('ImageEditorStore', () => {
             expect(store.historyIndex()).toBe(0);
             expect(store.history()[0].category).toBe('rotate');
             expect(store.history()[0].label).toBe('Rotate 45°');
-            // Slices restore from the new head's snapshot, which carries the
-            // brightness that was active when the rotation was applied.
+            // The removed brightness edit is replayed out: the rebuilt snapshot at
+            // the head keeps the rotation but no longer carries the brightness.
             expect(store.transform().rotateDeg).toBe(45);
-            expect(store.adjust().brightness).toBe(20);
+            expect(store.adjust().brightness).toBe(0);
             expect(store.adjust().saturation).toBe(0);
+        });
+
+        it('should drop a removed edit effect while re-applying the survivors', () => {
+            // The reported bug: remove compression but keep crop — crop must still
+            // apply and compression must revert.
+            fileInfo.compressionChanged('webp');
+            tool.cropApplied({ x: 10, y: 10, w: 100, h: 100, active: true, aspect: null });
+            const compressionId = store.history()[0].id;
+
+            history.editRemoved({ id: compressionId });
+
+            expect(store.history()).toHaveLength(1);
+            expect(store.fileInfo().compression).toBe('none');
+            expect(store.crop().active).toBe(true);
         });
 
         it('should undo and redo edits', () => {
@@ -341,19 +370,33 @@ describe('ImageEditorStore', () => {
     });
 
     describe('preview lifecycle', () => {
-        it('previewLoaded sets status loaded and clears error', () => {
+        it('silently retries the first preview failure before surfacing the error', () => {
+            const bustBefore = store.cacheBust();
+
+            // First failure: stay loading and bump the cache-bust for a fresh attempt.
+            lifecycle.previewErrored();
+            expect(store.previewStatus()).toBe('loading');
+            expect(store.cacheBust()).toBe(bustBefore + 1);
+            expect(store.error()).toBeNull();
+
+            // Second consecutive failure: surface the error.
+            lifecycle.previewErrored();
+            expect(store.previewStatus()).toBe('error');
+            expect(store.error()).toBe('Failed to render preview');
+        });
+
+        it('previewLoaded sets status loaded, clears error and resets the retry budget', () => {
+            lifecycle.previewErrored();
             lifecycle.previewErrored();
             expect(store.previewStatus()).toBe('error');
 
             lifecycle.previewLoaded();
             expect(store.previewStatus()).toBe('loaded');
             expect(store.error()).toBeNull();
-        });
 
-        it('previewErrored sets the error status', () => {
+            // Budget restored: a later single failure retries again rather than erroring.
             lifecycle.previewErrored();
-            expect(store.previewStatus()).toBe('error');
-            expect(store.error()).toBe('Failed to render preview');
+            expect(store.previewStatus()).toBe('loading');
         });
     });
 

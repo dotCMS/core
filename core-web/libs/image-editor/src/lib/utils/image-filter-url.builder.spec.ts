@@ -5,7 +5,6 @@ import {
     CompressionMode,
     CropState,
     FileInfoState,
-    FocalPointState,
     ImageEditorAssetContext,
     TransformState
 } from '../models/image-editor.models';
@@ -36,12 +35,6 @@ const baseCrop: CropState = {
     aspect: null
 };
 
-const baseFocalPoint: FocalPointState = {
-    x: 0.5,
-    y: 0.5,
-    active: false
-};
-
 const baseFileInfo: FileInfoState = {
     compression: 'none',
     quality: 65,
@@ -70,7 +63,8 @@ function chain(
         transform: Partial<TransformState>;
         crop: Partial<CropState>;
         fileInfo: Partial<FileInfoState>;
-        focalPoint: Partial<FocalPointState>;
+        naturalWidth: number;
+        naturalHeight: number;
     }> = {}
 ) {
     return buildFilterChain({
@@ -78,7 +72,8 @@ function chain(
         transform: { ...baseTransform, ...overrides.transform },
         crop: { ...baseCrop, ...overrides.crop },
         fileInfo: { ...baseFileInfo, ...overrides.fileInfo },
-        focalPoint: { ...baseFocalPoint, ...overrides.focalPoint }
+        naturalWidth: overrides.naturalWidth ?? 1000,
+        naturalHeight: overrides.naturalHeight ?? 800
     });
 }
 
@@ -147,16 +142,6 @@ describe('image-filter-url.builder', () => {
             const result = chain({ adjust: { brightness: 10 } });
             expect(result).toEqual([{ name: 'Hsb', args: '/hsb_h/0.00/hsb_s/0.00/hsb_b/0.10' }]);
         });
-
-        it('builds a FocalPoint filter when active and off-center', () => {
-            const result = chain({ focalPoint: { active: true, x: 0.25, y: 0.75 } });
-            expect(result).toEqual([{ name: 'FocalPoint', args: '/fp/0.25,0.75' }]);
-        });
-
-        it('omits FocalPoint when centered', () => {
-            const result = chain({ focalPoint: { active: true, x: 0.5, y: 0.5 } });
-            expect(result).toEqual([]);
-        });
     });
 
     describe('buildFilterChain - resize removes crop', () => {
@@ -175,6 +160,12 @@ describe('image-filter-url.builder', () => {
                 crop: { active: true, x: 0, y: 0, w: 100, h: 100 }
             });
             expect(result.some((f) => f.name === 'Crop')).toBe(false);
+        });
+
+        it('builds a Resize filter from scale% × the natural size', () => {
+            // 50% of the 1000×800 natural size.
+            const result = chain({ transform: { scale: 50 } });
+            expect(result).toEqual([{ name: 'Resize', args: '/resize_w/500/resize_h/400' }]);
         });
     });
 

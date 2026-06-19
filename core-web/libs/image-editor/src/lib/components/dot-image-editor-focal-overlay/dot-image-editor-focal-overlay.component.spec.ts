@@ -59,20 +59,35 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         expect(y).toBeLessThanOrEqual(1);
     });
 
-    it('should dispatch focalPointCleared when cancelFocalPoint is called', () => {
-        spectator.component.cancelFocalPoint();
+    it('should commit the focal point live when the marker is placed and released', () => {
+        // jsdom has no global PointerEvent constructor; a MouseEvent stands in —
+        // the handler only reads clientX/clientY and keys window listeners by type.
+        const surface = spectator.query<HTMLElement>(byTestId('image-editor-focal-surface'));
+        surface!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100, clientY: 150 }));
+        window.dispatchEvent(new MouseEvent('pointerup', { clientX: 100, clientY: 150 }));
 
-        expect(dispatchedEvent('focalPointCleared')).toBeDefined();
+        // 100/400 = 0.25 horizontally, 150/300 = 0.5 vertically.
+        const event = dispatchedEvent('focalPointSet');
+        expect(event).toBeDefined();
+        expect(event!.payload).toEqual({ x: 0.25, y: 0.5 });
     });
 
-    it('should stop propagation and dispatch focalPointCleared on Escape', () => {
+    it('should leave the focal tool (toolSelected move) when done is called', () => {
+        spectator.component.done();
+
+        const event = dispatchedEvent('toolSelected');
+        expect(event).toBeDefined();
+        expect(event!.payload).toBe('move');
+    });
+
+    it('should stop propagation and leave the focal tool on Escape', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
         const stopSpy = jest.spyOn(event, 'stopPropagation');
 
         spectator.element.dispatchEvent(event);
 
         expect(stopSpy).toHaveBeenCalled();
-        expect(dispatchedEvent('focalPointCleared')).toBeDefined();
+        expect(dispatchedEvent('toolSelected')).toBeDefined();
     });
 
     /** Finds the first dispatched event whose type matches the given suffix. */

@@ -26,6 +26,7 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
     let dispatcher: Dispatcher;
 
     const fileInfo = signal<FileInfoState>(FILE_INFO);
+    const assetContext = signal({ naturalWidth: 0, naturalHeight: 0 });
 
     const createComponent = createComponentFactory({
         component: DotImageEditorFileInfoPanelComponent,
@@ -33,11 +34,12 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
             provideNoopAnimations(),
             mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
         ],
-        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { fileInfo })]
+        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { fileInfo, assetContext })]
     });
 
     beforeEach(() => {
         fileInfo.set(FILE_INFO);
+        assetContext.set({ naturalWidth: 0, naturalHeight: 0 });
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
         jest.spyOn(dispatcher, 'dispatch');
@@ -87,6 +89,23 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
             expect(spectator.query(byTestId('image-editor-filesize-value'))!.textContent).toContain(
                 'KB'
             );
+        });
+    });
+
+    describe('original size', () => {
+        it('should render an em dash before the asset loads', () => {
+            expect(
+                spectator.query(byTestId('image-editor-originalsize-value'))!.textContent
+            ).toContain('—');
+        });
+
+        it('should render the natural dimensions once loaded', () => {
+            assetContext.set({ naturalWidth: 3024, naturalHeight: 1964 });
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('image-editor-originalsize-value'))!.textContent
+            ).toContain('3024 × 1964 px');
         });
     });
 

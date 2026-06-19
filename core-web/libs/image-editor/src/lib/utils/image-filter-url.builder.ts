@@ -1,10 +1,11 @@
+import { computeResizeParams } from './dimensions.util';
+
 import {
     AdjustState,
     AppliedFilter,
     CompressionMode,
     CropState,
     FileInfoState,
-    FocalPointState,
     ImageEditorAssetContext,
     TransformState
 } from '../models/image-editor.models';
@@ -15,7 +16,10 @@ interface FilterChainInput {
     transform: TransformState;
     crop: CropState;
     fileInfo: FileInfoState;
-    focalPoint: FocalPointState;
+    /** Natural image width, needed to translate scale% into resize pixels. */
+    naturalWidth: number;
+    /** Natural image height, needed to translate scale% into resize pixels. */
+    naturalHeight: number;
 }
 
 /**
@@ -57,23 +61,22 @@ function compressionFilter(mode: CompressionMode, quality: number): AppliedFilte
  * @returns The applied filters in the exact order they must be concatenated
  */
 export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
-    const { adjust, transform, crop, fileInfo, focalPoint } = input;
+    const { adjust, transform, crop, fileInfo, naturalWidth, naturalHeight } = input;
     const filters: AppliedFilter[] = [];
 
-    const isResizing =
-        transform.outputWidth != null || transform.outputHeight != null || transform.scale !== 100;
+    // Resize derives from explicit output dimensions OR scale% × natural size, so a
+    // scale change with no explicit W/H still produces resize pixels.
+    const resize = computeResizeParams(transform, { width: naturalWidth, height: naturalHeight });
 
-    if (isResizing) {
+    if (resize.width || resize.height) {
         let args = '';
-        if (transform.outputWidth != null) {
-            args += `/resize_w/${Math.round(transform.outputWidth)}`;
+        if (resize.width) {
+            args += `/resize_w/${resize.width}`;
         }
-        if (transform.outputHeight != null) {
-            args += `/resize_h/${Math.round(transform.outputHeight)}`;
+        if (resize.height) {
+            args += `/resize_h/${resize.height}`;
         }
-        if (args) {
-            filters.push({ name: 'Resize', args });
-        }
+        filters.push({ name: 'Resize', args });
     } else if (crop.active && crop.w > 0 && crop.h > 0) {
         const args =
             `/crop_w/${Math.round(crop.w)}` +
@@ -108,9 +111,10 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
         filters.push({ name: 'Hsb', args });
     }
 
-    if (focalPoint.active && !(focalPoint.x === 0.5 && focalPoint.y === 0.5)) {
-        filters.push({ name: 'FocalPoint', args: `/fp/${focalPoint.x},${focalPoint.y}` });
-    }
+    // The focal point is intentionally NOT a preview filter: the dotCMS FocalPoint
+    // filter only writes metadata (no visible change), so emitting it just forces a
+    // pointless reload. It is persisted on save (persistFocalPoint) and consumed by
+    // the focal-centered aspect crop directly from state.
 
     const compression = compressionFilter(fileInfo.compression, fileInfo.quality);
     if (compression) {

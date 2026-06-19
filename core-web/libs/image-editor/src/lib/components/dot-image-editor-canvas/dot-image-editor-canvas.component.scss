@@ -52,6 +52,44 @@
     color: var(--surface-0, #ffffff);
 }
 
+// Aspect presets in the (dark) focal crop bar: light pills, the selected one
+// filled with the primary color.
+.canvas__aspects {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.canvas__aspect {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        color 150ms ease;
+}
+
+.canvas__aspect:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.canvas__aspect--active {
+    border-color: var(--primary-color, #6366f1);
+    background: var(--primary-color, #6366f1);
+    color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__aspect {
+        transition: none;
+    }
+}
+
 .canvas__tool-rail {
     position: absolute;
     top: 50%;
@@ -109,9 +147,13 @@
     opacity: 0.35;
 }
 
-// The incoming frame sits above the current one until it is promoted.
+// The incoming frame loads HIDDEN — it is only a preloader. A visible <img>
+// paints progressively as it downloads, which would flash a half-loaded image on
+// top of the canvas. Instead the current frame (Layer A) stays visible (dimmed)
+// until this one is fully decoded and promoted, then shown instantly from cache.
 .canvas__img--pending {
     z-index: 1;
+    opacity: 0;
 }
 
 .canvas__skeleton {

@@ -51,7 +51,9 @@ export const imageEditorToolEvents = eventGroup({
         cropApplied: type<CropState>(),
         cropCancelled: type<void>(),
         focalPointSet: type<{ x: number; y: number }>(),
-        focalPointCleared: type<void>()
+        focalPointCleared: type<void>(),
+        // A crop to the given aspect ratio, centered on the current focal point.
+        aspectCropApplied: type<{ aspect: number; label: string }>()
     }
 });
 

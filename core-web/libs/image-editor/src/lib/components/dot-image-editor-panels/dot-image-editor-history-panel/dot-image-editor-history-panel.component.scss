@@ -22,11 +22,7 @@
 
 .ie-history__label {
     overflow: hidden;
+    font-size: 0.8125rem;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.ie-history__empty {
-    margin: 0;
-    color: var(--text-color-secondary);
 }

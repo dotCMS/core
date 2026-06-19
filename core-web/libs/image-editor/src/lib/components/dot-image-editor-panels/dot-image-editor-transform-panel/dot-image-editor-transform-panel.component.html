@@ -2,26 +2,50 @@
     <div class="ie-field">
         <div class="ie-field__header">
             <label>{{ 'edit.content.image-editor.transform.scale' | dm }}</label>
-            <span class="ie-field__value">{{ store.transform().scale }}%</span>
+            <span class="ie-field__value-wrap">
+                <input
+                    type="number"
+                    class="ie-field__value"
+                    [min]="1"
+                    [max]="400"
+                    [value]="scale()"
+                    [attr.aria-label]="'edit.content.image-editor.transform.scale' | dm"
+                    (change)="onScaleInput($event)"
+                    data-testid="image-editor-scale-value" />
+                <span class="ie-field__unit">%</span>
+            </span>
         </div>
         <p-slider
             [ngModel]="store.transform().scale"
             [min]="1"
             [max]="400"
             data-testid="image-editor-scale-slider"
+            (onChange)="onScaleChange($event)"
             (onSlideEnd)="scaleChanged($event)" />
     </div>
 
     <div class="ie-field">
         <div class="ie-field__header">
             <label>{{ 'edit.content.image-editor.transform.rotate' | dm }}</label>
-            <span class="ie-field__value">{{ store.transform().rotateDeg }}°</span>
+            <span class="ie-field__value-wrap">
+                <input
+                    type="number"
+                    class="ie-field__value"
+                    [min]="-180"
+                    [max]="180"
+                    [value]="rotate()"
+                    [attr.aria-label]="'edit.content.image-editor.transform.rotate' | dm"
+                    (change)="onRotateInput($event)"
+                    data-testid="image-editor-rotate-value" />
+                <span class="ie-field__unit">°</span>
+            </span>
         </div>
         <p-slider
             [ngModel]="store.transform().rotateDeg"
             [min]="-180"
             [max]="180"
             data-testid="image-editor-rotate-slider"
+            (onChange)="onRotateChange($event)"
             (onSlideEnd)="rotateChanged($event)" />
     </div>
 
@@ -32,12 +56,16 @@
                 [ngModel]="store.transform().flipH"
                 [onLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
                 [offLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
+                onIcon="pi pi-arrows-h"
+                offIcon="pi pi-arrows-h"
                 data-testid="image-editor-flip-horizontal-btn"
                 (onChange)="flipHToggled()" />
             <p-toggleButton
                 [ngModel]="store.transform().flipV"
                 [onLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
                 [offLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
+                onIcon="pi pi-arrows-v"
+                offIcon="pi pi-arrows-v"
                 data-testid="image-editor-flip-vertical-btn"
                 (onChange)="flipVToggled()" />
         </div>
