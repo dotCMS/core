@@ -248,3 +248,60 @@ Produce the minimal edited file that clears this violation.`;
     reportUsage('fix', usage);
     return output;
 }
+
+// ── 3. Color-contrast fix (rule-scoped — the LLM sees only the rule, not a file) ─
+// Used by the deterministic CSS path (S1.5): attribution finds the offending rule,
+// the sourcemap finds the source; the LLM only chooses a WCAG-AA-clearing color.
+
+export const ColorFixSchema = z.object({
+    // The original color value to replace (must be exactly as given), and the new one.
+    oldValue: z.string(),
+    newValue: z.string(),
+    // The CSS property being changed (color / background-color / …).
+    property: z.string(),
+    applied: z.boolean(),
+    reason: z.string()
+});
+
+export type ColorFix = z.infer<typeof ColorFixSchema>;
+
+export interface ColorFixInput {
+    /** The axe finding (for the contrast threshold + the counterpart color in context). */
+    finding: ScanFinding;
+    /** The single matched CSS rule, e.g. ".button-primary { color:#fff; background-color:#e76300 }". */
+    rule: string;
+    /** The property whose value fails contrast and should be nudged. */
+    property: string;
+    /** That property's current value (e.g. "#e76300"). */
+    currentValue: string;
+}
+
+const COLOR_FIX_SYSTEM = `You fix ONE CSS color-contrast violation by nudging a single color value to clear WCAG AA (4.5:1 normal text, 3:1 large text).
+
+Rules:
+- Return oldValue EXACTLY as given (so it can be string-replaced), and a newValue that clears AA against the counterpart color in the violation.
+- Nudge the EXISTING hue toward the needed luminance — do NOT invent an unrelated brand color. Keep it as close to the original as possible while passing.
+- If the threshold cannot be met without a design decision (e.g. both colors are brand-locked), set applied=false and explain.
+- Output a concrete CSS color value (hex preferred) for newValue.`;
+
+export async function generateColorFix(
+    input: ColorFixInput,
+    model: LanguageModel = defaultModel()
+): Promise<ColorFix> {
+    const prompt = `Violation (axe "${input.finding.code}"): ${input.finding.message}
+Offending element: ${input.finding.context}
+
+The failing rule:
+${input.rule}
+
+Change the "${input.property}" value (currently ${input.currentValue}) to clear WCAG AA against the element's counterpart color. Return oldValue (exactly ${input.currentValue}), newValue, property, applied, reason.`;
+
+    const { output, usage } = await generateText({
+        model,
+        output: Output.object({ schema: ColorFixSchema }),
+        system: COLOR_FIX_SYSTEM,
+        prompt
+    });
+    reportUsage('fix', usage);
+    return output;
+}

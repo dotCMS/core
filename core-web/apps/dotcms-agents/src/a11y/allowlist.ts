@@ -32,6 +32,10 @@ export const ALLOW_RULES: readonly AllowRule[] = [
     { method: 'GET', path: '/api/v1/page/_render-sources', match: 'prefix' },
     // READ — GET /api/v2/assets?path=...
     { method: 'GET', path: '/api/v2/assets', match: 'exact' },
+    // FETCH-STYLESHEET — GET the compiled theme stylesheet + inline sourcemap
+    // (CSS-attribution, S1.5). GET-only, read-only theme assets; the SASS
+    // preprocessor serves these from the theme folder, not /api/v2/assets.
+    { method: 'GET', path: '/application/themes/', match: 'prefix' },
     // SAVE-WORKING — PUT /api/v2/assets/save (multipart, working only; never /publish)
     { method: 'PUT', path: '/api/v2/assets/save', match: 'exact' }
 ] as const;
@@ -41,7 +45,7 @@ export class DisallowedRequestError extends Error {
         super(
             `Request not allowed by the a11y agent path allowlist: ${method} ${path}. ` +
                 `Permitted: page-scanner/a11y/check, _render-sources GET, ` +
-                `/api/v2/assets GET, /api/v2/assets/save PUT.`
+                `/api/v2/assets GET, /application/themes/ GET, /api/v2/assets/save PUT.`
         );
         this.name = 'DisallowedRequestError';
     }

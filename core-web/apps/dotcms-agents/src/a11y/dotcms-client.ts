@@ -38,6 +38,11 @@ export interface ScanResult {
         needsReview: number;
         items: ScanFinding[];
     };
+    // Stylesheet URLs the rendered page actually loaded (post-render, from the
+    // scanner's Puppeteer DOM). The authoritative "which stylesheet applies" list
+    // — filter to same-origin dotCMS assets to find the compiled CSS to attribute
+    // against (CSS-attribution path, S1.5). External (CDN/fonts) are included too.
+    stylesheets?: string[];
 }
 
 export interface SourceRef {
@@ -142,6 +147,26 @@ export class DotcmsClient {
             query.mode = mode;
         }
         const res = await this.request<unknown>({ method: 'GET', path: '/api/v2/assets', query });
+        return typeof res === 'string' ? res : JSON.stringify(res);
+    }
+
+    /**
+     * FETCH-STYLESHEET — GET the COMPILED stylesheet the page loads, with the
+     * inline sourcemap (`sourcemap=true`). Unlike `read` (raw asset via
+     * /api/v2/assets), this hits the theme stylesheet URL directly so dotCMS's
+     * SASS preprocessor returns compiled CSS + the source map (CSS-attribution
+     * path, S1.5). Accepts the absolute URL from `scan.stylesheets[]`; strips the
+     * origin to a relative path (the adapter rejects absolute paths) and adds the
+     * sourcemap param. Returns the compiled CSS text (map appended as a comment).
+     */
+    async fetchStylesheet(absoluteUrl: string): Promise<string> {
+        const u = new URL(absoluteUrl);
+        u.searchParams.set('sourcemap', 'true');
+        const res = await this.request<unknown>({
+            method: 'GET',
+            path: u.pathname,
+            query: Object.fromEntries(u.searchParams)
+        });
         return typeof res === 'string' ? res : JSON.stringify(res);
     }
 
