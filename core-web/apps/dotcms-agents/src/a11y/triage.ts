@@ -27,14 +27,14 @@ import type { ScanFinding, SourceRef } from './dotcms-client';
 
 export type AgentProvider = 'anthropic' | 'openrouter';
 
-// Default to OpenRouter + Kimi K2.7 Code — structured output works and it's ~11x
-// cheaper than Sonnet on the triage/diff calls. Override per-deploy via env.
+// Default to OpenRouter + GLM-5.2 — reliable structured output (Kimi K2.7 returned
+// empty/malformed objects on the triage schema) at low cost. Override per-deploy via env.
 export const DEFAULT_PROVIDER: AgentProvider =
     (process.env.A11Y_AGENT_PROVIDER as AgentProvider) || 'openrouter';
 
 export const DEFAULT_MODEL =
     process.env.A11Y_AGENT_MODEL ??
-    (DEFAULT_PROVIDER === 'openrouter' ? 'moonshotai/kimi-k2.7-code' : 'claude-sonnet-4-6');
+    (DEFAULT_PROVIDER === 'openrouter' ? 'z-ai/glm-5.2' : 'claude-sonnet-4-6');
 
 export function defaultModel(): LanguageModel {
     if (DEFAULT_PROVIDER === 'openrouter') {
@@ -83,6 +83,29 @@ function reportUsage(
         outputTokens: usage.outputTokens,
         cachedInputTokens: usage.cachedInputTokens
     });
+}
+
+/**
+ * LLMs intermittently return empty/unparseable structured output ("No output
+ * generated" / "did not match schema") even on small prompts — a transient
+ * provider hiccup, not a real failure. Retry the call a couple of times before
+ * giving up; most empties succeed on the second attempt.
+ */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+    let lastErr: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastErr = e;
+            const msg = e instanceof Error ? e.message : String(e);
+            // Only retry the transient structured-output emptiness; rethrow real errors.
+            if (!/No output generated|No object generated|did not match schema|could not parse/i.test(msg)) {
+                throw e;
+            }
+        }
+    }
+    throw lastErr;
 }
 
 // ── 1. Triage + attribution ─────────────────────────────────────────────────
@@ -150,33 +173,35 @@ skipCss is ${input.skipCss ? 'TRUE — treat CSS/contrast issues as report-only'
 
 Decide fixability, the target file (a candidate path or null), whether the offending markup is actually present in that file (evidenceFound), and a short reason.`;
 
-    const { output, usage } = await generateText({
-        model,
-        maxOutputTokens: 2048, // a triage decision is small; cap to stop runaway generation
-        output: Output.object({ schema: TriageDecisionSchema }),
-        system: TRIAGE_SYSTEM,
-        messages: [
-            {
-                role: 'user',
-                content: [
-                    {
-                        type: 'text',
-                        text: filesContext,
-                        // Anthropic prompt caching only — the `anthropic`-namespaced option is
-                        // meaningless (and can trip the parser) on other providers like OpenRouter.
-                        ...(DEFAULT_PROVIDER === 'anthropic'
-                            ? {
-                                  providerOptions: {
-                                      anthropic: { cacheControl: { type: 'ephemeral' as const } }
+    const { output, usage } = await withRetry(() =>
+        generateText({
+            model,
+            maxOutputTokens: 2048, // a triage decision is small; cap to stop runaway generation
+            output: Output.object({ schema: TriageDecisionSchema }),
+            system: TRIAGE_SYSTEM,
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: filesContext,
+                            // Anthropic prompt caching only — the `anthropic`-namespaced option is
+                            // meaningless (and can trip the parser) on other providers like OpenRouter.
+                            ...(DEFAULT_PROVIDER === 'anthropic'
+                                ? {
+                                      providerOptions: {
+                                          anthropic: { cacheControl: { type: 'ephemeral' as const } }
+                                      }
                                   }
-                              }
-                            : {})
-                    }
-                ]
-            },
-            { role: 'user', content: violationPrompt }
-        ]
-    });
+                                : {})
+                        }
+                    ]
+                },
+                { role: 'user', content: violationPrompt }
+            ]
+        })
+    );
     reportUsage('triage', usage);
 
     // Deterministic guard: honor skipCss even if the model ignored it.
@@ -240,13 +265,15 @@ ${input.originalContent}
 
 Produce the minimal edited file that clears this violation.`;
 
-    const { output, usage } = await generateText({
-        model,
-        maxOutputTokens: 8192, // returns the full edited file; generous but bounded
-        output: Output.object({ schema: FixOutputSchema }),
-        system: FIX_SYSTEM,
-        prompt
-    });
+    const { output, usage } = await withRetry(() =>
+        generateText({
+            model,
+            maxOutputTokens: 8192, // returns the full edited file; generous but bounded
+            output: Output.object({ schema: FixOutputSchema }),
+            system: FIX_SYSTEM,
+            prompt
+        })
+    );
     reportUsage('fix', usage);
     return output;
 }
