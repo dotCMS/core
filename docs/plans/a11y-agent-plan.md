@@ -162,11 +162,16 @@ JSON response instead of SSE — see §8 naming note.*
      (postcss), matches the offending element against rule selectors (css-select), ranks by
      specificity, and passes the LLM only the **winning color rule(s)** (§3 CSS attribution, §9).
      Match soundly = **pure compound selectors only** (the scan gives the element, not ancestors).
-4. **READ** — `GET /api/v2/assets?path=...` (PR #36112) → raw VTL **or CSS/SCSS** for each
-   source ref tied to a fixable violation. `_render-sources` returns the full theme
-   `files[]` tree (incl. the SCSS partials), so CSS fixes can target **source**, not the
-   compiled artifact (§3 CSS attribution). Match against compiled CSS (what actually applies),
-   then map the winning rule back to its **SCSS source** file to edit (S1.5).
+4. **READ — lazy, per-violation; NEVER bulk-read the theme tree (S1.5).** Real themes have
+   150+ SCSS partials (demo `travel`: 154 editable files ≈ 217K tokens) — reading them all and
+   handing them to the model is the wrong operation at any context size (cost, accuracy, speed,
+   doesn't generalize). Instead, per fixable violation read only what's needed:
+   - **VTL:** the small set of source refs from `_render-sources` (theme VTLs + container VTLs,
+     ~10) tied to *this* violation.
+   - **CSS:** parse the **one compiled stylesheet** the page loads (`…styles.scss?dotsass=true&sourcemap=true`),
+     attribute the rule in code (step 3), then use the **sourcemap** to read **only the one
+     SCSS source file** the winning rule maps to. Editing the compiled artifact is futile
+     (regenerated). The partial count is irrelevant — ~1 stylesheet + ~1 source file per fix.
 5. **FIX-TO-WORKING** — model produces a minimal diff; `PUT /api/v2/assets/save` (working
    only). Verify persisted `fileSize`. **Never `/publish`.** The agent does **not** guard
    against pre-existing unpublished edits — the goal is to fix the a11y issue, and working-
