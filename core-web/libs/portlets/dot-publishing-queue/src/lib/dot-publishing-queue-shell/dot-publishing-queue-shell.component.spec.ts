@@ -9,18 +9,18 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 /* eslint-disable @nx/enforce-module-boundaries */
 
 import {
-    DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotPublishingQueueService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingQueueShellComponent } from './dot-publishing-queue-shell.component';
 
-import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 describe('DotPublishingQueueShellComponent', () => {
     let spectator: Spectator<DotPublishingQueueShellComponent>;
@@ -51,20 +51,13 @@ describe('DotPublishingQueueShellComponent', () => {
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
                 ),
-                getUnsendBundles: jest
-                    .fn()
-                    .mockReturnValue(
-                        of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
-                    ),
                 getBundleAssets: jest.fn().mockReturnValue(of([])),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'dotcms.org.1' }))
-            }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
+            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
@@ -85,6 +78,11 @@ describe('DotPublishingQueueShellComponent', () => {
 
     it('renders the toolbar', () => {
         expect(spectator.query('dot-publishing-queue-toolbar')).toBeTruthy();
+    });
+
+    it('renders the single bundles table (no tabs)', () => {
+        expect(spectator.query('dot-publishing-queue-table')).toBeTruthy();
+        expect(spectator.query('p-tabs')).toBeFalsy();
     });
 
     describe('asset list dialog sync', () => {
@@ -117,15 +115,6 @@ describe('DotPublishingQueueShellComponent', () => {
         });
     });
 
-    describe('tab change', () => {
-        it('forwards value to setActiveTab', () => {
-            spectator.component.onTabChange('history');
-            expect(store.activeTab()).toBe('history');
-            spectator.component.onTabChange('queue');
-            expect(store.activeTab()).toBe('queue');
-        });
-    });
-
     describe('delete bundles dialog', () => {
         function openAndCloseWith(scope: 'selected' | 'all' | 'success' | 'failed' | undefined) {
             spectator.component.openDeleteBundles();
@@ -148,7 +137,7 @@ describe('DotPublishingQueueShellComponent', () => {
         });
 
         it('SELECTED → store.deleteBundlesBulk with current selected ids', () => {
-            store.setHistorySelection(['b1', 'b2']);
+            store.setBundlesSelection(['b1', 'b2']);
             const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
             openAndCloseWith('selected');
             expect(spy).toHaveBeenCalledWith(['b1', 'b2']);

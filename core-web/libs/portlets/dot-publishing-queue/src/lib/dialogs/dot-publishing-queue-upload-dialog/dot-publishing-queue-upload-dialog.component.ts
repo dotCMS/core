@@ -13,7 +13,7 @@ import { catchError, take } from 'rxjs/operators';
 import { DotPublishingQueueService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 /** `.tar.gz` (most common) and `.tgz` (legacy alias). */
 const BUNDLE_FILE_PATTERN = /\.(tar\.gz|tgz)$/i;

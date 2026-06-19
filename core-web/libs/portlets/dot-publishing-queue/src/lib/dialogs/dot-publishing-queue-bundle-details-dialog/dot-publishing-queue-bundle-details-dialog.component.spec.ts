@@ -12,7 +12,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueBundleDetailsDialogComponent } from './dot-publishing-queue-bundle-details-dialog.component';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 const detailFixture = (
     overrides: Partial<PublishingJobDetailView> = {}

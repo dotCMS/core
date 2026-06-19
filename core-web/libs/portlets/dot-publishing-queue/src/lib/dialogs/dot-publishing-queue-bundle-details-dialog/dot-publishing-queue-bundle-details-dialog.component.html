@@ -4,54 +4,59 @@
         <p-skeleton height="1.5rem" width="40%" />
         <p-skeleton height="6rem" width="100%" />
     } @else if (store.detail(); as detail) {
-        <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm" data-testid="pq-detail-meta">
-            <div>
-                <dt class="text-color-secondary">{{ 'publishing-queue.detail.title' | dm }}</dt>
-                <dd class="font-medium text-color">{{ detail.bundleName || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">{{ 'publishing-queue.detail.status' | dm }}</dt>
-                <dd>
-                    <dot-publishing-status-chip [status]="detail.status" />
-                </dd>
-            </div>
-            <div class="col-span-2">
-                <dt class="text-color-secondary">{{ 'publishing-queue.detail.bundle-id' | dm }}</dt>
-                <dd class="font-mono text-xs break-all text-color">{{ detail.bundleId }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">
-                    {{ 'publishing-queue.detail.bundle-start' | dm }}
-                </dt>
-                <dd>{{ (detail.timestamps.bundleStart | date: 'medium') || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">
-                    {{ 'publishing-queue.detail.bundle-end' | dm }}
-                </dt>
-                <dd>{{ (detail.timestamps.bundleEnd | date: 'medium') || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">
-                    {{ 'publishing-queue.detail.publish-start' | dm }}
-                </dt>
-                <dd>{{ (detail.timestamps.publishStart | date: 'medium') || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">
-                    {{ 'publishing-queue.detail.publish-end' | dm }}
-                </dt>
-                <dd>{{ (detail.timestamps.publishEnd | date: 'medium') || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">{{ 'publishing-queue.detail.filter' | dm }}</dt>
-                <dd>{{ detail.filterName || detail.filterKey || '—' }}</dd>
-            </div>
-            <div>
-                <dt class="text-color-secondary">{{ 'publishing-queue.detail.assets' | dm }}</dt>
-                <dd>{{ detail.assetCount }}</dd>
-            </div>
-        </dl>
+        <p-table
+            [value]="metaRows"
+            dataKey="key"
+            styleClass="rounded-md border border-surface-200 overflow-hidden text-sm"
+            data-testid="pq-detail-meta">
+            <ng-template pTemplate="body" let-row>
+                <tr data-testid="pq-detail-meta-row" [attr.data-key]="row.key">
+                    <td
+                        class="w-1/3 bg-surface-50 align-top font-semibold whitespace-nowrap text-color">
+                        {{ row.label }}
+                    </td>
+                    <td class="text-color">
+                        @switch (row.key) {
+                            @case ('title') {
+                                <span class="font-semibold">{{ detail.bundleName || '—' }}</span>
+                                @if (detail.assetCount > 0) {
+                                    <span class="text-color-secondary">
+                                        · {{ detail.assetCount }}
+                                        {{ 'publishing-queue.detail.assets-suffix' | dm }}
+                                    </span>
+                                }
+                            }
+                            @case ('status') {
+                                <dot-publishing-status-chip [status]="detail.status" />
+                            }
+                            @case ('bundleId') {
+                                <span class="font-mono text-xs break-all">
+                                    {{ detail.bundleId }}
+                                </span>
+                            }
+                            @case ('bundleStart') {
+                                {{ (detail.timestamps.bundleStart | date: 'medium') || '—' }}
+                            }
+                            @case ('bundleEnd') {
+                                {{ (detail.timestamps.bundleEnd | date: 'medium') || '—' }}
+                            }
+                            @case ('publishStart') {
+                                {{ (detail.timestamps.publishStart | date: 'medium') || '—' }}
+                            }
+                            @case ('publishEnd') {
+                                {{ (detail.timestamps.publishEnd | date: 'medium') || '—' }}
+                            }
+                            @case ('filter') {
+                                {{ detail.filterName || detail.filterKey || '—' }}
+                            }
+                            @case ('assets') {
+                                {{ detail.assetCount }}
+                            }
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
 
         <section class="flex flex-col gap-2" data-testid="pq-detail-endpoints">
             <h4 class="m-0 text-sm font-semibold text-color uppercase">

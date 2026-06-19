@@ -1,12 +1,12 @@
 <!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
-<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-history-table-wrapper">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-bundles-table-wrapper">
     <p-table
-        [value]="store.historyRows()"
+        [value]="store.bundlesRows()"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
         [rows]="store.rowsPerPage()"
-        [totalRecords]="store.historyTotal()"
+        [totalRecords]="store.bundlesTotal()"
         [first]="first()"
         [rowsPerPageOptions]="[10, 25, 50]"
         [rowHover]="true"
@@ -16,26 +16,26 @@
         [selection]="selectedRows()"
         (selectionChange)="onSelectionChange($event)"
         dataKey="bundleId"
-        data-testid="pq-history-table">
+        data-testid="pq-bundles-table">
         <ng-template pTemplate="header">
             <tr>
                 <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
-                <th style="width: 14rem" data-testid="pq-history-col-bundle-name">
+                <th style="width: 14rem" data-testid="pq-bundles-col-bundle-name">
                     {{ 'publishing-queue.column.bundle-name' | dm }}
                 </th>
-                <th style="width: 16rem" data-testid="pq-history-col-bundle-id">
+                <th style="width: 16rem" data-testid="pq-bundles-col-bundle-id">
                     {{ 'publishing-queue.column.bundle-id' | dm }}
                 </th>
-                <th style="width: 14rem" data-testid="pq-history-col-filter">
+                <th style="width: 14rem" data-testid="pq-bundles-col-filter">
                     {{ 'publishing-queue.column.filter' | dm }}
                 </th>
                 <th
                     pSortableColumn="status"
                     style="width: 16rem"
                     class="whitespace-nowrap"
-                    data-testid="pq-history-col-status">
+                    data-testid="pq-bundles-col-status">
                     {{ 'publishing-queue.column.status' | dm }}
                     <p-sortIcon field="status" />
                 </th>
@@ -43,7 +43,7 @@
                     pSortableColumn="created"
                     style="width: 11rem"
                     class="whitespace-nowrap"
-                    data-testid="pq-history-col-created">
+                    data-testid="pq-bundles-col-created">
                     {{ 'publishing-queue.column.data-entered' | dm }}
                     <p-sortIcon field="created" />
                 </th>
@@ -51,18 +51,18 @@
                     pSortableColumn="modified"
                     style="width: 11rem"
                     class="whitespace-nowrap"
-                    data-testid="pq-history-col-modified">
+                    data-testid="pq-bundles-col-modified">
                     {{ 'publishing-queue.column.last-update' | dm }}
                     <p-sortIcon field="modified" />
                 </th>
-                <th style="width: 3rem" data-testid="pq-history-col-actions"></th>
+                <th style="width: 3rem" data-testid="pq-bundles-col-actions"></th>
             </tr>
         </ng-template>
 
         <ng-template pTemplate="body" let-row>
-            @if (store.historyStatus() === 'loading') {
+            @if (store.bundlesStatus() === 'loading') {
                 <tr
-                    data-testid="pq-history-skeleton"
+                    data-testid="pq-bundles-skeleton"
                     class="h-17 cursor-default hover:bg-transparent!">
                     <td [style.width]="'3rem'" class="pl-4">
                         <span class="flex h-full items-center justify-center">
@@ -109,16 +109,16 @@
                 <tr
                     class="group cursor-pointer"
                     (click)="onRowClick(row)"
-                    data-testid="pq-history-row">
+                    data-testid="pq-bundles-row">
                     <td (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="row" />
                     </td>
-                    <td data-testid="pq-history-bundle-name">
+                    <td data-testid="pq-bundles-bundle-name">
                         <div class="truncate">
                             {{ row.bundleName || '—' }}
                         </div>
                     </td>
-                    <td data-testid="pq-history-bundle-id">
+                    <td data-testid="pq-bundles-bundle-id">
                         <!-- inline-flex so the row collapses to the natural
                              width of (truncated id + copy icon) — keeps the
                              copy button right next to the text instead of
@@ -136,25 +136,25 @@
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.copy-bundle-id' | dm"
                                 (onClick)="$event.stopPropagation(); copyToClipboard(row.bundleId)"
-                                data-testid="pq-history-bundle-id-copy" />
+                                data-testid="pq-bundles-bundle-id-copy" />
                         </div>
                     </td>
-                    <td data-testid="pq-history-filter">
+                    <td data-testid="pq-bundles-filter">
                         <div class="truncate">
                             {{ row.filterName || row.filterKey || '—' }}
                         </div>
                     </td>
-                    <td class="whitespace-nowrap" data-testid="pq-history-status">
+                    <td class="whitespace-nowrap" data-testid="pq-bundles-status">
                         <dot-publishing-status-chip [status]="row.status" />
                     </td>
                     <td
                         class="text-color-secondary text-xs whitespace-nowrap"
-                        data-testid="pq-history-created">
+                        data-testid="pq-bundles-created">
                         {{ (row.createDate | date: 'medium') || '—' }}
                     </td>
                     <td
                         class="text-color-secondary text-xs whitespace-nowrap"
-                        data-testid="pq-history-modified">
+                        data-testid="pq-bundles-modified">
                         {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
                     </td>
                     <td class="text-right" (click)="$event.stopPropagation()">
@@ -165,7 +165,7 @@
                             appendTo="body"
                             showTransitionOptions="0ms"
                             hideTransitionOptions="0ms"
-                            data-testid="pq-history-kebab-menu" />
+                            data-testid="pq-bundles-kebab-menu" />
                         <div
                             class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                             <p-button
@@ -176,7 +176,7 @@
                                 severity="secondary"
                                 (onClick)="kebab.toggle($event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
-                                data-testid="pq-history-kebab-btn" />
+                                data-testid="pq-bundles-kebab-btn" />
                         </div>
                     </td>
                 </tr>
@@ -188,9 +188,9 @@
                 <td colspan="8" class="h-full border-none p-6 text-center">
                     <div
                         class="flex h-full items-center justify-center"
-                        data-testid="pq-history-empty">
+                        data-testid="pq-bundles-empty">
                         <dot-empty-container
-                            [configuration]="historyEmpty"
+                            [configuration]="bundlesEmpty"
                             [hideContactUsLink]="true" />
                     </div>
                 </td>

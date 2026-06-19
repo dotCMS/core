@@ -5,12 +5,12 @@ import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
-import { DotPublishingQueueService } from '@dotcms/data-access';
+import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
 import { EndpointDetailView, PublishAuditStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingStatusChipComponent } from '../../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 const SUCCESS_STATUSES = new Set<PublishAuditStatus>([
     PublishAuditStatus.SUCCESS,
@@ -25,6 +25,25 @@ export interface EndpointTableRow {
     key: string;
     envName: string;
     endpoint: EndpointDetailView;
+}
+
+/** Discriminator for which body cell renders the row's value. Plain rows just
+ * show `value`; the special cases need bespoke markup (a chip, a monospace id,
+ * the "name · N assets" title). */
+type MetaKey =
+    | 'title'
+    | 'status'
+    | 'bundleId'
+    | 'bundleStart'
+    | 'bundleEnd'
+    | 'publishStart'
+    | 'publishEnd'
+    | 'filter'
+    | 'assets';
+
+export interface MetaRow {
+    key: MetaKey;
+    label: string;
 }
 
 @Component({
@@ -45,6 +64,37 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
     readonly store = inject(DotPublishingQueueStore);
 
     private readonly publishingService = inject(DotPublishingQueueService);
+    private readonly dotMessageService = inject(DotMessageService);
+
+    /** Static list of rows shown in the meta key/value table — the order here
+     * is the order rendered in the dialog. The body template switches on `key`
+     * to pick the right value cell. */
+    readonly metaRows: readonly MetaRow[] = [
+        { key: 'title', label: this.dotMessageService.get('publishing-queue.detail.title') },
+        { key: 'status', label: this.dotMessageService.get('publishing-queue.detail.status') },
+        { key: 'bundleId', label: this.dotMessageService.get('publishing-queue.detail.bundle-id') },
+        {
+            key: 'bundleStart',
+            label: this.dotMessageService.get('publishing-queue.detail.bundle-start')
+        },
+        {
+            key: 'bundleEnd',
+            label: this.dotMessageService.get('publishing-queue.detail.bundle-end')
+        },
+        {
+            key: 'publishStart',
+            label: this.dotMessageService.get('publishing-queue.detail.publish-start')
+        },
+        {
+            key: 'publishEnd',
+            label: this.dotMessageService.get('publishing-queue.detail.publish-end')
+        },
+        { key: 'filter', label: this.dotMessageService.get('publishing-queue.detail.filter') },
+        {
+            key: 'assets',
+            label: this.dotMessageService.get('publishing-queue.detail.total-assets')
+        }
+    ];
 
     readonly canDownload = computed(() => {
         const status = this.store.detail()?.status;

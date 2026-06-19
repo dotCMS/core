@@ -1,12 +1,11 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 
 import { DestroyRef, effect, inject, untracked } from '@angular/core';
 
-import { catchError, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
-    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotPublishingQueueService,
     PublishingSortDirection,
@@ -15,7 +14,6 @@ import {
 } from '@dotcms/data-access';
 import {
     BundleAssetView,
-    IN_PROGRESS_STATUSES,
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobView
@@ -23,7 +21,16 @@ import {
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
-const HISTORY_STATUSES: readonly PublishAuditStatus[] = [
+/** Every audit status surfaced by the unified table. When the user selects no
+ * status chips, the list call goes out with this full set (or omits the param,
+ * which the backend treats as "all"). */
+export const ALL_BUNDLE_STATUSES: readonly PublishAuditStatus[] = [
+    PublishAuditStatus.BUNDLE_REQUESTED,
+    PublishAuditStatus.WAITING_FOR_PUBLISHING,
+    PublishAuditStatus.BUNDLING,
+    PublishAuditStatus.SENDING_TO_ENDPOINTS,
+    PublishAuditStatus.PUBLISHING_BUNDLE,
+    PublishAuditStatus.RECEIVED_BUNDLE,
     PublishAuditStatus.SUCCESS,
     PublishAuditStatus.SUCCESS_WITH_WARNINGS,
     PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
@@ -58,34 +65,19 @@ export const PURGE_FAILED_STATUSES: readonly PublishAuditStatus[] = [
 
 const POLL_INTERVAL_MS = 15000;
 
-export type ActiveTab = 'queue' | 'history';
-
 interface DotPublishingQueueState {
-    activeTab: ActiveTab;
-
-    readyRows: PublishingJobView[];
-    readyPage: number;
-    readyTotal: number;
-    readyStatus: LoadStatus;
-
-    progressRows: PublishingJobView[];
-    progressPage: number;
-    progressTotal: number;
-    progressStatus: LoadStatus;
-
-    historyRows: PublishingJobView[];
-    historyPage: number;
-    historyTotal: number;
-    historyStatus: LoadStatus;
-    historySort: PublishingSortField | null;
-    historySortDirection: PublishingSortDirection;
-    historySelectedIds: string[];
+    bundlesRows: PublishingJobView[];
+    bundlesPage: number;
+    bundlesTotal: number;
+    bundlesStatus: LoadStatus;
+    bundlesSort: PublishingSortField | null;
+    bundlesSortDirection: PublishingSortDirection;
+    bundlesSelectedIds: string[];
 
     rowsPerPage: number;
     search: string;
-
-    /** Cached id of the logged-in user; required by the legacy unsent-bundles endpoint. */
-    userId: string | null;
+    /** Status chips checked in the toolbar filter. Empty = no filter (all statuses). */
+    statusFilter: PublishAuditStatus[];
 
     selectedBundleId: string | null;
     selectedAssets: BundleAssetView[];
@@ -101,30 +93,17 @@ interface DotPublishingQueueState {
 }
 
 const initialState: DotPublishingQueueState = {
-    activeTab: 'history',
-
-    readyRows: [],
-    readyPage: 1,
-    readyTotal: 0,
-    readyStatus: 'init',
-
-    progressRows: [],
-    progressPage: 1,
-    progressTotal: 0,
-    progressStatus: 'init',
-
-    historyRows: [],
-    historyPage: 1,
-    historyTotal: 0,
-    historyStatus: 'init',
-    historySort: null,
-    historySortDirection: 'desc',
-    historySelectedIds: [],
+    bundlesRows: [],
+    bundlesPage: 1,
+    bundlesTotal: 0,
+    bundlesStatus: 'init',
+    bundlesSort: null,
+    bundlesSortDirection: 'desc',
+    bundlesSelectedIds: [],
 
     rowsPerPage: 10,
     search: '',
-
-    userId: null,
+    statusFilter: [],
 
     selectedBundleId: null,
     selectedAssets: [],
@@ -141,124 +120,40 @@ export const DotPublishingQueueStore = signalStore(
     withState<DotPublishingQueueState>(initialState),
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
-        const currentUserService = inject(DotCurrentUserService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const destroyRef = inject(DestroyRef);
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
 
-        /** Resolves the current user id, fetching once and caching it in store state. */
-        function resolveUserId(): Observable<string> {
-            const cached = store.userId();
-            if (cached) {
-                return of(cached);
-            }
-            return currentUserService.getCurrentUser().pipe(
-                tap((user) => patchState(store, { userId: user.userId })),
-                switchMap((user) => of(user.userId))
-            );
-        }
+        function loadBundles() {
+            patchState(store, { bundlesStatus: 'loading' });
 
-        /**
-         * READY TO SEND = drafts owned by the current user. Drafts live in
-         * `publishing_bundle` only and have no `publish_audit` row, so we hit
-         * the legacy `getunsendbundles` endpoint. Maps the slim `{id, name}`
-         * payload to `PublishingJobView` with `status: null` + zero counts;
-         * the list template hides the chip / meta line when those are absent.
-         */
-        function loadReady() {
-            patchState(store, { readyStatus: 'loading' });
-            const offset = (store.readyPage() - 1) * store.rowsPerPage();
-            const filter = store.search() ? `*${store.search()}*` : '*';
+            const filter = store.statusFilter();
+            const statuses = filter.length > 0 ? filter : ALL_BUNDLE_STATUSES;
 
-            resolveUserId()
-                .pipe(
-                    switchMap((userId) =>
-                        service.getUnsendBundles(userId, filter, offset, store.rowsPerPage())
-                    ),
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { readyStatus: 'error' });
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
-                    const rows: PublishingJobView[] = response.items.map((item) => ({
-                        bundleId: item.id,
-                        bundleName: item.name,
-                        status: null,
-                        filterName: null,
-                        filterKey: null,
-                        assetCount: 0,
-                        assetPreview: [],
-                        environmentCount: 0,
-                        createDate: '',
-                        statusUpdated: null,
-                        numTries: 0
-                    }));
-
-                    patchState(store, {
-                        readyRows: rows,
-                        readyTotal: response.numRows ?? rows.length,
-                        readyStatus: 'loaded'
-                    });
-                });
-        }
-
-        function loadProgress() {
-            patchState(store, { progressStatus: 'loading' });
             service
                 .listPublishingJobs({
-                    statuses: IN_PROGRESS_STATUSES,
-                    page: store.progressPage(),
-                    perPage: store.rowsPerPage(),
-                    filter: store.search() || undefined
-                })
-                .pipe(
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { progressStatus: 'error' });
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
-                    patchState(store, {
-                        progressRows: response.entity,
-                        progressTotal: response.pagination?.totalEntries ?? 0,
-                        progressStatus: 'loaded'
-                    });
-                });
-        }
-
-        function loadHistory() {
-            patchState(store, { historyStatus: 'loading' });
-            service
-                .listPublishingJobs({
-                    statuses: HISTORY_STATUSES,
-                    page: store.historyPage(),
+                    statuses,
+                    page: store.bundlesPage(),
                     perPage: store.rowsPerPage(),
                     filter: store.search() || undefined,
-                    sort: store.historySort() ?? undefined,
-                    sortDirection: store.historySortDirection()
+                    sort: store.bundlesSort() ?? undefined,
+                    sortDirection: store.bundlesSortDirection()
                 })
                 .pipe(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { historyStatus: 'error' });
+                        patchState(store, { bundlesStatus: 'error' });
 
                         return EMPTY;
                     })
                 )
                 .subscribe((response) => {
                     patchState(store, {
-                        historyRows: response.entity,
-                        historyTotal: response.pagination?.totalEntries ?? 0,
-                        historyStatus: 'loaded'
+                        bundlesRows: response.entity,
+                        bundlesTotal: response.pagination?.totalEntries ?? 0,
+                        bundlesStatus: 'loaded'
                     });
                 });
         }
@@ -345,19 +240,7 @@ export const DotPublishingQueueStore = signalStore(
         }
 
         function refresh() {
-            const tab = store.activeTab();
-            if (tab === 'queue') {
-                loadReady();
-                loadProgress();
-            } else {
-                loadHistory();
-            }
-        }
-
-        function refreshProgressOnly() {
-            if (store.activeTab() === 'queue') {
-                loadProgress();
-            }
+            loadBundles();
         }
 
         function startPolling() {
@@ -366,7 +249,7 @@ export const DotPublishingQueueStore = signalStore(
                 if (document.hidden) {
                     return;
                 }
-                refreshProgressOnly();
+                loadBundles();
             }, POLL_INTERVAL_MS);
         }
 
@@ -380,69 +263,61 @@ export const DotPublishingQueueStore = signalStore(
         destroyRef.onDestroy(() => stopPolling());
 
         return {
-            loadReady,
-            loadProgress,
-            loadHistory,
+            loadBundles,
             loadAssets,
             loadDetail,
             refresh,
             startPolling,
             stopPolling,
 
-            setActiveTab(tab: ActiveTab) {
-                patchState(store, { activeTab: tab });
-            },
-
             setSearch(search: string) {
                 patchState(store, {
                     search,
-                    readyPage: 1,
-                    progressPage: 1,
-                    historyPage: 1,
-                    historySelectedIds: []
+                    bundlesPage: 1,
+                    bundlesSelectedIds: []
                 });
             },
 
-            setReadyPage(page: number) {
-                patchState(store, { readyPage: page });
+            setStatusFilter(statuses: PublishAuditStatus[]) {
+                patchState(store, {
+                    statusFilter: statuses,
+                    bundlesPage: 1,
+                    bundlesSelectedIds: []
+                });
             },
 
-            setProgressPage(page: number) {
-                patchState(store, { progressPage: page });
+            setBundlesPage(page: number) {
+                patchState(store, { bundlesPage: page });
             },
 
-            setHistoryPage(page: number) {
-                patchState(store, { historyPage: page });
-            },
-
-            cycleHistorySort(field: PublishingSortField) {
-                const current = store.historySort();
-                const dir = store.historySortDirection();
+            cycleBundlesSort(field: PublishingSortField) {
+                const current = store.bundlesSort();
+                const dir = store.bundlesSortDirection();
                 if (current !== field) {
                     patchState(store, {
-                        historySort: field,
-                        historySortDirection: 'asc',
-                        historyPage: 1
+                        bundlesSort: field,
+                        bundlesSortDirection: 'asc',
+                        bundlesPage: 1
                     });
                     return;
                 }
                 if (dir === 'asc') {
-                    patchState(store, { historySortDirection: 'desc', historyPage: 1 });
+                    patchState(store, { bundlesSortDirection: 'desc', bundlesPage: 1 });
                     return;
                 }
                 patchState(store, {
-                    historySort: null,
-                    historySortDirection: 'desc',
-                    historyPage: 1
+                    bundlesSort: null,
+                    bundlesSortDirection: 'desc',
+                    bundlesPage: 1
                 });
             },
 
-            setHistorySelection(ids: string[]) {
-                patchState(store, { historySelectedIds: ids });
+            setBundlesSelection(ids: string[]) {
+                patchState(store, { bundlesSelectedIds: ids });
             },
 
-            clearHistorySelection() {
-                patchState(store, { historySelectedIds: [] });
+            clearBundlesSelection() {
+                patchState(store, { bundlesSelectedIds: [] });
             },
 
             openAssetList(bundleId: string) {
@@ -482,9 +357,7 @@ export const DotPublishingQueueStore = signalStore(
                         })
                     )
                     .subscribe(() => {
-                        // Refetch the asset list so the row disappears
                         loadAssets();
-                        // Also refresh the READY column count, since assetCount changes
                         refresh();
                         onDone?.();
                     });
@@ -567,7 +440,7 @@ export const DotPublishingQueueStore = signalStore(
                         })
                     )
                     .subscribe(() => {
-                        patchState(store, { historySelectedIds: [] });
+                        patchState(store, { bundlesSelectedIds: [] });
                         refresh();
                         onDone?.();
                     });
@@ -588,7 +461,7 @@ export const DotPublishingQueueStore = signalStore(
                         })
                     )
                     .subscribe(() => {
-                        patchState(store, { historySelectedIds: [] });
+                        patchState(store, { bundlesSelectedIds: [] });
                         refresh();
                         onDone?.();
                     });
@@ -599,21 +472,12 @@ export const DotPublishingQueueStore = signalStore(
         return {
             onInit() {
                 effect(() => {
-                    const tab = store.activeTab();
                     store.search();
-                    if (tab === 'queue') {
-                        store.readyPage();
-                        store.progressPage();
-                        untracked(() => {
-                            store.loadReady();
-                            store.loadProgress();
-                        });
-                    } else {
-                        store.historyPage();
-                        store.historySort();
-                        store.historySortDirection();
-                        untracked(() => store.loadHistory());
-                    }
+                    store.statusFilter();
+                    store.bundlesPage();
+                    store.bundlesSort();
+                    store.bundlesSortDirection();
+                    untracked(() => store.loadBundles());
                 });
 
                 store.startPolling();

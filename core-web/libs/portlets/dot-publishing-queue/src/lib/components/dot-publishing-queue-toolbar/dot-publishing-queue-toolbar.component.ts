@@ -21,7 +21,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
+import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue-status-filter/dot-publishing-queue-status-filter.component';
 
 @Component({
     selector: 'dot-publishing-queue-toolbar',
@@ -33,7 +34,8 @@ import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/d
         InputIconModule,
         InputTextModule,
         ToolbarModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotPublishingQueueStatusFilterComponent
     ],
     templateUrl: './dot-publishing-queue-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,13 +48,8 @@ export class DotPublishingQueueToolbarComponent {
     private readonly destroyRef = inject(DestroyRef);
     private searchSubject = new Subject<string>();
 
-    /** Bulk actions appear only when the user has explicitly checked one or more rows.
-     * The Delete-Bundles dialog still offers ALL/SUCCESS/FAILED scopes (which don't
-     * strictly need a selection), but exposing them only after a selection keeps the
-     * top bar quiet and matches the rest of the bulk-action UI. */
-    readonly hasBulkActions = computed(
-        () => this.store.activeTab() === 'history' && this.store.historySelectedIds().length > 0
-    );
+    /** Bulk actions appear only when the user has explicitly checked one or more rows. */
+    readonly hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
 
     constructor() {
         this.searchSubject
@@ -65,6 +62,6 @@ export class DotPublishingQueueToolbarComponent {
     }
 
     onBulkRetry(): void {
-        this.store.retryBundles({ bundleIds: this.store.historySelectedIds() });
+        this.store.retryBundles({ bundleIds: this.store.bundlesSelectedIds() });
     }
 }

@@ -13,10 +13,12 @@
                 class="w-80" />
         </p-iconField>
 
+        <dot-publishing-queue-status-filter />
+
         <div class="ml-auto flex items-center gap-2">
             @if (hasBulkActions()) {
                 <span class="text-color-secondary text-sm" data-testid="pq-bulk-count">
-                    {{ store.historySelectedIds().length }}
+                    {{ store.bundlesSelectedIds().length }}
                     {{ 'publishing-queue.selected' | dm }}
                 </span>
                 <p-button
@@ -25,7 +27,7 @@
                     [outlined]="true"
                     size="small"
                     (onClick)="onBulkRetry()"
-                    data-testid="pq-history-bulk-retry" />
+                    data-testid="pq-bulk-retry" />
                 <p-button
                     [label]="'publishing-queue.delete-bundles' | dm"
                     icon="pi pi-trash"
@@ -33,7 +35,7 @@
                     [outlined]="true"
                     size="small"
                     (onClick)="deleteClick.emit()"
-                    data-testid="pq-history-delete-bundles" />
+                    data-testid="pq-bulk-delete" />
                 <span class="mx-1 h-6 w-px bg-surface-200" aria-hidden="true"></span>
             }
             <p-button

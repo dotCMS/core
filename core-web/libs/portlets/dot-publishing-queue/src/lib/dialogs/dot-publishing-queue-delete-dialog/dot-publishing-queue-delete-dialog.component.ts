@@ -6,7 +6,7 @@ import { MessageModule } from 'primeng/message';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 /** Scope chosen by the user — emitted back via DynamicDialogRef.close(). */
 export type DeleteBundlesScope = 'selected' | 'all' | 'success' | 'failed';
@@ -34,7 +34,7 @@ export class DotPublishingQueueDeleteDialogComponent {
     readonly store = inject(DotPublishingQueueStore);
     readonly dialogRef = inject(DynamicDialogRef);
 
-    readonly selectedCount = computed(() => this.store.historySelectedIds().length);
+    readonly selectedCount = computed(() => this.store.bundlesSelectedIds().length);
     readonly hasSelection = computed(() => this.selectedCount() > 0);
 
     choose(scope: DeleteBundlesScope): void {

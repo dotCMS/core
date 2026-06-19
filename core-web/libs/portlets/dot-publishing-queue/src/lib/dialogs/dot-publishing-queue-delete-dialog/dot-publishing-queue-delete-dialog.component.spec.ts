@@ -9,17 +9,17 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueDeleteDialogComponent } from './dot-publishing-queue-delete-dialog.component';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 describe('DotPublishingQueueDeleteDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueDeleteDialogComponent>;
     let dialogRef: jest.Mocked<DynamicDialogRef>;
 
-    const historySelectedIds = signal<string[]>([]);
+    const bundlesSelectedIds = signal<string[]>([]);
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueDeleteDialogComponent,
-        componentProviders: [mockProvider(DotPublishingQueueStore, { historySelectedIds })],
+        componentProviders: [mockProvider(DotPublishingQueueStore, { bundlesSelectedIds })],
         providers: [
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
             {
@@ -37,7 +37,7 @@ describe('DotPublishingQueueDeleteDialogComponent', () => {
     });
 
     beforeEach(() => {
-        historySelectedIds.set([]);
+        bundlesSelectedIds.set([]);
         spectator = createComponent();
         dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
     });
@@ -58,14 +58,14 @@ describe('DotPublishingQueueDeleteDialogComponent', () => {
     });
 
     it('disables SELECTED when there is no selection', () => {
-        historySelectedIds.set([]);
+        bundlesSelectedIds.set([]);
         spectator.detectChanges();
         const btn = spectator.query(byTestId('pq-delete-selected'))?.querySelector('button');
         expect(btn?.hasAttribute('disabled')).toBe(true);
     });
 
     it('enables SELECTED when there is a selection', () => {
-        historySelectedIds.set(['b1']);
+        bundlesSelectedIds.set(['b1']);
         spectator.detectChanges();
         const btn = spectator.query(byTestId('pq-delete-selected'))?.querySelector('button');
         expect(btn?.hasAttribute('disabled')).toBe(false);
@@ -77,7 +77,7 @@ describe('DotPublishingQueueDeleteDialogComponent', () => {
         ['pq-delete-success', 'success'],
         ['pq-delete-failed', 'failed']
     ])('closes with scope "%s" when %s is clicked', (testId, expected) => {
-        historySelectedIds.set(['b1']); // enable SELECTED for the parameterised test
+        bundlesSelectedIds.set(['b1']); // enable SELECTED for the parameterised test
         spectator.detectChanges();
         clickButton(testId);
         expect(dialogRef.close).toHaveBeenCalledWith(expected);

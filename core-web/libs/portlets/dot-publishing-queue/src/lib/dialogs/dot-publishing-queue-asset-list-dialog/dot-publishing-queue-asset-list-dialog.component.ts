@@ -30,7 +30,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 /** Show the search input only when the bundle is big enough that scrolling alone is painful. */
 const ASSET_SEARCH_THRESHOLD = 10;

@@ -10,7 +10,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueUploadDialogComponent } from './dot-publishing-queue-upload-dialog.component';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 describe('DotPublishingQueueUploadDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueUploadDialogComponent>;

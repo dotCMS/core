@@ -11,7 +11,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueAssetListDialogComponent } from './dot-publishing-queue-asset-list-dialog.component';
 
-import { DotPublishingQueueStore } from '../../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 const ASSETS: BundleAssetView[] = [
     { asset: 'a1', title: 'Asset 1', type: 'contentlet' },

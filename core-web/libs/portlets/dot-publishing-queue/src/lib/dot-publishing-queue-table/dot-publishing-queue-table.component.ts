@@ -9,29 +9,55 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
+/* eslint-disable @nx/enforce-module-boundaries */
+// `DotDownloadBundleDialogService` lives in apps/dotcms-ui (not yet promoted to a
+// shared lib). Tracked alongside the v1 consolidation work (#36048).
+
 import {
     DotGlobalMessageService,
     DotMessageService,
     PublishingSortField
 } from '@dotcms/data-access';
-import { PublishingJobView } from '@dotcms/dotcms-models';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
 import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingStatusChipComponent } from '../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
-import { DotPublishingQueueStore } from '../dot-publishing-queue-page/store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 /** Standard dotCMS bundle ids are 26-char ULIDs. Some are longer (custom
  * import/sync paths). Cap the visible length so the column doesn't stretch;
  * the full id stays accessible via the `title` tooltip + the copy button. */
 const BUNDLE_ID_DISPLAY_MAX = 32;
 
+const FAILURE_STATUSES = new Set<PublishAuditStatus>([
+    PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
+    PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS,
+    PublishAuditStatus.FAILED_TO_BUNDLE,
+    PublishAuditStatus.FAILED_TO_SENT,
+    PublishAuditStatus.FAILED_TO_PUBLISH,
+    PublishAuditStatus.FAILED_INTEGRITY_CHECK,
+    PublishAuditStatus.INVALID_TOKEN,
+    PublishAuditStatus.LICENSE_REQUIRED
+]);
+
+const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
+    PublishAuditStatus.BUNDLE_REQUESTED,
+    PublishAuditStatus.WAITING_FOR_PUBLISHING,
+    PublishAuditStatus.BUNDLING,
+    PublishAuditStatus.SENDING_TO_ENDPOINTS,
+    PublishAuditStatus.PUBLISHING_BUNDLE,
+    PublishAuditStatus.RECEIVED_BUNDLE
+]);
+
 @Component({
-    selector: 'dot-publishing-queue-history',
+    selector: 'dot-publishing-queue-table',
     standalone: true,
     imports: [
         DatePipe,
@@ -46,18 +72,20 @@ const BUNDLE_ID_DISPLAY_MAX = 32;
         DotPublishingStatusChipComponent
     ],
     providers: [ConfirmationService, DotClipboardUtil],
-    templateUrl: './dot-publishing-queue-history.component.html',
+    templateUrl: './dot-publishing-queue-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 flex-1' }
 })
-export class DotPublishingQueueHistoryComponent {
+export class DotPublishingQueueTableComponent {
     readonly store = inject(DotPublishingQueueStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly clipboard = inject(DotClipboardUtil);
     private readonly globalMessage = inject(DotGlobalMessageService);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private readonly dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
 
-    readonly first = computed(() => (this.store.historyPage() - 1) * this.store.rowsPerPage());
+    readonly first = computed(() => (this.store.bundlesPage() - 1) * this.store.rowsPerPage());
 
     /** Pass-through config:
      * - `table-layout: fixed` so each `<th style="width:…">` is honored exactly.
@@ -72,53 +100,77 @@ export class DotPublishingQueueHistoryComponent {
         table: {
             style: {
                 'table-layout': 'fixed' as const,
-                ...(this.store.historyRows().length === 0
+                ...(this.store.bundlesRows().length === 0
                     ? { height: '100%', width: '100%' }
                     : { width: 'auto' })
             }
         }
     }));
 
-    readonly historyEmpty: PrincipalConfiguration = {
-        icon: 'pi-history',
-        title: this.dotMessageService.get('publishing-queue.empty.history.title'),
-        subtitle: this.dotMessageService.get('publishing-queue.empty.history.subtitle')
+    readonly bundlesEmpty: PrincipalConfiguration = {
+        icon: 'pi-inbox',
+        title: this.dotMessageService.get('publishing-queue.empty.bundles.title'),
+        subtitle: this.dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
 
     readonly selectedRows = computed(() => {
-        const selectedIds = new Set(this.store.historySelectedIds());
-        return this.store.historyRows().filter((row) => selectedIds.has(row.bundleId));
+        const selectedIds = new Set(this.store.bundlesSelectedIds());
+        return this.store.bundlesRows().filter((row) => selectedIds.has(row.bundleId));
     });
 
     /** Per-row builder. Kept as a pure arrow so the spec can call it directly
      * to verify the items' shape. The template never calls this — it calls
      * `kebabFor(row)` which returns a memoized reference (see below). */
-    readonly historyKebabFor = (row: PublishingJobView): MenuItem[] => [
-        {
-            label: this.dotMessageService.get('publishing-queue.history.kebab.view-details'),
-            command: () => this.store.openDetail(row.bundleId)
-        },
-        {
-            label: this.dotMessageService.get('publishing-queue.history.kebab.view-contents'),
-            command: () => this.store.openAssetList(row.bundleId)
-        },
-        { separator: true },
-        {
+    readonly bundlesKebabFor = (row: PublishingJobView): MenuItem[] => {
+        const items: MenuItem[] = [
+            {
+                label: this.dotMessageService.get('publishing-queue.history.kebab.view-details'),
+                command: () => this.store.openDetail(row.bundleId)
+            },
+            {
+                label: this.dotMessageService.get('publishing-queue.history.kebab.view-contents'),
+                command: () => this.store.openAssetList(row.bundleId)
+            }
+        ];
+
+        if (row.status && ACTIVE_STATUSES.has(row.status)) {
+            items.push({
+                label: this.dotMessageService.get('publishing-queue.kebab.configure-send'),
+                command: () => this.openPushPublish(row)
+            });
+        }
+
+        if (row.status && FAILURE_STATUSES.has(row.status)) {
+            items.push({
+                label: this.dotMessageService.get('publishing-queue.retry-send'),
+                command: () => this.store.retryBundles({ bundleIds: [row.bundleId] })
+            });
+        }
+
+        items.push({
+            label: this.dotMessageService.get('publishing-queue.kebab.generate-download'),
+            command: () => this.dotDownloadBundleDialogService.open(row.bundleId)
+        });
+
+        items.push({ separator: true });
+        items.push({
             label: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
             styleClass: 'p-menuitem-danger',
             command: () => this.confirmRemove(row)
-        }
-    ];
+        });
+
+        return items;
+    };
 
     /** Memoizes the kebab items per row so `<p-menu [model]="…">` keeps the same
      * array reference across CD cycles. Without this, PrimeNG re-processes the
      * items on every CD and the menu thrashes — the first click only closes the
      * menu instead of firing the item's `command`, forcing the user to click
-     * twice. Mirrors the fix already applied in `dot-publishing-queue-list`. */
+     * twice. */
     private readonly kebabMenus = computed(() => {
         const map = new Map<string, MenuItem[]>();
-        for (const row of this.store.historyRows()) {
-            map.set(row.bundleId, this.historyKebabFor(row));
+        for (const row of this.store.bundlesRows()) {
+            map.set(row.bundleId, this.bundlesKebabFor(row));
         }
         return map;
     });
@@ -131,8 +183,8 @@ export class DotPublishingQueueHistoryComponent {
         const rows = (event.rows as number) ?? this.store.rowsPerPage();
         const first = (event.first as number) ?? 0;
         const page = Math.floor(first / rows) + 1;
-        if (page !== this.store.historyPage()) {
-            this.store.setHistoryPage(page);
+        if (page !== this.store.bundlesPage()) {
+            this.store.setBundlesPage(page);
         }
 
         if (event.sortField) {
@@ -140,26 +192,26 @@ export class DotPublishingQueueHistoryComponent {
                 Array.isArray(event.sortField) ? event.sortField[0] : event.sortField
             ) as PublishingSortField;
             if (
-                field !== this.store.historySort() ||
-                (event.sortOrder === 1 ? 'asc' : 'desc') !== this.store.historySortDirection()
+                field !== this.store.bundlesSort() ||
+                (event.sortOrder === 1 ? 'asc' : 'desc') !== this.store.bundlesSortDirection()
             ) {
-                this.store.cycleHistorySort(field);
+                this.store.cycleBundlesSort(field);
             }
         }
     }
 
     onSelectionChange(rows: PublishingJobView[]): void {
-        this.store.setHistorySelection(rows.map((r) => r.bundleId));
+        this.store.setBundlesSelection(rows.map((r) => r.bundleId));
     }
 
     onRowClick(row: PublishingJobView): void {
         this.store.openDetail(row.bundleId);
     }
 
-    /** Inline copy-to-clipboard for the Bundle Id column — same approach as
-     * `dot-es-search-page` (an `<p-button>` + `DotClipboardUtil` + global error
-     * toast). Avoids the heavier `<dot-copy-button>` wrapper which doesn't fit
-     * the row hover-only + compact icon-only style we want here. */
+    /** Inline copy-to-clipboard for the Bundle Id column. Same approach used in
+     * `dot-es-search-page`: a `<p-button>` + `DotClipboardUtil` + global error
+     * toast. Lighter than wrapping `<dot-copy-button>` for the row hover-only,
+     * compact icon-only style we want here. */
     async copyToClipboard(value: string): Promise<void> {
         const ok = await this.clipboard.copy(value);
         if (!ok) {
@@ -174,6 +226,20 @@ export class DotPublishingQueueHistoryComponent {
         return `${bundleId.slice(0, BUNDLE_ID_DISPLAY_MAX)}…`;
     }
 
+    /**
+     * Opens the project-wide push publish dialog (the same one used by templates,
+     * containers, content types, pages, content). Triggered via the global singleton
+     * service — the dialog itself is mounted once in `main-legacy.component.html`.
+     * `isBundle: true` routes the submit to the bundle endpoint instead of asset.
+     */
+    private openPushPublish(row: PublishingJobView): void {
+        this.dotPushPublishDialogService.open({
+            assetIdentifier: row.bundleId,
+            title: row.bundleName || row.bundleId,
+            isBundle: true
+        });
+    }
+
     private confirmRemove(row: PublishingJobView): void {
         this.confirmationService.confirm({
             header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
@@ -183,8 +249,6 @@ export class DotPublishingQueueHistoryComponent {
             ),
             acceptLabel: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
             rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
-            // Delete = primary, Cancel = tertiary (text). Destructive intent
-            // is communicated by the message text, not by color.
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
