@@ -6,8 +6,8 @@ import { ChipModule } from 'primeng/chip';
 
 import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { PageScannerA11yItem, PageScannerA11yResponse } from '../dot-page-scanner.service';
-import { A11yGroup } from '../models';
+import { AxeRule, PageScannerA11yResponse } from '../dot-page-scanner.service';
+import { A11yFindingType, A11yGroup } from '../models';
 
 @Component({
     selector: 'dot-page-scanner-a11y-report',
@@ -20,6 +20,21 @@ export class DotPageScannerA11yReportComponent {
     a11yData = input.required<PageScannerA11yResponse>();
 
     protected a11yGroups = computed(() => this.buildA11yGroups(this.a11yData()));
+
+    /** One accordion group per axe rule that flagged at least one element. */
+    protected errorCount = computed(() =>
+        this.a11yGroups()
+            .filter((group) => group.type === 'error')
+            .reduce((total, group) => total + group.count, 0)
+    );
+
+    /** Elements axe could not conclusively check (its `incomplete` results). */
+    protected warningCount = computed(() =>
+        this.a11yGroups()
+            .filter((group) => group.type === 'warning')
+            .reduce((total, group) => total + group.count, 0)
+    );
+
     protected readonly accordionPt = {
         motion: {
             root: {
@@ -31,34 +46,30 @@ export class DotPageScannerA11yReportComponent {
     };
 
     private buildA11yGroups(data: PageScannerA11yResponse): A11yGroup[] {
-        const items: PageScannerA11yItem[] = data.findings?.items ?? data.issues ?? [];
-        const map = new Map<string, A11yGroup>();
+        const axe = data.axe;
 
-        for (const item of items) {
-            if (map.has(item.code)) {
-                const existingGroup = map.get(item.code);
+        return [
+            ...this.mapRules(axe?.violations ?? [], 'error'),
+            ...this.mapRules(axe?.incomplete ?? [], 'warning')
+        ];
+    }
 
-                if (!existingGroup) {
-                    continue;
-                }
-
-                existingGroup.items.push(item);
-                existingGroup.count++;
-            } else {
-                const impact = item.runnerExtras?.impact ?? '';
-                const type = item.type;
-                map.set(item.code, {
-                    message: item.runnerExtras?.description ?? '',
-                    code: item.code,
-                    type,
-                    impact,
-                    helpUrl: item.runnerExtras?.helpUrl ?? '',
-                    items: [item],
-                    count: 1
-                });
-            }
-        }
-
-        return Array.from(map.values());
+    /**
+     * Flatten raw axe rules into display groups. Each rule already groups the
+     * elements it flagged in its `nodes` array, so one rule maps to one group.
+     */
+    private mapRules(rules: AxeRule[], type: A11yFindingType): A11yGroup[] {
+        return rules.map((rule) => ({
+            code: rule.id,
+            type,
+            message: rule.description ?? rule.help ?? '',
+            impact: rule.impact ?? null,
+            helpUrl: rule.helpUrl ?? '',
+            items: (rule.nodes ?? []).map((node) => ({
+                context: node.html,
+                selector: node.target?.join(', ') ?? ''
+            })),
+            count: rule.nodes?.length ?? 0
+        }));
     }
 }

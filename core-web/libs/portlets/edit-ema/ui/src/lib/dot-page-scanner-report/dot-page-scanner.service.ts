@@ -3,20 +3,45 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-export interface PageScannerA11yItem {
-    code: string;
-    type: 'error' | 'warning' | 'notice';
-    typeCode: number;
-    message: string;
-    context: string;
-    selector: string;
-    runner: string;
-    runnerExtras: {
-        description: string;
-        impact: string;
-        help: string;
-        helpUrl: string;
-    };
+/**
+ * Severity reported by axe-core for a rule/node.
+ */
+export type AxeImpact = 'critical' | 'serious' | 'moderate' | 'minor' | null;
+
+/**
+ * A single DOM element flagged by an axe rule.
+ */
+export interface AxeNode {
+    html: string;
+    target: string[];
+    impact: AxeImpact;
+    failureSummary: string;
+}
+
+/**
+ * A raw axe-core rule result. The same shape is used for both `violations`
+ * (confirmed failures) and `incomplete` (needs manual review).
+ */
+export interface AxeRule {
+    id: string;
+    impact: AxeImpact;
+    tags: string[];
+    description: string;
+    help: string;
+    helpUrl: string;
+    nodes: AxeNode[];
+}
+
+/**
+ * Raw axe-core run payload as returned by the external scanner.
+ */
+export interface AxeResult {
+    testEngine: { name: string; version: string };
+    testRunner: { name: string };
+    timestamp: string;
+    url: string;
+    violations: AxeRule[];
+    incomplete: AxeRule[];
 }
 
 export interface PageScannerA11yResponse {
@@ -27,29 +52,15 @@ export interface PageScannerA11yResponse {
     documentTitle: string;
     standard: string;
     runners: string[];
+    stylesheets: string[];
     authenticatedRequest: boolean;
     authHeaderMode: string;
-    counts: {
-        errors: number;
-        warnings: number;
-        notices: number;
-    };
-    totalIssues: number;
-    findings: {
-        total: number;
-        byType: {
-            errors: number;
-            warnings: number;
-            notices: number;
-        };
-        items: PageScannerA11yItem[];
-    };
-    issues: PageScannerA11yItem[];
+    axe: AxeResult;
     screenshot: {
         captured: boolean;
-        fileName: string;
-        endpoint: string;
-        mimeType: string;
+        fileName?: string;
+        endpoint?: string;
+        mimeType?: string;
     };
 }
 
