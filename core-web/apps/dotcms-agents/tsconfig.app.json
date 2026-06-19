@@ -4,6 +4,7 @@
         "outDir": "../../dist/out-tsc",
         "module": "commonjs",
         "moduleResolution": "node",
+        "resolveJsonModule": true,
         "types": ["node"]
     },
     "include": ["src/**/*.ts"],
