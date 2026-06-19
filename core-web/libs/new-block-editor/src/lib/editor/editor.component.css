@@ -133,6 +133,63 @@
     margin-top: 2.5rem;
 }
 
+/* ─── Lists ─────────────────────────────────────────────── */
+/* Self-contained list rendering. We do NOT rely on the host page's Tailwind
+   Typography (`prose`) for markers: Tailwind's preflight resets
+   `ol, ul, menu { list-style: none }` in `@layer base`, and depending on the
+   consuming app's layer order that can beat `prose` (it does in the
+   `dotcms-block-editor` web-component build, where lists rendered with no
+   bullets/numbers). These rules are unlayered component CSS, so they win over
+   any layered Tailwind reset regardless of host. `padding-left` is required for
+   the markers to be visible (`list-style-position: outside` paints them in the
+   indent); it also out-specifies the host-style `revert-layer` defense (0,1,1),
+   which would otherwise strip the list's padding and clip the markers. */
+:host ::ng-deep .tiptap ul,
+:host ::ng-deep .tiptap ol {
+    padding-left: 1.625rem;
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap ul {
+    list-style: disc;
+}
+
+:host ::ng-deep .tiptap ol {
+    list-style: decimal;
+}
+
+/* Nested markers cycle so depth stays legible */
+:host ::ng-deep .tiptap ul ul {
+    list-style: circle;
+}
+
+:host ::ng-deep .tiptap ul ul ul {
+    list-style: square;
+}
+
+/* `list-style: inherit` is load-bearing: the admin JSP ships an unlayered
+   `li { list-style: none }` that sets the property *directly on the <li>*,
+   overriding the value `list-style-type` would otherwise inherit from the
+   <ul>/<ol> above. Forcing the li to inherit re-derives the correct marker
+   (disc / decimal / circle / square) from its list parent. `.tiptap li`
+   (0,2,1) out-specifies the JSP's `li` (0,0,1). */
+:host ::ng-deep .tiptap li {
+    margin: 0.25rem 0;
+    list-style: inherit;
+}
+
+/* Markers default to Tailwind prose's light-gray bullet/counter color; match
+   them to the editor's text color so they read as part of the content. */
+:host ::ng-deep .tiptap li::marker {
+    color: currentColor;
+}
+
+/* TipTap wraps list-item content in a <p>; collapse its prose margins so the
+   marker stays vertically aligned with the first line of text. */
+:host ::ng-deep .tiptap li > p {
+    margin: 0;
+}
+
 /* ─── Figures / Images ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror figure {
     display: block;
