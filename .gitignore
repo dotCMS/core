@@ -150,6 +150,9 @@ dist-docs/
 
 #env
 /core-web/**/.env
+.env
+.env.*
+!.env.example
 
 /**/**/*.css.map
 
@@ -217,3 +220,6 @@ __pycache__/
 dist/
 *.egg
 .venv/
+
+# S0 spike throwaway
+/core-web/scratch/
