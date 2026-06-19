@@ -1,4 +1,5 @@
 import { anthropic } from '@ai-sdk/anthropic';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText, Output, type LanguageModel } from 'ai';
 import { z } from 'zod';
 
@@ -11,17 +12,40 @@ import type { ScanFinding, SourceRef } from './dotcms-client';
  *   1. triage + attribution — classify a violation and pick the source file
  *   2. minimal-diff generation — rewrite that file to clear the violation
  *
- * The model is injected (default Anthropic Sonnet) so it's mockable in tests and
- * the provider stays swappable per plan §3 (Azure/Bedrock/dotAI later).
+ * The model is injected (so it's mockable in tests) and the provider is
+ * env-selectable per plan §3 (provider not locked) — no loop rewrite to swap.
+ *
+ * Provider/model via env (no code change to retune):
+ *   A11Y_AGENT_PROVIDER = "anthropic" (default) | "openrouter"
+ *   A11Y_AGENT_MODEL    = model id for that provider
+ *                         (default "claude-sonnet-4-6"; for openrouter use a
+ *                          fully-qualified id e.g. "anthropic/claude-sonnet-4.5")
+ *   OPENROUTER_KEY / OPENROUTER_API_KEY = key when provider=openrouter
  *
  * Cost note: triage classification + minimal diffs do NOT need a frontier model.
- * Opus cost ~$12 for a single page in testing; Sonnet is the default. Override
- * per-deploy with A11Y_AGENT_MODEL (any Anthropic model id) without code changes.
+ * Opus cost ~$12 for a single page in testing; Sonnet is the default.
  */
 
-export const DEFAULT_MODEL = process.env.A11Y_AGENT_MODEL ?? 'claude-sonnet-4-6';
+export type AgentProvider = 'anthropic' | 'openrouter';
+
+export const DEFAULT_PROVIDER: AgentProvider =
+    (process.env.A11Y_AGENT_PROVIDER as AgentProvider) || 'anthropic';
+
+export const DEFAULT_MODEL =
+    process.env.A11Y_AGENT_MODEL ??
+    (DEFAULT_PROVIDER === 'openrouter' ? 'anthropic/claude-sonnet-4.5' : 'claude-sonnet-4-6');
 
 export function defaultModel(): LanguageModel {
+    if (DEFAULT_PROVIDER === 'openrouter') {
+        const apiKey = process.env.OPENROUTER_KEY ?? process.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
+            throw new Error(
+                'A11Y_AGENT_PROVIDER=openrouter but OPENROUTER_KEY (or OPENROUTER_API_KEY) is not set'
+            );
+        }
+        return createOpenRouter({ apiKey }).chat(DEFAULT_MODEL);
+    }
+    // Anthropic reads ANTHROPIC_API_KEY from the environment itself.
     return anthropic(DEFAULT_MODEL);
 }
 
