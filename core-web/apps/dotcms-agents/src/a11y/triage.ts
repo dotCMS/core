@@ -25,6 +25,41 @@ export function defaultModel(): LanguageModel {
     return anthropic(DEFAULT_MODEL);
 }
 
+// ── Usage instrumentation (optional, off by default) ─────────────────────────
+// A process-wide sink so tooling (the e2e cost harness) can total token usage
+// across every LLM call in a run without threading usage through signatures.
+// Production leaves it unset (no overhead).
+
+export interface LlmCallUsage {
+    call: 'triage' | 'fix';
+    inputTokens?: number;
+    outputTokens?: number;
+    cachedInputTokens?: number;
+}
+
+type UsageSink = (u: LlmCallUsage) => void;
+let usageSink: UsageSink | undefined;
+
+/** Register a sink to receive per-call token usage (e.g. for cost logging). */
+export function setUsageSink(sink: UsageSink | undefined): void {
+    usageSink = sink;
+}
+
+function reportUsage(
+    call: LlmCallUsage['call'],
+    usage: { inputTokens?: number; outputTokens?: number; cachedInputTokens?: number }
+): void {
+    if (!usageSink) {
+        return;
+    }
+    usageSink({
+        call,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        cachedInputTokens: usage.cachedInputTokens
+    });
+}
+
 // ── 1. Triage + attribution ─────────────────────────────────────────────────
 
 export const TriageDecisionSchema = z.object({
@@ -90,7 +125,7 @@ skipCss is ${input.skipCss ? 'TRUE — treat CSS/contrast issues as report-only'
 
 Decide fixability, the target file (a candidate path or null), whether the offending markup is actually present in that file (evidenceFound), and a short reason.`;
 
-    const { output } = await generateText({
+    const { output, usage } = await generateText({
         model,
         output: Output.object({ schema: TriageDecisionSchema }),
         system: TRIAGE_SYSTEM,
@@ -108,6 +143,7 @@ Decide fixability, the target file (a candidate path or null), whether the offen
             { role: 'user', content: violationPrompt }
         ]
     });
+    reportUsage('triage', usage);
 
     // Deterministic guard: honor skipCss even if the model ignored it.
     if (input.skipCss && output.fixability === 'css') {
@@ -170,11 +206,12 @@ ${input.originalContent}
 
 Produce the minimal edited file that clears this violation.`;
 
-    const { output } = await generateText({
+    const { output, usage } = await generateText({
         model,
         output: Output.object({ schema: FixOutputSchema }),
         system: FIX_SYSTEM,
         prompt
     });
+    reportUsage('fix', usage);
     return output;
 }
