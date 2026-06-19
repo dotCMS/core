@@ -1092,10 +1092,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     "Error creating reindex indices for ts=" + ts + ": " + e.getMessage(), e);
         }
         // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
-        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers
-        pointES(null, null,
-                operationsES.toPhysicalName(reindexWorkingName),
-                operationsES.toPhysicalName(reindexLiveName));
+        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers.
+        // Skipped in Phase 3: ES is decommissioned, so writing ES reindex pointers here would only
+        // create orphan NULL-version rows that the OS-only switchover never cleans up (#36077).
+        if (!isMigrationComplete()) {
+            pointES(null, null,
+                    operationsES.toPhysicalName(reindexWorkingName),
+                    operationsES.toPhysicalName(reindexLiveName));
+        }
         // ── END LEGACY ES ─────────────────────────────────────────────────────
 
         // Persist OS reindex slots, preserving existing working/live pointers.
@@ -1221,33 +1225,38 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // ── OS mirror (Phases 1 and 2, best-effort) ──────────────────────
             // The OS shadow index has its own reindex slots that must be promoted
             // in lock-step with ES. A failure here must never abort the ES result.
+            List<String> newActiveOs = List.of();
             if (isMigrationStarted()) {
                 try {
                     final Optional<VersionedIndices> osExisting =
                             versionedIndicesAPI.loadDefaultVersionedIndices();
+                    final Optional<String> osWorking =
+                            osExisting.flatMap(VersionedIndices::reindexWorking);
+                    final Optional<String> osLive =
+                            osExisting.flatMap(VersionedIndices::reindexLive);
                     final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
                     // Promote OS reindex slots → active; omitting reindexWorking/reindexLive
                     // from the builder clears them to Optional.empty() in the store.
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::working);
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::live);
+                    osWorking.ifPresent(osBuilder::working);
+                    osLive.ifPresent(osBuilder::live);
                     versionedIndicesAPI.saveIndices(osBuilder.build());
+                    // Capture the promoted OS names (.os-tagged, from the OS store) so they can be
+                    // optimized on the OS provider directly — see optimizeNewActiveIndicesAsync.
+                    if (osWorking.isPresent() && osLive.isPresent()) {
+                        newActiveOs = List.of(osWorking.get(), osLive.get());
+                    }
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not mirror reindex switchover to OS store", osEx);
                 }
             }
 
-            // Async: merge ES index segments and expand replicas on the newly active indices.
-            // Uses newInfo (ES reindex → active names), not oldInfo (old active names).
-            final List<String> newActiveEs = List.of(newInfo.getWorking(), newInfo.getLive());
-            DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
-                try {
-                    Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    optimize(newActiveEs);
-                } catch (Exception e) {
-                    Logger.warnAndDebug(this.getClass(),
-                            "unable to expand ES replicas:" + e.getMessage(), e);
-                }
-            });
+            // Async: merge index segments and expand replicas on the newly active indices,
+            // optimizing EACH provider with the names it actually holds — ES bare names from
+            // newInfo, OS .os-tagged names from the store. Routing through the phase-aware
+            // optimize() would send the ES names to the OS read provider in Phase 2 and hit
+            // index_not_found (then fall back to ES), which is noisy and skips the OS optimize.
+            optimizeNewActiveIndicesAsync(
+                    List.of(newInfo.getWorking(), newInfo.getLive()), newActiveOs);
 
             notifyAdminsOfFailedReindex();
 
@@ -1314,22 +1323,68 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         existing.reindexLive().ifPresent(osBuilder::live);
         versionedIndicesAPI.saveIndices(osBuilder.build());
 
+        // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
+        // old live/working plus any transient reindex_live/reindex_working that predate Phase 3.
+        // ES is decommissioned, so these rows are pure orphans — without this the table would
+        // accumulate stale ES rows on every Phase-3 reindex (#36077). DB-only: never contacts the
+        // ES cluster (which may be down). Best-effort — the OS promotion above already succeeded
+        // and must not be undone by a housekeeping failure. Physical ES index deletion is left to
+        // the scheduled DeleteInactiveLiveWorkingIndicesJob.
+        try {
+            versionedIndicesAPI.removeLegacyIndices();
+        } catch (Exception cleanupEx) {
+            Logger.warn(this, "Phase 3 switchover: could not purge legacy ES indicies rows", cleanupEx);
+        }
+
         // Async: optimize the newly active OS indices (merge segments, adjust replicas).
         // reindexWorking/reindexLive presence was validated at the top of this method.
+        // ES is decommissioned in Phase 3, so only the OS provider is optimized.
         final String newWorking = existing.reindexWorking().orElseThrow();
         final String newLive    = existing.reindexLive().orElseThrow();
-        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
-            try {
-                Logger.info(this.getClass(), "Updating and optimizing OpenSearch Indexes");
-                optimize(List.of(newWorking, newLive));
-            } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "unable to optimize OS indices:" + e.getMessage(), e);
-            }
-        });
+        optimizeNewActiveIndicesAsync(List.of(), List.of(newWorking, newLive));
 
         notifyAdminsOfFailedReindex();
         return true;
+    }
+
+    /**
+     * Optimizes (force-merges) the newly-promoted indices after a reindex switchover, targeting
+     * each provider with the names it actually holds: ES with its bare names, OS with its
+     * {@code .os}-tagged names. Both calls go to the vendor implementation directly
+     * ({@code operationsES/OS.indexAPI()}) rather than the phase-aware {@code optimize()} router,
+     * because the router routes optimize through the read provider — in Phase 2 that is OS, so the
+     * ES names would be sent to OS, miss (the OS index carries the {@code .os} tag), and only
+     * succeed via the ES fallback while logging a misleading error and skipping the OS optimize.
+     *
+     * <p>Runs asynchronously and is best-effort per provider: a force-merge failure (including an
+     * OS shadow failure in dual-write phases) is logged and swallowed and never affects the
+     * completed switchover.</p>
+     *
+     * @param esNames ES physical (bare) names to optimize, or empty to skip ES (e.g. Phase 3)
+     * @param osNames OS physical ({@code .os}-tagged) names to optimize, or empty to skip OS
+     */
+    private void optimizeNewActiveIndicesAsync(final List<String> esNames,
+            final List<String> osNames) {
+        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+            if (esNames != null && !esNames.isEmpty()) {
+                try {
+                    Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
+                    operationsES.indexAPI().optimize(esNames);
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(),
+                            "unable to optimize ES indices:" + e.getMessage(), e);
+                }
+            }
+            if (osNames != null && !osNames.isEmpty()) {
+                try {
+                    Logger.info(this.getClass(), "Updating and optimizing OpenSearch Indexes");
+                    operationsOS.indexAPI().optimize(osNames);
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(),
+                            "unable to optimize OS indices:" + e.getMessage(), e);
+                }
+            }
+        });
     }
 
     /**
