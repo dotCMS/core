@@ -86,7 +86,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -1033,24 +1036,69 @@ public class PageResource {
         for (final ContainerEntry containerEntry : containerEntries) {
 
             final String containerId = containerEntry.getContainerId();
+
+            if (!UtilMethods.isSet(containerId)) {
+                throw new BadRequestException("A container identifier is required");
+            }
+
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
             final List<String> contentletIdList = containerEntry.getContentIds();
             for (final String contentletId : contentletIdList) {
+
+                if (!UtilMethods.isSet(contentletId)) {
+                    throw new BadRequestException("A contentlet identifier is required for the container");
+                }
+
                 final Contentlet contentlet;
                 try {
+                    // This lookup excludes deleted (archived) versions. It wraps everything it
+                    // catches in a DotContentletStateException, so we must inspect the cause:
+                    // a NotFoundInDbException means the content is archived or does not exist --
+                    // both are skipped silently (treated identically to avoid leaking whether an
+                    // identifier exists, and so a page still referencing archived content stays
+                    // saveable). Any other cause is a genuine failure and must be surfaced rather
+                    // than silently dropping the contentlet. See issue #35993.
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
-                    if (null == contentlet) {
-
-                        throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
+                } catch (final DotContentletStateException e) {
+                    if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                        // Expected/benign case (archived or non-existent). Checks the full cause
+                        // chain (not just the direct cause) so an added intermediate wrapper does
+                        // not silently turn this into a client error. Logged without the exception
+                        // so we don't emit a stack trace -- or the wrapped lookup message -- on
+                        // every page save that references archived content.
+                        Logger.warn(this, "Skipping contentlet '" + contentletId
+                                + "' on page content save: archived or not found");
+                        continue;
                     }
+                    // Genuine lookup/DB failure wrapped as DotContentletStateException: log full
+                    // detail server-side and return a generic message so internal identifiers /
+                    // SQL fragments are not leaked in the response.
+                    Logger.error(this, "Error validating contentlet '" + contentletId
+                            + "' on page content save", e);
+                    throw new BadRequestException("Error validating one or more contentlets for the page");
+                } catch (final DotDataException e) {
+                    // findContentletByIdentifierAnyLanguageAnyVariant declares this checked
+                    // exception (in practice it wraps failures in DotContentletStateException,
+                    // handled above). Handle it the same way so this method throws only unchecked
+                    // exceptions and never forwards a raw message to the client.
+                    Logger.error(this, "Error validating contentlet '" + contentletId
+                            + "' on page content save", e);
+                    throw new BadRequestException("Error validating one or more contentlets for the page");
+                }
 
-                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+                if (null == contentlet) {
+                    Logger.warn(this, "Skipping contentlet '" + contentletId
+                            + "' on page content save: working version not found");
+                    continue;
+                }
 
-                        throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
-                    }
-                } catch (DotDataException e) {
-
-                    throw new BadRequestException(e, e.getMessage());
+                if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT)
+                        && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+                    // The content-type variable is public schema metadata (already exposed via the
+                    // Content Types API), so it is safe to include and helps the caller identify the
+                    // offending content.
+                    throw new BadRequestException("Content type '" + contentlet.getContentType().variable()
+                            + "' is not allowed in this container");
                 }
             }
         }
@@ -1063,9 +1111,22 @@ public class PageResource {
                     .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
-        } catch (DotDataException | DotSecurityException e) {
-
-            throw new BadRequestException(e, e.getMessage());
+        } catch (final DotSecurityException e) {
+            // The system user lacking read permission on the container is a server-side
+            // misconfiguration, not a client bad request -- surface it as 403 (generic message;
+            // full detail logged server-side) rather than 400.
+            Logger.error(this, "No permission to read container '" + containerId + "'", e);
+            throw new ForbiddenException(e, "Not allowed to read the container");
+        } catch (final DotDataException e) {
+            // Log full detail server-side; return a generic message so internal identifiers /
+            // SQL fragments are not leaked in the response.
+            //
+            // DoesNotExistException is intentionally NOT caught here: a missing container must
+            // surface as a 404 carrying its message. The id in that message is the caller's own
+            // input (not sensitive), and the 404 + message is an established API contract verified
+            // by the Define_Contentlets_StyleProperties postman test.
+            Logger.error(this, "Error retrieving content types for container '" + containerId + "'", e);
+            throw new BadRequestException("Error retrieving content types for the container");
         }
     }
 
