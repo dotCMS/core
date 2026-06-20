@@ -158,18 +158,18 @@ describe('runFix orchestration', () => {
         expect(report.results.find((r) => r.ruleId === 'button-name')).toBeUndefined();
     });
 
-    it('multilingual page adds language_id to the EDIT_MODE scan URL', async () => {
+    it('multilingual page adds language_id to the PREVIEW_MODE scan URL', async () => {
         const client = makeClient({ scans: [makeScan(0), makeScan(0), makeScan(0)] });
         await runFix(makeRequest({ page: { ...makeRequest().page, languageId: 2 } }), {
             client,
             research: false
         });
-        const editModeUrl = client.scan.mock.calls[1][0] as string; // 2nd scan = EDIT_MODE baseline
-        expect(editModeUrl).toContain('mode=EDIT_MODE');
-        expect(editModeUrl).toContain('language_id=2');
+        const previewUrl = client.scan.mock.calls[1][0] as string; // 2nd scan = PREVIEW baseline
+        expect(previewUrl).toContain('mode=PREVIEW_MODE');
+        expect(previewUrl).toContain('language_id=2');
     });
 
-    it('aborts (no fixes) when the render is unreliable (a stylesheet failed to load)', async () => {
+    it('aborts (no fixes) when a stylesheet/script failed to load', async () => {
         const broken = makeScan(5, [contrastFinding()], {
             renderReliable: false,
             renderWarnings: [{ url: '//x/styles.css', status: 404, resourceType: 'stylesheet' }]
@@ -180,5 +180,21 @@ describe('runFix orchestration', () => {
             expect.objectContaining({ ruleId: 'render-unreliable', status: 'reported' })
         ]);
         expect(client.saveWorking).not.toHaveBeenCalled();
+    });
+
+    it('does NOT abort for non-render-affecting 404s (image/xhr/favicon)', async () => {
+        // renderReliable:false but only an image + xhr failed — these don't affect
+        // contrast/layout, so the run should proceed.
+        const okish = makeScan(1, [makeFinding()], {
+            renderReliable: false,
+            renderWarnings: [
+                { url: '//x/favicon.ico', status: 404, resourceType: 'other' },
+                { url: '//x/hero.jpg', status: 404, resourceType: 'image' }
+            ]
+        });
+        const client = makeClient({ scans: [okish, okish, okish] });
+        const report = await runFix(makeRequest(), { client, research: false });
+        // proceeds → the non-CSS violation is deferred to PASS 2, not the abort result
+        expect(report.results.some((r) => r.ruleId === 'render-unreliable')).toBe(false);
     });
 });

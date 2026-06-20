@@ -32,8 +32,8 @@ const MAX_GREP_LINES = 10;
 export interface ResearchToolsDeps {
     client: DotcmsClient;
     page: { uri: string; hostId: string };
-    /** The two scan URLs (live, editMode) for rescan. */
-    editModeUrl: string;
+    /** The PREVIEW_MODE scan URL (working content, no editor chrome) for rescan. */
+    previewUrl: string;
     /** Files edited so far (shared with PASS 1 caps / reporting). */
     editedPaths: Set<string>;
     /** Per-call source-content cache (avoid re-reading). */
@@ -169,7 +169,7 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
             execute: async () => {
                 step('rescan', 'Agent: re-scanning');
                 try {
-                    const scan = await client.scan(deps.editModeUrl);
+                    const scan = await client.scan(deps.previewUrl);
                     const viols = scan.findings.items.filter(isFixableViolation);
                     return {
                         violations: viols.length,
