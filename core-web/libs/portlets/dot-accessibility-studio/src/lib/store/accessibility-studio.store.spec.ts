@@ -10,8 +10,16 @@ import { GlobalStore } from '@dotcms/store';
 
 import { AccessibilityStudioStore } from './accessibility-studio.store';
 
-import { StudioPageRow } from '../models/accessibility-studio.models';
+import { AgentStreamEvent, StudioPageRow } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
+
+/** A canned SSE run: two steps then `done` with the mock report. */
+const MOCK_FIX_STREAM: AgentStreamEvent[] = [
+    { type: 'step', phase: 'scan', message: 'Scanning live + working baseline' },
+    { type: 'step', phase: 'fix', message: 'Fixing color-contrast → .btn' },
+    { type: 'done', report: MOCK_FIX_REPORT }
+];
 
 // Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
 const MOCK_SCAN_RESPONSE = {
@@ -112,6 +120,7 @@ describe('AccessibilityStudioStore', () => {
     let store: InstanceType<typeof AccessibilityStudioStore>;
     let searchService: jest.Mocked<DotContentSearchService>;
     let scannerService: jest.Mocked<DotPageScannerService>;
+    let agentService: jest.Mocked<DotA11yAgentService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
 
     const createService = createServiceFactory({
@@ -122,6 +131,9 @@ describe('AccessibilityStudioStore', () => {
             }),
             mockProvider(DotPageScannerService, {
                 checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
+            }),
+            mockProvider(DotA11yAgentService, {
+                fixStream: jest.fn().mockReturnValue(of(...MOCK_FIX_STREAM))
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of(null))
@@ -145,6 +157,7 @@ describe('AccessibilityStudioStore', () => {
         scannerService = spectator.inject(
             DotPageScannerService
         ) as jest.Mocked<DotPageScannerService>;
+        agentService = spectator.inject(DotA11yAgentService) as jest.Mocked<DotA11yAgentService>;
         // The onInit effect triggers loadPages while in the picker phase.
         spectator.flushEffects();
     });
@@ -266,14 +279,54 @@ describe('AccessibilityStudioStore', () => {
             expect(store.scanResult()).toBeNull();
         });
 
-        it('startFix moves scanned → done with the full report', () => {
+        it('startFix streams steps then moves scanned → done with the full report', () => {
             store.runScan();
             store.startFix();
+            // Each SSE `step` event was appended to the live activity log…
+            expect(agentService.fixStream).toHaveBeenCalledTimes(1);
+            expect(store.steps()).toHaveLength(2);
+            expect(store.steps()[0]).toEqual({
+                id: 0,
+                phase: 'scan',
+                message: 'Scanning live + working baseline'
+            });
+            // …and the terminal `done` event set the report + phase.
             expect(store.phase()).toBe('done');
             expect(store.isDone()).toBe(true);
             expect(store.fixedCount()).toBe(7);
             expect(store.reportedCount()).toBe(5);
             expect(store.afterCount()).toBe(MOCK_FIX_REPORT.scan.after.violations);
+        });
+
+        it('startFix sends the selected page + skipCss in the agent request', () => {
+            store.setSkipCss(true);
+            store.runScan();
+            store.startFix();
+            const request = agentService.fixStream.mock.calls[0][0];
+            expect(request.page.identifier).toBe('id-1');
+            expect(request.page.uri).toBe('/about-us');
+            expect(request.page.hostId).toBe('host-id-1');
+            expect(request.page.languageId).toBe(1);
+            expect(request.options.skipCss).toBe(true);
+        });
+
+        it('startFix returns to scanned and records the error on a terminal error event', () => {
+            agentService.fixStream.mockReturnValueOnce(
+                of<AgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+            );
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('scanned');
+            expect(store.fixError()).toBe('render unreliable');
+            expect(store.report()).toBeNull();
+        });
+
+        it('startFix returns to scanned and records the error if the stream throws', () => {
+            agentService.fixStream.mockReturnValueOnce(throwError(() => new Error('network down')));
+            store.runScan();
+            store.startFix();
+            expect(store.phase()).toBe('scanned');
+            expect(store.fixError()).toBe('network down');
         });
 
         it('publish moves done → published', () => {

@@ -8,7 +8,15 @@ import {
     shortName
 } from './agent-utils';
 import { colorTokenAt, nudgeToClear, parseColor, parseTargetRatio } from './contrast';
-import { attribute, findColorDeclNode, parseColorRules, type CssRule } from './css-attribution';
+import {
+    attribute,
+    attributeByTarget,
+    findColorDeclNode,
+    parseColorRules,
+    parseCustomProperties,
+    resolveVarValue,
+    type CssRule
+} from './css-attribution';
 import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
 import { DotcmsClient, type ScanFinding, type ScanResult } from './dotcms-client';
 import { runResearch } from './researchLoop';
@@ -325,16 +333,25 @@ interface ProcessCtx {
 interface ParsedStylesheet {
     rules: CssRule[];
     map: ReturnType<typeof extractInlineSourceMap>;
+    /** Custom-property name→value map, to resolve `var(--x)` to a concrete color. */
+    vars: Map<string, string>;
+    /** The raw CSS text — used to edit directly when there's no sourcemap. */
+    css: string;
 }
 
-/** Fetch + parse a stylesheet once per run (cached): its color rules + inline sourcemap. */
+/** Fetch + parse a stylesheet once per run (cached): color rules, vars, inline sourcemap. */
 async function loadStylesheet(ctx: ProcessCtx, sheet: string): Promise<ParsedStylesheet> {
     const cached = ctx.stylesheetCache.get(sheet);
     if (cached) {
         return cached;
     }
     const css = await ctx.deps.client.fetchStylesheet(sheet);
-    const parsed: ParsedStylesheet = { rules: parseColorRules(css), map: extractInlineSourceMap(css) };
+    const parsed: ParsedStylesheet = {
+        rules: parseColorRules(css),
+        map: extractInlineSourceMap(css),
+        vars: parseCustomProperties(css),
+        css
+    };
     ctx.stylesheetCache.set(sheet, parsed);
     return parsed;
 }
@@ -373,7 +390,6 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
  */
 async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     const { finding, deps, stylesheets, editedPaths, caps } = ctx;
-    const client = deps.client;
     const step = deps.onStep ?? noop;
     const base: FixResult = { ruleId: finding.code, status: 'reported' };
 
@@ -395,6 +411,8 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     // the color identity decides. The OTHER color of the pair is the counterpart.
     let matches: CssRule[] = [];
     let map: ParsedStylesheet['map'] = null;
+    let vars: Map<string, string> = new Map();
+    let matchedSheet: ParsedStylesheet | null = null;
     for (const sheet of stylesheets) {
         let parsed: ParsedStylesheet;
         try {
@@ -402,14 +420,19 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         } catch (e) {
             return { ...base, status: 'failed', reason: `fetch stylesheet failed: ${errMsg(e)}` };
         }
-        const m = attribute(finding.context, parsed.rules);
+        // Prefer axe's full target path (handles combinator rules like `.site-nav a`);
+        // fall back to element-HTML matching if the target is empty/unparseable.
+        const byTarget = finding.selector ? attributeByTarget(finding.selector, parsed.rules) : [];
+        const m = byTarget.length > 0 ? byTarget : attribute(finding.context, parsed.rules);
         if (m.length) {
             matches = m;
             map = parsed.map;
+            vars = parsed.vars;
+            matchedSheet = parsed;
             break;
         }
     }
-    if (!matches.length) {
+    if (!matches.length || !matchedSheet) {
         return { ...base, reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).' };
     }
 
@@ -422,16 +445,29 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     interface Candidate {
         rule: CssRule;
         decl: { prop: string; value: string };
+        /** The decl's value resolved through `var()` to a concrete color literal. */
+        resolvedValue: string;
+        /** The custom-property name to edit, if the decl was `var(--name)`; else null. */
+        varName: string | null;
         counterpart: NonNullable<ReturnType<typeof parseColor>>;
     }
+    // Match on the RESOLVED color (var(--x) → its literal) so we match what axe
+    // measured. When the decl is a var, remember the property name — the fix edits
+    // the custom-property definition, not the var() reference.
+    const varNameOf = (value: string): string | null => {
+        const m = value.match(/^\s*var\(\s*(--[\w-]+)/);
+        return m ? m[1] : null;
+    };
     const candidates: Candidate[] = [];
     for (const rule of matches) {
         for (const d of rule.decls) {
-            const v = parseColor(d.value);
+            const resolvedValue = resolveVarValue(d.value, vars);
+            const v = parseColor(resolvedValue);
+            const varName = varNameOf(d.value);
             if (sameColor(v, fg) && bg) {
-                candidates.push({ rule, decl: d, counterpart: bg });
+                candidates.push({ rule, decl: d, resolvedValue, varName, counterpart: bg });
             } else if (sameColor(v, bg) && fg) {
-                candidates.push({ rule, decl: d, counterpart: fg });
+                candidates.push({ rule, decl: d, resolvedValue, varName, counterpart: fg });
             }
         }
     }
@@ -442,74 +478,179 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         };
     }
 
-    if (!map) {
-        return { ...base, reason: 'No sourcemap on the stylesheet; cannot locate the SCSS source to edit.' };
-    }
     const targetRatio = parseTargetRatio(data.expectedContrastRatio);
 
-    // Try each candidate; the first that resolves to source AND yields a nudge wins.
+    // Try each candidate; the first that resolves to an editable source AND yields a
+    // nudge wins. The nudge is computed from the RESOLVED color (the concrete value
+    // axe measured), not the declared value (which may be `var(--x)`).
     let lastReason = 'No candidate could be fixed.';
     for (const cand of candidates) {
-        const editable = parseColor(cand.decl.value);
+        const editable = parseColor(cand.resolvedValue);
         const fix = editable ? nudgeToClear(editable, cand.counterpart, targetRatio) : null;
         if (!fix) {
-            lastReason = `Cannot reach ${targetRatio}:1 by nudging ${cand.decl.value} (${cand.decl.prop}); trying the counterpart.`;
+            lastReason = `Cannot reach ${targetRatio}:1 by nudging ${cand.resolvedValue} (${cand.decl.prop}); trying the counterpart.`;
             continue; // this side is unfixable (e.g. white) — try the other
         }
 
-        // Resolve this decl's value position → its SCSS source.
-        const declNode = findColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
-        const declPos = declNode?.source?.start;
-        if (!declNode || !declPos) {
-            lastReason = `No declaration position for ${cand.decl.prop}; trying the counterpart.`;
+        // Decide WHERE the literal lives and WHAT to replace:
+        //   var(--x)  → edit the custom-property definition's literal
+        //   sourcemap → map the decl position back to its SCSS source
+        //   plain css → edit the literal in the .css directly
+        const located = await locateEditTarget(ctx, {
+            cand,
+            map,
+            sheet: matchedSheet,
+            stylesheetUrl: stylesheets[0]
+        });
+        if ('reason' in located) {
+            lastReason = located.reason;
             continue;
         }
-        const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
-        if (!resolved || resolved.content === undefined) {
-            lastReason = `Could not map ${cand.rule.selector} (${cand.decl.prop}) to its SCSS source; trying the counterpart.`;
-            continue;
-        }
-        const sourcePath = resolveSourcePath(resolved.source, stylesheets[0]);
-        const sourceValue = colorTokenAt(resolved.content, resolved.line, resolved.column);
-        if (!sourceValue) {
-            lastReason = `Found no editable color token at ${shortName(sourcePath)}:${resolved.line}; trying the counterpart.`;
-            continue;
-        }
+        const { sourcePath, original, literal } = located;
+
         if (!editedPaths.has(sourcePath) && editedPaths.size >= caps.maxFiles) {
             return { ...base, file: sourcePath, reason: 'Per-run file cap reached' };
         }
-
-        // Read the ONE source file (lazy; prefer the sourcemap's embedded content).
-        let original = ctx.currentContent[sourcePath] ?? resolved.content;
-        if (ctx.currentContent[sourcePath] === undefined && resolved.content === undefined) {
-            try {
-                original = await client.read(sourcePath);
-            } catch (e) {
-                return { ...base, status: 'failed', file: sourcePath, reason: `read source failed: ${errMsg(e)}` };
-            }
-        }
-        if (!original.includes(sourceValue)) {
-            lastReason = `Source value ${sourceValue} not found in ${shortName(sourcePath)}; trying the counterpart.`;
+        if (!original.includes(literal)) {
+            lastReason = `Source value ${literal} not found in ${shortName(sourcePath)}; trying the counterpart.`;
             continue;
         }
 
-        step('fix', `Fixing ${finding.code} → ${cand.rule.selector} (${cand.decl.prop}) in ${shortName(sourcePath)}`);
-        const edited = replaceFirst(original, sourceValue, fix.newColor);
+        const where = cand.varName ? `${cand.varName} (${cand.rule.selector})` : cand.rule.selector;
+        // Enrich the live step so the UI shows the actual change as it happens —
+        // the before→after color + contrast ratio, not just the selector.
+        const beforeRatio = data.contrastRatio != null ? `${data.contrastRatio}:1` : '?';
+        step(
+            'fix',
+            `Fixing ${finding.code} → ${where}: ${literal} → ${fix.newColor} (${beforeRatio} → ${fix.achievedRatio.toFixed(2)}:1) in ${shortName(sourcePath)}`
+        );
+        const edited = replaceFirst(original, literal, fix.newColor);
         if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
             return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
         }
-        const diff = `- ${cand.decl.prop}: ${sourceValue}\n+ ${cand.decl.prop}: ${fix.newColor}  (${cand.rule.selector}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
+        const diff = `- ${literal}\n+ ${fix.newColor}  (${where}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
         return saveAndRescan(ctx, {
             path: sourcePath,
             original,
             edited,
             diff,
-            blastRadius: 'token',
-            review: `CSS color edit in ${shortName(sourcePath)} — may affect every element using this rule/variable`
+            blastRadius: cand.varName ? 'token' : 'shared-rule',
+            review: cand.varName
+                ? `CSS custom property ${cand.varName} in ${shortName(sourcePath)} — affects every element using this token`
+                : `CSS color edit (${cand.rule.selector}) in ${shortName(sourcePath)} — may affect every element matching this rule`
         });
     }
 
     return { ...base, reason: `${lastReason} (needs a design decision); reported.` };
+}
+
+interface EditTarget {
+    /** Host-qualified path of the file to edit. */
+    sourcePath: string;
+    /** Current content of that file. */
+    original: string;
+    /** The exact color literal to replace in that content. */
+    literal: string;
+}
+
+/**
+ * Resolve a contrast candidate to a concrete (file, literal) edit target, choosing
+ * the deepest available source:
+ *   1. var(--x)        → the custom-property DEFINITION's literal (in its source file)
+ *   2. sourcemap (SCSS) → the decl value mapped back to its .scss source line
+ *   3. plain .css       → the literal in the compiled .css directly
+ *
+ * Returns `{ reason }` when this candidate can't be located (so the caller tries
+ * the counterpart). The var() path takes priority because editing the token fixes
+ * the value at its single source of truth.
+ */
+async function locateEditTarget(
+    ctx: ProcessCtx,
+    args: {
+        cand: { decl: { prop: string; value: string }; resolvedValue: string; varName: string | null; rule: CssRule };
+        map: ParsedStylesheet['map'];
+        sheet: ParsedStylesheet;
+        stylesheetUrl: string;
+    }
+): Promise<EditTarget | { reason: string }> {
+    const { cand, map, sheet, stylesheetUrl } = args;
+
+    const contentHost = ctx.req.page.host;
+    // The compiled stylesheet's own host-qualified asset path (host from the page
+    // request, not the runtime origin in the stylesheet URL).
+    const cssPath = cssAssetPath(stylesheetUrl, contentHost);
+
+    // 1. var(--x): edit the custom-property definition's literal. Locate the
+    //    `--name: <color>` decl's position; map it to source if there's a sourcemap,
+    //    else edit it in the .css directly. The resolved color IS the literal to find.
+    if (cand.varName) {
+        const literal = cand.resolvedValue;
+        const defNode = findVarDefinition(sheet.css, cand.varName);
+        // Map the var definition's position to source when a sourcemap exists.
+        if (map && defNode) {
+            const resolved = await resolveDeclarationValue(map, defNode.line, defNode.column, cand.varName);
+            if (resolved && resolved.content !== undefined) {
+                const sourcePath = resolveSourcePath(resolved.source, stylesheetUrl, contentHost);
+                const sourceLiteral = colorTokenAt(resolved.content, resolved.line, resolved.column) ?? literal;
+                const original = await readSource(ctx, sourcePath, resolved.content);
+                return { sourcePath, original, literal: sourceLiteral };
+            }
+        }
+        // No sourcemap (plain .css) → edit the literal in the stylesheet itself.
+        const original = await readSource(ctx, cssPath, sheet.css);
+        return { sourcePath: cssPath, original, literal };
+    }
+
+    // 2. sourcemap (SCSS): map the decl value position back to its .scss source.
+    const declNode = findColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
+    const declPos = declNode?.source?.start;
+    if (map && declNode && declPos) {
+        const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
+        if (resolved && resolved.content !== undefined) {
+            const sourcePath = resolveSourcePath(resolved.source, stylesheetUrl, contentHost);
+            const sourceLiteral = colorTokenAt(resolved.content, resolved.line, resolved.column);
+            if (sourceLiteral) {
+                const original = await readSource(ctx, sourcePath, resolved.content);
+                return { sourcePath, original, literal: sourceLiteral };
+            }
+        }
+    }
+
+    // 3. plain .css (no sourcemap): edit the literal in the compiled .css directly.
+    const original = await readSource(ctx, cssPath, sheet.css);
+    return { sourcePath: cssPath, original, literal: cand.resolvedValue };
+}
+
+/** Host-qualify the compiled stylesheet's path: `//<contentHost>/<pathname>`. */
+function cssAssetPath(stylesheetUrl: string, contentHost: string): string {
+    try {
+        return `//${contentHost}${new URL(stylesheetUrl).pathname}`;
+    } catch {
+        return stylesheetUrl;
+    }
+}
+
+/** Locate a `--name: <value>` definition's 1-based line/column in raw CSS, or null. */
+function findVarDefinition(css: string, name: string): { line: number; column: number } | null {
+    const lines = css.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const idx = lines[i].indexOf(`${name}:`);
+        if (idx !== -1) {
+            return { line: i + 1, column: idx };
+        }
+    }
+    return null;
+}
+
+/** Read a source file: prefer in-run edits, then sourcemap-embedded content, then fetch. */
+async function readSource(ctx: ProcessCtx, path: string, embedded: string): Promise<string> {
+    if (ctx.currentContent[path] !== undefined) {
+        return ctx.currentContent[path];
+    }
+    if (embedded !== undefined) {
+        return embedded;
+    }
+    return ctx.deps.client.read(path);
 }
 
 interface SaveSpec {
@@ -587,15 +728,17 @@ async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult
 }
 
 /** Resolve a sourcemap `sources[]` entry (theme-relative) to a dotCMS asset path. */
-function resolveSourcePath(source: string, stylesheetUrl: string): string {
+function resolveSourcePath(source: string, stylesheetUrl: string, contentHost: string): string {
     // The stylesheet lives at …/themes/<theme>/css/<sheet>; sources are relative
     // to that css/ dir (e.g. "custom-styles/_variables-custom.scss"). Resolve against
     // the stylesheet's directory, then return the host-qualified //host/path form.
+    // The host is the CONTENT host (from the page request) — the stylesheet URL's
+    // host may be the runtime origin (localhost:8080), not a valid asset host.
     try {
         const sheet = new URL(stylesheetUrl);
         const cssDir = sheet.pathname.slice(0, sheet.pathname.lastIndexOf('/') + 1);
         const abs = new URL(source, 'http://h' + cssDir).pathname; // normalize ../ segments
-        return `//${sheet.host}${abs}`;
+        return `//${contentHost}${abs}`;
     } catch {
         return source;
     }

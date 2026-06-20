@@ -19,12 +19,14 @@ import { GlobalStore } from '@dotcms/store';
 
 import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
 import {
+    AgentFixRequest,
     FixReport,
     FixResult,
     StudioPageRow,
-    StudioPhase
+    StudioPhase,
+    StudioStep
 } from '../models/accessibility-studio.models';
-import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { DotA11yAgentService } from '../services/dot-a11y-agent.service';
 
 type PickerStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -44,7 +46,11 @@ interface AccessibilityStudioState {
     skipCss: boolean;
     /** The real axe scan result — populated by runScan() via DotPageScannerService. */
     scanResult: PageScannerA11yResponse | null;
-    /** The §6 run report — populated when the (mocked) fix pass completes. */
+    /** Live agent activity log — appended from SSE `step` events during a fix run. */
+    steps: StudioStep[];
+    /** Set when a fix run fails — surfaced inline so the user can retry. */
+    fixError: string | null;
+    /** The §6 run report — populated when the fix pass completes (SSE `done`). */
     report: FixReport | null;
 }
 
@@ -59,6 +65,8 @@ const initialState: AccessibilityStudioState = {
     selected: null,
     skipCss: false,
     scanResult: null,
+    steps: [],
+    fixError: null,
     report: null
 };
 
@@ -160,24 +168,50 @@ export const AccessibilityStudioStore = signalStore(
                     ?.results.filter((r) =>
                         ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
                     ).length ?? 0
-        )
+        ),
+        /** The most recent agent step — drives the headline status line while fixing. */
+        latestStep: computed<StudioStep | null>(() => {
+            const steps = store.steps();
+
+            return steps.length ? steps[steps.length - 1] : null;
+        })
     })),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
         const scannerService = inject(DotPageScannerService);
+        const agentService = inject(DotA11yAgentService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const globalStore = inject(GlobalStore);
 
         /**
+         * The dotCMS backend origin the agent must render + call against. In prod the
+         * portlet is served FROM the dotCMS origin, so `window.location.origin` is
+         * already correct and the agent trusts it verbatim. The dev split below is the
+         * ONLY adjustment — see backendOrigin().
+         */
+        function backendOrigin(): string {
+            // ====================================================================
+            // ⚠️ DEV-ONLY HACK — REMOVE BEFORE PRODUCTION ⚠️
+            // --------------------------------------------------------------------
+            // The Angular dev server runs on :4200, but the agent (and the dotCMS
+            // scanner it drives) render/call the page server-side and can only reach
+            // the BE on :8080. Rewrite the dev-server origin → the BE origin so the
+            // agent receives a backend-reachable dotcmsBaseUrl. Mirrors the same
+            // :4200→:8080 hack in DotPageScannerService.checkA11y. In prod there is
+            // no split, so this is a no-op. MUST be replaced by an env-aware origin.
+            // ====================================================================
+            return window.location.origin.replace('4200', '8080');
+        }
+
+        /**
          * Build the absolute URL the scanner renders + checks. It must be on the
-         * runtime origin (`window.location.origin`) — never the content-site
-         * hostname, which may not be publicly reachable — with `host_id` to
-         * disambiguate the site and `mode=EDIT_MODE` for the working version (§8.2).
-         * Mirrors DotEmaShellComponent.handleScannerToolClick.
+         * backend origin (never the content-site hostname, which may not be publicly
+         * reachable) with `host_id` to disambiguate the site and `mode=EDIT_MODE` for
+         * the working version (§8.2). Mirrors DotEmaShellComponent.handleScannerToolClick.
          */
         function buildScanUrl(page: StudioPageRow): string {
             const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
-            const url = new URL(path, window.location.origin);
+            const url = new URL(path, backendOrigin());
             url.searchParams.set('host_id', page.hostId);
             url.searchParams.set('language_id', String(page.languageId));
             url.searchParams.set('mode', 'EDIT_MODE');
@@ -235,7 +269,14 @@ export const AccessibilityStudioStore = signalStore(
 
             /** Open a page from the picker → studio "ready" (waits for the user to scan). */
             openPage(selected: StudioPageRow) {
-                patchState(store, { selected, phase: 'ready', scanResult: null, report: null });
+                patchState(store, {
+                    selected,
+                    phase: 'ready',
+                    scanResult: null,
+                    steps: [],
+                    fixError: null,
+                    report: null
+                });
             },
 
             backToPicker() {
@@ -243,6 +284,8 @@ export const AccessibilityStudioStore = signalStore(
                     phase: 'picker',
                     selected: null,
                     scanResult: null,
+                    steps: [],
+                    fixError: null,
                     report: null
                 });
             },
@@ -277,15 +320,65 @@ export const AccessibilityStudioStore = signalStore(
             },
 
             /**
-             * Run the (mocked) fix pass. S3 has no SSE — this resolves to the done
-             * state with the full mock §6 report. S4 streams real step events.
+             * Run the real fix pass: POST the page to the agent and stream its
+             * progress over SSE. Each `step` event appends to the live activity
+             * log; `done` sets the §6 report and moves to "done"; `error` returns
+             * to "scanned" so the user can retry. The browser holds no token — the
+             * dev/prod proxy injects the bearer (see DotA11yAgentService).
              */
             startFix() {
-                if (store.phase() !== 'scanned') {
+                const page = store.selected();
+                if (store.phase() !== 'scanned' || !page) {
                     return;
                 }
-                patchState(store, { phase: 'fixing' });
-                patchState(store, { phase: 'done', report: MOCK_FIX_REPORT });
+                patchState(store, { phase: 'fixing', steps: [], fixError: null, report: null });
+
+                const uri = page.path.startsWith('/') ? page.path : `/${page.path}`;
+                const origin = backendOrigin();
+                const request: AgentFixRequest = {
+                    runId: `r_${page.identifier}_${page.languageId}`,
+                    // The dotCMS backend origin — the agent renders the page (server-side
+                    // scan) and calls the dotCMS API against this. In prod it equals the
+                    // page origin; in dev backendOrigin() maps :4200 → :8080 (see above).
+                    dotcmsBaseUrl: origin,
+                    page: {
+                        identifier: page.identifier,
+                        uri,
+                        liveUrl: new URL(uri, origin).toString(),
+                        host: page.hostName,
+                        hostId: page.hostId,
+                        languageId: page.languageId
+                    },
+                    options: { skipCss: store.skipCss() }
+                };
+
+                let nextStepId = 0;
+                agentService
+                    .fixStream(request)
+                    .pipe(
+                        catchError((error: unknown) => {
+                            const message =
+                                error instanceof Error ? error.message : 'The agent run failed.';
+                            patchState(store, { phase: 'scanned', fixError: message });
+
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((event) => {
+                        if (event.type === 'step') {
+                            patchState(store, {
+                                steps: [
+                                    ...store.steps(),
+                                    { id: nextStepId++, phase: event.phase, message: event.message }
+                                ]
+                            });
+                        } else if (event.type === 'done') {
+                            patchState(store, { phase: 'done', report: event.report });
+                        } else {
+                            // Terminal error event from the agent.
+                            patchState(store, { phase: 'scanned', fixError: event.message });
+                        }
+                    });
             },
 
             /** Promote the working fixes to live (the only publish; human-triggered). */

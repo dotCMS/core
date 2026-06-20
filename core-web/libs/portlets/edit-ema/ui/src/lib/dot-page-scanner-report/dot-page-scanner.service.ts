@@ -99,6 +99,13 @@ export class DotPageScannerService {
     private http = inject(HttpClient);
 
     checkA11y(url: string): Observable<PageScannerA11yResponse> {
+        // Never scan in EDIT_MODE: dotCMS injects editor-only chrome (drag handles,
+        // add-content buttons, etc.) into the EDIT_MODE render, which axe flags as
+        // accessibility violations that don't exist on the real page. Force
+        // PREVIEW_MODE so the scan sees the page as visitors do. Enforced here at the
+        // single chokepoint so no caller can accidentally scan EDIT_MODE.
+        const scanUrl = this.forcePreviewMode(url);
+
         // ============================================================================
         // ⚠️⚠️⚠️ DEV-ONLY HACK — REMOVE BEFORE PRODUCTION ⚠️⚠️⚠️
         // ----------------------------------------------------------------------------
@@ -111,8 +118,22 @@ export class DotPageScannerService {
         // reachable scan URL in the caller (env-aware) instead.
         // ============================================================================
         return this.http.post<PageScannerA11yResponse>('/api/v1/page-scanner/a11y/check', {
-            url: url.replace('4200', '8080')
+            url: scanUrl.replace('4200', '8080')
         });
+    }
+
+    /** Rewrite any `mode=EDIT_MODE` on the URL to `PREVIEW_MODE` (see checkA11y). */
+    private forcePreviewMode(url: string): string {
+        try {
+            const parsed = new URL(url, window.location.origin);
+            if (parsed.searchParams.get('mode') === 'EDIT_MODE') {
+                parsed.searchParams.set('mode', 'PREVIEW_MODE');
+            }
+            return parsed.toString();
+        } catch {
+            // Fall back to a plain string replace for non-absolute / unparseable URLs.
+            return url.replace('mode=EDIT_MODE', 'mode=PREVIEW_MODE');
+        }
     }
 
     checkGeo(url: string): Observable<PageScannerGeoResponse> {

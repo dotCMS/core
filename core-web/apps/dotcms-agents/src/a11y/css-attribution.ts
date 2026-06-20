@@ -1,8 +1,7 @@
 import { is as cssIs } from 'css-select';
+import { Element } from 'domhandler';
 import { parseDocument } from 'htmlparser2';
 import postcss from 'postcss';
-
-import type { Element } from 'domhandler';
 
 /**
  * Deterministic CSS attribution for `color-contrast` violations — NO LLM.
@@ -82,6 +81,43 @@ export function parseColorRules(css: string): CssRule[] {
 }
 
 /**
+ * Parse all CSS custom-property definitions (`--name: value`) into a name→value
+ * map. Used to resolve `var(--name)` declarations to a concrete color so the
+ * attribution's color-equality check can match what axe reports (the *computed*
+ * color). Later definitions win (last-wins approximates the cascade for the common
+ * single-:root case; we don't model per-selector overrides).
+ */
+export function parseCustomProperties(css: string): Map<string, string> {
+    const root = postcss.parse(css);
+    const vars = new Map<string, string>();
+    root.walkDecls((d) => {
+        if (d.prop.startsWith('--')) {
+            vars.set(d.prop.trim(), d.value.trim());
+        }
+    });
+    return vars;
+}
+
+/**
+ * Resolve a declaration value to a concrete color, expanding `var(--x[, fallback])`
+ * against `vars` (recursively, with a depth guard). Returns the input unchanged if
+ * there's no var() to expand. A var that resolves to another var is followed; an
+ * unknown var falls back to its declared fallback, else the original string.
+ */
+export function resolveVarValue(value: string, vars: Map<string, string>, depth = 0): string {
+    const m = value.match(/^\s*var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)\s*$/);
+    if (!m || depth > 10) {
+        return value.trim();
+    }
+    const [, name, fallback] = m;
+    const resolved = vars.get(name);
+    if (resolved !== undefined) {
+        return resolveVarValue(resolved, vars, depth + 1);
+    }
+    return fallback !== undefined ? resolveVarValue(fallback, vars, depth + 1) : value.trim();
+}
+
+/**
  * The postcss `Declaration` node on `rule` matching `prop`+`value` (a rule may
  * have several color decls, so match the exact one). Callers use `.source.start`
  * for sourcemap resolution. Lives here so postcss knowledge stays in this module.
@@ -120,6 +156,71 @@ function elementFromHtml(html: string): Element {
         throw new Error(`No element in context HTML: ${html}`);
     }
     return el;
+}
+
+/**
+ * Parse one compound selector (e.g. `a[href="/"]`, `.book-card__genre`) into a
+ * synthetic Element carrying just the tag, id, classes, and attributes it asserts.
+ * This lets css-select test combinator rules (`.site-nav a`) against a real
+ * parent/child chain built from axe's `target` path. Unsupported pieces (pseudos)
+ * are ignored — they only narrow, and we've already excluded state pseudos.
+ */
+function elementFromCompound(compound: string): Element {
+    const attribs: Record<string, string> = {};
+    let tag = '';
+
+    // tag (leading, optional)
+    const tagMatch = compound.match(/^[a-zA-Z][\w-]*/);
+    if (tagMatch) {
+        tag = tagMatch[0];
+    }
+    // #id
+    const idMatch = compound.match(/#([\w-]+)/);
+    if (idMatch) {
+        attribs['id'] = idMatch[1];
+    }
+    // .class (possibly several)
+    const classes = [...compound.matchAll(/\.([\w-]+)/g)].map((m) => m[1]);
+    if (classes.length) {
+        attribs['class'] = classes.join(' ');
+    }
+    // [attr], [attr=val], [attr$=val] … — record the bare attr so css-select can
+    // evaluate the original rule's attribute selector against it.
+    for (const am of compound.matchAll(/\[\s*([\w-]+)\s*(?:([~^$*|]?=)\s*"?([^\]"]*)"?\s*)?\]/g)) {
+        const [, name, , val] = am;
+        attribs[name] = val ?? '';
+    }
+
+    return new Element(tag || 'div', attribs);
+}
+
+/**
+ * Build a parent→…→leaf Element chain from an axe `target` selector
+ * (e.g. `.site-nav > a[href="/"]` or `article:nth-child(1) > .book-card__body > .x`).
+ * Combinators are flattened to ancestry (we treat `>` and descendant the same —
+ * sound enough for attribution: a child IS a descendant). Returns the LEAF element
+ * with its `.parent` chain wired, or null if the target is empty.
+ */
+function elementChainFromTarget(target: string): Element | null {
+    const compounds = target
+        .split(/\s*[>~+]\s*|\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (!compounds.length) {
+        return null;
+    }
+    let parent: Element | null = null;
+    let leaf: Element | null = null;
+    for (const compound of compounds) {
+        const el = elementFromCompound(compound);
+        if (parent) {
+            el.parent = parent;
+            parent.children = [el];
+        }
+        parent = el;
+        leaf = el;
+    }
+    return leaf;
 }
 
 /**
@@ -163,6 +264,35 @@ export function attribute(elementHtml: string, rules: CssRule[]): CssRule[] {
         }
         try {
             return cssIs(el, r.selector);
+        } catch {
+            return false; // unsupported selector syntax
+        }
+    });
+
+    return matched.sort((a, b) => cmpSpec(specificity(b.selector), specificity(a.selector)));
+}
+
+/**
+ * Attribute using axe's full `target` selector path (e.g. `.site-nav > a[href="/"]`)
+ * instead of just the element HTML. axe already computed the precise DOM path, so
+ * we can synthesize the element's ancestor chain and soundly match COMBINATOR
+ * rules too (`.site-nav a`, `.book-card__meta > .book-card__genre`) — the cases the
+ * HTML-only {@link attribute} must skip. State-pseudo rules are still excluded
+ * (the scanner measures the resting state). Ranked by specificity (cascade winner
+ * first). Returns [] on an empty/unparseable target so callers can fall back.
+ */
+export function attributeByTarget(target: string, rules: CssRule[]): CssRule[] {
+    const leaf = elementChainFromTarget(target);
+    if (!leaf) {
+        return [];
+    }
+
+    const matched = rules.filter((r) => {
+        if (isStateSelector(r.selector)) {
+            return false;
+        }
+        try {
+            return cssIs(leaf, r.selector);
         } catch {
             return false; // unsupported selector syntax
         }
