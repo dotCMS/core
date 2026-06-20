@@ -100,3 +100,46 @@ export interface FixReport {
 
 /** The active-run slot status (GET /active-run). */
 export type ActiveRunStatus = 'running' | 'done' | 'error';
+
+// ── Agent streaming (SSE) ───────────────────────────────────────────────────
+
+/**
+ * Coarse phase tag on each streamed `step` event, emitted by the agent loop.
+ * Mirrors the agent's onStep phases (runFix/tools): the Studio maps these to an
+ * icon + tone for the live activity log.
+ */
+export type StudioStepPhase = 'scan' | 'locate' | 'read' | 'fix' | 'rescan';
+
+/** One live activity-log entry, built from an SSE `step` event. */
+export interface StudioStep {
+    /** Monotonic id for @for tracking + entry animation. */
+    id: number;
+    phase: StudioStepPhase;
+    message: string;
+}
+
+/**
+ * The agent fix request (POST /a11y/fix[/stream]). Mirrors the agent's
+ * FixRequest contract (apps/dotcms-agents/src/a11y/contract.ts) — keep in sync.
+ */
+export interface AgentFixRequest {
+    runId: string;
+    dotcmsBaseUrl: string;
+    page: {
+        identifier: string;
+        uri: string;
+        liveUrl: string;
+        host: string;
+        hostId: string;
+        languageId: number;
+    };
+    options: {
+        skipCss: boolean;
+    };
+}
+
+/** Discriminated union of the parsed SSE events the agent emits. */
+export type AgentStreamEvent =
+    | { type: 'step'; phase: StudioStepPhase; message: string }
+    | { type: 'done'; report: FixReport }
+    | { type: 'error'; message: string };

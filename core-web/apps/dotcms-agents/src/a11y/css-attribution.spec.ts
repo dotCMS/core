@@ -1,4 +1,11 @@
-import { attribute, parseColorRules, specificity } from './css-attribution';
+import {
+    attribute,
+    attributeByTarget,
+    parseColorRules,
+    parseCustomProperties,
+    resolveVarValue,
+    specificity
+} from './css-attribution';
 
 describe('css-attribution — deterministic color-rule attribution (no LLM)', () => {
     describe('parseColorRules', () => {
@@ -136,6 +143,71 @@ describe('css-attribution — deterministic color-rule attribution (no LLM)', ()
             expect(specificity('.btn')).toEqual([0, 1, 0]);
             expect(specificity('#book')).toEqual([1, 0, 0]);
             expect(specificity('a.btn[href]:focus')).toEqual([0, 3, 1]);
+        });
+    });
+
+    describe('attributeByTarget — uses axe’s full target path (combinator-aware)', () => {
+        const css = `
+            .site-nav a { color: #b3ab9e; }
+            .book-card__meta > .book-card__genre { color: #e88c42; }
+            a { color: #333; }
+            .site-nav a:hover { color: #000; }
+        `;
+        const rules = parseColorRules(css);
+
+        it('matches a descendant-combinator rule via the target path', () => {
+            // The element-HTML attribute() would skip `.site-nav a` (combinator).
+            const matched = attributeByTarget('.site-nav > a[href="/"]', rules);
+            expect(matched.map((r) => r.selector)).toContain('.site-nav a');
+        });
+
+        it('matches a child-combinator rule and ranks by specificity', () => {
+            const matched = attributeByTarget(
+                'article:nth-child(1) > .book-card__body > .book-card__meta > .book-card__genre',
+                rules
+            );
+            expect(matched[0].selector).toBe('.book-card__meta > .book-card__genre');
+        });
+
+        it('still excludes :hover state rules', () => {
+            const matched = attributeByTarget('.site-nav > a[href="/"]', rules);
+            expect(matched.map((r) => r.selector)).not.toContain('.site-nav a:hover');
+        });
+
+        it('returns [] for an empty target (caller falls back to element HTML)', () => {
+            expect(attributeByTarget('', rules)).toEqual([]);
+        });
+    });
+
+    describe('parseCustomProperties + resolveVarValue', () => {
+        const css = `
+            :root {
+                --color-orange: #E47B27;
+                --color-orange-light: #E88C42;
+                --brand: var(--color-orange);
+            }
+        `;
+        const vars = parseCustomProperties(css);
+
+        it('parses custom-property definitions into a name→value map', () => {
+            expect(vars.get('--color-orange')).toBe('#E47B27');
+            expect(vars.get('--color-orange-light')).toBe('#E88C42');
+        });
+
+        it('resolves var(--x) to its concrete color', () => {
+            expect(resolveVarValue('var(--color-orange-light)', vars)).toBe('#E88C42');
+        });
+
+        it('follows var → var indirection', () => {
+            expect(resolveVarValue('var(--brand)', vars)).toBe('#E47B27');
+        });
+
+        it('uses the fallback when the var is undefined', () => {
+            expect(resolveVarValue('var(--missing, #123456)', vars)).toBe('#123456');
+        });
+
+        it('returns a plain color unchanged', () => {
+            expect(resolveVarValue('#abcdef', vars)).toBe('#abcdef');
         });
     });
 });

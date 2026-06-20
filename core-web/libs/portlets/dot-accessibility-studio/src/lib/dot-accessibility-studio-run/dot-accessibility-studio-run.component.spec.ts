@@ -6,7 +6,12 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAccessibilityStudioRunComponent } from './dot-accessibility-studio-run.component';
 
 import { A11yGroup } from '../models/a11y-groups';
-import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
+import {
+    FixReport,
+    StudioPageRow,
+    StudioPhase,
+    StudioStep
+} from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
@@ -37,6 +42,8 @@ describe('DotAccessibilityStudioRunComponent', () => {
     // Mutable per-test state read by the store mock's reactive getters.
     let phase: StudioPhase = 'ready';
     let report: FixReport | null = null;
+    let steps: StudioStep[] = [];
+    let fixError: string | null = null;
     // Whether a scan result is present (drives report vs. iframe in the pane).
     let hasScan = false;
 
@@ -81,6 +88,9 @@ describe('DotAccessibilityStudioRunComponent', () => {
     const storeMock = {
         phase: () => phase,
         report: () => report,
+        steps: () => steps,
+        fixError: () => fixError,
+        latestStep: () => (steps.length ? steps[steps.length - 1] : null),
         selected: () => MOCK_PAGE,
         skipCss: () => false,
         scanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
@@ -121,9 +131,16 @@ describe('DotAccessibilityStudioRunComponent', () => {
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }]
     });
 
-    function render(nextPhase: StudioPhase, nextReport: FixReport | null = null) {
+    function render(
+        nextPhase: StudioPhase,
+        nextReport: FixReport | null = null,
+        nextSteps: StudioStep[] = [],
+        nextFixError: string | null = null
+    ) {
         phase = nextPhase;
         report = nextReport;
+        steps = nextSteps;
+        fixError = nextFixError;
         // A scan result exists once the page has been scanned.
         hasScan = ['scanned', 'fixing', 'done', 'published'].includes(nextPhase);
         spectator = createComponent();
@@ -134,6 +151,8 @@ describe('DotAccessibilityStudioRunComponent', () => {
         jest.clearAllMocks();
         phase = 'ready';
         report = null;
+        steps = [];
+        fixError = null;
         hasScan = false;
     });
 
@@ -148,8 +167,9 @@ describe('DotAccessibilityStudioRunComponent', () => {
             expect(spectator.query(byTestId('studio-skipcss-toggle'))).toBeTruthy();
         });
 
-        it('shows a dash in the score ring before scanning', () => {
-            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('–');
+        it('hides the score widget in the ready state (before scanning)', () => {
+            expect(spectator.query(byTestId('studio-score-ring'))).toBeFalsy();
+            expect(spectator.query(byTestId('studio-score-count'))).toBeFalsy();
         });
 
         it('triggers runScan on click', () => {
@@ -178,6 +198,38 @@ describe('DotAccessibilityStudioRunComponent', () => {
             const btn = spectator.query(byTestId('studio-fix-btn'))?.querySelector('button');
             spectator.click(btn as HTMLElement);
             expect(startFix).toHaveBeenCalled();
+        });
+    });
+
+    describe('fixing phase (live stream)', () => {
+        const LIVE_STEPS: StudioStep[] = [
+            { id: 0, phase: 'scan', message: 'Scanning live + working baseline' },
+            { id: 1, phase: 'fix', message: 'Fixing color-contrast → .btn' },
+            { id: 2, phase: 'read', message: 'Agent: reading activity.vtl' }
+        ];
+
+        beforeEach(() => render('fixing', null, LIVE_STEPS));
+
+        it('shows a disabled fixing button', () => {
+            expect(spectator.query(byTestId('studio-fixing-btn'))).toBeTruthy();
+        });
+
+        it('renders one live recipe step per streamed event', () => {
+            expect(spectator.queryAll(byTestId('studio-recipe-step')).length).toBe(3);
+        });
+
+        it('shows the latest step in the now-doing banner', () => {
+            const banner = spectator.query(byTestId('studio-now-doing'));
+            expect(banner).toHaveText('Agent: reading activity.vtl');
+        });
+    });
+
+    describe('fix error state', () => {
+        beforeEach(() => render('scanned', MOCK_FIX_REPORT, [], 'render unreliable'));
+
+        it('surfaces the agent error inline', () => {
+            const error = spectator.query(byTestId('studio-fix-error'));
+            expect(error).toHaveText('render unreliable');
         });
     });
 
@@ -226,12 +278,24 @@ describe('DotAccessibilityStudioRunComponent', () => {
     describe('preview pane', () => {
         beforeEach(() => render('ready'));
 
-        it('renders the preview iframe with a /dot-page edit-mode URL', () => {
+        it('renders the preview iframe with a /dot-page PREVIEW_MODE URL by default', () => {
             const iframe = spectator.query(byTestId('studio-preview-iframe'));
             expect(iframe).toBeTruthy();
             expect(iframe?.getAttribute('src')).toContain('/dot-page/about-us');
             expect(iframe?.getAttribute('src')).toContain('host_id=host-id-1');
-            expect(iframe?.getAttribute('src')).toContain('mode=EDIT_MODE');
+            expect(iframe?.getAttribute('src')).toContain('mode=PREVIEW_MODE');
+        });
+
+        it('shows the preview/live mode select', () => {
+            expect(spectator.query(byTestId('studio-preview-mode-select'))).toBeTruthy();
+        });
+
+        it('switches the iframe to LIVE when previewMode is set to LIVE', () => {
+            spectator.component.previewMode.set('LIVE');
+            spectator.detectChanges();
+            const iframe = spectator.query(byTestId('studio-preview-iframe'));
+            expect(iframe?.getAttribute('src')).toContain('mode=LIVE');
+            expect(iframe?.getAttribute('src')).not.toContain('PREVIEW_MODE');
         });
     });
 

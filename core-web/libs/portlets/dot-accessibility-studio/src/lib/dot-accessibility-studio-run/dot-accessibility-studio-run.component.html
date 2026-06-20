@@ -21,11 +21,12 @@
         </div>
     </div>
 
-    <!-- Score widget -->
-    <div class="flex-none border-b border-surface-100 px-6 py-5">
-        <div class="flex items-center gap-5">
-            <div class="relative size-31 flex-none">
-                <svg viewBox="0 0 124 124" class="-rotate-90" data-testid="studio-score-ring">
+    <!-- Score widget — hidden in the ready state (shown once a scan starts) -->
+    @if (!store.isReady()) {
+        <div class="flex-none border-b border-surface-100 px-6 py-5">
+            <div class="flex items-center gap-5">
+                <div class="relative size-31 flex-none">
+                    <svg viewBox="0 0 124 124" class="-rotate-90" data-testid="studio-score-ring">
                     <circle
                         cx="62"
                         cy="62"
@@ -114,7 +115,8 @@
                 }
             </div>
         </div>
-    </div>
+        </div>
+    }
 
     <!-- Recipe log header -->
     <div class="flex flex-none items-center gap-2 px-6 pt-4 pb-2">
@@ -131,8 +133,13 @@
         }
     </div>
 
-    <!-- Recipe log (scrolls) -->
-    <div class="min-h-0 flex-1 overflow-y-auto px-6 pt-1 pb-4" data-testid="studio-recipe-log">
+    <!-- Recipe log: sizes to content (flex 0 1 auto), scrolls only when it
+         overflows — so the action footer sits right under the content rather
+         than being pushed to the very bottom of the column. -->
+    <div
+        #recipeLog
+        class="min-h-0 flex-[0_1_auto] overflow-y-auto px-6 pt-1 pb-4"
+        data-testid="studio-recipe-log">
         @if (store.isReady()) {
             <!-- Ready: what to expect -->
             <div class="mt-2 rounded-2xl border border-surface-100 bg-surface-50 p-5">
@@ -174,23 +181,51 @@
             </div>
         }
 
-        @if (store.isScanning() || store.isFixing()) {
+        @if (store.isScanning()) {
             <div
                 class="mt-2 flex items-center gap-2.5 text-sm text-gray-500"
                 data-testid="studio-progress">
                 <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
-                {{
-                    store.isScanning()
-                        ? ('accessibility.studio.scanning' | dm)
-                        : ('accessibility.studio.fixing' | dm)
-                }}
+                {{ 'accessibility.studio.scanning' | dm }}
+            </div>
+        }
+
+        @if (store.fixError(); as error) {
+            <div
+                class="mt-2 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-3.5 text-sm text-red-700"
+                data-testid="studio-fix-error"
+                role="alert">
+                <i class="pi pi-exclamation-triangle mt-0.5" aria-hidden="true"></i>
+                <div class="min-w-0">
+                    <div class="font-semibold">
+                        {{ 'accessibility.studio.error.title' | dm }}
+                    </div>
+                    <div class="mt-0.5 wrap-break-word text-xs text-red-600">{{ error }}</div>
+                </div>
+            </div>
+        }
+
+        <!-- Live "now doing" banner — the agent's most recent step, pulsing. -->
+        @if (store.isFixing()) {
+            <div
+                class="mt-2 mb-1 flex items-center gap-2.5 rounded-xl border border-primary-100 bg-primary-50 px-3.5 py-2.5"
+                data-testid="studio-now-doing">
+                <i class="pi pi-spin pi-spinner text-primary" aria-hidden="true"></i>
+                <span class="min-w-0 truncate text-[13px] font-semibold text-primary">
+                    {{
+                        store.latestStep()?.message ??
+                            ('accessibility.studio.fixing' | dm)
+                    }}
+                </span>
             </div>
         }
 
         <!-- Step log -->
-        <div class="flex flex-col">
-            @for (step of recipeSteps(); track $index) {
-                <div class="relative flex gap-3 py-1.5" data-testid="studio-recipe-step">
+        <div class="flex flex-col" data-testid="studio-recipe-log-steps">
+            @for (step of recipeSteps(); track step.id) {
+                <div
+                    class="dot-recipe-step relative flex gap-3 py-1.5"
+                    data-testid="studio-recipe-step">
                     <div class="flex flex-none flex-col items-center">
                         <div
                             class="flex size-7.5 items-center justify-center rounded-lg"
@@ -221,23 +256,26 @@
 
     <!-- Action footer -->
     <div class="flex-none border-t border-surface-200 bg-surface-50 px-6 pt-4 pb-4.5">
-        <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
-            <div class="min-w-0">
-                <div class="text-sm leading-snug font-bold text-gray-900">
-                    {{
-                        footerTitleKey()
-                            | dm
-                                : [
-                                      store.fixedCount().toString(),
-                                      store.reportedCount().toString()
-                                  ]
-                    }}
-                </div>
-                <div class="mt-px text-xs leading-snug text-gray-400">
-                    {{ footerSubKey() | dm: [store.selected()?.path ?? ''] }}
+        <!-- Footer copy — hidden in the ready state (shown once a scan starts) -->
+        @if (!store.isReady()) {
+            <div class="mb-3.5 flex min-w-0 items-center gap-2.5">
+                <div class="min-w-0">
+                    <div class="text-sm leading-snug font-bold text-gray-900">
+                        {{
+                            footerTitleKey()
+                                | dm
+                                    : [
+                                          store.fixedCount().toString(),
+                                          store.reportedCount().toString()
+                                      ]
+                        }}
+                    </div>
+                    <div class="mt-px text-xs leading-snug text-gray-400">
+                        {{ footerSubKey() | dm: [store.selected()?.path ?? ''] }}
+                    </div>
                 </div>
             </div>
-        </div>
+        }
 
         @switch (store.phase()) {
             @case ('ready') {
@@ -330,9 +368,29 @@
 <!-- ============ PREVIEW PANE ============ -->
 <main class="flex min-h-0 flex-col bg-surface-100">
     <div class="flex h-13 flex-none items-center gap-3 px-5">
-        <span class="text-xs font-bold text-gray-700">
-            {{ 'accessibility.studio.preview.label' | dm }}
-        </span>
+        <!-- Preview vs Live: compare the agent's working fixes against the
+             currently-published page. -->
+        <p-select
+            [options]="previewModeOptions"
+            optionValue="value"
+            [ngModel]="previewMode()"
+            (ngModelChange)="previewMode.set($event)"
+            [attr.aria-label]="'accessibility.studio.preview.mode.label' | dm"
+            data-testid="studio-preview-mode-select">
+            <ng-template #selectedItem let-opt>
+                <span class="flex items-center gap-2 text-xs font-semibold">
+                    <i
+                        [class]="previewMode() === 'LIVE' ? 'pi pi-globe' : 'pi pi-pencil'"
+                        aria-hidden="true"></i>
+                    {{ (previewMode() === 'LIVE'
+                        ? 'accessibility.studio.preview.mode.live'
+                        : 'accessibility.studio.preview.mode.preview') | dm }}
+                </span>
+            </ng-template>
+            <ng-template #item let-opt>
+                <span class="text-xs">{{ opt.label | dm }}</span>
+            </ng-template>
+        </p-select>
     </div>
 
     <div
