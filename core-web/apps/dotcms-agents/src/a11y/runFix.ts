@@ -9,6 +9,7 @@ import {
     type ScanResult,
     type SourceRef
 } from './dotcms-client';
+import { runResearch } from './researchLoop';
 import {
     generateFix,
     triageViolation,
@@ -64,6 +65,10 @@ export interface RunFixDeps {
     triage?: (input: TriageInput, model?: LanguageModel) => Promise<TriageDecision>;
     /** Override the LLM (VTL) fix-generation call. */
     fix?: (input: FixInput, model?: LanguageModel) => Promise<FixOutput>;
+    /** Disable PASS 2 agentic research (default on). Set false to run deterministic-only. */
+    research?: boolean;
+    /** maxSteps for the PASS 2 research loop (default 40). */
+    researchMaxSteps?: number;
 }
 
 const noop = () => undefined;
@@ -234,6 +239,50 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
                 ctx.lastScan.findings.items.filter(isViolation).map(sig)
             );
             runningBaseline = countViolations(ctx.lastScan);
+        }
+    }
+
+    // PASS 2 — agentic research on whatever PASS 1 left unresolved. Give the model
+    // read/grep/edit/rescan tools and let it discover sources we didn't pre-locate
+    // (container VTL colors, markup, structure) — the way the MCP agent did. Safe:
+    // typed tools only (no publish/delete), all through the allowlisted sandbox.
+    if (deps.research !== false) {
+        const resolvedSigs = new Set(
+            results.filter((r) => r.status === 'fixed-to-working' && r.file).map((r) => r.ruleId)
+        );
+        // Re-derive the live unresolved set from the latest signatures.
+        const unresolved = violations.filter((v) => liveSignatures.has(sig(v)));
+        if (unresolved.length > 0) {
+            step('fix', `Agentic research on ${unresolved.length} remaining violation(s)`);
+            try {
+                const research = await runResearch({
+                    violations: unresolved,
+                    model: deps.model,
+                    maxSteps: deps.researchMaxSteps,
+                    deps: {
+                        client,
+                        page: { uri: req.page.uri, hostId: req.page.hostId },
+                        editModeUrl: editMode,
+                        editedPaths,
+                        cache: currentContent,
+                        onStep: step
+                    }
+                });
+                // Record what the research pass touched (honest: a file edit, confirmed
+                // by the final re-scan below — we don't claim per-violation here).
+                for (const p of research.editedPaths) {
+                    if (!resolvedSigs.has(p)) {
+                        results.push({
+                            ruleId: 'agentic-research',
+                            status: 'fixed-to-working',
+                            file: p,
+                            reason: research.summary.slice(0, 300)
+                        });
+                    }
+                }
+            } catch (e) {
+                step('fix', `Agentic research failed: ${errMsg(e)}`);
+            }
         }
     }
 
