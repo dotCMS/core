@@ -14,8 +14,10 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
+import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
 import {
     FixReport,
     FixResult,
@@ -40,7 +42,9 @@ interface AccessibilityStudioState {
     selected: StudioPageRow | null;
     /** Per-run opt-out: when true, the agent reports CSS contrast instead of fixing it (§3). */
     skipCss: boolean;
-    /** The §6 run report — populated when the (mocked) run completes. */
+    /** The real axe scan result — populated by runScan() via DotPageScannerService. */
+    scanResult: PageScannerA11yResponse | null;
+    /** The §6 run report — populated when the (mocked) fix pass completes. */
     report: FixReport | null;
 }
 
@@ -54,6 +58,7 @@ const initialState: AccessibilityStudioState = {
     pickerStatus: 'init',
     selected: null,
     skipCss: false,
+    scanResult: null,
     report: null
 };
 
@@ -111,9 +116,27 @@ export const AccessibilityStudioStore = signalStore(
         scanned: computed(() =>
             ['scanned', 'fixing', 'done', 'published'].includes(store.phase())
         ),
-        /** Total violations found by the initial scan. */
-        beforeCount: computed(() => store.report()?.scan.before.violations ?? 0),
-        /** Violations remaining after the fix pass. */
+        /** Real axe findings grouped per rule (violations → error, incomplete → warning). */
+        a11yGroups: computed<A11yGroup[]>(() => buildA11yGroups(store.scanResult())),
+        /** Real axe error-element count (confirmed violations). */
+        errorCount: computed(() =>
+            buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'error')
+                .reduce((total, g) => total + g.count, 0)
+        ),
+        /** Real axe warning-element count (incomplete / needs review). */
+        warningCount: computed(() =>
+            buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'warning')
+                .reduce((total, g) => total + g.count, 0)
+        ),
+        /** Total violations found by the real initial scan (error elements). */
+        beforeCount: computed(() =>
+            buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'error')
+                .reduce((total, g) => total + g.count, 0)
+        ),
+        /** Violations remaining after the (mocked) fix pass. */
         afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
         fixedResults: computed<FixResult[]>(
             () => store.report()?.results.filter((r) => r.status === 'fixed-to-working') ?? []
@@ -141,8 +164,25 @@ export const AccessibilityStudioStore = signalStore(
     })),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
+        const scannerService = inject(DotPageScannerService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const globalStore = inject(GlobalStore);
+
+        /**
+         * Build the absolute URL the scanner renders + checks. It must be on the
+         * runtime origin (`window.location.origin`) — never the content-site
+         * hostname, which may not be publicly reachable — with `host_id` to
+         * disambiguate the site and `mode=EDIT_MODE` for the working version (§8.2).
+         * Mirrors DotEmaShellComponent.handleScannerToolClick.
+         */
+        function buildScanUrl(page: StudioPageRow): string {
+            const path = page.path.startsWith('/') ? page.path : `/${page.path}`;
+            const url = new URL(path, window.location.origin);
+            url.searchParams.set('host_id', page.hostId);
+            url.searchParams.set('language_id', String(page.languageId));
+            url.searchParams.set('mode', 'EDIT_MODE');
+            return url.toString();
+        }
 
         function loadPages() {
             patchState(store, { pickerStatus: 'loading' });
@@ -195,29 +235,45 @@ export const AccessibilityStudioStore = signalStore(
 
             /** Open a page from the picker → studio "ready" (waits for the user to scan). */
             openPage(selected: StudioPageRow) {
-                patchState(store, { selected, phase: 'ready', report: null });
+                patchState(store, { selected, phase: 'ready', scanResult: null, report: null });
             },
 
             backToPicker() {
                 patchState(store, {
                     phase: 'picker',
                     selected: null,
+                    scanResult: null,
                     report: null
                 });
             },
 
             /**
-             * Run the (mocked) scan. S3 has no SSE — this resolves straight to the
-             * scanned state carrying the before count from the mock report. S4 will
-             * replace this with the real proxy/SSE call.
+             * Run the REAL axe scan via DotPageScannerService against the page's
+             * EDIT_MODE render, then store the result and move to "scanned". The
+             * fix pass (startFix) is still mocked until the agent proxy lands (S4).
              */
             runScan() {
-                if (store.phase() !== 'ready') {
+                const page = store.selected();
+                if (store.phase() !== 'ready' || !page) {
                     return;
                 }
                 patchState(store, { phase: 'scanning' });
-                // Mocked: jump to scanned with the report's "before" violations visible.
-                patchState(store, { phase: 'scanned', report: MOCK_FIX_REPORT });
+
+                scannerService
+                    .checkA11y(buildScanUrl(page))
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            // Return to ready so the user can retry the scan.
+                            patchState(store, { phase: 'ready' });
+
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((scanResult) => {
+                        patchState(store, { scanResult, phase: 'scanned' });
+                    });
             },
 
             /**

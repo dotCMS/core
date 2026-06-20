@@ -5,6 +5,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAccessibilityStudioRunComponent } from './dot-accessibility-studio-run.component';
 
+import { A11yGroup } from '../models/a11y-groups';
 import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
@@ -35,12 +36,56 @@ describe('DotAccessibilityStudioRunComponent', () => {
     // Mutable per-test state read by the store mock's reactive getters.
     let phase: StudioPhase = 'ready';
     let report: FixReport | null = null;
+    // Whether a scan result is present (drives report vs. iframe in the pane).
+    let hasScan = false;
+
+    // Two error groups (5 elements) + one warning group (2 elements).
+    const MOCK_GROUPS: A11yGroup[] = [
+        {
+            code: 'image-alt',
+            type: 'error',
+            message: 'Images must have alternate text',
+            impact: 'critical',
+            helpUrl: 'https://example.com/image-alt',
+            items: [
+                { context: '<img>', selector: 'img.a' },
+                { context: '<img>', selector: 'img.b' },
+                { context: '<img>', selector: 'img.c' }
+            ],
+            count: 3
+        },
+        {
+            code: 'button-name',
+            type: 'error',
+            message: 'Buttons must have discernible text',
+            impact: 'serious',
+            helpUrl: 'https://example.com/button-name',
+            items: [
+                { context: '<button>', selector: 'button.x' },
+                { context: '<button>', selector: 'button.y' }
+            ],
+            count: 2
+        },
+        {
+            code: 'color-contrast',
+            type: 'warning',
+            message: 'Elements must have sufficient color contrast',
+            impact: 'moderate',
+            helpUrl: 'https://example.com/color-contrast',
+            items: [{ context: '<a>', selector: 'a.l1' }],
+            count: 1
+        }
+    ];
 
     const storeMock = {
         phase: () => phase,
         report: () => report,
         selected: () => MOCK_PAGE,
         skipCss: () => false,
+        scanResult: () => (hasScan ? ({ standard: 'WCAG2AA' } as unknown) : null),
+        a11yGroups: () => (hasScan ? MOCK_GROUPS : []),
+        errorCount: () => (hasScan ? 5 : 0),
+        warningCount: () => (hasScan ? 2 : 0),
         isReady: () => phase === 'ready',
         isScanning: () => phase === 'scanning',
         isScanned: () => phase === 'scanned',
@@ -49,7 +94,7 @@ describe('DotAccessibilityStudioRunComponent', () => {
         isPublished: () => phase === 'published',
         isWorking: () => phase === 'scanning' || phase === 'fixing',
         scanned: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
-        beforeCount: () => report?.scan.before.violations ?? 0,
+        beforeCount: () => (hasScan ? 5 : 0),
         afterCount: () => report?.scan.after.violations ?? 0,
         fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
         reportedResults: () =>
@@ -75,6 +120,8 @@ describe('DotAccessibilityStudioRunComponent', () => {
     function render(nextPhase: StudioPhase, nextReport: FixReport | null = null) {
         phase = nextPhase;
         report = nextReport;
+        // A scan result exists once the page has been scanned.
+        hasScan = ['scanned', 'fixing', 'done', 'published'].includes(nextPhase);
         spectator = createComponent();
         spectator.detectChanges();
     }
@@ -83,6 +130,7 @@ describe('DotAccessibilityStudioRunComponent', () => {
         jest.clearAllMocks();
         phase = 'ready';
         report = null;
+        hasScan = false;
     });
 
     describe('ready phase', () => {
@@ -114,8 +162,12 @@ describe('DotAccessibilityStudioRunComponent', () => {
             expect(spectator.query(byTestId('studio-fix-btn'))).toBeTruthy();
         });
 
-        it('shows the before-count in the ring', () => {
-            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('12');
+        it('shows the real open-count in the ring', () => {
+            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
+        });
+
+        it('keeps the preview iframe visible after scanning', () => {
+            expect(spectator.query(byTestId('studio-preview-iframe'))).toBeTruthy();
         });
 
         it('triggers startFix on click', () => {

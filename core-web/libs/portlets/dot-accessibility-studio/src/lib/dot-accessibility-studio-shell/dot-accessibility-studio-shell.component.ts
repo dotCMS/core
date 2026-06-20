@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { DotPageScannerService } from '@dotcms/portlets/dot-ema/ui';
+
 import { DotAccessibilityStudioPickerComponent } from '../dot-accessibility-studio-picker/dot-accessibility-studio-picker.component';
 import { DotAccessibilityStudioRunComponent } from '../dot-accessibility-studio-run/dot-accessibility-studio-run.component';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
@@ -20,7 +22,7 @@ import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
             <dot-accessibility-studio-run />
         }
     `,
-    providers: [AccessibilityStudioStore],
+    providers: [AccessibilityStudioStore, DotPageScannerService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 block bg-surface-100' }
 })

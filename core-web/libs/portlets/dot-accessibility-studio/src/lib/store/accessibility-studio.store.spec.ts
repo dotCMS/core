@@ -5,12 +5,62 @@ import { signal } from '@angular/core';
 
 import { DotContentSearchService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 
 import { AccessibilityStudioStore } from './accessibility-studio.store';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+
+// Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
+const MOCK_SCAN_RESPONSE = {
+    ok: true,
+    standard: 'WCAG2AA',
+    axe: {
+        violations: [
+            {
+                id: 'image-alt',
+                impact: 'critical',
+                description: 'Images must have alternate text',
+                help: '',
+                helpUrl: 'https://example.com/image-alt',
+                tags: [],
+                nodes: [
+                    { html: '<img>', target: ['img.a'], impact: 'critical', failureSummary: '' },
+                    { html: '<img>', target: ['img.b'], impact: 'critical', failureSummary: '' },
+                    { html: '<img>', target: ['img.c'], impact: 'critical', failureSummary: '' }
+                ]
+            },
+            {
+                id: 'button-name',
+                impact: 'serious',
+                description: 'Buttons must have discernible text',
+                help: '',
+                helpUrl: 'https://example.com/button-name',
+                tags: [],
+                nodes: [
+                    { html: '<button>', target: ['button.x'], impact: 'serious', failureSummary: '' },
+                    { html: '<button>', target: ['button.y'], impact: 'serious', failureSummary: '' }
+                ]
+            }
+        ],
+        incomplete: [
+            {
+                id: 'color-contrast',
+                impact: 'moderate',
+                description: 'Elements must have sufficient color contrast',
+                help: '',
+                helpUrl: 'https://example.com/color-contrast',
+                tags: [],
+                nodes: [
+                    { html: '<a>', target: ['a.l1'], impact: 'moderate', failureSummary: '' },
+                    { html: '<a>', target: ['a.l2'], impact: 'moderate', failureSummary: '' }
+                ]
+            }
+        ]
+    }
+} as unknown as PageScannerA11yResponse;
 
 const MOCK_CONTENTLETS = [
     {
@@ -61,6 +111,7 @@ describe('AccessibilityStudioStore', () => {
     let spectator: SpectatorService<InstanceType<typeof AccessibilityStudioStore>>;
     let store: InstanceType<typeof AccessibilityStudioStore>;
     let searchService: jest.Mocked<DotContentSearchService>;
+    let scannerService: jest.Mocked<DotPageScannerService>;
     let currentSiteIdSignal: ReturnType<typeof signal<string | null>>;
 
     const createService = createServiceFactory({
@@ -68,6 +119,9 @@ describe('AccessibilityStudioStore', () => {
         providers: [
             mockProvider(DotContentSearchService, {
                 get: jest.fn().mockReturnValue(of(MOCK_SEARCH_ENTITY))
+            }),
+            mockProvider(DotPageScannerService, {
+                checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
             }),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn().mockReturnValue(of(null))
@@ -81,12 +135,16 @@ describe('AccessibilityStudioStore', () => {
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         currentSiteIdSignal = signal<string | null>('site-1');
         spectator = createService();
         store = spectator.service;
         searchService = spectator.inject(
             DotContentSearchService
         ) as jest.Mocked<DotContentSearchService>;
+        scannerService = spectator.inject(
+            DotPageScannerService
+        ) as jest.Mocked<DotPageScannerService>;
         // The onInit effect triggers loadPages while in the picker phase.
         spectator.flushEffects();
     });
@@ -167,20 +225,45 @@ describe('AccessibilityStudioStore', () => {
             expect(store.phase()).toBe('ready');
             expect(store.isReady()).toBe(true);
             expect(store.selected()).toEqual(MOCK_ROW);
+            expect(store.scanResult()).toBeNull();
             expect(store.report()).toBeNull();
         });
 
-        it('runScan moves ready → scanned and loads the mock report before-count', () => {
+        it('runScan calls the real scanner with an EDIT_MODE URL on the app origin', () => {
+            store.runScan();
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(1);
+            const url = scannerService.checkA11y.mock.calls[0][0];
+            expect(url).toContain(`${window.location.origin}/about-us`);
+            expect(url).toContain('host_id=host-id-1');
+            expect(url).toContain('language_id=1');
+            expect(url).toContain('mode=EDIT_MODE');
+        });
+
+        it('runScan stores the scan result and the real error/warning counts', () => {
             store.runScan();
             expect(store.phase()).toBe('scanned');
             expect(store.scanned()).toBe(true);
-            expect(store.beforeCount()).toBe(MOCK_FIX_REPORT.scan.before.violations);
+            expect(store.scanResult()).toBe(MOCK_SCAN_RESPONSE);
+            expect(store.errorCount()).toBe(5); // 3 + 2 violation elements
+            expect(store.warningCount()).toBe(2); // 2 incomplete elements
+            expect(store.beforeCount()).toBe(5);
+            expect(store.a11yGroups().length).toBe(3);
         });
 
         it('runScan is a no-op when not in the ready phase', () => {
             store.runScan(); // ready → scanned
             store.runScan(); // already scanned, ignored
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(1);
             expect(store.phase()).toBe('scanned');
+        });
+
+        it('returns to ready and reports the error if the scan fails', () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            scannerService.checkA11y.mockReturnValueOnce(throwError(() => new Error('boom')));
+            store.runScan();
+            expect(errorManager.handle).toHaveBeenCalled();
+            expect(store.phase()).toBe('ready');
+            expect(store.scanResult()).toBeNull();
         });
 
         it('startFix moves scanned → done with the full report', () => {
@@ -214,12 +297,13 @@ describe('AccessibilityStudioStore', () => {
             expect(store.phase()).toBe('scanned');
         });
 
-        it('backToPicker resets selection + report', () => {
+        it('backToPicker resets selection, scan result + report', () => {
             store.runScan();
             store.startFix();
             store.backToPicker();
             expect(store.phase()).toBe('picker');
             expect(store.selected()).toBeNull();
+            expect(store.scanResult()).toBeNull();
             expect(store.report()).toBeNull();
         });
 
