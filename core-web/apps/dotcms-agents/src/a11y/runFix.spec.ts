@@ -31,13 +31,18 @@ function makeRequest(overrides: Partial<FixRequest> = {}): FixRequest {
     };
 }
 
-function makeScan(violations: number, items: ScanFinding[] = []): ScanResult {
+function makeScan(
+    violations: number,
+    items: ScanFinding[] = [],
+    over: Partial<ScanResult> = {}
+): ScanResult {
     return {
         ok: true,
         totalIssues: violations,
         counts: { errors: violations, warnings: 0, notices: 0 },
         findings: { total: violations, violations, needsReview: 0, items },
-        stylesheets: []
+        stylesheets: [],
+        ...over
     };
 }
 
@@ -162,5 +167,18 @@ describe('runFix orchestration', () => {
         const editModeUrl = client.scan.mock.calls[1][0] as string; // 2nd scan = EDIT_MODE baseline
         expect(editModeUrl).toContain('mode=EDIT_MODE');
         expect(editModeUrl).toContain('language_id=2');
+    });
+
+    it('aborts (no fixes) when the render is unreliable (a stylesheet failed to load)', async () => {
+        const broken = makeScan(5, [contrastFinding()], {
+            renderReliable: false,
+            renderWarnings: [{ url: '//x/styles.css', status: 404, resourceType: 'stylesheet' }]
+        });
+        const client = makeClient({ scans: [broken, broken, broken] });
+        const report = await runFix(makeRequest(), { client, research: false });
+        expect(report.results).toEqual([
+            expect.objectContaining({ ruleId: 'render-unreliable', status: 'reported' })
+        ]);
+        expect(client.saveWorking).not.toHaveBeenCalled();
     });
 });
