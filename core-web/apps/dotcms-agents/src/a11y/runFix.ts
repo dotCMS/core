@@ -297,7 +297,7 @@ async function loadStylesheet(ctx: ProcessCtx, sheet: string): Promise<ParsedSty
     if (cached) {
         return cached;
     }
-    const css = await ctx.deps.client.fetchStylesheet(sheet, ctx.req.page.hostId);
+    const css = await ctx.deps.client.fetchStylesheet(sheet);
     const parsed: ParsedStylesheet = { rules: parseColorRules(css), map: extractInlineSourceMap(css) };
     ctx.stylesheetCache.set(sheet, parsed);
     return parsed;
