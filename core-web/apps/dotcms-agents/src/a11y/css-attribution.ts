@@ -45,10 +45,8 @@ export interface CssRule {
     selector: string;
     /** The color-affecting declarations on this rule. */
     decls: { prop: string; value: string }[];
-    /** The postcss Rule node — callers need it for surgical edits + position lookup. */
+    /** The postcss Rule node — callers use it for surgical edits + decl position lookup. */
     node: postcss.Rule;
-    /** Source start position (1-based), for sourcemap resolution. */
-    pos?: { line: number; column: number };
 }
 
 /**
@@ -72,18 +70,33 @@ export function parseColorRules(css: string): CssRule[] {
             return;
         }
 
-        const start = rule.source?.start;
-        const pos = start ? { line: start.line, column: start.column } : undefined;
-
         // Split "a, .b .c" into separate selectors so each is tested independently.
         for (const sel of rule.selector.split(',').map((s) => s.trim())) {
             if (sel) {
-                rules.push({ selector: sel, decls, node: rule, pos });
+                rules.push({ selector: sel, decls, node: rule });
             }
         }
     });
 
     return rules;
+}
+
+/**
+ * The postcss `Declaration` node on `rule` matching `prop`+`value` (a rule may
+ * have several color decls, so match the exact one). Callers use `.source.start`
+ * for sourcemap resolution. Lives here so postcss knowledge stays in this module.
+ */
+export function findColorDeclNode(
+    rule: postcss.Rule,
+    prop: string,
+    value: string
+): postcss.Declaration | undefined {
+    const decls = rule.nodes.filter((n): n is postcss.Declaration => n.type === 'decl');
+    return (
+        decls.find((d) => d.prop === prop && d.value === value) ??
+        decls.find((d) => d.value === value) ??
+        decls.find((d) => /color/i.test(d.prop))
+    );
 }
 
 /** Rough specificity `(ids, classes/attrs/pseudo-classes, types)`. */

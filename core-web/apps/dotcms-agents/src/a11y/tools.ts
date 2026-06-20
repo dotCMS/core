@@ -1,7 +1,16 @@
 import { tool, type Tool } from 'ai';
 import { z } from 'zod';
 
-import type { DotcmsClient, RenderSources, SourceRef } from './dotcms-client';
+import {
+    collectSourceRefs,
+    errMsg,
+    isFixableViolation,
+    noop,
+    saveMime,
+    shortName
+} from './agent-utils';
+
+import type { DotcmsClient, RenderSources } from './dotcms-client';
 
 /**
  * Typed tools for the agentic research pass (PASS 2). The model uses these to
@@ -13,6 +22,12 @@ import type { DotcmsClient, RenderSources, SourceRef } from './dotcms-client';
  * client (the wire backstop). The model can only read theme/container sources and
  * write the WORKING version.
  */
+
+/** Cap on the chars of a single file returned to the model (context budget). */
+const MAX_ASSET_CHARS = 20000;
+/** Cap on rescan items / matching grep lines returned to the model. */
+const MAX_RESCAN_ITEMS = 40;
+const MAX_GREP_LINES = 10;
 
 export interface ResearchToolsDeps {
     client: DotcmsClient;
@@ -26,30 +41,16 @@ export interface ResearchToolsDeps {
     onStep?: (phase: string, message: string) => void;
 }
 
-/** Collect the editable source refs (theme files + container VTLs) for grep/locate. */
-function editableRefs(sources: RenderSources): SourceRef[] {
-    const refs: SourceRef[] = (sources.theme?.files ?? []).filter((f) => {
-        const ext = (f.extension ?? '').toLowerCase();
-        return ['vtl', 'css', 'scss', 'sass', 'dotsass', 'less'].includes(ext);
-    });
-    for (const c of Object.values(sources.containers ?? {})) {
-        for (const ct of c.contentTypes ?? []) {
-            if (ct.path) {
-                refs.push({ identifier: ct.identifier, path: ct.path });
-            }
-        }
-    }
-    const seen = new Set<string>();
-    return refs.filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true)));
-}
-
-const STYLESHEET_EXT = ['.css', '.scss', '.sass', '.dotsass', '.less'];
-const saveMime = (p: string) =>
-    STYLESHEET_EXT.some((e) => p.toLowerCase().endsWith(e)) ? 'text/css' : 'text/plain';
-
 export function createResearchTools(deps: ResearchToolsDeps): Record<string, Tool> {
     const { client, page } = deps;
-    const step = deps.onStep ?? (() => undefined);
+    const step = deps.onStep ?? noop;
+
+    // Memoize _render-sources for the whole research pass (locate + grep reuse it).
+    let sourcesPromise: Promise<RenderSources> | undefined;
+    const locate = (): Promise<RenderSources> => {
+        sourcesPromise ??= client.locate(page.uri, page.hostId);
+        return sourcesPromise;
+    };
 
     const readCached = async (path: string): Promise<string> => {
         if (deps.cache[path] === undefined) {
@@ -65,8 +66,7 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
             inputSchema: z.object({}),
             execute: async () => {
                 step('locate', 'Agent: locating sources');
-                const sources = await client.locate(page.uri, page.hostId);
-                const refs = editableRefs(sources);
+                const refs = collectSourceRefs(await locate());
                 return {
                     files: refs.map((r) => r.path),
                     count: refs.length
@@ -81,22 +81,22 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 path: z.string().describe('host-qualified asset path from locateSources')
             }),
             execute: async ({ path }) => {
-                step('read', `Agent: reading ${path.split('/').pop()}`);
+                step('read', `Agent: reading ${shortName(path)}`);
                 try {
                     const content = await readCached(path);
                     // Guard huge files: return a head + length so the model isn't flooded.
-                    if (content.length > 20000) {
+                    if (content.length > MAX_ASSET_CHARS) {
                         return {
                             path,
                             length: content.length,
                             truncated: true,
-                            head: content.slice(0, 20000),
+                            head: content.slice(0, MAX_ASSET_CHARS),
                             note: 'File truncated; use grepAssets to find specific text/colors.'
                         };
                     }
                     return { path, length: content.length, content };
                 } catch (e) {
-                    return { path, error: e instanceof Error ? e.message : String(e) };
+                    return { path, error: errMsg(e) };
                 }
             }
         }),
@@ -113,27 +113,28 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
             }),
             execute: async ({ query, paths }) => {
                 step('read', `Agent: grep "${query}"`);
-                const sources = await client.locate(page.uri, page.hostId);
-                const refs = editableRefs(sources);
+                const refs = collectSourceRefs(await locate());
                 const targets = paths?.length ? refs.filter((r) => paths.includes(r.path)) : refs;
                 const q = query.toLowerCase();
+                // Warm the content cache in parallel, then filter (CPU-only).
+                const contents = await Promise.all(
+                    targets.map((ref) => readCached(ref.path).catch(() => undefined))
+                );
                 const hits: { path: string; lines: string[] }[] = [];
-                for (const ref of targets) {
-                    let content: string;
-                    try {
-                        content = await readCached(ref.path);
-                    } catch {
-                        continue;
+                targets.forEach((ref, i) => {
+                    const content = contents[i];
+                    if (content === undefined) {
+                        return;
                     }
                     const lines = content
                         .split('\n')
-                        .map((l, i) => ({ l, i: i + 1 }))
+                        .map((l, idx) => ({ l, idx: idx + 1 }))
                         .filter((x) => x.l.toLowerCase().includes(q))
-                        .map((x) => `${x.i}: ${x.l.trim()}`);
+                        .map((x) => `${x.idx}: ${x.l.trim()}`);
                     if (lines.length) {
-                        hits.push({ path: ref.path, lines: lines.slice(0, 10) });
+                        hits.push({ path: ref.path, lines: lines.slice(0, MAX_GREP_LINES) });
                     }
-                }
+                });
                 return { query, matches: hits, fileCount: hits.length };
             }
         }),
@@ -146,7 +147,7 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 content: z.string().describe('the complete edited file content')
             }),
             execute: async ({ path, content }) => {
-                step('fix', `Agent: saving ${path.split('/').pop()}`);
+                step('fix', `Agent: saving ${shortName(path)}`);
                 try {
                     const saved = await client.saveWorking(path, content, saveMime(path));
                     if (!saved || saved.fileSize <= 0) {
@@ -156,7 +157,7 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                     deps.cache[path] = content;
                     return { path, ok: true, fileSize: saved.fileSize, identifier: saved.identifier };
                 } catch (e) {
-                    return { path, ok: false, error: e instanceof Error ? e.message : String(e) };
+                    return { path, ok: false, error: errMsg(e) };
                 }
             }
         }),
@@ -169,23 +170,15 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 step('rescan', 'Agent: re-scanning');
                 try {
                     const scan = await client.scan(deps.editModeUrl);
-                    const viols = scan.findings.items.filter(
-                        (f) =>
-                            (f.resultType === 'violation' || f.type === 'error') &&
-                            // exclude only genuine editor chrome (edit/add buttons), NOT
-                            // contentlet/container wrappers (those are attribution metadata)
-                            !/data-dot-object="(edit-content|edit-container|add)"/.test(
-                                f.context ?? ''
-                            )
-                    );
+                    const viols = scan.findings.items.filter(isFixableViolation);
                     return {
                         violations: viols.length,
                         items: viols
-                            .slice(0, 40)
+                            .slice(0, MAX_RESCAN_ITEMS)
                             .map((f) => ({ code: f.code, selector: f.selector }))
                     };
                 } catch (e) {
-                    return { error: e instanceof Error ? e.message : String(e) };
+                    return { error: errMsg(e) };
                 }
             }
         })

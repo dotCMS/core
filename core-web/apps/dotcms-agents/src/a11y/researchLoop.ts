@@ -43,10 +43,6 @@ export interface ResearchResult {
     editedPaths: string[];
     /** The model's final summary text. */
     summary: string;
-    /** Violation count before/after the research pass (from rescans), if known. */
-    before?: number;
-    after?: number;
-    steps: number;
 }
 
 export interface RunResearchInput {
@@ -67,10 +63,13 @@ function violationsBlock(violations: ScanFinding[]): string {
         .join('\n\n');
 }
 
+/** Default tool-use step budget for the research pass. */
+export const DEFAULT_RESEARCH_MAX_STEPS = 40;
+
 export async function runResearch(input: RunResearchInput): Promise<ResearchResult> {
     const { violations, deps } = input;
     const model = input.model ?? defaultModel();
-    const maxSteps = input.maxSteps ?? 40;
+    const maxSteps = input.maxSteps ?? DEFAULT_RESEARCH_MAX_STEPS;
     const tools = createResearchTools(deps);
 
     const prompt = `These ${violations.length} accessibility violations remain unfixed. Research the page source and fix the ones you can:\n\n${violationsBlock(violations)}`;
@@ -85,7 +84,6 @@ export async function runResearch(input: RunResearchInput): Promise<ResearchResu
 
     return {
         editedPaths: [...deps.editedPaths],
-        summary: result.text,
-        steps: result.steps?.length ?? 0
+        summary: result.text
     };
 }

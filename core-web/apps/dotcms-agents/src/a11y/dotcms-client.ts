@@ -257,16 +257,13 @@ export class DotcmsClient {
         return res.entity;
     }
 
-    /**
-     * READ — GET /api/v2/assets?path=. Returns the raw asset text.
-     * `mode: 'EDIT_MODE'` reads the working version (S0: reflects unpublished edits).
-     */
-    async read(path: string, mode?: 'EDIT_MODE'): Promise<string> {
-        const query: Record<string, string> = { path };
-        if (mode) {
-            query.mode = mode;
-        }
-        const res = await this.request<unknown>({ method: 'GET', path: '/api/v2/assets', query });
+    /** READ — GET /api/v2/assets?path=. Returns the raw asset text. */
+    async read(path: string): Promise<string> {
+        const res = await this.request<unknown>({
+            method: 'GET',
+            path: '/api/v2/assets',
+            query: { path }
+        });
         return typeof res === 'string' ? res : JSON.stringify(res);
     }
 
