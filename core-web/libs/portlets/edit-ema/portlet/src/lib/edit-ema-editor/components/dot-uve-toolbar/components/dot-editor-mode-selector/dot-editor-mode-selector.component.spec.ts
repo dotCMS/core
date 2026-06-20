@@ -15,6 +15,7 @@ describe('DotEditorModeSelectorComponent', () => {
     let store: {
         editorHasAccessToEditMode: ReturnType<typeof signal<boolean>>;
         $lockFeatureEnabled: ReturnType<typeof signal<boolean>>;
+        $isMissingTranslation: ReturnType<typeof signal<boolean>>;
         pageParams: ReturnType<typeof signal<{ mode: UVE_MODE }>>;
         viewClearDeviceAndSocialMedia: jest.Mock;
         pageLoad: jest.Mock;
@@ -59,6 +60,7 @@ describe('DotEditorModeSelectorComponent', () => {
         store = {
             editorHasAccessToEditMode: signal(true),
             $lockFeatureEnabled: signal(false),
+            $isMissingTranslation: signal(false),
             pageParams: signal({ mode: UVE_MODE.EDIT }),
             viewClearDeviceAndSocialMedia: jest.fn(),
             pageLoad: jest.fn(),
@@ -201,6 +203,37 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(store.trackUVEModeChange).not.toHaveBeenCalled();
             expect(store.pageLoad).not.toHaveBeenCalled();
             expect(store.viewClearDeviceAndSocialMedia).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('missing translation state', () => {
+        beforeEach(() => {
+            store.$isMissingTranslation.set(true);
+            store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+            spectator.detectChanges();
+        });
+
+        it('should show only Preview when page has no translation', () => {
+            openSelectOverlay();
+
+            expect(document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)).toBeNull();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.PREVIEW}-menu-item"]`)
+            ).toBeTruthy();
+            expect(document.querySelector(`[data-testId="${UVE_MODE.LIVE}-menu-item"]`)).toBeNull();
+        });
+
+        it('should hide Draft even when lock feature is enabled', () => {
+            store.$lockFeatureEnabled.set(true);
+            spectator.detectChanges();
+
+            openSelectOverlay();
+
+            expect(document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)).toBeNull();
+        });
+
+        it('should sync selected mode to Preview', () => {
+            expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.PREVIEW);
         });
     });
 
