@@ -354,7 +354,9 @@
         <div class="min-h-0 flex-1 bg-white">
             @if (previewUrl()) {
                 <iframe
+                    #previewFrame
                     [src]="previewUrl() | safeUrl"
+                    (load)="onPreviewLoad()"
                     class="size-full border-0"
                     [title]="'accessibility.studio.preview.label' | dm"
                     data-testid="studio-preview-iframe"></iframe>
