@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -8,6 +8,7 @@ import { DotAccessibilityStudioRunComponent } from './dot-accessibility-studio-r
 import { A11yGroup } from '../models/a11y-groups';
 import { FixReport, StudioPageRow, StudioPhase } from '../models/accessibility-studio.models';
 import { MOCK_FIX_REPORT } from '../models/mock-fix-report';
+import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
 const MOCK_PAGE: StudioPageRow = {
@@ -113,7 +114,10 @@ describe('DotAccessibilityStudioRunComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAccessibilityStudioRunComponent,
-        componentProviders: [{ provide: AccessibilityStudioStore, useValue: storeMock }],
+        componentProviders: [
+            { provide: AccessibilityStudioStore, useValue: storeMock },
+            mockProvider(A11yMarkerService)
+        ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }]
     });
 

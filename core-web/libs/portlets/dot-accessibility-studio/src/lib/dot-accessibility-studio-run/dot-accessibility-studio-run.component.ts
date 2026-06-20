@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    ElementRef,
+    inject,
+    viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
 import { FixResult } from '../models/accessibility-studio.models';
+import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
 /** A human-readable line in the Agent Recipe log. */
@@ -39,14 +48,39 @@ interface RecipeStep {
         SafeUrlPipe
     ],
     templateUrl: './dot-accessibility-studio-run.component.html',
+    providers: [A11yMarkerService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'grid h-full min-h-0 grid-cols-[412px_1fr]' }
 })
 export class DotAccessibilityStudioRunComponent {
     readonly store = inject(AccessibilityStudioStore);
 
+    private readonly markerService = inject(A11yMarkerService);
+
+    /** The preview iframe — markers are injected into its (same-origin) document. */
+    private readonly previewFrame =
+        viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
+
     /** Score ring geometry — circumference of r=54 circle. */
     private readonly RING_CIRCUMFERENCE = 339.292;
+
+    constructor() {
+        // Redraw markers whenever the findings change (e.g. after a scan). The
+        // iframe (load) handler also redraws once the document is ready, covering
+        // the case where findings arrive before the frame finishes loading.
+        effect(() => {
+            const groups = this.store.a11yGroups();
+            this.markerService.render(this.previewFrame()?.nativeElement, groups);
+        });
+    }
+
+    /** Iframe finished (re)loading — (re)draw markers for the current findings. */
+    onPreviewLoad(): void {
+        this.markerService.render(
+            this.previewFrame()?.nativeElement,
+            this.store.a11yGroups()
+        );
+    }
 
     /** The number shown in the ring center: open violations, or a dash pre-scan. */
     readonly centerCount = computed<string | number>(() => {
