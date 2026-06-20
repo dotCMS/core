@@ -2,15 +2,17 @@ import { runFix, type RunFixDeps } from './runFix';
 
 import type { FixRequest } from './contract';
 import type { RenderSources, ScanFinding, ScanResult, SavedAsset } from './dotcms-client';
-import type { FixOutput, TriageDecision } from './triage';
 
 /**
- * Loop guard tests (plan §5). The DotcmsClient and the two LLM calls are
- * injected, so these exercise the deterministic skeleton with zero network or
- * API key — the guards are real code paths here.
+ * runFix orchestration tests. The deterministic CSS attribution + contrast math
+ * are unit-tested in css-attribution/css-source-map/contrast specs; here we test
+ * the LOOP's routing and guards with a fake client and PASS 2 (research) disabled
+ * (research: false) so no model/network is touched:
+ *   - CSS (color-contrast) → deterministic path
+ *   - non-CSS → deferred to PASS 2 (reported here)
+ *   - editor chrome (data-dot-object edit buttons) → dropped
+ *   - scan URL assembly (multilingual language_id)
  */
-
-const HEADER_VTL = '//demo.dotcms.com/application/themes/travel/header.vtl';
 
 function makeRequest(overrides: Partial<FixRequest> = {}): FixRequest {
     return {
@@ -34,7 +36,8 @@ function makeScan(violations: number, items: ScanFinding[] = []): ScanResult {
         ok: true,
         totalIssues: violations,
         counts: { errors: violations, warnings: 0, notices: 0 },
-        findings: { total: violations, violations, needsReview: 0, items }
+        findings: { total: violations, violations, needsReview: 0, items },
+        stylesheets: []
     };
 }
 
@@ -52,15 +55,19 @@ function makeFinding(over: Partial<ScanFinding> = {}): ScanFinding {
     };
 }
 
+const contrastFinding = (over: Partial<ScanFinding> = {}): ScanFinding =>
+    makeFinding({
+        code: 'color-contrast',
+        context: '<a class="btn">x</a>',
+        selector: '.btn',
+        data: { fgColor: '#ffffff', bgColor: '#e76300', expectedContrastRatio: '4.5:1' },
+        ...over
+    });
+
 const SOURCES: RenderSources = {
     containers: {},
     page: { identifier: 'a9f3', languageId: 1, uri: '/index' },
-    theme: {
-        folderPath: '/themes/travel',
-        id: 't1',
-        name: 'travel',
-        files: [{ identifier: 'a56e', path: HEADER_VTL, extension: 'vtl' }]
-    },
+    theme: { folderPath: '/themes/travel', id: 't1', name: 'travel', files: [] },
     widgets: []
 };
 
@@ -70,192 +77,89 @@ const savedOk = (over: Partial<SavedAsset> = {}): SavedAsset => ({
     inode: 'i1',
     lang: 'en-us',
     live: false,
-    name: 'header.vtl',
-    path: HEADER_VTL,
+    name: 'x',
+    path: '//x',
     working: true,
     ...over
 });
 
-/**
- * A fake client. `scans` is a queue consumed in call order (live, baseline,
- * per-fix re-scans, final). `liveText` backs read(). save() records calls and
- * returns savedOk by default.
- */
-function makeClient(opts: { scans: ScanResult[]; liveText?: string; save?: jest.Mock }) {
+function makeClient(opts: { scans: ScanResult[]; save?: jest.Mock }) {
     const scanQueue = [...opts.scans];
-    const live = opts.liveText ?? '<img src="x.png">';
-    const save =
-        opts.save ??
-        jest.fn(async (path: string, _content?: string, _mime?: string) =>
-            savedOk({ path, name: path.split('/').pop() })
-        );
+    const save = opts.save ?? jest.fn(async (path: string) => savedOk({ path }));
     return {
         scan: jest.fn(async () => scanQueue.shift() ?? makeScan(0)),
         locate: jest.fn(async () => SOURCES),
-        read: jest.fn(async (_path: string) => live),
+        read: jest.fn(async () => ''),
+        fetchStylesheet: jest.fn(async () => ''),
         saveWorking: save
-    } as unknown as RunFixDeps['client'] & { saveWorking: jest.Mock; scan: jest.Mock };
+    } as unknown as RunFixDeps['client'] & { saveWorking: jest.Mock; scan: jest.Mock; locate: jest.Mock };
 }
 
-const triageFixable = async (): Promise<TriageDecision> => ({
-    fixability: 'vtl',
-    targetPath: HEADER_VTL,
-    evidenceFound: true,
-    reason: 'alt missing on img in header.vtl'
-});
-
-const fixApplied = async (): Promise<FixOutput> => ({
-    newContent: '<img src="x.png" alt="A photo">',
-    diff: '+ alt="A photo"',
-    applied: true,
-    reason: 'added alt'
-});
-
-describe('runFix loop guards (plan §5)', () => {
-    it('fixes a violation to working and reports it (happy path)', async () => {
-        const client = makeClient({
-            scans: [
-                makeScan(12, [makeFinding()]), // live
-                makeScan(12), // baseline (EDIT_MODE)
-                makeScan(11), // per-fix re-scan (improved)
-                makeScan(11) // final
-            ]
-        });
-        const report = await runFix(makeRequest(), {
-            client,
-            triage: triageFixable,
-            fix: fixApplied
-        });
-
-        expect(report.results).toHaveLength(1);
-        expect(report.results[0].status).toBe('fixed-to-working');
-        expect(report.results[0].file).toBe(HEADER_VTL);
+describe('runFix orchestration', () => {
+    it('produces a valid §6 report (publishRequired true) with research disabled', async () => {
+        const client = makeClient({ scans: [makeScan(0), makeScan(0), makeScan(0)] });
+        const report = await runFix(makeRequest(), { client, research: false });
+        expect(report.runId).toBe('r_test');
         expect(report.publishRequired).toBe(true);
-        expect(client.saveWorking).toHaveBeenCalledTimes(1);
+        expect(report.page).toEqual({ uri: '/index', host: 'demo.dotcms.com', languageId: 1 });
     });
 
-    it('fixes the same file twice — the second fix builds on the first edit', async () => {
-        // Two violations both attributed to header.vtl. The second generateFix call
-        // must receive the FIRST fix's output as its originalContent (not the live
-        // original) — we no longer guard against in-run edits to the same file.
-        const fix: jest.Mock = jest
-            .fn()
-            .mockResolvedValueOnce({ newContent: 'v1', diff: 'd1', applied: true, reason: '' })
-            .mockResolvedValueOnce({ newContent: 'v2', diff: 'd2', applied: true, reason: '' });
+    it('defers non-CSS violations to PASS 2 (reported) — no LLM in PASS 1', async () => {
         const client = makeClient({
-            scans: [
-                makeScan(12, [makeFinding(), makeFinding({ code: 'link-name' })]), // live: 2 violations
-                makeScan(12), // baseline
-                // re-scan after fix 1 still shows the 2nd (link-name) violation, so the
-                // loop does NOT treat it as collateral-cleared and proceeds to fix it.
-                makeScan(11, [makeFinding({ code: 'link-name' })]),
-                makeScan(10, [makeFinding({ code: 'link-name' })]), // re-scan after fix 2
-                makeScan(10) // final
-            ]
+            scans: [makeScan(1, [makeFinding()]), makeScan(1), makeScan(1)]
         });
-        const report = await runFix(makeRequest(), {
-            client,
-            triage: triageFixable,
-            fix
-        });
-
-        expect(report.results.every((r) => r.status === 'fixed-to-working')).toBe(true);
-        // First fix saw the live original; second fix saw the first fix's output.
-        expect(fix.mock.calls[0][0].originalContent).toBe('<img src="x.png">');
-        expect(fix.mock.calls[1][0].originalContent).toBe('v1');
-        expect(client.saveWorking).toHaveBeenCalledTimes(2);
-    });
-
-    it('auto-revert: re-scan worse → reverts the asset and reports regressed', async () => {
-        const save = jest.fn(async (path: string, _content: string, _mime?: string) =>
-            savedOk({ path })
-        );
-        const client = makeClient({
-            scans: [
-                makeScan(12, [makeFinding()]), // live
-                makeScan(12), // baseline
-                makeScan(15) // per-fix re-scan (WORSE than baseline 12)
-            ],
-            save
-        });
-        const report = await runFix(makeRequest(), {
-            client,
-            triage: triageFixable,
-            fix: fixApplied
-        });
-
-        expect(report.results[0].status).toBe('regressed');
-        expect(report.results[0].reverted).toBe(true);
-        // Two saves: the edit, then the revert back to original.
-        expect(save).toHaveBeenCalledTimes(2);
-        expect(save.mock.calls[1][1]).toBe('<img src="x.png">'); // reverted to original content
-    });
-
-    it('attribution-evidence gate: reports (no edit) when evidence not found', async () => {
-        const client = makeClient({
-            scans: [makeScan(12, [makeFinding()]), makeScan(12), makeScan(12)]
-        });
-        const report = await runFix(makeRequest(), {
-            client,
-            triage: async () => ({
-                fixability: 'vtl',
-                targetPath: HEADER_VTL,
-                evidenceFound: false,
-                reason: 'cannot locate the node in source'
-            }),
-            fix: fixApplied
-        });
-
-        expect(report.results[0].status).toBe('reported');
-        expect(report.results[0].reason).toMatch(/not provable/i);
+        const report = await runFix(makeRequest(), { client, research: false });
+        const imgAlt = report.results.find((r) => r.ruleId === 'image-alt');
+        expect(imgAlt?.status).toBe('reported');
+        expect(imgAlt?.reason).toMatch(/agentic research/i);
+        // Nothing was saved (PASS 1 doesn't touch VTL anymore; PASS 2 disabled).
         expect(client.saveWorking).not.toHaveBeenCalled();
     });
 
-    it('reports report-only triage without editing', async () => {
+    it('routes color-contrast to the deterministic CSS path (attempts a stylesheet)', async () => {
+        // No same-origin stylesheet → CSS path reports "no stylesheet", proving it routed
+        // to processCssViolation (not the deferral path).
         const client = makeClient({
-            scans: [makeScan(12, [makeFinding()]), makeScan(12), makeScan(12)]
+            scans: [makeScan(1, [contrastFinding()]), makeScan(1), makeScan(1)]
         });
-        const report = await runFix(makeRequest(), {
-            client,
-            triage: async () => ({
-                fixability: 'report-only',
-                targetPath: null,
-                evidenceFound: false,
-                reason: 'content-field text; out of scope'
-            }),
-            fix: fixApplied
-        });
-
-        expect(report.results[0].status).toBe('reported');
-        expect(client.saveWorking).not.toHaveBeenCalled();
+        const report = await runFix(makeRequest(), { client, research: false });
+        const cc = report.results.find((r) => r.ruleId === 'color-contrast');
+        expect(cc?.status).toBe('reported');
+        expect(cc?.reason).toMatch(/no same-origin stylesheet/i);
     });
 
-    it('failed: save persists 0 bytes → status failed', async () => {
+    it('honors skipCss: contrast reported without attribution', async () => {
         const client = makeClient({
-            scans: [makeScan(12, [makeFinding()]), makeScan(12), makeScan(12)],
-            save: jest.fn(async (path: string, _c?: string, _m?: string) =>
-                savedOk({ path, fileSize: 0 })
-            )
+            scans: [makeScan(1, [contrastFinding()]), makeScan(1), makeScan(1)]
         });
-        const report = await runFix(makeRequest(), {
+        const report = await runFix(makeRequest({ options: { skipCss: true } }), {
             client,
-            triage: triageFixable,
-            fix: fixApplied
+            research: false
         });
+        const cc = report.results.find((r) => r.ruleId === 'color-contrast');
+        expect(cc?.reason).toMatch(/skipCss/i);
+    });
 
-        expect(report.results[0].status).toBe('failed');
-        expect(report.results[0].reason).toMatch(/0 bytes/i);
+    it('drops editor chrome (data-dot-object edit buttons) — not in results', async () => {
+        const chrome = makeFinding({
+            code: 'button-name',
+            context: '<button data-dot-object="edit-content">edit</button>',
+            selector: 'button'
+        });
+        const client = makeClient({
+            scans: [makeScan(1, [chrome]), makeScan(1), makeScan(1)]
+        });
+        const report = await runFix(makeRequest(), { client, research: false });
+        expect(report.results.find((r) => r.ruleId === 'button-name')).toBeUndefined();
     });
 
     it('multilingual page adds language_id to the EDIT_MODE scan URL', async () => {
-        const client = makeClient({ scans: [makeScan(0, []), makeScan(0), makeScan(0)] });
+        const client = makeClient({ scans: [makeScan(0), makeScan(0), makeScan(0)] });
         await runFix(makeRequest({ page: { ...makeRequest().page, languageId: 2 } }), {
             client,
-            triage: triageFixable,
-            fix: fixApplied
+            research: false
         });
-        // 2nd scan call is the EDIT_MODE baseline.
-        const editModeUrl = client.scan.mock.calls[1][0] as string;
+        const editModeUrl = client.scan.mock.calls[1][0] as string; // 2nd scan = EDIT_MODE baseline
         expect(editModeUrl).toContain('mode=EDIT_MODE');
         expect(editModeUrl).toContain('language_id=2');
     });
