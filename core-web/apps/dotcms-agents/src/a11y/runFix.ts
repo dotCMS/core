@@ -23,15 +23,16 @@ import type { LanguageModel } from 'ai';
  * (attribution-evidence gate, auto-revert-on-regression) are real, testable
  * code paths.
  *
- *   SCAN(live) → SCAN(EDIT_MODE baseline) → LOCATE → READ candidates
+ *   SCAN(live) → SCAN(PREVIEW_MODE baseline) → LOCATE → READ candidates
  *   → per violation: TRIAGE → evidence gate → FIX → SAVE-WORKING
- *   → RE-SCAN(EDIT_MODE) → auto-revert if worse → REPORT
+ *   → RE-SCAN(PREVIEW_MODE) → auto-revert if worse → REPORT
  *
- * Re-scan basis is EDIT_MODE-before vs EDIT_MODE-after (S0: EDIT_MODE chrome
- * adds ~48 phantom violations; same chrome both sides cancels). The final §6
- * `scan` delta reports the live-before count and the EDIT_MODE-after count for
- * the human-facing number, while the auto-revert decision uses the EDIT_MODE
- * baseline so a fix is never mis-judged a regression.
+ * Re-scan basis is PREVIEW_MODE — it renders the WORKING/draft version (so the
+ * agent's saves are reflected) WITHOUT the editor chrome that EDIT_MODE injects
+ * (drag handles / edit buttons + extra container divs, which axe over-flags as
+ * region/button-name). PREVIEW_MODE matches the live page structure but with the
+ * working content. We scan PREVIEW before AND after edits so the delta is
+ * apples-to-apples and the auto-revert never mis-judges a fix.
  */
 
 export interface RunFixCaps {
@@ -62,16 +63,18 @@ export interface RunFixDeps {
 }
 
 /** Build the two scan URLs from the resolved page (plan §8.2 string assembly). */
-function scanUrls(req: FixRequest): { live: string; editMode: string } {
+function scanUrls(req: FixRequest): { live: string; preview: string } {
     const { dotcmsBaseUrl, page } = req;
     const base = `${dotcmsBaseUrl}${page.uri}?host_id=${page.hostId}`;
     const live = base;
-    let editMode = `${base}&mode=EDIT_MODE`;
+    // PREVIEW_MODE renders the working/draft content WITHOUT editor chrome (unlike
+    // EDIT_MODE, which injects edit buttons + extra container divs axe over-flags).
+    let preview = `${base}&mode=PREVIEW_MODE`;
     // language_id only needed for multilingual pages (S0 finding (c)).
     if (page.languageId && page.languageId !== 1) {
-        editMode += `&language_id=${page.languageId}`;
+        preview += `&language_id=${page.languageId}`;
     }
-    return { live, editMode };
+    return { live, preview };
 }
 
 /** axe rule ids that are governed by CSS (contrast etc.) → the deterministic CSS path. */
@@ -100,21 +103,29 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     const { client } = deps;
     const caps = deps.caps ?? DEFAULT_CAPS;
     const step = deps.onStep ?? noop;
-    const { live, editMode } = scanUrls(req);
+    const { live, preview } = scanUrls(req);
 
-    // 1. SCAN live (human-facing "before") + EDIT_MODE baseline (the apples-to-
-    // apples basis for revert decisions). Independent → run concurrently.
-    step('scan', 'Scanning live + working baseline');
-    const [liveScan, baselineScan] = await Promise.all([client.scan(live), client.scan(editMode)]);
+    // 1. SCAN live (human-facing "before") + PREVIEW_MODE baseline (working content,
+    // no editor chrome — the apples-to-apples basis for revert decisions).
+    // Independent → run concurrently.
+    step('scan', 'Scanning live + working (preview) baseline');
+    const [liveScan, baselineScan] = await Promise.all([client.scan(live), client.scan(preview)]);
 
-    // If a render-affecting resource (stylesheet/script) failed to load, the scan
-    // measured a broken/unstyled render — fixing against it (esp. contrast) is
-    // unsafe. Abort and report inconclusively rather than "fix" a styleless page.
-    if (baselineScan.renderReliable === false || liveScan.renderReliable === false) {
-        const warned = (baselineScan.renderWarnings ?? liveScan.renderWarnings ?? [])
+    // Abort only when a RENDER-AFFECTING resource (stylesheet/script) failed to
+    // load — that means the scan measured a broken/unstyled render and fixing
+    // against it (esp. contrast) is unsafe. We check the warning resource types
+    // ourselves rather than trusting renderReliable wholesale, since a 404 on a
+    // decorative image / xhr / favicon shouldn't block a run.
+    const renderAffecting = (s: ScanResult) =>
+        (s.renderWarnings ?? []).filter((w) =>
+            ['stylesheet', 'script', 'document'].includes((w.resourceType ?? '').toLowerCase())
+        );
+    const blocking = [...renderAffecting(baselineScan), ...renderAffecting(liveScan)];
+    if (blocking.length > 0) {
+        const warned = blocking
             .map((w) => `${w.resourceType ?? 'resource'} ${w.status ?? w.errorText ?? 'failed'}: ${w.url}`)
             .join('; ');
-        step('scan', `Render unreliable — aborting (a sub-resource failed to load): ${warned}`);
+        step('scan', `Render unreliable — aborting (a stylesheet/script failed to load): ${warned}`);
         return {
             runId: req.runId,
             page: { uri: req.page.uri, host: req.page.host, languageId: req.page.languageId },
@@ -156,11 +167,11 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     // A single CSS edit (a shared rule/token) often clears MANY violations at once.
     // So we skip any violation that a previous edit already resolved: after each
     // successful edit we re-scan, and a finding whose (code+selector) no longer
-    // appears in the fresh EDIT_MODE scan is counted as cleared — no second edit,
+    // appears in the fresh PREVIEW scan is counted as cleared — no second edit,
     // no wasted re-scan. `liveSignatures` tracks what's still failing.
     const sig = (f: ScanFinding) => `${f.code}|${f.selector}`;
     let liveSignatures = new Set(violations.map(sig));
-    // Running EDIT_MODE baseline — drops as edits clear violations, so each fix's
+    // Running PREVIEW baseline — drops as edits clear violations, so each fix's
     // revert guard compares against the current state, not the original page.
     let runningBaseline = countViolations(baselineScan);
     // Rule codes we have actually edited a source for. A collateral clear is only
@@ -198,7 +209,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             currentContent,
             editedPaths,
             caps,
-            editModeUrl: editMode,
+            previewUrl: preview,
             stylesheetCache,
             baselineViolations: runningBaseline
         };
@@ -236,7 +247,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
                     deps: {
                         client,
                         page: { uri: req.page.uri, hostId: req.page.hostId },
-                        editModeUrl: editMode,
+                        previewUrl: preview,
                         editedPaths,
                         cache: currentContent,
                         onStep: step
@@ -260,14 +271,13 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
         }
     }
 
-    // Final re-scan for the human-facing "after" — one EDIT_MODE scan after all edits.
+    // Final re-scan for the human-facing "after" — one PREVIEW scan after all edits.
     step('rescan', 'Re-scanning working page');
     let afterCount = countViolations(liveScan);
     try {
-        const finalScan = await client.scan(editMode);
-        // Map EDIT_MODE count back to a live-comparable number by subtracting the
-        // chrome baseline delta is not exact; we report the raw EDIT_MODE delta
-        // against the EDIT_MODE baseline as the trustworthy signal.
+        const finalScan = await client.scan(preview);
+        // PREVIEW matches the live structure (no editor chrome), so the working
+        // delta maps directly: after = live-before − (preview-baseline − preview-final).
         const baseline = countViolations(baselineScan);
         const finalEdit = countViolations(finalScan);
         afterCount = Math.max(0, countViolations(liveScan) - (baseline - finalEdit));
@@ -300,13 +310,13 @@ interface ProcessCtx {
     currentContent: Record<string, string>;
     editedPaths: Set<string>;
     caps: RunFixCaps;
-    editModeUrl: string;
+    previewUrl: string;
     baselineViolations: number;
     /** Per-run cache: a stylesheet's parsed color rules + sourcemap, keyed by URL.
      * Contrast violations cluster on one compiled stylesheet, so fetch+parse it
      * once for the whole run instead of per violation. */
     stylesheetCache: Map<string, ParsedStylesheet>;
-    /** Set by saveAndRescan: the fresh EDIT_MODE scan taken after the edit (kept or
+    /** Set by saveAndRescan: the fresh PREVIEW scan taken after the edit (kept or
      * reverted). The main loop reuses it to refresh which violations remain — so a
      * shared-rule edit that clears many violations costs ONE re-scan, not N. */
     lastScan?: ScanResult;
@@ -512,7 +522,7 @@ interface SaveSpec {
     review?: string;
 }
 
-/** Save-working, verify bytes, re-scan EDIT_MODE, auto-revert on regression. Shared by both paths. */
+/** Save-working, verify bytes, re-scan PREVIEW, auto-revert on regression. Shared by both paths. */
 async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult> {
     const { deps, editedPaths, currentContent } = ctx;
     const client = deps.client;
@@ -534,7 +544,7 @@ async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult
 
     step('rescan', `Re-scanning after ${ctx.finding.code}`);
     try {
-        const rescan = await client.scan(ctx.editModeUrl);
+        const rescan = await client.scan(ctx.previewUrl);
         const after = countViolations(rescan);
         if (after > ctx.baselineViolations) {
             step('fix', `Reverting ${shortName(path)} (re-scan worse)`);
