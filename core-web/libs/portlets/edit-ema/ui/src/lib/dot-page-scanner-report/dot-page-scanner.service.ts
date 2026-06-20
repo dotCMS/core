@@ -99,7 +99,20 @@ export class DotPageScannerService {
     private http = inject(HttpClient);
 
     checkA11y(url: string): Observable<PageScannerA11yResponse> {
-        return this.http.post<PageScannerA11yResponse>('/api/v1/page-scanner/a11y/check', { url });
+        // ============================================================================
+        // ⚠️⚠️⚠️ DEV-ONLY HACK — REMOVE BEFORE PRODUCTION ⚠️⚠️⚠️
+        // ----------------------------------------------------------------------------
+        // The scanner runs on the dotCMS backend and renders the URL server-side, so
+        // it cannot reach the Angular dev server on :4200. We rewrite :4200 → :8080
+        // so the scan hits the backend in local dev.
+        //
+        // This is WRONG for production: it hardcodes ports into a shared library used
+        // by UVE, and prod has no :4200/:8080 split. MUST be reverted — build the
+        // reachable scan URL in the caller (env-aware) instead.
+        // ============================================================================
+        return this.http.post<PageScannerA11yResponse>('/api/v1/page-scanner/a11y/check', {
+            url: url.replace('4200', '8080')
+        });
     }
 
     checkGeo(url: string): Observable<PageScannerGeoResponse> {
