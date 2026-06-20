@@ -1,14 +1,16 @@
 
-import { nudgeToClear, parseColor, parseTargetRatio } from './contrast';
-import { attribute, parseColorRules, type CssRule } from './css-attribution';
-import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
 import {
-    DotcmsClient,
-    type RenderSources,
-    type ScanFinding,
-    type ScanResult,
-    type SourceRef
-} from './dotcms-client';
+    errMsg,
+    isFixableViolation,
+    isViolation,
+    noop,
+    saveMime,
+    shortName
+} from './agent-utils';
+import { colorTokenAt, nudgeToClear, parseColor, parseTargetRatio } from './contrast';
+import { attribute, findColorDeclNode, parseColorRules, type CssRule } from './css-attribution';
+import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
+import { DotcmsClient, type ScanFinding, type ScanResult } from './dotcms-client';
 import { runResearch } from './researchLoop';
 
 import type { FixReport, FixRequest, FixResult } from './contract';
@@ -59,8 +61,6 @@ export interface RunFixDeps {
     researchMaxSteps?: number;
 }
 
-const noop = () => undefined;
-
 /** Build the two scan URLs from the resolved page (plan §8.2 string assembly). */
 function scanUrls(req: FixRequest): { live: string; editMode: string } {
     const { dotcmsBaseUrl, page } = req;
@@ -72,30 +72,6 @@ function scanUrls(req: FixRequest): { live: string; editMode: string } {
         editMode += `&language_id=${page.languageId}`;
     }
     return { live, editMode };
-}
-
-/**
- * VTL candidate refs from /_render-sources: theme VTLs + container VTLs only.
- * This is a SMALL set (~10) — markup the agent may edit for VTL-level violations
- * (missing alt/aria/lang/labels, heading order). We deliberately do NOT include
- * stylesheets here: CSS goes through the lazy deterministic path (attribute the
- * one compiled stylesheet + sourcemap → edit one SCSS source), so the 150+ SCSS
- * partials are never read or sent to the model (plan §5 READ, S1.5).
- */
-function collectVtlCandidates(sources: RenderSources): SourceRef[] {
-    const refs: SourceRef[] = (sources.theme?.files ?? []).filter(
-        (f) => (f.extension ?? '').toLowerCase() === 'vtl'
-    );
-    for (const container of Object.values(sources.containers ?? {})) {
-        for (const ct of container.contentTypes ?? []) {
-            if (ct.path) {
-                refs.push({ identifier: ct.identifier, path: ct.path });
-            }
-        }
-    }
-    // De-dup by path.
-    const seen = new Set<string>();
-    return refs.filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true)));
 }
 
 /** axe rule ids that are governed by CSS (contrast etc.) → the deterministic CSS path. */
@@ -119,29 +95,6 @@ function applicableStylesheets(scan: ScanResult, dotcmsBaseUrl: string): string[
     });
 }
 
-const isViolation = (f: ScanFinding) => f.resultType === 'violation' || f.type === 'error';
-
-/**
- * Genuine EDIT_MODE editor chrome — the inline edit/add buttons the editor
- * injects (`data-dot-object="edit-content"` / `"edit-container"` / `"add"`).
- * These are editor UI, in no template, so unfixable noise — drop them.
- *
- * NOTE: only the edit-* / add buttons are dropped. Elements with
- * `data-dot-object="contentlet"` or `"container"` are NOT chrome — those
- * attributes are dotCMS's attribution metadata (content type → VTL) and are
- * useful, not noise (see the scanner data-dot-ancestor spec).
- */
-const isEditorChrome = (f: ScanFinding) =>
-    /data-dot-object="(edit-content|edit-container|add)"/.test(f.context ?? '');
-
-const STYLESHEET_EXTENSIONS = ['.css', '.scss', '.sass', '.dotsass', '.less'];
-
-/** Content type used when saving an edited working copy. Stylesheets (including CSS
- * preprocessors) save as text/css; everything else as text/plain. */
-function saveMime(path: string): string {
-    const lower = path.toLowerCase();
-    return STYLESHEET_EXTENSIONS.some((ext) => lower.endsWith(ext)) ? 'text/css' : 'text/plain';
-}
 
 export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixReport> {
     const { client } = deps;
@@ -149,31 +102,26 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     const step = deps.onStep ?? noop;
     const { live, editMode } = scanUrls(req);
 
-    // 1. SCAN (live) — the human-facing "before" count.
-    step('scan', 'Scanning live page');
-    const liveScan = await client.scan(live);
+    // 1. SCAN live (human-facing "before") + EDIT_MODE baseline (the apples-to-
+    // apples basis for revert decisions). Independent → run concurrently.
+    step('scan', 'Scanning live + working baseline');
+    const [liveScan, baselineScan] = await Promise.all([client.scan(live), client.scan(editMode)]);
 
-    // 1b. SCAN (EDIT_MODE baseline) — the apples-to-apples basis for revert
-    // decisions (same editor chrome as the post-edit re-scan).
-    step('scan', 'Scanning working baseline');
-    const baselineScan = await client.scan(editMode);
-
-    // 2. LOCATE. VTL candidates are a small set (theme + container VTLs); the SCSS
-    // tree is NOT collected — CSS uses the lazy deterministic path (S1.5).
-    step('locate', 'Locating page sources');
-    const sources = await client.locate(req.page.uri, req.page.hostId);
-    const vtlCandidates = collectVtlCandidates(sources);
     const stylesheets = applicableStylesheets(liveScan, req.dotcmsBaseUrl);
 
     // `currentContent` is the single progressively-improved working copy per file
     // (a later violation on the same file builds on the earlier edit). Files are
     // read LAZILY on first touch — never bulk-read up front. We do not guard
     // against pre-existing unpublished edits (working-save is non-destructive; §3).
+    // PASS 1 fixes only CSS (deterministic); PASS 2 re-discovers VTL sources via
+    // its own tools, so the loop doesn't pre-locate here.
     const currentContent: Record<string, string> = {};
+    // Fetch+parse each compiled stylesheet at most once per run (contrast violations
+    // cluster on the same sheet — without this it re-downloads + re-parses per violation).
+    const stylesheetCache = new Map<string, ParsedStylesheet>();
 
     const violations = liveScan.findings.items
-        .filter(isViolation)
-        .filter((f) => !isEditorChrome(f)) // drop platform edit-mode chrome (unfixable noise)
+        .filter(isFixableViolation) // real violations, excluding editor chrome
         .slice(0, caps.maxViolations);
 
     const results: FixResult[] = [];
@@ -220,12 +168,12 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             finding,
             req,
             deps,
-            vtlCandidates,
             stylesheets,
             currentContent,
             editedPaths,
             caps,
             editModeUrl: editMode,
+            stylesheetCache,
             baselineViolations: runningBaseline
         };
         const res = await processViolation(ctx);
@@ -249,10 +197,8 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     // (container VTL colors, markup, structure) — the way the MCP agent did. Safe:
     // typed tools only (no publish/delete), all through the allowlisted sandbox.
     if (deps.research !== false) {
-        const resolvedSigs = new Set(
-            results.filter((r) => r.status === 'fixed-to-working' && r.file).map((r) => r.ruleId)
-        );
-        // Re-derive the live unresolved set from the latest signatures.
+        // What PASS 1 already touched — so PASS 2's file edits aren't double-reported.
+        const pass1Files = new Set(results.filter((r) => r.file).map((r) => r.file));
         const unresolved = violations.filter((v) => liveSignatures.has(sig(v)));
         if (unresolved.length > 0) {
             step('fix', `Agentic research on ${unresolved.length} remaining violation(s)`);
@@ -270,10 +216,10 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
                         onStep: step
                     }
                 });
-                // Record what the research pass touched (honest: a file edit, confirmed
-                // by the final re-scan below — we don't claim per-violation here).
+                // Record each file the research pass edited (confirmed by the final
+                // re-scan below — we don't claim per-violation here).
                 for (const p of research.editedPaths) {
-                    if (!resolvedSigs.has(p)) {
+                    if (!pass1Files.has(p)) {
                         results.push({
                             ruleId: 'agentic-research',
                             status: 'fixed-to-working',
@@ -315,25 +261,46 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     };
 }
 
+/** Violation count from the normalized scan (normalizeAxe always sets findings.violations). */
 function countViolations(scan: ScanResult): number {
-    return scan.findings?.violations ?? scan.counts?.errors ?? scan.totalIssues ?? 0;
+    return scan.findings.violations;
 }
 
 interface ProcessCtx {
     finding: ScanFinding;
     req: FixRequest;
     deps: RunFixDeps;
-    vtlCandidates: SourceRef[];
     stylesheets: string[];
     currentContent: Record<string, string>;
     editedPaths: Set<string>;
     caps: RunFixCaps;
     editModeUrl: string;
     baselineViolations: number;
+    /** Per-run cache: a stylesheet's parsed color rules + sourcemap, keyed by URL.
+     * Contrast violations cluster on one compiled stylesheet, so fetch+parse it
+     * once for the whole run instead of per violation. */
+    stylesheetCache: Map<string, ParsedStylesheet>;
     /** Set by saveAndRescan: the fresh EDIT_MODE scan taken after the edit (kept or
      * reverted). The main loop reuses it to refresh which violations remain — so a
      * shared-rule edit that clears many violations costs ONE re-scan, not N. */
     lastScan?: ScanResult;
+}
+
+interface ParsedStylesheet {
+    rules: CssRule[];
+    map: ReturnType<typeof extractInlineSourceMap>;
+}
+
+/** Fetch + parse a stylesheet once per run (cached): its color rules + inline sourcemap. */
+async function loadStylesheet(ctx: ProcessCtx, sheet: string): Promise<ParsedStylesheet> {
+    const cached = ctx.stylesheetCache.get(sheet);
+    if (cached) {
+        return cached;
+    }
+    const css = await ctx.deps.client.fetchStylesheet(sheet);
+    const parsed: ParsedStylesheet = { rules: parseColorRules(css), map: extractInlineSourceMap(css) };
+    ctx.stylesheetCache.set(sheet, parsed);
+    return parsed;
 }
 
 /**
@@ -390,16 +357,19 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     // whose VALUE equals axe's flagged fgColor or bgColor — that decl is provably
     // the one axe measured. We do NOT trust specificity ranking to guess the decl;
     // the color identity decides. The OTHER color of the pair is the counterpart.
-    let css = '';
     let matches: CssRule[] = [];
+    let map: ParsedStylesheet['map'] = null;
     for (const sheet of stylesheets) {
+        let parsed: ParsedStylesheet;
         try {
-            css = await client.fetchStylesheet(sheet);
+            parsed = await loadStylesheet(ctx, sheet); // cached per run
         } catch (e) {
             return { ...base, status: 'failed', reason: `fetch stylesheet failed: ${errMsg(e)}` };
         }
-        matches = attribute(finding.context, parseColorRules(css));
-        if (matches.length) {
+        const m = attribute(finding.context, parsed.rules);
+        if (m.length) {
+            matches = m;
+            map = parsed.map;
             break;
         }
     }
@@ -436,7 +406,6 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         };
     }
 
-    const map = extractInlineSourceMap(css);
     if (!map) {
         return { ...base, reason: 'No sourcemap on the stylesheet; cannot locate the SCSS source to edit.' };
     }
@@ -453,7 +422,7 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         }
 
         // Resolve this decl's value position → its SCSS source.
-        const declNode = findNamedColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
+        const declNode = findColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
         const declPos = declNode?.source?.start;
         if (!declNode || !declPos) {
             lastReason = `No declaration position for ${cand.decl.prop}; trying the counterpart.`;
@@ -596,44 +565,8 @@ function resolveSourcePath(source: string, stylesheetUrl: string): string {
     }
 }
 
-const shortName = (p: string) => p.split('/').pop() ?? p;
-
-/** The postcss declaration node matching `prop` + `value` on a rule (for its
- * value position; a rule may have several color decls, so match the exact one). */
-function findNamedColorDeclNode(
-    rule: CssRule['node'],
-    prop: string,
-    value: string
-): { prop: string; value: string; source?: { start?: { line: number; column: number } } } | undefined {
-    const decls = rule.nodes.filter(
-        (n): n is import('postcss').Declaration => n.type === 'decl'
-    );
-    return (
-        decls.find((d) => d.prop === prop && d.value === value) ??
-        decls.find((d) => d.value === value) ??
-        decls.find((d) => /color/i.test(d.prop))
-    );
-}
-
-/** Extract a CSS color token (hex / rgb()/rgba() / name) at or near a source position. */
-function colorTokenAt(content: string, line: number, column: number): string | null {
-    const lineText = content.split('\n')[line - 1];
-    if (!lineText) {
-        return null;
-    }
-    // Search from the resolved column onward (then the whole line) for a color literal.
-    const COLOR = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/;
-    const fromCol = lineText.slice(Math.max(0, column));
-    const m = fromCol.match(COLOR) ?? lineText.match(COLOR);
-    return m ? m[0] : null;
-}
-
 /** Replace only the first occurrence of `needle` (literal) in `haystack`. */
 function replaceFirst(haystack: string, needle: string, replacement: string): string {
     const i = haystack.indexOf(needle);
     return i === -1 ? haystack : haystack.slice(0, i) + replacement + haystack.slice(i + needle.length);
-}
-
-function errMsg(e: unknown): string {
-    return e instanceof Error ? e.message : String(e);
 }

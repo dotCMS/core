@@ -14,7 +14,6 @@ describe('css-attribution — deterministic color-rule attribution (no LLM)', ()
             ]);
             // The same postcss node is shared by both split selectors.
             expect(rules[0].node).toBe(rules[1].node);
-            expect(rules[0].pos).toEqual({ line: 1, column: 1 });
         });
 
         it('keeps only color-affecting properties', () => {

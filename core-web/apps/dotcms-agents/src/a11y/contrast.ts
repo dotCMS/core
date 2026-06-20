@@ -138,3 +138,22 @@ export function nudgeToClear(
     }
     return best;
 }
+
+/**
+ * Color literals this module can `parseColor` — kept in lockstep with parseColor's
+ * accepted syntax (#rgb / #rrggbb / rgb()/rgba()) so a token extracted here never
+ * fails to parse. (Deliberately excludes 4/8-digit hex and hsl(), which parseColor
+ * does not handle.)
+ */
+export const COLOR_TOKEN_RE = /#[0-9a-fA-F]{3}\b|#[0-9a-fA-F]{6}\b|rgba?\([^)]*\)/;
+
+/** Find a parseable color token at/after `column` on the given 1-based source line. */
+export function colorTokenAt(content: string, line: number, column: number): string | null {
+    const lineText = content.split('\n')[line - 1];
+    if (!lineText) {
+        return null;
+    }
+    const fromCol = lineText.slice(Math.max(0, column));
+    const m = fromCol.match(COLOR_TOKEN_RE) ?? lineText.match(COLOR_TOKEN_RE);
+    return m ? m[0] : null;
+}
