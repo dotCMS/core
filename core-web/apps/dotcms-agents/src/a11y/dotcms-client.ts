@@ -272,19 +272,14 @@ export class DotcmsClient {
      * inline sourcemap (`sourcemap=true`). Unlike `read` (raw asset via
      * /api/v2/assets), this hits the theme stylesheet URL directly so dotCMS's
      * SASS preprocessor returns compiled CSS + the source map (CSS-attribution
-     * path, S1.5). Accepts the absolute URL from `scan.stylesheets[]`; strips the
-     * origin to a relative path (the adapter rejects absolute paths) and adds the
-     * sourcemap param. Returns the compiled CSS text (map appended as a comment).
+     * path, S1.5). The URL comes verbatim from `scan.stylesheets[]` (the scanner
+     * is responsible for returning a resolvable URL — incl. host scope); we only
+     * strip the origin to a relative path (the adapter rejects absolute paths) and
+     * add the sourcemap param. Returns the compiled CSS text (map appended).
      */
-    async fetchStylesheet(absoluteUrl: string, hostId?: string): Promise<string> {
+    async fetchStylesheet(absoluteUrl: string): Promise<string> {
         const u = new URL(absoluteUrl);
         u.searchParams.set('sourcemap', 'true');
-        // On a NON-default host the theme asset path 404s unless host-scoped — the
-        // agent's token doesn't carry the host, so pass host_id explicitly (same
-        // reason the scan URL carries it). Harmless on the default host.
-        if (hostId) {
-            u.searchParams.set('host_id', hostId);
-        }
         const res = await this.request<unknown>({
             method: 'GET',
             path: u.pathname,
