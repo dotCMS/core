@@ -133,6 +133,16 @@ function applicableStylesheets(scan: ScanResult, dotcmsBaseUrl: string): string[
 
 const isViolation = (f: ScanFinding) => f.resultType === 'violation' || f.type === 'error';
 
+/**
+ * EDIT_MODE chrome injected by the dotCMS editor (drag handles, add-content /
+ * edit-content buttons) — NOT part of the page's templates, so unfixable and just
+ * noise. Identified by the `data-dot-object` marker in the offending HTML. Drop
+ * these before triage/PASS 2 so neither the agent nor the report wastes effort on
+ * them. (They only appear because we scan EDIT_MODE; same root cause as the §8.2
+ * chrome-inflation note.)
+ */
+const isEditorChrome = (f: ScanFinding) => /data-dot-object=/.test(f.context ?? '');
+
 const STYLESHEET_EXTENSIONS = ['.css', '.scss', '.sass', '.dotsass', '.less'];
 
 /** Content type used when saving an edited working copy. Stylesheets (including CSS
@@ -172,6 +182,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
 
     const violations = liveScan.findings.items
         .filter(isViolation)
+        .filter((f) => !isEditorChrome(f)) // drop platform edit-mode chrome (unfixable noise)
         .slice(0, caps.maxViolations);
 
     const results: FixResult[] = [];

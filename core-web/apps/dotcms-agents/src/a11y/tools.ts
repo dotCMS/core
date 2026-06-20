@@ -170,7 +170,10 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 try {
                     const scan = await client.scan(deps.editModeUrl);
                     const viols = scan.findings.items.filter(
-                        (f) => f.resultType === 'violation' || f.type === 'error'
+                        (f) =>
+                            (f.resultType === 'violation' || f.type === 'error') &&
+                            // exclude platform edit-mode chrome (data-dot-object) — unfixable noise
+                            !/data-dot-object=/.test(f.context ?? '')
                     );
                     return {
                         violations: viols.length,
