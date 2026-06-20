@@ -50,20 +50,14 @@ export class DotAccessibilityStudioRunComponent {
 
     /** The number shown in the ring center: open violations, or a dash pre-scan. */
     readonly centerCount = computed<string | number>(() => {
-        if (this.store.isScanning()) {
+        if (this.store.isScanning() || !this.store.scanned()) {
             return '–';
         }
-        if (!this.store.scanned()) {
-            return '–';
-        }
-        const report = this.store.report();
-        if (!report) {
-            return '–';
-        }
-        // While "scanned" (pre-fix) show the before count; after a fix show after.
-        return this.store.isScanned()
-            ? report.scan.before.violations
-            : report.scan.after.violations;
+        // While "scanned" (pre-fix) show the real before count; after the
+        // (mocked) fix show the after count.
+        return this.store.isDone() || this.store.isPublished()
+            ? this.store.afterCount()
+            : this.store.beforeCount();
     });
 
     /** Ring fill 0→1 based on issues cleared (before − current) / before. */
