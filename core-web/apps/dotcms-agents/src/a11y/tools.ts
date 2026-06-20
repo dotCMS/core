@@ -172,8 +172,11 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                     const viols = scan.findings.items.filter(
                         (f) =>
                             (f.resultType === 'violation' || f.type === 'error') &&
-                            // exclude platform edit-mode chrome (data-dot-object) — unfixable noise
-                            !/data-dot-object=/.test(f.context ?? '')
+                            // exclude only genuine editor chrome (edit/add buttons), NOT
+                            // contentlet/container wrappers (those are attribution metadata)
+                            !/data-dot-object="(edit-content|edit-container|add)"/.test(
+                                f.context ?? ''
+                            )
                     );
                     return {
                         violations: viols.length,
