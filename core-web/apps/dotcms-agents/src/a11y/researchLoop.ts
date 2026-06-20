@@ -1,7 +1,7 @@
 import { generateText, stepCountIs, type LanguageModel } from 'ai';
 
+import { defaultModel } from './model';
 import { createResearchTools, type ResearchToolsDeps } from './tools';
-import { defaultModel } from './triage';
 
 import type { ScanFinding } from './dotcms-client';
 

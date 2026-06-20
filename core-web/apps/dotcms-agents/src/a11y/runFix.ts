@@ -10,14 +10,6 @@ import {
     type SourceRef
 } from './dotcms-client';
 import { runResearch } from './researchLoop';
-import {
-    generateFix,
-    triageViolation,
-    type FixInput,
-    type FixOutput,
-    type TriageDecision,
-    type TriageInput
-} from './triage';
 
 import type { FixReport, FixRequest, FixResult } from './contract';
 import type { LanguageModel } from 'ai';
@@ -61,10 +53,6 @@ export interface RunFixDeps {
     caps?: RunFixCaps;
     /** Hook for the future SSE layer; no-op by default (plan §8.4). */
     onStep?: (phase: string, message: string) => void;
-    /** Override the LLM triage call (tests / alternate strategies). */
-    triage?: (input: TriageInput, model?: LanguageModel) => Promise<TriageDecision>;
-    /** Override the LLM (VTL) fix-generation call. */
-    fix?: (input: FixInput, model?: LanguageModel) => Promise<FixOutput>;
     /** Disable PASS 2 agentic research (default on). Set false to run deterministic-only. */
     research?: boolean;
     /** maxSteps for the PASS 2 research loop (default 40). */
@@ -348,7 +336,14 @@ interface ProcessCtx {
     lastScan?: ScanResult;
 }
 
-/** Route a violation to the deterministic CSS path or the LLM-driven VTL path. */
+/**
+ * Route a violation. PASS 1 handles only color-contrast, deterministically (no
+ * LLM, no forced-JSON). Everything else (VTL markup: alt/aria/labels/structure)
+ * is left to PASS 2 — the tool-calling research loop — which is both more robust
+ * (tool calls, not Output.object) and has more reach (researches across files).
+ * So non-contrast violations return `reported` here and flow to PASS 2 as the
+ * unresolved set.
+ */
 async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
     const { finding } = ctx;
     const isCss = CSS_RULE_CODES.has(finding.code);
@@ -362,7 +357,9 @@ async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
         }
         return processCssViolation(ctx);
     }
-    return processVtlViolation(ctx);
+    // Non-contrast → defer to PASS 2 (agentic, tool-calling). Marked reported so
+    // it joins the unresolved set the research loop works on.
+    return { ruleId: finding.code, status: 'reported', reason: 'Deferred to agentic research pass.' };
 }
 
 /**
@@ -508,79 +505,6 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     }
 
     return { ...base, reason: `${lastReason} (needs a design decision); reported.` };
-}
-
-/**
- * VTL path (LLM-driven): the small VTL candidate set is read lazily; the model
- * triages + attributes, gated on evidence, then produces a minimal file diff.
- */
-async function processVtlViolation(ctx: ProcessCtx): Promise<FixResult> {
-    const { finding, deps, vtlCandidates, currentContent, editedPaths, caps } = ctx;
-    const client = deps.client;
-    const step = deps.onStep ?? noop;
-    const triageFn = deps.triage ?? triageViolation;
-    const fixFn = deps.fix ?? generateFix;
-    const base: FixResult = { ruleId: finding.code, status: 'reported' };
-
-    // Lazily read the (small) VTL candidate set for this violation's triage.
-    for (const ref of vtlCandidates) {
-        if (currentContent[ref.path] === undefined) {
-            try {
-                currentContent[ref.path] = await client.read(ref.path);
-            } catch {
-                // skip unreadable candidate
-            }
-        }
-    }
-
-    let decision: TriageDecision;
-    try {
-        decision = await triageFn(
-            { finding, candidates: vtlCandidates, fileContents: currentContent, skipCss: ctx.req.options.skipCss },
-            deps.model
-        );
-    } catch (e) {
-        return { ...base, status: 'failed', reason: `triage failed: ${errMsg(e)}` };
-    }
-
-    if (decision.fixability !== 'vtl' || !decision.targetPath) {
-        return { ...base, reason: decision.reason };
-    }
-    if (!decision.evidenceFound) {
-        return { ...base, reason: `Attribution not provable in source: ${decision.reason}` };
-    }
-
-    const path = decision.targetPath;
-    const ref = vtlCandidates.find((c) => c.path === path);
-    if (!editedPaths.has(path) && editedPaths.size >= caps.maxFiles) {
-        return { ...base, file: path, reason: 'Per-run file cap reached' };
-    }
-
-    const original = currentContent[path] ?? '';
-    step('fix', `Fixing ${finding.code} in ${shortName(path)}`);
-    let fix: FixOutput;
-    try {
-        fix = await fixFn(
-            { finding, targetPath: path, originalContent: original, fixability: 'vtl' },
-            deps.model
-        );
-    } catch (e) {
-        return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: `fix generation failed: ${errMsg(e)}` };
-    }
-    if (!fix.applied) {
-        return { ...base, file: path, identifier: ref?.identifier, reason: fix.reason };
-    }
-    if (Buffer.byteLength(fix.newContent, 'utf-8') > caps.maxFileBytes) {
-        return { ...base, status: 'failed', file: path, identifier: ref?.identifier, reason: 'Edited file exceeds byte cap' };
-    }
-
-    return saveAndRescan(ctx, {
-        path,
-        original,
-        edited: fix.newContent,
-        diff: fix.diff,
-        identifier: ref?.identifier
-    });
 }
 
 interface SaveSpec {
