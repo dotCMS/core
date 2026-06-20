@@ -56,6 +56,19 @@ export interface ScanResult {
     // — filter to same-origin dotCMS assets to find the compiled CSS to attribute
     // against (CSS-attribution path, S1.5). External (CDN/fonts) are included too.
     stylesheets?: string[];
+    // False when a render-affecting sub-resource (stylesheet/script) failed to load,
+    // so the scan measured a broken/unstyled render — results (esp. contrast) are
+    // not trustworthy. The agent treats an unreliable scan as inconclusive.
+    renderReliable?: boolean;
+    // Sub-resources that failed to load during render (for diagnostics).
+    renderWarnings?: RenderWarning[];
+}
+
+export interface RenderWarning {
+    url: string;
+    status?: number | null;
+    resourceType?: string;
+    errorText?: string;
 }
 
 // ── Raw axe response (what the scanner returns; agent normalizes it) ─────────
@@ -87,6 +100,8 @@ export interface RawScanResponse {
     ok?: boolean;
     documentTitle?: string;
     stylesheets?: string[];
+    renderReliable?: boolean;
+    renderWarnings?: RenderWarning[];
     axe?: {
         violations?: AxeRule[];
         incomplete?: AxeRule[];
@@ -196,7 +211,9 @@ export function normalizeAxe(raw: RawScanResponse): ScanResult {
             needsReview: needsReviewItems.length,
             items
         },
-        stylesheets: raw.stylesheets
+        stylesheets: raw.stylesheets,
+        renderReliable: raw.renderReliable,
+        renderWarnings: raw.renderWarnings
     };
 }
 

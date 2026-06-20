@@ -107,6 +107,32 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     step('scan', 'Scanning live + working baseline');
     const [liveScan, baselineScan] = await Promise.all([client.scan(live), client.scan(editMode)]);
 
+    // If a render-affecting resource (stylesheet/script) failed to load, the scan
+    // measured a broken/unstyled render — fixing against it (esp. contrast) is
+    // unsafe. Abort and report inconclusively rather than "fix" a styleless page.
+    if (baselineScan.renderReliable === false || liveScan.renderReliable === false) {
+        const warned = (baselineScan.renderWarnings ?? liveScan.renderWarnings ?? [])
+            .map((w) => `${w.resourceType ?? 'resource'} ${w.status ?? w.errorText ?? 'failed'}: ${w.url}`)
+            .join('; ');
+        step('scan', `Render unreliable — aborting (a sub-resource failed to load): ${warned}`);
+        return {
+            runId: req.runId,
+            page: { uri: req.page.uri, host: req.page.host, languageId: req.page.languageId },
+            scan: {
+                before: { violations: countViolations(liveScan) },
+                after: { violations: countViolations(liveScan) }
+            },
+            results: [
+                {
+                    ruleId: 'render-unreliable',
+                    status: 'reported',
+                    reason: `Scan render was unreliable — a render-affecting resource failed to load, so results aren't trustworthy. No fixes attempted. Failed: ${warned}`
+                }
+            ],
+            publishRequired: true
+        };
+    }
+
     const stylesheets = applicableStylesheets(liveScan, req.dotcmsBaseUrl);
 
     // `currentContent` is the single progressively-improved working copy per file
