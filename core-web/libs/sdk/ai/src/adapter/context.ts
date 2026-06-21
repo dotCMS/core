@@ -179,7 +179,7 @@ export async function loadDotCMSContext(
         }),
         loadCurrentUser(request).catch((err) => {
             onError?.('currentUser', err);
-            return null;
+            return null as CurrentUserSummary | null;
         })
     ]);
 

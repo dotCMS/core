@@ -49,13 +49,13 @@ describe('a11y-fix contract', () => {
         });
 
         it('defaults options.skipCss to false when options is omitted', () => {
-            const withoutOptions = { ...valid, options: undefined };
+            const withoutOptions = { ...valid, options: undefined as unknown };
             const parsed = FixRequestSchema.parse(withoutOptions);
             expect(parsed.options.skipCss).toBe(false);
         });
 
         it('requires the proxy to resolve hostId (agent never re-resolves URLs)', () => {
-            const pageWithoutHostId = { ...valid.page, hostId: undefined };
+            const pageWithoutHostId = { ...valid.page, hostId: undefined as unknown };
             const result = FixRequestSchema.safeParse({
                 ...valid,
                 page: pageWithoutHostId

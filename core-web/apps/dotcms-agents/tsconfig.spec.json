@@ -5,6 +5,7 @@
         "module": "commonjs",
         "moduleResolution": "node10",
         "resolveJsonModule": true,
+        "noImplicitAny": true,
         "types": ["jest", "node"]
     },
     "include": [

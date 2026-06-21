@@ -118,8 +118,12 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 const targets = paths?.length ? refs.filter((r) => paths.includes(r.path)) : refs;
                 const q = query.toLowerCase();
                 // Warm the content cache in parallel, then filter (CPU-only).
+                // The catch returns undefined for unreadable files; type it so the
+                // array is (string | undefined)[] rather than poisoning to any[].
                 const contents = await Promise.all(
-                    targets.map((ref) => readCached(ref.path).catch(() => undefined))
+                    targets.map((ref): Promise<string | undefined> =>
+                        readCached(ref.path).catch((): undefined => undefined)
+                    )
                 );
                 const hits: { path: string; lines: string[] }[] = [];
                 targets.forEach((ref, i) => {
@@ -129,9 +133,9 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                     }
                     const lines = content
                         .split('\n')
-                        .map((l, idx) => ({ l, idx: idx + 1 }))
-                        .filter((x) => x.l.toLowerCase().includes(q))
-                        .map((x) => `${x.idx}: ${x.l.trim()}`);
+                        .map((line: string, idx: number) => ({ line, lineNo: idx + 1 }))
+                        .filter((entry) => entry.line.toLowerCase().includes(q))
+                        .map((entry) => `${entry.lineNo}: ${entry.line.trim()}`);
                     if (lines.length) {
                         hits.push({ path: ref.path, lines: lines.slice(0, MAX_GREP_LINES) });
                     }
