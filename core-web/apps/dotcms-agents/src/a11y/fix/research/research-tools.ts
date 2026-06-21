@@ -8,9 +8,9 @@ import {
     noop,
     saveMime,
     shortName
-} from './agent-utils';
+} from '../../shared/agent-utils';
 
-import type { DotcmsClient, RenderSources } from './dotcms-client';
+import type { DotcmsClient, RenderSources } from '../../dotcms/dotcms-client';
 
 /**
  * Typed tools for the agentic research pass (PASS 2). The model uses these to

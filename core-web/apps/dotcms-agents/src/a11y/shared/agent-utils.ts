@@ -1,4 +1,4 @@
-import type { RenderSources, ScanFinding, SourceRef } from './dotcms-client';
+import type { RenderSources, ScanFinding, SourceRef } from '../dotcms/dotcms-client';
 
 /**
  * Shared helpers used by both the deterministic loop (runFix) and the agentic

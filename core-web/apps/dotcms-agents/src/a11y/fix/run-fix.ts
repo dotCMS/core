@@ -1,13 +1,5 @@
 
-import {
-    errMsg,
-    isFixableViolation,
-    isViolation,
-    noop,
-    saveMime,
-    shortName
-} from './agent-utils';
-import { colorTokenAt, nudgeToClear, parseColor, parseTargetRatio } from './contrast';
+import { colorTokenAt, nudgeToClear, parseColor, parseTargetRatio } from './css/contrast';
 import {
     attribute,
     attributeByTarget,
@@ -16,12 +8,21 @@ import {
     parseCustomProperties,
     resolveVarValue,
     type CssRule
-} from './css-attribution';
-import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
-import { DotcmsClient, type ScanFinding, type ScanResult } from './dotcms-client';
-import { runResearch } from './researchLoop';
+} from './css/css-attribution';
+import { extractInlineSourceMap, resolveDeclarationValue } from './css/css-source-map';
+import { runResearch } from './research/research-loop';
 
-import type { FixReport, FixRequest, FixResult } from './contract';
+import { DotcmsClient, type ScanFinding, type ScanResult } from '../dotcms/dotcms-client';
+import {
+    errMsg,
+    isFixableViolation,
+    isViolation,
+    noop,
+    saveMime,
+    shortName
+} from '../shared/agent-utils';
+
+import type { FixReport, FixRequest, FixResult } from '../domain/contract';
 import type { LanguageModel } from 'ai';
 
 /**

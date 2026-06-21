@@ -1,7 +1,7 @@
-import { runFix, type RunFixDeps } from './runFix';
+import { runFix, type RunFixDeps } from './run-fix';
 
-import type { FixRequest } from './contract';
-import type { RenderSources, ScanFinding, ScanResult, SavedAsset } from './dotcms-client';
+import type { FixRequest } from '../domain/contract';
+import type { RenderSources, ScanFinding, ScanResult, SavedAsset } from '../dotcms/dotcms-client';
 
 /**
  * runFix orchestration tests. The deterministic CSS attribution + contrast math

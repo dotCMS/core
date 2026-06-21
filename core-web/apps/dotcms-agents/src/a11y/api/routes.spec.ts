@@ -2,8 +2,8 @@ import { ActiveRunRegistry } from './active-run';
 import { decodeSubject, extractBearer, parseBearer } from './auth';
 import { createA11yRoutes, type A11yRoutesDeps } from './routes';
 
-import type { FixReport, FixRequest } from './contract';
-import type { RunFixDeps } from './runFix';
+import type { FixReport, FixRequest } from '../domain/contract';
+import type { RunFixDeps } from '../fix/run-fix';
 
 /** A JWT with sub="user-42" (header.payload.sig; unsigned — agent doesn't verify). */
 function makeJwt(sub: string): string {
