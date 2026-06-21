@@ -115,10 +115,7 @@ describe('css-attribution — deterministic color-rule attribution (no LLM)', ()
 
         it('does not crash on an unparseable / unsupported selector', () => {
             const css = `:::weird::: { color: red; } .button-primary { color: #000; }`;
-            const matched = attribute(
-                '<a class="button-primary">x</a>',
-                parseColorRules(css)
-            );
+            const matched = attribute('<a class="button-primary">x</a>', parseColorRules(css));
 
             // The weird selector is silently skipped; the valid one still matches.
             expect(matched.map((r) => r.selector)).toEqual(['.button-primary']);

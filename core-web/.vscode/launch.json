@@ -51,9 +51,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug dotcms-agents with Nx",
+            "name": "Debug ai-agents with Nx",
             "runtimeExecutable": "pnpm exec",
-            "runtimeArgs": ["nx", "serve", "dotcms-agents"],
+            "runtimeArgs": ["nx", "serve", "ai-agents"],
             "env": {
                 "NODE_OPTIONS": "--inspect=9230"
             },
@@ -62,7 +62,7 @@
             "skipFiles": ["<node_internals>/**"],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/apps/dotcms-agents/dist/**/*.(m|c|)js",
+                "${workspaceFolder}/apps/ai-agents/dist/**/*.(m|c|)js",
                 "!**/node_modules/**"
             ]
         }

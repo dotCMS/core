@@ -1,5 +1,5 @@
 module.exports = {
-    displayName: 'dotcms-agents',
+    displayName: 'ai-agents',
     preset: '../../jest.preset.js',
     testEnvironment: 'node',
     transform: {
@@ -13,5 +13,5 @@ module.exports = {
         'node_modules/(?!(?:.+/)?(?:css-select|css-what|boolbase|nth-check|domhandler|domutils|domelementtype|dom-serializer|htmlparser2|entities)/)'
     ],
     moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../coverage/apps/dotcms-agents'
+    coverageDirectory: '../../coverage/apps/ai-agents'
 };

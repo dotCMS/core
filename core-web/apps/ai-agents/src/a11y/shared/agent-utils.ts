@@ -47,8 +47,7 @@ export const isEditorChrome = (f: ScanFinding): boolean =>
     /data-dot-object="(edit-content|edit-container|add)"/.test(f.context ?? '');
 
 /** A violation the agent should act on: a real failure that isn't editor chrome. */
-export const isFixableViolation = (f: ScanFinding): boolean =>
-    isViolation(f) && !isEditorChrome(f);
+export const isFixableViolation = (f: ScanFinding): boolean => isViolation(f) && !isEditorChrome(f);
 
 // ── Source-ref collection ────────────────────────────────────────────────────
 

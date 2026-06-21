@@ -54,9 +54,15 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     ];
     if (blocking.length > 0) {
         const warned = blocking
-            .map((w) => `${w.resourceType ?? 'resource'} ${w.status ?? w.errorText ?? 'failed'}: ${w.url}`)
+            .map(
+                (w) =>
+                    `${w.resourceType ?? 'resource'} ${w.status ?? w.errorText ?? 'failed'}: ${w.url}`
+            )
             .join('; ');
-        step('scan', `Render unreliable — aborting (a stylesheet/script failed to load): ${warned}`);
+        step(
+            'scan',
+            `Render unreliable — aborting (a stylesheet/script failed to load): ${warned}`
+        );
         return {
             runId: req.runId,
             page: { uri: req.page.uri, host: req.page.host, languageId: req.page.languageId },
@@ -153,9 +159,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
         // and to carry the new baseline forward.
         if (res.status === 'fixed-to-working' && res.file && ctx.lastScan) {
             editedCodes.add(finding.code);
-            liveSignatures = new Set(
-                ctx.lastScan.findings.items.filter(isViolation).map(sig)
-            );
+            liveSignatures = new Set(ctx.lastScan.findings.items.filter(isViolation).map(sig));
             runningBaseline = countViolations(ctx.lastScan);
         }
     }

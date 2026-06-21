@@ -121,8 +121,9 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                 // The catch returns undefined for unreadable files; type it so the
                 // array is (string | undefined)[] rather than poisoning to any[].
                 const contents = await Promise.all(
-                    targets.map((ref): Promise<string | undefined> =>
-                        readCached(ref.path).catch((): undefined => undefined)
+                    targets.map(
+                        (ref): Promise<string | undefined> =>
+                            readCached(ref.path).catch((): undefined => undefined)
                     )
                 );
                 const hits: { path: string; lines: string[] }[] = [];
@@ -160,7 +161,12 @@ export function createResearchTools(deps: ResearchToolsDeps): Record<string, Too
                     }
                     deps.editedPaths.add(path);
                     deps.cache[path] = content;
-                    return { path, ok: true, fileSize: saved.fileSize, identifier: saved.identifier };
+                    return {
+                        path,
+                        ok: true,
+                        fileSize: saved.fileSize,
+                        identifier: saved.identifier
+                    };
                 } catch (e) {
                     return { path, ok: false, error: errMsg(e) };
                 }

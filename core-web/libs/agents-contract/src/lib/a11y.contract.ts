@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * The a11y-fix agent contract — the seam the proxy (S2) and Studio (S3) build
  * against, and the SINGLE SOURCE OF TRUTH shared by the Node agent
- * (apps/dotcms-agents) and the Angular Studio portlet. Schemas are zod (the agent
+ * (apps/ai-agents) and the Angular Studio portlet. Schemas are zod (the agent
  * validates requests against them); type-only consumers use the `z.infer` exports.
  *
  * LOCKED in S1. The request shape MUST NOT change when SSE streaming is added

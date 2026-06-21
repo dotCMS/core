@@ -45,7 +45,9 @@ export function parseColor(input: string): Rgb | null {
 /** Format Rgb back to #rrggbb. */
 export function toHex({ r, g, b }: Rgb): string {
     const h = (n: number) =>
-        Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+        Math.max(0, Math.min(255, Math.round(n)))
+            .toString(16)
+            .padStart(2, '0');
     return `#${h(r)}${h(g)}${h(b)}`;
 }
 
@@ -94,11 +96,7 @@ export interface ContrastFix {
  *
  * Which side to move: if `against` is light, darken `failing`; if dark, lighten.
  */
-export function nudgeToClear(
-    failing: Rgb,
-    against: Rgb,
-    targetRatio: number
-): ContrastFix | null {
+export function nudgeToClear(failing: Rgb, against: Rgb, targetRatio: number): ContrastFix | null {
     if (contrastRatio(failing, against) >= targetRatio) {
         return { newColor: toHex(failing), achievedRatio: contrastRatio(failing, against) };
     }
