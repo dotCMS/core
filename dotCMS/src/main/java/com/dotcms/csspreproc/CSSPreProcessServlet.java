@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.http.HttpStatus;
@@ -61,7 +62,13 @@ public class CSSPreProcessServlet extends HttpServlet {
         try {
             Logger.debug(this, "---- CSS Pre-Process Compiler ----");
             final Host currentSite = WebAPILocator.getHostWebAPI().getCurrentHost(req);
-            final boolean live = !WebAPILocator.getUserWebAPI().isLoggedToBackend(req);
+            // Derive `live` from the requested PageMode (not login state) so a backend user requesting
+            // ?mode=LIVE gets the live compiled CSS, not their unpublished working edit. The stylesheet is
+            // fetched by the browser as a SEPARATE request that carries no ?mode= of its own, so
+            // getWithReferer() also honors the mode declared on the page's Referer. Anonymous/non-backend
+            // users remain forced to LIVE, so public traffic is unaffected.
+            final PageMode mode = PageMode.getWithReferer(req);
+            final boolean live = mode.showLive;
             final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             final String originalURI = req.getRequestURI();
             
