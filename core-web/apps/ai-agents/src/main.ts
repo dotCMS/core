@@ -1,8 +1,26 @@
 import { serve } from '@hono/node-server';
+import { config as loadDotenv } from 'dotenv';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { createA11yRoutes } from './a11y/api/routes';
+
+// Dev: load the repo-root .env (DOTCMS_URL/DOTCMS_AUTH/OPENROUTER_KEY/…) so
+// `nx serve ai-agents` works without sourcing env by hand. The .env lives at the
+// monorepo root (core/.env), one level above the Nx workspace (core-web), which is
+// the cwd under `nx serve`. Real env vars already set always win (override:false).
+// In production these come from the deployment env, not a file — a missing .env
+// here is silently fine.
+for (const candidate of ['../.env', '.env']) {
+    const p = resolve(process.cwd(), candidate);
+    if (existsSync(p)) {
+        loadDotenv({ path: p });
+        break;
+    }
+}
 
 /**
  * ai-agents — host service for dotCMS AI agent capabilities.
