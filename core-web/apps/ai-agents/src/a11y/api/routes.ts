@@ -52,14 +52,15 @@ export function createA11yRoutes(deps: A11yRoutesDeps = {}): Hono {
             return c.json(p.error, p.status);
         }
         const { bearer, request } = p;
-        registry.start(bearer.userId, request.runId);
+        const signal = registry.start(bearer.userId, request.runId);
         try {
-            const report: FixReport = await runFix(
-                request,
-                makeRunDeps(bearer.token, request.dotcmsBaseUrl)
-            );
+            const report: FixReport = await runFix(request, {
+                ...makeRunDeps(bearer.token, request.dotcmsBaseUrl),
+                signal
+            });
             registry.finish(bearer.userId, request.runId, report);
-            return c.json(report, 200);
+            // Partial report when the user stopped mid-run; flag it so callers can tell.
+            return c.json({ ...report, aborted: signal.aborted }, 200);
         } catch (e) {
             registry.fail(bearer.userId, request.runId);
             const message = e instanceof Error ? e.message : 'run failed';
@@ -75,21 +76,24 @@ export function createA11yRoutes(deps: A11yRoutesDeps = {}): Hono {
             return c.json(p.error, p.status);
         }
         const { bearer, request } = p;
+        const signal = registry.start(bearer.userId, request.runId);
         return streamSSE(c, async (stream) => {
             const send = (event: string, data: unknown) =>
                 stream.writeSSE({ event, data: JSON.stringify(data) });
-            registry.start(bearer.userId, request.runId);
             try {
                 const runDeps = makeRunDeps(bearer.token, request.dotcmsBaseUrl);
                 const report = await runFix(request, {
                     ...runDeps,
+                    signal,
                     onStep: (phase, message) => {
                         // fire-and-forget; SSE writes are ordered by the stream
                         void send('step', { phase, message });
                     }
                 });
                 registry.finish(bearer.userId, request.runId, report);
-                await send('done', { report });
+                // If the user stopped, the report is partial — emit `aborted` (a
+                // terminal event distinct from `done`) carrying what got applied.
+                await send(signal.aborted ? 'aborted' : 'done', { report });
             } catch (e) {
                 registry.fail(bearer.userId, request.runId);
                 await send('error', {
@@ -98,6 +102,21 @@ export function createA11yRoutes(deps: A11yRoutesDeps = {}): Hono {
                 });
             }
         });
+    });
+
+    // Stop the caller's in-flight run (cooperative — runFix stops at the next safe
+    // checkpoint and the stream emits a terminal `aborted` event with the partial
+    // report; fixes already applied stay). 202 if a run was signalled, 404 if none.
+    app.post('/stop', async (c) => {
+        const bearer = parseBearer(c.req.header('Authorization'));
+        if (!bearer) {
+            return c.json({ error: 'Missing or malformed Authorization: Bearer token' }, 401);
+        }
+        const runId = registry.requestStop(bearer.userId);
+        if (!runId) {
+            return c.json({ error: 'No active run to stop' }, 404);
+        }
+        return c.json({ stopping: true, runId }, 202);
     });
 
     app.get('/active-run', (c) => {
