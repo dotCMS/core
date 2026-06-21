@@ -1,0 +1,8 @@
+{
+    "name": "@dotcms/agent-contracts",
+    "version": "0.0.1",
+    "type": "commonjs",
+    "dependencies": {
+        "zod": "4.1.9"
+    }
+}
