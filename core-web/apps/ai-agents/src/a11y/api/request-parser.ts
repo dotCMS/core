@@ -18,13 +18,14 @@ export async function parseFixRequest(
     header: string | undefined,
     rawBody: () => Promise<unknown>
 ): Promise<ParseResult> {
-    // Dev fallback: when no Authorization header arrives but A11Y_AGENT_DEV_TOKEN
-    // is set, treat that env token as the bearer. This lets the Angular dev server
-    // call the agent same-origin without the browser holding a token (the WDS dev
-    // proxy can't reliably inject headers on streamed requests). Gated on the env
-    // var, so production — which has no such var and always sees the proxy-injected
+    // Dev fallback: when no Authorization header arrives, use a token from the env
+    // as the bearer — A11Y_AGENT_DEV_TOKEN, or DOTCMS_AUTH from the repo .env (so
+    // `nx serve` works with the existing .env, no extra var). This lets the Angular
+    // dev server call the agent same-origin without the browser holding a token (the
+    // WDS dev proxy can't reliably inject headers on streamed requests). Gated on the
+    // env var, so production — which has neither and always sees the proxy-injected
     // JWT — keeps requiring a real bearer.
-    const devToken = process.env.A11Y_AGENT_DEV_TOKEN;
+    const devToken = process.env.A11Y_AGENT_DEV_TOKEN ?? process.env.DOTCMS_AUTH;
     const bearer = parseBearer(header) ?? (devToken ? parseBearer(`Bearer ${devToken}`) : null);
     if (!bearer) {
         return {
