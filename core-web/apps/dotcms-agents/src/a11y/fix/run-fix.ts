@@ -12,7 +12,8 @@ import {
 import { extractInlineSourceMap, resolveDeclarationValue } from './css/css-source-map';
 import { runResearch } from './research/research-loop';
 
-import { DotcmsClient, type ScanFinding, type ScanResult } from '../dotcms/dotcms-client';
+import { type ScanFinding, type ScanResult } from '../dotcms/dotcms-client';
+import { type DotcmsGateway } from '../dotcms/dotcms-gateway';
 import {
     errMsg,
     isFixableViolation,
@@ -60,7 +61,7 @@ export const DEFAULT_CAPS: RunFixCaps = {
 };
 
 export interface RunFixDeps {
-    client: DotcmsClient;
+    client: DotcmsGateway;
     model?: LanguageModel; // injected for tests / provider swap
     caps?: RunFixCaps;
     /** Hook for the future SSE layer; no-op by default (plan §8.4). */
