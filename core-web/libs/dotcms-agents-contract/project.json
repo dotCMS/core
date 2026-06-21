@@ -1,0 +1,13 @@
+{
+    "name": "dotcms-agents-contract",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/dotcms-agents-contract/src",
+    "projectType": "library",
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        }
+    },
+    "tags": ["skip:test"]
+}
