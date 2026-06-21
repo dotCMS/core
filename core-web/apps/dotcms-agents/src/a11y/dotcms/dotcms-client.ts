@@ -2,6 +2,8 @@ import { createApiAdapter, createExecutor } from '@dotcms/agentic-tools';
 
 import { withAllowlist } from './allowlist';
 
+import type { DotcmsGateway } from './dotcms-gateway';
+
 /**
  * Typed wrappers over the four dotCMS calls the a11y loop makes — each runs as
  * an `api.request(...)` inside the agentic-tools sandbox, through the path-
@@ -231,7 +233,7 @@ export interface DotcmsClientConfig {
  * Runs a single `api.request(...)` through the guarded sandbox and returns its
  * value, throwing on sandbox failure so callers see a real error.
  */
-export class DotcmsClient {
+export class DotcmsClient implements DotcmsGateway {
     private readonly executor: ReturnType<typeof createExecutor>;
     private readonly timeoutMs: number;
 

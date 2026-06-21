@@ -10,7 +10,8 @@ import {
     shortName
 } from '../../shared/agent-utils';
 
-import type { DotcmsClient, RenderSources } from '../../dotcms/dotcms-client';
+import type { RenderSources } from '../../dotcms/dotcms-client';
+import type { DotcmsGateway } from '../../dotcms/dotcms-gateway';
 
 /**
  * Typed tools for the agentic research pass (PASS 2). The model uses these to
@@ -30,7 +31,7 @@ const MAX_RESCAN_ITEMS = 40;
 const MAX_GREP_LINES = 10;
 
 export interface ResearchToolsDeps {
-    client: DotcmsClient;
+    client: DotcmsGateway;
     page: { uri: string; hostId: string };
     /** The PREVIEW_MODE scan URL (working content, no editor chrome) for rescan. */
     previewUrl: string;
