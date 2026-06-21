@@ -28,6 +28,8 @@ export interface RunResearchInput {
     deps: ResearchToolsDeps;
     model?: LanguageModel;
     maxSteps?: number;
+    /** Cancels the in-flight model call when the user hits Stop (passed to generateText). */
+    signal?: AbortSignal;
 }
 
 /** Format the unresolved violations compactly for the prompt. */
@@ -59,7 +61,10 @@ export async function runResearch(input: RunResearchInput): Promise<ResearchResu
         tools,
         stopWhen: stepCountIs(maxSteps),
         system: RESEARCH_SYSTEM,
-        prompt
+        prompt,
+        // Stop endpoint: abort the in-flight model call so research is cancellable
+        // mid-loop, not just at PASS-1 checkpoints.
+        abortSignal: input.signal
     });
 
     return {

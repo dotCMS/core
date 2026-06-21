@@ -32,4 +32,10 @@ export interface RunFixDeps {
     research?: boolean;
     /** maxSteps for the PASS 2 research loop (default 40). */
     researchMaxSteps?: number;
+    /**
+     * Cooperative cancellation (Stop endpoint). When aborted, runFix stops at the
+     * next SAFE checkpoint (between violations, before PASS 2) and returns a partial
+     * report — fixes already saved to working stay applied. Never aborts mid-edit.
+     */
+    signal?: AbortSignal;
 }

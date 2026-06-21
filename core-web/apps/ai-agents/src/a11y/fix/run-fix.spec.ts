@@ -186,6 +186,24 @@ describe('runFix orchestration', () => {
         expect(client.saveWorking).not.toHaveBeenCalled();
     });
 
+    it('stops at the violation checkpoint when the signal is aborted (partial run)', async () => {
+        // A pre-aborted signal: the per-violation loop should break before processing
+        // any violation, and PASS 2 research must be skipped (locate never called).
+        const client = makeClient({
+            scans: [makeScan(1, [contrastFinding()]), makeScan(1), makeScan(1)]
+        });
+        const controller = new AbortController();
+        controller.abort();
+        const report = await runFix(makeRequest(), { client, signal: controller.signal });
+        // The contrast violation was never processed → no per-fix result, no save.
+        expect(report.results.find((r) => r.ruleId === 'color-contrast')).toBeUndefined();
+        expect(client.saveWorking).not.toHaveBeenCalled();
+        // PASS 2 was skipped despite research being enabled (no locate call).
+        expect(client.locate).not.toHaveBeenCalled();
+        // Still returns a valid report.
+        expect(report.publishRequired).toBe(true);
+    });
+
     it('does NOT abort for non-render-affecting 404s (image/xhr/favicon)', async () => {
         // renderReliable:false but only an image + xhr failed — these don't affect
         // contrast/layout, so the run should proceed.

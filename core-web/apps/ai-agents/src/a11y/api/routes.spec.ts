@@ -206,4 +206,65 @@ describe('ActiveRunRegistry (plan §8.7)', () => {
         r.start('u1', 'run1');
         expect(r.get('u2')).toBeNull();
     });
+
+    it('start returns a live (non-aborted) signal; signalFor matches by runId', () => {
+        const r = new ActiveRunRegistry();
+        const signal = r.start('u1', 'run1');
+        expect(signal.aborted).toBe(false);
+        expect(r.signalFor('u1', 'run1')).toBe(signal);
+        expect(r.signalFor('u1', 'other')).toBeUndefined();
+    });
+
+    it('requestStop aborts the current run signal and returns its runId', () => {
+        const r = new ActiveRunRegistry();
+        const signal = r.start('u1', 'run1');
+        expect(r.requestStop('u1')).toBe('run1');
+        expect(signal.aborted).toBe(true);
+    });
+
+    it('requestStop returns null when there is no running run', () => {
+        const r = new ActiveRunRegistry();
+        expect(r.requestStop('u1')).toBeNull(); // no run
+        r.start('u1', 'run1');
+        r.finish('u1', 'run1', fakeReport);
+        expect(r.requestStop('u1')).toBeNull(); // already done
+    });
+
+    it('re-trigger aborts the prior run signal (no two runs editing at once)', () => {
+        const r = new ActiveRunRegistry();
+        const first = r.start('u1', 'run1');
+        const second = r.start('u1', 'run2');
+        expect(first.aborted).toBe(true);
+        expect(second.aborted).toBe(false);
+    });
+});
+
+describe('POST /a11y/stop', () => {
+    it('401s without a token', async () => {
+        const app = createA11yRoutes({ registry: new ActiveRunRegistry() });
+        const res = await app.request('/stop', { method: 'POST' });
+        expect(res.status).toBe(401);
+    });
+
+    it('404s when the user has no active run', async () => {
+        const app = createA11yRoutes({ registry: new ActiveRunRegistry() });
+        const res = await app.request('/stop', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${TOKEN}` }
+        });
+        expect(res.status).toBe(404);
+    });
+
+    it('202s and aborts the run signal when one is in flight', async () => {
+        const registry = new ActiveRunRegistry();
+        const signal = registry.start('user-42', 'r_http');
+        const app = createA11yRoutes({ registry });
+        const res = await app.request('/stop', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${TOKEN}` }
+        });
+        expect(res.status).toBe(202);
+        expect(await res.json()).toMatchObject({ stopping: true, runId: 'r_http' });
+        expect(signal.aborted).toBe(true);
+    });
 });

@@ -33,9 +33,10 @@ import type { ScanFinding } from '../dotcms/dotcms-client';
 export { DEFAULT_CAPS, type RunFixCaps, type RunFixDeps } from './types';
 
 export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixReport> {
-    const { client } = deps;
+    const { client, signal } = deps;
     const caps = deps.caps ?? DEFAULT_CAPS;
     const step = deps.onStep ?? noop;
+    const aborted = () => signal?.aborted ?? false;
     const { live, preview } = scanUrls(req);
 
     // 1. SCAN live (human-facing "before") + PREVIEW_MODE baseline (working content,
@@ -118,6 +119,15 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     const editedCodes = new Set<string>();
 
     for (const finding of violations) {
+        // SAFE checkpoint: stop processing further violations if the user hit Stop.
+        // Between-violations only — a fix (save → rescan → keep/revert) is atomic, so
+        // the working version is always in a consistent state here. Fixes already
+        // applied stay; the report below is partial.
+        if (aborted()) {
+            step('fix', 'Stopped by user — keeping fixes applied so far');
+            break;
+        }
+
         // No longer present in the latest re-scan. Only credit it as fixed if we
         // edited a source for this SAME rule code; otherwise it vanished for
         // reasons we can't claim (scan variance) → report honestly.
@@ -168,17 +178,31 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
     // read/grep/edit/rescan tools and let it discover sources we didn't pre-locate
     // (container VTL colors, markup, structure) — the way the MCP agent did. Safe:
     // typed tools only (no publish/delete), all through the allowlisted sandbox.
-    if (deps.research !== false) {
+    // Skipped entirely if the user stopped during PASS 1 (research is the slow part).
+    if (deps.research !== false && !aborted()) {
         // What PASS 1 already touched — so PASS 2's file edits aren't double-reported.
         const pass1Files = new Set(results.filter((r) => r.file).map((r) => r.file));
         const unresolved = violations.filter((v) => liveSignatures.has(sig(v)));
         if (unresolved.length > 0) {
             step('fix', `Agentic research on ${unresolved.length} remaining violation(s)`);
+            // Record a file the research pass saved as a fixed result (confirmed by
+            // the final re-scan below — we don't claim per-violation here).
+            const recordEdit = (summary: string) => (p: string) => {
+                if (!pass1Files.has(p)) {
+                    results.push({
+                        ruleId: 'agentic-research',
+                        status: 'fixed-to-working',
+                        file: p,
+                        reason: summary.slice(0, 300)
+                    });
+                }
+            };
             try {
                 const research = await runResearch({
                     violations: unresolved,
                     model: deps.model,
                     maxSteps: deps.researchMaxSteps,
+                    signal, // Stop cancels the in-flight model call mid-research.
                     deps: {
                         client,
                         page: { uri: req.page.uri, hostId: req.page.hostId },
@@ -188,20 +212,17 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
                         onStep: step
                     }
                 });
-                // Record each file the research pass edited (confirmed by the final
-                // re-scan below — we don't claim per-violation here).
-                for (const p of research.editedPaths) {
-                    if (!pass1Files.has(p)) {
-                        results.push({
-                            ruleId: 'agentic-research',
-                            status: 'fixed-to-working',
-                            file: p,
-                            reason: research.summary.slice(0, 300)
-                        });
-                    }
-                }
+                research.editedPaths.forEach(recordEdit(research.summary));
             } catch (e) {
-                step('fix', `Agentic research failed: ${errMsg(e)}`);
+                // On Stop, generateText throws AbortError — that's expected, not a
+                // failure. Either way, keep crediting files the model already saved
+                // (editedPaths is mutated by the save tool before any abort).
+                if (aborted()) {
+                    step('fix', 'Stopped by user — keeping research fixes applied so far');
+                    [...editedPaths].forEach(recordEdit('Saved before the run was stopped.'));
+                } else {
+                    step('fix', `Agentic research failed: ${errMsg(e)}`);
+                }
             }
         }
     }

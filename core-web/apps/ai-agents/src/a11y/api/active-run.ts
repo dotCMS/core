@@ -15,21 +15,51 @@ interface Slot {
     runId: string;
     status: ActiveRun['status'];
     report?: FixReport;
+    /** Aborts the in-flight runFix when the user calls Stop. */
+    controller: AbortController;
 }
 
 export class ActiveRunRegistry {
     private readonly slots = new Map<string, Slot>();
 
-    /** Mark a run as started for this user (replaces any prior slot). */
-    start(userId: string, runId: string): void {
-        this.slots.set(userId, { runId, status: 'running' });
+    /**
+     * Mark a run as started for this user (replaces any prior slot). Any prior
+     * in-flight run for the same user is aborted first, so a re-trigger doesn't
+     * leave two runs editing the same working files (Codex review §5).
+     */
+    start(userId: string, runId: string): AbortSignal {
+        this.slots.get(userId)?.controller.abort();
+        const controller = new AbortController();
+        this.slots.set(userId, { runId, status: 'running', controller });
+        return controller.signal;
+    }
+
+    /** The abort signal for a user's current run, or undefined if it's not this run. */
+    signalFor(userId: string, runId: string): AbortSignal | undefined {
+        const slot = this.slots.get(userId);
+        return slot?.runId === runId ? slot.controller.signal : undefined;
+    }
+
+    /**
+     * Request the user's in-flight run to stop (cooperative — runFix checks the
+     * signal at safe checkpoints and returns a partial report). Returns the runId
+     * that was signalled, or null if the user has no running run.
+     */
+    requestStop(userId: string): string | null {
+        const slot = this.slots.get(userId);
+        if (!slot || slot.status !== 'running') {
+            return null;
+        }
+        slot.controller.abort();
+        return slot.runId;
     }
 
     /** Record the finished report (only if this run still owns the slot). */
     finish(userId: string, runId: string, report: FixReport): void {
         const current = this.slots.get(userId);
         if (current?.runId === runId) {
-            this.slots.set(userId, { runId, status: 'done', report });
+            current.status = 'done';
+            current.report = report;
         }
     }
 
@@ -37,7 +67,7 @@ export class ActiveRunRegistry {
     fail(userId: string, runId: string): void {
         const current = this.slots.get(userId);
         if (current?.runId === runId) {
-            this.slots.set(userId, { runId, status: 'error' });
+            current.status = 'error';
         }
     }
 
