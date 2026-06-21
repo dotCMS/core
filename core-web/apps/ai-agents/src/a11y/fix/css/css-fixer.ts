@@ -11,12 +11,7 @@ import {
 import { extractInlineSourceMap, resolveDeclarationValue } from './css-source-map';
 
 import { CSS_RULE_CODES, countViolations } from '../../domain/policies';
-import {
-    errMsg,
-    noop,
-    saveMime,
-    shortName
-} from '../../shared/agent-utils';
+import { errMsg, noop, saveMime, shortName } from '../../shared/agent-utils';
 import { type RunFixCaps, type RunFixDeps } from '../types';
 
 import type { FixRequest, FixResult } from '../../domain/contract';
@@ -106,7 +101,11 @@ export async function processViolation(ctx: ProcessCtx): Promise<FixResult> {
     }
     // Non-contrast → defer to PASS 2 (agentic, tool-calling). Marked reported so
     // it joins the unresolved set the research loop works on.
-    return { ruleId: finding.code, status: 'reported', reason: 'Deferred to agentic research pass.' };
+    return {
+        ruleId: finding.code,
+        status: 'reported',
+        reason: 'Deferred to agentic research pass.'
+    };
 }
 
 /**
@@ -121,7 +120,10 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     const base: FixResult = { ruleId: finding.code, status: 'reported' };
 
     if (stylesheets.length === 0) {
-        return { ...base, reason: 'No same-origin stylesheet found on the page to attribute against.' };
+        return {
+            ...base,
+            reason: 'No same-origin stylesheet found on the page to attribute against.'
+        };
     }
 
     // axe's data is the SOURCE OF TRUTH for which colors are in play.
@@ -129,7 +131,10 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
     const fg = data?.fgColor ? parseColor(data.fgColor) : null;
     const bg = data?.bgColor ? parseColor(data.bgColor) : null;
     if (!data || (!fg && !bg)) {
-        return { ...base, reason: 'Scanner did not provide fg/bg color data for this contrast violation; reported.' };
+        return {
+            ...base,
+            reason: 'Scanner did not provide fg/bg color data for this contrast violation; reported.'
+        };
     }
 
     // Gather candidate rules that match the element, then pick the (rule, decl)
@@ -160,7 +165,10 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         }
     }
     if (!matches.length || !matchedSheet) {
-        return { ...base, reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).' };
+        return {
+            ...base,
+            reason: 'Could not attribute the contrast failure to a CSS rule (no sound match).'
+        };
     }
 
     // Candidate edits: the decl whose value == fgColor (nudge it against bg) and
@@ -253,7 +261,12 @@ async function processCssViolation(ctx: ProcessCtx): Promise<FixResult> {
         );
         const edited = replaceFirst(original, literal, fix.newColor);
         if (Buffer.byteLength(edited, 'utf-8') > caps.maxFileBytes) {
-            return { ...base, status: 'failed', file: sourcePath, reason: 'Edited file exceeds byte cap' };
+            return {
+                ...base,
+                status: 'failed',
+                file: sourcePath,
+                reason: 'Edited file exceeds byte cap'
+            };
         }
         const diff = `- ${literal}\n+ ${fix.newColor}  (${where}; ${data.contrastRatio ?? '?'}:1 → ${fix.achievedRatio.toFixed(2)}:1, target ${targetRatio}:1)`;
         return saveAndRescan(ctx, {
@@ -294,7 +307,12 @@ interface EditTarget {
 async function locateEditTarget(
     ctx: ProcessCtx,
     args: {
-        cand: { decl: { prop: string; value: string }; resolvedValue: string; varName: string | null; rule: CssRule };
+        cand: {
+            decl: { prop: string; value: string };
+            resolvedValue: string;
+            varName: string | null;
+            rule: CssRule;
+        };
         map: ParsedStylesheet['map'];
         sheet: ParsedStylesheet;
         stylesheetUrl: string;
@@ -315,10 +333,16 @@ async function locateEditTarget(
         const defNode = findVarDefinition(sheet.css, cand.varName);
         // Map the var definition's position to source when a sourcemap exists.
         if (map && defNode) {
-            const resolved = await resolveDeclarationValue(map, defNode.line, defNode.column, cand.varName);
+            const resolved = await resolveDeclarationValue(
+                map,
+                defNode.line,
+                defNode.column,
+                cand.varName
+            );
             if (resolved && resolved.content !== undefined) {
                 const sourcePath = resolveSourcePath(resolved.source, stylesheetUrl, contentHost);
-                const sourceLiteral = colorTokenAt(resolved.content, resolved.line, resolved.column) ?? literal;
+                const sourceLiteral =
+                    colorTokenAt(resolved.content, resolved.line, resolved.column) ?? literal;
                 const original = await readSource(ctx, sourcePath, resolved.content);
                 return { sourcePath, original, literal: sourceLiteral };
             }
@@ -332,7 +356,12 @@ async function locateEditTarget(
     const declNode = findColorDeclNode(cand.rule.node, cand.decl.prop, cand.decl.value);
     const declPos = declNode?.source?.start;
     if (map && declNode && declPos) {
-        const resolved = await resolveDeclarationValue(map, declPos.line, declPos.column, declNode.prop);
+        const resolved = await resolveDeclarationValue(
+            map,
+            declPos.line,
+            declPos.column,
+            declNode.prop
+        );
         if (resolved && resolved.content !== undefined) {
             const sourcePath = resolveSourcePath(resolved.source, stylesheetUrl, contentHost);
             const sourceLiteral = colorTokenAt(resolved.content, resolved.line, resolved.column);
@@ -402,10 +431,22 @@ async function saveAndRescan(ctx: ProcessCtx, spec: SaveSpec): Promise<FixResult
     try {
         saved = await client.saveWorking(path, edited, saveMime(path));
     } catch (e) {
-        return { ...base, status: 'failed', file: path, identifier: spec.identifier, reason: `save failed: ${errMsg(e)}` };
+        return {
+            ...base,
+            status: 'failed',
+            file: path,
+            identifier: spec.identifier,
+            reason: `save failed: ${errMsg(e)}`
+        };
     }
     if (!saved || saved.fileSize <= 0) {
-        return { ...base, status: 'failed', file: path, identifier: saved?.identifier ?? spec.identifier, reason: 'save returned 0 bytes; not applied' };
+        return {
+            ...base,
+            status: 'failed',
+            file: path,
+            identifier: saved?.identifier ?? spec.identifier,
+            reason: 'save returned 0 bytes; not applied'
+        };
     }
     editedPaths.add(path);
     currentContent[path] = edited;
@@ -474,5 +515,7 @@ function resolveSourcePath(source: string, stylesheetUrl: string, contentHost: s
 /** Replace only the first occurrence of `needle` (literal) in `haystack`. */
 function replaceFirst(haystack: string, needle: string, replacement: string): string {
     const i = haystack.indexOf(needle);
-    return i === -1 ? haystack : haystack.slice(0, i) + replacement + haystack.slice(i + needle.length);
+    return i === -1
+        ? haystack
+        : haystack.slice(0, i) + replacement + haystack.slice(i + needle.length);
 }

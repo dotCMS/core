@@ -134,7 +134,12 @@ export interface RenderSources {
         // (vtl, css, scss, sass, dotsass, js, ...) — the API does not whitelist types.
         files: SourceRef[];
     };
-    widgets: Array<{ contentTypeVar?: string; identifier?: string; path?: string; source?: string }>;
+    widgets: Array<{
+        contentTypeVar?: string;
+        identifier?: string;
+        path?: string;
+        source?: string;
+    }>;
 }
 
 export interface SavedAsset {

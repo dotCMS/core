@@ -19,19 +19,19 @@ const target =
 console.log(`[proxy-dev] proxying dotCMS backend → ${target}`);
 
 /**
- * dotcms-agents host (the a11y-fix agent). In dev the Studio calls it same-origin
- * via `/dotcms-agents/*`; this proxy strips the prefix and forwards to the agent.
+ * ai-agents host (the a11y-fix agent). In dev the Studio calls it same-origin
+ * via `/ai-agents/*`; this proxy strips the prefix and forwards to the agent.
  * The browser holds no dotCMS token — in dev the AGENT itself supplies the
  * credential from its own A11Y_AGENT_DEV_TOKEN env (see routes.ts), mirroring the
  * production trust boundary where the dotCMS proxy injects the JWT (plan §8.2).
  */
 const agentTarget = process.env.A11Y_AGENT_TARGET || 'http://localhost:3001';
-console.log(`[proxy-dev] proxying /dotcms-agents → ${agentTarget}`);
+console.log(`[proxy-dev] proxying /ai-agents → ${agentTarget}`);
 
 export default [
-    // 0. dotcms-agents (a11y-fix agent) — SSE-capable.
+    // 0. ai-agents (a11y-fix agent) — SSE-capable.
     {
-        context: ['/dotcms-agents'],
+        context: ['/ai-agents'],
         target: agentTarget,
         secure: false,
         changeOrigin: true,
@@ -41,7 +41,7 @@ export default [
         timeout: 300000,
         proxyTimeout: 300000,
         followRedirects: false,
-        pathRewrite: { '^/dotcms-agents': '' }
+        pathRewrite: { '^/ai-agents': '' }
     },
     // 1. Dedicated WebSocket Proxy (Must be first)
     {

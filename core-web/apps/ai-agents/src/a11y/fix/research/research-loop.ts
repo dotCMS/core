@@ -35,7 +35,9 @@ function violationsBlock(violations: ScanFinding[]): string {
     return violations
         .map((v, i) => {
             const d = v.data;
-            const colors = d?.fgColor ? ` [fg=${d.fgColor} bg=${d.bgColor} ratio=${d.contrastRatio} need ${d.expectedContrastRatio}]` : '';
+            const colors = d?.fgColor
+                ? ` [fg=${d.fgColor} bg=${d.bgColor} ratio=${d.contrastRatio} need ${d.expectedContrastRatio}]`
+                : '';
             return `${i + 1}. ${v.code}${colors}\n   selector: ${v.selector}\n   html: ${v.context.slice(0, 200)}`;
         })
         .join('\n\n');

@@ -92,7 +92,10 @@ export function createA11yRoutes(deps: A11yRoutesDeps = {}): Hono {
                 await send('done', { report });
             } catch (e) {
                 registry.fail(bearer.userId, request.runId);
-                await send('error', { message: e instanceof Error ? e.message : 'run failed', runId: request.runId });
+                await send('error', {
+                    message: e instanceof Error ? e.message : 'run failed',
+                    runId: request.runId
+                });
             }
         });
     });

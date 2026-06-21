@@ -57,7 +57,12 @@ function cleanRunDeps(): A11yRoutesDeps['makeRunDeps'] {
                     ok: true,
                     totalIssues: 0,
                     counts: { errors: 0, warnings: 0, notices: 0 },
-                    findings: { total: 0, violations: 0, needsReview: 0, items: [] as ScanFinding[] }
+                    findings: {
+                        total: 0,
+                        violations: 0,
+                        needsReview: 0,
+                        items: [] as ScanFinding[]
+                    }
                 }),
                 locate: async () => ({
                     containers: {},

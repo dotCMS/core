@@ -10,7 +10,7 @@ import {
 } from '../models/accessibility-studio.models';
 
 /**
- * Talks to the dotcms-agents a11y-fix agent.
+ * Talks to the ai-agents a11y-fix agent.
  *
  * The agent runs the fix loop and streams its progress over Server-Sent Events:
  *   event: step  → { phase, message }   (live, many)
@@ -20,12 +20,12 @@ import {
  * Angular's HttpClient can't read a streaming response incrementally, so this
  * uses the fetch() ReadableStream and hand-parses SSE frames, surfacing each
  * event through an Observable. In dev the request is same-origin via the dev
- * proxy (`/dotcms-agents/*` → :3001), which also injects the bearer token; in
+ * proxy (`/ai-agents/*` → :3001), which also injects the bearer token; in
  * production the dotCMS proxy does the same. The browser never holds a token.
  */
 
 /** Same-origin base; the dev/prod proxy strips this and forwards to the agent. */
-const AGENT_BASE = '/dotcms-agents/a11y';
+const AGENT_BASE = '/ai-agents/a11y';
 
 const STEP_PHASES: ReadonlyArray<StudioStepPhase> = ['scan', 'locate', 'read', 'fix', 'rescan'];
 

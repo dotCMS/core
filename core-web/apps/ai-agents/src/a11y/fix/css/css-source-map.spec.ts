@@ -38,10 +38,7 @@ function buildFixture(opts: { withContent?: boolean } = {}): SourceMapJson {
 
     if (opts.withContent) {
         gen.setSourceContent('_mixins.scss', '@mixin btn {\n  color: red;\n}\n');
-        gen.setSourceContent(
-            '_variables.scss',
-            '// tokens\n\n$primary: #e76300;\n'
-        );
+        gen.setSourceContent('_variables.scss', '// tokens\n\n$primary: #e76300;\n');
     }
 
     return JSON.parse(gen.toString()) as SourceMapJson;

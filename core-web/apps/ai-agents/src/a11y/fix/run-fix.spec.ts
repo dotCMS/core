@@ -97,7 +97,11 @@ function makeClient(opts: { scans: ScanResult[]; save?: jest.Mock }) {
         read: jest.fn(async () => ''),
         fetchStylesheet: jest.fn(async () => ''),
         saveWorking: save
-    } as unknown as RunFixDeps['client'] & { saveWorking: jest.Mock; scan: jest.Mock; locate: jest.Mock };
+    } as unknown as RunFixDeps['client'] & {
+        saveWorking: jest.Mock;
+        scan: jest.Mock;
+        locate: jest.Mock;
+    };
 }
 
 describe('runFix orchestration', () => {

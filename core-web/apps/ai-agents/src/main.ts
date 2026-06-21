@@ -5,7 +5,7 @@ import { cors } from 'hono/cors';
 import { createA11yRoutes } from './a11y/api/routes';
 
 /**
- * dotcms-agents — host service for dotCMS agent capabilities.
+ * ai-agents — host service for dotCMS AI agent capabilities.
  *
  * First capability: the accessibility-fix agent (S1). Routes are grouped by
  * capability (e.g. `/a11y/...`) so additional agents can be added later without
@@ -27,7 +27,7 @@ app.use(
     })
 );
 
-app.get('/health', (c) => c.json({ ok: true, service: 'dotcms-agents' }));
+app.get('/health', (c) => c.json({ ok: true, service: 'ai-agents' }));
 
 // The a11y-fix agent: POST /a11y/fix, GET /a11y/active-run.
 app.route('/a11y', createA11yRoutes());
@@ -36,7 +36,7 @@ const port = Number(process.env.PORT ?? 3001);
 
 serve({ fetch: app.fetch, port }, (info) => {
     // eslint-disable-next-line no-console
-    console.log(`dotcms-agents listening on http://localhost:${info.port}`);
+    console.log(`ai-agents listening on http://localhost:${info.port}`);
 });
 
 export { app };

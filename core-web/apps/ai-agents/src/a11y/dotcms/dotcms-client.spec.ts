@@ -40,7 +40,9 @@ describe('normalizeAxe', () => {
                         {
                             target: ['a.btn'],
                             html: '<a class="btn">Link</a>',
-                            any: [{ id: 'color-contrast', data: { fgColor: '#999', bgColor: '#fff' } }]
+                            any: [
+                                { id: 'color-contrast', data: { fgColor: '#999', bgColor: '#fff' } }
+                            ]
                         }
                     ]
                 }

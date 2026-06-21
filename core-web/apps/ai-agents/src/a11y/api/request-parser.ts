@@ -27,7 +27,11 @@ export async function parseFixRequest(
     const devToken = process.env.A11Y_AGENT_DEV_TOKEN;
     const bearer = parseBearer(header) ?? (devToken ? parseBearer(`Bearer ${devToken}`) : null);
     if (!bearer) {
-        return { ok: false, status: 401, error: { error: 'Missing or malformed Authorization: Bearer token' } };
+        return {
+            ok: false,
+            status: 401,
+            error: { error: 'Missing or malformed Authorization: Bearer token' }
+        };
     }
     let body: unknown;
     try {
@@ -37,7 +41,11 @@ export async function parseFixRequest(
     }
     const parsed = FixRequestSchema.safeParse(body);
     if (!parsed.success) {
-        return { ok: false, status: 422, error: { error: 'Invalid request', issues: parsed.error.issues } };
+        return {
+            ok: false,
+            status: 422,
+            error: { error: 'Invalid request', issues: parsed.error.issues }
+        };
     }
     return { ok: true, bearer, request: parsed.data };
 }

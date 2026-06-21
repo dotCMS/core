@@ -83,7 +83,11 @@ describe('a11y path allowlist (plan §3 stage B)', () => {
 
             const result = await guarded.methods
                 .get('request')!
-                .execute({ method: 'GET', path: '/api/v2/assets', query: { path: '//demo/x.vtl' } });
+                .execute({
+                    method: 'GET',
+                    path: '/api/v2/assets',
+                    query: { path: '//demo/x.vtl' }
+                });
 
             expect(result).toEqual({ ok: true });
             expect(inner).toHaveBeenCalledTimes(1);
