@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 
 import { ActiveRunRegistry } from './active-run';
-import { parseBearer, type BearerInfo } from './auth';
+import { parseBearer } from './auth';
+import { parseFixRequest } from './request-parser';
 
-import { type FixReport, type FixRequest, FixRequestSchema } from '../domain/contract';
+import { type FixReport } from '../domain/contract';
 import { DotcmsClient } from '../dotcms/dotcms-client';
 import { runFix, type RunFixDeps } from '../fix/run-fix';
 
@@ -37,39 +38,6 @@ function defaultMakeRunDeps(token: string, dotcmsBaseUrl: string): RunFixDeps {
         deps.research = false;
     }
     return deps;
-}
-
-/** Auth + validate the /fix request body; returns the bearer + parsed request or a 4xx error. */
-type ParseFailure = { ok: false; status: 401 | 400 | 422; error: object };
-type ParseSuccess = { ok: true; bearer: BearerInfo; request: FixRequest };
-type ParseResult = ParseSuccess | ParseFailure;
-
-async function parseFixRequest(
-    header: string | undefined,
-    rawBody: () => Promise<unknown>
-): Promise<ParseResult> {
-    // Dev fallback: when no Authorization header arrives but A11Y_AGENT_DEV_TOKEN
-    // is set, treat that env token as the bearer. This lets the Angular dev server
-    // call the agent same-origin without the browser holding a token (the WDS dev
-    // proxy can't reliably inject headers on streamed requests). Gated on the env
-    // var, so production — which has no such var and always sees the proxy-injected
-    // JWT — keeps requiring a real bearer.
-    const devToken = process.env.A11Y_AGENT_DEV_TOKEN;
-    const bearer = parseBearer(header) ?? (devToken ? parseBearer(`Bearer ${devToken}`) : null);
-    if (!bearer) {
-        return { ok: false, status: 401, error: { error: 'Missing or malformed Authorization: Bearer token' } };
-    }
-    let body: unknown;
-    try {
-        body = await rawBody();
-    } catch {
-        return { ok: false, status: 400, error: { error: 'Request body must be valid JSON' } };
-    }
-    const parsed = FixRequestSchema.safeParse(body);
-    if (!parsed.success) {
-        return { ok: false, status: 422, error: { error: 'Invalid request', issues: parsed.error.issues } };
-    }
-    return { ok: true, bearer, request: parsed.data };
 }
 
 export function createA11yRoutes(deps: A11yRoutesDeps = {}): Hono {
