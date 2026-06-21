@@ -5,6 +5,7 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "resolveJsonModule": true,
+        "noImplicitAny": true,
         "types": ["node"]
     },
     "include": ["src/**/*.ts"],

@@ -3,6 +3,7 @@ import { decodeSubject, extractBearer, parseBearer } from './auth';
 import { createA11yRoutes, type A11yRoutesDeps } from './routes';
 
 import type { FixReport, FixRequest } from '../domain/contract';
+import type { ScanFinding } from '../dotcms/dotcms-client';
 import type { RunFixDeps } from '../fix/run-fix';
 
 /** A JWT with sub="user-42" (header.payload.sig; unsigned — agent doesn't verify). */
@@ -56,13 +57,13 @@ function cleanRunDeps(): A11yRoutesDeps['makeRunDeps'] {
                     ok: true,
                     totalIssues: 0,
                     counts: { errors: 0, warnings: 0, notices: 0 },
-                    findings: { total: 0, violations: 0, needsReview: 0, items: [] }
+                    findings: { total: 0, violations: 0, needsReview: 0, items: [] as ScanFinding[] }
                 }),
                 locate: async () => ({
                     containers: {},
                     page: { identifier: 'a9f3', languageId: 1, uri: '/index' },
-                    theme: { folderPath: '', id: '', name: '', vtls: [] },
-                    widgets: []
+                    theme: { folderPath: '', id: '', name: '', vtls: [] as string[] },
+                    widgets: [] as string[]
                 }),
                 read: async () => '',
                 saveWorking: async () => ({

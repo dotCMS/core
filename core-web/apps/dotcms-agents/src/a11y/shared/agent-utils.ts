@@ -7,7 +7,7 @@ import type { RenderSources, ScanFinding, SourceRef } from '../dotcms/dotcms-cli
  * string utilities (they had drifted across the two modules).
  */
 
-const noop = () => undefined;
+const noop = (): void => undefined;
 export { noop };
 
 /** `e.message` when it's an Error, else the stringified value. */
