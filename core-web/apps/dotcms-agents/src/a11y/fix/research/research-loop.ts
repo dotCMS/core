@@ -1,9 +1,10 @@
 import { generateText, stepCountIs, type LanguageModel } from 'ai';
 
-import { defaultModel } from './model';
-import { createResearchTools, type ResearchToolsDeps } from './tools';
+import { createResearchTools, type ResearchToolsDeps } from './research-tools';
 
-import type { ScanFinding } from './dotcms-client';
+import { defaultModel } from '../model';
+
+import type { ScanFinding } from '../../dotcms/dotcms-client';
 
 /**
  * PASS 2 — agentic research loop. For violations the deterministic pass couldn't

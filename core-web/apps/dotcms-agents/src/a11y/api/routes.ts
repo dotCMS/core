@@ -3,9 +3,10 @@ import { streamSSE } from 'hono/streaming';
 
 import { ActiveRunRegistry } from './active-run';
 import { parseBearer, type BearerInfo } from './auth';
-import { type FixReport, type FixRequest, FixRequestSchema } from './contract';
-import { DotcmsClient } from './dotcms-client';
-import { runFix, type RunFixDeps } from './runFix';
+
+import { type FixReport, type FixRequest, FixRequestSchema } from '../domain/contract';
+import { DotcmsClient } from '../dotcms/dotcms-client';
+import { runFix, type RunFixDeps } from '../fix/run-fix';
 
 /**
  * The a11y agent HTTP surface (plan §8.2 / §8.7), mounted under /a11y:

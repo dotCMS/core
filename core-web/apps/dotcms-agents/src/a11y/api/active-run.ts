@@ -1,4 +1,4 @@
-import type { ActiveRun, FixReport } from './contract';
+import type { ActiveRun, FixReport } from '../domain/contract';
 
 /**
  * Per-user active-run slot (plan §8.7). One in-flight or finished run per user,

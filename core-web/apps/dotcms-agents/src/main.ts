@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
-import { createA11yRoutes } from './a11y/routes';
+import { createA11yRoutes } from './a11y/api/routes';
 
 /**
  * dotcms-agents — host service for dotCMS agent capabilities.
