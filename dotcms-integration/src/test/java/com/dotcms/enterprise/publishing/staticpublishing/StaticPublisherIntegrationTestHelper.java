@@ -794,6 +794,36 @@ public class StaticPublisherIntegrationTestHelper {
         return testCase;
     }
 
+    /**
+     * QA repro for issue #35365: a page whose only real version is in the DEFAULT language, with the
+     * bundle configured for an additional language. Push Publish renders the page in BOTH languages
+     * — the additional one via default-language fallback ({@code findByIdLanguageFallback}) — so the
+     * artifact exists on the static endpoint for both. Push Remove must therefore remove BOTH
+     * language artifacts, not only the default-language one. The page has no live version (working
+     * only, i.e. already unpublished), so removal is driven entirely by /live/ markers.
+     */
+    public static TestCase getWorkingPageInDefaultLangConfiguredForFallbackLang()
+            throws WebAssetException, DotDataException, DotSecurityException {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final PageWithDependencies workingPage = new PageWithDependenciesBuilder()
+                .language(defaultLanguage)
+                .build();
+
+        // A second language with NO real version of this page; Push Publish renders it via
+        // default-language fallback, so its artifact also exists on the endpoint.
+        final Language fallbackLanguage = new LanguageDataGen().nextPersisted();
+
+        final Map<String, String> assetsMap = getAssetsMap(workingPage.page);
+
+        final TestCase testCase = new TestCase(workingPage.page, new ArrayList<>(),
+                list(defaultLanguage, fallbackLanguage), assetsMap);
+        // Both the default-language and the fallback-language artifacts must be removed.
+        testCase.unPublishExpected = list(
+                new FileExpected(getPageFilePath(workingPage, defaultLanguage), null, true),
+                new FileExpected(getPageFilePath(workingPage, fallbackLanguage), null, true));
+        return testCase;
+    }
+
     private static Contentlet createNewVersionInDifferentLang(final Contentlet contentlet,
             final Language language, final Map<String, String> fieldValues) throws DotDataException, DotSecurityException {
 

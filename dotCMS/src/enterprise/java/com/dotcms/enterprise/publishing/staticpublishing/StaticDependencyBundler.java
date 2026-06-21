@@ -23,6 +23,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -31,8 +32,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
@@ -180,14 +183,19 @@ public class StaticDependencyBundler implements IBundler {
                     }
 
                     if (staticUnpublish && contentPath != null && h != null) {
-                        // A marker is only needed for languages where the content has NO live
-                        // version: live content is rendered by the content bundlers and removed by
-                        // the publisher's delete branch, so it needs no marker. The publish queue
-                        // does not track the asset language (PublisherAPIImpl hardcodes
-                        // language_id=1), so derive the languages from the content's own versions
-                        // rather than the bundle languages. See issue #35365.
+                        // Un-publish must remove every artifact Push Publish created. The publish
+                        // queue does not track the asset language (PublisherAPIImpl hardcodes
+                        // language_id=1), so derive the languages from the content itself:
+                        //  - HTML pages are published for every configured language they resolve in
+                        //    (directly or via default-language fallback), so mirror that — otherwise
+                        //    fallback-rendered artifacts in other languages are orphaned. See #35365.
+                        //  - Other content (file assets, URL-mapped) is published only where it has a
+                        //    real version, so the per-version languages are the right set.
+                        final Collection<String> markerLanguages = contentlet.isHTMLPage()
+                                ? pageMarkerLanguages(id, languages)
+                                : nonLiveLanguages(id.getId());
                         StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
-                                nonLiveLanguages(id.getId()), contentPath);
+                                markerLanguages, contentPath);
                     }
                 }
             }
@@ -219,6 +227,40 @@ public class StaticDependencyBundler implements IBundler {
             }
         }
         return nonLive;
+    }
+
+    /**
+     * For an HTML page, resolves the languages in which Push Publish would have created an artifact:
+     * each configured bundle language in which the page resolves directly or via default-language
+     * fallback. This mirrors {@link com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler},
+     * which renders a file per configured language via {@code findByIdLanguageFallback}. Un-publish
+     * must remove every such artifact — including the fallback-rendered ones for languages the page
+     * has no direct version in, which would otherwise be orphaned on the endpoint. See issue #35365.
+     *
+     * @param identifier      the page identifier
+     * @param configLanguages the bundle's configured languages (ids as strings)
+     * @return the language ids (as strings) in which the page is published
+     */
+    private Collection<String> pageMarkerLanguages(final Identifier identifier,
+            final Set<String> configLanguages) throws DotDataException, DotSecurityException {
+        final Set<String> langs = new LinkedHashSet<>();
+        for (final String languageId : configLanguages) {
+            try {
+                // live=false: at un-publish time the live version is already gone, but the (now
+                // working) version still resolves through the same fallback Push Publish used.
+                final IHTMLPage page = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
+                        identifier, Long.parseLong(languageId), false, systemUser, false);
+                if (page != null) {
+                    langs.add(languageId);
+                }
+            } catch (final DoesNotExistException e) {
+                // The page is not published in this language (no direct version and no fallback)
+                // -> Push Publish created nothing here, so there is nothing to remove.
+                Logger.debug(StaticDependencyBundler.class, () -> "Page " + identifier.getId()
+                        + " does not resolve in language " + languageId + "; no un-publish marker.");
+            }
+        }
+        return langs;
     }
 
     @Override
