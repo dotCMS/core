@@ -6,9 +6,11 @@ import {
     Component,
     computed,
     DestroyRef,
+    effect,
     ElementRef,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
@@ -21,14 +23,13 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { ImageRect } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { imageEditorLifecycleEvents, imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
+import { clamp } from '../../utils/dimensions.util';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
-import {
-    DotImageEditorCropOverlayComponent,
-    ImageRect
-} from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
+import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
 import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
 
@@ -126,15 +127,41 @@ export class DotImageEditorCanvasComponent {
     /** Display-only zoom percentage applied as a CSS transform to the stage. */
     protected readonly zoomLevel = signal<number>(ZOOM_DEFAULT);
 
-    /** CSS scale derived from the current zoom percentage. */
-    protected readonly stageScale = computed(() => `scale(${this.zoomLevel() / 100})`);
+    /** Pan offset (CSS px) applied to the stage so a zoomed-in image can be dragged. */
+    protected readonly panOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+    /** Whether a pan drag is in progress (suppresses the transform transition). */
+    protected readonly panning = signal(false);
+
+    /** Panning only applies when zoomed past fit with the move tool active. */
+    protected readonly canPan = computed(
+        () => this.zoomLevel() > ZOOM_DEFAULT && this.store.activeTool() === 'move'
+    );
+
+    /** Combined pan + zoom transform applied to the stage. */
+    protected readonly stageTransform = computed(() => {
+        const { x, y } = this.panOffset();
+
+        return `translate(${x}px, ${y}px) scale(${this.zoomLevel() / 100})`;
+    });
+
+    /**
+     * The visible image region (image-local CSS px) captured when the crop tool is
+     * activated while zoomed in. Seeds the crop overlay so switching to crop frames
+     * exactly what the user had in view. `undefined` when not zoomed (full image).
+     */
+    protected readonly capturedCropRect = signal<ImageRect | undefined>(undefined);
 
     /** Observes the displayed image so overlay rects track resize and layout. */
     #resizeObserver: ResizeObserver | null = null;
 
+    /** Tears down the active pan drag's window listeners, if any. */
+    #panCleanup: (() => void) | null = null;
+
     constructor() {
         this.#destroyRef.onDestroy(() => {
             this.#resizeObserver?.disconnect();
+            this.#detachPan();
             this.#revoke(this.#displayedObjectUrl);
             this.#revoke(this.#pending?.objectUrl ?? null);
         });
@@ -168,6 +195,29 @@ export class DotImageEditorCanvasComponent {
                 this.#pending = { filterUrl, objectUrl };
                 this.pendingSrc.set(objectUrl);
             });
+
+        // When the crop tool activates while zoomed in, capture the region the user
+        // had framed and reset to fit, so the crop box lands on exactly what was in
+        // view (crop-to-current-view). `untracked` keeps this firing only on the
+        // tool change, not on every zoom/pan tweak.
+        effect(() => {
+            const tool = this.store.activeTool();
+
+            untracked(() => {
+                if (tool !== 'crop') {
+                    this.capturedCropRect.set(undefined);
+
+                    return;
+                }
+
+                const visible = this.#computeVisibleImageRect();
+                this.capturedCropRect.set(visible);
+
+                if (visible) {
+                    this.fit();
+                }
+            });
+        });
     }
 
     /**
@@ -189,6 +239,13 @@ export class DotImageEditorCanvasComponent {
 
         img.decode()
             .then(() => {
+                // `decode()` is async: a newer edit may have superseded (and revoked)
+                // this pending blob via #discardPending while it ran. Bail if so —
+                // promoting a revoked object URL would render a broken frame.
+                if (this.#pending !== pending) {
+                    return;
+                }
+
                 if (!img.naturalWidth || !img.naturalHeight) {
                     this.#dispatch.previewErrored();
 
@@ -264,14 +321,63 @@ export class DotImageEditorCanvasComponent {
         this.zoomLevel.update((level) => Math.min(ZOOM_MAX, level + ZOOM_STEP));
     }
 
-    /** Decreases the zoom by one step, clamped to the minimum. */
+    /** Decreases the zoom by one step, clamped to the minimum; recenters at/below fit. */
     protected zoomOut(): void {
-        this.zoomLevel.update((level) => Math.max(ZOOM_MIN, level - ZOOM_STEP));
+        const level = Math.max(ZOOM_MIN, this.zoomLevel() - ZOOM_STEP);
+        this.zoomLevel.set(level);
+
+        if (level <= ZOOM_DEFAULT) {
+            this.panOffset.set({ x: 0, y: 0 });
+        }
     }
 
-    /** Resets the zoom so the image fits the stage. */
+    /** Resets the zoom so the image fits the stage and recenters the pan. */
     protected fit(): void {
         this.zoomLevel.set(ZOOM_DEFAULT);
+        this.panOffset.set({ x: 0, y: 0 });
+    }
+
+    /**
+     * Starts a pan drag when zoomed in with the move tool: pointer moves translate
+     * the stage by the drag delta. Listeners live on `window` so the drag continues
+     * outside the stage and are torn down on pointer-up (and on destroy).
+     */
+    protected onStagePointerDown(event: PointerEvent): void {
+        if (!this.canPan()) {
+            return;
+        }
+
+        event.preventDefault();
+        this.panning.set(true);
+
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const origin = this.panOffset();
+
+        const move = (moveEvent: PointerEvent) => {
+            this.panOffset.set({
+                x: origin.x + (moveEvent.clientX - startX),
+                y: origin.y + (moveEvent.clientY - startY)
+            });
+        };
+        const up = () => {
+            this.panning.set(false);
+            this.#detachPan();
+        };
+
+        this.#detachPan();
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        this.#panCleanup = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+        };
+    }
+
+    /** Removes any active pan drag's window listeners. */
+    #detachPan(): void {
+        this.#panCleanup?.();
+        this.#panCleanup = null;
     }
 
     /** Lazily attaches a single ResizeObserver to the displayed image element. */
@@ -298,14 +404,59 @@ export class DotImageEditorCanvasComponent {
             return;
         }
 
+        // The stage carries the zoom as a CSS `transform: scale(...)`, so
+        // getBoundingClientRect returns painted (scaled) values. Divide back out so
+        // the rect is in the stage's logical CSS px — the same space the overlays
+        // (children of the scaled stage) position themselves in. Without this the
+        // crop/focal markers drift at any zoom other than 100%.
+        const scale = this.zoomLevel() / 100;
         const stageBox = stage.getBoundingClientRect();
         const imgBox = img.getBoundingClientRect();
 
         this.imageRect.set({
-            x: imgBox.left - stageBox.left,
-            y: imgBox.top - stageBox.top,
-            width: imgBox.width,
-            height: imgBox.height
+            x: (imgBox.left - stageBox.left) / scale,
+            y: (imgBox.top - stageBox.top) / scale,
+            width: imgBox.width / scale,
+            height: imgBox.height / scale
         });
+    }
+
+    /**
+     * The portion of the image currently visible in the viewport, expressed in the
+     * image-local CSS px the crop overlay uses, or `undefined` when not zoomed in
+     * (the whole image is already visible). Inverts the stage's
+     * `translate(pan) scale(zoom)` transform about its center to find the logical
+     * window that maps onto the visible stage box, then clamps it to the image.
+     */
+    #computeVisibleImageRect(): ImageRect | undefined {
+        const rect = this.imageRect();
+        const stage = this.stage()?.nativeElement;
+        const scale = this.zoomLevel() / 100;
+
+        if (!rect || !stage || scale <= 1) {
+            return undefined;
+        }
+
+        const { x: panX, y: panY } = this.panOffset();
+        const stageWidth = stage.clientWidth;
+        const stageHeight = stage.clientHeight;
+        const centerX = stageWidth / 2;
+        const centerY = stageHeight / 2;
+
+        const visibleLeft = centerX - (centerX + panX) / scale;
+        const visibleRight = centerX + (stageWidth - centerX - panX) / scale;
+        const visibleTop = centerY - (centerY + panY) / scale;
+        const visibleBottom = centerY + (stageHeight - centerY - panY) / scale;
+
+        const left = clamp(visibleLeft - rect.x, 0, rect.width);
+        const right = clamp(visibleRight - rect.x, 0, rect.width);
+        const top = clamp(visibleTop - rect.y, 0, rect.height);
+        const bottom = clamp(visibleBottom - rect.y, 0, rect.height);
+
+        if (right - left < 1 || bottom - top < 1) {
+            return undefined;
+        }
+
+        return { x: left, y: top, width: right - left, height: bottom - top };
     }
 }

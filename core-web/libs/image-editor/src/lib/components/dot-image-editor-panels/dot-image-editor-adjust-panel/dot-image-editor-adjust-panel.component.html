@@ -17,6 +17,7 @@
             [ngModel]="store.adjust().brightness"
             [min]="-100"
             [max]="100"
+            [ariaLabel]="'edit.content.image-editor.adjust.brightness' | dm"
             data-testid="image-editor-brightness-slider"
             (onChange)="onBrightnessChange($event)"
             (onSlideEnd)="onBrightnessSlideEnd($event)" />
@@ -40,6 +41,7 @@
             [ngModel]="store.adjust().hue"
             [min]="-100"
             [max]="100"
+            [ariaLabel]="'edit.content.image-editor.adjust.hue' | dm"
             data-testid="image-editor-hue-slider"
             (onChange)="onHueChange($event)"
             (onSlideEnd)="onHueSlideEnd($event)" />
@@ -63,6 +65,7 @@
             [ngModel]="store.adjust().saturation"
             [min]="-100"
             [max]="100"
+            [ariaLabel]="'edit.content.image-editor.adjust.saturation' | dm"
             data-testid="image-editor-saturation-slider"
             (onChange)="onSaturationChange($event)"
             (onSlideEnd)="onSaturationSlideEnd($event)" />

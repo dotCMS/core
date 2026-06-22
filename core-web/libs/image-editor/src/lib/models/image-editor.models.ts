@@ -13,6 +13,14 @@ export type ActiveTool = 'move' | 'crop' | 'focal';
 /** Output compression strategy applied as the last filter in the chain. */
 export type CompressionMode = 'none' | 'auto' | 'jpeg' | 'webp';
 
+/** Axis-aligned rectangle of the rendered image inside the canvas, in CSS px. */
+export interface ImageRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 /** Loading lifecycle of the preview image. */
 export type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
 

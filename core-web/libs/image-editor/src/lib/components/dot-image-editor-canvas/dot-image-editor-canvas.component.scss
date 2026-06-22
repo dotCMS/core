@@ -128,6 +128,17 @@
     transition: transform 150ms ease-out;
 }
 
+// Grab cursor while a zoomed-in image can be panned; tighten to grabbing during the
+// drag and drop the transition so the pan tracks the pointer 1:1 (no easing lag).
+.canvas__stage--pannable {
+    cursor: grab;
+}
+
+.canvas__stage--panning {
+    cursor: grabbing;
+    transition: none;
+}
+
 // Both image layers occupy the same grid cell so they overlay pixel-for-pixel and stay
 // centered. min-* lets them shrink to fit (an in-flow flex <img> doesn't honor
 // max-height reliably, which clipped the new frame).

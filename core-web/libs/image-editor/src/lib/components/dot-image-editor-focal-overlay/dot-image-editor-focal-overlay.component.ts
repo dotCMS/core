@@ -6,7 +6,6 @@ import {
     computed,
     effect,
     ElementRef,
-    HostListener,
     inject,
     input,
     signal
@@ -15,17 +14,10 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { focalPointPop } from '../../animations/image-editor.animations';
+import { ImageRect } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
-
-/** Axis-aligned rectangle of the rendered image inside the canvas, in CSS px. */
-export interface ImageRect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
 
 /** A normalized point in the unit square, where {x:0.5, y:0.5} is the center. */
 interface NormalizedPoint {
@@ -51,7 +43,8 @@ const NUDGE_STEP_LARGE = 0.05;
     imports: [DotMessagePipe],
     templateUrl: './dot-image-editor-focal-overlay.component.html',
     styleUrl: './dot-image-editor-focal-overlay.component.scss',
-    animations: [focalPointPop()]
+    animations: [focalPointPop()],
+    host: { '(keydown.escape)': 'onEscape($event)' }
 })
 export class DotImageEditorFocalOverlayComponent {
     /** Bounds of the rendered image within the canvas, in CSS px. */
@@ -153,7 +146,6 @@ export class DotImageEditorFocalOverlayComponent {
      * Intercepts Escape so the host dialog does not close while placing the focal
      * point; the keypress instead leaves the focal tool (the point stays set).
      */
-    @HostListener('keydown.escape', ['$event'])
     protected onEscape(event: KeyboardEvent): void {
         if (!this.isActive()) {
             return;

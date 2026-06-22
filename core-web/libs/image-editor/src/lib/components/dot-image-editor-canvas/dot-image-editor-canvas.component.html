@@ -9,7 +9,13 @@
     <div class="canvas__viewport">
         <dot-image-editor-tool-rail class="canvas__tool-rail" />
 
-        <div #stage class="canvas__stage" [style.transform]="stageScale()">
+        <div
+            #stage
+            class="canvas__stage"
+            [class.canvas__stage--pannable]="canPan()"
+            [class.canvas__stage--panning]="panning()"
+            [style.transform]="stageTransform()"
+            (pointerdown)="onStagePointerDown($event)">
             @if (store.previewStatus() === 'idle' && !displayedUrl()) {
                 <p-skeleton
                     class="canvas__skeleton"
@@ -41,7 +47,9 @@
                     data-testid="image-editor-pending-img" />
             }
 
-            <dot-image-editor-crop-overlay [imageRect]="imageRect()" />
+            <dot-image-editor-crop-overlay
+                [imageRect]="imageRect()"
+                [initialRect]="capturedCropRect()" />
             <dot-image-editor-focal-overlay [imageRect]="imageRect()" />
         </div>
 
@@ -84,7 +92,10 @@
                     data-testid="image-editor-crop-apply-btn" />
             }
             @case ('focal') {
-                <div class="canvas__aspects" role="group">
+                <div
+                    class="canvas__aspects"
+                    role="group"
+                    [attr.aria-label]="'edit.content.image-editor.focal.aspects' | dm">
                     @for (preset of aspectPresets; track preset.key) {
                         <button
                             type="button"

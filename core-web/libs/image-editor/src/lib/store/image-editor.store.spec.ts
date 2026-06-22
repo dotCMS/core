@@ -316,6 +316,23 @@ describe('ImageEditorStore', () => {
             expect(store.historyIndex()).toBe(0);
         });
 
+        it('drops the redo tail when a same-category edit follows an undo', () => {
+            adjust.brightnessChanged(20); // entry 0 (adjust)
+            transform.rotateChanged(45); // entry 1 (rotate)
+            expect(store.history()).toHaveLength(2);
+
+            history.undoRequested(); // back to entry 0; entry 1 is now a redo step
+            expect(store.canRedo()).toBe(true);
+
+            // A new same-category edit coalesces in place AND invalidates the redo
+            // tail (it was built against the pre-undo value).
+            adjust.brightnessChanged(40);
+            expect(store.history()).toHaveLength(1);
+            expect(store.historyIndex()).toBe(0);
+            expect(store.canRedo()).toBe(false);
+            expect(store.adjust().brightness).toBe(40);
+        });
+
         it('should reset everything', () => {
             adjust.brightnessChanged(20);
             transform.rotateChanged(45);

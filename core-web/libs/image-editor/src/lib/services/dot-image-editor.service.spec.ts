@@ -1,9 +1,7 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import { DotImageEditorService } from './dot-image-editor.service';
 
@@ -13,21 +11,15 @@ URL.createObjectURL = jest.fn(() => 'blob:mock-object-url');
 describe('DotImageEditorService', () => {
     let spectator: SpectatorService<DotImageEditorService>;
     let httpMock: HttpTestingController;
-    let httpErrorManager: DotHttpErrorManagerService;
 
     const createService = createServiceFactory({
         service: DotImageEditorService,
-        providers: [
-            provideHttpClient(),
-            provideHttpClientTesting(),
-            mockProvider(DotHttpErrorManagerService)
-        ]
+        providers: [provideHttpClient(), provideHttpClientTesting()]
     });
 
     beforeEach(() => {
         spectator = createService();
         httpMock = spectator.inject(HttpTestingController);
-        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
     });
 
     afterEach(() => {
@@ -193,7 +185,7 @@ describe('DotImageEditorService', () => {
             req.flush(tempResponse);
         });
 
-        it('should handle the error and rethrow on failure', () => {
+        it('should rethrow on failure without surfacing it (the store handles the error)', () => {
             let errored = false;
             spectator.service.saveEditedImage('/dA/asset.png', 'fileField').subscribe({
                 error: () => (errored = true)
@@ -203,7 +195,8 @@ describe('DotImageEditorService', () => {
                 .expectOne((request) => request.url.startsWith('/dA/asset.png'))
                 .flush('boom', { status: 500, statusText: 'Server Error' });
 
-            expect(httpErrorManager.handle).toHaveBeenCalled();
+            // The service stays a pure rethrow pipe; the store's tapResponse is the
+            // single place that surfaces the error (avoids a double toast).
             expect(errored).toBe(true);
         });
     });

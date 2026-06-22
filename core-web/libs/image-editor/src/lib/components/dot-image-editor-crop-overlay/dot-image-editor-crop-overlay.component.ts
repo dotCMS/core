@@ -5,7 +5,6 @@ import {
     Component,
     computed,
     effect,
-    HostListener,
     inject,
     input,
     signal
@@ -14,17 +13,10 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { imageEditorOverlayEnterLeave } from '../../animations/image-editor.animations';
+import { ImageRect } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
-
-/** Axis-aligned rectangle of the rendered image inside the canvas, in CSS px. */
-export interface ImageRect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
 
 /** A crop rectangle expressed in CSS px, local to the rendered image origin. */
 interface LocalRect {
@@ -61,11 +53,19 @@ const HANDLES: readonly HandlePosition[] = ['tl', 't', 'tr', 'r', 'br', 'b', 'bl
     imports: [DotMessagePipe],
     templateUrl: './dot-image-editor-crop-overlay.component.html',
     styleUrl: './dot-image-editor-crop-overlay.component.scss',
-    animations: [imageEditorOverlayEnterLeave()]
+    animations: [imageEditorOverlayEnterLeave()],
+    host: { '(keydown.escape)': 'onEscape($event)' }
 })
 export class DotImageEditorCropOverlayComponent {
     /** Bounds of the rendered image within the canvas, in CSS px. */
     imageRect = input<ImageRect>();
+
+    /**
+     * Initial crop selection (image-local CSS px) to seed on activation — set when
+     * the user switches to crop while zoomed, so the box frames what was in view.
+     * When unset the selection defaults to the full image.
+     */
+    initialRect = input<ImageRect>();
 
     readonly #store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
@@ -93,13 +93,17 @@ export class DotImageEditorCropOverlayComponent {
     });
 
     constructor() {
-        // Seed the selection to the full rendered image whenever the tool
-        // activates or the rendered bounds change while cropping.
+        // Seed the selection whenever the tool activates or the rendered bounds
+        // change while cropping: to the captured visible region when the user
+        // switched to crop while zoomed, otherwise to the full rendered image.
         effect(() => {
             const rect = this.imageRect();
 
             if (this.isActive() && rect) {
-                this.cropRect.set({ x: 0, y: 0, width: rect.width, height: rect.height });
+                const initial = this.initialRect();
+                this.cropRect.set(
+                    initial ?? { x: 0, y: 0, width: rect.width, height: rect.height }
+                );
             }
         });
     }
@@ -195,7 +199,6 @@ export class DotImageEditorCropOverlayComponent {
      * Intercepts Escape so the host dialog does not close while cropping; the
      * keypress instead cancels the crop selection.
      */
-    @HostListener('keydown.escape', ['$event'])
     protected onEscape(event: KeyboardEvent): void {
         if (!this.isActive()) {
             return;

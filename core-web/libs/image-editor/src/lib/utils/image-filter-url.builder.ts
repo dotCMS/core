@@ -57,7 +57,7 @@ function compressionFilter(mode: CompressionMode, quality: number): AppliedFilte
  * mirroring the legacy ImageEditor rules: resizing removes crop, vertical flip
  * is expressed as a 180deg rotation plus flip-token cancellation, and the
  * compression filter is always applied last and exclusively.
- * @param input - The adjust/transform/crop/fileInfo/focalPoint state slices
+ * @param input - The adjust/transform/crop/fileInfo slices plus the natural dimensions
  * @returns The applied filters in the exact order they must be concatenated
  */
 export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {

@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, effect, HostListener, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -47,7 +47,10 @@ import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-im
     styleUrl: './dot-image-editor.component.scss',
     animations: [imageEditorModalScaleFade()],
     host: {
-        '[@imageEditorModalScaleFade]': ''
+        '[@imageEditorModalScaleFade]': '',
+        // Listen on the document, not the host: in a DynamicDialog focus usually
+        // sits outside this component, so a host-only keydown never fires.
+        '(document:keydown)': 'onKeydown($event)'
     }
 })
 export class DotImageEditorComponent {
@@ -79,7 +82,6 @@ export class DotImageEditorComponent {
      * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo. Skipped when a
      * text field has focus so its native text undo keeps working.
      */
-    @HostListener('keydown', ['$event'])
     protected onKeydown(event: KeyboardEvent): void {
         if (!(event.metaKey || event.ctrlKey) || this.#isEditableTarget(event.target)) {
             return;

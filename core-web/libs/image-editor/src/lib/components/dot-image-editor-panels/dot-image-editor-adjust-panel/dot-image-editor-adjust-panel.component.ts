@@ -59,7 +59,7 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Updates the optimistic brightness label as the slider moves. */
     protected onBrightnessChange(event: SliderChangeEvent): void {
-        this.brightness.set(this.singleValue(event.value));
+        this.brightness.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final brightness value once the slider drag ends. */
@@ -69,14 +69,14 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a brightness value typed into the inline number field. */
     protected onBrightnessInput(event: Event): void {
-        const value = this.commitTypedValue(event, this.brightness());
+        const value = this.#commitTypedValue(event, this.brightness());
         this.brightness.set(value);
         this.dispatch.brightnessChanged(value);
     }
 
     /** Updates the optimistic hue label as the slider moves. */
     protected onHueChange(event: SliderChangeEvent): void {
-        this.hue.set(this.singleValue(event.value));
+        this.hue.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final hue value once the slider drag ends. */
@@ -86,14 +86,14 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a hue value typed into the inline number field. */
     protected onHueInput(event: Event): void {
-        const value = this.commitTypedValue(event, this.hue());
+        const value = this.#commitTypedValue(event, this.hue());
         this.hue.set(value);
         this.dispatch.hueChanged(value);
     }
 
     /** Updates the optimistic saturation label as the slider moves. */
     protected onSaturationChange(event: SliderChangeEvent): void {
-        this.saturation.set(this.singleValue(event.value));
+        this.saturation.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final saturation value once the slider drag ends. */
@@ -103,7 +103,7 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a saturation value typed into the inline number field. */
     protected onSaturationInput(event: Event): void {
-        const value = this.commitTypedValue(event, this.saturation());
+        const value = this.#commitTypedValue(event, this.saturation());
         this.saturation.set(value);
         this.dispatch.saturationChanged(value);
     }
@@ -114,7 +114,7 @@ export class DotImageEditorAdjustPanelComponent {
     }
 
     /** Narrows the slider's number-or-range value to a single number. */
-    private singleValue(value: SliderChangeEvent['value']): number {
+    #singleValue(value: SliderChangeEvent['value']): number {
         return Array.isArray(value) ? (value[0] ?? 0) : (value ?? 0);
     }
 
@@ -123,7 +123,7 @@ export class DotImageEditorAdjustPanelComponent {
      * when empty/invalid, rounds, and clamps to the slider range. Writes the
      * resolved value back to the field so an out-of-range entry shows corrected.
      */
-    private commitTypedValue(event: Event, fallback: number): number {
+    #commitTypedValue(event: Event, fallback: number): number {
         const input = event.target as HTMLInputElement;
         const raw = input.valueAsNumber;
         const value = clamp(

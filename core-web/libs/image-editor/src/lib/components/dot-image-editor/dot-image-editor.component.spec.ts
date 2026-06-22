@@ -182,9 +182,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             it('should dispatch undoRequested on Ctrl/Cmd+Z when undo is available', () => {
                 canUndo.set(true);
 
-                spectator.element.dispatchEvent(
-                    new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })
-                );
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
 
                 expect(dispatcher.dispatch).toHaveBeenCalledWith(
                     imageEditorHistoryEvents.undoRequested(),
@@ -195,7 +193,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             it('should dispatch redoRequested on Ctrl/Cmd+Shift+Z when redo is available', () => {
                 canRedo.set(true);
 
-                spectator.element.dispatchEvent(
+                document.dispatchEvent(
                     new KeyboardEvent('keydown', { key: 'z', metaKey: true, shiftKey: true })
                 );
 
@@ -208,9 +206,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             it('should dispatch redoRequested on Ctrl+Y when redo is available', () => {
                 canRedo.set(true);
 
-                spectator.element.dispatchEvent(
-                    new KeyboardEvent('keydown', { key: 'y', ctrlKey: true })
-                );
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true }));
 
                 expect(dispatcher.dispatch).toHaveBeenCalledWith(
                     imageEditorHistoryEvents.redoRequested(),
@@ -221,9 +217,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             it('should not dispatch undo when there is nothing to undo', () => {
                 canUndo.set(false);
 
-                spectator.element.dispatchEvent(
-                    new KeyboardEvent('keydown', { key: 'z', ctrlKey: true })
-                );
+                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
 
                 expect(dispatcher.dispatch).not.toHaveBeenCalledWith(
                     imageEditorHistoryEvents.undoRequested(),

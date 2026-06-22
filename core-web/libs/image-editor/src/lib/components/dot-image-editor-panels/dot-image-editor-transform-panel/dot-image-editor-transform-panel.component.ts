@@ -64,7 +64,7 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Updates the optimistic scale field as the slider moves. */
     protected onScaleChange(event: SliderChangeEvent): void {
-        this.scale.set(this.singleValue(event.value));
+        this.scale.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final scale value once the slider drag ends. */
@@ -74,14 +74,14 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Commits a scale value typed into the inline number field. */
     protected onScaleInput(event: Event): void {
-        const value = this.commitTypedValue(event, this.scale(), SCALE_MIN, SCALE_MAX);
+        const value = this.#commitTypedValue(event, this.scale(), SCALE_MIN, SCALE_MAX);
         this.scale.set(value);
         this.dispatch.scaleChanged(value);
     }
 
     /** Updates the optimistic rotation field as the slider moves. */
     protected onRotateChange(event: SliderChangeEvent): void {
-        this.rotate.set(this.singleValue(event.value));
+        this.rotate.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final rotation value once the slider drag ends. */
@@ -91,7 +91,7 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Commits a rotation value typed into the inline number field. */
     protected onRotateInput(event: Event): void {
-        const value = this.commitTypedValue(event, this.rotate(), ROTATE_MIN, ROTATE_MAX);
+        const value = this.#commitTypedValue(event, this.rotate(), ROTATE_MIN, ROTATE_MAX);
         this.rotate.set(value);
         this.dispatch.rotateChanged(value);
     }
@@ -108,34 +108,34 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Dispatches a change to the explicit output width, guarding the minimum. */
     protected outputWidthChanged(value: number | null): void {
-        this.widthError.set(this.isBelowMinimum(value));
+        this.widthError.set(this.#isBelowMinimum(value));
         this.dispatch.outputDimsChanged({
-            width: this.toDimension(value),
+            width: this.#toDimension(value),
             height: this.store.transform().outputHeight
         });
     }
 
     /** Dispatches a change to the explicit output height, guarding the minimum. */
     protected outputHeightChanged(value: number | null): void {
-        this.heightError.set(this.isBelowMinimum(value));
+        this.heightError.set(this.#isBelowMinimum(value));
         this.dispatch.outputDimsChanged({
             width: this.store.transform().outputWidth,
-            height: this.toDimension(value)
+            height: this.#toDimension(value)
         });
     }
 
     /** Normalizes a dimension input to a positive integer, or `null` when cleared/invalid. */
-    private toDimension(value: number | null): number | null {
+    #toDimension(value: number | null): number | null {
         return value != null && value >= 1 ? value : null;
     }
 
     /** Whether a non-empty dimension is below the allowed minimum of 1. */
-    private isBelowMinimum(value: number | null): boolean {
+    #isBelowMinimum(value: number | null): boolean {
         return value != null && value < 1;
     }
 
     /** Narrows the slider's number-or-range value to a single number. */
-    private singleValue(value: SliderChangeEvent['value']): number {
+    #singleValue(value: SliderChangeEvent['value']): number {
         return Array.isArray(value) ? (value[0] ?? 0) : (value ?? 0);
     }
 
@@ -144,7 +144,7 @@ export class DotImageEditorTransformPanelComponent {
      * when empty/invalid, rounds, and clamps to [min, max]. Writes the resolved
      * value back to the field so an out-of-range entry shows corrected.
      */
-    private commitTypedValue(event: Event, fallback: number, min: number, max: number): number {
+    #commitTypedValue(event: Event, fallback: number, min: number, max: number): number {
         const input = event.target as HTMLInputElement;
         const raw = input.valueAsNumber;
         const value = clamp(Math.round(Number.isFinite(raw) ? raw : fallback), min, max);

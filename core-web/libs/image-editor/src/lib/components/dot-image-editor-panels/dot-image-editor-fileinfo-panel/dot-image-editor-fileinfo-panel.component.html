@@ -26,6 +26,7 @@
                 [ngModel]="store.fileInfo().quality"
                 [min]="0"
                 [max]="100"
+                [ariaLabel]="'edit.content.image-editor.fileinfo.quality' | dm"
                 data-testid="image-editor-quality-slider"
                 (onSlideEnd)="qualityChanged($event)" />
         </div>

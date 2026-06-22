@@ -5,10 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { FocalPointState, ImageEditorAssetContext } from '../models/image-editor.models';
+import { ImageEditorAssetContext } from '../models/image-editor.models';
 
 /** Shape of the save endpoint JSON response used to build a {@link DotCMSTempFile}. */
 interface SaveEditedImageResponse {
@@ -29,7 +28,6 @@ interface AssetMeta {
     naturalWidth: number;
     naturalHeight: number;
     originalBytes: number | null;
-    focalPoint?: FocalPointState;
 }
 
 /**
@@ -42,7 +40,6 @@ interface AssetMeta {
 @Injectable({ providedIn: 'root' })
 export class DotImageEditorService {
     readonly #http = inject(HttpClient);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     /**
      * Resolves the byte size of a remote asset via a HEAD request.
@@ -106,8 +103,9 @@ export class DotImageEditorService {
      * @param filterUrl - The fully-built filter/preview URL for the edited image
      * @param variable - The binary field id the saved file should target
      * @returns The resulting temp file
-     * @throws Rethrows the original error after surfacing it, so callers can keep
-     * the editor open on failure
+     * @throws Rethrows the original error (without surfacing it) so the caller —
+     * the store — is the single place that shows the error and keeps the editor
+     * open on failure
      */
     saveEditedImage(filterUrl: string, variable: string): Observable<DotCMSTempFile> {
         const separator = filterUrl.includes('?') ? '&' : '?';
@@ -115,11 +113,7 @@ export class DotImageEditorService {
 
         return this.#http.get<SaveEditedImageResponse>(url).pipe(
             map((res) => this.#toTempFile(res)),
-            catchError((error: HttpErrorResponse) => {
-                this.#httpErrorManager.handle(error);
-
-                return throwError(() => error);
-            })
+            catchError((error: HttpErrorResponse) => throwError(() => error))
         );
     }
 
@@ -143,7 +137,7 @@ export class DotImageEditorService {
      * the original byte size. Always emits a safe default on error and never
      * throws.
      * @param ctx - Resolved asset context providing the original URL
-     * @returns The natural dimensions, original byte size and optional focal point
+     * @returns The natural dimensions and original byte size
      */
     loadAssetMeta(ctx: ImageEditorAssetContext): Observable<AssetMeta> {
         return forkJoin({
