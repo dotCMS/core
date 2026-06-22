@@ -40,7 +40,8 @@ function compressionFilter(mode: CompressionMode, quality: number): AppliedFilte
 /**
  * Builds the ordered list of server filters from the current edit state,
  * mirroring the legacy ImageEditor rules: resizing removes crop, vertical flip
- * is expressed as a 180deg rotation plus flip-token cancellation, and the
+ * is expressed as a 180deg rotation plus flip-token cancellation, crop is applied
+ * after the geometry transforms (so it crops the image as displayed), and the
  * compression filter is always applied last and exclusively.
  * @param input - The adjust/transform/crop/fileInfo slices plus the natural dimensions
  * @returns The applied filters in the exact order they must be concatenated
@@ -52,8 +53,9 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
     // Resize derives from explicit output dimensions OR scale% × natural size, so a
     // scale change with no explicit W/H still produces resize pixels.
     const resize = computeResizeParams(transform, { width: naturalWidth, height: naturalHeight });
+    const hasResize = !!(resize.width || resize.height);
 
-    if (resize.width || resize.height) {
+    if (hasResize) {
         let args = '';
         if (resize.width) {
             args += `/resize_w/${resize.width}`;
@@ -62,13 +64,6 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
             args += `/resize_h/${resize.height}`;
         }
         filters.push({ name: 'Resize', args });
-    } else if (crop.active && crop.w > 0 && crop.h > 0) {
-        const args =
-            `/crop_w/${Math.round(crop.w)}` +
-            `/crop_h/${Math.round(crop.h)}` +
-            `/crop_x/${Math.round(crop.x)}` +
-            `/crop_y/${Math.round(crop.y)}`;
-        filters.push({ name: 'Crop', args });
     }
 
     // Vertical flip is achieved by rotating 180deg and toggling the flip token.
@@ -82,6 +77,21 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
 
     if (transform.flipH !== transform.flipV) {
         filters.push({ name: 'Flip', args: '/flip_flip/1' });
+    }
+
+    // Crop is applied AFTER the geometry transforms (rotate/flip) so it acts on the
+    // image as displayed — the box the user draws lives in the flipped/rotated
+    // preview's coordinates ("crop what you see", matching the legacy editor, which
+    // appends Crop to the already-transformed chain). Without this, a horizontal
+    // flip mirrors the crop region. Resize and crop stay mutually exclusive: resize
+    // wins.
+    if (!hasResize && crop.active && crop.w > 0 && crop.h > 0) {
+        const args =
+            `/crop_w/${Math.round(crop.w)}` +
+            `/crop_h/${Math.round(crop.h)}` +
+            `/crop_x/${Math.round(crop.x)}` +
+            `/crop_y/${Math.round(crop.y)}`;
+        filters.push({ name: 'Crop', args });
     }
 
     if (adjust.grayscale) {

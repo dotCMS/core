@@ -121,6 +121,20 @@ describe('image-filter-url.builder', () => {
             expect(result).toEqual([]);
         });
 
+        it('applies Crop after Flip/Rotate so it crops the image as displayed', () => {
+            const result = chain({
+                transform: { flipH: true, rotateDeg: 90 },
+                crop: { active: true, x: 10, y: 20, w: 100, h: 50 }
+            });
+            const names = result.map((f) => f.name);
+            const rotateIdx = names.indexOf('Rotate');
+            const flipIdx = names.indexOf('Flip');
+            const cropIdx = names.indexOf('Crop');
+
+            expect(cropIdx).toBeGreaterThan(rotateIdx);
+            expect(cropIdx).toBeGreaterThan(flipIdx);
+        });
+
         it('builds a Rotate filter', () => {
             const result = chain({ transform: { rotateDeg: 90 } });
             expect(result).toEqual([{ name: 'Rotate', args: '/rotate_a/90.0' }]);
