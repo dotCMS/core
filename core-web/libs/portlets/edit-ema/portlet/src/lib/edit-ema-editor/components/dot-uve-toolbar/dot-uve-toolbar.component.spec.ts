@@ -216,7 +216,6 @@ const baseUVEState = {
     $urlContentMap: urlContentMapSignal, // Mutable for tests
     $lockOptions: toggleLockOptionsSignal, // Mutable for tests
     $lockFeatureEnabled: $lockFeatureEnabledSignal,
-    $isMissingTranslation: signal(false),
     pageReload: jest.fn(),
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
@@ -799,8 +798,8 @@ describe('DotUveToolbarComponent', () => {
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             });
 
-            it('should call pageLoad with language_id when selected language has no translation', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
+            it('should call confirmationService.confirm when selected language has no translation', () => {
+                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -808,8 +807,51 @@ describe('DotUveToolbarComponent', () => {
                     'onLanguageChange',
                     languageWithoutTranslation
                 );
+                spectator.detectChanges();
 
-                expect(spyLoadPageAsset).toHaveBeenCalledWith({ language_id: '2' });
+                expect(spyConfirmationService).toHaveBeenCalled();
+            });
+
+            it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
+                const translatePageSpy = jest.spyOn(spectator.component.translatePage, 'emit');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const acceptCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .accept;
+                acceptCallback();
+
+                const expectedPage = pageSnapshotSignal().page;
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    page: expectedPage,
+                    newLanguage: 2
+                });
+            });
+
+            it('should reset language selector to current language when user rejects new translation', () => {
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+                const currentLanguage = baseUVEState.pageLanguage();
+                const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
+                const valueSetSpy = jest.spyOn(languageSelector.value, 'set');
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const rejectCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .reject;
+                rejectCallback();
+
+                expect(valueSetSpy).toHaveBeenCalledWith(currentLanguage);
             });
         });
 

@@ -25,7 +25,7 @@ import { map } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotDeviceListItem, DotExperimentStatus, DotLanguage } from '@dotcms/dotcms-models';
-import { DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
@@ -77,6 +77,7 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
+    translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
     editUrlContentMap = output<DotCMSURLContentMap>();
     deviceSelectorChange = output<DeviceSelectorChange>();
 
@@ -284,15 +285,28 @@ export class DotUveToolbarComponent {
     /**
      * Handle the language selection
      *
-     * @param {DotLanguage} language
-     * @memberof DotUveToolbarComponent
+     * @param {number} language
+     * @memberof DotEmaComponent
      */
     onLanguageSelected(language: DotLanguage) {
         const language_id = language.id.toString();
-        // Always load the page in the requested language.
-        // If the page has no version in that language, the editor's
-        // $translatePageEffect will detect translated=false after the load
-        // and show the "create translation?" dialog at that point.
+        const languages = this.#store.pageLanguages();
+
+        // pageLanguages has the translated flag; fall back to the selector's language object
+        // when this language has never been created for this page (not in pageLanguages yet)
+        const currentLanguage = languages.find((lang) => lang.id === language.id) ?? language;
+        const languageHasTranslation = currentLanguage.translated;
+
+        if (!languageHasTranslation) {
+            // Show confirmation dialog to create a new translation
+            const page = this.#store.pageAsset()?.page;
+            if (page) {
+                this.createNewTranslation(currentLanguage, page);
+            }
+
+            return;
+        }
+
         this.#store.pageLoad({ language_id });
     }
 
@@ -378,6 +392,39 @@ export class DotUveToolbarComponent {
                             });
                         }
                     }); // This does a take 1 under the hood
+            }
+        });
+    }
+
+    /*
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage.emit({
+                    page: page,
+                    newLanguage: language.id
+                });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.$languageSelector()?.value.set(this.#store.pageLanguage());
             }
         });
     }
