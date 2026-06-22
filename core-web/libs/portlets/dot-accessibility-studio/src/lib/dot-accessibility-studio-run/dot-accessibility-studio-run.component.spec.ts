@@ -229,6 +229,13 @@ describe('DotAccessibilityStudioRunComponent', () => {
         it('shows the re-scan icon button', () => {
             expect(spectator.query(byTestId('studio-rescan-btn'))).toBeTruthy();
         });
+
+        it('surfaces needs-review items separately (not in the fix count)', () => {
+            // mock warningCount = 2 → the note renders (the mock message service returns
+            // the key verbatim); the donut count stays 5 (confirmed errors only).
+            expect(spectator.query(byTestId('studio-needsreview-note'))).toBeTruthy();
+            expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
+        });
     });
 
     describe('scanning phase', () => {
