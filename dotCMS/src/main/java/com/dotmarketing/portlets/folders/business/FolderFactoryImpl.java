@@ -1194,14 +1194,21 @@ public class FolderFactoryImpl extends FolderFactory {
       sqlParams.add("%" + params.name().toLowerCase() + "%");
     }
 
+    // Normalize: dotCMS stores parent_path and full_path_lc always with a trailing slash.
+    // Ensuring the path ends with '/' means:
+    //   - parent_path = '/foo/'   → direct children only (non-recursive)
+    //   - full_path_lc LIKE '/foo/%' → descendants only, not the folder itself (recursive)
+    final String normalizedPath = params.path().endsWith("/")
+        ? params.path() : params.path() + "/";
+
     // Skip path condition only when searching the whole site (root + recursive)
-    if (!("/".equals(params.path()) && params.recursive())) {
+    if (!("/".equals(normalizedPath) && params.recursive())) {
       if (params.recursive()) {
         sql.append("AND identifier.full_path_lc LIKE ? ");
-        sqlParams.add(params.path().toLowerCase() + "%");
+        sqlParams.add(normalizedPath.toLowerCase() + "%");
       } else {
         sql.append("AND identifier.parent_path = ? ");
-        sqlParams.add(params.path());
+        sqlParams.add(normalizedPath);
       }
     }
 
