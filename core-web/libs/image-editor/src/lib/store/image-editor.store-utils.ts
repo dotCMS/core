@@ -83,8 +83,9 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
 /**
  * Coalesces a new edit into the undo/redo history. When the current head entry
  * shares the edit's category the entry is updated in place (so dragging a slider
- * produces a single history step); otherwise any redo tail is discarded and a new
- * entry is appended.
+ * produces a single history step) and any redo tail is discarded; otherwise a new
+ * entry is appended — also discarding any redo tail. Either way a new value
+ * invalidates forward history that was built against the old one.
  * @param state - The current editor state
  * @param category - The category the edit belongs to
  * @param label - The human-readable label for the entry

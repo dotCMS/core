@@ -1,6 +1,6 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotImageEditorService } from './dot-image-editor.service';
@@ -185,19 +185,21 @@ describe('DotImageEditorService', () => {
             req.flush(tempResponse);
         });
 
-        it('should rethrow on failure without surfacing it (the store handles the error)', () => {
-            let errored = false;
+        it('should rethrow the original error without surfacing it (the store handles it)', () => {
+            let caughtError: unknown;
             spectator.service.saveEditedImage('/dA/asset.png', 'fileField').subscribe({
-                error: () => (errored = true)
+                error: (error) => (caughtError = error)
             });
 
             httpMock
                 .expectOne((request) => request.url.startsWith('/dA/asset.png'))
                 .flush('boom', { status: 500, statusText: 'Server Error' });
 
-            // The service stays a pure rethrow pipe; the store's tapResponse is the
-            // single place that surfaces the error (avoids a double toast).
-            expect(errored).toBe(true);
+            // The service stays a pure rethrow pipe: the ORIGINAL HttpErrorResponse
+            // reaches the caller unchanged (not swallowed, not wrapped), so the
+            // store's tapResponse is the single place that surfaces it (no double toast).
+            expect(caughtError).toBeInstanceOf(HttpErrorResponse);
+            expect((caughtError as HttpErrorResponse).status).toBe(500);
         });
     });
 
