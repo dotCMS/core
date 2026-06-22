@@ -1,26 +1,11 @@
 import { computeResizeParams } from './dimensions.util';
 
 import {
-    AdjustState,
     AppliedFilter,
     CompressionMode,
-    CropState,
-    FileInfoState,
-    ImageEditorAssetContext,
-    TransformState
+    FilterChainInput,
+    ImageEditorAssetContext
 } from '../models/image-editor.models';
-
-/** State slices required to build the server filter chain. */
-interface FilterChainInput {
-    adjust: AdjustState;
-    transform: TransformState;
-    crop: CropState;
-    fileInfo: FileInfoState;
-    /** Natural image width, needed to translate scale% into resize pixels. */
-    naturalWidth: number;
-    /** Natural image height, needed to translate scale% into resize pixels. */
-    naturalHeight: number;
-}
 
 /**
  * Formats an HSB slider value (-100..100) into the legacy `-1..1` string the

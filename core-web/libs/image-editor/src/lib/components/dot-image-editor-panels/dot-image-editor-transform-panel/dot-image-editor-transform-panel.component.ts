@@ -9,16 +9,10 @@ import { ToggleButtonModule } from 'primeng/togglebutton';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { RANGES } from '../../../image-editor.constants';
 import { imageEditorTransformEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 import { clamp } from '../../../utils/dimensions.util';
-
-/** Inclusive range of the scale (%) control, matching its slider. */
-const SCALE_MIN = 1;
-const SCALE_MAX = 400;
-/** Inclusive range of the rotate (°) control, matching its slider. */
-const ROTATE_MIN = -180;
-const ROTATE_MAX = 180;
 
 /**
  * Geometric transform panel. Binds scale and rotate sliders, horizontal/vertical
@@ -74,7 +68,12 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Commits a scale value typed into the inline number field. */
     protected onScaleInput(event: Event): void {
-        const value = this.#commitTypedValue(event, this.scale(), SCALE_MIN, SCALE_MAX);
+        const value = this.#commitTypedValue(
+            event,
+            this.scale(),
+            RANGES.scale.min,
+            RANGES.scale.max
+        );
         this.scale.set(value);
         this.dispatch.scaleChanged(value);
     }
@@ -91,7 +90,12 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Commits a rotation value typed into the inline number field. */
     protected onRotateInput(event: Event): void {
-        const value = this.#commitTypedValue(event, this.rotate(), ROTATE_MIN, ROTATE_MAX);
+        const value = this.#commitTypedValue(
+            event,
+            this.rotate(),
+            RANGES.rotate.min,
+            RANGES.rotate.max
+        );
         this.rotate.set(value);
         this.dispatch.rotateChanged(value);
     }

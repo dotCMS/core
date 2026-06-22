@@ -1,10 +1,9 @@
-import { CropState, ImageEditorAssetContext, TransformState } from '../models/image-editor.models';
-
-/** Intrinsic pixel dimensions of an image. */
-interface Dimensions {
-    width: number;
-    height: number;
-}
+import {
+    CropState,
+    Dimensions,
+    ImageEditorAssetContext,
+    TransformState
+} from '../models/image-editor.models';
 
 /**
  * Constrains a number to the inclusive `[min, max]` range.

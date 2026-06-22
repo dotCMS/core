@@ -28,17 +28,13 @@ import {
     imageEditorTransformEvents
 } from './image-editor.events';
 import {
-    ImageEditorState,
     initialCropState,
     initialFocalPointState,
-    initialImageEditorState,
-    RANGES
+    initialImageEditorState
 } from './image-editor.state';
 import {
     adjustPatch,
-    AUTO_PREVIEW_RETRY_LIMIT,
     coalesceHistory,
-    COMPRESSION_LABELS,
     contextFromParams,
     editableSlicesOf,
     errorMessage,
@@ -51,11 +47,13 @@ import {
     transformPatch
 } from './image-editor.store-utils';
 
+import { AUTO_PREVIEW_RETRY_LIMIT, COMPRESSION_LABELS, RANGES } from '../image-editor.constants';
 import {
     AdjustState,
     CropState,
     FileInfoState,
     FocalPointState,
+    ImageEditorState,
     TransformState
 } from '../models/image-editor.models';
 import { DotImageEditorService } from '../services/dot-image-editor.service';

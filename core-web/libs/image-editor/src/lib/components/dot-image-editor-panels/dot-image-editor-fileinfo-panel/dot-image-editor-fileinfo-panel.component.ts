@@ -8,18 +8,10 @@ import { SliderModule, SliderSlideEndEvent } from 'primeng/slider';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { CompressionMode } from '../../../models/image-editor.models';
+import { BYTES_PER_KB } from '../../../image-editor.constants';
+import { CompressionMode, CompressionOption } from '../../../models/image-editor.models';
 import { imageEditorFileInfoEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
-
-/** A selectable compression option shown in the compression select button. */
-interface CompressionOption {
-    label: string;
-    value: CompressionMode;
-}
-
-/** One kibibyte, used to format byte counts for display. */
-const BYTES_PER_KB = 1024;
 
 /**
  * File info / compression panel. Lets the user pick a compression strategy and,

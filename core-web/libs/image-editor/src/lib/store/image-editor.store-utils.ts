@@ -1,5 +1,4 @@
 import {
-    ImageEditorState,
     initialAdjustState,
     initialCropState,
     initialFileInfoState,
@@ -7,16 +6,18 @@ import {
     initialTransformState
 } from './image-editor.state';
 
+import { SLICE_KEYS } from '../image-editor.constants';
 import {
     AdjustState,
-    CompressionMode,
     CropState,
+    EditableSlices,
     FileInfoState,
     FilterCategory,
-    FocalPointState,
     ImageEditorAssetContext,
     ImageEditorHistoryEntry,
     ImageEditorOpenParams,
+    ImageEditorState,
+    SlicePatch,
     TransformState
 } from '../models/image-editor.models';
 import { clamp } from '../utils/dimensions.util';
@@ -29,9 +30,6 @@ import { clamp } from '../utils/dimensions.util';
  * in isolation.
  */
 
-/** The editable slices captured in a history snapshot. */
-export type EditableSlices = ImageEditorHistoryEntry['snapshot'];
-
 /** The pristine values of the editable slices, used to seed and reset history. */
 export const initialEditableSlices: EditableSlices = {
     adjust: initialAdjustState,
@@ -39,34 +37,6 @@ export const initialEditableSlices: EditableSlices = {
     crop: initialCropState,
     focalPoint: initialFocalPointState,
     fileInfo: initialFileInfoState
-};
-
-/** Human-readable labels per compression mode, used in history entries. */
-export const COMPRESSION_LABELS: Record<CompressionMode, string> = {
-    none: 'None',
-    auto: 'Auto',
-    jpeg: 'JPEG',
-    webp: 'WebP'
-};
-
-/**
- * Times a failed preview is silently retried before the error UI is shown. The
- * server renders filter chains on the fly, so the first request for a fresh URL
- * can race that generation and return an incomplete response; a couple of silent
- * re-attempts (mirroring a manual refresh) almost always lands the finished image.
- */
-export const AUTO_PREVIEW_RETRY_LIMIT = 3;
-
-/** The editable slices, in snapshot order. */
-const SLICE_KEYS = ['adjust', 'transform', 'crop', 'focalPoint', 'fileInfo'] as const;
-
-/** A field-level patch over the editable slices (only the fields that changed). */
-type SlicePatch = {
-    adjust?: Partial<AdjustState>;
-    transform?: Partial<TransformState>;
-    crop?: Partial<CropState>;
-    focalPoint?: Partial<FocalPointState>;
-    fileInfo?: Partial<FileInfoState>;
 };
 
 /** Extracts the editable slices from the full state for snapshotting. */

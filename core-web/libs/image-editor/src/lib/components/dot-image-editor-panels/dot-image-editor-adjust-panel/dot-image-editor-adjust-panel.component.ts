@@ -8,13 +8,13 @@ import { SliderChangeEvent, SliderModule, SliderSlideEndEvent } from 'primeng/sl
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { RANGES } from '../../../image-editor.constants';
 import { imageEditorAdjustEvents } from '../../../store/image-editor.events';
 import { ImageEditorStore } from '../../../store/image-editor.store';
 import { clamp } from '../../../utils/dimensions.util';
 
-/** Inclusive range shared by every adjustment slider and its number field. */
-const ADJUST_MIN = -100;
-const ADJUST_MAX = 100;
+// Brightness, hue and saturation share the same inclusive range, so the inline
+// number fields all clamp to RANGES.brightness.
 
 /**
  * Color & light adjustment panel. Binds brightness, hue and saturation sliders
@@ -128,8 +128,8 @@ export class DotImageEditorAdjustPanelComponent {
         const raw = input.valueAsNumber;
         const value = clamp(
             Math.round(Number.isFinite(raw) ? raw : fallback),
-            ADJUST_MIN,
-            ADJUST_MAX
+            RANGES.brightness.min,
+            RANGES.brightness.max
         );
         input.value = String(value);
 

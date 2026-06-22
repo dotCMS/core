@@ -14,20 +14,11 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { focalPointPop } from '../../animations/image-editor.animations';
-import { ImageRect } from '../../models/image-editor.models';
+import { FOCAL_NUDGE_STEP, FOCAL_NUDGE_STEP_LARGE } from '../../image-editor.constants';
+import { ImageRect, NormalizedPoint } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
-
-/** A normalized point in the unit square, where {x:0.5, y:0.5} is the center. */
-interface NormalizedPoint {
-    x: number;
-    y: number;
-}
-
-/** Fraction of the image moved per arrow keypress; Shift uses the larger step. */
-const NUDGE_STEP = 0.01;
-const NUDGE_STEP_LARGE = 0.05;
 
 /**
  * Focal point overlay rendered on top of the image canvas while the focal tool
@@ -98,7 +89,7 @@ export class DotImageEditorFocalOverlayComponent {
 
     /** Moves (and commits) or finishes the focal point in response to keyboard input. */
     protected onMarkerKeydown(event: KeyboardEvent): void {
-        const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
+        const step = event.shiftKey ? FOCAL_NUDGE_STEP_LARGE : FOCAL_NUDGE_STEP;
         const current = this.point();
 
         switch (event.key) {

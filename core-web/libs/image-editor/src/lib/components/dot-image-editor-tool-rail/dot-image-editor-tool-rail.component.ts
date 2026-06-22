@@ -6,19 +6,9 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ActiveTool } from '../../models/image-editor.models';
+import { ActiveTool, ToolRailItem } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
-
-/** A selectable tool on the floating canvas rail. */
-interface ToolRailItem {
-    /** The tool identifier dispatched on selection; also selects the inline SVG icon. */
-    id: ActiveTool;
-    /** i18n key for the aria-label and tooltip. */
-    label: string;
-    /** `data-testid` value for the button. */
-    testId: string;
-}
 
 /**
  * Floating vertical rail of canvas tools (move, crop, focal point). Acts as a

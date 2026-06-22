@@ -201,3 +201,134 @@ export interface DotImageEditorLauncher {
      */
     open(params: ImageEditorOpenParams): Observable<DotCMSTempFile | null>;
 }
+
+/**
+ * The complete, flat state of the image editor. Each slice owns a domain of the
+ * editing experience (color adjustment, geometric transform, crop, focal point,
+ * file/compression info, zoom) plus the editor lifecycle bookkeeping (active
+ * tool, preview/save status, history and a cache-busting counter).
+ */
+export interface ImageEditorState {
+    /** Resolved identifiers and natural dimensions of the asset being edited. */
+    assetContext: ImageEditorAssetContext;
+    /** Color adjustment slice (brightness/hue/saturation/grayscale). */
+    adjust: AdjustState;
+    /** Geometric transform slice (scale/rotate/flip/output dimensions). */
+    transform: TransformState;
+    /** Crop selection slice. */
+    crop: CropState;
+    /** Compression configuration and resulting/original file sizes. */
+    fileInfo: FileInfoState;
+    /** Normalized focal point slice. */
+    focalPoint: FocalPointState;
+    /** Canvas zoom slice. */
+    zoom: ZoomState;
+    /** Tool currently selected on the canvas. */
+    activeTool: ActiveTool;
+    /** Loading lifecycle of the preview image. */
+    previewStatus: PreviewStatus;
+    /** Consecutive silent retries of the current failing preview (reset on success). */
+    previewRetries: number;
+    /** Lifecycle of the current save / save-as operation. */
+    saveStatus: SaveStatus;
+    /** Temp file produced by the last successful save, or `null`. */
+    savedTempFile: DotCMSTempFile | null;
+    /** Last error message surfaced to the user, or `null`. */
+    error: string | null;
+    /** Ordered undo/redo history of applied edits. */
+    history: ImageEditorHistoryEntry[];
+    /** Index of the current head entry in {@link history}, or `-1` when empty. */
+    historyIndex: number;
+    /** Monotonic counter appended to preview URLs to bust the browser cache. */
+    cacheBust: number;
+}
+
+// ---------------------------------------------------------------------------
+// Implementation-level shapes shared across the components, store and services.
+// Kept here so the library has a single home for types rather than scattering
+// them across the files that happen to use them.
+// ---------------------------------------------------------------------------
+
+/** Intrinsic pixel dimensions of an image. */
+export interface Dimensions {
+    width: number;
+    height: number;
+}
+
+/** State slices required to build the server filter chain. */
+export interface FilterChainInput {
+    adjust: AdjustState;
+    transform: TransformState;
+    crop: CropState;
+    fileInfo: FileInfoState;
+    /** Natural image width, needed to translate scale% into resize pixels. */
+    naturalWidth: number;
+    /** Natural image height, needed to translate scale% into resize pixels. */
+    naturalHeight: number;
+}
+
+/** A selectable tool on the floating canvas rail. */
+export interface ToolRailItem {
+    /** The tool identifier dispatched on selection; also selects the inline SVG icon. */
+    id: ActiveTool;
+    /** i18n key for the aria-label and tooltip. */
+    label: string;
+    /** `data-testid` value for the button. */
+    testId: string;
+}
+
+/** A selectable compression option shown in the compression select button. */
+export interface CompressionOption {
+    label: string;
+    value: CompressionMode;
+}
+
+/** A crop rectangle expressed in CSS px, local to the rendered image origin. */
+export interface LocalRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Identifiers for the eight resize handles around the crop box. */
+export type HandlePosition = 'tl' | 't' | 'tr' | 'r' | 'br' | 'b' | 'bl' | 'l';
+
+/** A normalized point in the unit square, where {x:0.5, y:0.5} is the center. */
+export interface NormalizedPoint {
+    x: number;
+    y: number;
+}
+
+/** Shape of the save endpoint JSON response used to build a {@link DotCMSTempFile}. */
+export interface SaveEditedImageResponse {
+    id: string;
+    fileName: string;
+    length: number;
+    metadata?: DotCMSTempFile['metadata'];
+}
+
+/** Natural pixel dimensions of an image resolved from the browser. */
+export interface NaturalDimensions {
+    naturalWidth: number;
+    naturalHeight: number;
+}
+
+/** Metadata resolved for an asset before editing begins. */
+export interface AssetMeta {
+    naturalWidth: number;
+    naturalHeight: number;
+    originalBytes: number | null;
+}
+
+/** The editable slices captured in a history snapshot. */
+export type EditableSlices = ImageEditorHistoryEntry['snapshot'];
+
+/** A field-level patch over the editable slices (only the fields that changed). */
+export type SlicePatch = {
+    adjust?: Partial<AdjustState>;
+    transform?: Partial<TransformState>;
+    crop?: Partial<CropState>;
+    focalPoint?: Partial<FocalPointState>;
+    fileInfo?: Partial<FileInfoState>;
+};

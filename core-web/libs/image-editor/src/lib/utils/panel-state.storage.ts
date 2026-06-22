@@ -1,3 +1,5 @@
+import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../image-editor.constants';
+
 /**
  * Persistence for the image-editor side-panel accordion's expanded sections.
  *
@@ -9,10 +11,10 @@
  * survives across browser sessions — they get the panels back the way they left
  * them, even after closing the tab.
  *
- * The value is the array of open `p-accordion-panel` values (e.g. `['adjust']`).
- * The default is an empty array: every section starts collapsed.
+ * The stored value (under {@link IMAGE_EDITOR_PANEL_STATE_KEY}) is the array of
+ * open `p-accordion-panel` values (e.g. `['adjust']`); the default is an empty
+ * array so every section starts collapsed.
  */
-export const IMAGE_EDITOR_PANEL_STATE_KEY = 'DOT_IMAGE_EDITOR_PANEL_STATE';
 
 /** Every accordion section collapsed by default. */
 const DEFAULT_PANEL_STATE: string[] = [];

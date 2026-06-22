@@ -13,31 +13,16 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { imageEditorOverlayEnterLeave } from '../../animations/image-editor.animations';
-import { ImageRect } from '../../models/image-editor.models';
+import {
+    CROP_HANDLES,
+    CROP_NUDGE_STEP,
+    CROP_NUDGE_STEP_LARGE,
+    MIN_CROP_SIZE
+} from '../../image-editor.constants';
+import { HandlePosition, ImageRect, LocalRect } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
-
-/** A crop rectangle expressed in CSS px, local to the rendered image origin. */
-interface LocalRect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
-/** Identifiers for the eight resize handles around the crop box. */
-type HandlePosition = 'tl' | 't' | 'tr' | 'r' | 'br' | 'b' | 'bl' | 'l';
-
-/** Distance in CSS px nudged per arrow keypress; Shift multiplies this. */
-const NUDGE_STEP = 1;
-const NUDGE_STEP_LARGE = 10;
-
-/** Smallest allowed crop dimension in CSS px to keep the box usable. */
-const MIN_CROP_SIZE = 16;
-
-/** The eight resize handles rendered around the crop box. */
-const HANDLES: readonly HandlePosition[] = ['tl', 't', 'tr', 'r', 'br', 'b', 'bl', 'l'] as const;
 
 /**
  * Interactive crop overlay rendered on top of the image canvas while the crop
@@ -71,7 +56,7 @@ export class DotImageEditorCropOverlayComponent {
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
 
     /** The resize handles rendered around the crop box. */
-    protected readonly handles = HANDLES;
+    protected readonly handles = CROP_HANDLES;
 
     /** Whether the crop tool is the active canvas tool. */
     protected readonly isActive = computed(() => this.#store.activeTool() === 'crop');
@@ -131,7 +116,7 @@ export class DotImageEditorCropOverlayComponent {
 
     /** Nudges or applies/cancels the crop in response to keyboard input. */
     protected onBoxKeydown(event: KeyboardEvent): void {
-        const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP;
+        const step = event.shiftKey ? CROP_NUDGE_STEP_LARGE : CROP_NUDGE_STEP;
         const current = this.cropRect();
 
         switch (event.key) {

@@ -1,8 +1,7 @@
-import {
-    getStoredPanelState,
-    IMAGE_EDITOR_PANEL_STATE_KEY,
-    savePanelState
-} from './panel-state.storage';
+import { getStoredPanelState, savePanelState } from './panel-state.storage';
+
+import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../image-editor.constants';
+
 
 describe('panel-state.storage', () => {
     afterEach(() => {

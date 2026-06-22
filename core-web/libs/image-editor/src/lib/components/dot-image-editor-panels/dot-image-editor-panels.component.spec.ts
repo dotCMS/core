@@ -11,7 +11,7 @@ import { DotImageEditorHistoryPanelComponent } from './dot-image-editor-history-
 import { DotImageEditorPanelsComponent } from './dot-image-editor-panels.component';
 import { DotImageEditorTransformPanelComponent } from './dot-image-editor-transform-panel/dot-image-editor-transform-panel.component';
 
-import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../../utils/panel-state.storage';
+import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../../image-editor.constants';
 
 describe('DotImageEditorPanelsComponent', () => {
     let spectator: Spectator<DotImageEditorPanelsComponent>;

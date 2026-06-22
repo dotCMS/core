@@ -23,6 +23,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '../../image-editor.constants';
 import { ImageRect } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { imageEditorLifecycleEvents, imageEditorToolEvents } from '../../store/image-editor.events';
@@ -32,15 +33,6 @@ import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-b
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
 import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
-
-/** Smallest zoom percentage the canvas allows. */
-const ZOOM_MIN = 10;
-/** Largest zoom percentage the canvas allows. */
-const ZOOM_MAX = 400;
-/** Step applied per zoom-in / zoom-out request. */
-const ZOOM_STEP = 25;
-/** Default (fit) zoom percentage. */
-const ZOOM_DEFAULT = 100;
 
 /**
  * Dark stage that renders the live image preview at the center of the editor.

@@ -7,28 +7,12 @@ import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { ImageEditorAssetContext } from '../models/image-editor.models';
-
-/** Shape of the save endpoint JSON response used to build a {@link DotCMSTempFile}. */
-interface SaveEditedImageResponse {
-    id: string;
-    fileName: string;
-    length: number;
-    metadata?: DotCMSTempFile['metadata'];
-}
-
-/** Natural pixel dimensions of an image resolved from the browser. */
-interface NaturalDimensions {
-    naturalWidth: number;
-    naturalHeight: number;
-}
-
-/** Metadata resolved for an asset before editing begins. */
-interface AssetMeta {
-    naturalWidth: number;
-    naturalHeight: number;
-    originalBytes: number | null;
-}
+import {
+    AssetMeta,
+    ImageEditorAssetContext,
+    NaturalDimensions,
+    SaveEditedImageResponse
+} from '../models/image-editor.models';
 
 /**
  * Data-access service for the image editor: resolves asset metadata, queries
