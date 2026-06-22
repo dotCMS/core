@@ -51,7 +51,6 @@ export interface EditorComputed {
     editorCanEditStyles: Signal<boolean>;
     editorEnableInlineEdit: Signal<boolean>;
     editorHasAccessToEditMode: Signal<boolean>;
-    $isMissingTranslation: Signal<boolean>;
 }
 
 export interface SetSeoDataParams {
@@ -94,15 +93,6 @@ export function withEditor() {
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-            // True when the page is loaded in a language that has no version yet.
-            // During page transitions pageLanguages is cleared ([]) so currentLanguage
-            // is undefined — this computed returns false while loading, preventing
-            // spurious read-only locks during navigation.
-            const isMissingTranslation = computed(() => {
-                const { currentLanguage } = store.pageTranslateProps();
-                return currentLanguage !== undefined && !currentLanguage.translated;
-            });
-
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
                 const isExperimentRunning = [
@@ -110,7 +100,7 @@ export function withEditor() {
                     DotExperimentStatus.SCHEDULED
                 ].includes(store.pageExperiment()?.status);
 
-                if (!isPageEditable || isExperimentRunning || isMissingTranslation()) {
+                if (!isPageEditable || isExperimentRunning) {
                     return false;
                 }
 
@@ -141,8 +131,7 @@ export function withEditor() {
                     canEditPage &&
                     canDrawTemplate &&
                     !isExperimentRunning &&
-                    !store.$lockIsPageLocked() &&
-                    !isMissingTranslation()
+                    !store.$lockIsPageLocked()
                 );
             });
 
@@ -174,7 +163,6 @@ export function withEditor() {
                 editorEnableInlineEdit,
                 $isEmaLegacyScriptInjectionEnabled,
                 editorHasAccessToEditMode,
-                $isMissingTranslation: isMissingTranslation,
 
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = store.pageAsset()?.numberContents;

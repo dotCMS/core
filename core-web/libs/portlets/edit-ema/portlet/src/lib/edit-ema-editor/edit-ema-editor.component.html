@@ -3,6 +3,7 @@
 @let dropzone = $dropzone();
 
 <dot-uve-toolbar
+    (translatePage)="translatePage($event)"
     (editUrlContentMap)="editContentMap($event)"
     (deviceSelectorChange)="handleDeviceSelectorChange($event)" />
 
@@ -270,11 +271,13 @@
     </div>
 }
 
-<dot-edit-ema-dialog
-    (action)="onCustomEvent($event)"
-    (reloadFromDialog)="reloadPage()"
-    #dialog
-    data-testId="ema-dialog" />
+@if ($showDialogs()) {
+    <dot-edit-ema-dialog
+        (action)="onCustomEvent($event)"
+        (reloadFromDialog)="reloadPage()"
+        #dialog
+        data-testId="ema-dialog" />
+}
 <p-confirmDialog
     [style]="{
         width: '400px'
