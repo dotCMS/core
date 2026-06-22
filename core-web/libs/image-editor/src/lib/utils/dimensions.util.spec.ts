@@ -1,12 +1,11 @@
 import { clamp, computeOutputDimensions, computeResizeParams } from './dimensions.util';
 
+import { CropState, TransformState } from '../models/image-editor.models';
 import {
     initialCropState,
     initialImageEditorState,
     initialTransformState
 } from '../store/image-editor.state';
-
-import { CropState, TransformState } from '../models/image-editor.models';
 
 /** A transform slice with the given overrides on top of the defaults. */
 const transform = (overrides: Partial<TransformState> = {}): TransformState => ({
