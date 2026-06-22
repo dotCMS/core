@@ -323,6 +323,13 @@ public class DotTemplateTool implements ViewTool {
     /**
      * Method that will create a map of required data for the Layout template, basically paths
      * where the different elements of the theme can be found.
+     * <p>
+     * The returned map includes {@code templatePathIsFileAsset}: {@code true} when the theme provides
+     * its own {@code template.vtl} file asset (so {@code PageLoader} includes it with version-aware
+     * {@code #dotParse}), {@code false} for the bundled static-fallback templates (included with
+     * {@code #parse}). For file-asset themes {@code templatePath} is host-qualified
+     * ({@code //<themeHost>/...}) so {@code #dotParse} resolves it against the theme's own host
+     * regardless of which host renders the page, since the cache is keyed by theme identifier only.
      *
      * @param themeFolder
      * @param hostId

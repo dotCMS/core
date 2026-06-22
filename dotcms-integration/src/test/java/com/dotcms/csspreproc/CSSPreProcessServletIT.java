@@ -42,7 +42,7 @@ import org.mockito.Mockito;
  * @author Jose Castro
  * @since Aug 10th, 2022
  */
-public class CSSPreProcessServletTest extends IntegrationTestBase {
+public class CSSPreProcessServletIT extends IntegrationTestBase {
 
     protected static String defaultSiteId = null;
     protected static Host defaultSite = null;
@@ -83,7 +83,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
             // Simply delete the folder containing all the test data
             APILocator.getFolderAPI().delete(testThemeHome, APILocator.systemUser(), false);
         } catch (final Exception e) {
-            Logger.error(CSSPreProcessServletTest.class, "Error during data cleanup", e);
+            Logger.error(CSSPreProcessServletIT.class, "Error during data cleanup", e);
             throw e;
         }
     }
