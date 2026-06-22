@@ -397,20 +397,50 @@ public class OAuthWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Resolve the callback URL the IdP should redirect to. If an explicit {@code callbackUrl}
-     * is configured it is used as the base (the callback path is appended if missing).
-     * Otherwise login is refused so the redirect URI is never derived from the Host header.
+     * Resolve the callback URL the IdP should redirect to. An explicit {@code callbackUrl} acts
+     * as an override (the callback path is appended if missing). When it is blank — the default —
+     * the base URL is derived from the request (see {@link #baseUrlFromRequest}), the same way SAML
+     * derives its endpoints. Deriving per-request is required for a global config that serves
+     * multiple sites, where each site's callback host differs; a single stored value can't cover
+     * them all. The servlet container (RemoteIpValve) makes scheme/serverName/serverPort
+     * proxy-aware, and the IdP's registered redirect_uri allowlist is the authoritative guard
+     * against a spoofed Host header.
      */
     private String computeCallbackUrl(final HttpServletRequest request, final OAuthAppConfig config) {
+        final String base;
         if (UtilMethods.isSet(config.callbackUrl)) {
-            final String base = config.callbackUrl.replaceAll("/+$", "");
-            return base.endsWith(OAuthConstants.CALLBACK_PATH)
-                    ? base
-                    : base + OAuthConstants.CALLBACK_PATH;
+            base = config.callbackUrl.replaceAll("/+$", "");
+        } else {
+            base = baseUrlFromRequest(request);
+            if (base == null) {
+                SecurityLogger.logInfo(OAuthWebInterceptor.class,
+                        "OAuth callbackUrl is not configured and the request base URL could not be derived");
+                return null;
+            }
         }
-        SecurityLogger.logInfo(OAuthWebInterceptor.class,
-                "OAuth callbackUrl is not configured; refusing to derive redirect URI from request Host header");
-        return null;
+        return base.endsWith(OAuthConstants.CALLBACK_PATH)
+                ? base
+                : base + OAuthConstants.CALLBACK_PATH;
+    }
+
+    /**
+     * Build {@code scheme://host[:port]} from the request. The port is omitted for the scheme's
+     * default (443 for https, 80 for http) and only appended when non-standard (e.g.
+     * {@code localhost:8080}) — so the derived redirect_uri matches what is registered at the IdP,
+     * which is configured without an explicit port for standard ports. Returns null if
+     * scheme/host are absent.
+     */
+    static String baseUrlFromRequest(final HttpServletRequest request) {
+        final String scheme = request.getScheme();
+        final String host = request.getServerName();
+        if (!UtilMethods.isSet(scheme) || !UtilMethods.isSet(host)) {
+            return null;
+        }
+        final int port = request.getServerPort();
+        final boolean defaultPort = port <= 0
+                || ("https".equalsIgnoreCase(scheme) && port == 443)
+                || ("http".equalsIgnoreCase(scheme) && port == 80);
+        return defaultPort ? scheme + "://" + host : scheme + "://" + host + ":" + port;
     }
 
     private static String originalRequestUri(final HttpServletRequest request) {
