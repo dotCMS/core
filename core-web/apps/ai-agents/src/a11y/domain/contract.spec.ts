@@ -111,6 +111,7 @@ describe('a11y-fix contract', () => {
                     reason: 'save returned 0 bytes; not applied'
                 }
             ],
+            changedFiles: ['//demo.dotcms.com/application/themes/travel/css/styles.scss'],
             publishRequired: true
         };
 
@@ -118,6 +119,9 @@ describe('a11y-fix contract', () => {
             const parsed = FixReportSchema.parse(planExample);
             expect(parsed.results).toHaveLength(5);
             expect(parsed.scan.before.violations).toBe(12);
+            expect(parsed.changedFiles).toEqual([
+                '//demo.dotcms.com/application/themes/travel/css/styles.scss'
+            ]);
         });
 
         it('forces publishRequired to be true (the agent never publishes)', () => {

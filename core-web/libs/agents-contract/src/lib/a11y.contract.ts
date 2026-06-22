@@ -104,6 +104,14 @@ export const FixReportSchema = z.object({
         after: ScanCountSchema
     }),
     results: z.array(FixResultSchema),
+    /**
+     * The distinct source files left CHANGED on the working version by this run —
+     * host-qualified paths, the authoritative set the user reviews + publishes.
+     * Excludes files that were touched but reverted (a regressed fix). Present on
+     * both a completed and a stopped (partial) run. Derived from the run's edit set,
+     * not by deduping results[].file (which still lists reverted files).
+     */
+    changedFiles: z.array(z.string()),
     publishRequired: z.literal(true) // human publishes from the Studio
 });
 
