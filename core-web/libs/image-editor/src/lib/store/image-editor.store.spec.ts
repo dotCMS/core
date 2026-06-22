@@ -421,6 +421,23 @@ describe('ImageEditorStore', () => {
             lifecycle.previewErrored();
             expect(store.previewStatus()).toBe('loading');
         });
+
+        it('retryRequested reloads and restores the silent-retry budget', () => {
+            // Exhaust the budget so the editor is in the error state.
+            for (let attempt = 0; attempt < 4; attempt++) {
+                lifecycle.previewErrored();
+            }
+            expect(store.previewStatus()).toBe('error');
+            const bust = store.cacheBust();
+
+            lifecycle.retryRequested();
+            expect(store.previewStatus()).toBe('loading');
+            expect(store.cacheBust()).toBe(bust + 1);
+
+            // Budget reset: the next failure retries (loading) rather than erroring.
+            lifecycle.previewErrored();
+            expect(store.previewStatus()).toBe('loading');
+        });
     });
 
     describe('previewUrl', () => {
@@ -462,6 +479,15 @@ describe('ImageEditorStore', () => {
             expect(store.assetContext().naturalWidth).toBe(800);
             expect(store.assetContext().naturalHeight).toBe(600);
             expect(store.fileInfo().originalBytes).toBe(5000);
+        });
+
+        it('surfaces a load failure when loadAssetMeta errors', () => {
+            service.loadAssetMeta.mockReturnValue(throwError(() => new Error('boom')));
+
+            lifecycle.assetRequested(OPEN_PARAMS);
+
+            expect(store.previewStatus()).toBe('error');
+            expect(store.error()).toBe('boom');
         });
     });
 
