@@ -66,7 +66,7 @@ class ConfigurableOpenSearchProvider {
      */
     private void buildClient() {
         try {
-            OSClientConfig config = loadConfigurationFromProperties();
+            OSClientConfig config = configFromProperties();
             buildClient(config);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client from properties", e);
@@ -82,7 +82,10 @@ class ConfigurableOpenSearchProvider {
             transport = createTransport(config);
             client = new OpenSearchClient(transport);
 
-            Logger.info(this.getClass(), "OpenSearch client initialized successfully with endpoints: " + config.endpoints());
+            // The human-readable, masked configuration banner is logged once at startup by
+            // IndexStartupValidator (alongside the connection outcome). Here we keep only a quiet
+            // DEBUG line so runtime (re)builds remain observable without duplicating the banner.
+            Logger.debug(this.getClass(), "OpenSearch client built for endpoints: " + config.endpoints());
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client", e);
             throw new DotRuntimeException("Failed to build OpenSearch client", e);
@@ -90,9 +93,16 @@ class ConfigurableOpenSearchProvider {
     }
 
     /**
-     * Load configuration from dotCMS properties
+     * Resolves an {@link OSClientConfig} from dotCMS properties. Package-private and {@code static}
+     * so {@link IndexStartupValidator} (same package) can re-resolve the configuration from the same
+     * properties — for the startup banner and the endpoint-separation check — without exposing any
+     * configuration accessor outside this package or widening the {@link OSClientProvider} contract.
+     *
+     * <p>Resolution is deterministic from properties: the validator's re-resolution matches what the
+     * client is built with at startup. It is a re-resolution, not a readback of the live client's
+     * stored config; the two could only differ if properties changed without a client rebuild.</p>
      */
-    private OSClientConfig loadConfigurationFromProperties() {
+    static OSClientConfig configFromProperties() {
         Builder builder = OSClientConfig.builder();
 
         // Load endpoints
@@ -150,7 +160,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Get default endpoints if not configured
      */
-    private String[] getDefaultEndpoints() {
+    private static String[] getDefaultEndpoints() {
         String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
         String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, HTTPS_PROTOCOL);
         int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);

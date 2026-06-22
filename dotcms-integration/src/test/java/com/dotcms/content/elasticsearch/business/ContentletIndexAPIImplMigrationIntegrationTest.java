@@ -17,12 +17,14 @@ import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
@@ -776,8 +778,122 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     // =========================================================================
+    // Phase 3 reindex cleanup — orphan ES rows in the indicies table (#36077)
+    // =========================================================================
+
+    /**
+     * Given Scenario: Phase 3 (OS-only). The {@code indicies} table holds the exact orphan
+     *                 state reported in #36077 after a Phase-3 reindex: the legacy ES
+     *                 {@code live}/{@code working} pair plus the transient
+     *                 {@code reindex_live}/{@code reindex_working} pair (all NULL version),
+     *                 alongside the promoted OS {@code .os} (version 3.X) {@code live}/{@code working}
+     *                 pair — and an unrelated {@code site_search} pointer (also NULL version).
+     * When : {@link VersionedIndicesAPI#removeLegacyIndices()} runs (the cleanup step the
+     *        Phase-3 switchover now invokes).
+     * Then : the four legacy ES content rows are gone; the {@code site_search} row is preserved
+     *        (it is NOT part of the content-index migration); and the OS rows are preserved
+     *        (they carry a non-NULL version). The expected end state is the two OS rows only.
+     *
+     * <p>Asserts against the specific seeded names rather than table totals so the result is
+     * independent of whatever rows the running instance already holds. The blanket delete also
+     * removes the live instance's real ES content rows; {@code @After} restores them via
+     * {@code IndiciesAPI.point(savedEsInfo)}.</p>
+     */
+    @Test
+    public void test_phase3_removeLegacyIndices_purgesEsRowsPreservesSiteSearchAndOs()
+            throws DotDataException {
+        setPhase(3);
+
+        final String esWorking   = "cluster_test.working_20200101000000_"        + RUN_ID;
+        final String esLive      = "cluster_test.live_20200101000000_"           + RUN_ID;
+        final String esReindexWk = "cluster_test.working_20200102000000_"        + RUN_ID;
+        final String esReindexLv = "cluster_test.live_20200102000000_"           + RUN_ID;
+        final String esSiteSrch  = "cluster_test.sitesearch_20200101000000_"     + RUN_ID;
+        final String osWorking   = "cluster_test.working_20260101000000_" + RUN_ID + ".os";
+        final String osLive      = "cluster_test.live_20260101000000_"    + RUN_ID + ".os";
+        final List<String> seeded = List.of(
+                esWorking, esLive, esReindexWk, esReindexLv, esSiteSrch, osWorking, osLive);
+
+        try {
+            // Clear the content-index slots first so the seeded orphan state is deterministic.
+            // Bootstrap already populated (working|live, NULL) and (working|live, 3.X) rows; the
+            // OS seeds below reuse those (index_type, index_version) pairs and would otherwise hit
+            // the uq_index_type_version UNIQUE constraint. The @After restores the saved ES/OS
+            // indices state, so removing these rows mid-test is safe.
+            clearContentIndiciesRows();
+
+            insertIndiciesRow(esWorking,   "working",         null);
+            insertIndiciesRow(esLive,      "live",            null);
+            insertIndiciesRow(esReindexWk, "reindex_working", null);
+            insertIndiciesRow(esReindexLv, "reindex_live",    null);
+            insertIndiciesRow(esSiteSrch,  "site_search",     null);
+            insertIndiciesRow(osWorking,   "working",         VersionedIndices.OPENSEARCH_3X);
+            insertIndiciesRow(osLive,      "live",            VersionedIndices.OPENSEARCH_3X);
+
+            final int removed = APILocator.getVersionedIndicesAPI().removeLegacyIndices();
+
+            assertTrue("Cleanup must remove at least our 4 seeded ES content rows",
+                    removed >= 4);
+            assertEquals("Legacy ES content rows (NULL version) must be purged",
+                    0L, countIndiciesRows(esWorking, esLive, esReindexWk, esReindexLv));
+            assertEquals("site_search row must be preserved (not part of content migration)",
+                    1L, countIndiciesRows(esSiteSrch));
+            assertEquals("OS rows (version 3.X) must be preserved",
+                    2L, countIndiciesRows(osWorking, osLive));
+
+            Logger.info(this, "✅ Phase 3 cleanup purged orphan ES rows, kept site_search + OS");
+        } finally {
+            for (final String name : seeded) {
+                Try.run(() -> new DotConnect()
+                        .setSQL("DELETE FROM indicies WHERE index_name = ?")
+                        .addParam(name).loadResult());
+            }
+        }
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * Removes every content-index pointer row (both legacy ES NULL-version rows and OS 3.X rows)
+     * so a test can seed a controlled {@code indicies} state without colliding with the bootstrap
+     * rows on the {@code uq_index_type_version} UNIQUE constraint. {@code site_search} is included
+     * for completeness. The caller is responsible for restoring state (handled by {@code @After}).
+     */
+    private static void clearContentIndiciesRows() throws DotDataException {
+        new DotConnect()
+                .setSQL("DELETE FROM indicies WHERE index_type IN "
+                        + "('working','live','reindex_working','reindex_live','site_search')")
+                .loadResult();
+    }
+
+    private static void insertIndiciesRow(final String indexName, final String indexType,
+            final String version) throws DotDataException {
+        if (version == null) {
+            // Legacy ES row: omit the version column so it stores NULL (matches IndiciesFactory.point).
+            new DotConnect()
+                    .setSQL("INSERT INTO indicies (index_name, index_type) VALUES (?, ?)")
+                    .addParam(indexName).addParam(indexType)
+                    .loadResult();
+        } else {
+            new DotConnect()
+                    .setSQL("INSERT INTO indicies (index_name, index_type, index_version) VALUES (?, ?, ?)")
+                    .addParam(indexName).addParam(indexType).addParam(version)
+                    .loadResult();
+        }
+    }
+
+    private static long countIndiciesRows(final String... indexNames) throws DotDataException {
+        final String placeholders = String.join(",", java.util.Collections.nCopies(indexNames.length, "?"));
+        final DotConnect dc = new DotConnect()
+                .setSQL("SELECT COUNT(*) AS cnt FROM indicies WHERE index_name IN (" + placeholders + ")");
+        for (final String name : indexNames) {
+            dc.addParam(name);
+        }
+        final List<Map<String, Object>> rows = dc.loadResults();
+        return Long.parseLong(rows.get(0).get("cnt").toString());
+    }
 
     /**
      * Returns {@code true} when the ES client and OS client are configured to talk to
