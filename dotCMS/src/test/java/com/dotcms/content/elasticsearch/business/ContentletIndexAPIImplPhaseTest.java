@@ -576,10 +576,17 @@ public class ContentletIndexAPIImplPhaseTest {
     static class FakeVersionedIndicesAPI implements VersionedIndicesAPI {
 
         VersionedIndices stored = null;
+        int removeLegacyIndicesCalls = 0;
 
         @Override
         public Optional<VersionedIndices> loadDefaultVersionedIndices() {
             return Optional.ofNullable(stored);
+        }
+
+        @Override
+        public int removeLegacyIndices() {
+            removeLegacyIndicesCalls++;
+            return 0;
         }
 
         @Override

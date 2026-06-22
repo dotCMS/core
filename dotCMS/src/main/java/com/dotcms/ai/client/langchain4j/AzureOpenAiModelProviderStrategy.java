@@ -87,7 +87,7 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
         validate(config, modelType);
         if (config.endpoint().contains("services.ai.azure.com")) {
             if (config.apiVersion() != null) {
-                Logger.warn(AzureOpenAiModelProviderStrategy.class,
+                Logger.debug(AzureOpenAiModelProviderStrategy.class,
                         "apiVersion is not used for Azure AI Foundry endpoints and will be ignored");
             }
             final OpenAiOfficialImageModel.Builder builder = OpenAiOfficialImageModel.builder()
