@@ -74,6 +74,22 @@ describe('DotPublishingQueueService', () => {
             expect(req.request.params.has('filter')).toBe(false);
             req.flush({ entity: [], pagination: { currentPage: 1, perPage: 50, totalEntries: 0 } });
         });
+
+        it('omits the status param when statuses is undefined (BE returns all)', () => {
+            service.listPublishingJobs({}).subscribe();
+
+            const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
+            expect(req.request.params.has('status')).toBe(false);
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 50, totalEntries: 0 } });
+        });
+
+        it('omits the status param when statuses is an empty array', () => {
+            service.listPublishingJobs({ statuses: [] }).subscribe();
+
+            const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
+            expect(req.request.params.has('status')).toBe(false);
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 50, totalEntries: 0 } });
+        });
     });
 
     describe('getBundleAssets', () => {

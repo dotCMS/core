@@ -10,7 +10,7 @@ import {
     PublishingJobView
 } from '@dotcms/dotcms-models';
 
-import { ALL_BUNDLE_STATUSES, DotPublishingQueueStore } from './dot-publishing-queue.store';
+import { DotPublishingQueueStore } from './dot-publishing-queue.store';
 
 const buildJob = (overrides: Partial<PublishingJobView> = {}): PublishingJobView => ({
     bundleId: 'bundle-1',
@@ -101,10 +101,10 @@ describe('DotPublishingQueueStore', () => {
     });
 
     describe('onInit', () => {
-        it('loads bundles once on init with the full status set', () => {
+        it('loads bundles once on init with no status filter (BE returns all)', () => {
             expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
             expect(service.listPublishingJobs).toHaveBeenCalledWith(
-                expect.objectContaining({ statuses: ALL_BUNDLE_STATUSES })
+                expect.objectContaining({ statuses: undefined })
             );
             expect(store.bundlesStatus()).toBe('loaded');
             expect(store.bundlesRows().length).toBe(2);
@@ -144,7 +144,7 @@ describe('DotPublishingQueueStore', () => {
             expect(store.bundlesSelectedIds()).toEqual([]);
         });
 
-        it('falls back to ALL_BUNDLE_STATUSES when the filter is empty', () => {
+        it('omits the statuses param when the filter is empty so BE returns every status', () => {
             store.setStatusFilter([PublishAuditStatus.SUCCESS]);
             spectator.flushEffects();
             (service.listPublishingJobs as jest.Mock).mockClear();
@@ -153,7 +153,7 @@ describe('DotPublishingQueueStore', () => {
             spectator.flushEffects();
 
             expect(service.listPublishingJobs).toHaveBeenCalledWith(
-                expect.objectContaining({ statuses: ALL_BUNDLE_STATUSES })
+                expect.objectContaining({ statuses: undefined })
             );
         });
     });

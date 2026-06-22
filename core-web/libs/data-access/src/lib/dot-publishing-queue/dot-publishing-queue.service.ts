@@ -20,7 +20,8 @@ export type PublishingSortField = 'bundle_name' | 'status' | 'created' | 'modifi
 export type PublishingSortDirection = 'asc' | 'desc';
 
 export interface ListPublishingJobsParams {
-    statuses: readonly PublishAuditStatus[];
+    /** Empty/omitted = all statuses (BE returns every row in publish_audit). */
+    statuses?: readonly PublishAuditStatus[];
     page?: number;
     perPage?: number;
     filter?: string;
@@ -72,7 +73,14 @@ export class DotPublishingQueueService {
     private http = inject(HttpClient);
 
     listPublishingJobs(params: ListPublishingJobsParams): Observable<PublishingJobsResponse> {
-        let httpParams = new HttpParams().set('status', params.statuses.join(','));
+        let httpParams = new HttpParams();
+
+        // Only send status when the caller selected one or more — omitting the
+        // param tells the BE "all statuses" and makes the FE forward-compatible
+        // with new server-side statuses (e.g. SCHEDULED, see #36267).
+        if (params.statuses && params.statuses.length > 0) {
+            httpParams = httpParams.set('status', params.statuses.join(','));
+        }
 
         if (params.page !== undefined) {
             httpParams = httpParams.set('page', params.page);

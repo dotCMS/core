@@ -21,30 +21,6 @@ import {
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
-/** Every audit status surfaced by the unified table. When the user selects no
- * status chips, the list call goes out with this full set (or omits the param,
- * which the backend treats as "all"). */
-export const ALL_BUNDLE_STATUSES: readonly PublishAuditStatus[] = [
-    PublishAuditStatus.BUNDLE_REQUESTED,
-    PublishAuditStatus.WAITING_FOR_PUBLISHING,
-    PublishAuditStatus.BUNDLING,
-    PublishAuditStatus.SENDING_TO_ENDPOINTS,
-    PublishAuditStatus.PUBLISHING_BUNDLE,
-    PublishAuditStatus.RECEIVED_BUNDLE,
-    PublishAuditStatus.SUCCESS,
-    PublishAuditStatus.SUCCESS_WITH_WARNINGS,
-    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-    PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY,
-    PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
-    PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS,
-    PublishAuditStatus.FAILED_TO_BUNDLE,
-    PublishAuditStatus.FAILED_TO_SENT,
-    PublishAuditStatus.FAILED_TO_PUBLISH,
-    PublishAuditStatus.FAILED_INTEGRITY_CHECK,
-    PublishAuditStatus.INVALID_TOKEN,
-    PublishAuditStatus.LICENSE_REQUIRED
-];
-
 /** Statuses targeted by the dialog's "SUCCESS" scope — matches legacy
  * `BundleResource#deleteAllSuccess`. */
 export const PURGE_SUCCESS_STATUSES: readonly PublishAuditStatus[] = [
@@ -129,11 +105,13 @@ export const DotPublishingQueueStore = signalStore(
             patchState(store, { bundlesStatus: 'loading' });
 
             const filter = store.statusFilter();
-            const statuses = filter.length > 0 ? filter : ALL_BUNDLE_STATUSES;
 
             service
                 .listPublishingJobs({
-                    statuses,
+                    // Omit `statuses` entirely when nothing is selected so the BE returns
+                    // every status. Forward-compatible with new server-side statuses (e.g.
+                    // SCHEDULED, see #36267) without an FE update.
+                    statuses: filter.length > 0 ? filter : undefined,
                     page: store.bundlesPage(),
                     perPage: store.rowsPerPage(),
                     filter: store.search() || undefined,
