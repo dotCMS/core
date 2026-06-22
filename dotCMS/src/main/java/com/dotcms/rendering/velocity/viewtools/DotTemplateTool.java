@@ -353,20 +353,26 @@ public class DotTemplateTool implements ViewTool {
 
         //Getting the theme path
         String themePath;
+        // Host-qualified ("//<themeHost>/...") theme path. Used for the file-asset template include so it
+        // resolves to the theme's own host regardless of which host renders the page (the themeMap cache is
+        // keyed by theme identifier only, so a relative path cached by one host would resolve against the
+        // wrong host for a shared theme rendered by another host within the cache window).
+        final Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
+        final String hostQualifiedThemePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
         if ( themeFolder.getHostId().equals( hostId ) ) {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
-            Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-            themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
+            themePath = hostQualifiedThemePath;
         }
 
         //Getting the template.vtl file path
         String themeTemplatePath;
         boolean themeTemplateIsFileAsset;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
-            // Logical, host-relative file-asset path (NOT the physical working-inode disk path) so the
+            // Logical, host-qualified file-asset path (NOT the physical working-inode disk path) so the
             // page render can include it with #dotParse and resolve live vs working from the PageMode.
-            themeTemplatePath = themePath + Template.THEME_TEMPLATE; // themePath already ends with "/"
+            // Always host-qualified so #dotParse resolves it against the theme's host, not the rendering page's.
+            themeTemplatePath = hostQualifiedThemePath + Template.THEME_TEMPLATE; // path already ends with "/"
             themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
