@@ -33,6 +33,8 @@ export enum BlockEditorDefaultBlocks {
     TABLE = 'table',
     /** Represents a DotCMS content block */
     DOT_CONTENT = 'dotContent',
+    /** Represents an inline DotCMS contentlet reference (rendered within a paragraph) */
+    DOT_INLINE_CONTENT = 'dotInlineContent',
     /** Represents a grid block with columns */
     GRID_BLOCK = 'gridBlock',
     /** Represents a column inside a grid block */

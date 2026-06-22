@@ -32,6 +32,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { AssetByUrlPopoverComponent } from './components/asset-by-url-popover/asset-by-url-popover.component';
 import { EmojiPickerComponent } from './components/emoji-picker/emoji-picker.component';
 import { ImagePropertiesPopoverComponent } from './components/image-popover/image-popover.component';
+import { InlineContentSuggestionComponent } from './components/inline-content-suggestion/inline-content-suggestion.component';
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
@@ -50,6 +51,7 @@ import { ContentletEditUrlService } from './services/contentlet-edit-url.service
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
+import { InlineContentSuggestionService } from './services/inline-content-suggestion.service';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 
@@ -177,6 +179,7 @@ function normalizeEditorContent(
     providers: [
         EditorStore,
         SlashMenuService,
+        InlineContentSuggestionService,
         EditorPopoverService,
         EditorModalService,
         EditorToolbarStore,
@@ -192,6 +195,7 @@ function normalizeEditorContent(
     imports: [
         TiptapEditorDirective,
         SlashMenuComponent,
+        InlineContentSuggestionComponent,
         EmojiPickerComponent,
         TablePopoverComponent,
         TableHandlePopoverComponent,
@@ -260,6 +264,7 @@ function normalizeEditorContent(
                     </div>
 
                     <dot-slash-menu />
+                    <dot-inline-content-suggestion />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-popover [editor]="ed" />
                     <dot-table-handle-popover [editor]="ed" />
@@ -276,6 +281,8 @@ function normalizeEditorContent(
 export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
+    /** Inline `@`-mention picker state; provided at component scope for per-editor isolation. */
+    private readonly inlineSuggestionService = inject(InlineContentSuggestionService);
 
     /** Field-scoped UI state (e.g. allowed blocks, language for API calls). */
     protected readonly store = inject(EditorStore);
@@ -439,6 +446,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 parseAllowedBlocks(this.field()),
                 this.injector,
                 this.dotMessageService,
+                this.inlineSuggestionService,
                 remoteExtensions
             ),
             content: ''

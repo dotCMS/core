@@ -8,6 +8,7 @@ import { DotCodeBlock, DotBlockQuote } from '../blocks/code.component';
 import { DotContentletBlock } from '../blocks/dot-contentlet.component';
 import { DotGridBlock } from '../blocks/grid-block.component';
 import { DotImageBlock } from '../blocks/image.component';
+import { DotInlineContentBlock } from '../blocks/inline-content.component';
 import { DotBulletList, DotOrdererList, DotListItem } from '../blocks/list.component';
 import { DotTableBlock } from '../blocks/table.component';
 import { DotParagraphBlock, DotTextBlock, DotHeadingBlock } from '../blocks/text.component';
@@ -36,6 +37,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
         DotTableBlock,
         DotGridBlock,
         DotContentletBlock,
+        DotInlineContentBlock,
         DotUnknownBlockComponent
     ]
 })

@@ -49,7 +49,50 @@ function buildContentletByTypeQuery(variable: string, languageId: number): strin
     return `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true +catchall:** title:''^15`;
 }
 
-interface ContentletSearchEntity {
+/**
+ * Strips Lucene special characters from a user-typed `@`-mention query so the term can be
+ * interpolated into a query string without breaking it or injecting clauses. Spaces collapse
+ * to single spaces; reserved syntax characters are removed.
+ */
+function sanitizeLuceneTerm(query: string): string {
+    return query
+        .replace(/[+\-!(){}[\]^"~*?:\\/]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/**
+ * Lucene query for the inline contentlet `@`-mention picker: live title search, optionally
+ * scoped to the content types allowed by the field's `contentTypes` field variable.
+ *
+ * @param query The user's `@`-mention text. Empty ⇒ browse recent (matches the slash picker's
+ *   broad `+catchall:**` behaviour); non-empty ⇒ wildcard match on `catchall` with a strong
+ *   `title` boost so exact-title hits float to the top.
+ * @param languageId Active editor language.
+ * @param allowedContentTypes Normalized comma-separated allowlist from `EditorStore`
+ *   (e.g. `"Blog,News"`). Empty ⇒ no content-type restriction (search all types).
+ */
+function buildContentletByTitleQuery(
+    query: string,
+    languageId: number,
+    allowedContentTypes: string
+): string {
+    const term = sanitizeLuceneTerm(query);
+    const titleClause = term
+        ? `+catchall:*${term}* title:'${term}'^15`
+        : `+catchall:** title:''^15`;
+    const types = allowedContentTypes
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    // Space inside the group is an implicit OR, e.g. `+contentType:(Blog News)`.
+    const typeClause = types.length > 0 ? `+contentType:(${types.join(' ')}) ` : '';
+    return `${typeClause}+languageId:${languageId} +deleted:false +working:true ${titleClause}`;
+}
+
+export { buildContentletByTitleQuery };
+
+export interface ContentletSearchEntity {
     jsonObjectView?: { contentlets?: DotCMSContentlet[] };
 }
 

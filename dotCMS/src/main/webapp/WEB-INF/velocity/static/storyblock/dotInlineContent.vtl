@@ -1,0 +1,18 @@
+## Inline contentlet reference (dotInlineContent node). Renders a live <a> to the referenced
+## contentlet's front-end URL when one resolves (URL-mapped content via urlMap, or a page via url);
+## otherwise a plain inline label. Title and URL come from the hydrated attrs.data, so renames and
+## moves on the source contentlet propagate automatically. Output stays inline (no block wrapper)
+## so it flows within the surrounding paragraph.
+#set($inlineData = $!item.attrs.data)
+#set($inlineTitle = "$!{inlineData.title}")
+#if($inlineTitle == "")#set($inlineTitle = "$!{inlineData.identifier}")#end
+#set($inlineInode = "$!{inlineData.inode}")
+#set($inlineUrl = "")
+#if($inlineInode != "")
+    #set($inlineRef = $dotcontent.find($inlineInode))
+    #if($inlineRef)
+        #set($inlineUrl = "$!{inlineRef.urlMap}")
+        #if($inlineUrl == "")#set($inlineUrl = "$!{inlineRef.url}")#end
+    #end
+#end
+#if($inlineUrl != "")<a class="dot-inline-content" href="$esc.html($inlineUrl)">$esc.html($inlineTitle)</a>#else<span class="dot-inline-content">$esc.html($inlineTitle)</span>#end

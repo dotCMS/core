@@ -16,6 +16,7 @@ import {
 } from './blocks/semantic-blocks.component';
 
 import { DotContentletBlock } from '../dotcms-block-editor-renderer/blocks/dot-contentlet.component';
+import { DotInlineContentBlock } from '../dotcms-block-editor-renderer/blocks/inline-content.component';
 import { DotUnknownBlockComponent } from '../dotcms-block-editor-renderer/blocks/unknown.component';
 import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-editor-renderer.component';
 
@@ -58,6 +59,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer/dotcms-block-edi
         DotSemanticBlockQuote,
         DotSemanticCodeBlock,
         DotContentletBlock,
+        DotInlineContentBlock,
         DotUnknownBlockComponent
     ]
 })

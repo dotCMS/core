@@ -580,6 +580,10 @@ export class MyBannerComponent {
 }
 ```
 
+#### Inline contentlet references (`dotInlineContent`)
+
+The Block Editor can embed a **live, inline reference** to another contentlet inside a paragraph (authored with the `@`-mention picker). dotCMS stores only the reference (`{ identifier, languageId }`) and re-hydrates the current title at read time, so renames propagate automatically. By default the renderer outputs the title as an inline link (`<a>`) when a front-end URL is resolvable (`urlMap` for URL-mapped content, `url` for pages), and a plain inline label otherwise. Register a custom renderer for the `dotInlineContent` node type to override this output.
+
 #### Recommendations
 
 -   Should not be used with [`DotCMSEditableText`](#dotcmseditabletext).

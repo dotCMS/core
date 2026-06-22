@@ -76,6 +76,13 @@
                 *##set($item = $element)#*
                 *##parse("static/storyblock/dotContent.vtl")#*
             *##end#*
+        *##elseif( $element.type == "dotInlineContent" )#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotInlineContent.vtl")#*
+            *##end#*
         *##elseif( $element.type == "dotVideo" )#*
             *##if($dotStoryBlockRenderHelper)#*
                 *#$dotStoryBlockRenderHelper.render($element)#*

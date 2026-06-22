@@ -384,6 +384,90 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: Creates a story block whose paragraph holds an inline contentlet reference
+     * ({@code dotInlineContent}) nested inside the paragraph's {@code content} array — alongside a
+     * text node — and then renames the referenced contentlet.
+     * ExpectedResult: Refreshing references descends into the paragraph and re-hydrates the nested
+     * inline node's {@code attrs.data.title} with the contentlet's current title. This proves the
+     * "live reference" promise for inline references.
+     */
+    @Test
+    public void test_refresh_references_for_nested_inline_content()
+            throws DotDataException, DotSecurityException, JsonProcessingException {
+        // 1) create a contentlet to be referenced inline
+        final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+        final Contentlet referenced = new ContentletDataGen(contentTypeRichText)
+                .setProperty("title", "Inline Title 1")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).nextPersisted();
+
+        // 2) build a story block with a dotInlineContent node nested inside a paragraph
+        final String storyBlockJson = String.format(
+                "{" +
+                "  \"type\": \"doc\"," +
+                "  \"content\": [" +
+                "    {" +
+                "      \"type\": \"paragraph\"," +
+                "      \"content\": [" +
+                "        { \"type\": \"text\", \"text\": \"See \" }," +
+                "        {" +
+                "          \"type\": \"dotInlineContent\"," +
+                "          \"attrs\": {" +
+                "            \"data\": {" +
+                "              \"identifier\": \"%s\"," +
+                "              \"languageId\": 1" +
+                "            }" +
+                "          }" +
+                "        }" +
+                "      ]" +
+                "    }" +
+                "  ]" +
+                "}",
+                referenced.getIdentifier());
+
+        // 3) rename the referenced contentlet so the stored (empty) title differs from the live one
+        final Contentlet newVersion = APILocator.getContentletAPI().checkout(referenced.getInode(), APILocator.systemUser(), false);
+        newVersion.setProperty("title", "Inline Title 2");
+        newVersion.setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
+        APILocator.getContentletAPI().publish(
+                APILocator.getContentletAPI().checkin(newVersion, APILocator.systemUser(), false), APILocator.systemUser(), false);
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(new MockAttributeRequest(mock(HttpServletRequest.class)));
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(mock(HttpServletResponse.class));
+
+            // 4) refresh references — the nested inline node must be reached and hydrated
+            final StoryBlockReferenceResult refreshResult =
+                    APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(storyBlockJson, "1234");
+
+            assertTrue("Nested inline reference should be refreshed", refreshResult.isRefreshed());
+
+            final Map refreshedMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                    .readValue(Try.of(() -> refreshResult.getValue().toString()).getOrElse(StringPool.BLANK),
+                            LinkedHashMap.class);
+            final List docContent = (List) refreshedMap.get("content");
+            final Map paragraph = (Map) docContent.get(0);
+            final List paragraphContent = (List) paragraph.get("content");
+            final Optional<Object> inlineNode = paragraphContent.stream()
+                    .filter(node -> "dotInlineContent".equals(Map.class.cast(node).get("type"))).findFirst();
+
+            assertTrue("Inline node should remain in the paragraph content", inlineNode.isPresent());
+            final Map inlineData = (Map) Map.class.cast(Map.class.cast(inlineNode.get()).get(StoryBlockAPI.ATTRS_KEY))
+                    .get(StoryBlockAPI.DATA_KEY);
+            assertEquals("Inline reference identifier should be preserved",
+                    referenced.getIdentifier(), inlineData.get("identifier"));
+            assertEquals("Inline reference title should be hydrated to the live title",
+                    "Inline Title 2", inlineData.get("title"));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
+
+    /**
      * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
      * Given Scenario: Creates a story block and adds 3 contentlets
      * ExpectedResult: The contentlets added should be retrieved

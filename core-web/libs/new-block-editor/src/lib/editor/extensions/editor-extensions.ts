@@ -16,12 +16,14 @@ import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { IndentExtension } from './indent.extension';
+import { createInlineContentSuggestionExtension } from './inline-content-suggestion.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
 import { createCodeBlock } from './nodes/code-block/code-block.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
+import { createDotInlineContent } from './nodes/inline-content/inline-content.extension';
 import {
     createUploadPlaceholderExtension,
     type UploadPlaceholderMediaType
@@ -33,14 +35,17 @@ import { TableActiveCellsPlugin } from './table-active-cells.plugin';
 import { createDotTableExtensions } from './table-extensions';
 
 import { EditorPopoverService } from '../services/editor-popover.service';
+import { EditorStore } from '../store/editor.store';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
+import type { InlineContentSuggestionService } from '../services/inline-content-suggestion.service';
 
 export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
     injector: Injector,
     dotMessageService: DotMessageService,
+    inlineSuggestionService: InlineContentSuggestionService,
     remoteExtensions: AnyExtension[] = []
 ): Extensions {
     const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
@@ -135,6 +140,14 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('dotContent') ? [createDotContentlet(injector)] : []),
+        ...(has('dotInlineContent')
+            ? [
+                  createDotInlineContent(injector),
+                  createInlineContentSuggestionExtension(inlineSuggestionService, () =>
+                      injector.get(EditorStore).languageId()
+                  )
+              ]
+            : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         IndentExtension,

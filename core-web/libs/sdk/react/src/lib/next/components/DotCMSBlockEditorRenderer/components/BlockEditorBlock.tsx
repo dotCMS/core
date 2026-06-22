@@ -6,6 +6,7 @@ import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/DotContent';
 import { GridBlock } from './blocks/GridBlock';
 import { DotCMSImage } from './blocks/Image';
+import { InlineContent } from './blocks/InlineContent';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { TableRenderer } from './blocks/Table';
 import { Heading, Paragraph, TextBlock } from './blocks/Texts';
@@ -173,6 +174,9 @@ export const BlockEditorBlock = ({
                         isDevMode={isDevMode}
                     />
                 );
+
+            case BlockEditorDefaultBlocks.DOT_INLINE_CONTENT:
+                return <InlineContent key={key} node={node} />;
 
             default:
                 return <UnknownBlock key={key} node={node} />;

@@ -101,6 +101,10 @@
                     [customRenderers]="customRenderers" />
             }
 
+            @case (BLOCKS.DOT_INLINE_CONTENT) {
+                <dotcms-block-editor-renderer-inline-content [node]="node" />
+            }
+
             @default {
                 <dotcms-block-editor-renderer-unknown [node]="node" />
             }

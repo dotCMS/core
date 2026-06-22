@@ -781,3 +781,42 @@
     background-color: rgba(99, 102, 241, 0.18);
     border-radius: 2px;
 }
+
+/* ─── Inline contentlet reference token (dotInlineContent node view) ─── */
+/* Compact, baseline-aligned token rendered within paragraph text by the `@`-mention picker.
+   The published / SDK output renders an <a>; in the editor it's a non-link selectable token. */
+:host ::ng-deep .ProseMirror dot-inline-content-node-view.dot-inline-content-token {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.2em;
+    max-width: 100%;
+    padding: 0 0.3em;
+    border-radius: 0.25rem;
+    background-color: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+    line-height: inherit;
+    vertical-align: baseline;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+:host ::ng-deep .ProseMirror dot-inline-content-node-view.dot-inline-content-token.is-selected {
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+:host ::ng-deep .ProseMirror dot-inline-content-node-view.dot-inline-content-token.is-missing {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    cursor: default;
+}
+
+:host ::ng-deep .ProseMirror .dot-inline-content-token__icon {
+    font-size: 1em;
+    line-height: 1;
+    transform: translateY(0.12em);
+}
+
+:host ::ng-deep .ProseMirror .dot-inline-content-token__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

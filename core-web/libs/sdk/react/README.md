@@ -377,6 +377,22 @@ const DetailPage = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
 };
 ```
 
+#### Inline contentlet references (`dotInlineContent`)
+
+The Block Editor can embed a **live, inline reference** to another contentlet inside a paragraph (authored with the `@`-mention picker). dotCMS stores only the reference (`{ identifier, languageId }`) and re-hydrates the current title at read time, so renames propagate automatically. By default the renderer outputs the title as an inline link (`<a>`) when a front-end URL is resolvable (`urlMap` for URL-mapped content, `url` for pages), and a plain inline label otherwise.
+
+Override the default by registering a renderer for the `dotInlineContent` node type:
+
+```tsx
+const CUSTOM_RENDERERS = {
+    dotInlineContent: ({ node }) => (
+        <a className="content-ref" href={node.attrs.data.urlMap}>
+            {node.attrs.data.title}
+        </a>
+    )
+};
+```
+
 #### Next.js Server Components
 
 `DotCMSBlockEditorRenderer` can be used directly in a Next.js server component — it has no hooks or browser dependencies:

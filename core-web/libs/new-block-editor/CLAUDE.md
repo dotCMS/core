@@ -55,6 +55,7 @@ When creating a new node, you may choose any name — but choose carefully, beca
 | Image | `dotImage` | `extensions/nodes/image.extension.ts` |
 | Video | `dotVideo` | `extensions/nodes/video.extension.ts` |
 | Contentlet | `dotContent` | `extensions/nodes/contentlet/contentlet.extension.ts` |
+| Inline contentlet | `dotInlineContent` | `extensions/nodes/inline-content/inline-content.extension.ts` |
 | Grid block | `gridBlock` | `extensions/nodes/grid.extension.ts` |
 | Grid column | `gridColumn` | `extensions/nodes/grid.extension.ts` |
 | AI content | `aiContent` | `extensions/nodes/ai-content.extension.ts` |
@@ -72,7 +73,7 @@ The lib follows a strict split: **data fetching** delegates to `@dotcms/data-acc
 | Service | Used for |
 |---|---|
 | `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`) and per-type metadata reads (`getContentType`, used by `ContentletEditUrlService`). |
-| `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down (`/api/content/_search`). The editor-flavoured query string (`+contentType:X +languageId:Y +deleted:false +working:true +catchall:** title:''^15`) is built inline at the call site (`buildContentletByTypeQuery` in `slash-menu-catalog.ts`); the service itself stays generic. |
+| `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down AND the inline `@`-mention picker (`/api/content/_search`). The editor-flavoured query strings (`buildContentletByTypeQuery` for the slash drill-down; `buildContentletByTitleQuery` for the inline `@`-search, which is title-scoped and honors the field's `contentTypes` allowlist) are built inline at the call sites in `slash-menu-catalog.ts`; the service itself stays generic. |
 | `DotLanguagesService` | Language metadata for the editor store (`getById`). |
 | `DotAiService` | AI text generation, AI image generation + publish, plugin status check. Identical surface to legacy block-editor usage. |
 | `DotUploadFileService` | Wrapped by the lib's local `DotUploadService` adapter (see below). |
@@ -160,6 +161,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | `youtube` |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
+| `dotInlineContent` | `inline-content/inline-content.extension.ts` | — (`@`-mention picker, inline) | — | `dotInlineContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
 | `aiContent` | `ai-content.extension.ts` | Ask AI (centered modal) | — | `aiContent` |
