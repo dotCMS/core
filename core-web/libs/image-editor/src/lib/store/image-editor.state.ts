@@ -90,5 +90,6 @@ export const initialImageEditorState: ImageEditorState = {
     error: null,
     history: [],
     historyIndex: -1,
-    cacheBust: 0
+    cacheBust: 0,
+    isFullscreen: false
 };

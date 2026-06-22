@@ -30,9 +30,16 @@
         [pTooltip]="'edit.content.image-editor.zoom.out.aria' | dm"
         data-testid="image-editor-zoom-out-btn"
         (click)="zoomOut.emit()"></button>
-    <span class="address-bar__zoom-value" data-testid="image-editor-zoom-value">
+    <!-- Clicking the zoom value resets the zoom so the image fits the stage. -->
+    <button
+        type="button"
+        class="address-bar__zoom-value"
+        [attr.aria-label]="'edit.content.image-editor.zoom.fit.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.zoom.fit.aria' | dm"
+        data-testid="image-editor-fit-btn"
+        (click)="fit.emit()">
         {{ zoomLevel() }}%
-    </span>
+    </button>
     <button
         pButton
         type="button"
@@ -46,13 +53,24 @@
     <button
         pButton
         type="button"
-        icon="pi pi-window-maximize"
+        [icon]="store.isFullscreen() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
         [text]="true"
         severity="secondary"
-        [attr.aria-label]="'edit.content.image-editor.zoom.fit.aria' | dm"
-        [pTooltip]="'edit.content.image-editor.zoom.fit.aria' | dm"
-        data-testid="image-editor-fit-btn"
-        (click)="fit.emit()"></button>
+        [attr.aria-pressed]="store.isFullscreen()"
+        [attr.aria-label]="
+            (store.isFullscreen()
+                ? 'edit.content.image-editor.fullscreen.exit.aria'
+                : 'edit.content.image-editor.fullscreen.enter.aria'
+            ) | dm
+        "
+        [pTooltip]="
+            (store.isFullscreen()
+                ? 'edit.content.image-editor.fullscreen.exit.aria'
+                : 'edit.content.image-editor.fullscreen.enter.aria'
+            ) | dm
+        "
+        data-testid="image-editor-fullscreen-btn"
+        (click)="toggleFullscreen()"></button>
     <button
         pButton
         type="button"

@@ -234,6 +234,8 @@ export interface ImageEditorState {
     historyIndex: number;
     /** Monotonic counter appended to preview URLs to bust the browser cache. */
     cacheBust: number;
+    /** Whether the editor dialog is expanded to fill the viewport (full-screen). */
+    isFullscreen: boolean;
 }
 
 // ---------------------------------------------------------------------------

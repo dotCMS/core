@@ -40,6 +40,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         const isDirty = signal(false);
         const canUndo = signal(false);
         const canRedo = signal(false);
+        const isFullscreen = signal(false);
 
         const createComponent = createComponentFactory({
             component: DotImageEditorComponent,
@@ -56,7 +57,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // mocking only the store.
             componentProviders: [
                 ConfirmationService,
-                mockProvider(ImageEditorStore, { isDirty, canUndo, canRedo })
+                mockProvider(ImageEditorStore, { isDirty, canUndo, canRedo, isFullscreen })
             ],
             // Isolate the shell from the children's own store/dispatch wiring.
             overrideComponents: [
@@ -92,6 +93,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             isDirty.set(false);
             canUndo.set(false);
             canRedo.set(false);
+            isFullscreen.set(false);
 
             // Spy before creation so the constructor's assetRequested dispatch is
             // captured (injectDispatch dispatches through Dispatcher.prototype).

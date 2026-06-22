@@ -9,8 +9,8 @@ import {
     withFocalPoint,
     withHistory,
     withPreview,
-    withTools,
-    withTransform
+    withTransform,
+    withView
 } from './features';
 import { initialImageEditorState } from './image-editor.state';
 
@@ -33,7 +33,7 @@ export const ImageEditorStore = signalStore(
     withCrop(),
     withFocalPoint(),
     withFileInfo(),
-    withTools(),
+    withView(),
     withHistory(),
     withAsset(),
     withPreview(),

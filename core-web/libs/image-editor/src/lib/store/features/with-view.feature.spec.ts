@@ -4,23 +4,25 @@ import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { withTools } from './with-tools.feature';
+import { withView } from './with-view.feature';
 
-import { imageEditorToolEvents } from '../image-editor.events';
+import { imageEditorToolEvents, imageEditorViewEvents } from '../image-editor.events';
 import { initialImageEditorState } from '../image-editor.state';
 
-const ToolsStore = signalStore(withState(initialImageEditorState), withTools());
+const ViewStore = signalStore(withState(initialImageEditorState), withView());
 
-describe('withTools', () => {
-    let store: InstanceType<typeof ToolsStore>;
+describe('withView', () => {
+    let store: InstanceType<typeof ViewStore>;
     let tool: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
+    let view: ReturnType<typeof injectDispatch<typeof imageEditorViewEvents>>;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({ providers: [ToolsStore, Dispatcher] });
+        TestBed.configureTestingModule({ providers: [ViewStore, Dispatcher] });
         const injector = TestBed.inject(Injector);
-        store = TestBed.inject(ToolsStore);
+        store = TestBed.inject(ViewStore);
         runInInjectionContext(injector, () => {
             tool = injectDispatch(imageEditorToolEvents);
+            view = injectDispatch(imageEditorViewEvents);
         });
     });
 
@@ -31,5 +33,15 @@ describe('withTools', () => {
 
         tool.toolSelected('focal');
         expect(store.activeTool()).toBe('focal');
+    });
+
+    it('toggles full-screen on and off', () => {
+        expect(store.isFullscreen()).toBe(false);
+
+        view.fullscreenToggled();
+        expect(store.isFullscreen()).toBe(true);
+
+        view.fullscreenToggled();
+        expect(store.isFullscreen()).toBe(false);
     });
 });

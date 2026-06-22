@@ -10,7 +10,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotImageEditorAddressBarComponent } from './dot-image-editor-address-bar.component';
 
-import { imageEditorHistoryEvents } from '../../store/image-editor.events';
+import { imageEditorHistoryEvents, imageEditorViewEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 
 const PREVIEW_URL = '/contentAsset/image/inode-1/fileAsset?byInode=true';
@@ -29,6 +29,7 @@ describe('DotImageEditorAddressBarComponent', () => {
     const zoom = signal({ level: 100, fitToScreen: true });
     const canUndo = signal(true);
     const canRedo = signal(true);
+    const isFullscreen = signal(false);
 
     const createComponent = createComponentFactory({
         component: DotImageEditorAddressBarComponent,
@@ -40,7 +41,8 @@ describe('DotImageEditorAddressBarComponent', () => {
                 previewUrl,
                 zoom,
                 canUndo,
-                canRedo
+                canRedo,
+                isFullscreen
             })
         ]
     });
@@ -50,6 +52,7 @@ describe('DotImageEditorAddressBarComponent', () => {
         zoom.set({ level: 100, fitToScreen: true });
         canUndo.set(true);
         canRedo.set(true);
+        isFullscreen.set(false);
 
         writeText = jest.fn().mockResolvedValue(undefined);
         Object.defineProperty(navigator, 'clipboard', {
@@ -66,10 +69,10 @@ describe('DotImageEditorAddressBarComponent', () => {
         expect(spectator.query(byTestId('image-editor-address-field'))).toHaveText(PREVIEW_URL);
     });
 
-    it('should render the zoom level from the zoomLevel input', () => {
+    it('should render the zoom level on the fit control from the zoomLevel input', () => {
         spectator.setInput('zoomLevel', 125);
 
-        expect(spectator.query(byTestId('image-editor-zoom-value'))).toHaveText('125%');
+        expect(spectator.query(byTestId('image-editor-fit-btn'))).toHaveText('125%');
     });
 
     it('should copy the full (absolute) preview URL to the clipboard when the copy button is clicked', () => {
@@ -118,12 +121,31 @@ describe('DotImageEditorAddressBarComponent', () => {
         expect(fitSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('should dispatch fullscreenToggled when the full-screen button is clicked', () => {
+        spectator.click(byTestId('image-editor-fullscreen-btn'));
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            imageEditorViewEvents.fullscreenToggled(),
+            { scope: 'self' }
+        );
+    });
+
+    it('should swap the full-screen icon to "minimize" while full-screen', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(
+            spectator.query(byTestId('image-editor-fullscreen-btn'))?.querySelector('.pi')
+        ).toHaveClass('pi-window-minimize');
+    });
+
     it('should expose the expected testids', () => {
         expect(spectator.query(byTestId('image-editor-address-field'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-copy-url-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-zoom-out-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-zoom-in-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-fit-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-fullscreen-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-undo-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-redo-btn'))).toBeTruthy();
     });

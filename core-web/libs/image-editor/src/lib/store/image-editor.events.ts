@@ -41,6 +41,14 @@ export const imageEditorFileInfoEvents = eventGroup({
     }
 });
 
+/** Events emitted by the editor view chrome (full-screen toggle). */
+export const imageEditorViewEvents = eventGroup({
+    source: 'Image Editor View',
+    events: {
+        fullscreenToggled: type<void>()
+    }
+});
+
 /** Events emitted by the canvas tools (move/crop/focal). */
 export const imageEditorToolEvents = eventGroup({
     source: 'Image Editor Tool',

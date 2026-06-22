@@ -33,4 +33,16 @@
     min-width: 3.5rem;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    // Rendered as a <button> (click to fit), so strip the native chrome and
+    // inherit the bar's text treatment.
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+        color: #fff;
+    }
 }
