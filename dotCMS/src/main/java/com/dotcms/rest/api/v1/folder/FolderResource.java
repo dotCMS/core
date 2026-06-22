@@ -16,6 +16,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -578,6 +579,8 @@ public class FolderResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .init().getUser();
 
+        validateSiteReadAccess(siteId, user);
+
         final Map<String, Object> extraParams = Map.of(
                 SITE_ID_PARAM, siteId,
                 PATH_PARAM, path,
@@ -601,6 +604,29 @@ public class FolderResource implements Serializable {
                 .build();
 
         return folderSearchPaginationUtil.getPageView(params);
+    }
+
+    /**
+     * Verifies that the given user has READ permission on the specified site.
+     * Throws {@link DoesNotExistException} if the site is not found,
+     * {@link ForbiddenException} if the user lacks READ access,
+     * and {@link BadRequestException} if the siteId is malformed.
+     */
+    private void validateSiteReadAccess(final String siteId, final User user) {
+        try {
+            final Host site = APILocator.getHostAPI().find(siteId, user, false);
+            if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+                throw new DoesNotExistException("No site found with id: " + siteId);
+            }
+            if (!APILocator.getPermissionAPI()
+                    .doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false)) {
+                throw new ForbiddenException("User does not have permission to access site: " + siteId);
+            }
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        } catch (final DotDataException e) {
+            throw new BadRequestException("Invalid siteId: " + siteId);
+        }
     }
 
 }

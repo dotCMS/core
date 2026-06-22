@@ -1425,10 +1425,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		final User user = (userIn == null || userIn.getUserId() == null)
 				? APILocator.getUserAPI().getAnonymousUser() : userIn;
 
-		// Admin and system user have access to everything
+		// CMS Admin and system user bypass all permission checks — consistent with
+		// filterCollection(List, int, boolean, User) and filterCollectionByDBPermissionReference.
+		// Intentionally avoids user.isAdmin() (Liferay-level) so that only the dotCMS
+		// CMS Admin role grants this bypass, regardless of respectFrontendRoles.
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
 		if (user.getUserId().equals(APILocator.systemUser().getUserId())
-				|| user.isAdmin()
-				|| APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+				|| roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
 			return new ArrayList<>(permissionables);
 		}
 
