@@ -5,14 +5,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opensearch.client.opensearch.OpenSearchClient;
 
 /**
- * Unit tests for the phase-aware OpenSearch startup connection gate
+ * Integration tests for the phase-aware OpenSearch startup connection gate
  * {@link OSIndexAPIImpl#waitUtilIndexReady()} (issue #36244).
  *
  * <p>These tests exercise the <strong>retry-exhausted</strong> branch with an
@@ -20,18 +22,29 @@ import org.opensearch.client.opensearch.OpenSearchClient;
  * unreachable / misconfigured OpenSearch cluster. The connection attempts and retry sleep are
  * forced to their minimum so the gate exhausts immediately without a real cluster.</p>
  *
+ * <p>Registered in {@link com.dotcms.OpenSearchUpgradeSuite}. Run with:
+ * <pre>
+ *   ./mvnw verify -pl :dotcms-integration \
+ *       -Dcoreit.test.skip=false \
+ *       -Dopensearch.upgrade.test=true
+ * </pre>
+ * </p>
+ *
  * <h2>What is and isn't covered here</h2>
  * <ul>
  *   <li><strong>Phase 1 / 2 (shadow)</strong> — covered: the gate must NOT kill the JVM; it halts
- *       the migration (phase reset to 0) and returns {@code false}.</li>
- *   <li><strong>Phase 3 (OS primary)</strong> — intentionally NOT unit-tested: the gate aborts via
+ *       the migration (phase reset to 0) and returns {@code false}. These two cases use the failing
+ *       client provider, so they do not need the live OpenSearch container.</li>
+ *   <li><strong>Phase 3 (OS primary)</strong> — intentionally NOT tested here: the gate aborts via
  *       {@code SystemExitManager.immediateExit}, which calls {@code Runtime.halt()} and would kill
- *       the test JVM. The Phase 3 abort is verified by integration / manual QA instead.</li>
- *   <li><strong>Success path</strong> — covered by the OpenSearch integration suite (needs a real
- *       cluster to satisfy {@code client.info()}).</li>
+ *       the test JVM. The Phase 3 abort is verified by manual QA instead.</li>
+ *   <li><strong>Success path</strong> — covered by the other OpenSearch integration tests that run
+ *       against the live cluster (a reachable {@code client.info()}).</li>
  * </ul>
+ *
+ * @author Fabrizzio Araya
  */
-public class OSIndexAPIImplWaitReadyTest {
+public class OSIndexAPIImplWaitReadyIT {
 
     /** {@link OSClientProvider} that always fails to produce a client (unreachable cluster). */
     private static final class FailingClientProvider implements OSClientProvider {
@@ -39,6 +52,11 @@ public class OSIndexAPIImplWaitReadyTest {
         public OpenSearchClient getClient() {
             throw new RuntimeException("simulated OpenSearch connection failure (test)");
         }
+    }
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
     }
 
     @Before
