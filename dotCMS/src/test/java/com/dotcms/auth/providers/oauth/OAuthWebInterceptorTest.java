@@ -8,10 +8,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.AuthAccessDeniedUtil;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -84,6 +86,35 @@ class OAuthWebInterceptorTest {
         when(request.getScheme()).thenReturn("https");
         when(request.getServerName()).thenReturn("");
         assertEquals(null, OAuthWebInterceptor.baseUrlFromRequest(request));
+    }
+
+    @Test
+    void originalRequestUri_prefersServerSideRedirectAfterLogin() {
+        // Core stores the real page in REDIRECT_AFTER_LOGIN; it must win over the client referrer.
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)).thenReturn("/members/");
+        when(request.getParameter(OAuthConstants.PARAM_REFERRER)).thenReturn("/other/");
+        assertEquals("/members/", OAuthWebInterceptor.originalRequestUri(request));
+    }
+
+    @Test
+    void originalRequestUri_prefersReferrerParam() {
+        // /dotCMS/login?referrer=/members/ must resolve to /members/, not the login URL itself.
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(OAuthConstants.PARAM_REFERRER)).thenReturn("/members/");
+        assertEquals("/members/", OAuthWebInterceptor.originalRequestUri(request));
+    }
+
+    @Test
+    void originalRequestUri_fallsBackToUriWithQueryWhenNoReferrer() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(OAuthConstants.PARAM_REFERRER)).thenReturn(null);
+        when(request.getAttribute(javax.servlet.RequestDispatcher.FORWARD_REQUEST_URI)).thenReturn(null);
+        when(request.getRequestURI()).thenReturn("/dotAdmin/");
+        when(request.getQueryString()).thenReturn(null);
+        assertEquals("/dotAdmin/", OAuthWebInterceptor.originalRequestUri(request));
     }
 
     @Test
