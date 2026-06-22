@@ -12,6 +12,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -443,11 +444,29 @@ public class OAuthWebInterceptor implements WebInterceptor {
         return defaultPort ? scheme + "://" + host : scheme + "://" + host + ":" + port;
     }
 
-    private static String originalRequestUri(final HttpServletRequest request) {
+    static String originalRequestUri(final HttpServletRequest request) {
+        // Prefer dotCMS's server-side request cache: core's login-required logic
+        // (HTMLPageAssetAPIImpl, CMSUrlUtil, the back-end login interceptor) stores the original
+        // page URI in REDIRECT_AFTER_LOGIN before bouncing an anonymous user to login. This is the
+        // trusted, server-set destination — so post-login we return to the page the user actually
+        // wanted (e.g. /members/) rather than the login URL itself, which isn't a real page and 404s.
+        final HttpSession session = request.getSession(false);
+        if (session != null) {
+            final Object redirectAfterLogin = session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+            if (redirectAfterLogin instanceof String && UtilMethods.isSet((String) redirectAfterLogin)) {
+                return (String) redirectAfterLogin;
+            }
+        }
+        // Fallback: a login-trigger URL may carry the destination in the referrer param.
+        final String referrer = request.getParameter(OAuthConstants.PARAM_REFERRER);
+        if (UtilMethods.isSet(referrer)) {
+            return referrer;
+        }
         final Object forward = request.getAttribute(javax.servlet.RequestDispatcher.FORWARD_REQUEST_URI);
         if (forward != null) {
             return forward.toString();
         }
+        // sanitizeRedirect() guards whatever is returned here against open-redirect when it is used.
         final String q = request.getQueryString();
         return q == null ? request.getRequestURI() : request.getRequestURI() + "?" + q;
     }
