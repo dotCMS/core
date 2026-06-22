@@ -5,8 +5,23 @@ export LANG=${LANG:-"C.UTF-8"}
 
 export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true  -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-# This is what MS jaz always runs. G1GC is now java default
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:G1PeriodicGCInterval=10000 -Djdk.nio.maxCachedBufferSize=262144"}
+# Auto-tune GC algorithm based on available vCPUs:
+#   1-3 cores → G1GC (default) + G1PeriodicGCInterval to return memory to OS on idle
+#   4+        → ZGC  (Java 25 uses GenerationalZGC by default; sub-ms pauses, scales with cores)
+# Override by setting JAVA_OPTS_MEMORY before this script runs.
+if [ -z "${JAVA_OPTS_MEMORY+set}" ]; then
+  _cpus=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 2)
+  _mem_base="-XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -Djdk.nio.maxCachedBufferSize=262144"
+
+  if [ "$_cpus" -le 3 ]; then
+    _gc="-XX:G1PeriodicGCInterval=10000"
+  else
+    _gc="-XX:+UseZGC"
+  fi
+
+  export JAVA_OPTS_MEMORY="$_mem_base $_gc"
+  echo "setenv: auto-GC: ${_gc} (${_cpus} vCPU; override via JAVA_OPTS_MEMORY)"
+fi
 
 # Calculate direct (off-heap) buffer memory based on container memory to prevent unbound growth 
 # can't use a percentage here so we have to calc it ourselves
@@ -58,7 +73,7 @@ export DB_HOST=${DB_HOST:-"db.dotcms.site"}
 export DB_NAME=${DB_NAME:-"dotcms"}
 
 # Max Connection Lifetime 30m
-export DB_MAX_WAIT=${DB_MAX_WAIT:-"1800000"}
+export DB_MAX_CONNECTION_LIFETIME=${DB_MAX_CONNECTION_LIFETIME:-"1800000"}
 
 # Min Idle Connections
 export DB_MIN_IDLE=${DB_MIN_IDLE:-"1"}
