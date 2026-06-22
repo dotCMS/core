@@ -346,10 +346,13 @@ export const AccessibilityStudioStore = signalStore(
              */
             runScan() {
                 const page = store.selected();
-                if (store.phase() !== 'ready' || !page) {
+                // Allow scanning from `ready` (first scan) and `scanned` (the re-scan
+                // button) — both transition into `scanning`.
+                if ((store.phase() !== 'ready' && store.phase() !== 'scanned') || !page) {
                     return;
                 }
-                patchState(store, { phase: 'scanning' });
+                // Drop any prior scan/report so the widgets reflect the fresh scan.
+                patchState(store, { phase: 'scanning', scanResult: null, report: null, fixError: null });
 
                 activeSub = scannerService
                     .checkA11y(buildScanUrl(page))
