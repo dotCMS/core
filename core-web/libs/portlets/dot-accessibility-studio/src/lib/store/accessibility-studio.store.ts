@@ -144,6 +144,16 @@ export const AccessibilityStudioStore = signalStore(
                 .filter((g) => g.type === 'warning')
                 .reduce((total, g) => total + g.count, 0)
         ),
+        /**
+         * Axe `incomplete` groups (needs manual review) — one per rule, sorted by
+         * occurrence count. The agent doesn't fix these (axe couldn't confirm them),
+         * so the panel lists them separately with an explanation.
+         */
+        reviewGroups: computed<A11yGroup[]>(() =>
+            buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'warning')
+                .sort((a, b) => b.count - a.count)
+        ),
         /** Total violations found by the real initial scan (error elements). */
         beforeCount: computed(() =>
             buildA11yGroups(store.scanResult())

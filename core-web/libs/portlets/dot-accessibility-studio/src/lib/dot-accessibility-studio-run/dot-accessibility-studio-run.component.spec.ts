@@ -118,6 +118,7 @@ describe('DotAccessibilityStudioRunComponent', () => {
             minor: 0
         }),
         issueTypeRows: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'error') : []),
+        reviewGroups: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'warning') : []),
         fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
         reportedResults: () =>
             report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
@@ -236,6 +237,12 @@ describe('DotAccessibilityStudioRunComponent', () => {
             expect(spectator.query(byTestId('studio-needsreview-note'))).toBeTruthy();
             expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
         });
+
+        it('renders the needs-review section with a row per incomplete rule', () => {
+            // MOCK_GROUPS has 1 warning group (color-contrast).
+            expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
+            expect(spectator.queryAll(byTestId('studio-review-row')).length).toBe(1);
+        });
     });
 
     describe('marker visibility (showMarkers)', () => {
@@ -330,6 +337,10 @@ describe('DotAccessibilityStudioRunComponent', () => {
 
         it('shows the after-count in the ring', () => {
             expect(spectator.query(byTestId('studio-score-count'))).toHaveText('5');
+        });
+
+        it('still shows the needs-review section in the report', () => {
+            expect(spectator.query(byTestId('studio-review-section'))).toBeTruthy();
         });
 
         it('renders a recipe step per result plus scan/locate/rescan framing', () => {

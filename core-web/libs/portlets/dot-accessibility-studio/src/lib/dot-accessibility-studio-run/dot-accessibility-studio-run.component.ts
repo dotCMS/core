@@ -518,4 +518,24 @@ export class DotAccessibilityStudioRunComponent {
     severityColorFor(impact: AxeImpact): string {
         return SEVERITY_COLOR[impactToSeverity(impact)];
     }
+
+    /**
+     * i18n key for WHY an axe `incomplete` rule needs a human — keyed by rule code,
+     * with a generic fallback. These are the common needs-review rules; axe couldn't
+     * confirm them automatically, so a person has to judge.
+     */
+    reviewReasonKey(code: string): string {
+        const known = REVIEW_REASON_KEYS[code];
+        return known ?? 'accessibility.studio.review.reason.default';
+    }
 }
+
+/** Per-rule "why it needs review" i18n keys for the common axe incomplete rules. */
+const REVIEW_REASON_KEYS: Record<string, string> = {
+    'color-contrast': 'accessibility.studio.review.reason.colorcontrast',
+    'color-contrast-enhanced': 'accessibility.studio.review.reason.colorcontrast',
+    'link-in-text-block': 'accessibility.studio.review.reason.linkintext',
+    'scrollable-region-focusable': 'accessibility.studio.review.reason.scrollable',
+    'aria-allowed-attr': 'accessibility.studio.review.reason.aria',
+    'nested-interactive': 'accessibility.studio.review.reason.nested'
+};
