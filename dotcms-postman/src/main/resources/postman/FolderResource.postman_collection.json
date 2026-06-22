@@ -858,63 +858,63 @@
 				}
 			]
 		},
-        {
-          "name": "deleteFolder",
-          "item": [
-            {
-              "name": "deleteNonExistedFolder",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test(\"Response status code is 404\", function () {",
-                      "    pm.expect(pm.response.code).to.equal(404);",
-                      "});",
-                      "",
-                      "pm.test(\"Response should contain a message field\", function () {",
-                      "    const responseData = pm.response.json();",
-                      "    ",
-                      "    pm.expect(responseData).to.be.an('object');",
-                      "    pm.expect(responseData).to.have.property('message');",
-                      "});",
-                      ""
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "request": {
-                "method": "DELETE",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "[\"/folder-1/folder-2/target-folder\"]",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{serverURL}}/api/v1/folder/default",
-                  "host": [
-                    "{{serverURL}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "folder",
-                    "default"
-                  ]
-                }
-              },
-              "response": []
-            }
-          ]
-        },
+		{
+			"name": "deleteFolder",
+			"item": [
+				{
+					"name": "deleteNonExistedFolder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 404\", function () {",
+									"    pm.expect(pm.response.code).to.equal(404);",
+									"});",
+									"",
+									"pm.test(\"Response should contain a message field\", function () {",
+									"    const responseData = pm.response.json();",
+									"    ",
+									"    pm.expect(responseData).to.be.an('object');",
+									"    pm.expect(responseData).to.have.property('message');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/folder-1/folder-2/target-folder\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"default"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Get Folder Success",
 			"event": [
@@ -1158,6 +1158,437 @@
 				"description": "Get folder2 and all the subFolders"
 			},
 			"response": []
+		},
+		{
+			"name": "searchFolders",
+			"item": [
+				{
+					"name": "Create site for byName tests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"byNameSiteId\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"byNameSiteName\", jsonData.entity.siteName);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"siteName\":\"site.test.find.folders.by.name\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create test folders for byName",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"images\", \"my-images\", \"documents\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/{{byNameSiteName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"{{byNameSiteName}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders matching partial name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const entity = jsonData.entity;",
+									"",
+									"pm.test(\"Returns at least 2 folders matching 'images'\", function () {",
+									"    pm.expect(entity.length).to.be.at.least(2);",
+									"});",
+									"",
+									"pm.test(\"All results contain 'images' in the path\", function () {",
+									"    entity.forEach(function(folder) {",
+									"        pm.expect(folder.path.toLowerCase()).to.include('images');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Each result has required fields\", function () {",
+									"    entity.forEach(function(folder) {",
+									"        pm.expect(folder.id).to.be.a('string').and.not.eql('');",
+									"        pm.expect(folder.inode).to.be.a('string').and.not.eql('');",
+									"        pm.expect(folder.path).to.be.a('string').and.not.eql('');",
+									"        pm.expect(folder.hostName).to.be.a('string').and.not.eql('');",
+									"        pm.expect(folder.addChildrenAllowed).to.be.a('boolean');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "images"
+								},
+								{
+									"key": "siteId",
+									"value": "{{byNameSiteId}}"
+								},
+								{
+									"key": "recursive",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders scoped by hostId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"const entity = jsonData.entity;",
+									"const expectedSite = pm.collectionVariables.get('byNameSiteName');",
+									"",
+									"pm.test(\"All returned folders belong to the specified site\", function () {",
+									"    entity.forEach(function(folder) {",
+									"        pm.expect(folder.hostName).to.eql(expectedSite);",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "images"
+								},
+								{
+									"key": "siteId",
+									"value": "{{byNameSiteId}}"
+								},
+								{
+									"key": "recursive",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders with pagination \u2014 page 1 per_page 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Returns exactly 1 result\", function () {",
+									"    pm.expect(jsonData.entity.length).to.eql(1);",
+									"});",
+									"",
+									"pm.test(\"Pagination header X-Pagination-Total-Entries is present\", function () {",
+									"    pm.expect(pm.response.headers.get('X-Pagination-Total-Entries')).to.not.be.null;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&page=1&per_page=1&recursive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "images"
+								},
+								{
+									"key": "siteId",
+									"value": "{{byNameSiteId}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "1"
+								},
+								{
+									"key": "recursive",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders by name within path scope",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pagination in body is present\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination).to.not.be.null;",
+									"    pm.expect(jsonData.pagination.totalEntries).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true&page=1&per_page=10",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "images"
+								},
+								{
+									"key": "siteId",
+									"value": "{{byNameSiteId}}"
+								},
+								{
+									"key": "recursive",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders \u2014 missing hostId returns 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search?name=images&recursive=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "images"
+								},
+								{
+									"key": "recursive",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find folders \u2014 missing filter returns 400",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

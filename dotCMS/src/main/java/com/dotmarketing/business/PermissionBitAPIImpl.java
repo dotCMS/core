@@ -1410,6 +1410,53 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionFactory.filterCollectionByDBPermissionReference(permissionables, requiredTypePermission, respectFrontendRoles, user);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public <P extends Permissionable> List<P> filterCollection(
+			final Collection<P> permissionables,
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if (permissionables == null || permissionables.isEmpty()) {
+			return List.of();
+		}
+
+		final User user = (userIn == null || userIn.getUserId() == null)
+				? APILocator.getUserAPI().getAnonymousUser() : userIn;
+
+		// Admin and system user have access to everything
+		if (user.getUserId().equals(APILocator.systemUser().getUserId())
+				|| user.isAdmin()
+				|| APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+			return new ArrayList<>(permissionables);
+		}
+
+		// Resolve user roles once
+		final List<String> roleIds = new ArrayList<>();
+		if (respectFrontendRoles) {
+			roleIds.add(anonRole.get().getId());
+			roleIds.add(APILocator.getRoleAPI().loadLoggedinSiteRole().getId());
+		}
+		APILocator.getRoleAPI().loadRolesForUser(user.getUserId())
+				.stream().map(Role::getId).forEach(roleIds::add);
+
+		if (roleIds.isEmpty()) {
+			return List.of();
+		}
+
+		final List<String> permissionIds = permissionables.stream()
+				.map(Permissionable::getPermissionId)
+				.filter(UtilMethods::isSet)
+				.toList();
+
+		final Set<String> permitted = permissionFactory.getPermittedIds(permissionIds, permissionType, roleIds);
+
+		return permissionables.stream()
+				.filter(p -> permitted.contains(p.getPermissionId()))
+				.collect(Collectors.toList());
+	}
+
 	@WrapInTransaction
 	@Override
 	public void removePermissionsByRole(String roleId) {
