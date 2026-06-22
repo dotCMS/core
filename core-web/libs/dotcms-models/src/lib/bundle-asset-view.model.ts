@@ -3,8 +3,8 @@
  *
  * Backed by `GET /api/bundle/{bundleId}/assets` which returns a `List<Map<String,Object>>`
  * (`com.dotcms.rest.BundleResource#getPublishQueueElements`) produced by
- * `PublishQueueElementTransformer`. The transformer emits keys like `type`, `title`,
- * `inode`, `content_type_name`, `language_code`, `country_code`, `operation`, `asset`.
+ * `PublishQueueElementTransformer`. The transformer emits keys exactly as named below
+ * (snake_case for the multi-word ones — these field names mirror the wire format).
  *
  * `asset` is the universal identifier — always set by the transformer for every row
  * type (contentlet, language, template, container, etc.). This is the id we pass to
@@ -17,8 +17,8 @@ export interface BundleAssetView {
     title: string;
     type: string;
     inode?: string;
-    contentTypeName?: string;
-    languageCode?: string;
-    countryCode?: string;
+    content_type_name?: string;
+    language_code?: string;
+    country_code?: string;
     operation?: number;
 }

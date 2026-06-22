@@ -1,0 +1,306 @@
+<div class="flex h-full min-h-0 flex-col overflow-hidden" data-testid="pq-select-bundle-dialog">
+    <div class="flex min-h-0 flex-1 overflow-hidden">
+        <!-- LEFT: Bundles list -->
+        <div
+            class="flex min-h-0 w-2/5 flex-col border-r border-surface-200"
+            data-testid="pq-select-bundle-left">
+            <div class="px-4 py-3">
+                <p-iconField iconPosition="left">
+                    <p-inputIcon styleClass="pi pi-search" />
+                    <input
+                        pInputText
+                        type="text"
+                        [ngModel]="bundleSearch()"
+                        (ngModelChange)="onBundleSearch($event)"
+                        [placeholder]="'publishing-queue.select-bundle.search.placeholder' | dm"
+                        [attr.aria-label]="'publishing-queue.select-bundle.search.placeholder' | dm"
+                        data-testid="pq-select-bundle-search"
+                        class="w-full" />
+                </p-iconField>
+            </div>
+
+            <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+                <p-table
+                    [value]="bundles()"
+                    [selection]="checkedBundles()"
+                    (selectionChange)="onCheckedChange($event)"
+                    dataKey="id"
+                    [scrollable]="false"
+                    [tableStyle]="tableStyleFixed"
+                    data-testid="pq-select-bundle-list">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th style="width: 3rem">
+                                <p-tableHeaderCheckbox />
+                            </th>
+                            <th
+                                class="text-color-secondary text-xs font-semibold tracking-wide uppercase">
+                                {{ 'publishing-queue.select-bundle.bundles' | dm }}
+                            </th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-bundle>
+                        @if (bundlesStatus() === 'loading') {
+                            <tr class="cursor-default hover:bg-transparent!">
+                                <td><p-skeleton width="1rem" height="1rem" /></td>
+                                <td>
+                                    <p-skeleton width="60%" height="1rem" class="mb-1!" />
+                                    <p-skeleton width="40%" height="0.75rem" />
+                                </td>
+                            </tr>
+                        } @else {
+                            <tr
+                                class="group cursor-pointer border-l-4 border-transparent"
+                                [class.bg-primary-50!]="activeBundleId() === bundle.id"
+                                [class.hover:bg-primary-50!]="activeBundleId() === bundle.id"
+                                [class.border-l-primary-500!]="activeBundleId() === bundle.id"
+                                (click)="onSelectBundle(bundle)"
+                                data-testid="pq-select-bundle-row"
+                                [attr.data-bundle-id]="bundle.id">
+                                <td (click)="$event.stopPropagation()">
+                                    <p-tableCheckbox [value]="bundle" />
+                                </td>
+                                <td>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="truncate font-medium text-color"
+                                                [class.text-primary-700]="
+                                                    activeBundleId() === bundle.id
+                                                "
+                                                data-testid="pq-select-bundle-name">
+                                                {{ bundle.name }}
+                                            </div>
+                                            <div class="inline-flex max-w-full items-center gap-1">
+                                                <span
+                                                    class="text-color-secondary truncate font-mono text-xs"
+                                                    data-testid="pq-select-bundle-id"
+                                                    [title]="bundle.id">
+                                                    {{ bundle.id }}
+                                                </span>
+                                                <dot-copy-button
+                                                    [copy]="bundle.id"
+                                                    [tooltipText]="
+                                                        'publishing-queue.copy-bundle-id' | dm
+                                                    "
+                                                    tooltipPosition="top"
+                                                    customClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                                    data-testid="pq-select-bundle-id-copy" />
+                                            </div>
+                                        </div>
+                                        <i
+                                            class="pi pi-chevron-right text-color-secondary text-xs opacity-0 transition-opacity group-hover:opacity-100"
+                                            [class.opacity-100]="activeBundleId() === bundle.id"
+                                            [class.text-primary-500]="
+                                                activeBundleId() === bundle.id
+                                            "
+                                            aria-hidden="true"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                        <tr class="hover:bg-transparent!">
+                            <td colspan="2" class="p-6 text-center">
+                                <span
+                                    class="text-color-secondary text-sm"
+                                    data-testid="pq-select-bundle-empty">
+                                    {{ 'publishing-queue.select-bundle.empty' | dm }}
+                                </span>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+
+            <div
+                class="flex items-center justify-center gap-2 border-t border-surface-200 px-4 py-2">
+                <span class="text-color-secondary text-sm" data-testid="pq-select-bundle-page">
+                    {{ 'publishing-queue.select-bundle.page' | dm }} {{ bundlesPage() }}
+                </span>
+                <p-button
+                    icon="pi pi-chevron-left"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    [disabled]="bundlesPage() <= 1"
+                    (onClick)="onBundlesPagePrev()"
+                    [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
+                    data-testid="pq-select-bundle-prev" />
+                <p-button
+                    icon="pi pi-chevron-right"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    [disabled]="bundlesPage() * bundlesPerPage >= bundlesTotal()"
+                    (onClick)="onBundlesPageNext()"
+                    [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
+                    data-testid="pq-select-bundle-next" />
+            </div>
+        </div>
+
+        <!-- RIGHT: Assets table -->
+        <div class="flex min-h-0 w-3/5 flex-col" data-testid="pq-select-bundle-right">
+            <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+                <p-table
+                    [value]="pagedAssets()"
+                    dataKey="asset"
+                    [scrollable]="false"
+                    [tableStyle]="tableStyleFixed"
+                    data-testid="pq-select-bundle-asset-table">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th
+                                class="text-color-secondary text-xs font-semibold tracking-wide uppercase">
+                                {{ 'publishing-queue.select-bundle.col.name' | dm }}
+                            </th>
+                            <th
+                                style="width: 10rem"
+                                class="text-color-secondary text-xs font-semibold tracking-wide uppercase">
+                                {{ 'publishing-queue.select-bundle.col.type' | dm }}
+                            </th>
+                            <th style="width: 3.5rem"></th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-asset>
+                        @if (assetsStatus() === 'loading') {
+                            <tr class="cursor-default hover:bg-transparent!">
+                                <td><p-skeleton width="60%" height="1rem" /></td>
+                                <td><p-skeleton width="50%" height="1rem" /></td>
+                                <td></td>
+                            </tr>
+                        } @else {
+                            <tr data-testid="pq-select-bundle-asset-row">
+                                <td>
+                                    <div class="flex min-w-0 items-center gap-2">
+                                        <i
+                                            [class]="typeIcon(asset.type)"
+                                            class="shrink-0"
+                                            aria-hidden="true"></i>
+                                        @if (editUrlFor(asset); as editUrl) {
+                                            <a
+                                                [href]="editUrl"
+                                                target="_blank"
+                                                rel="noopener"
+                                                class="truncate text-primary-600 hover:text-primary-700 hover:underline"
+                                                [title]="asset.title || asset.asset"
+                                                data-testid="pq-select-bundle-asset-name">
+                                                {{ asset.title || asset.asset }}
+                                            </a>
+                                        } @else {
+                                            <span
+                                                class="truncate text-color"
+                                                [title]="asset.title || asset.asset"
+                                                data-testid="pq-select-bundle-asset-name">
+                                                {{ asset.title || asset.asset }}
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <p-tag
+                                        [value]="asset.content_type_name || asset.type"
+                                        severity="secondary"
+                                        [rounded]="false"
+                                        data-testid="pq-select-bundle-asset-type" />
+                                </td>
+                                <td class="text-right">
+                                    <p-button
+                                        icon="pi pi-trash"
+                                        [text]="true"
+                                        [rounded]="true"
+                                        size="small"
+                                        severity="danger"
+                                        [pTooltip]="
+                                            'publishing-queue.select-bundle.delete-tooltip' | dm
+                                        "
+                                        tooltipPosition="left"
+                                        (onClick)="onRemoveAsset(asset)"
+                                        [attr.aria-label]="
+                                            'publishing-queue.select-bundle.delete-tooltip' | dm
+                                        "
+                                        data-testid="pq-select-bundle-asset-delete" />
+                                </td>
+                            </tr>
+                        }
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                        <tr class="hover:bg-transparent!">
+                            <td colspan="3" class="p-6 text-center">
+                                <span
+                                    class="text-color-secondary text-sm"
+                                    data-testid="pq-select-bundle-asset-empty">
+                                    @if (activeBundleId()) {
+                                        {{ 'publishing-queue.select-bundle.asset-empty' | dm }}
+                                    } @else {
+                                        {{ 'publishing-queue.select-bundle.no-active' | dm }}
+                                    }
+                                </span>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+
+            <div
+                class="flex items-center justify-center gap-2 border-t border-surface-200 px-4 py-2">
+                <span
+                    class="text-color-secondary text-sm"
+                    data-testid="pq-select-bundle-asset-page">
+                    {{ 'publishing-queue.select-bundle.page' | dm }} {{ assetsPage() }}
+                </span>
+                <p-button
+                    icon="pi pi-chevron-left"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    [disabled]="assetsPage() <= 1"
+                    (onClick)="onAssetsPagePrev()"
+                    [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
+                    data-testid="pq-select-bundle-asset-prev" />
+                <p-button
+                    icon="pi pi-chevron-right"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    [disabled]="assetsPage() * assetsPerPage >= assetsTotal()"
+                    (onClick)="onAssetsPageNext()"
+                    [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
+                    data-testid="pq-select-bundle-asset-next" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Action bar -->
+    <div
+        class="flex shrink-0 items-center justify-end gap-3 border-t border-surface-200 px-4 py-3"
+        data-testid="pq-select-bundle-actions">
+        <p-button
+            [label]="'publishing-queue.select-bundle.remove' | dm"
+            [text]="true"
+            severity="danger"
+            [disabled]="!hasChecked()"
+            (onClick)="onRemoveBundles()"
+            data-testid="pq-select-bundle-remove-btn" />
+        <p-button
+            [label]="'publishing-queue.select-bundle.download' | dm"
+            icon="pi pi-chevron-down"
+            iconPos="right"
+            [outlined]="true"
+            [disabled]="!hasActive()"
+            (onClick)="onDownloadActive()"
+            data-testid="pq-select-bundle-download-btn" />
+        <p-button
+            [label]="'publishing-queue.select-bundle.configure' | dm"
+            [disabled]="!hasActive()"
+            (onClick)="onConfigureActive()"
+            data-testid="pq-select-bundle-configure-btn" />
+    </div>
+
+    <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
+</div>

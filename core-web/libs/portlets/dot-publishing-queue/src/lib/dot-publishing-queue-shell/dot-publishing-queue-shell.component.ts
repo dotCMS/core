@@ -16,6 +16,7 @@ import {
     DeleteBundlesScope,
     DotPublishingQueueDeleteDialogComponent
 } from '../dialogs/dot-publishing-queue-delete-dialog/dot-publishing-queue-delete-dialog.component';
+import { DotPublishingQueueSelectBundleDialogComponent } from '../dialogs/dot-publishing-queue-select-bundle-dialog/dot-publishing-queue-select-bundle-dialog.component';
 import { DotPublishingQueueUploadDialogComponent } from '../dialogs/dot-publishing-queue-upload-dialog/dot-publishing-queue-upload-dialog.component';
 import { DotPublishingQueueTableComponent } from '../dot-publishing-queue-table/dot-publishing-queue-table.component';
 import {
@@ -57,6 +58,7 @@ export class DotPublishingQueueShellComponent {
     private uploadRef: DynamicDialogRef | null = null;
     private assetListRef: DynamicDialogRef | null = null;
     private deleteRef: DynamicDialogRef | null = null;
+    private selectBundleRef: DynamicDialogRef | null = null;
 
     constructor() {
         effect(() => {
@@ -67,6 +69,30 @@ export class DotPublishingQueueShellComponent {
         effect(() => {
             const bundleId = this.store.detailBundleId();
             untracked(() => this.syncDetail(bundleId));
+        });
+    }
+
+    openSelectBundle(): void {
+        if (this.selectBundleRef) {
+            return;
+        }
+        this.selectBundleRef = this.dialogService.open(
+            DotPublishingQueueSelectBundleDialogComponent,
+            {
+                header: this.dotMessageService.get('publishing-queue.select-bundle.title'),
+                width: 'min(95vw, 1100px)',
+                contentStyle: { height: '70vh', padding: '0' },
+                closable: true,
+                closeOnEscape: true,
+                draggable: false,
+                position: 'center'
+            }
+        );
+        this.selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
+            this.selectBundleRef = null;
+            // Selecting/removing bundles inside the dialog may have changed the
+            // active set — refresh the unified table so the user sees the latest.
+            this.store.refresh();
         });
     }
 

@@ -74,18 +74,32 @@ describe('DotPublishingQueueToolbarComponent', () => {
     });
 
     describe('layout', () => {
-        it('renders search, status filter, refresh, upload', () => {
+        it('renders search, status filter, refresh, add bundle dropdown', () => {
             expect(spectator.query(byTestId('pq-search-input'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-status-filter-stub'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-refresh-btn'))).toBeTruthy();
-            expect(spectator.query(byTestId('pq-upload-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeTruthy();
+        });
+    });
+
+    describe('Add Bundle dropdown', () => {
+        it('exposes two menu items: Select Bundle + Upload', () => {
+            expect(spectator.component.addBundleItems.length).toBe(2);
+            expect(spectator.component.addBundleItems[0].icon).toBe('pi pi-table');
+            expect(spectator.component.addBundleItems[1].icon).toBe('pi pi-upload');
         });
 
-        it('upload button click emits uploadClick', () => {
+        it('Upload item → emits uploadClick', () => {
             const emit = jest.fn();
             spectator.component.uploadClick.subscribe(emit);
-            const uploadBtn = spectator.query(byTestId('pq-upload-btn'))?.querySelector('button');
-            spectator.click(uploadBtn as HTMLButtonElement);
+            spectator.component.addBundleItems[1].command?.({} as never);
+            expect(emit).toHaveBeenCalled();
+        });
+
+        it('Select Bundle item → emits selectBundleClick (placeholder for future dialog)', () => {
+            const emit = jest.fn();
+            spectator.component.selectBundleClick.subscribe(emit);
+            spectator.component.addBundleItems[0].command?.({} as never);
             expect(emit).toHaveBeenCalled();
         });
     });

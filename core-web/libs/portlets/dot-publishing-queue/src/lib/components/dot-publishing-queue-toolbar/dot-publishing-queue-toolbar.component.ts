@@ -11,14 +11,17 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
@@ -33,6 +36,7 @@ import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue
         IconFieldModule,
         InputIconModule,
         InputTextModule,
+        MenuModule,
         ToolbarModule,
         DotMessagePipe,
         DotPublishingQueueStatusFilterComponent
@@ -43,13 +47,31 @@ import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue
 export class DotPublishingQueueToolbarComponent {
     readonly store = inject(DotPublishingQueueStore);
     readonly uploadClick = output<void>();
+    readonly selectBundleClick = output<void>();
     readonly deleteClick = output<void>();
 
     private readonly destroyRef = inject(DestroyRef);
+    private readonly dotMessageService = inject(DotMessageService);
     private searchSubject = new Subject<string>();
 
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
     readonly hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
+
+    /** "Add Bundle" dropdown items. "Select Bundle" is reserved for a future
+     * dialog (issue #36040 follow-up); for now it just emits the output so the
+     * shell can wire it up when ready. */
+    readonly addBundleItems: MenuItem[] = [
+        {
+            label: this.dotMessageService.get('publishing-queue.add-bundle.select'),
+            icon: 'pi pi-table',
+            command: () => this.selectBundleClick.emit()
+        },
+        {
+            label: this.dotMessageService.get('publishing-queue.add-bundle.upload'),
+            icon: 'pi pi-upload',
+            command: () => this.uploadClick.emit()
+        }
+    ];
 
     constructor() {
         this.searchSubject

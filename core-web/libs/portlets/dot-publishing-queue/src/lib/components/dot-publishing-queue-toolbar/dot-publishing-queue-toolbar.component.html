@@ -44,10 +44,21 @@
                 [text]="true"
                 (onClick)="store.refresh()"
                 data-testid="pq-refresh-btn" />
+            <p-menu
+                #addBundleMenu
+                [model]="addBundleItems"
+                [popup]="true"
+                appendTo="body"
+                showTransitionOptions="0ms"
+                hideTransitionOptions="0ms"
+                data-testid="pq-add-bundle-menu" />
             <p-button
-                [label]="'publishing-queue.upload-bundle' | dm"
-                (onClick)="uploadClick.emit()"
-                data-testid="pq-upload-btn" />
+                [label]="'publishing-queue.add-bundle' | dm"
+                icon="pi pi-chevron-down"
+                iconPos="right"
+                (onClick)="addBundleMenu.toggle($event)"
+                [attr.aria-label]="'publishing-queue.add-bundle' | dm"
+                data-testid="pq-add-bundle-btn" />
         </div>
     </div>
 </p-toolbar>
