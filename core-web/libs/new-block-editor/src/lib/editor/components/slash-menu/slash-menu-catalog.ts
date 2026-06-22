@@ -86,7 +86,7 @@ function buildContentletByTitleQuery(
         .map((s) => s.trim())
         .filter(Boolean);
     // Space inside the group is an implicit OR, e.g. `+contentType:(Blog News)`.
-    const typeClause = types.length > 0 ? `+contentType:(${types.join(' ')}) ` : '';
+    const typeClause = types.length > 0 ? `+contentType:(${types.join(' OR ')}) ` : '';
     return `${typeClause}+languageId:${languageId} +deleted:false +working:true ${titleClause}`;
 }
 

@@ -51,7 +51,6 @@ export function createInlineContentSuggestionExtension(
                     // Results are resolved asynchronously by the service; TipTap's synchronous
                     // item list is unused.
                     items: () => [],
-
                     command: ({ editor, range, props }) => {
                         editor
                             .chain()

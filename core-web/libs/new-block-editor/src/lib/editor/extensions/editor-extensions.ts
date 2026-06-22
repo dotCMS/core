@@ -148,6 +148,13 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('dotContent') ? [createDotContentlet(injector)] : []),
+        // Register the inline-content NODE unconditionally so stored content always parses.
+        // TipTap's JSON loader (`schema.nodeFromJSON`) THROWS on an unknown node type and then
+        // resets the WHOLE document to empty — it cannot drop a single unknown JSON node the way
+        // the HTML parser can. So gating the node's schema registration by `allowedBlocks` would
+        // blank the entire field whenever a doc contains `dotInlineContent` but the field doesn't
+        // list it (e.g. tightened allowlist, paste, migration). Only the `@`-mention INSERTION is
+        // gated, so a restricted field still renders existing references but can't author new ones.
         ...(has('dotInlineContent')
             ? [
                   createDotInlineContent(injector),

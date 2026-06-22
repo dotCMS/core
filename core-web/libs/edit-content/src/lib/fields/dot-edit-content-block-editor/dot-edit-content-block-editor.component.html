@@ -12,15 +12,15 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        @if (isNewBlockEditorEnabled()) {
+        <!-- Exclude null and undefined values from the template -->
+        @if (isNewBlockEditorEnabled() === true) {
             <dot-block-editor
                 [languageId]="$languageId()"
                 [formControlName]="field.variable"
                 [contentlet]="$contentlet()"
                 [hasError]="fieldHasError"
                 [field]="field" />
-        } @else {
-            <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
+        } @else if (isNewBlockEditorEnabled() === false) {
             <dot-old-block-editor
                 [languageId]="$languageId()"
                 [formControlName]="field.variable"
