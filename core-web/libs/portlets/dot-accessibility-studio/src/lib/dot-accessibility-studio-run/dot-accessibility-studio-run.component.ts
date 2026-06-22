@@ -12,15 +12,32 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { ChartModule } from 'primeng/chart';
 import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
+import {
+    impactToSeverity,
+    SEVERITY_COLOR,
+    SEVERITY_LABEL,
+    SEVERITY_ORDER,
+    type Severity
+} from '../models/a11y-severity';
 import { FixResult, StudioStepPhase } from '../models/accessibility-studio.models';
 import { A11yMarkerService } from '../services/a11y-marker.service';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
+
+/** A severity legend / breakdown row beside the donut. */
+interface SeverityRow {
+    severity: Severity;
+    label: string;
+    color: string;
+    count: number;
+}
 
 /** A human-readable line in the Agent Recipe log. */
 interface RecipeStep {
@@ -56,6 +73,7 @@ const STEP_PHASE_ICON: Record<StudioStepPhase, string> = {
     imports: [
         FormsModule,
         ButtonModule,
+        ChartModule,
         SelectModule,
         ToggleSwitchModule,
         TooltipModule,
@@ -105,9 +123,6 @@ export class DotAccessibilityStudioRunComponent {
     /** The scrollable recipe log — auto-scrolled to the latest live step. */
     private readonly recipeLog = viewChild<ElementRef<HTMLElement>>('recipeLog');
 
-    /** Score ring geometry — circumference of r=54 circle. */
-    private readonly RING_CIRCUMFERENCE = 339.292;
-
     constructor() {
         // Redraw markers whenever the findings or preview mode change. Markers
         // highlight the ORIGINAL violations, so they belong on the LIVE (published,
@@ -142,38 +157,115 @@ export class DotAccessibilityStudioRunComponent {
         );
     }
 
-    /** The number shown in the ring center: open violations, or a dash pre-scan. */
-    readonly centerCount = computed<string | number>(() => {
-        if (this.store.isScanning() || !this.store.scanned()) {
-            return '–';
+    /** The big number in the donut center — the live open-issue count. */
+    readonly centerCount = computed<number>(() => this.store.openCount());
+
+    /**
+     * The section-header label above the scrollable body, by phase:
+     *   scanning → "SCAN", scanned → "BY ISSUE TYPE", fixing/done → "AGENT ACTIVITY".
+     */
+    readonly logHeaderKey = computed<string>(() => {
+        if (this.store.isScanning()) {
+            return 'accessibility.studio.loghdr.scan';
         }
-        // While "scanned" (pre-fix) show the real before count; after the
-        // (mocked) fix show the after count.
-        return this.store.isDone() || this.store.isPublished()
-            ? this.store.afterCount()
-            : this.store.beforeCount();
+        if (this.store.isScanned()) {
+            return 'accessibility.studio.loghdr.issues';
+        }
+        return 'accessibility.studio.loghdr.activity';
     });
 
-    /** Ring fill 0→1 based on issues cleared (before − current) / before. */
-    readonly ringProgress = computed(() => {
-        if (!this.store.isDone() && !this.store.isPublished()) {
-            return 0;
+    /** The working badge label beside the header ("SCANNING" / "WORKING"), or null. */
+    readonly logBadgeKey = computed<string | null>(() => {
+        if (this.store.isScanning()) {
+            return 'accessibility.studio.badge.scanning';
         }
-        const before = this.store.beforeCount();
-        const cleared = before - this.store.afterCount();
-        return before > 0 ? Math.min(1, Math.max(0, cleared / before)) : 0;
+        if (this.store.isFixing()) {
+            return 'accessibility.studio.badge.working';
+        }
+        return null;
     });
 
-    readonly ringOffset = computed(
-        () => this.RING_CIRCUMFERENCE * (1 - this.ringProgress())
-    );
-
-    readonly ringClass = computed(() => {
-        if (!this.store.scanned()) {
-            return 'stroke-surface-300';
+    /** Headline above the severity legend, by phase. */
+    readonly scoreHeadlineKey = computed<string>(() => {
+        if (this.store.isFixing()) {
+            return 'accessibility.studio.score.fixing';
         }
-        return this.ringProgress() >= 1 ? 'stroke-green-500' : 'stroke-primary';
+        if (this.store.isDone() || this.store.isPublished()) {
+            return 'accessibility.studio.score.remaining';
+        }
+        return 'accessibility.studio.score.found';
     });
+
+    /**
+     * Severity legend rows beside the donut (Critical/Serious/Moderate/Minor with
+     * their element counts). Drives both the legend and the donut segments. While
+     * scanned we hide empty buckets (matches the mockup); once fixing/done we keep
+     * them so the user sees a bucket reach 0.
+     */
+    readonly severityRows = computed<SeverityRow[]>(() => {
+        const counts = this.store.severityCounts();
+        const keepZeros = this.store.isFixing() || this.store.isDone() || this.store.isPublished();
+        return SEVERITY_ORDER.map((severity) => ({
+            severity,
+            label: SEVERITY_LABEL[severity],
+            color: SEVERITY_COLOR[severity],
+            count: counts[severity]
+        })).filter((row) => keepZeros || row.count > 0);
+    });
+
+    /** PrimeNG doughnut data — one arc per severity, colored by SEVERITY_COLOR. */
+    readonly donutData = computed(() => {
+        const counts = this.store.severityCounts();
+        const open = this.store.openCount();
+        const total = SEVERITY_ORDER.reduce((sum, s) => sum + counts[s], 0);
+        // No open issues → render a single full "clear" ring (green) so the donut
+        // still reads as a complete circle rather than collapsing.
+        if (total === 0 || open === 0) {
+            return {
+                labels: ['Clear'],
+                datasets: [{ data: [1], backgroundColor: ['#22c55e'], borderWidth: 0 }]
+            };
+        }
+        return {
+            labels: SEVERITY_ORDER.map((s) => SEVERITY_LABEL[s]),
+            datasets: [
+                {
+                    data: SEVERITY_ORDER.map((s) => counts[s]),
+                    backgroundColor: SEVERITY_ORDER.map((s) => SEVERITY_COLOR[s]),
+                    borderWidth: 0
+                }
+            ]
+        };
+    });
+
+    /** Doughnut options — thin ring, no legend/tooltip (the center text is overlaid). */
+    readonly donutOptions = {
+        cutout: '74%',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        animation: { duration: 500 }
+    };
+
+    /**
+     * The scanning mini-log (screenshot 2): the two fixed rows shown while the
+     * axe scan runs — "Loading page" then "Running axe-core scan".
+     */
+    readonly scanningRows = computed(() => [
+        {
+            icon: 'pi pi-search',
+            text: 'accessibility.studio.scanning.loading',
+            // The page path is shown verbatim (not an i18n string).
+            sub: this.store.selected()?.path ?? '',
+            translateSub: false
+        },
+        {
+            icon: 'pi pi-spin pi-spinner',
+            text: 'accessibility.studio.scanning.running',
+            sub: 'accessibility.studio.scanning.running.sub',
+            translateSub: true
+        }
+    ]);
 
     /** True while the agent is actively running (SSE in flight). */
     readonly isFixing = computed(() => this.store.isFixing());
@@ -235,9 +327,12 @@ export class DotAccessibilityStudioRunComponent {
         });
 
         this.store.reportedResults().forEach((r, i) => {
+            // Distinct icon per non-fixed status: reverted → undo, regressed → undo,
+            // everything else (reported/skipped/failed) → flag.
+            const reverted = r.reverted || r.status === 'regressed';
             steps.push({
                 id: `reported-${i}`,
-                icon: 'pi pi-flag',
+                icon: reverted ? 'pi pi-replay' : 'pi pi-flag',
                 text: r.review ?? r.reason ?? `Flagged ${r.ruleId}`,
                 sub: this.ruleAndFile(r),
                 tone: 'reported'
@@ -272,6 +367,37 @@ export class DotAccessibilityStudioRunComponent {
                 return 'accessibility.studio.footer.published.title';
             default:
                 return '';
+        }
+    });
+
+    /** Interpolation args for the footer title, by phase. */
+    readonly footerArgs = computed<string[]>(() => {
+        switch (this.store.phase()) {
+            case 'scanned':
+                // "N issues ready to fix"
+                return [this.store.openCount().toString()];
+            case 'fixing':
+            case 'done':
+            case 'published':
+                // "N fixed to working …" / "N fixed · M flagged"
+                return [
+                    this.store.fixedCount().toString(),
+                    this.store.reportedCount().toString()
+                ];
+            default:
+                return [];
+        }
+    });
+
+    /** Small leading icon + bubble color for the footer copy, by phase. */
+    readonly footerIcon = computed<{ icon: string; cls: string } | null>(() => {
+        switch (this.store.phase()) {
+            case 'scanned':
+                return { icon: 'pi pi-sparkles', cls: 'bg-primary-50 text-primary' };
+            case 'fixing':
+                return { icon: 'pi pi-bolt', cls: 'bg-orange-50 text-orange-600' };
+            default:
+                return null;
         }
     });
 
@@ -345,8 +471,16 @@ export class DotAccessibilityStudioRunComponent {
         this.store.runScan();
     }
 
+    stopScan(): void {
+        this.store.stopScan();
+    }
+
     startFix(): void {
         this.store.startFix();
+    }
+
+    stopAgent(): void {
+        this.store.stopAgent();
     }
 
     publish(): void {
@@ -364,5 +498,10 @@ export class DotAccessibilityStudioRunComponent {
     private ruleAndFile(r: FixResult): string {
         const file = r.file ? r.file.split('/').pop() : undefined;
         return file ? `${r.ruleId} · ${file}` : r.ruleId;
+    }
+
+    /** Dot color for an issue-type row, by axe impact (used by the BY ISSUE TYPE list). */
+    severityColorFor(impact: AxeImpact): string {
+        return SEVERITY_COLOR[impactToSeverity(impact)];
     }
 }

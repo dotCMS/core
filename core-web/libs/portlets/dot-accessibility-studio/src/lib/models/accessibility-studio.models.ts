@@ -75,4 +75,7 @@ export interface StudioStep {
 export type AgentStreamEvent =
     | { type: 'step'; phase: StudioStepPhase; message: string }
     | { type: 'done'; report: FixReport }
+    // Terminal event when the user stopped the run — carries the PARTIAL report
+    // (fixes already applied are kept). Same payload as `done`.
+    | { type: 'aborted'; report: FixReport }
     | { type: 'error'; message: string };

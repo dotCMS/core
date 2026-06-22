@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
 import {
     AgentFixRequest,
@@ -35,10 +36,22 @@ function isStepPhase(value: unknown): value is StudioStepPhase {
 
 @Injectable()
 export class DotA11yAgentService {
+    private readonly http = inject(HttpClient);
+
+    /**
+     * Ask the agent to stop the caller's in-flight run (cooperative). The agent
+     * stops at the next safe checkpoint and the open SSE stream emits a terminal
+     * `aborted` event with the partial report. 202 if a run was signalled, 404 if
+     * none — both are fine here, so errors are swallowed.
+     */
+    stop(): Observable<unknown> {
+        return this.http.post(`${AGENT_BASE}/stop`, {});
+    }
+
     /**
      * Run the fix loop, streaming each agent step. The observable emits one
-     * AgentStreamEvent per SSE event and completes after `done`/`error` (or when
-     * the caller unsubscribes, which aborts the in-flight request).
+     * AgentStreamEvent per SSE event and completes after `done`/`aborted`/`error`
+     * (or when the caller unsubscribes, which aborts the in-flight request).
      */
     fixStream(request: AgentFixRequest): Observable<AgentStreamEvent> {
         return new Observable<AgentStreamEvent>((subscriber) => {
@@ -149,6 +162,14 @@ export class DotA11yAgentService {
                 }
 
                 return { type: 'done', report };
+            }
+            case 'aborted': {
+                const report = data['report'] as FixReport | undefined;
+                if (!report) {
+                    return { type: 'error', message: 'Agent stopped without a report.' };
+                }
+
+                return { type: 'aborted', report };
             }
             case 'error': {
                 const message =
