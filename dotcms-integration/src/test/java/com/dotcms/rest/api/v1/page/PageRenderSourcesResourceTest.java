@@ -60,7 +60,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -582,7 +584,9 @@ public class PageRenderSourcesResourceTest {
                 .name(themeName)
                 .nextPersisted();
 
-        // Create a test VTL file in the theme folder
+        // A theme is composed of many file types (VTL, CSS, CSS preprocessors, JS, ...);
+        // create a representative spread so we can prove the response returns every file
+        // with its extension rather than a whitelisted subset.
         final File tempVtl = File.createTempFile("header", ".vtl");
         Files.writeString(tempVtl.toPath(), "#* test vtl *#");
         final Contentlet vtlContentlet = new FileAssetDataGen(themeFolder, tempVtl)
@@ -590,6 +594,32 @@ public class PageRenderSourcesResourceTest {
                 .nextPersisted();
         vtlContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(vtlContentlet, adminUser, false);
+
+        final File tempCss = File.createTempFile("styles", ".css");
+        Files.writeString(tempCss.toPath(), "body { color: #000; }");
+        final Contentlet cssContentlet = new FileAssetDataGen(themeFolder, tempCss)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        cssContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(cssContentlet, adminUser, false);
+
+        final File tempJs = File.createTempFile("script", ".js");
+        Files.writeString(tempJs.toPath(), "console.log('test');");
+        final Contentlet jsContentlet = new FileAssetDataGen(themeFolder, tempJs)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        jsContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(jsContentlet, adminUser, false);
+
+        // A CSS preprocessor file — proves the response is not limited to a known set of
+        // extensions and that .scss comes back like any other file.
+        final File tempScss = File.createTempFile("main", ".scss");
+        Files.writeString(tempScss.toPath(), "$c: #000; body { color: $c; }");
+        final Contentlet scssContentlet = new FileAssetDataGen(themeFolder, tempScss)
+                .languageId(defaultLang.getId())
+                .nextPersisted();
+        scssContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(scssContentlet, adminUser, false);
 
         // Create a template that uses this theme. The template stores the theme folder's
         // identifier (ThemeAPI.findThemeById resolves it via FolderAPI.find), not its path.
@@ -621,6 +651,23 @@ public class PageRenderSourcesResourceTest {
         assertNotNull(view.getTheme().getFolderPath());
         assertTrue("folderPath should start with //",
                 view.getTheme().getFolderPath().startsWith("//"));
+
+        // Every file the theme contains is returned in a single list, each carrying its
+        // extension — no type is dropped, including the .scss preprocessor file.
+        final List<FileRefView> files = view.getTheme().getFiles();
+        final Set<String> extensions = files.stream()
+                .map(FileRefView::getExtension)
+                .collect(Collectors.toSet());
+        assertTrue("VTL file should be returned", extensions.contains("vtl"));
+        assertTrue("CSS file should be returned", extensions.contains("css"));
+        assertTrue("JS file should be returned", extensions.contains("js"));
+        assertTrue("SCSS file should be returned (not whitelisted away)",
+                extensions.contains("scss"));
+
+        // The extension always matches the path's real extension.
+        assertTrue("extension must match the file's path",
+                files.stream().allMatch(f ->
+                        f.getPath().toLowerCase().endsWith("." + f.getExtension())));
     }
 
     // -----------------------------------------------------------------------

@@ -44,6 +44,16 @@ public class DotParse extends DotDirective {
     private final static String RENDER = "render";
     private static final long serialVersionUID = 1L;
 
+    /**
+     * One-shot context flag that suppresses the EDIT_MODE edit-control icon for a single
+     * {@code #dotParse} include. When present (set to {@code true}) the icon for the very next
+     * resolved file asset is skipped and the flag is immediately removed, so nested {@code #dotParse}
+     * calls within the included template keep emitting their own icons. Used by the page render to
+     * include the theme {@code template.vtl} shell without injecting a stray {@code vtl-file} control
+     * before the document root.
+     */
+    static final String DONT_SHOW_THEME_TEMPLATE_ICON = "dontShowThemeTemplateIcon";
+
     private final String hostIndicator = "//";
     private final String EDIT_ICON =
                     "<div data-dot-object='vtl-file' data-dot-inode='%s' data-dot-url='%s' data-dot-can-read='%s' data-dot-can-edit='%s'></div>";
@@ -160,8 +170,16 @@ public class DotParse extends DotDirective {
             
             
 
+            // One-shot suppression: the page render sets this flag for the theme template.vtl shell
+            // so it is not wrapped in an edit-control icon. Consume it here so nested #dotParse calls
+            // (html_head/header/footer) inside the theme still emit their own icons as before.
+            final boolean dontShowThemeTemplateIcon = Boolean.TRUE.equals(context.get(DONT_SHOW_THEME_TEMPLATE_ICON));
+            if (dontShowThemeTemplateIcon) {
+                context.remove(DONT_SHOW_THEME_TEMPLATE_ICON);
+            }
+
             // add the edit control if we have run through a page render
-            if (!context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode && context.containsKey("dotPageContent")) {
+            if (!dontShowThemeTemplateIcon && !context.containsKey("dontShowIcon") && PageMode.EDIT_MODE == params.mode && context.containsKey("dotPageContent")) {
                 final String editIcon = String.format(EDIT_ICON, contentlet.getInode(), idAndField._1.getAssetName(),
                                 APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
                                                 user),

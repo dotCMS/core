@@ -362,18 +362,27 @@ public class DotTemplateTool implements ViewTool {
 
         //Getting the template.vtl file path
         String themeTemplatePath;
+        boolean themeTemplateIsFileAsset;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
-            themeTemplatePath = themeTemplate.getFileAsset().getPath();
+            // Logical, host-relative file-asset path (NOT the physical working-inode disk path) so the
+            // page render can include it with #dotParse and resolve live vs working from the PageMode.
+            themeTemplatePath = themePath + Template.THEME_TEMPLATE; // themePath already ends with "/"
+            themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
+            themeTemplateIsFileAsset = false;
         } else {//If the theme doesn't provide a template.vtl file lest use ours
             themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
+            themeTemplateIsFileAsset = false;
         }
 
         //Setting required theme data for the Layout template
-        
+
         themeMap.put( "path", themePath );
         themeMap.put( "templatePath", themeTemplatePath );
+        // Tells PageLoader which Velocity directive to use: #dotParse (version-aware) for real
+        // file-asset themes, #parse (filesystem) for the bundled static fallback templates.
+        themeMap.put( "templatePathIsFileAsset", themeTemplateIsFileAsset );
         themeMap.put( "htmlHead", haveHtmlHead );
         themeMap.put( "title", themeFolder.getName());
         cache.put(key, themeMap);

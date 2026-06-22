@@ -1251,23 +1251,25 @@ public class PageResourceHelper implements Serializable {
             folders.addAll(APILocator.getFolderAPI()
                     .findSubFoldersRecursively(theme, user, false));
 
-            final List<VtlFileRefView> vtls = folders.stream()
+            // A theme is composed of more than VTLs — CSS/SCSS/SASS, JS, images, etc. all
+            // participate in how a page renders, and the set of relevant extensions is open
+            // (.scss, .sass, .dotsass, ...). So return every file and let the consumer filter
+            // by the per-file extension rather than whitelisting types here.
+            final List<FileRefView> files = folders.stream()
                     .flatMap(folder -> Try.of(() -> APILocator.getFileAssetAPI()
                                     .findFileAssetsByFolder(folder, null, false, user, false))
                             .getOrElse(Collections.emptyList()).stream())
-                    .filter(f -> UtilMethods.isSet(f.getFileName())
-                            && f.getFileName().endsWith(Constants.VELOCITY_FILE_EXTENSION))
-                    .map(f -> new VtlFileRefView(
-                            buildHostQualifiedPath(f.getPath() + f.getFileName(), host),
-                            f.getIdentifier()))
+                    .filter(f -> UtilMethods.isSet(f.getFileName()))
+                    .map(f -> toFileRef(f, host))
                     .collect(Collectors.toList());
 
-            return new ThemeSourceView(theme.getIdentifier(), theme.getName(), folderPath, vtls);
+            return new ThemeSourceView(theme.getIdentifier(), theme.getName(), folderPath, files);
         } catch (final Exception e) {
             Logger.warn(this, "Could not build theme view: " + e.getMessage());
             return null;
         }
     }
+
 
     /**
      * Returns a {@link LinkedHashMap} keyed by the container reference (UUID for DB containers,
@@ -1429,7 +1431,7 @@ public class PageResourceHelper implements Serializable {
 
             final String widgetContentletId   = c.getIdentifier();
             final String widgetContentletInode = c.getInode();
-            final Optional<VtlFileRefView> fileRef = resolveWidgetFileRef(c, ct, host, user);
+            final Optional<FileRefView> fileRef = resolveWidgetFileRef(c, ct, host, user);
 
             if (fileRef.isPresent()) {
                 // FILE-backed widget: path and VTL file identifier are known
@@ -1446,7 +1448,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     /**
-     * Returns a {@link VtlFileRefView} (path + identifier) for the file backing a FILE-type widget,
+     * Returns a {@link FileRefView} (path + identifier) for the file backing a FILE-type widget,
      * or {@link Optional#empty()} if the contentlet has no file-typed field resolving to a file
      * asset.
      *
@@ -1455,7 +1457,7 @@ public class PageResourceHelper implements Serializable {
      * field whose file asset is a {@code .vtl}; only when no field resolves to a {@code .vtl} does
      * it fall back to the first file asset found.</p>
      */
-    private Optional<VtlFileRefView> resolveWidgetFileRef(final Contentlet contentlet,
+    private Optional<FileRefView> resolveWidgetFileRef(final Contentlet contentlet,
             final ContentType ct, final Host host, final User user) {
         // Try FileField first, then BinaryField
         final List<Field> fileFields = new ArrayList<>(ct.fields(FileField.class));
@@ -1480,7 +1482,7 @@ public class PageResourceHelper implements Serializable {
                     final FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(fileCon);
                     if (UtilMethods.isSet(fa.getFileName())
                             && fa.getFileName().endsWith(Constants.VELOCITY_FILE_EXTENSION)) {
-                        return Optional.of(toVtlFileRef(fa, host));
+                        return Optional.of(toFileRef(fa, host));
                     }
                     if (firstAsset == null) {
                         firstAsset = fa;
@@ -1492,13 +1494,15 @@ public class PageResourceHelper implements Serializable {
                         + e.getMessage());
             }
         }
-        return Optional.ofNullable(firstAsset).map(fa -> toVtlFileRef(fa, host));
+        return Optional.ofNullable(firstAsset).map(fa -> toFileRef(fa, host));
     }
 
-    private VtlFileRefView toVtlFileRef(final FileAsset fa, final Host host) {
-        return new VtlFileRefView(
+    private FileRefView toFileRef(final FileAsset fa, final Host host) {
+        return new FileRefView(
                 buildHostQualifiedPath(fa.getPath() + fa.getFileName(), host),
-                fa.getIdentifier());
+                fa.getIdentifier(),
+                // Lowercased, no leading dot; empty when the file name has no extension.
+                UtilMethods.getFileExtension(fa.getFileName()));
     }
 
     /**
