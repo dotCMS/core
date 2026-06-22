@@ -173,6 +173,19 @@ public class CSSPreProcessServlet extends HttpServlet {
             // (site, uri, live) only, so storing the heavier map-embedded output would leak it to normal requests
             // (and vice versa). This keeps the default path byte-identical while letting callers opt into the map.
             if (sourceMap) {
+                // The inline source map embeds the raw SCSS sources (including @imported partials that are never
+                // served on their own) via --embed-sources. Serving that to anyone who can fetch the compiled CSS
+                // would leak editable theme source code, so gate it behind EDIT permission on the asset. For LIVE
+                // requests userHasEditPerms was not computed above, so resolve it here.
+                final boolean canSeeSources = live
+                        ? APILocator.getPermissionAPI().doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)
+                        : userHasEditPerms;
+                if (!canSeeSources) {
+                    Logger.warn(this, String.format("User '%s' requested a source map for '%s:%s' without EDIT " +
+                            "permission; refusing to embed sources", user.getUserId(), currentSite, actualUri));
+                    sendError(resp, HttpStatus.SC_FORBIDDEN);
+                    return;
+                }
                 serveWithSourceMap(req, resp, compiler, currentSite, fileUri, actualUri, userHasEditPerms);
                 return;
             }
