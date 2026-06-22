@@ -1,13 +1,11 @@
 import { mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
-import { of, Subject, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
 
 import {
     imageEditorAdjustEvents,
@@ -22,17 +20,6 @@ import { ImageEditorStore } from './image-editor.store';
 import { ImageEditorOpenParams } from '../models/image-editor.models';
 import { DotImageEditorService } from '../services/dot-image-editor.service';
 
-const TEMP_FILE: DotCMSTempFile = {
-    id: 'temp-123',
-    fileName: 'edited.png',
-    folder: '',
-    image: true,
-    length: 2048,
-    mimeType: 'image/png',
-    referenceUrl: '',
-    thumbnailUrl: ''
-};
-
 const OPEN_PARAMS: ImageEditorOpenParams = {
     inode: 'inode-1',
     variable: 'fileAsset',
@@ -44,7 +31,6 @@ const OPEN_PARAMS: ImageEditorOpenParams = {
 describe('ImageEditorStore', () => {
     let store: InstanceType<typeof ImageEditorStore>;
     let service: SpyObject<DotImageEditorService>;
-    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let injector: Injector;
 
     // Self-dispatching event groups, resolved within the injection context.
@@ -69,12 +55,7 @@ describe('ImageEditorStore', () => {
                         .mockReturnValue(
                             of({ naturalWidth: 800, naturalHeight: 600, originalBytes: 5000 })
                         ),
-                    persistFocalPoint: jest.fn().mockReturnValue(of(void 0)),
-                    saveEditedImage: jest.fn().mockReturnValue(of(TEMP_FILE)),
                     triggerDownload: jest.fn()
-                }),
-                mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn().mockReturnValue(of({}))
                 }),
                 mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
             ]
@@ -84,9 +65,6 @@ describe('ImageEditorStore', () => {
         // Instantiating the store runs its `onInit` effects.
         store = TestBed.inject(ImageEditorStore);
         service = TestBed.inject(DotImageEditorService) as SpyObject<DotImageEditorService>;
-        httpErrorManager = TestBed.inject(
-            DotHttpErrorManagerService
-        ) as SpyObject<DotHttpErrorManagerService>;
 
         runInInjectionContext(injector, () => {
             adjust = injectDispatch(imageEditorAdjustEvents);
@@ -374,16 +352,6 @@ describe('ImageEditorStore', () => {
             lifecycle.previewLoaded();
             expect(store.isBusy()).toBe(false);
         });
-
-        it('canSave requires loaded preview, not saving and dirty', () => {
-            expect(store.canSave()).toBe(false);
-
-            adjust.brightnessChanged(20);
-            expect(store.canSave()).toBe(false); // still loading
-
-            lifecycle.previewLoaded();
-            expect(store.canSave()).toBe(true);
-        });
     });
 
     describe('preview lifecycle', () => {
@@ -488,74 +456,6 @@ describe('ImageEditorStore', () => {
 
             expect(store.previewStatus()).toBe('error');
             expect(store.error()).toBe('boom');
-        });
-    });
-
-    describe('save', () => {
-        it('success sets the saved temp file and saved status', () => {
-            lifecycle.assetRequested(OPEN_PARAMS);
-            adjust.brightnessChanged(20);
-            lifecycle.saveRequested();
-
-            expect(service.saveEditedImage).toHaveBeenCalled();
-            expect(store.savedTempFile()).toEqual(TEMP_FILE);
-            expect(store.saveStatus()).toBe('saved');
-        });
-
-        it('persists the focal point before saving when active', () => {
-            lifecycle.assetRequested(OPEN_PARAMS);
-            tool.focalPointSet({ x: 0.3, y: 0.4 });
-            lifecycle.saveRequested();
-
-            expect(service.persistFocalPoint).toHaveBeenCalledWith(expect.any(String), {
-                x: 0.3,
-                y: 0.4
-            });
-            expect(service.saveEditedImage).toHaveBeenCalled();
-        });
-
-        it('does not persist the focal point when inactive', () => {
-            lifecycle.assetRequested(OPEN_PARAMS);
-            adjust.brightnessChanged(20);
-            lifecycle.saveRequested();
-
-            expect(service.persistFocalPoint).not.toHaveBeenCalled();
-        });
-
-        it('error path handles the error and sets save status to error', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-            service.saveEditedImage.mockReturnValue(throwError(() => error));
-
-            lifecycle.assetRequested(OPEN_PARAMS);
-            adjust.brightnessChanged(20);
-            lifecycle.saveRequested();
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(store.saveStatus()).toBe('error');
-        });
-
-        it('ignores a second save while one is in flight and never strands saving', () => {
-            // Defer the first save so a second request arrives mid-flight.
-            const inFlight = new Subject<DotCMSTempFile>();
-            service.saveEditedImage.mockReturnValue(inFlight.asObservable());
-
-            lifecycle.assetRequested(OPEN_PARAMS);
-            adjust.brightnessChanged(20);
-
-            lifecycle.saveRequested();
-            expect(store.saveStatus()).toBe('saving');
-
-            // A second trigger while saving must be ignored (exhaustMap), not
-            // cancel the first and strand the store in 'saving'.
-            lifecycle.saveAsRequested();
-
-            // Complete the original save.
-            inFlight.next(TEMP_FILE);
-            inFlight.complete();
-
-            expect(service.saveEditedImage).toHaveBeenCalledTimes(1);
-            expect(store.savedTempFile()).toEqual(TEMP_FILE);
-            expect(store.saveStatus()).toBe('saved');
         });
     });
 

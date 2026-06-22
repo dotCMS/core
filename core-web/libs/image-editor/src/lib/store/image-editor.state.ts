@@ -87,8 +87,6 @@ export const initialImageEditorState: ImageEditorState = {
     activeTool: 'move',
     previewStatus: 'idle',
     previewRetries: 0,
-    saveStatus: 'idle',
-    savedTempFile: null,
     error: null,
     history: [],
     historyIndex: -1,

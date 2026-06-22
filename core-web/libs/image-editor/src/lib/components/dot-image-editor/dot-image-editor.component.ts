@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -66,15 +66,6 @@ export class DotImageEditorComponent {
 
     constructor() {
         this.#dispatch.assetRequested(this.#config.data as ImageEditorOpenParams);
-
-        // Close the dialog with the saved file the moment a save succeeds.
-        effect(() => {
-            const savedTempFile = this.store.savedTempFile();
-
-            if (savedTempFile) {
-                this.#dialogRef.close(savedTempFile);
-            }
-        });
     }
 
     /**

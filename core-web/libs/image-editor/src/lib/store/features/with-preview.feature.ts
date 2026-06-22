@@ -81,10 +81,8 @@ export function withPreview() {
                 ),
                 /** Whether any edit produces a non-empty filter chain. */
                 isDirty: computed(() => appliedFilters().length > 0),
-                /** Whether the editor is mid-flight loading a preview or saving. */
-                isBusy: computed(
-                    () => store.previewStatus() === 'loading' || store.saveStatus() === 'saving'
-                )
+                /** Whether the editor is mid-flight loading a preview. */
+                isBusy: computed(() => store.previewStatus() === 'loading')
             };
         }),
         withEventHandlers((store) => {

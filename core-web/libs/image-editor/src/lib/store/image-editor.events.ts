@@ -1,8 +1,6 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
-
 import {
     ActiveTool,
     CompressionMode,
@@ -68,7 +66,7 @@ export const imageEditorHistoryEvents = eventGroup({
     }
 });
 
-/** Events covering the editor lifecycle: load, preview, download and save. */
+/** Events covering the editor lifecycle: load, preview and download. */
 export const imageEditorLifecycleEvents = eventGroup({
     source: 'Image Editor Lifecycle',
     events: {
@@ -77,8 +75,6 @@ export const imageEditorLifecycleEvents = eventGroup({
         previewErrored: type<void>(),
         retryRequested: type<void>(),
         downloadRequested: type<void>(),
-        saveRequested: type<void>(),
-        saveAsRequested: type<{ fileName: string }>(),
         assetLoaded: type<{
             naturalWidth: number;
             naturalHeight: number;
@@ -86,8 +82,6 @@ export const imageEditorLifecycleEvents = eventGroup({
             focalPoint?: FocalPointState;
         }>(),
         assetLoadFailed: type<unknown>(),
-        previewSizeResolved: type<number>(),
-        saveSucceeded: type<DotCMSTempFile>(),
-        saveFailed: type<unknown>()
+        previewSizeResolved: type<number>()
     }
 });

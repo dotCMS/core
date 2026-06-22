@@ -13,12 +13,4 @@
         [disabled]="store.isBusy()"
         (onClick)="onDownload()"
         data-testid="image-editor-download-btn" />
-
-    <p-splitButton
-        [label]="saveLabel()"
-        [icon]="saveIcon()"
-        [model]="saveMenuItems"
-        [disabled]="!store.canSave()"
-        (onClick)="onSave()"
-        data-testid="image-editor-save-btn" />
 </div>

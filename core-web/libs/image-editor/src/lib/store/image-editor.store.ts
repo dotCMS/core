@@ -4,11 +4,11 @@ import {
     withAdjust,
     withAsset,
     withCrop,
+    withDownload,
     withFileInfo,
     withFocalPoint,
     withHistory,
     withPreview,
-    withSave,
     withTools,
     withTransform
 } from './features';
@@ -22,9 +22,9 @@ import { initialImageEditorState } from './image-editor.state';
  * single place (`features/with-*.feature.ts`).
  *
  * Order matters only where features consume each other's selectors: `withPreview`
- * derives `appliedFilters` / `previewUrl`, which `withSave` reads — so save
- * composes after preview. The store is NOT provided in root; the editor dialog
- * supplies it so each editor instance is isolated.
+ * derives `previewUrl`, which `withDownload` reads — so download composes after
+ * preview. The store is NOT provided in root; the editor dialog supplies it so
+ * each editor instance is isolated.
  */
 export const ImageEditorStore = signalStore(
     withState(initialImageEditorState),
@@ -37,5 +37,5 @@ export const ImageEditorStore = signalStore(
     withHistory(),
     withAsset(),
     withPreview(),
-    withSave()
+    withDownload()
 );

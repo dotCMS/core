@@ -24,9 +24,6 @@ export interface ImageRect {
 /** Loading lifecycle of the preview image. */
 export type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
-/** Lifecycle of a save / save-as operation. */
-export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
 /** Logical category an applied edit belongs to, used for grouping and labels. */
 export type FilterCategory =
     | 'adjust'
@@ -229,10 +226,6 @@ export interface ImageEditorState {
     previewStatus: PreviewStatus;
     /** Consecutive silent retries of the current failing preview (reset on success). */
     previewRetries: number;
-    /** Lifecycle of the current save / save-as operation. */
-    saveStatus: SaveStatus;
-    /** Temp file produced by the last successful save, or `null`. */
-    savedTempFile: DotCMSTempFile | null;
     /** Last error message surfaced to the user, or `null`. */
     error: string | null;
     /** Ordered undo/redo history of applied edits. */
@@ -298,14 +291,6 @@ export type HandlePosition = 'tl' | 't' | 'tr' | 'r' | 'br' | 'b' | 'bl' | 'l';
 export interface NormalizedPoint {
     x: number;
     y: number;
-}
-
-/** Shape of the save endpoint JSON response used to build a {@link DotCMSTempFile}. */
-export interface SaveEditedImageResponse {
-    id: string;
-    fileName: string;
-    length: number;
-    metadata?: DotCMSTempFile['metadata'];
 }
 
 /** Natural pixel dimensions of an image resolved from the browser. */

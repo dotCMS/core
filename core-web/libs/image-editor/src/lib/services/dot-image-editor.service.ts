@@ -1,25 +1,21 @@
-import { Observable, forkJoin, of, throwError } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
-
 import {
     AssetMeta,
     ImageEditorAssetContext,
-    NaturalDimensions,
-    SaveEditedImageResponse
+    NaturalDimensions
 } from '../models/image-editor.models';
 
 /**
- * Data-access service for the image editor: resolves asset metadata, queries
- * file sizes, persists the saved/edited image and the focal point, and triggers
- * client-side downloads. All read-only/metadata calls are non-fatal and never
- * throw; only {@link saveEditedImage} rethrows so the store can keep the modal
- * open on failure.
+ * Data-access service for the image editor: resolves asset metadata, queries the
+ * verified preview blob and file sizes, and triggers client-side downloads. All
+ * read-only/metadata calls are non-fatal and never throw. (Saving the edited image
+ * is handled in a separate issue.)
  */
 @Injectable({ providedIn: 'root' })
 export class DotImageEditorService {
@@ -82,41 +78,6 @@ export class DotImageEditorService {
     }
 
     /**
-     * Persists the edited image to a temp file by hitting the filter URL with
-     * the save tokens appended.
-     * @param filterUrl - The fully-built filter/preview URL for the edited image
-     * @param variable - The binary field id the saved file should target
-     * @returns The resulting temp file
-     * @throws Rethrows the original error (without surfacing it) so the caller —
-     * the store — is the single place that shows the error and keeps the editor
-     * open on failure
-     */
-    saveEditedImage(filterUrl: string, variable: string): Observable<DotCMSTempFile> {
-        const separator = filterUrl.includes('?') ? '&' : '?';
-        const url = `${filterUrl}${separator}binaryFieldId=${encodeURIComponent(variable)}&_imageToolSaveFile=true`;
-
-        return this.#http.get<SaveEditedImageResponse>(url).pipe(
-            map((res) => this.#toTempFile(res)),
-            catchError((error: HttpErrorResponse) => throwError(() => error))
-        );
-    }
-
-    /**
-     * Persists the focal point for an asset so it is honored by future renders.
-     * @param originalUrl - The base URL of the unfiltered original asset
-     * @param fp - Normalized focal point coordinates
-     * @returns Completes with `void`; non-fatal and never throws
-     */
-    persistFocalPoint(originalUrl: string, fp: { x: number; y: number }): Observable<void> {
-        const url = `${originalUrl}/filter/FocalPoint/fp/${fp.x},${fp.y}/?overwrite=${Date.now()}`;
-
-        return this.#http.get(url, { responseType: 'text' }).pipe(
-            map(() => void 0),
-            catchError(() => of(void 0))
-        );
-    }
-
-    /**
      * Resolves the metadata needed to seed the editor: natural dimensions and
      * the original byte size. Always emits a safe default on error and never
      * throws.
@@ -173,19 +134,5 @@ export class DotImageEditorService {
 
             image.src = url;
         });
-    }
-
-    #toTempFile(res: SaveEditedImageResponse): DotCMSTempFile {
-        return {
-            id: res.id,
-            fileName: res.fileName,
-            length: res.length,
-            metadata: res.metadata,
-            folder: '',
-            image: true,
-            mimeType: res.metadata?.contentType ?? '',
-            referenceUrl: '',
-            thumbnailUrl: ''
-        };
     }
 }

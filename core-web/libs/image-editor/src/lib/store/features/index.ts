@@ -1,10 +1,10 @@
 export { withAdjust } from './with-adjust.feature';
 export { withAsset } from './with-asset.feature';
 export { withCrop } from './with-crop.feature';
+export { withDownload } from './with-download.feature';
 export { withFileInfo } from './with-file-info.feature';
 export { withFocalPoint } from './with-focal-point.feature';
 export { withHistory } from './with-history.feature';
 export { withPreview } from './with-preview.feature';
-export { withSave } from './with-save.feature';
 export { withTools } from './with-tools.feature';
 export { withTransform } from './with-transform.feature';

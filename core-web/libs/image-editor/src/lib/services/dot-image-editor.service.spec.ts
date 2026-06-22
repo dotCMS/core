@@ -1,6 +1,6 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotImageEditorService } from './dot-image-editor.service';
@@ -140,94 +140,6 @@ describe('DotImageEditorService', () => {
                 .flush(blob, { headers: { 'Content-Type': 'text/html' } });
 
             expect(errored).toBe(true);
-        });
-    });
-
-    describe('saveEditedImage', () => {
-        const tempResponse = {
-            id: 'temp_123',
-            fileName: 'edited.png',
-            length: 4096,
-            metadata: { contentType: 'image/png' }
-        };
-
-        it('should GET a URL with binaryFieldId and _imageToolSaveFile and map to a temp file', () => {
-            const result: unknown[] = [];
-            spectator.service
-                .saveEditedImage('/dA/asset.png/filter/Grayscale/grayscale/1', 'fileField')
-                .subscribe((file) => result.push(file));
-
-            const req = httpMock.expectOne((request) => request.url.startsWith('/dA/asset.png'));
-            expect(req.request.method).toBe('GET');
-            expect(req.request.urlWithParams).toContain('binaryFieldId=fileField');
-            expect(req.request.urlWithParams).toContain('_imageToolSaveFile=true');
-            req.flush(tempResponse);
-
-            expect(result[0]).toEqual({
-                id: 'temp_123',
-                fileName: 'edited.png',
-                length: 4096,
-                metadata: { contentType: 'image/png' },
-                folder: '',
-                image: true,
-                mimeType: 'image/png',
-                referenceUrl: '',
-                thumbnailUrl: ''
-            });
-        });
-
-        it('should append the save tokens with & when the filter URL already has a query', () => {
-            spectator.service.saveEditedImage('/dA/asset.png?test=1', 'fileField').subscribe();
-
-            const req = httpMock.expectOne((request) => request.url.startsWith('/dA/asset.png'));
-            expect(req.request.urlWithParams).toContain('test=1');
-            expect(req.request.urlWithParams).toContain('&binaryFieldId=fileField');
-            req.flush(tempResponse);
-        });
-
-        it('should rethrow the original error without surfacing it (the store handles it)', () => {
-            let caughtError: unknown;
-            spectator.service.saveEditedImage('/dA/asset.png', 'fileField').subscribe({
-                error: (error) => (caughtError = error)
-            });
-
-            httpMock
-                .expectOne((request) => request.url.startsWith('/dA/asset.png'))
-                .flush('boom', { status: 500, statusText: 'Server Error' });
-
-            // The service stays a pure rethrow pipe: the ORIGINAL HttpErrorResponse
-            // reaches the caller unchanged (not swallowed, not wrapped), so the
-            // store's tapResponse is the single place that surfaces it (no double toast).
-            expect(caughtError).toBeInstanceOf(HttpErrorResponse);
-            expect((caughtError as HttpErrorResponse).status).toBe(500);
-        });
-    });
-
-    describe('persistFocalPoint', () => {
-        it('should GET the FocalPoint filter URL with an overwrite cache-buster', () => {
-            spectator.service.persistFocalPoint('/dA/asset.png', { x: 0.25, y: 0.75 }).subscribe();
-
-            const req = httpMock.expectOne((request) => request.url.startsWith('/dA/asset.png'));
-            expect(req.request.method).toBe('GET');
-            expect(req.request.urlWithParams).toContain('/filter/FocalPoint/fp/0.25,0.75/');
-            expect(req.request.urlWithParams).toContain('overwrite=');
-            req.flush('');
-        });
-
-        it('should complete with void on HTTP error without throwing', () => {
-            let completed = false;
-            let errored = false;
-            spectator.service.persistFocalPoint('/dA/asset.png', { x: 0.5, y: 0.5 }).subscribe({
-                complete: () => (completed = true),
-                error: () => (errored = true)
-            });
-
-            httpMock
-                .expectOne((request) => request.url.startsWith('/dA/asset.png'))
-                .flush('boom', { status: 500, statusText: 'Server Error' });
-
-            expect(completed).toBe(true);
-            expect(errored).toBe(false);
         });
     });
 

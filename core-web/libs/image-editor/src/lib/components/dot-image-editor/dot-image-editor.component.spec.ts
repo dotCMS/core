@@ -15,7 +15,6 @@ import { Confirmation, ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
@@ -30,17 +29,6 @@ import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-im
 import { DotImageEditorHeaderComponent } from '../dot-image-editor-header/dot-image-editor-header.component';
 import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-image-editor-panels.component';
 
-const TEMP_FILE: DotCMSTempFile = {
-    id: 'temp_saved',
-    fileName: 'edited.jpg',
-    length: 1024,
-    folder: '',
-    image: true,
-    mimeType: 'image/jpeg',
-    referenceUrl: '',
-    thumbnailUrl: ''
-};
-
 /** Builds the suite for a given set of open params, asserting the shared shell behavior. */
 function describeWith(label: string, data: ImageEditorOpenParams): void {
     describe(`DotImageEditorComponent (${label})`, () => {
@@ -49,7 +37,6 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         let dialogRef: SpyObject<DynamicDialogRef>;
         let confirmationService: SpyObject<ConfirmationService>;
 
-        const savedTempFile = signal<DotCMSTempFile | null>(null);
         const isDirty = signal(false);
         const canUndo = signal(false);
         const canRedo = signal(false);
@@ -69,7 +56,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // mocking only the store.
             componentProviders: [
                 ConfirmationService,
-                mockProvider(ImageEditorStore, { savedTempFile, isDirty, canUndo, canRedo })
+                mockProvider(ImageEditorStore, { isDirty, canUndo, canRedo })
             ],
             // Isolate the shell from the children's own store/dispatch wiring.
             overrideComponents: [
@@ -102,7 +89,6 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // describe; clear it so prior tests' close() calls don't leak into the
             // "not closed" assertions.
             jest.clearAllMocks();
-            savedTempFile.set(null);
             isDirty.set(false);
             canUndo.set(false);
             canRedo.set(false);
@@ -132,13 +118,6 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
                 imageEditorLifecycleEvents.assetRequested(data),
                 { scope: 'self' }
             );
-        });
-
-        it('should close with the saved temp file once a save succeeds', () => {
-            savedTempFile.set(TEMP_FILE);
-            spectator.detectChanges();
-
-            expect(dialogRef.close).toHaveBeenCalledWith(TEMP_FILE);
         });
 
         it('should close with null when the header close is triggered and not dirty', () => {

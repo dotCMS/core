@@ -27,38 +27,25 @@ describe('DotImageEditorFooterComponent', () => {
     let dispatcher: SpyObject<Dispatcher>;
 
     const isBusy = signal(false);
-    const canSave = signal(true);
-    const saveStatus = signal<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
     const createComponent = createComponentFactory({
         component: DotImageEditorFooterComponent,
         imports: [DotMessagePipe],
         providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })],
-        componentProviders: [
-            Dispatcher,
-            mockProvider(ImageEditorStore, {
-                isBusy,
-                canSave,
-                saveStatus,
-                assetContext: () => ({ fileName: 'x.jpg' })
-            })
-        ]
+        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { isBusy })]
     });
 
     beforeEach(() => {
         isBusy.set(false);
-        canSave.set(true);
-        saveStatus.set('idle');
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
         jest.spyOn(dispatcher, 'dispatch');
     });
 
-    it('should render the action buttons', () => {
+    it('should render the cancel and download actions', () => {
         expect(spectator.query(byTestId('image-editor-cancel-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-download-btn'))).toBeTruthy();
-        expect(spectator.query(byTestId('image-editor-save-btn'))).toBeTruthy();
     });
 
     it('should emit cancel when Cancel is clicked', () => {
@@ -78,43 +65,10 @@ describe('DotImageEditorFooterComponent', () => {
         );
     });
 
-    it('should dispatch saveRequested when Save is clicked', () => {
-        spectator.click(nativeButton(spectator, 'image-editor-save-btn'));
+    it('should disable Download when isBusy is true', () => {
+        isBusy.set(true);
+        spectator.detectChanges();
 
-        expect(dispatcher.dispatch).toHaveBeenCalledWith(
-            imageEditorLifecycleEvents.saveRequested(),
-            {
-                scope: 'self'
-            }
-        );
-    });
-
-    it('should expose a "Save as…" menu item that dispatches saveAsRequested', () => {
-        const saveAsItem = spectator.component['saveMenuItems'][0];
-
-        expect(saveAsItem.label).toBe('edit.content.image-editor.footer.save-as');
-
-        saveAsItem.command?.({});
-
-        expect(dispatcher.dispatch).toHaveBeenCalledWith(
-            imageEditorLifecycleEvents.saveAsRequested({ fileName: 'x.jpg' }),
-            { scope: 'self' }
-        );
-    });
-
-    describe('disabled states', () => {
-        it('should disable Save when canSave is false', () => {
-            canSave.set(false);
-            spectator.detectChanges();
-
-            expect(nativeButton(spectator, 'image-editor-save-btn').disabled).toBe(true);
-        });
-
-        it('should disable Download when isBusy is true', () => {
-            isBusy.set(true);
-            spectator.detectChanges();
-
-            expect(nativeButton(spectator, 'image-editor-download-btn').disabled).toBe(true);
-        });
+        expect(nativeButton(spectator, 'image-editor-download-btn').disabled).toBe(true);
     });
 });
