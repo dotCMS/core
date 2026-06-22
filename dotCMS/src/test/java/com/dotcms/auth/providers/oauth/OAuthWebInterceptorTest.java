@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,6 +44,46 @@ class OAuthWebInterceptorTest {
     @Test
     void hasRequiredRole_frontendLoginAcceptsFrontendUser() {
         assertTrue(AuthAccessDeniedUtil.hasRequiredRole(new TestUser(false, true, false), true));
+    }
+
+    @Test
+    void baseUrlFromRequest_omitsDefaultHttpsPort() {
+        // Standard 443 must NOT appear in the URL — the IdP redirect_uri is registered without it.
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getScheme()).thenReturn("https");
+        when(request.getServerName()).thenReturn("cms.example.com");
+        when(request.getServerPort()).thenReturn(443);
+        assertEquals("https://cms.example.com",
+                OAuthWebInterceptor.baseUrlFromRequest(request));
+    }
+
+    @Test
+    void baseUrlFromRequest_omitsDefaultHttpPort() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getServerName()).thenReturn("cms.example.com");
+        when(request.getServerPort()).thenReturn(80);
+        assertEquals("http://cms.example.com",
+                OAuthWebInterceptor.baseUrlFromRequest(request));
+    }
+
+    @Test
+    void baseUrlFromRequest_includesNonDefaultPort() {
+        // localhost:8080 etc. keep the explicit port.
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getScheme()).thenReturn("http");
+        when(request.getServerName()).thenReturn("localhost");
+        when(request.getServerPort()).thenReturn(8080);
+        assertEquals("http://localhost:8080",
+                OAuthWebInterceptor.baseUrlFromRequest(request));
+    }
+
+    @Test
+    void baseUrlFromRequest_blankServerNameReturnsNull() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getScheme()).thenReturn("https");
+        when(request.getServerName()).thenReturn("");
+        assertEquals(null, OAuthWebInterceptor.baseUrlFromRequest(request));
     }
 
     @Test
