@@ -275,8 +275,13 @@ const COMPRESSION_LABELS: Record<CompressionMode, string> = {
     webp: 'WebP'
 };
 
-/** Times a failed preview is silently retried before the error UI is shown. */
-const AUTO_PREVIEW_RETRY_LIMIT = 1;
+/**
+ * Times a failed preview is silently retried before the error UI is shown. The
+ * server renders filter chains on the fly, so the first request for a fresh URL
+ * can race that generation and return an incomplete response; a couple of silent
+ * re-attempts (mirroring a manual refresh) almost always lands the finished image.
+ */
+const AUTO_PREVIEW_RETRY_LIMIT = 3;
 
 /**
  * NgRx SignalStore for the image editor. Built entirely on the events API:

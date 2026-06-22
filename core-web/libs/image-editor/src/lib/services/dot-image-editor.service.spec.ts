@@ -7,6 +7,9 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import { DotImageEditorService } from './dot-image-editor.service';
 
+// jsdom has no object-URL API; the service creates one for each verified blob.
+URL.createObjectURL = jest.fn(() => 'blob:mock-object-url');
+
 describe('DotImageEditorService', () => {
     let spectator: SpectatorService<DotImageEditorService>;
     let httpMock: HttpTestingController;
@@ -66,6 +69,85 @@ describe('DotImageEditorService', () => {
 
             expect(result).toEqual([0]);
             expect(errored).toBe(false);
+        });
+    });
+
+    describe('loadPreviewImage', () => {
+        it('should GET the URL as a blob and return an object URL for a complete image', () => {
+            const blob = new Blob(['imagedata'], { type: 'image/png' });
+            let result: string | undefined;
+            spectator.service
+                .loadPreviewImage('/dA/preview.png')
+                .subscribe((url) => (result = url));
+
+            const req = httpMock.expectOne('/dA/preview.png');
+            expect(req.request.method).toBe('GET');
+            expect(req.request.responseType).toBe('blob');
+            req.flush(blob, {
+                headers: { 'Content-Length': String(blob.size), 'Content-Type': 'image/png' }
+            });
+
+            expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
+            expect(result).toBe('blob:mock-object-url');
+        });
+
+        it('should accept an image blob when no Content-Length is present', () => {
+            const blob = new Blob(['x'], { type: 'image/jpeg' });
+            let result: string | undefined;
+            spectator.service
+                .loadPreviewImage('/dA/preview.png')
+                .subscribe((url) => (result = url));
+
+            httpMock
+                .expectOne('/dA/preview.png')
+                .flush(blob, { headers: { 'Content-Type': 'image/jpeg' } });
+
+            expect(result).toBe('blob:mock-object-url');
+        });
+
+        it('should error when the body is shorter than the declared Content-Length (truncated)', () => {
+            const blob = new Blob(['x'], { type: 'image/png' });
+            let errored = false;
+            spectator.service.loadPreviewImage('/dA/preview.png').subscribe({
+                next: () => undefined,
+                error: () => (errored = true)
+            });
+
+            httpMock.expectOne('/dA/preview.png').flush(blob, {
+                headers: { 'Content-Length': '500', 'Content-Type': 'image/png' }
+            });
+
+            expect(errored).toBe(true);
+        });
+
+        it('should error on an empty body', () => {
+            const blob = new Blob([], { type: 'image/png' });
+            let errored = false;
+            spectator.service.loadPreviewImage('/dA/preview.png').subscribe({
+                next: () => undefined,
+                error: () => (errored = true)
+            });
+
+            httpMock
+                .expectOne('/dA/preview.png')
+                .flush(blob, { headers: { 'Content-Type': 'image/png' } });
+
+            expect(errored).toBe(true);
+        });
+
+        it('should reject an HTML/JSON error body served with a 200', () => {
+            const blob = new Blob(['<html>error</html>'], { type: 'text/html' });
+            let errored = false;
+            spectator.service.loadPreviewImage('/dA/preview.png').subscribe({
+                next: () => undefined,
+                error: () => (errored = true)
+            });
+
+            httpMock
+                .expectOne('/dA/preview.png')
+                .flush(blob, { headers: { 'Content-Type': 'text/html' } });
+
+            expect(errored).toBe(true);
         });
     });
 

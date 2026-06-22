@@ -1,4 +1,5 @@
 import { injectDispatch } from '@ngrx/signals/events';
+import { EMPTY } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -10,13 +11,17 @@ import {
     signal,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { catchError, map, switchMap } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { imageEditorLifecycleEvents, imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
@@ -67,6 +72,7 @@ export class DotImageEditorCanvasComponent {
     readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
     readonly #toolDispatch = injectDispatch(imageEditorToolEvents);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #service = inject(DotImageEditorService);
 
     /** Aspect-ratio presets for the focal-point-centered crop, shown in the focal bar. */
     protected readonly aspectPresets = [
@@ -88,18 +94,31 @@ export class DotImageEditorCanvasComponent {
     /** The focal overlay, so the footer can set or cancel the active focal point. */
     protected readonly focalOverlay = viewChild(DotImageEditorFocalOverlayComponent);
 
-    /** URL of the last successfully loaded preview, shown on the bottom layer. */
+    /** Filter URL of the last successfully loaded preview (the bottom layer's identity). */
     protected readonly displayedUrl = signal<string>('');
 
+    /** Object URL rendered on the bottom (displayed) layer — verified, complete bytes. */
+    protected readonly displayedSrc = signal<string>('');
+
     /**
-     * URL queued for loading on the top layer: the store's current preview when
-     * it differs from what is already displayed, otherwise empty.
+     * Filter URL queued for loading on the top layer: the store's current preview
+     * when it differs from what is already displayed, otherwise empty. This is the
+     * remote URL we fetch as a blob; the layer renders the resulting object URL.
      */
     protected readonly pendingUrl = computed(() => {
         const next = this.store.previewUrl();
 
         return next && next !== this.displayedUrl() ? next : '';
     });
+
+    /** Object URL of the verified pending blob, rendered on the top layer once ready. */
+    protected readonly pendingSrc = signal<string>('');
+
+    /** The verified-but-not-yet-promoted pending preview (filter URL + its object URL). */
+    #pending: { filterUrl: string; objectUrl: string } | null = null;
+
+    /** Object URL currently shown on the displayed layer, retained for revocation. */
+    #displayedObjectUrl: string | null = null;
 
     /** Rendered bounds of the displayed image within the stage, in CSS px. */
     protected readonly imageRect = signal<ImageRect | undefined>(undefined);
@@ -114,26 +133,60 @@ export class DotImageEditorCanvasComponent {
     #resizeObserver: ResizeObserver | null = null;
 
     constructor() {
-        this.#destroyRef.onDestroy(() => this.#resizeObserver?.disconnect());
+        this.#destroyRef.onDestroy(() => {
+            this.#resizeObserver?.disconnect();
+            this.#revoke(this.#displayedObjectUrl);
+            this.#revoke(this.#pending?.objectUrl ?? null);
+        });
+
+        // Fetch each queued preview as a complete, verified blob before it is ever
+        // rendered. `switchMap` cancels a superseded in-flight request (a newer edit
+        // wins); a fetch failure — including a truncated / partially-generated
+        // response — reports to the store, which owns the silent-retry policy.
+        toObservable(this.pendingUrl)
+            .pipe(
+                switchMap((filterUrl) => {
+                    // A new target supersedes any verified-but-unpromoted pending blob.
+                    this.#discardPending();
+
+                    if (!filterUrl) {
+                        return EMPTY;
+                    }
+
+                    return this.#service.loadPreviewImage(filterUrl).pipe(
+                        map((objectUrl) => ({ filterUrl, objectUrl })),
+                        catchError(() => {
+                            this.#dispatch.previewErrored();
+
+                            return EMPTY;
+                        })
+                    );
+                }),
+                takeUntilDestroyed()
+            )
+            .subscribe(({ filterUrl, objectUrl }) => {
+                this.#pending = { filterUrl, objectUrl };
+                this.pendingSrc.set(objectUrl);
+            });
     }
 
     /**
-     * Promotes a freshly loaded pending image to the displayed layer and reports
-     * the successful preview to the store. The crossfade is keyed on URL identity
-     * so the visible frame is never blanked while the next one loads.
-     *
-     * Promotes the URL that actually finished loading — not the live store value,
-     * which may have advanced under rapid edits. When a newer preview already
-     * exists, the `pendingUrl` computed keeps Layer B mounted for that newer URL.
-     * @param loadedUrl - The URL of the pending image that finished loading
+     * Promotes the verified pending blob to the displayed layer and reports the
+     * successful preview to the store. The pending image already holds complete,
+     * fetched bytes (rendered from a local object URL), so it cannot paint a
+     * truncated frame; `decode()` is a final paint-ready gate and we also require
+     * real dimensions. The crossfade keeps the previous frame visible until this
+     * one is promoted, so the canvas is never blanked.
      */
-    protected onPendingLoaded(loadedUrl: string, event: Event): void {
+    protected onPendingLoaded(event: Event): void {
+        const pending = this.#pending;
         const img = event.target as HTMLImageElement;
 
-        // `load` already implies fetched + decoded, but `decode()` confirms the
-        // bitmap is paint-ready and rejects on a corrupt/partial image; we also
-        // require real dimensions. Any failure reports to the store, which owns
-        // the retry policy (silent retry, then the error UI).
+        // Guard against a stale load event after the pending blob was superseded.
+        if (!pending) {
+            return;
+        }
+
         img.decode()
             .then(() => {
                 if (!img.naturalWidth || !img.naturalHeight) {
@@ -142,7 +195,14 @@ export class DotImageEditorCanvasComponent {
                     return;
                 }
 
-                this.displayedUrl.set(loadedUrl);
+                // The pending blob becomes the displayed frame; release the one it replaces.
+                this.#revoke(this.#displayedObjectUrl);
+                this.#displayedObjectUrl = pending.objectUrl;
+                this.displayedSrc.set(pending.objectUrl);
+                this.displayedUrl.set(pending.filterUrl);
+                this.#pending = null;
+                this.pendingSrc.set('');
+
                 this.#measureImageRect();
                 this.#dispatch.previewLoaded();
             })
@@ -156,6 +216,20 @@ export class DotImageEditorCanvasComponent {
      */
     protected onPendingError(): void {
         this.#dispatch.previewErrored();
+    }
+
+    /** Drops any verified-but-unpromoted pending blob, revoking its object URL. */
+    #discardPending(): void {
+        this.#revoke(this.#pending?.objectUrl ?? null);
+        this.#pending = null;
+        this.pendingSrc.set('');
+    }
+
+    /** Releases an object URL created for a preview blob, if any. */
+    #revoke(objectUrl: string | null): void {
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+        }
     }
 
     /** Recomputes the rendered image rect once the displayed image lays out. */

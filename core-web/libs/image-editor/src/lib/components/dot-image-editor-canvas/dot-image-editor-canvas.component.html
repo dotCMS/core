@@ -23,20 +23,20 @@
                 #displayImg
                 class="canvas__img canvas__img--displayed"
                 [class.canvas__img--loading]="store.previewStatus() === 'loading'"
-                [src]="displayedUrl()"
-                [hidden]="!displayedUrl()"
+                [src]="displayedSrc()"
+                [hidden]="!displayedSrc()"
                 alt=""
                 (load)="onDisplayLoaded()"
                 data-testid="image-editor-display-img" />
 
-            <!-- Layer B: queued preview, crossfaded in once it loads. -->
-            @if (pendingUrl(); as pending) {
+            <!-- Layer B: queued preview (a verified, fully-fetched blob), crossfaded in once it loads. -->
+            @if (pendingSrc(); as pending) {
                 <img
                     class="canvas__img canvas__img--pending"
                     [src]="pending"
                     alt=""
                     aria-hidden="true"
-                    (load)="onPendingLoaded(pending, $event)"
+                    (load)="onPendingLoaded($event)"
                     (error)="onPendingError()"
                     data-testid="image-editor-pending-img" />
             }

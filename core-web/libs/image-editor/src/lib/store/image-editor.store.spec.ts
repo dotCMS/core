@@ -370,24 +370,30 @@ describe('ImageEditorStore', () => {
     });
 
     describe('preview lifecycle', () => {
-        it('silently retries the first preview failure before surfacing the error', () => {
-            const bustBefore = store.cacheBust();
+        it('silently retries failures up to the budget before surfacing the error', () => {
+            let bust = store.cacheBust();
 
-            // First failure: stay loading and bump the cache-bust for a fresh attempt.
-            lifecycle.previewErrored();
-            expect(store.previewStatus()).toBe('loading');
-            expect(store.cacheBust()).toBe(bustBefore + 1);
-            expect(store.error()).toBeNull();
+            // Each failure within the budget stays loading and bumps the cache-bust
+            // for a fresh attempt; the error is never surfaced yet.
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                lifecycle.previewErrored();
+                expect(store.previewStatus()).toBe('loading');
+                expect(store.cacheBust()).toBe(bust + 1);
+                expect(store.error()).toBeNull();
+                bust = store.cacheBust();
+            }
 
-            // Second consecutive failure: surface the error.
+            // The failure past the budget surfaces the error.
             lifecycle.previewErrored();
             expect(store.previewStatus()).toBe('error');
             expect(store.error()).toBe('Failed to render preview');
         });
 
         it('previewLoaded sets status loaded, clears error and resets the retry budget', () => {
-            lifecycle.previewErrored();
-            lifecycle.previewErrored();
+            // Exhaust the budget (3 silent retries) then fail once more to reach error.
+            for (let attempt = 0; attempt < 4; attempt++) {
+                lifecycle.previewErrored();
+            }
             expect(store.previewStatus()).toBe('error');
 
             lifecycle.previewLoaded();
