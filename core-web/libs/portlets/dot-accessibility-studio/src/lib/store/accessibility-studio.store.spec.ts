@@ -186,6 +186,20 @@ describe('AccessibilityStudioStore', () => {
             expect(query).not.toContain('title:');
         });
 
+        it('does not fetch until the current site is known, then fetches scoped', () => {
+            // Simulate the real boot order: site resolves AFTER init.
+            searchService.get.mockClear();
+            currentSiteIdSignal.set(null);
+            spectator.flushEffects();
+            expect(searchService.get).not.toHaveBeenCalled(); // no unscoped all-sites query
+
+            currentSiteIdSignal.set('site-2');
+            spectator.flushEffects();
+            expect(searchService.get).toHaveBeenCalledTimes(1);
+            const query = (searchService.get.mock.calls[0][0] as { query: string }).query;
+            expect(query).toContain('+conhost:site-2');
+        });
+
         it('adds a title/path/urlmap clause when filtering', () => {
             searchService.get.mockClear();
             store.setFilter('contact');

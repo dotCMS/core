@@ -278,9 +278,17 @@ export const AccessibilityStudioStore = signalStore(
         }
 
         function loadPages() {
+            const siteId = globalStore.currentSiteId();
+            // The current site loads asynchronously (GlobalStore → auth → HTTP). Until
+            // it's known, a fetch would be unscoped (`+conhost` omitted) and return
+            // pages from every site. Skip; the picker effect re-runs once the site
+            // resolves (it tracks currentSiteId), so this fires exactly once, scoped.
+            if (!siteId) {
+                return;
+            }
             patchState(store, { pickerStatus: 'loading' });
 
-            const query = buildPagesQuery(store.filter(), globalStore.currentSiteId());
+            const query = buildPagesQuery(store.filter(), siteId);
             const offset = (store.page() - 1) * store.rows();
 
             contentSearchService
