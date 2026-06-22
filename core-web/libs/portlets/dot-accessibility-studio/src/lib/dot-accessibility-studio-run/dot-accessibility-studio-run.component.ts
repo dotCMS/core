@@ -124,16 +124,12 @@ export class DotAccessibilityStudioRunComponent {
     private readonly recipeLog = viewChild<ElementRef<HTMLElement>>('recipeLog');
 
     constructor() {
-        // Redraw markers whenever the findings or preview mode change. Markers
-        // highlight the ORIGINAL violations, so they belong on the LIVE (published,
-        // pre-fix) render — on the PREVIEW (working, post-fix) render they'd be
-        // stale, so we clear them there to show the clean, fixed result.
+        // Redraw markers whenever the findings, preview mode, or phase change.
         effect(() => {
             const groups = this.store.a11yGroups();
-            const showMarkers = this.previewMode() === 'LIVE';
             this.markerService.render(
                 this.previewFrame()?.nativeElement,
-                showMarkers ? groups : []
+                this.showMarkers() ? groups : []
             );
         });
 
@@ -148,14 +144,32 @@ export class DotAccessibilityStudioRunComponent {
         });
     }
 
-    /** Iframe finished (re)loading — (re)draw markers (LIVE only; see constructor). */
+    /** Iframe finished (re)loading — (re)draw markers (see showMarkers()). */
     onPreviewLoad(): void {
-        const showMarkers = this.previewMode() === 'LIVE';
         this.markerService.render(
             this.previewFrame()?.nativeElement,
-            showMarkers ? this.store.a11yGroups() : []
+            this.showMarkers() ? this.store.a11yGroups() : []
         );
     }
+
+    /**
+     * Whether the violation overlay should be drawn in the current preview render.
+     * Markers come from the ORIGINAL scan, so they're only valid where those
+     * violations still exist:
+     *   - PRE-fix (scanned): both PREVIEW and LIVE still have them → show in either.
+     *   - POST-fix (fixing/done/published): PREVIEW carries the agent's fixes so the
+     *     old markers would be stale there → show on LIVE only.
+     * Never before a scan has produced findings.
+     */
+    readonly showMarkers = computed<boolean>(() => {
+        if (!this.store.scanned()) {
+            return false;
+        }
+        if (this.store.isScanned()) {
+            return true; // pre-fix: valid in both PREVIEW and LIVE
+        }
+        return this.previewMode() === 'LIVE'; // post-fix: only the unfixed LIVE render
+    });
 
     /** The big number in the donut center — the live open-issue count. */
     readonly centerCount = computed<number>(() => this.store.openCount());

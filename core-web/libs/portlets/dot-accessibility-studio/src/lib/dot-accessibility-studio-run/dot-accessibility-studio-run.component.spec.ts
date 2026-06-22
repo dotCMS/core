@@ -238,6 +238,29 @@ describe('DotAccessibilityStudioRunComponent', () => {
         });
     });
 
+    describe('marker visibility (showMarkers)', () => {
+        it('is off before a scan', () => {
+            render('ready');
+            expect(spectator.component.showMarkers()).toBe(false);
+        });
+
+        it('is on in BOTH preview modes while scanned (pre-fix)', () => {
+            render('scanned', MOCK_FIX_REPORT);
+            spectator.component.previewMode.set('PREVIEW_MODE');
+            expect(spectator.component.showMarkers()).toBe(true);
+            spectator.component.previewMode.set('LIVE');
+            expect(spectator.component.showMarkers()).toBe(true);
+        });
+
+        it('is LIVE-only once fixes exist (done) — PREVIEW would be stale', () => {
+            render('done', MOCK_FIX_REPORT);
+            spectator.component.previewMode.set('PREVIEW_MODE');
+            expect(spectator.component.showMarkers()).toBe(false);
+            spectator.component.previewMode.set('LIVE');
+            expect(spectator.component.showMarkers()).toBe(true);
+        });
+    });
+
     describe('scanning phase', () => {
         beforeEach(() => render('scanning'));
 
