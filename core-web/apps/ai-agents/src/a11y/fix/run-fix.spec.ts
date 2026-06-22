@@ -111,6 +111,8 @@ describe('runFix orchestration', () => {
         expect(report.runId).toBe('r_test');
         expect(report.publishRequired).toBe(true);
         expect(report.page).toEqual({ uri: '/index', host: 'demo.dotcms.com', languageId: 1 });
+        // No file was edited → changedFiles is an empty list (always present).
+        expect(report.changedFiles).toEqual([]);
     });
 
     it('defers non-CSS violations to PASS 2 (reported) — no LLM in PASS 1', async () => {

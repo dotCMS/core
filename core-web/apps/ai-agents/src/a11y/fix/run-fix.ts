@@ -78,6 +78,7 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
                     reason: `Scan render was unreliable — a render-affecting resource failed to load, so results aren't trustworthy. No fixes attempted. Failed: ${warned}`
                 }
             ],
+            changedFiles: [], // aborted before any fix
             publishRequired: true
         };
     }
@@ -249,6 +250,9 @@ export async function runFix(req: FixRequest, deps: RunFixDeps): Promise<FixRepo
             after: { violations: afterCount }
         },
         results,
+        // The authoritative set of files left changed (reverted files already removed
+        // from editedPaths). Same on a completed or stopped run.
+        changedFiles: [...editedPaths],
         publishRequired: true
     };
 }

@@ -33,6 +33,7 @@ const fakeReport: FixReport = {
     page: { uri: '/index', host: 'demo.dotcms.com', languageId: 1 },
     scan: { before: { violations: 3 }, after: { violations: 1 } },
     results: [{ ruleId: 'image-alt', status: 'fixed-to-working', file: '//x/h.vtl' }],
+    changedFiles: ['//x/h.vtl'],
     publishRequired: true
 };
 

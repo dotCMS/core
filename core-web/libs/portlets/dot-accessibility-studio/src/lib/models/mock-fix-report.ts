@@ -113,5 +113,14 @@ export const MOCK_FIX_REPORT: FixReport = {
             reason: 'Link text comes from a contentlet; out of v1 scope'
         }
     ],
+    // Distinct files left changed (the fixed-to-working ones, deduped). The
+    // reported .scss files were not modified, so they're excluded.
+    changedFiles: [
+        '//demo.dotcms.com/application/themes/travel/templates/travel-header.vtl',
+        '//demo.dotcms.com/application/themes/travel/html-head.vtl',
+        '//demo.dotcms.com/application/themes/travel/default-template.vtl',
+        '//demo.dotcms.com/application/containers/newsletter/newsletter-container.vtl',
+        '//demo.dotcms.com/application/containers/cards/destination-card.vtl'
+    ],
     publishRequired: true
 };
