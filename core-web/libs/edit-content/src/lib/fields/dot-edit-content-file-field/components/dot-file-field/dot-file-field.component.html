@@ -119,6 +119,7 @@
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
                     (editImage)="onEditImage()"
+                    (editFile)="showFileEditorDialog()"
                     [canEditImage]="$canEditImage()"
                     [disabled]="$isDisabled()"
                     [previewFile]="uploadedFile"

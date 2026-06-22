@@ -56,4 +56,27 @@ export class DotEditContentFileFieldComponent extends BaseWrapperField {
      * inner file field so the parent can sync FileAsset title/fileName.
      */
     valueUpdated = output<{ value: string; fileName: string }>();
+
+    /**
+     * Intercepts `valueUpdated` from the inner `dot-file-field` and patches the
+     * FormControl directly.
+     *
+     * When this wrapper is rendered inside an `@defer` block the `formControlName`
+     * on `dot-file-field` cannot reach the parent `ControlContainer` through the
+     * deferred view's injector chain, so `registerOnChange` / `writeValue` are
+     * never called and the CVA contract is silently broken.  The inner component
+     * still knows its value (store) and emits `valueUpdated` for every user-driven
+     * change (upload, remove, image edit, import).  Patching `formControl` here
+     * ensures the reactive-form value stays in sync regardless of the CVA state.
+     */
+    onInnerValueUpdated(event: { value: string; fileName: string }): void {
+        const control = this.formControl;
+
+        if (control) {
+            control.setValue(event.value, { emitEvent: true });
+            control.markAsTouched();
+        }
+
+        this.valueUpdated.emit(event);
+    }
 }

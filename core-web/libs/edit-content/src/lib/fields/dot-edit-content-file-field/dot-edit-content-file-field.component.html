@@ -13,7 +13,7 @@
             [field]="field"
             [contentlet]="$contentlet()"
             [formControlName]="field.variable"
-            (valueUpdated)="valueUpdated.emit($event)"
+            (valueUpdated)="onInnerValueUpdated($event)"
             [hasError]="fieldHasError" />
     </dot-card-field-content>
     <dot-card-field-footer>

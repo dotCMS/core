@@ -431,6 +431,61 @@ describe('DotFileFieldComponent', () => {
         });
     });
 
+    describe('BinaryField form value sync (handleStoreValueChange)', () => {
+        const savedValue = '/dA/abc123/binaryField/document.pdf';
+        const contentlet = createFakeContentlet({
+            [BINARY_FIELD_MOCK.variable]: savedValue,
+            binaryFieldMetaData: {
+                name: 'document.pdf',
+                title: 'document.pdf',
+                editableAsText: false
+            }
+        });
+
+        it('should not call onChange with empty string when reopening saved content', () => {
+            setup(BINARY_FIELD_MOCK, contentlet);
+
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.writeValue(savedValue);
+            spectator.detectChanges();
+
+            expect(onChange).not.toHaveBeenCalledWith('');
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it('should call onChange when the user uploads a new file', () => {
+            setup(BINARY_FIELD_MOCK, contentlet);
+
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.writeValue(savedValue);
+            spectator.detectChanges();
+
+            onChange.mockClear();
+            // Directly patch store value to trigger handleStoreValueChange,
+            // avoiding the preview-component rendering path which requires a
+            // complete UploadedFile shape that mocks cannot easily satisfy.
+            store.setValue('new-temp-id');
+            spectator.detectChanges();
+
+            expect(onChange).toHaveBeenCalledWith('new-temp-id');
+        });
+
+        it('should sync writeValue to the store immediately', () => {
+            setup(BINARY_FIELD_MOCK, contentlet);
+
+            const spySetValue = jest.spyOn(store, 'setValue');
+
+            spectator.component.writeValue(savedValue);
+
+            expect(spySetValue).toHaveBeenCalledWith(savedValue);
+            expect(store.value()).toBe(savedValue);
+        });
+    });
+
     describe('Edit image gating ($canEditImage)', () => {
         afterEach(() => mockLauncher.open.mockClear());
 

@@ -42,7 +42,7 @@ const initialState: FormFileEditorState = {
         extension: '.txt',
         language: 'text'
     },
-    allowFileNameEdit: false,
+    allowFileNameEdit: true,
     status: ComponentStatus.INIT,
     error: null,
     monacoOptions: DEFAULT_MONACO_CONFIG,
@@ -135,7 +135,10 @@ export const FormFileEditorStore = signalStore(
                 if (uploadedFile) {
                     const { file, source } = uploadedFile;
 
-                    const name = source === 'contentlet' ? file.title : file.fileName;
+                    const name =
+                        source === 'contentlet'
+                            ? (file.metaData?.name ?? file.title)
+                            : file.fileName;
                     const extension = extractFileExtension(name);
                     const info = getInfoByLang(extension);
 

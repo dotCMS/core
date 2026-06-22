@@ -112,6 +112,13 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     editImage = output();
+
+    /**
+     * Edit file. Emitted when the user clicks the text file preview to open the editor.
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    editFile = output();
     /**
      * Show dialog
      *

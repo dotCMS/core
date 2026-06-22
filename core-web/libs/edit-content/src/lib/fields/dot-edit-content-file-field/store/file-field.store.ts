@@ -167,6 +167,14 @@ export const FileFieldStore = signalStore(
                 });
             },
             /**
+             * Syncs the store value with the reactive form without altering preview state.
+             * Mirrors the legacy binary field {@link DotBinaryFieldStore.setValue} contract
+             * so mount-time store ticks stay aligned with `writeValue`.
+             */
+            setValue: (value: string) => {
+                patchState(store, { value });
+            },
+            /**
              * setUIMessage is used to set uiMessage
              * @param uiMessage
              */

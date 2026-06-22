@@ -21,12 +21,14 @@ import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
-import { UploadedFile } from '../../../../models/dot-edit-content-file.model';
+import { UPLOAD_TYPE, UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
     allowFileNameEdit: boolean;
     userMonacoOptions: Partial<MonacoEditorConstructionOptions>;
     uploadedFile: UploadedFile | null;
+    uploadType?: UPLOAD_TYPE;
+    acceptedFiles?: string[];
 };
 
 @Component({
@@ -147,7 +149,8 @@ export class DotFormFileEditorComponent implements OnInit {
             return;
         }
 
-        const { uploadedFile, userMonacoOptions, allowFileNameEdit } = data;
+        const { uploadedFile, userMonacoOptions, allowFileNameEdit, uploadType, acceptedFiles } =
+            data;
 
         if (uploadedFile) {
             this.#initValuesForm(uploadedFile);
@@ -157,8 +160,8 @@ export class DotFormFileEditorComponent implements OnInit {
             monacoOptions: userMonacoOptions || {},
             allowFileNameEdit: allowFileNameEdit || true,
             uploadedFile,
-            acceptedFiles: [],
-            uploadType: 'dotasset'
+            acceptedFiles: acceptedFiles ?? [],
+            uploadType: uploadType ?? 'dotasset'
         });
     }
 
@@ -247,7 +250,7 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     #initValuesForm({ source, file }: UploadedFile): void {
         this.form.patchValue({
-            name: source === 'temp' ? file.fileName : file.title,
+            name: source === 'temp' ? file.fileName : (file.metaData?.name ?? file.title),
             content: file.content
         });
     }

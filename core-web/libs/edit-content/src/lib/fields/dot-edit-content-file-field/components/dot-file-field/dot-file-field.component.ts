@@ -265,7 +265,6 @@ export class DotFileFieldComponent
      */
     ngOnInit() {
         const field = this.$field();
-
         this.store.initLoad({
             fieldVariable: field.variable,
             inputType: field.fieldType as INPUT_TYPE
@@ -284,6 +283,15 @@ export class DotFileFieldComponent
     ngAfterViewInit() {
         const field = this.$field();
         const contentlet = this.$contentlet();
+
+        // Guarantee value propagation even when `writeValue` is never called.
+        // Components rendered inside @defer blocks cannot reach the parent
+        // ControlContainer through the deferred view's injector, so formControlName
+        // never links and registerOnChange/writeValue are never invoked.
+        // Setting #hasHydrated here lets emitValueUpdated fire for every user-driven
+        // store change; the wrapper intercepts valueUpdated and patches the
+        // FormControl directly via onInnerValueUpdated.
+        this.#hasHydrated = true;
 
         if (!field?.variable || !contentlet) {
             return;
@@ -650,18 +658,16 @@ export class DotFileFieldComponent
     }
 
     /**
-     * Mount-time chatter suppression for `handleStoreValueChange`.
+     * Guards `handleStoreValueChange` and `emitValueUpdated` against
+     * mount-time chatter before the component is fully initialized.
      *
-     * The signalMethod's initial firing observes the store's default
-     * empty value before any user interaction, and after `writeValue`
-     * the `handleValueChange` -> `store.getAssetData` async hydration
-     * causes additional ticks (one or more empty-value ticks during
-     * the in-flight HTTP, then one with the resolved identifier).
-     * Propagating any of these dirties the parent form on mount.
-     *
-     * The rule: ignore every `handleStoreValueChange` tick until
-     * `writeValue` has run *and* (if it had a value) the store has
-     * caught up to it once. After that, every emission is user-driven.
+     * Set to `true` by whichever fires first:
+     * - `writeValue` — when the CVA contract is properly connected
+     *   (component rendered outside an @defer block).
+     * - `ngAfterViewInit` — fallback for the @defer case where
+     *   `formControlName` cannot resolve the parent ControlContainer
+     *   through the deferred view's injector, so `writeValue` is
+     *   never called.
      */
     #hasHydrated = false;
 
@@ -675,14 +681,28 @@ export class DotFileFieldComponent
     /** Last value emitted through `valueUpdated`, to avoid duplicate emissions. */
     #lastEmittedValue: string | null = null;
 
+    /**
+     * Last value propagated via `onChange`. The filter in `handleStoreValueChange`
+     * compares against this instead of `$value()` — reading `$value()` inside the
+     * signalMethod would make it a reactive dependency and cause spurious firings
+     * whenever `writeValue` updates `$value` before `store.setValue` runs.
+     */
+    #lastOnChangeValue: string | null = null;
+
     override writeValue(value: string): void {
         super.writeValue(value);
         this.#originalValue = value ?? null;
-        // If Angular wrote a falsy value, there is no async hydration
-        // to wait for — the next tick is already user-territory.
-        if (!value) {
-            this.#hasHydrated = true;
+        this.#lastOnChangeValue = value ?? null;
+
+        if (value) {
+            // Non-empty form value: keep the store in sync so the imminent
+            // handleStoreValueChange tick (same value) is suppressed.
+            this.store.setValue(value);
         }
+        // Empty/null: do NOT reset store.value — it may already hold a valid value
+        // from setFileFromContentlet or a prior upload.
+
+        this.#hasHydrated = true;
     }
 
     /**
@@ -713,16 +733,21 @@ export class DotFileFieldComponent
         }
 
         if (!this.#hasHydrated) {
-            // Mark hydration complete the first time the store catches
-            // up to the value Angular pushed via `writeValue`. Skip
-            // propagating that round-trip emission itself.
-            if (value === this.$value()) {
-                this.#hasHydrated = true;
-            }
             return;
         }
 
+        // Only propagate when the store value diverges from what the form holds.
+        // Null and empty string are treated as equivalent.
+        // NOTE: intentionally does NOT read this.$value() — that would add $value
+        // as a reactive dependency and cause spurious firings when writeValue
+        // updates $value before store.setValue runs in the same tick.
+        if ((value || '') === (this.#lastOnChangeValue || '')) {
+            return;
+        }
+
+        this.#lastOnChangeValue = value;
         this.onChange(value);
+        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {
