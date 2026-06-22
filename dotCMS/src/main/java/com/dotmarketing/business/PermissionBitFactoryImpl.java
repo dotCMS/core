@@ -2731,42 +2731,47 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			return Set.of();
 		}
 
-		final String roleList = roleIds.stream()
-				.map(id -> "'" + id + "'")
-				.collect(Collectors.joining(", "));
-
+		final String rolePlaceholders  = roleIds.stream().map(r -> "?").collect(Collectors.joining(", "));
 		final String refBitAnd = DbConnectionFactory.isOracle()
-				? "bitand(permission.permission, " + permission + ") > 0"
-				: "(permission.permission & " + permission + ") > 0";
+				? "bitand(permission.permission, ?) > 0"
+				: "(permission.permission & ?) > 0";
 		final String indBitAnd = DbConnectionFactory.isOracle()
-				? "bitand(permission, " + permission + ") > 0"
-				: "(permission & " + permission + ") > 0";
-
-		final String permRefBase =
-				"SELECT permission_reference.asset_id AS permitted_id " +
-				"FROM permission_reference, permission " +
-				"WHERE permission_reference.reference_id = permission.inode_id " +
-				"  AND permission.permission_type = permission_reference.permission_type " +
-				"  AND permission.roleid IN (" + roleList + ") " +
-				"  AND " + refBitAnd +
-				"  AND permission_reference.asset_id IN (";
-		final String indivBase =
-				"SELECT inode_id AS permitted_id " +
-				"FROM permission " +
-				"WHERE permission_type = 'individual' " +
-				"  AND roleid IN (" + roleList + ") " +
-				"  AND " + indBitAnd +
-				"  AND inode_id IN (";
+				? "bitand(permission, ?) > 0"
+				: "(permission & ?) > 0";
 
 		final Set<String> permitted = new HashSet<>();
 		final List<String> idList = new ArrayList<>(inodeIds);
 		for (int i = 0; i < idList.size(); i += 500) {
 			final List<String> chunk = idList.subList(i, Math.min(i + 500, idList.size()));
-			final String inClause = chunk.stream()
-					.map(id -> "'" + id + "'")
-					.collect(Collectors.joining(", "));
-			final String sql = permRefBase + inClause + ") UNION " + indivBase + inClause + ")";
-			new DotConnect().setSQL(sql).loadObjectResults().stream()
+			final String inodePlaceholders = chunk.stream().map(id -> "?").collect(Collectors.joining(", "));
+
+			final String sql =
+					"SELECT permission_reference.asset_id AS permitted_id " +
+					"FROM permission_reference, permission " +
+					"WHERE permission_reference.reference_id = permission.inode_id " +
+					"  AND permission.permission_type = permission_reference.permission_type " +
+					"  AND permission.roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + refBitAnd +
+					"  AND permission_reference.asset_id IN (" + inodePlaceholders + ") " +
+					"UNION " +
+					"SELECT inode_id AS permitted_id " +
+					"FROM permission " +
+					"WHERE permission_type = 'individual' " +
+					"  AND roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + indBitAnd +
+					"  AND inode_id IN (" + inodePlaceholders + ")";
+
+			final DotConnect dc = new DotConnect().setSQL(sql);
+			// Parameters for the first SELECT (permission_reference join):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+			// Parameters for the second SELECT (individual permission):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+
+			dc.loadObjectResults().stream()
 					.map(row -> (String) row.get("permitted_id"))
 					.filter(java.util.Objects::nonNull)
 					.forEach(permitted::add);
