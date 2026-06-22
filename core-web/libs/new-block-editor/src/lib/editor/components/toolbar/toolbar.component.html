@@ -212,7 +212,7 @@
     data-testid="toolbar-edit-image"
     [disabled]="!state.isImageSelected()"
     [attr.aria-disabled]="!state.isImageSelected()"
-    [class]="btnClass(false)"
+    [class]="btnClass(popovers.isOpen('image-properties'))"
     (mousedown)="openImagePropertiesDialog($event)">
     <span aria-hidden="true" class="material-symbols-outlined">tune</span>
 </button>
@@ -369,7 +369,7 @@
             [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
-            [class]="btnClass(state.isLink())"
+            [class]="btnClass(state.isLink() || popovers.isOpen('link'))"
             (mousedown)="openLinkDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">link</span>
         </button>
@@ -409,7 +409,7 @@
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
             data-testid="toolbar-asset-by-url"
-            [class]="btnClass(false)"
+            [class]="btnClass(popovers.isOpen('asset-by-url'))"
             (mousedown)="openAssetByUrlDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">media_link</span>
         </button>
@@ -422,7 +422,7 @@
             [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
-            [class]="btnClass(false)"
+            [class]="btnClass(popovers.isOpen('table'))"
             (mousedown)="openTableDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">table</span>
         </button>
@@ -436,7 +436,7 @@
             data-testid="toolbar-table-properties"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
-            [class]="btnClass(false)"
+            [class]="btnClass(popovers.isOpen('table-properties'))"
             (mousedown)="openTablePropertiesDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">table_edit</span>
         </button>
@@ -455,7 +455,7 @@
             [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
-            [class]="btnClass(false)"
+            [class]="btnClass(popovers.isOpen('emoji'))"
             (mousedown)="openEmojiPicker($event)">
             <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
         </button>
