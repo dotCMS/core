@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
 
@@ -263,11 +263,20 @@ describe('AccessibilityStudioStore', () => {
             expect(store.a11yGroups().length).toBe(3);
         });
 
-        it('runScan is a no-op when not in the ready phase', () => {
+        it('runScan re-scans from the scanned phase (the re-scan button)', () => {
             store.runScan(); // ready → scanned
-            store.runScan(); // already scanned, ignored
-            expect(scannerService.checkA11y).toHaveBeenCalledTimes(1);
+            store.runScan(); // scanned → scanning → scanned again (re-scan)
+            expect(scannerService.checkA11y).toHaveBeenCalledTimes(2);
             expect(store.phase()).toBe('scanned');
+        });
+
+        it('re-scanning drops the prior scan result before the new one lands', () => {
+            store.runScan(); // ready → scanned, result populated
+            // Hold the second scan open so we can observe the cleared state.
+            scannerService.checkA11y.mockReturnValueOnce(NEVER);
+            store.runScan();
+            expect(store.phase()).toBe('scanning');
+            expect(store.scanResult()).toBeNull();
         });
 
         it('returns to ready and reports the error if the scan fails', () => {
