@@ -270,13 +270,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
-    // Component builds its own editor props locally
-    protected readonly $showDialogs = computed<boolean>(() => {
-        const canEditPage = this.uveStore.editorCanEditContent();
-        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
-        return canEditPage && isEditState;
-    });
-
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
@@ -419,9 +412,19 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on freshly-loaded state.
+        // - When the editor component is recreated (e.g. after visiting the Pages list and
+        //   opening a different page), the store may still hold stale data from the previous
+        //   page while the new pageLoad() is in flight. The tap in pageLoad sets
+        //   uveStatus = LOADING synchronously, so by the time this effect flushes (microtask),
+        //   status is already LOADING — preventing a false dialog on stale translated:false data.
+        // - untracked: createNewTranslation calls confirmationService.confirm which may read
+        //   PrimeNG-internal signals; tracking those would cause spurious re-fires when
+        //   dialog state changes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
@@ -1704,24 +1707,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.translatePage({ page, newLanguage: language.id });
             },
             reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
+                // The page is already loaded in the target language.
+                // Just dismiss the dialog — no page reload needed.
+                // Content will display in the target language where versions exist,
+                // with fallback to the default language where they don't.
             }
         });
     }
 
     translatePage(event: { page: DotCMSPage; newLanguage: number }) {
         this.dialog.translatePage(event);
-    }
-
-    /**
-     * Use the Page Language to navigate back to the current language
-     *
-     * @memberof DotEmaShellComponent
-     */
-    #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
     }
 
     #clientPayload() {
