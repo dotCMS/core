@@ -33,7 +33,9 @@ describe('DotAccessibilityStudioRunComponent', () => {
     let spectator: Spectator<DotAccessibilityStudioRunComponent>;
 
     const runScan = jest.fn();
+    const stopScan = jest.fn();
     const startFix = jest.fn();
+    const stopAgent = jest.fn();
     const publish = jest.fn();
     const discard = jest.fn();
     const backToPicker = jest.fn();
@@ -107,6 +109,15 @@ describe('DotAccessibilityStudioRunComponent', () => {
         scanned: () => ['scanned', 'fixing', 'done', 'published'].includes(phase),
         beforeCount: () => (hasScan ? 5 : 0),
         afterCount: () => report?.scan.after.violations ?? 0,
+        openCount: () => report?.scan.after.violations ?? (hasScan ? 5 : 0),
+        // 3 critical (image-alt) + 2 serious (button-name) + 0 moderate/minor errors.
+        severityCounts: () => ({
+            critical: hasScan ? 3 : 0,
+            serious: hasScan ? 2 : 0,
+            moderate: 0,
+            minor: 0
+        }),
+        issueTypeRows: () => (hasScan ? MOCK_GROUPS.filter((g) => g.type === 'error') : []),
         fixedResults: () => report?.results.filter((r) => r.status === 'fixed-to-working') ?? [],
         reportedResults: () =>
             report?.results.filter((r) => r.status !== 'fixed-to-working') ?? [],
@@ -115,7 +126,9 @@ describe('DotAccessibilityStudioRunComponent', () => {
         reportedCount: () =>
             report?.results.filter((r) => r.status !== 'fixed-to-working').length ?? 0,
         runScan,
+        stopScan,
         startFix,
+        stopAgent,
         publish,
         discard,
         backToPicker,
@@ -199,6 +212,44 @@ describe('DotAccessibilityStudioRunComponent', () => {
             spectator.click(btn as HTMLElement);
             expect(startFix).toHaveBeenCalled();
         });
+
+        it('renders the BY ISSUE TYPE list — one row per error rule', () => {
+            // MOCK_GROUPS has 2 error groups (image-alt, button-name) + 1 warning.
+            expect(spectator.queryAll(byTestId('studio-issue-type-row')).length).toBe(2);
+        });
+
+        it('renders the severity legend (non-empty buckets)', () => {
+            const legend = spectator.query(byTestId('studio-severity-legend'));
+            expect(legend).toBeTruthy();
+            // critical + serious have counts; moderate/minor are 0 → hidden when scanned.
+            expect(legend).toHaveText('Critical');
+            expect(legend).toHaveText('Serious');
+        });
+
+        it('shows the re-scan icon button', () => {
+            expect(spectator.query(byTestId('studio-rescan-btn'))).toBeTruthy();
+        });
+    });
+
+    describe('scanning phase', () => {
+        beforeEach(() => render('scanning'));
+
+        it('renders the scanning mini-log', () => {
+            expect(spectator.query(byTestId('studio-scanning-log'))).toBeTruthy();
+        });
+
+        it('shows the Stop scan button and triggers stopScan', () => {
+            const btn = spectator
+                .query(byTestId('studio-stopscan-btn'))
+                ?.querySelector('button');
+            expect(btn).toBeTruthy();
+            spectator.click(btn as HTMLElement);
+            expect(stopScan).toHaveBeenCalled();
+        });
+
+        it('does not show the issue-type list while scanning', () => {
+            expect(spectator.query(byTestId('studio-issue-type-list'))).toBeFalsy();
+        });
     });
 
     describe('fixing phase (live stream)', () => {
@@ -210,8 +261,14 @@ describe('DotAccessibilityStudioRunComponent', () => {
 
         beforeEach(() => render('fixing', null, LIVE_STEPS));
 
-        it('shows a disabled fixing button', () => {
-            expect(spectator.query(byTestId('studio-fixing-btn'))).toBeTruthy();
+        it('shows the Stop agent button', () => {
+            expect(spectator.query(byTestId('studio-stopagent-btn'))).toBeTruthy();
+        });
+
+        it('triggers stopAgent on click', () => {
+            const btn = spectator.query(byTestId('studio-stopagent-btn'))?.querySelector('button');
+            spectator.click(btn as HTMLElement);
+            expect(stopAgent).toHaveBeenCalled();
         });
 
         it('renders one live recipe step per streamed event', () => {

@@ -6,7 +6,7 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, Subscription } from 'rxjs';
 
 import { computed, effect, inject, untracked } from '@angular/core';
 
@@ -18,6 +18,12 @@ import { DotPageScannerService, PageScannerA11yResponse } from '@dotcms/portlets
 import { GlobalStore } from '@dotcms/store';
 
 import { A11yGroup, buildA11yGroups } from '../models/a11y-groups';
+import {
+    impactToSeverity,
+    SEVERITY_ORDER,
+    severityBreakdown,
+    type SeverityCounts
+} from '../models/a11y-severity';
 import {
     AgentFixRequest,
     FixReport,
@@ -174,6 +180,45 @@ export const AccessibilityStudioStore = signalStore(
             const steps = store.steps();
 
             return steps.length ? steps[steps.length - 1] : null;
+        }),
+        /**
+         * Confirmed-violation groups (axe `error`s), one per rule, sorted for the
+         * "BY ISSUE TYPE" list: highest severity first, then most occurrences.
+         */
+        issueTypeRows: computed<A11yGroup[]>(() => {
+            const rank = (g: A11yGroup) => SEVERITY_ORDER.indexOf(impactToSeverity(g.impact));
+            return buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'error')
+                .sort((a, b) => rank(a) - rank(b) || b.count - a.count);
+        }),
+        /** Open issues broken down by severity (element counts) — drives the donut + legend. */
+        severityCounts: computed<SeverityCounts>(() =>
+            severityBreakdown(
+                buildA11yGroups(store.scanResult()).filter((g) => g.type === 'error')
+            )
+        ),
+        /**
+         * Live "open" count for the score widget. After the run finishes it's the
+         * report's authoritative after-count; while fixing it's an optimistic
+         * estimate (before − violations cleared so far) so the donut animates down
+         * as fixes land; before any run it's the scan's before-count.
+         */
+        openCount: computed<number>(() => {
+            const before = buildA11yGroups(store.scanResult())
+                .filter((g) => g.type === 'error')
+                .reduce((total, g) => total + g.count, 0);
+            const report = store.report();
+            if (report) {
+                return report.scan.after.violations;
+            }
+            if (store.phase() === 'fixing') {
+                const cleared = store
+                    .steps()
+                    .filter((s) => s.phase === 'fix' && /^Fixed |Added |Set |Wrapped |Named /.test(s.message))
+                    .length;
+                return Math.max(0, before - cleared);
+            }
+            return before;
         })
     })),
     withMethods((store) => {
@@ -182,6 +227,10 @@ export const AccessibilityStudioStore = signalStore(
         const agentService = inject(DotA11yAgentService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const globalStore = inject(GlobalStore);
+
+        // The in-flight scan / fix-stream subscription, held so Stop can cancel it
+        // (unsubscribing aborts the underlying fetch). Not reactive UI state.
+        let activeSub: Subscription | null = null;
 
         /**
          * The dotCMS backend origin the agent must render + call against. In prod the
@@ -302,7 +351,7 @@ export const AccessibilityStudioStore = signalStore(
                 }
                 patchState(store, { phase: 'scanning' });
 
-                scannerService
+                activeSub = scannerService
                     .checkA11y(buildScanUrl(page))
                     .pipe(
                         take(1),
@@ -317,6 +366,16 @@ export const AccessibilityStudioStore = signalStore(
                     .subscribe((scanResult) => {
                         patchState(store, { scanResult, phase: 'scanned' });
                     });
+            },
+
+            /** Cancel the in-flight scan (unsubscribe aborts the request) → back to ready. */
+            stopScan() {
+                if (store.phase() !== 'scanning') {
+                    return;
+                }
+                activeSub?.unsubscribe();
+                activeSub = null;
+                patchState(store, { phase: 'ready' });
             },
 
             /**
@@ -353,7 +412,7 @@ export const AccessibilityStudioStore = signalStore(
                 };
 
                 let nextStepId = 0;
-                agentService
+                activeSub = agentService
                     .fixStream(request)
                     .pipe(
                         catchError((error: unknown) => {
@@ -372,13 +431,29 @@ export const AccessibilityStudioStore = signalStore(
                                     { id: nextStepId++, phase: event.phase, message: event.message }
                                 ]
                             });
-                        } else if (event.type === 'done') {
+                        } else if (event.type === 'done' || event.type === 'aborted') {
+                            // done = full run; aborted = stopped early with a partial
+                            // report (fixes already applied are kept). Both land on the
+                            // done screen with the report the agent returned.
                             patchState(store, { phase: 'done', report: event.report });
                         } else {
                             // Terminal error event from the agent.
                             patchState(store, { phase: 'scanned', fixError: event.message });
                         }
                     });
+            },
+
+            /**
+             * Stop the in-flight agent run. Tells the agent to stop (it returns a
+             * partial report via the stream's `aborted` event, keeping fixes already
+             * applied). We keep the stream subscribed so that terminal event still
+             * lands and moves us to the done screen.
+             */
+            stopAgent() {
+                if (store.phase() !== 'fixing') {
+                    return;
+                }
+                agentService.stop().pipe(take(1), catchError(() => EMPTY)).subscribe();
             },
 
             /** Promote the working fixes to live (the only publish; human-triggered). */
