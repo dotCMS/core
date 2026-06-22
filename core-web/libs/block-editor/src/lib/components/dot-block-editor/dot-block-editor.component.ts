@@ -553,6 +553,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         return {
             heading: levels?.length ? { levels, HTMLAttributes: {} } : false,
+            // StarterKit v3 bundles Link + Underline, but this editor registers its own
+            // (`Underline` and `Link.extend(...)` in the extension list). Disable the bundled
+            // ones to avoid "Duplicate extension names found: ['link', 'underline']".
+            link: false,
+            underline: false,
             ...starterKit
         };
     }

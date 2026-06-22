@@ -810,6 +810,8 @@
     cursor: default;
 }
 
+/* The content-type icon is always shown (a real Material Symbols glyph). Hovering the
+   token surfaces the content type name via the host's native `title` tooltip. */
 :host ::ng-deep .ProseMirror .dot-inline-content-token__icon {
     font-size: 1em;
     line-height: 1;

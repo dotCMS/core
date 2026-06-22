@@ -42,6 +42,8 @@ export class InlineContentSuggestionService {
     readonly isOpen = signal(false);
     /** True while a search request is in flight. */
     readonly isLoading = signal(false);
+    /** True when the last search request failed (distinct from an empty result set). */
+    readonly hasError = signal(false);
     /** Index of the highlighted row for keyboard navigation. */
     readonly activeIndex = signal(0);
     /** TipTap suggestion anchor: resolves the caret rect for positioning the overlay. */
@@ -78,9 +80,21 @@ export class InlineContentSuggestionService {
                 takeUntilDestroyed()
             )
             .subscribe((entity) => {
-                const contentlets = entity?.jsonObjectView?.contentlets ?? [];
                 this.zone.run(() => {
-                    this.results.set(contentlets);
+                    // A request that resolves after the picker closed must not repopulate
+                    // results or clear the loading flag for the next session.
+                    if (!this.isOpen()) return;
+                    // `catchError` maps a failed request to `null`; an empty result set is a
+                    // non-null entity with no contentlets. Surface the two states distinctly.
+                    if (entity === null) {
+                        this.hasError.set(true);
+                        this.results.set([]);
+                        this.activeIndex.set(0);
+                        this.isLoading.set(false);
+                        return;
+                    }
+                    this.hasError.set(false);
+                    this.results.set(entity?.jsonObjectView?.contentlets ?? []);
                     this.activeIndex.set(0);
                     this.isLoading.set(false);
                 });
@@ -119,6 +133,7 @@ export class InlineContentSuggestionService {
             this.results.set([]);
             this.clientRectFn.set(clientRectFn);
             this.activeIndex.set(0);
+            this.hasError.set(false);
             this.isLoading.set(true);
             this.isOpen.set(true);
         });
@@ -140,6 +155,7 @@ export class InlineContentSuggestionService {
         this.commandFn = commandFn;
         this.zone.run(() => {
             this.clientRectFn.set(clientRectFn);
+            this.hasError.set(false);
             this.isLoading.set(true);
         });
         this.query$.next(query);
@@ -152,6 +168,7 @@ export class InlineContentSuggestionService {
             this.clientRectFn.set(null);
             this.commandFn = null;
             this.isLoading.set(false);
+            this.hasError.set(false);
             this.results.set([]);
         });
     }
@@ -175,14 +192,13 @@ export class InlineContentSuggestionService {
         const count = this.results().length;
         switch (event.key) {
             case 'ArrowDown':
-                this.zone.run(() => this.activeIndex.update((i) => (i + 1) % Math.max(1, count)));
+                // Nothing to navigate — let the event through rather than swallowing it.
+                if (count === 0) return false;
+                this.zone.run(() => this.activeIndex.update((i) => (i + 1) % count));
                 return true;
             case 'ArrowUp':
-                this.zone.run(() =>
-                    this.activeIndex.update(
-                        (i) => (i - 1 + Math.max(1, count)) % Math.max(1, count)
-                    )
-                );
+                if (count === 0) return false;
+                this.zone.run(() => this.activeIndex.update((i) => (i - 1 + count) % count));
                 return true;
             case 'Enter':
                 if (count > 0) this.select(this.results()[this.activeIndex()]);

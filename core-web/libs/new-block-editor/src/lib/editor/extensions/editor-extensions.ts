@@ -83,7 +83,15 @@ export function createEditorExtensions(
             orderedList: has('orderedList') ? {} : false,
             blockquote: has('blockquote') ? {} : false,
             codeBlock: false,
-            horizontalRule: has('horizontalRule') ? {} : false
+            horizontalRule: has('horizontalRule') ? {} : false,
+            // StarterKit v3 bundles Link + Underline. Disable both here:
+            // - `link` is owned by our DotLink extension (added below, gated by `has('link')`).
+            //   Leaving StarterKit's on causes a "Duplicate extension names: ['link']" warning
+            //   and silently bypasses the allowedBlocks gating for links.
+            // - `underline` is not part of this editor's mark set, so we drop it rather than
+            //   let the v3 upgrade smuggle it in.
+            link: false,
+            underline: false
         }),
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
         createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),

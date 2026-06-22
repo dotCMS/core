@@ -48,6 +48,15 @@ import { InlineContentSuggestionService } from '../../services/inline-content-su
                 <div class="px-2 py-3 text-sm text-gray-500">
                     {{ 'dot.block.editor.suggestion.inline-content.loading' | dm }}
                 </div>
+            } @else if (service.hasError()) {
+                <div class="px-2 py-3">
+                    <p class="text-sm font-medium text-gray-700">
+                        {{ 'dot.block.editor.suggestion.inline-content.error.label' | dm }}
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        {{ 'dot.block.editor.suggestion.inline-content.error.description' | dm }}
+                    </p>
+                </div>
             } @else if (service.results().length === 0) {
                 <div class="px-2 py-3">
                     <p class="text-sm font-medium text-gray-700">
@@ -67,9 +76,7 @@ import { InlineContentSuggestionService } from '../../services/inline-content-su
                         [class]="itemClass(i)"
                         (mousemove)="onMouseMove(i)"
                         (click)="service.select(item)">
-                        <span
-                            class="material-symbols-rounded text-gray-400"
-                            aria-hidden="true">
+                        <span class="material-symbols-outlined text-gray-400" aria-hidden="true">
                             article
                         </span>
                         <span class="flex min-w-0 flex-col text-left">
