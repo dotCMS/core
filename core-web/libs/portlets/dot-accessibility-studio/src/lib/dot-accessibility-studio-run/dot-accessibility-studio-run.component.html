@@ -93,6 +93,24 @@
                         </div>
                     }
                 </div>
+
+                <!-- Needs-review: axe flagged these but couldn't confirm them (e.g.
+                     contrast over an image). The agent doesn't auto-fix them, so they
+                     stay out of the count above — but we surface them so the user
+                     knows they exist and need a human eye. -->
+                @if (store.warningCount() > 0) {
+                    <div
+                        class="mt-2 flex items-center gap-1.5 text-xs text-gray-400"
+                        data-testid="studio-needsreview-note">
+                        <i class="pi pi-eye text-xs!" aria-hidden="true"></i>
+                        <span>
+                            {{
+                                'accessibility.studio.score.needsreview'
+                                    | dm: [store.warningCount().toString()]
+                            }}
+                        </span>
+                    </div>
+                }
             </div>
         </div>
     }
