@@ -403,7 +403,16 @@ export class DotEditContentBinaryFieldComponent
     onEditImage() {
         const launcher = this.#imageEditorLauncher;
 
+        // The new Angular editor is gated by FEATURE_FLAG_NEW_IMAGE_EDITOR (via the
+        // launcher's `isAvailable()`). When it's off — or no launcher is provided in
+        // this context — fall back to the legacy Dojo image editor.
         if (!launcher?.isAvailable()) {
+            this.#dotBinaryFieldEditImageService.openImageEditor({
+                inode: this.contentlet?.inode,
+                tempId: this.tempId,
+                variable: this.variable
+            });
+
             return;
         }
 

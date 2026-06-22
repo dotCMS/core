@@ -1,11 +1,12 @@
 import { Observable, map, take } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSTempFile, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotImageEditorComponent,
     DotImageEditorLauncher,
@@ -14,14 +15,27 @@ import {
 
 /**
  * Launches the Angular `@dotcms/image-editor` modal through PrimeNG's `DialogService`.
+ *
+ * Gated behind the {@link FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR} feature flag:
+ * `isAvailable()` resolves to the server-configured value (off by default), so the
+ * binary field falls back to the legacy Dojo editor until an admin enables it.
  */
 @Injectable()
 export class AngularImageEditorLauncher implements DotImageEditorLauncher {
     readonly #dialogService = inject(DialogService);
-    readonly #dotMessageService = inject(DotMessageService);
+    readonly #propertiesService = inject(DotPropertiesService);
+
+    /** Resolved value of the new-image-editor feature flag (off until the server replies). */
+    readonly #enabled = toSignal(
+        this.#propertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR,
+            false
+        ),
+        { initialValue: false }
+    );
 
     isAvailable(): boolean {
-        return true;
+        return this.#enabled();
     }
 
     /**

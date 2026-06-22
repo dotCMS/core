@@ -357,6 +357,25 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
                 expect(spyTempFile).not.toHaveBeenCalled();
             });
+
+            it('should fall back to the legacy Dojo editor when the new editor is disabled', () => {
+                imageEditorLauncherMock.isAvailable.mockReturnValue(false);
+                const spyLegacy = jest
+                    .spyOn(DotBinaryFieldEditImageService.prototype, 'openImageEditor')
+                    .mockImplementation();
+                spectator.setInput('contentlet', { ...MOCK_DOTCMS_FILE, inode: 'inode-123' });
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(spyLegacy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        inode: 'inode-123',
+                        variable: BINARY_FIELD_MOCK.variable
+                    })
+                );
+                expect(imageEditorLauncherMock.open).not.toHaveBeenCalled();
+            });
         });
     });
 

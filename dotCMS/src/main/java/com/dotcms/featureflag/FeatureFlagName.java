@@ -74,4 +74,12 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
 
     String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
+
+    /**
+     * Enables the new Angular image editor (@dotcms/image-editor) in the Edit Content v2
+     * binary field. Off by default; when disabled the binary field falls back to the
+     * legacy Dojo image editor.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR}.
+     */
+    String FEATURE_FLAG_NEW_IMAGE_EDITOR = "FEATURE_FLAG_NEW_IMAGE_EDITOR";
 }
