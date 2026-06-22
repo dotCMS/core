@@ -385,8 +385,10 @@ public class CSSPreProcessServlet extends HttpServlet {
         }
 
         resp.setContentType("text/css");
-        resp.setHeader("Content-Disposition",
-                "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/')) + "\"");
+        // lastIndexOf('/') + 1 yields the bare file name; it also safely returns the full URI
+        // (index 0) when there is no slash, avoiding a StringIndexOutOfBoundsException.
+        final String fileName = fileUri.substring(fileUri.lastIndexOf('/') + 1);
+        resp.setHeader("Content-Disposition", "inline; filename=\"" + fileName + "\"");
         // The map reflects the file's current state at compile time; don't let intermediaries cache it.
         resp.setHeader("Cache-Control", "no-store");
         try {
