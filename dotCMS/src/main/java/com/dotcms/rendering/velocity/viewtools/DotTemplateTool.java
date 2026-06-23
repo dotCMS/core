@@ -360,16 +360,14 @@ public class DotTemplateTool implements ViewTool {
 
         //Getting the theme path
         String themePath;
-        // Host-qualified ("//<themeHost>/...") theme path. Used for the file-asset template include so it
-        // resolves to the theme's own host regardless of which host renders the page (the themeMap cache is
-        // keyed by theme identifier only, so a relative path cached by one host would resolve against the
-        // wrong host for a shared theme rendered by another host within the cache window).
         final Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-        final String hostQualifiedThemePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
         if ( themeFolder.getHostId().equals( hostId ) ) {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
-            themePath = hostQualifiedThemePath;
+            // Host-qualified ("//<themeHost>/...") theme path so a shared theme rendered by another
+            // host still resolves against its own host (the themeMap cache is keyed by theme
+            // identifier only).
+            themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
         }
 
         //Getting the template.vtl file path
@@ -378,8 +376,11 @@ public class DotTemplateTool implements ViewTool {
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
             // Logical, host-qualified file-asset path (NOT the physical working-inode disk path) so the
             // page render can include it with #dotParse and resolve live vs working from the PageMode.
-            // Always host-qualified so #dotParse resolves it against the theme's host, not the rendering page's.
-            themeTemplatePath = hostQualifiedThemePath + Template.THEME_TEMPLATE; // path already ends with "/"
+            // Built from the asset's own parent path (which is not guaranteed to be directly under
+            // /application/themes/<name>/) and host-qualified so #dotParse resolves it against the
+            // theme's host, not the rendering page's.
+            themeTemplatePath = "//" + themeHost.getHostname()
+                    + themeTemplate.getFileAsset().getPath() + Template.THEME_TEMPLATE; // parent path already ends with "/"
             themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
