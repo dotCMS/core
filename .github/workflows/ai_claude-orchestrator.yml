@@ -127,15 +127,14 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
   # Automatic PR reviews (no @claude mention)
-  # Uses DeepSeek V3.2 via AWS Bedrock (Converse API, generic-bedrock route) for model
+  # Uses DeepSeek R1 via AWS Bedrock (Converse API, generic-bedrock route) for model
   # diversity — Claude writes code here, a non-Claude model reviews it so training/weighting
   # biases from one model family don't carry into the review. Interactive @claude sessions
   # remain on Anthropic Claude (job above). Prompt lives in .github/prompts/gpt-auto-review.md.
   #
   # Was openai.gpt-5.5 (Bedrock Mantle), but as of 2026-06-15 gpt-5.5 is failing on mantle
-  # in both regions ("Engine not found"; AWS-side — see ext-aws-tam thread). DeepSeek V3.2 is
-  # healthy on bedrock-runtime and keeps the reviews running. Switch back to a mantle model by
-  # setting model_id to an openai.* id once AWS restores it.
+  # in both regions ("Engine not found"; AWS-side). Switched to DeepSeek R1 (reasoning model)
+  # which produces higher-quality code review findings than V3.2.
   ai-automatic-review:
     needs: [security-check, load-gpt-prompt]
     # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
@@ -147,9 +146,10 @@ jobs:
       cancel-in-progress: true
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
     with:
-      # deepseek.* is not anthropic/openai, so the orchestrator routes it to the
-      # bedrock-generic (Converse) executor. reasoning_effort has no effect on that path.
-      model_id: deepseek.v3.2
+      # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
+      # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
+      # Current value: deepseek.r1-v1:0 (reasoning model, better for catching subtle bugs).
+      model_id: ${{ vars.REVIEW_MODEL_ID || 'deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
