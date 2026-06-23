@@ -185,14 +185,14 @@
                                                 [href]="editUrl"
                                                 target="_blank"
                                                 rel="noopener"
-                                                class="truncate text-primary-600 hover:text-primary-700 hover:underline"
+                                                class="min-w-0 flex-1 truncate text-primary-600 hover:text-primary-700 hover:underline"
                                                 [title]="asset.title || asset.asset"
                                                 data-testid="pq-select-bundle-asset-name">
                                                 {{ asset.title || asset.asset }}
                                             </a>
                                         } @else {
                                             <span
-                                                class="truncate text-color"
+                                                class="min-w-0 flex-1 truncate text-color"
                                                 [title]="asset.title || asset.asset"
                                                 data-testid="pq-select-bundle-asset-name">
                                                 {{ asset.title || asset.asset }}
@@ -205,6 +205,9 @@
                                         [value]="asset.content_type_name || asset.type"
                                         severity="secondary"
                                         [rounded]="false"
+                                        styleClass="max-w-full whitespace-nowrap overflow-hidden text-ellipsis [&_.p-tag-label]:truncate [&_.p-tag-label]:block"
+                                        [pTooltip]="asset.content_type_name || asset.type"
+                                        tooltipPosition="left"
                                         data-testid="pq-select-bundle-asset-type" />
                                 </td>
                                 <td class="text-right">
