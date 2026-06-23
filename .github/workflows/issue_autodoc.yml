@@ -75,55 +75,48 @@ jobs:
       REPO: ${{ github.repository }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.DOTCMS_API_TOKEN_AISEARCH }}
-      DOTCMS_API_TOKEN_AUTODOCDRAFT: ${{ secrets.DOTCMS_API_TOKEN_AUTODOCDRAFT }}
-      DOTCMS_BASE_URL: ${{ secrets.DOTCMS_BASE_URL }}
-      DOTCMS_SITE_FOLDER: ${{ secrets.DOTCMS_SITE_FOLDER }}
+      AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
+      AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
+      AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
+      AUTODOC_DOTCMS_SITE_FOLDER: ${{ secrets.AUTODOC_DOTCMS_SITE_FOLDER }}
 
     steps:
-      - name: Checkout core-workflow-test (for repo/gh context)
+      - name: Checkout triggering repo (for gh context)
         uses: actions/checkout@v4
 
-      - name: Checkout autodoc scripts
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ secrets.AUTODOC_REPO }}
-          token: ${{ secrets.AUTODOC_TOKEN }}
-          path: autodoc
-
-      - name: Checkout dotcms-aios (vault substitute)
+      - name: Checkout dotcms-aios (includes autodoc scripts)
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
-          token: ${{ secrets.AUTODOC_TOKEN }}
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
           path: dotcms-aios
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
-          working-directory: autodoc
+          working-directory: dotcms-aios/autodoc
 
       - name: Install autodoc dependencies
-        working-directory: autodoc
+        working-directory: dotcms-aios/autodoc
         run: uv sync
 
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Run eval → Claude
-        working-directory: autodoc
+        working-directory: dotcms-aios/autodoc
         run: |
           uv run python scripts/run_eval.py \
             --epic "$EPIC_NUMBER" \
             --repo "$REPO" \
             --prompt burlap \
-            --aios-dir ../dotcms-aios \
+            --aios-dir ../ \
             > /tmp/eval_context.md
 
           claude --print --allowedTools Bash,Write < /tmp/eval_context.md
 
       - name: Run finalize (apply + post comment + commit)
-        working-directory: autodoc
+        working-directory: dotcms-aios/autodoc
         run: |
           git config user.name "autodoc[bot]"
           git config user.email "autodoc-bot@users.noreply.github.com"
