@@ -197,6 +197,7 @@ export class DotFileFieldComponent
             return false;
         }
 
+        // Image editing is only supported for Binary fields, not File or Image fields.
         if (this.store.inputType() !== INPUT_TYPES.Binary) {
             return false;
         }
@@ -370,8 +371,13 @@ export class DotFileFieldComponent
                 filter((tempFile) => !!tempFile),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((tempFile) => {
-                this.store.applyTempFile(tempFile);
+            .subscribe({
+                next: (tempFile) => {
+                    this.store.applyTempFile(tempFile);
+                },
+                error: () => {
+                    this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
+                }
             });
     }
 

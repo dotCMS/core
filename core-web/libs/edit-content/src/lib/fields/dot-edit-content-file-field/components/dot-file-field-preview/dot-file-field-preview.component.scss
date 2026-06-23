@@ -168,15 +168,12 @@
 }
 
 // Third-party web-component internals – cannot be styled with Tailwind
-dot-contentlet-thumbnail::ng-deep {
-    .background-image:not(.svg-thumbnail) {
-        img {
+:host {
+    dot-contentlet-thumbnail::ng-deep {
+        .thumbnail img,
+        .background-image:not(.svg-thumbnail) img {
             object-fit: cover;
         }
-    }
-
-    img {
-        object-fit: contain;
     }
 }
 

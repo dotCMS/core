@@ -371,6 +371,7 @@ export const FileFieldStore = signalStore(
                                     patchState(store, {
                                         fileStatus: 'preview',
                                         value,
+                                        uiMessage: getUiMessage('SERVER_ERROR'),
                                         uploadedFile: {
                                             source: 'contentlet',
                                             file: {

@@ -11,8 +11,12 @@ import { LegacyDialogImageEditorLauncher } from './legacy-dialog-image-editor-la
 import { LegacyDojoImageEditorLauncher } from './legacy-dojo-image-editor-launcher.service';
 
 describe('LegacyDojoImageEditorLauncher', () => {
-    const launcher = new LegacyDojoImageEditorLauncher();
+    let launcher: LegacyDojoImageEditorLauncher;
     const variable = 'fileAsset';
+
+    beforeEach(() => {
+        launcher = new LegacyDojoImageEditorLauncher();
+    });
 
     it('should dispatch the open-image-editor event with the asset details', () => {
         const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
@@ -121,6 +125,30 @@ describe('LegacyDialogImageEditorLauncher', () => {
         expect(next).toHaveBeenCalledWith(tempFile);
         expect(closeSpy).toHaveBeenCalled();
         expect(complete).toHaveBeenCalled();
+
+        sub.unsubscribe();
+    });
+
+    it('should ignore messages from a different origin', () => {
+        const next = jest.fn();
+
+        const sub = launcher
+            .open({ inode: 'inode-1', variable, fieldName: variable })
+            .subscribe({ next });
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    source: 'dot-image-editor',
+                    type: 'tempfile',
+                    variable,
+                    tempFile: { id: 'x' }
+                },
+                origin: 'https://other.example.com'
+            })
+        );
+
+        expect(next).not.toHaveBeenCalled();
 
         sub.unsubscribe();
     });

@@ -38,7 +38,6 @@ type LegacyImageEditorDialogConfig = { data: DotLegacyImageEditorDialogData };
     `,
     styleUrl: './dot-legacy-image-editor-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [SafeUrlPipe]
 })
 export class DotLegacyImageEditorDialogComponent {

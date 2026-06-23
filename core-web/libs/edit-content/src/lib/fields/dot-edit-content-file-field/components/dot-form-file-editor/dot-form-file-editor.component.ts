@@ -158,7 +158,7 @@ export class DotFormFileEditorComponent implements OnInit {
 
         this.store.initLoad({
             monacoOptions: userMonacoOptions || {},
-            allowFileNameEdit: allowFileNameEdit || true,
+            allowFileNameEdit: allowFileNameEdit ?? true,
             uploadedFile,
             acceptedFiles: acceptedFiles ?? [],
             uploadType: uploadType ?? 'dotasset'
