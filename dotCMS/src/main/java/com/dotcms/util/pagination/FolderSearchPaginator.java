@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.rest.api.v1.folder.FolderSearchResultView;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderSearchParams;
@@ -18,7 +18,7 @@ import java.util.Map;
  * <p>Extra params expected in the map (keyed by the query param names defined in
  * the calling resource): {@code "siteId"}, {@code "path"}, {@code "recursive"}.
  */
-public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchResultView> {
+public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchView> {
 
     private static final String DEFAULT_ORDER_BY_COLUMN = "folder.name";
 
@@ -34,7 +34,7 @@ public class FolderSearchPaginator implements PaginatorOrdered<FolderSearchResul
     }
 
     @Override
-    public PaginatedArrayList<FolderSearchResultView> getItems(final User user, final String filter,
+    public PaginatedArrayList<FolderSearchView> getItems(final User user, final String filter,
             final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams)
             throws PaginationException {

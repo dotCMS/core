@@ -13,7 +13,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.api.tree.Parentable;
-import com.dotcms.rest.api.v1.folder.FolderSearchResultView;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -808,7 +808,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	@Override
 	@CloseDBIfOpened
-	public PaginatedArrayList<FolderSearchResultView> searchFolders(final FolderSearchParams params)
+	public PaginatedArrayList<FolderSearchView> searchFolders(final FolderSearchParams params)
 			throws DotDataException, DotSecurityException {
 
 		// 1. Load all matching folders (no LIMIT — pagination happens in Java so that
@@ -835,13 +835,13 @@ public class FolderAPIImpl implements FolderAPI  {
 				.map(folder -> {
 					final var fullPath   = folder.getPath();
 					final var parentPath = fullPath.substring(0, fullPath.length() - folder.getName().length() - 1);
-					return new FolderSearchResultView(
+					return new FolderSearchView(
 							folder.getIdentifier(), folder.getInode(), folder.getName(),
 							parentPath, canAddIds.contains(folder.getPermissionId()));
 				})
 				.toList();
 
-		final var result = new PaginatedArrayList<FolderSearchResultView>();
+		final var result = new PaginatedArrayList<FolderSearchView>();
 		result.setTotalResults(total);
 		result.addAll(views);
 		return result;

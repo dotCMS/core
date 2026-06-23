@@ -27222,11 +27222,11 @@ components:
       properties:
         addChildrenAllowed:
           type: boolean
+        hostName:
+          type: string
         id:
           type: string
         inode:
-          type: string
-        name:
           type: string
         path:
           type: string

@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
-import com.dotcms.rest.api.v1.folder.FolderSearchResultView;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -636,7 +636,7 @@ import java.util.function.Predicate;
 	 * @throws DotDataException     on database error
 	 * @throws DotSecurityException if the user lacks permissions
 	 */
-	PaginatedArrayList<FolderSearchResultView> searchFolders(FolderSearchParams params)
+	PaginatedArrayList<FolderSearchView> searchFolders(FolderSearchParams params)
 			throws DotDataException, DotSecurityException;
 
 	/**

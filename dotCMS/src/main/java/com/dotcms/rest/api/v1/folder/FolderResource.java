@@ -522,7 +522,7 @@ public class FolderResource implements Serializable {
      * @param siteId              site identifier (required)
      * @param page                1-based page number (default: 1)
      * @param perPage             results per page (default: 40)
-     * @return paginated list of matching {@link FolderSearchResultView} objects
+     * @return paginated list of matching {@link FolderSearchView} objects
      */
     @GET
     @Path("/search")

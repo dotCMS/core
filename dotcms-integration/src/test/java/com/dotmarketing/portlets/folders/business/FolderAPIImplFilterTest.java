@@ -4,7 +4,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
-import com.dotcms.rest.api.v1.folder.FolderSearchResultView;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.folders.business.FolderSearchParams;
 import com.dotmarketing.beans.Host;
@@ -180,7 +180,7 @@ public class FolderAPIImplFilterTest {
 
         assertEquals(1, result.size());
         assertEquals(1, result.getTotalResults());
-        final FolderSearchResultView view = result.get(0);
+        final FolderSearchView view = result.get(0);
         assertNotNull(view.id());
         assertNotNull(view.inode());
         assertNotNull(view.name());

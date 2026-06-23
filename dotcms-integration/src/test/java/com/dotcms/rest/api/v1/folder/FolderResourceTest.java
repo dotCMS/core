@@ -399,9 +399,9 @@ public class FolderResourceTest {
         Assert.assertEquals(10, page2.size());
 
         // No overlap between pages
-        final List<String> page1Paths = page1.stream().map(FolderSearchResultView::path).toList();
+        final List<String> page1Paths = page1.stream().map(FolderSearchResultView::getPath).toList();
         for (final FolderSearchResultView item : page2) {
-            Assert.assertFalse("Page 2 should not contain items from page 1", page1Paths.contains(item.path()));
+            Assert.assertFalse("Page 2 should not contain items from page 1", page1Paths.contains(item.getPath()));
         }
     }
 

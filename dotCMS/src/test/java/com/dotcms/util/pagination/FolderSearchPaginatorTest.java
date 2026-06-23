@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.rest.api.v1.folder.FolderSearchResultView;
+import com.dotcms.rest.api.v1.folder.FolderSearchView;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -27,7 +27,7 @@ public class FolderSearchPaginatorTest {
 
     private FolderAPI folderAPI;
     private FolderSearchPaginator paginator;
-    private PaginatedArrayList<FolderSearchResultView> results;
+    private PaginatedArrayList<FolderSearchView> results;
 
     @Before
     public void setUp() {
@@ -36,9 +36,9 @@ public class FolderSearchPaginatorTest {
 
         results = new PaginatedArrayList<>();
         results.setTotalResults(3);
-        results.add(mock(FolderSearchResultView.class));
-        results.add(mock(FolderSearchResultView.class));
-        results.add(mock(FolderSearchResultView.class));
+        results.add(mock(FolderSearchView.class));
+        results.add(mock(FolderSearchView.class));
+        results.add(mock(FolderSearchView.class));
     }
 
     /**
@@ -62,7 +62,7 @@ public class FolderSearchPaginatorTest {
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("siteId", siteId);
 
-        final PaginatedArrayList<FolderSearchResultView> items =
+        final PaginatedArrayList<FolderSearchView> items =
                 paginator.getItems(user, null, 40, 0, null, null, extraParams);
 
         assertEquals(3, items.getTotalResults());
@@ -93,7 +93,7 @@ public class FolderSearchPaginatorTest {
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put("siteId", siteId);
 
-        final PaginatedArrayList<FolderSearchResultView> items =
+        final PaginatedArrayList<FolderSearchView> items =
                 paginator.getItems(user, name, 40, 0, null, null, extraParams);
 
         assertSame(results, items);
@@ -126,7 +126,7 @@ public class FolderSearchPaginatorTest {
         extraParams.put("path", path);
         extraParams.put("recursive", true);
 
-        final PaginatedArrayList<FolderSearchResultView> items =
+        final PaginatedArrayList<FolderSearchView> items =
                 paginator.getItems(user, null, 10, 0, null, null, extraParams);
 
         assertSame(results, items);
@@ -159,7 +159,7 @@ public class FolderSearchPaginatorTest {
         extraParams.put("path", path);
         extraParams.put("recursive", false);
 
-        final PaginatedArrayList<FolderSearchResultView> items =
+        final PaginatedArrayList<FolderSearchView> items =
                 paginator.getItems(user, null, 10, 0, null, null, extraParams);
 
         assertSame(results, items);
@@ -196,7 +196,7 @@ public class FolderSearchPaginatorTest {
         extraParams.put("path", path);
         extraParams.put("recursive", true);
 
-        final PaginatedArrayList<FolderSearchResultView> items =
+        final PaginatedArrayList<FolderSearchView> items =
                 paginator.getItems(user, name, 20, 0, "mod_date", OrderDirection.DESC, extraParams);
 
         assertSame(results, items);
