@@ -411,7 +411,11 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
 
         indexName = indexName.toLowerCase();
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL url = classLoader.getResource("es-sitesearch-settings.json");
+        // OpenSearch-format settings: the legacy es-sitesearch-settings.json uses ES-only token
+        // filter syntax (e.g. edgeNGram / side) that the typed OpenSearch IndexSettings deserializer
+        // rejects. os-sitesearch-settings.json declares the same analyzers (standard_content,
+        // partial_content) in OpenSearch syntax. The mapping is vendor-neutral and is reused as-is.
+        URL url = classLoader.getResource("os-sitesearch-settings.json");
         final String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
         url = classLoader.getResource("es-sitesearch-mapping.json");
         final String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
