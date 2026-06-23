@@ -19,39 +19,41 @@ Check for:
 
 ## Output format
 
-Write the human-readable findings first (or "No issues found." if clean). Then, **at the very end of your response**, append this machine-data block on its own line (invisible in GitHub UI — used by the next review run to carry findings forward):
+Always use this exact structure (omit a section entirely if it has no entries):
 
-`<!-- dotcms-review-findings:[{"sev":"<severity emoji> <label>","loc":"path/file:line","desc":"<one-sentence description>"},...] -->`
+```
+#### New Issues
+- 🔴 Critical: `path/file:line` — what's wrong and why it matters
+- 🟠 High: `path/file:line` — what's wrong and why it matters
+- 🟡 Medium: `path/file:line` — what's wrong and why it matters
+
+#### Existing
+- 🟡 Medium: `path/file:line` — prior finding still present (unchanged or incomplete fix)
+
+#### Resolved
+- ✅ `path/file:line` — brief reason it's now fixed or no longer applicable
+```
+
+If the PR is clean with no prior findings, write: `No issues found.`
+
+**Severity gating:**
+- 🔴 Critical / 🟠 High: blocking — must be fixed before merge
+- 🟡 Medium: non-blocking — worth fixing but does not block merge
+
+At the very end of your response, on its own line, append this machine-data block (invisible in GitHub UI — used by the next run to carry findings forward):
+
+`<!-- dotcms-review-findings:[{"sev":"🔴 Critical","loc":"path/file:line","desc":"one sentence, no internal quotes"},...] -->`
 
 Rules for the machine-data line:
 - Always present — use `<!-- dotcms-review-findings:[] -->` when there are no findings
-- One line only, no newlines inside the JSON
-- Each object: `sev` = severity label (e.g. `"🔴 Critical"`), `loc` = `path/file:line`, `desc` = one sentence, no quotes that break JSON
-- Include ALL findings — new and carried
-
-Human-readable findings format:
-
-**[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
-
-**Severity gating:**
-- 🔴 Critical / 🟠 High: blocking — these must be fixed before merge
-- 🟡 Medium: non-blocking — worth fixing but does not block merge
+- One line, no newlines inside the JSON
+- Include ALL open findings — new and existing (not resolved ones)
 
 ## If a "Prior review findings" section is present
 
 A `## Prior review findings (recheck these)` section may appear at the end of this prompt. If it does:
 
-1. **Recheck each prior finding** against the current diff and codebase:
-   - Still present and unfixed → include in your findings with a **↩ Carried** prefix
-   - Fixed or no longer applicable → list under a **Resolved** section
-
-2. Check the diff for **new** issues not in the prior list.
-
-3. Structure your response as:
-   - New findings (new issues only)
-   - `**↩ Carried**` findings (prior issues still present)
-   - `**Resolved since last review:**` — `path/file:line` ✅ (one line each)
-
-The machine-data JSON comment must include ALL findings — both new and carried.
-
-If there are no prior findings, output findings directly (no sections needed).
+1. Check the diff for **new** issues not in the prior list → **New Issues** section
+2. **Recheck each prior finding** against the current diff:
+   - Still present → **Existing** section
+   - Fixed or no longer applicable → **Resolved** section
