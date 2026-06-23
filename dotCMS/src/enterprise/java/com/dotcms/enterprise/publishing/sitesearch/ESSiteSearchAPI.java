@@ -89,7 +89,11 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     public ESSiteSearchAPI() {
-       this(APILocator.getESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
+       // Use the vendor-specific ESIndexAPI directly (NOT APILocator.getESIndexAPI(), which returns
+       // the phase-aware IndexAPIImpl router). The SiteSearchAPIImpl router is the single fan-out
+       // point for the ES → OS migration; routing index ops through the neutral router here as well
+       // would dual-write a second time and create duplicate OpenSearch indices.
+       this(new ESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
     }
 
     /**
