@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -152,12 +153,16 @@ public class PublishQueueElementTransformer {
             contentlet = PublishAuditUtil.getInstance()
                     .findContentletByIdentifier(id);
 
+            final ContentType contentType = UtilMethods.isSet(contentlet) ? contentlet.getContentType() : null;
+            final String contentTypeName = contentType != null ? contentType.name() : StringPool.BLANK;
+            final String contentTypeVariable = contentType != null ? contentType.variable() : StringPool.BLANK;
+
             return new HashMap<>(UtilMethods.isSet(contentlet) ?
                     Map.of(
                         TITLE_KEY, contentlet.getTitle(),
                         INODE_KEY, contentlet.getInode(),
-                        CONTENT_TYPE_NAME_KEY, contentlet.getContentType().name(),
-                        CONTENT_TYPE_VARIABLE_KEY, contentlet.getContentType().variable(),
+                        CONTENT_TYPE_NAME_KEY, contentTypeName,
+                        CONTENT_TYPE_VARIABLE_KEY, contentTypeVariable,
                         HTML_PAGE_KEY, contentlet.isHTMLPage()
                     ) : Map.of(TITLE_KEY, id, INODE_KEY, id));
         } catch (DotSecurityException | DotDataException e) {
