@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
- * Theme metadata — folder reference + VTL file list.  No file content is included.
- * To list all files under the theme folder use:
- * {@code GET /api/v1/folder/sitename/{site}/uri/{uri}}
+ * Theme metadata — folder reference plus every file that composes the theme.
+ * No file content is included; each file carries its extension so consumers can
+ * filter by type (vtl, css, scss, sass, js, ...) without the API whitelisting them.
  */
 public class ThemeSourceView {
 
@@ -19,15 +19,16 @@ public class ThemeSourceView {
     @Schema(description = "Host-qualified path to the theme folder, e.g. //demo.dotcms.com/application/themes/travel/")
     private final String folderPath;
 
-    @Schema(description = "VTL files found anywhere under the theme folder (searched recursively)")
-    private final List<VtlFileRefView> vtls;
+    @Schema(description = "Every file found anywhere under the theme folder (searched recursively), "
+            + "regardless of type. Each entry carries its extension so consumers can filter.")
+    private final List<FileRefView> files;
 
     public ThemeSourceView(final String id, final String name, final String folderPath,
-            final List<VtlFileRefView> vtls) {
+            final List<FileRefView> files) {
         this.id         = id;
         this.name       = name;
         this.folderPath = folderPath;
-        this.vtls       = vtls;
+        this.files      = files;
     }
 
     public String getId() {
@@ -42,7 +43,7 @@ public class ThemeSourceView {
         return folderPath;
     }
 
-    public List<VtlFileRefView> getVtls() {
-        return vtls;
+    public List<FileRefView> getFiles() {
+        return files;
     }
 }
