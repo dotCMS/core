@@ -408,7 +408,7 @@
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
 											"    pm.expect(jsonData.entity.contentType).to.eql(\"webPageContent\");",
-											"    pm.expect(jsonData.entity.body).to.eql(\"test1\");",
+											"    pm.expect(jsonData.entity.body.content[0].content[0].text).to.eql(\"test1\");",
 											"});",
 											""
 										],
