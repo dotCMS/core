@@ -68,15 +68,16 @@ public class Logger {
     }
 
     public static void info(Class clazz, final Supplier<String> message) {
-       
+        if (isInfoEnabled(clazz)) {
             info(clazz, message.get());
-        
+        }
     }
 
     public static void info(final Object ob, final Supplier<String> message) {
-
-            info(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isInfoEnabled(clazz)) {
+            info(clazz, message.get());
+        }
     }
 
     public static void info(Object ob, String message) {
@@ -104,18 +105,23 @@ public class Logger {
     }
 
     public static void debug(final Object ob, final Supplier<String> message) {
-        debug(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get());
+        }
     }
 
     public static void debug(final String className, final Supplier<String> message) {
-        debug(className, message.get());
-        
+        if (isDebugEnabled(className)) {
+            debug(className, message.get());
+        }
     }
 
     public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
-        debug(ob.getClass(), message.get(), throwable);
-
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get(), throwable);
+        }
     }
 
     public static void debug(Object ob, String message) {
@@ -529,21 +535,23 @@ public class Logger {
         return isVelocityMessage(obj.getClass());
     }
 
-    private static boolean isVelocityMessage(Class clazz) {
-        boolean ret = false;
-        if (clazz != null && clazz.getName() != null) {
-            String name = clazz.getName().toLowerCase();
-            ret = name.contains("velocity") || name.contains("viewtool");
-
-            if (!ret) {
-                ret = ViewTool.class.isAssignableFrom(clazz);
-            }
-            if (!ret) {
-                ret = VelocityServlet.class.isAssignableFrom(clazz);
-            }
+    /**
+     * Memoized per class: this runs on every Class-keyed log call, and the lowercased name
+     * allocation showed up in allocation profiles. ClassValue lookups are allocation-free and
+     * entries are released with their class, so OSGi classloaders aren't pinned.
+     */
+    private static final ClassValue<Boolean> velocityClassValue = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            final String name = type.getName().toLowerCase();
+            return name.contains("velocity") || name.contains("viewtool")
+                    || ViewTool.class.isAssignableFrom(type)
+                    || VelocityServlet.class.isAssignableFrom(type);
         }
-        return ret;
+    };
 
+    private static boolean isVelocityMessage(Class clazz) {
+        return clazz != null && velocityClassValue.get(clazz);
     }
 
     /**
