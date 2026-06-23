@@ -84,7 +84,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 **For Local Development:**
 
 -   🐳 [Docker setup guide](https://github.com/dotCMS/core/tree/main/docker/docker-compose-examples/single-node-demo-site)
--   💻 [Local installation guide](https://dev.dotcms.com/docs/quick-start-guide)
+-   💻 [Local installation guide](https://dev.dotcms.com/getting-started/setup/run-locally)
 
 #### Create a dotCMS API Key
 
@@ -100,7 +100,7 @@ This integration requires an API Key with read-only permissions for security bes
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
-#### Installation
+### Installation
 
 Install the SDK and required dependencies:
 
@@ -121,7 +121,7 @@ import { createDotCMSClient } from '@dotcms/client';
 // Create a client instance
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token', // Optional for public content
+    authToken: 'your-auth-token',
     siteId: 'your-site-id' // Optional site identifier
 });
 
@@ -457,11 +457,8 @@ response.contentlets.forEach(post => {
 #### Typing AI Search Results
 
 ```typescript
-import type {
-    DotCMSAISearchResponse,
-    DotCMSBasicContentlet,
-    DISTANCE_FUNCTIONS
-} from '@dotcms/types';
+import { DISTANCE_FUNCTIONS } from '@dotcms/types';
+import type { DotCMSAISearchResponse, DotCMSBasicContentlet } from '@dotcms/types';
 
 // Define your content type
 interface Article extends DotCMSBasicContentlet {
@@ -879,14 +876,15 @@ getCollection<T = DotCMSBasicContentlet>(
 
 #### Builder Methods
 
-| Method       | Arguments                     | Description                              |
-| ------------ | ----------------------------- | ---------------------------------------- |
-| `query()`    | `string` \| `BuildQuery`      | Filter content using query builder       |
-| `limit()`    | `number`                      | Set number of items to return            |
-| `page()`     | `number`                      | Set which page of results to fetch       |
-| `sortBy()`   | `SortBy[]`                    | Sort by one or more fields               |
-| `language()` | `number \| string`            | Set content language                     |
-| `depth()`    | `number`                      | Set depth of related content             |
+| Method                | Arguments                     | Description                                                        |
+| --------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `query()`             | `string` \| `BuildQuery`      | Filter content using query builder                                 |
+| `limit()`             | `number`                      | Set number of items to return                                      |
+| `page()`              | `number`                      | Set which page of results to fetch                                 |
+| `sortBy()`            | `SortBy[]`                    | Sort by one or more fields                                         |
+| `language()`          | `number \| string`            | Set content language                                               |
+| `depth()`             | `number`                      | Set depth of related content                                       |
+| `includeSystemHost()` | -                             | Include content from the System Host alongside the configured site |
 
 #### Example
 ```typescript
@@ -1200,12 +1198,13 @@ DotHttpError: "Network request failed"
 
 ### Choosing the Right Method
 
-The dotCMS Client SDK provides four core methods for fetching data. Use this quick guide to decide which one is best for your use case:
+The dotCMS Client SDK provides five core methods for fetching data. Use this quick guide to decide which one is best for your use case:
 
 | Method                           | Use When You Need...                                          | Best For                                                                                                                                                                                         |
 | -------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `client.page.get()`              | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
-| `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components.                                                                                                               |
+| `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components using the fluent query builder.                                                                                |
+| `client.content.query()`         | Full control over a raw Lucene query string                   | Advanced search scenarios where you need direct Lucene syntax without the `getCollection()` query-builder DSL or automatic `contentType.` field prefixing.                                        |
 | `client.ai.search()`             | Semantic/AI-powered content discovery based on natural language | **Intelligent search experiences** where users describe what they're looking for in natural language. Great for search features, content recommendations, and finding relevant content by meaning rather than exact keywords. ⚠️ **Experimental API** |
 | `client.navigation.get()`        | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
 
@@ -1219,7 +1218,7 @@ For most use cases, `client.page.get()` is all you need. It lets you retrieve:
 
 All in a single request using GraphQL.
 
-Only use `content.getCollection()` or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
+Only use `content.getCollection()`, `content.query()`, or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
 
 > 🔍 **For comprehensive examples of advanced GraphQL querying including relationships and custom fields,** see the [How to Work with GraphQL](#how-to-work-with-graphql) section.
 
@@ -1228,7 +1227,7 @@ Only use `content.getCollection()` or `navigation.get()` if you have advanced ne
 The SDK follows a client-builder pattern with four main APIs:
 
 - **Page API** (`client.page.get()`) - Fetches complete page content with layout and containers
-- **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections
+- **Content API** (`client.content.getCollection()`, `client.content.query()`) - Builder pattern for querying content collections or raw Lucene queries
 - **AI API** (`client.ai.search()`) - AI-powered semantic search using embeddings and vector similarity ⚠️ **Experimental**
 - **Navigation API** (`client.navigation.get()`) - Fetches site navigation structure
 
@@ -1265,6 +1264,14 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 5. Open a Pull Request
 
 Please ensure your code follows the existing style and includes appropriate tests.
+
+## Licensing
+
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
+
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
+
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).
 
 ## Changelog
 
@@ -1425,11 +1432,3 @@ import { RequestOptions } from '@dotcms/types';
 // After
 import { DotRequestOptions } from '@dotcms/types';
 ```
-
-## Licensing
-
-dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
-
-Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
-
-Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).
