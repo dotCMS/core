@@ -1,5 +1,7 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
+import static org.junit.Assert.assertNotEquals;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -810,8 +812,11 @@ public class StaticPublisherIntegrationTestHelper {
                 .build();
 
         // A second language with NO real version of this page; Push Publish renders it via
-        // default-language fallback, so its artifact also exists on the endpoint.
+        // default-language fallback, so its artifact also exists on the endpoint. It must be a
+        // distinct language for the fallback scenario to be exercised.
         final Language fallbackLanguage = new LanguageDataGen().nextPersisted();
+        assertNotEquals("fallback language must differ from the default language",
+                defaultLanguage.getId(), fallbackLanguage.getId());
 
         final Map<String, String> assetsMap = getAssetsMap(workingPage.page);
 
