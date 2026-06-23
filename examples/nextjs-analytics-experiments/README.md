@@ -90,8 +90,21 @@ All `@dotcms/*` packages should be aligned:
 | `src/lib/dotCMSClient.ts` | `@dotcms/client` instance |
 | `src/app/layout.tsx` | `<DotContentAnalytics />` for site-wide page views |
 | `src/views/Page.tsx` | Standard page render (analytics only) |
-| `src/views/BlogPage.tsx` | Blog render with `withExperiments(DotCMSLayoutBody)` |
+| `src/views/BlogPage.tsx` | Blog render with `withExperiments(DotCMSLayoutBody)` — always called on this route |
 | `src/components/AnalyticsDemoCta.tsx` | Example `useContentAnalytics().track()` call |
+
+## Why experiments only on `/blog`
+
+This example intentionally separates analytics and experiments across routes:
+
+- **Analytics** (`@dotcms/analytics`) runs site-wide from `layout.tsx` — automatic page views on every navigation.
+- **Experiments** (`@dotcms/experiments`) run only on `/blog` via a dedicated `BlogPage.tsx` view.
+
+`withExperiments` uses React hooks internally and **must not** be called conditionally (for example `apiKey ? withExperiments(...) : DotCMSLayoutBody`) in the same component. That pattern violates the rules of hooks and can crash Next.js App Router pages and the UVE editor.
+
+This architecture is the recommended pattern documented in the [Experiments SDK README](../../core-web/libs/sdk/experiments/README.md) and addresses [GitHub issue #36225](https://github.com/dotCMS/core/issues/36225).
+
+For pages without A/B testing, use `views/Page.tsx` (standard `DotCMSLayoutBody` only). For experiment-enabled pages, use a dedicated view like `BlogPage.tsx` on its own route.
 
 ## UVE (Universal Visual Editor) Setup
 
@@ -102,6 +115,8 @@ In dotCMS, configure the headless app URL pattern:
 ```
 
 Set `NEXT_PUBLIC_DOTCMS_MODE=edit` when editing in UVE.
+
+When opening `/blog` in UVE, the page should render without a "client-side exception" overlay. If it crashes, verify that `BlogPage.tsx` does not conditionally skip `withExperiments`.
 
 ## Verification Checklist
 
@@ -126,6 +141,8 @@ npm start
 | 500 / page not found | No published page in dotCMS at that path |
 | No analytics events | Wrong `jsKey`, or testing inside UVE editor (analytics auto-disabled) |
 | No experiment assignment | Missing `NEXT_PUBLIC_DOTCMS_ANALYTICS_KEY`, or no active experiment on `/blog` |
+| UVE crash on `/blog` | `withExperiments` called conditionally — use dedicated view pattern (see above) |
+| `GET /experiments/DEFAULT` 404 | Known backoffice bug (variant name used as experiment ID) — harmless in headless apps |
 | Image 404 | Check `NEXT_PUBLIC_DOTCMS_HOST` matches dotCMS origin |
 
 ## Related Examples

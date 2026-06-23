@@ -9,11 +9,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { pageComponents } from "@/components/content-types";
-import {
-  dotCMSMode,
-  experimentsConfig,
-  experimentsEnabled,
-} from "@/config/dotcms.config";
+import { dotCMSMode, experimentsConfig } from "@/config/dotcms.config";
 
 interface BlogPageProps {
   pageContent: Parameters<typeof useEditableDotCMSPage>[0];
@@ -22,11 +18,7 @@ interface BlogPageProps {
 function ExperimentsLayoutBody(props: DotCMSLayoutBodyProps) {
   const { replace } = useRouter();
 
-  if (!experimentsEnabled) {
-    return <DotCMSLayoutBody {...props} />;
-  }
-
-  /* eslint-disable react-hooks/static-components -- withExperiments must run during render (SDK uses hooks internally) */
+  /* eslint-disable react-hooks/static-components -- withExperiments uses hooks internally (SDK pattern) */
   const LayoutBody = withExperiments(DotCMSLayoutBody, {
     ...experimentsConfig,
     redirectFn: replace,
@@ -36,7 +28,12 @@ function ExperimentsLayoutBody(props: DotCMSLayoutBodyProps) {
   /* eslint-enable react-hooks/static-components */
 }
 
-/** Blog page with A/B testing via @dotcms/experiments. */
+/**
+ * Blog page with A/B testing via @dotcms/experiments.
+ *
+ * This route always calls `withExperiments` unconditionally — see
+ * core-web/libs/sdk/experiments/README.md (anti-patterns section).
+ */
 export function BlogPage({ pageContent }: BlogPageProps) {
   const { pageAsset } = useEditableDotCMSPage(pageContent);
 
