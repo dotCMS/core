@@ -1,6 +1,8 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
+import { fakeAsync, tick } from '@angular/core/testing';
+
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -151,6 +153,99 @@ describe('DotPluginsExtraPackagesComponent', () => {
         it('should render confirm dialog host for reset flow', () => {
             expect(spectator.query('p-confirmdialog')).toExist();
         });
+    });
+
+    describe('search', () => {
+        const SEARCH_DEBOUNCE_MS = 500;
+        const PACKAGES_TEXT =
+            'com.example.foo\ncom.example.bar\norg.example.baz\ncom.example.qux';
+
+        function searchInput(): HTMLInputElement {
+            const el = spectator.query(byTestId('plugins-extra-packages-search'));
+            return el as HTMLInputElement;
+        }
+
+        beforeEach(() => {
+            component.extraPackages.set(PACKAGES_TEXT);
+            spectator.detectChanges();
+        });
+
+        it('should keep focus on the search input after typing (debounced)', fakeAsync(() => {
+            const input = searchInput();
+            const textarea = nativeTextarea()!;
+            expect(input).toBeTruthy();
+            expect(textarea).toBeTruthy();
+
+            input.focus();
+            expect(document.activeElement).toBe(input);
+
+            spectator.typeInElement('com', input);
+            tick(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            expect(component.matchCount()).toBe(3);
+            expect(document.activeElement).toBe(input);
+        }));
+
+        it('should pre-select the first match on the textarea while typing without focusing it', fakeAsync(() => {
+            const input = searchInput();
+            const textarea = nativeTextarea()!;
+
+            input.focus();
+            spectator.typeInElement('com', input);
+            tick(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            expect(document.activeElement).toBe(input);
+            const firstStart = component.matchPositions()[0];
+            expect(textarea.selectionStart).toBe(firstStart);
+            expect(textarea.selectionEnd).toBe(firstStart + 'com'.length);
+        }));
+
+        it('should move focus to the textarea on next-match navigation', fakeAsync(() => {
+            const input = searchInput();
+            const textarea = nativeTextarea()!;
+
+            input.focus();
+            spectator.typeInElement('com', input);
+            tick(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            component.nextMatch();
+
+            expect(document.activeElement).toBe(textarea);
+            expect(component.currentMatchIndex()).toBe(1);
+            const secondStart = component.matchPositions()[1];
+            expect(textarea.selectionStart).toBe(secondStart);
+            expect(textarea.selectionEnd).toBe(secondStart + 'com'.length);
+        }));
+
+        it('should move focus to the textarea on prev-match navigation', fakeAsync(() => {
+            const input = searchInput();
+            const textarea = nativeTextarea()!;
+
+            input.focus();
+            spectator.typeInElement('com', input);
+            tick(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            component.prevMatch();
+
+            expect(document.activeElement).toBe(textarea);
+            expect(component.currentMatchIndex()).toBe(component.matchCount() - 1);
+        }));
+
+        it('should leave focus untouched when the query has no matches', fakeAsync(() => {
+            const input = searchInput();
+
+            input.focus();
+            spectator.typeInElement('does-not-exist', input);
+            tick(SEARCH_DEBOUNCE_MS);
+            spectator.detectChanges();
+
+            expect(component.matchCount()).toBe(0);
+            expect(document.activeElement).toBe(input);
+        }));
     });
 
     describe('save', () => {

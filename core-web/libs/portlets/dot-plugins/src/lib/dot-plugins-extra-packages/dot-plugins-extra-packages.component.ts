@@ -115,13 +115,13 @@ export class DotPluginsExtraPackagesComponent {
     nextMatch(): void {
         const next = (this.currentMatchIndex() + 1) % this.matchCount();
         this.currentMatchIndex.set(next);
-        this.#scrollToMatch(next);
+        this.#scrollToMatch(next, { focus: true });
     }
 
     prevMatch(): void {
         const prev = (this.currentMatchIndex() - 1 + this.matchCount()) % this.matchCount();
         this.currentMatchIndex.set(prev);
-        this.#scrollToMatch(prev);
+        this.#scrollToMatch(prev, { focus: true });
     }
 
     save(): void {
@@ -180,8 +180,12 @@ export class DotPluginsExtraPackagesComponent {
             });
     }
 
-    /** Focuses the textarea, selects the match at `index`, and scrolls to center it. */
-    #scrollToMatch(index: number): void {
+    /**
+     * Selects the match at `index` and scrolls to center it. Focus is only moved to the
+     * textarea when `focus: true` is passed (explicit ▲/▼ navigation); the search-as-you-type
+     * path must leave focus on the search input so further keystrokes don't edit the textarea.
+     */
+    #scrollToMatch(index: number, { focus = false }: { focus?: boolean } = {}): void {
         const positions = this.matchPositions();
         const textarea = this.textareaRef()?.nativeElement;
         if (!textarea || positions.length === 0) return;
@@ -189,7 +193,7 @@ export class DotPluginsExtraPackagesComponent {
         const start = positions[index];
         const end = start + this.searchQuery().length;
 
-        textarea.focus();
+        if (focus) textarea.focus();
         textarea.setSelectionRange(start, end);
         textarea.scrollTop = this.#scrollTopForChar(textarea, start);
     }
