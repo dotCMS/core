@@ -175,11 +175,11 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly $dialogContentClass = computed(() => {
         switch (this.$activeDialog()?.type) {
             case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
-                return 'w-[min(92vw,38rem)] px-0! pt-0 pb-4';
+                return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
             case DIALOG_TYPE.UPLOAD_SELECTOR:
-                return 'w-[min(92vw,31.25rem)] pt-0 p-4';
+                return 'w-125 max-w-[92vw] pt-0 p-4';
             default:
-                return 'w-[43.75rem] pt-0 p-4';
+                return 'w-175 pt-0 p-4';
         }
     });
 
