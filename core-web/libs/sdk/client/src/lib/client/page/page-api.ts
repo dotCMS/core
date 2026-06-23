@@ -13,7 +13,13 @@ import {
     UVE_MODE
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    mapContentResponse,
+    removeUndefinedValues
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
@@ -144,24 +150,25 @@ export class PageClient extends BaseApiClient {
         });
 
         const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
-        const requestVariables: Record<string, unknown> = {
+        // Strip `undefined` values from the variables. They are returned verbatim on the response
+        // and `undefined` breaks JSON serialization for consumers like Next.js Pages Router
+        // (getServerSideProps/getStaticProps throw on it). Any param can be `undefined` — the
+        // optional ones (personaId/publishDate/variantName) by default, or any param if a caller
+        // passes it explicitly. The GraphQL request is unaffected since these variables are
+        // nullable and JSON.stringify already drops undefined keys.
+        const requestVariables: Record<string, unknown> = removeUndefinedValues({
             // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
             url: normalizedUrl,
             // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
             mode: UVE_MODE[mode],
             languageId,
+            personaId,
             fireRules,
+            publishDate,
             siteId,
-            // Only include optional params when defined. Spreading `undefined` would leave
-            // `undefined` values in `requestVariables`, which is returned verbatim on the response
-            // and breaks JSON serialization for consumers like Next.js Pages Router
-            // (getServerSideProps/getStaticProps). The GraphQL request itself is unaffected since
-            // these variables are nullable and JSON.stringify already drops undefined keys.
-            ...(personaId !== undefined && { personaId }),
-            ...(publishDate !== undefined && { publishDate }),
-            ...(variantName !== undefined && { variantName }),
+            variantName,
             ...variables
-        };
+        });
 
         const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
