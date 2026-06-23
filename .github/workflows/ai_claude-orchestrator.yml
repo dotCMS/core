@@ -130,16 +130,16 @@ jobs:
           # Extract structured findings from the most recent prior AI review comment.
           # Findings are stored as a JSON array in a hidden HTML comment at the top of each review.
           PRIOR_FINDINGS=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
-            | jq -r '[.[] | select(.body | test("^<!-- dotcms-review-findings:"))] | sort_by(.created_at) | last | .body // empty' \
-            | grep '^<!-- dotcms-review-findings:' \
-            | sed 's/<!-- dotcms-review-findings:\(.*\) -->/\1/' \
+            | jq -r '[.[] | select(.body | test("<!-- dotcms-review-findings:"))] | sort_by(.created_at) | last | .body // empty' \
+            | grep '<!-- dotcms-review-findings:' \
+            | sed 's/.*<!-- dotcms-review-findings:\(.*\) -->.*/\1/' \
             | head -1)
 
           if [ -n "$PRIOR_FINDINGS" ]; then
-            # Cap at 15 findings and truncate desc to 150 chars to bound prompt size
+            # Cap at 15 findings and truncate desc to 300 chars to bound prompt size
             # and prevent prompt injection via model-generated content in prior reviews.
             PRIOR_LIST=$(echo "$PRIOR_FINDINGS" \
-              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:150])"')
+              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:300])"')
             printf '\n\n---\n\n## Prior review findings (recheck these)\n\n%s\n' "$PRIOR_LIST" >> /tmp/full_prompt.md
           fi
 

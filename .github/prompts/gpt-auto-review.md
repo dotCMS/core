@@ -19,13 +19,17 @@ Check for:
 
 ## Output format
 
-**First line of your response must always be this machine-data comment** (invisible in GitHub UI):
+Write the human-readable findings first (or "No issues found." if clean). Then, **at the very end of your response**, append this machine-data block on its own line (invisible in GitHub UI — used by the next review run to carry findings forward):
 
-`<!-- dotcms-review-findings:[{"sev":"<severity emoji> <label>","loc":"path/file:line","desc":"<one-line description>"},...] -->`
+`<!-- dotcms-review-findings:[{"sev":"<severity emoji> <label>","loc":"path/file:line","desc":"<one-sentence description>"},...] -->`
 
-Use `[]` when there are no findings. Each object: `sev` = severity label (e.g. `"🔴 Critical"`), `loc` = file and line, `desc` = one-sentence description. No newlines inside the JSON.
+Rules for the machine-data line:
+- Always present — use `<!-- dotcms-review-findings:[] -->` when there are no findings
+- One line only, no newlines inside the JSON
+- Each object: `sev` = severity label (e.g. `"🔴 Critical"`), `loc` = `path/file:line`, `desc` = one sentence, no quotes that break JSON
+- Include ALL findings — new and carried
 
-Then the human-readable findings:
+Human-readable findings format:
 
 **[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
 
