@@ -10,6 +10,10 @@ Check for:
 3. **dotCMS conventions** — `Config.getStringProperty()` not `System.getProperty/getenv`; `Logger` not `System.out`; `APILocator`/`FactoryLocator` for service access; `@WrapInTransaction` on multi-step DB writes; add dependency versions to `bom/application/pom.xml` only (never `dotCMS/pom.xml`)
 4. **Design** — wrong layer of concern, broken abstraction, unnecessary complexity
 5. **Test gaps** — meaningful new behavior with no test coverage
+6. **Error paths** — for each external call or state mutation in the diff, what actually happens when it fails? Is the failure caught, logged, surfaced, or silently swallowed?
+7. **Replay safety** — if this exact code runs twice (retry, double-click, redelivered queue message), does it double-charge, double-write, or corrupt state? New writes without idempotency guards are suspect.
+8. **Blast radius** — when this breaks, what breaks with it? Flag code paths where a single failure cascades to unrelated services, callers, or data.
+9. **Missing code** — the hardest check: what should be here but isn't? No timeout. No rollback. No cancellation. No error handler. No test for the failure case. Half the bugs are a correct line that was never written, not a wrong line that was.
 
 **Non-speculative rule:** Only flag what you can prove from the diff and repository code. Do not flag based on assumptions about external systems, undocumented APIs, or behaviors you cannot verify. If a concern depends on uncertainty, include it as 🟡 Medium with explicit "Assumption:" and "What to verify:" lines — do not escalate its severity.
 
