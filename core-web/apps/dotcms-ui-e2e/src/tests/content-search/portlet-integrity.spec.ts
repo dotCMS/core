@@ -57,6 +57,7 @@ test.describe('Content listing portlet — UI integrity', () => {
         await listing.goto();
         await listing.openQueryModal();
 
+        // openQueryModal already waits for #queryResults, this just confirms it
         await expect(listing.frame.locator('#queryResults')).toBeVisible();
     });
 
@@ -65,9 +66,12 @@ test.describe('Content listing portlet — UI integrity', () => {
         await listing.goto();
         await listing.openQueryModal();
 
-        const newTabPromise = page.waitForEvent('popup');
-        await listing.clickQueryModalApiLink();
-        const newTab = await newTabPromise;
+        // The "API" element is a <span> that calls window.open() after an async AJAX
+        // POST, so context.waitForEvent('page') is more reliable than page.waitForEvent('popup')
+        // for capturing popups that originate inside Dojo iframes.
+        const newPagePromise = page.context().waitForEvent('page');
+        await listing.queryModalApiLink.click();
+        const newTab = await newPagePromise;
 
         await newTab.waitForLoadState();
         expect(newTab.url()).toBeTruthy();
