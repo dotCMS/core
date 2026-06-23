@@ -43,8 +43,9 @@ describe('DotTagsListComponent', () => {
             mockProvider(DotTagsListStore, {
                 tags: jest.fn().mockReturnValue(MOCK_TAGS),
                 selectedTags: jest.fn().mockReturnValue(MOCK_TAGS),
-                exportLabelKey: jest.fn().mockReturnValue('tags.export'),
+                showExportAll: jest.fn().mockReturnValue(false),
                 filter: jest.fn().mockReturnValue(''),
+                showGlobal: jest.fn().mockReturnValue(false),
                 page: jest.fn().mockReturnValue(1),
                 rows: jest.fn().mockReturnValue(25),
                 totalRecords: jest.fn().mockReturnValue(100),
@@ -52,13 +53,15 @@ describe('DotTagsListComponent', () => {
                 sortField: jest.fn().mockReturnValue('tagname'),
                 sortOrder: jest.fn().mockReturnValue('ASC'),
                 setFilter: jest.fn(),
+                setShowGlobal: jest.fn(),
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
                 setSelectedTags: jest.fn(),
                 createTag: jest.fn(),
                 updateTag: jest.fn(),
                 deleteTags: jest.fn(),
-                exportSelectedTags: jest.fn(),
+                exportSelected: jest.fn(),
+                exportAll: jest.fn(),
                 loadTags: jest.fn()
             }),
             mockProvider(DialogService),
@@ -71,6 +74,7 @@ describe('DotTagsListComponent', () => {
                 useValue: new MockDotMessageService({
                     'tags.export': 'Export',
                     'tags.export.all': 'Export All',
+                    'tags.export.selected': 'Export Selected',
                     'tags.empty.state.title': 'No tags yet',
                     'tags.empty.state.description': 'Create a tag to get started.',
                     'tags.delete': 'Delete',
@@ -78,7 +82,8 @@ describe('DotTagsListComponent', () => {
                     'tags.confirm.delete.message': 'tags.confirm.delete.message',
                     'tags.confirm.delete.header': 'tags.confirm.delete.header',
                     'tags.import.success': 'Imported {0} tags successfully.',
-                    'tags.import.partial-success': 'Imported {0} of {1} tags. {2} failed.'
+                    'tags.import.partial-success': 'Imported {0} of {1} tags. {2} failed.',
+                    'tags.show.global': 'Show Global Tags'
                 })
             }
         ]
@@ -224,64 +229,44 @@ describe('DotTagsListComponent', () => {
         });
 
         describe('Conditional Buttons Visibility', () => {
-            it('should show Delete and Export buttons when tags are selected', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
-                spectator.detectChanges();
-                const deleteBtn = spectator.query(byTestId('tag-delete-btn'));
-                const exportBtn = spectator.query(byTestId('tag-export-btn'));
-
-                expect(deleteBtn).toBeTruthy();
-                expect(exportBtn).toBeTruthy();
-            });
-
-            it('should hide Delete and Export buttons when no tags are selected', () => {
-                (store.selectedTags as jest.Mock).mockReturnValue([]);
-                spectator.detectChanges();
-
-                const deleteBtn = spectator.query(byTestId('tag-delete-btn'));
-                const exportBtn = spectator.query(byTestId('tag-export-btn'));
-
-                expect(deleteBtn).toBeFalsy();
-                expect(exportBtn).toBeFalsy();
-
-                // Restore mock for subsequent tests
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
-            });
-
-            it('should show buttons when selection changes from 0 to 1', () => {
-                // Recreate component with no selection
+            it('should hide Delete and Export split-button when nothing is selected', () => {
                 (store.selectedTags as jest.Mock).mockReturnValue([]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('tag-delete-btn'))).toBeFalsy();
-                expect(spectator.query(byTestId('tag-export-btn'))).toBeFalsy();
+                expect(spectator.query(byTestId('tag-export-split-btn'))).toBeFalsy();
+            });
 
-                // Recreate component with 1 item selected
+            it('should show Delete and Export split-button when tags are selected', () => {
                 (store.selectedTags as jest.Mock).mockReturnValue([MOCK_TAGS[0]]);
                 spectator = createComponent();
                 store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('tag-delete-btn'))).toBeTruthy();
-                expect(spectator.query(byTestId('tag-export-btn'))).toBeTruthy();
+                expect(spectator.query(byTestId('tag-export-split-btn'))).toBeTruthy();
             });
 
-            it('should show buttons when multiple tags are selected', () => {
-                // Ensure mock returns 2 items
-                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+            it('should show the Add split button regardless of selection', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                spectator = createComponent();
+                store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
+                expect(spectator.query(byTestId('tag-add-split-btn'))).toBeTruthy();
 
-                const deleteBtn = spectator.query(byTestId('tag-delete-btn'));
-                const exportBtn = spectator.query(byTestId('tag-export-btn'));
-
-                expect(deleteBtn).toBeTruthy();
-                expect(exportBtn).toBeTruthy();
-                expect(store.selectedTags().length).toBe(2);
+                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                spectator = createComponent();
+                store = spectator.inject(DotTagsListStore, true);
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('tag-add-split-btn'))).toBeTruthy();
             });
         });
 
         describe('Button Actions', () => {
             it('should call confirmDelete when Delete button clicked', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                spectator = createComponent();
+                store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
                 const spy = jest.spyOn(spectator.component, 'confirmDelete');
                 const btnHost = spectator.query(byTestId('tag-delete-btn'));
@@ -292,32 +277,75 @@ describe('DotTagsListComponent', () => {
                 expect(spy).toHaveBeenCalled();
             });
 
-            it('should call exportSelectedTags when Export button clicked', () => {
+            it('should call store.exportSelected when Export split-button main action clicked', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+                spectator = createComponent();
+                store = spectator.inject(DotTagsListStore, true);
                 spectator.detectChanges();
-                const btnHost = spectator.query(byTestId('tag-export-btn'));
-                expect(btnHost).toBeTruthy();
-                const button = btnHost?.querySelector('button');
-                expect(button).toBeTruthy();
-                spectator.click(button!);
-                expect(store.exportSelectedTags).toHaveBeenCalled();
-            });
-
-            it('should show Export All when exportLabelKey returns tags.export.all', () => {
-                (store.exportLabelKey as jest.Mock).mockReturnValue('tags.export.all');
-                spectator.detectChanges();
-
-                const exportBtn = spectator.query(byTestId('tag-export-btn'));
-                expect(exportBtn?.textContent).toContain('Export All');
-            });
-
-            it('should show Export when exportLabelKey returns tags.export', () => {
-                (store.exportLabelKey as jest.Mock).mockReturnValue('tags.export');
-                spectator.detectChanges();
-
-                const exportBtn = spectator.query(byTestId('tag-export-btn'));
-                expect(exportBtn?.textContent).toContain('Export');
+                const mainButton = spectator
+                    .query(byTestId('tag-export-split-btn'))
+                    ?.querySelector('button');
+                expect(mainButton).toBeTruthy();
+                spectator.click(mainButton!);
+                expect(store.exportSelected).toHaveBeenCalled();
             });
         });
+
+        describe('Export menu items', () => {
+            it('should expose Export Selected and Export All entries', () => {
+                expect(spectator.component.exportMenuItems()).toHaveLength(2);
+                expect(spectator.component.exportMenuItems()[0].label).toBe('Export Selected');
+                expect(spectator.component.exportMenuItems()[1].label).toBe('Export All');
+            });
+
+            it('should disable Export All when showExportAll is false', () => {
+                (store.showExportAll as jest.Mock).mockReturnValue(false);
+                spectator = createComponent();
+                expect(spectator.component.exportMenuItems()[1].disabled).toBe(true);
+            });
+
+            it('should enable Export All when showExportAll is true', () => {
+                (store.showExportAll as jest.Mock).mockReturnValue(true);
+                spectator = createComponent();
+                expect(spectator.component.exportMenuItems()[1].disabled).toBe(false);
+            });
+
+            it('should invoke store.exportSelected when Export Selected menu item runs', () => {
+                spectator.component.exportMenuItems()[0].command?.(
+                    {} as unknown as MenuItemCommandEvent
+                );
+                expect(store.exportSelected).toHaveBeenCalled();
+            });
+
+            it('should invoke store.exportAll when Export All menu item runs', () => {
+                spectator.component.exportMenuItems()[1].command?.(
+                    {} as unknown as MenuItemCommandEvent
+                );
+                expect(store.exportAll).toHaveBeenCalled();
+            });
+        });
+
+        describe('Show Global Tags toggle', () => {
+            it('should render the Show Global Tags checkbox with label', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('tag-show-global-checkbox'))).toBeTruthy();
+                expect(spectator.query('label[for="show-global-tags"]')?.textContent).toContain(
+                    'Show Global Tags'
+                );
+            });
+
+            it('should call store.setShowGlobal when checkbox is toggled', () => {
+                spectator.detectChanges();
+                const input = spectator
+                    .query(byTestId('tag-show-global-checkbox'))
+                    ?.querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+                expect(input).toBeTruthy();
+                input!.click();
+                spectator.detectChanges();
+                expect(store.setShowGlobal).toHaveBeenCalledWith(true);
+            });
+        });
+
     });
 
     describe('Row Click', () => {
