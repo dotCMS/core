@@ -45,8 +45,6 @@ const initialState: DotTagsListState = {
     status: 'init'
 };
 
-const EXPORT_PAGE_SIZE = 200;
-
 export const DotTagsListStore = signalStore(
     withState<DotTagsListState>(initialState),
     withComputed((store) => ({
@@ -67,17 +65,23 @@ export const DotTagsListStore = signalStore(
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const globalStore = inject(GlobalStore);
 
+        function buildBaseParams() {
+            return {
+                filter: store.filter() || undefined,
+                site: globalStore.currentSiteId() || undefined,
+                global: store.showGlobal() || undefined,
+                orderBy: store.sortField(),
+                direction: store.sortOrder()
+            };
+        }
+
         function loadTags() {
             patchState(store, { status: 'loading' });
             tagsService
                 .getTagsPaginated({
-                    filter: store.filter() || undefined,
-                    site: globalStore.currentSiteId() || undefined,
-                    global: store.showGlobal() || undefined,
+                    ...buildBaseParams(),
                     page: store.page(),
-                    per_page: store.rows(),
-                    orderBy: store.sortField(),
-                    direction: store.sortOrder()
+                    per_page: store.rows()
                 })
                 .pipe(
                     take(1),
@@ -190,16 +194,16 @@ export const DotTagsListStore = signalStore(
             },
 
             exportAll() {
+                const total = store.totalRecords();
+                if (total === 0) {
+                    return;
+                }
                 patchState(store, { status: 'loading' });
                 tagsService
                     .getTagsPaginated({
-                        filter: store.filter() || undefined,
-                        site: globalStore.currentSiteId() || undefined,
-                        global: store.showGlobal() || undefined,
+                        ...buildBaseParams(),
                         page: 1,
-                        per_page: store.totalRecords() || EXPORT_PAGE_SIZE,
-                        orderBy: store.sortField(),
-                        direction: store.sortOrder()
+                        per_page: total
                     })
                     .pipe(
                         take(1),

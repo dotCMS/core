@@ -293,34 +293,34 @@ describe('DotTagsListComponent', () => {
 
         describe('Export menu items', () => {
             it('should expose Export Selected and Export All entries', () => {
-                expect(spectator.component.exportMenuItems()).toHaveLength(2);
-                expect(spectator.component.exportMenuItems()[0].label).toBe('Export Selected');
-                expect(spectator.component.exportMenuItems()[1].label).toBe('Export All');
+                expect(spectator.component.$exportMenuItems()).toHaveLength(2);
+                expect(spectator.component.$exportMenuItems()[0].label).toBe('Export Selected');
+                expect(spectator.component.$exportMenuItems()[1].label).toBe('Export All');
             });
 
             it('should disable Export All when showExportAll is false', () => {
                 (store.showExportAll as jest.Mock).mockReturnValue(false);
                 spectator = createComponent();
-                expect(spectator.component.exportMenuItems()[1].disabled).toBe(true);
+                expect(spectator.component.$exportMenuItems()[1].disabled).toBe(true);
             });
 
             it('should enable Export All when showExportAll is true', () => {
                 (store.showExportAll as jest.Mock).mockReturnValue(true);
                 spectator = createComponent();
-                expect(spectator.component.exportMenuItems()[1].disabled).toBe(false);
+                expect(spectator.component.$exportMenuItems()[1].disabled).toBe(false);
             });
 
             it('should invoke store.exportSelected when Export Selected menu item runs', () => {
-                spectator.component.exportMenuItems()[0].command?.(
-                    {} as unknown as MenuItemCommandEvent
-                );
+                spectator.component
+                    .$exportMenuItems()[0]
+                    .command?.({} as unknown as MenuItemCommandEvent);
                 expect(store.exportSelected).toHaveBeenCalled();
             });
 
             it('should invoke store.exportAll when Export All menu item runs', () => {
-                spectator.component.exportMenuItems()[1].command?.(
-                    {} as unknown as MenuItemCommandEvent
-                );
+                spectator.component
+                    .$exportMenuItems()[1]
+                    .command?.({} as unknown as MenuItemCommandEvent);
                 expect(store.exportAll).toHaveBeenCalled();
             });
         });
@@ -345,7 +345,6 @@ describe('DotTagsListComponent', () => {
                 expect(store.setShowGlobal).toHaveBeenCalledWith(true);
             });
         });
-
     });
 
     describe('Row Click', () => {

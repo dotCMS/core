@@ -72,7 +72,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     loadingFields = signal(false);
     savingContentType = signal(false);
-    renderForm = signal(false);
+    $renderForm = signal(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private destroyRef = inject(DestroyRef);
@@ -124,7 +124,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     onDialogHide(): void {
-        this.renderForm.set(false);
+        this.$renderForm.set(false);
         if (!this.isEditMode()) {
             this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
         } else {
@@ -142,7 +142,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     startFormDialog(): void {
-        this.renderForm.set(true);
+        this.$renderForm.set(true);
         this.show.set(true);
         this.setEditContentletDialogOptions();
     }

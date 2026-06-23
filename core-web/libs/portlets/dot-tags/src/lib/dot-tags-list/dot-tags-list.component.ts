@@ -86,7 +86,7 @@ export class DotTagsListComponent {
      * one page of results exists (the current selection already covers everything),
      * but kept in the menu for discoverability.
      */
-    readonly exportMenuItems = computed((): MenuItem[] => [
+    readonly $exportMenuItems = computed((): MenuItem[] => [
         {
             label: this.dotMessageService.get('tags.export.selected'),
             command: () => this.store.exportSelected()

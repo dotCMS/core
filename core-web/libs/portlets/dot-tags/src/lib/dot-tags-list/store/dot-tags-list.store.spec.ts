@@ -394,7 +394,7 @@ describe('DotTagsListStore', () => {
             });
         }
 
-        it('should fetch the entire filtered set and dump it to CSV', async () => {
+        it('should fetch the entire filtered set in one request sized by totalRecords', async () => {
             const mockGetDownloadLink = getDownloadLink as jest.Mock;
             mockGetDownloadLink.mockClear();
             tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
@@ -403,6 +403,7 @@ describe('DotTagsListStore', () => {
 
             store.exportAll();
 
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledTimes(1);
             expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
                 expect.objectContaining({ page: 1, per_page: 100 })
             );
@@ -411,6 +412,25 @@ describe('DotTagsListStore', () => {
             const text = await readBlob(blob);
             expect(text).toContain('"tag1","site1"');
             expect(text).toContain('"tag2","site2"');
+        });
+
+        it('should be a no-op when totalRecords is 0', () => {
+            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            mockGetDownloadLink.mockClear();
+            tagsService.getTagsPaginated.mockReturnValue(
+                of({
+                    ...MOCK_API_RESPONSE_BASE,
+                    entity: [],
+                    pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+                })
+            );
+            store.loadTags();
+            tagsService.getTagsPaginated.mockClear();
+
+            store.exportAll();
+
+            expect(tagsService.getTagsPaginated).not.toHaveBeenCalled();
+            expect(mockGetDownloadLink).not.toHaveBeenCalled();
         });
 
         it('should propagate the current filter and showGlobal state to the fetch', () => {
@@ -529,5 +549,4 @@ describe('DotTagsListStore', () => {
             );
         });
     });
-
 });

@@ -39,7 +39,7 @@
                     icon="pi pi-download"
                     [outlined]="true"
                     (onClick)="store.exportSelected()"
-                    [model]="exportMenuItems()"
+                    [model]="$exportMenuItems()"
                     data-testid="tag-export-split-btn" />
             }
             <p-splitButton
