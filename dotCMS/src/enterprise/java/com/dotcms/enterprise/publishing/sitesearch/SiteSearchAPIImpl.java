@@ -103,7 +103,7 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     public List<String> listIndices() {
         final List<SiteSearchAPI> providers = router.writeProviders();
         if (providers.size() == 1) {
-            return providers.get(0).listIndices();
+            return providers.getFirst().listIndices();
         }
         final Set<String> merged = new LinkedHashSet<>(esImpl.listIndices());
         merged.addAll(osImpl.listIndices());
@@ -114,7 +114,7 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
     public List<String> listClosedIndices() {
         final List<SiteSearchAPI> providers = router.writeProviders();
         if (providers.size() == 1) {
-            return providers.get(0).listClosedIndices();
+            return providers.getFirst().listClosedIndices();
         }
         final Set<String> merged = new LinkedHashSet<>(esImpl.listClosedIndices());
         merged.addAll(osImpl.listClosedIndices());
