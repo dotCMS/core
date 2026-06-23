@@ -18,7 +18,7 @@ Check for:
 **Non-speculative rule:** Only flag what you can prove from the diff and repository code. Do not flag based on assumptions about external systems, undocumented APIs, or behaviors you cannot verify. If a concern depends on uncertainty, include it as 🟡 Medium with explicit "Assumption:" and "What to verify:" lines — do not escalate its severity.
 
 Format each finding as:
-> **[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
+**[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
 
 **Severity gating:**
 - 🔴 Critical / 🟠 High: blocking — these must be fixed before merge
