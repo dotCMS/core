@@ -24,6 +24,4 @@ Format each finding as:
 - 🔴 Critical / 🟠 High: blocking — these must be fixed before merge
 - 🟡 Medium: non-blocking — worth fixing but does not block merge
 
-**Carried-forward findings:** If prior review comments on this PR flagged issues that remain unresolved in the current diff, list them under a `## ⚠️ Unresolved from prior review` section with the original finding and current evidence that it still exists.
-
 If the PR is clean, say so in one sentence.
