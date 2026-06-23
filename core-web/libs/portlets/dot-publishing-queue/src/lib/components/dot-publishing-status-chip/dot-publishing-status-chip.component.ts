@@ -63,5 +63,8 @@ export class DotPublishingStatusChipComponent {
         return s ? publishingStatusBucket(s) : null;
     });
 
-    readonly labelKey = computed<string>(() => `publisher_status_${this.status()}`);
+    /** Uses portlet-scoped keys (`publishing-queue.status.*`) so the chip labels
+     * stay short for the new design without affecting the legacy JSPs that
+     * still read `publisher_status_*`. */
+    readonly labelKey = computed<string>(() => `publishing-queue.status.${this.status()}`);
 }
