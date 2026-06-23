@@ -136,8 +136,10 @@ jobs:
             | head -1)
 
           if [ -n "$PRIOR_FINDINGS" ]; then
-            # Format the JSON array as a readable list for the model
-            PRIOR_LIST=$(echo "$PRIOR_FINDINGS" | jq -r '.[] | "- **[\(.sev)]** `\(.loc)` — \(.desc)"')
+            # Cap at 15 findings and truncate desc to 150 chars to bound prompt size
+            # and prevent prompt injection via model-generated content in prior reviews.
+            PRIOR_LIST=$(echo "$PRIOR_FINDINGS" \
+              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:150])"')
             printf '\n\n---\n\n## Prior review findings (recheck these)\n\n%s\n' "$PRIOR_LIST" >> /tmp/full_prompt.md
           fi
 
