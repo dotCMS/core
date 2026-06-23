@@ -20,7 +20,6 @@ if(user == null){
 }
 boolean isUserCMSAdmin = user.isAdmin();
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
-boolean isFromPublishingQueue = UtilMethods.isSet(referer) && referer.contains("publishing-queue");
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
@@ -150,14 +149,6 @@ function jumpToContentType(){
 <%}%>
 
 <%--check permissions to display the save and publish button or not--%>
-
-<%if(isFromPublishingQueue) {%>
-<div class="content-edit-actions">
-    <a href="<%= referer %>">
-        &larr; <%= LanguageUtil.get(pageContext, "Back-to") %> <%= LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.publishing-queue") %>
-    </a>
-</div>
-<%}%>
 
 <%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(contentUrl)) {%>
    <div class="content-edit-actions" >
