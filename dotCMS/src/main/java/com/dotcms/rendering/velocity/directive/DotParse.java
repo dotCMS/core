@@ -152,9 +152,15 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            final String inode =
-                            params.mode.showLive ? contentletVersionInfo.get().getLiveInode()
+            // Prefer live inode in LIVE mode; fall back to working when no live version exists so
+            // that a never-published file-asset (e.g. a theme template.vtl in the starter) still
+            // renders rather than silently disappearing (which is the same behaviour as the legacy
+            // #parse directive that served the working file from disk unconditionally).
+            String inode = params.mode.showLive ? contentletVersionInfo.get().getLiveInode()
                                     : contentletVersionInfo.get().getWorkingInode();
+            if (!UtilMethods.isSet(inode) && params.mode.showLive) {
+                inode = contentletVersionInfo.get().getWorkingInode();
+            }
 
             // We found the resource but not the version we are looking for
             if (!UtilMethods.isSet(inode)) {
