@@ -719,7 +719,15 @@ export class DotFileFieldComponent
             return;
         }
 
-        if (value === this.#originalValue || value === this.#lastEmittedValue) {
+        if (value === this.#lastEmittedValue) {
+            return;
+        }
+
+        // Treat null and '' as equivalent for the original-value comparison,
+        // but only when nothing has been emitted yet. Once a real value has been
+        // emitted (e.g. after upload), a subsequent change back to '' (remove) must
+        // still propagate so the form control and touched state are updated.
+        if (!this.#lastEmittedValue && (value || null) === (this.#originalValue || null)) {
             return;
         }
 
@@ -747,7 +755,6 @@ export class DotFileFieldComponent
 
         this.#lastOnChangeValue = value;
         this.onChange(value);
-        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {
