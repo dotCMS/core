@@ -23,7 +23,6 @@ import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
-import com.dotcms.content.index.opensearch.MappingOperationsOS;
 import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
@@ -125,24 +124,20 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
 
     private final OSClientProvider clientProvider;
     private final IndexAPI indexApi;
-    private final MappingOperationsOS mappingOperations;
 
     /** CDI-managed constructor. */
     @Inject
     public OSSiteSearchAPI() {
         this(CDIUtils.getBeanThrows(OSClientProvider.class),
-                CDIUtils.getBeanThrows(OSIndexAPIImpl.class),
-                CDIUtils.getBeanThrows(MappingOperationsOS.class));
+                CDIUtils.getBeanThrows(OSIndexAPIImpl.class));
     }
 
     /** Package-private constructor for testing. */
     @VisibleForTesting
     OSSiteSearchAPI(final OSClientProvider clientProvider,
-            final IndexAPI indexApi,
-            final MappingOperationsOS mappingOperations) {
+            final IndexAPI indexApi) {
         this.clientProvider = clientProvider;
         this.indexApi = indexApi;
-        this.mappingOperations = mappingOperations;
     }
 
     // =========================================================================
@@ -430,14 +425,39 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             indexApi.createAlias(indexName, alias);
         }
 
-        try {
-            mappingOperations.putMapping(List.of(indexName), mapping);
+        putMapping(indexName, mapping);
+
+        return true;
+    }
+
+    /**
+     * Applies the mapping to the site-search index via a raw {@code PUT /<index>/_mapping}.
+     *
+     * <p>Done here rather than via {@code MappingOperationsOS} on purpose: that helper force-tags the
+     * physical name with {@code .os}, which would target a different index than the untagged one this
+     * class creates and queries (see the class "Index naming" note), leaving the real index on the
+     * dynamic default mapping (string fields become {@code text}, which then breaks keyword
+     * aggregations such as {@code mimeType}). Forwarding to the same untagged physical name used by
+     * {@code createIndex}/search/put keeps the mapping on the index that is actually hit.</p>
+     */
+    private void putMapping(final String indexName, final String mapping) throws DotSearchException {
+        final String endpoint = "/" + physicalName(indexName) + "/_mapping";
+        try (final Response response = clientProvider.getClient().generic()
+                .execute(Requests.builder()
+                        .method("PUT")
+                        .endpoint(endpoint)
+                        .body(Bodies.json(mapping))
+                        .build())) {
+            final int status = response.getStatus();
+            if (status < 200 || status >= 300) {
+                throw new DotSearchException("Error applying mapping to OpenSearch site search index "
+                        + indexName + " — HTTP " + status + " — "
+                        + response.getBody().map(Body::bodyAsString).orElse(""));
+            }
         } catch (final IOException e) {
             throw new DotSearchException("Error applying mapping to OpenSearch site search index: "
                     + e.getMessage(), e);
         }
-
-        return true;
     }
 
     @Override
