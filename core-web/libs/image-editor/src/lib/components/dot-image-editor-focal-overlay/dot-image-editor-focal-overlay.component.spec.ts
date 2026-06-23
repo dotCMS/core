@@ -72,6 +72,22 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         expect(event!.payload).toEqual({ x: 0.25, y: 0.5 });
     });
 
+    it('maps the click through the zoom scale so the point lands under the cursor when zoomed', () => {
+        // Zoomed out to 50%: the painted click offset is half the logical px, so the
+        // handler must divide by the scale. Before the fix this mapped to 0.25/0.2.
+        spectator.setInput('scale', 0.5);
+        spectator.detectChanges();
+
+        const surface = spectator.query<HTMLElement>(byTestId('image-editor-focal-surface'));
+        surface!.dispatchEvent(new MouseEvent('pointerdown', { clientX: 100, clientY: 60 }));
+        window.dispatchEvent(new MouseEvent('pointerup', { clientX: 100, clientY: 60 }));
+
+        // (100 / 0.5) / 400 = 0.5 ; (60 / 0.5) / 300 = 0.4
+        const event = dispatchedEvent('focalPointSet');
+        expect(event).toBeDefined();
+        expect(event!.payload).toEqual({ x: 0.5, y: 0.4 });
+    });
+
     it('should leave the focal tool (toolSelected move) when done is called', () => {
         spectator.component.done();
 

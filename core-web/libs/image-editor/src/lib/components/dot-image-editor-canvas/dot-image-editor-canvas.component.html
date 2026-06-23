@@ -50,7 +50,7 @@
             <dot-image-editor-crop-overlay
                 [imageRect]="imageRect()"
                 [initialRect]="capturedCropRect()" />
-            <dot-image-editor-focal-overlay [imageRect]="imageRect()" />
+            <dot-image-editor-focal-overlay [imageRect]="imageRect()" [scale]="zoomLevel() / 100" />
         </div>
 
         @if (store.previewStatus() === 'loading') {

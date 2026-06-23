@@ -41,6 +41,15 @@ export class DotImageEditorFocalOverlayComponent {
     /** Bounds of the rendered image within the canvas, in CSS px. */
     imageRect = input<ImageRect>();
 
+    /**
+     * Current stage zoom scale (1 = 100%). The overlay sits inside the
+     * zoom-scaled stage, so `getBoundingClientRect()` returns painted pixels;
+     * `imageRect` is in unscaled (logical) px. This factor converts a painted
+     * pointer offset back to logical px so clicks land where the user pressed at
+     * any zoom level.
+     */
+    scale = input<number>(1);
+
     readonly #store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
     readonly #host = inject(ElementRef<HTMLElement>);
@@ -154,9 +163,14 @@ export class DotImageEditorFocalOverlayComponent {
             return;
         }
 
+        // `host` is painted (zoom-scaled); divide the painted offset by the zoom
+        // scale to get logical px before comparing against `rect` (logical), so the
+        // point lands under the cursor at any zoom. Pan is already folded into
+        // `host.left/top`.
         const host = this.#hostRect();
-        const localX = clientX - host.left - rect.x;
-        const localY = clientY - host.top - rect.y;
+        const scale = this.scale() || 1;
+        const localX = (clientX - host.left) / scale - rect.x;
+        const localY = (clientY - host.top) / scale - rect.y;
         this.#moveTo(localX / rect.width, localY / rect.height);
     }
 
