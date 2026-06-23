@@ -73,7 +73,7 @@ export DB_HOST=${DB_HOST:-"db.dotcms.site"}
 export DB_NAME=${DB_NAME:-"dotcms"}
 
 # Max Connection Lifetime 30m
-export DB_MAX_CONNECTION_LIFETIME=${DB_MAX_CONNECTION_LIFETIME:-"1800000"}
+export DB_MAX_WAIT=${DB_MAX_WAIT:-"1800000"}
 
 # Min Idle Connections
 export DB_MIN_IDLE=${DB_MIN_IDLE:-"1"}
