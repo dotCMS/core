@@ -58,7 +58,7 @@ public class H22Cache extends CacheProvider {
     // how many commits hit the H2/Hikari pool concurrently (embedded H2 writes don't scale linearly),
     // while inFlightTasks tracks the total async backlog that isAllocationWithinTolerance() reads.
     final ThreadFactory namedThreadFactory = Thread.ofVirtual().name("H22-ASYNC-COMMIT-", 0).factory();
-    private final Semaphore dbWorkPermits = new Semaphore(Math.max(1, numberOfAsyncThreads), true);
+    private final Semaphore dbWorkPermits = new Semaphore(Math.max(1, numberOfAsyncThreads));
     private final AtomicInteger inFlightTasks = new AtomicInteger(0);
     private ExecutorService executorService;
 
