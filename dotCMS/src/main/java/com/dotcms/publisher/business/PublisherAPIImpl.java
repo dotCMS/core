@@ -694,8 +694,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 					"SELECT pq.bundle_id AS bundle_id, " +
 					"MAX(pb.name) AS bundle_name, " +
 					"MAX(pb.filter_key) AS filter_key, " +
-					"COALESCE(MAX(pb.publish_date), MAX(pq.publish_date)) AS publish_date, " +
-					"COALESCE(MAX(pq.entered_date), MAX(pb.publish_date), MAX(pq.publish_date)) AS entered_date, " +
+					// publishing_queue.publish_date is the authoritative scheduled time: it is what
+					// publishBundleAssets() sets and what PublisherQueueJob reads. publishing_bundle's
+					// publish_date can be stale/null, so the queue value must win.
+					"COALESCE(MAX(pq.publish_date), MAX(pb.publish_date)) AS publish_date, " +
+					"COALESCE(MAX(pq.entered_date), MAX(pq.publish_date), MAX(pb.publish_date)) AS entered_date, " +
 					"COUNT(*) AS asset_count, " +
 					"(SELECT COUNT(*) FROM publishing_bundle_environment e WHERE e.bundle_id = pq.bundle_id) " +
 					"AS environment_count ")
