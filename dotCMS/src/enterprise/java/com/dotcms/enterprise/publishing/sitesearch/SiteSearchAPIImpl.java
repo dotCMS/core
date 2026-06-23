@@ -22,6 +22,7 @@ import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -222,12 +223,38 @@ public class SiteSearchAPIImpl implements SiteSearchAPI {
 
     @Override
     public void putToIndex(final String idx, final SiteSearchResult res, final String resultType) {
-        router.write(impl -> impl.putToIndex(idx, res, resultType));
+        // Each provider gets its own copy: putToIndex mutates the result's backing map
+        // (e.g. SiteSearchResult.setKeywords rewrites the "keywords" entry String -> List), so a
+        // shared instance would let the first provider in the fan-out corrupt the input the next
+        // provider reads — producing a ClassCastException on the second leaf. The lambda is invoked
+        // once per provider, so copyOf(res) is evaluated fresh from the untouched original each time.
+        router.write(impl -> impl.putToIndex(idx, copyOf(res), resultType));
     }
 
     @Override
     public void putToIndex(final String idx, final List<SiteSearchResult> res, final String resultType) {
-        router.write(impl -> impl.putToIndex(idx, res, resultType));
+        // See single-result overload: copy per provider so the fan-out never shares mutable state.
+        router.write(impl -> impl.putToIndex(idx, copyOf(res), resultType));
+    }
+
+    /**
+     * Shallow-copies a {@link SiteSearchResult} so the fan-out can hand an independent instance to
+     * each write provider. {@code putToIndex} mutates the backing map in place (HTML stripping,
+     * description derivation, {@code keywords} String→List rewrite); copying the map prevents one
+     * provider's mutations from leaking into the next provider's input. A shallow map copy is
+     * sufficient because every mutation replaces a map entry rather than mutating a value object.
+     */
+    private static SiteSearchResult copyOf(final SiteSearchResult res) {
+        return new SiteSearchResult(new HashMap<>(res.getMap()));
+    }
+
+    /** Copies each element of a result batch — see {@link #copyOf(SiteSearchResult)}. */
+    private static List<SiteSearchResult> copyOf(final List<SiteSearchResult> results) {
+        final List<SiteSearchResult> copies = new ArrayList<>(results.size());
+        for (final SiteSearchResult r : results) {
+            copies.add(copyOf(r));
+        }
+        return copies;
     }
 
     @Override

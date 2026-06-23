@@ -14,6 +14,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.LicenseUtil;
@@ -392,8 +393,12 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             indexApi.createAlias(indexName, alias);
         }
 
-        //put mappings
-        mappingAPI.putMapping(indexName, mapping);
+        // Put mappings on the ES index only. ESMappingAPIImpl.putMapping(String, String) is
+        // phase-dispatched and would fan out to OpenSearch, but SiteSearchAPIImpl is already the
+        // single fan-out point for site search (it invokes OSSiteSearchAPI separately, which owns
+        // its own untagged OS index + mapping). Fanning out here too would re-issue the mapping to
+        // a `.os`-tagged physical name that site-search OS indices never use → HTTP 404. Pin to ES.
+        mappingAPI.putMapping(List.of(indexName), mapping, IndexTag.ES);
 
         return true;
     }
