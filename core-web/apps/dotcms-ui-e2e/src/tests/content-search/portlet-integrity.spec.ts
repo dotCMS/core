@@ -57,6 +57,7 @@ test.describe('Content listing portlet — UI integrity', () => {
         await listing.goto();
         await listing.openQueryModal();
 
+        // openQueryModal already waits for #queryResults, this just confirms it
         await expect(listing.frame.locator('#queryResults')).toBeVisible();
     });
 
@@ -65,9 +66,21 @@ test.describe('Content listing portlet — UI integrity', () => {
         await listing.goto();
         await listing.openQueryModal();
 
-        const newTabPromise = page.waitForEvent('popup');
-        await listing.clickQueryModalApiLink();
-        const newTab = await newTabPromise;
+        // The "API" span calls window.open() inside a Dojo XHR callback — browsers block
+        // that as a popup because it is no longer a direct user gesture. Intercept the
+        // POST so it resolves instantly, keeping window.open() close enough to the click
+        // for Playwright (popup blocking disabled) to capture it reliably.
+        await page.route('**/api/content/_search', (route) =>
+            route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ contentlets: [], total: 0 })
+            })
+        );
+
+        const newPagePromise = page.context().waitForEvent('page');
+        await listing.queryModalApiLink.click();
+        const newTab = await newPagePromise;
 
         await newTab.waitForLoadState();
         expect(newTab.url()).toBeTruthy();

@@ -89,6 +89,11 @@ export class ContentListingHelper {
 
     /**
      * Clicks the "createOptions" gear button and then "Show Query".
+     * Waits for #queryResults to confirm the modal fully rendered.
+     *
+     * The "Show Query" menu item lives in a Dojo popup that is always in the DOM
+     * but hidden until the button is clicked. In CI the popup can take longer to
+     * transition to visible, so we allow up to 15 s before giving up.
      */
     async openQueryModal() {
         const optionsBtn = this.frame.getByRole('button', { name: 'createOptions' });
@@ -96,8 +101,10 @@ export class ContentListingHelper {
         await optionsBtn.click();
 
         const showQueryLink = this.frame.getByText('Show Query');
-        await showQueryLink.waitFor({ state: 'visible', timeout: 5000 });
+        await showQueryLink.waitFor({ state: 'visible', timeout: 15000 });
         await showQueryLink.click();
+
+        await this.frame.locator('#queryResults').waitFor({ state: 'visible', timeout: 15000 });
     }
 
     /**
@@ -109,11 +116,11 @@ export class ContentListingHelper {
     }
 
     /**
-     * Clicks the API link inside the query modal (opens a new browser tab).
+     * Returns the "API" span element inside the query modal.
+     * The element is a <span class="dot-api-link"> — not an <a> tag — and calls
+     * window.open() via an async AJAX POST when clicked.
      */
-    async clickQueryModalApiLink() {
-        const apiLink = this.frame.getByText('API', { exact: true });
-        await apiLink.waitFor({ state: 'visible', timeout: 10000 });
-        await apiLink.click();
+    get queryModalApiLink() {
+        return this.frame.locator('.dot-api-link');
     }
 }
