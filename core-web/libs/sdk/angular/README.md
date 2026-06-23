@@ -5,11 +5,14 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 ## Table of Contents
 
 -   [Prerequisites & Setup](#prerequisites--setup)
-    -   [dotCMS Instance](#dotcms-instance)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Get a dotCMS Environment](#get-a-dotcms-environment)
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
+    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Installation](#installation)
-    -   [dotCMS Client Configuration](#dotcms-client-configuration)
+-   [Configuration](#configuration)
+    -   [Basic Configuration](#basic-configuration)
+    -   [Custom HTTP Client Configuration](#custom-http-client-configuration)
+    -   [Using the Client](#using-the-client)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
     -   [Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
@@ -609,7 +612,7 @@ import { DotCMSShowWhen } from '@dotcms/angular';
 export class YourComponent {}
 ```
 
-📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/uve).
+📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/universal-visual-editor).
 
 ### DotCMSEditablePageService
 
@@ -781,7 +784,7 @@ We offer multiple channels to get help with the dotCMS Angular SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-angular` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 

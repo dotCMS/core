@@ -77,7 +77,7 @@ This integration requires an API Key with read-only permissions for security bes
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
-### Install Dependencies
+### Installation
 
 ```bash
 npm install @dotcms/react@latest
@@ -404,7 +404,7 @@ export default async function ArticlePage() {
 -   Take into account the CSS cascade can affect the look and feel of your blocks.
 -   `DotCMSBlockEditorRenderer` only works with [Block Editor fields](https://dev.dotcms.com/docs/block-editor). For other fields, use [`DotCMSEditableText`](#dotcmseditabletext).
 
-📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/src/lib/components/DotCMSBlockEditorRenderer).
+📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/src/lib/next/components/DotCMSBlockEditorRenderer).
 
 #### DotCMSShow
 
@@ -430,7 +430,7 @@ const MyComponent = () => {
 };
 ```
 
-📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/uve).
+📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/universal-visual-editor).
 
 ### useEditableDotCMSPage
 
@@ -776,7 +776,7 @@ We offer multiple channels to get help with the dotCMS React SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 

@@ -688,6 +688,69 @@ const response = await client.page.get('/about-us', {
 });
 ```
 
+### How to Enable Page Editing
+
+The `@dotcms/client` SDK is responsible for **fetching** your page, while a framework SDK ([`@dotcms/react`](https://www.npmjs.com/package/@dotcms/react) or [`@dotcms/angular`](https://www.npmjs.com/package/@dotcms/angular)) makes that page **editable** inside the [Universal Visual Editor (UVE)](https://dev.dotcms.com/docs/uve-headless-config).
+
+The flow is always the same three steps:
+
+1. **Fetch the page** on the server with `client.page.get()`.
+2. **Connect the page to the editor** with the framework hook/service (`useEditableDotCMSPage` in React, `DotCMSEditablePageService` in Angular).
+3. **Render the layout** with `DotCMSLayoutBody`, mapping your content types to components.
+
+#### 1. Fetch the page with `client.page.get()`
+
+Fetch the full page response on the server. The complete response object — not just `pageAsset` — must be forwarded to the editor layer, because it carries the data UVE needs to track changes.
+
+```typescript
+// server-side, e.g. a Next.js Server Component
+import { createDotCMSClient } from '@dotcms/client';
+
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    siteId: 'your-site-id'
+});
+
+// Return the whole response so the framework SDK can make it editable
+export async function getPage(path) {
+    return await client.page.get(path);
+}
+```
+
+#### 2. Make the page editable (React example)
+
+Pass the full page response into `useEditableDotCMSPage`. The hook keeps the page in sync with UVE while editing and returns the same `pageAsset` / `content` shape you get from `client.page.get()`, so the component works identically in and out of the editor.
+
+```tsx
+'use client';
+
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
+import { pageComponents } from '@/components/content-types';
+
+export function Page({ pageContent }) {
+    // `pageContent` is the full response from client.page.get()
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+
+    return (
+        <DotCMSLayoutBody
+            page={pageAsset}
+            components={pageComponents}
+            mode={process.env.NEXT_PUBLIC_DOTCMS_MODE}
+        />
+    );
+}
+```
+
+> 💡 Using Angular? Use [`DotCMSEditablePageService`](https://www.npmjs.com/package/@dotcms/angular) together with `DotCMSLayoutBody` — the same fetch → make-editable → render flow applies.
+
+#### 3. Render the layout with `DotCMSLayoutBody`
+
+`DotCMSLayoutBody` renders the page's rows, columns, and containers, and maps each contentlet to one of your components via the `components` prop. When loaded inside UVE it automatically applies the `data-dot-*` attributes that make the page editable — no extra wiring required.
+
+#### Working example
+
+See the page-editing flow end to end in the official Next.js example — [`examples/nextjs`](https://github.com/dotCMS/core/tree/main/examples/nextjs). In particular, [`src/views/Page.js`](https://github.com/dotCMS/core/blob/main/examples/nextjs/src/views/Page.js) uses `useEditableDotCMSPage` and `DotCMSLayoutBody` exactly as shown above.
 
 ## API Reference
 
@@ -1182,7 +1245,7 @@ We offer multiple channels to get help with the dotCMS Client SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-client` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 

@@ -17,7 +17,7 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [🚩 Custom Setup: Manual Rendering (Not Recommended)](#-custom-setup-manual-rendering-not-recommended)
 -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Get a dotCMS Environment](#get-a-dotcms-environment)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
     -   [Installation](#installation)
     -   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
 -   [SDK Reference](#sdk-reference)
@@ -49,7 +49,7 @@ With `@dotcms/uve`, framework SDKs are able to:
 We strongly recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box. These examples are the best way to get started:
 
 -   [dotCMS Angular SDK: Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) – Ideal for Angular apps 🅰️
--   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/react) – Ideal for NextJS projects ⚛️
+-   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/nextjs) – Ideal for NextJS projects ⚛️
 -   [dotCMS React SDK: Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) – Ideal for Astro projects 🌌
 
 These examples handle UVE integration, routing, rendering, and more—out of the box. **If you're building a headless dotCMS front-end, start there.**
@@ -449,7 +449,7 @@ reorderMenu({ startLevel: 2, depth: 3 });
 
 | Input     | Type                                       | Required | Description                  |
 | --------- | ------------------------------------------ | -------- | ---------------------------- |
-| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessage) | ✅       | Object with action + payload |
+| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessaget) | ✅       | Object with action + payload |
 
 #### Usage
 
@@ -627,7 +627,7 @@ When **defining styles** for a contentlet within a page using **Style Editor**, 
 
 > **NOTE:** (🎨 Styles are different) means the capability to define distinct styles, even when utilizing the identical Contentlet.
 
-The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario), results in the loss of those styles. See the [technical details document](https://docs.google.com/document/d/1UiuJlIn8ZjybIB-0oHeoTLXZo1k-YExITEqEMfyvVlU/edit?tab=t.0) for our planned solution.
+The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario) results in the loss of those styles. A fix for this scenario is on our roadmap.
 
 ## Troubleshooting
 
@@ -713,7 +713,7 @@ We offer multiple channels to get help with the dotCMS UVE SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
 -   **Stack Overflow**: Use the tag `dotcms-uve` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support)
 
 When reporting issues, please include:
 
