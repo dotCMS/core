@@ -255,7 +255,7 @@ public class StaticDependencyBundler implements IBundler {
                 langId = Long.parseLong(languageId);
             } catch (final NumberFormatException e) {
                 Logger.warn(StaticDependencyBundler.class,
-                        "Skipping non-numeric bundle language id: " + languageId);
+                        () -> "Skipping non-numeric bundle language id: " + languageId);
                 continue;
             }
             try {

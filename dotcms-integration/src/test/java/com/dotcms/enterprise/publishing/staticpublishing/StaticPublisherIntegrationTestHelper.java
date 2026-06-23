@@ -805,7 +805,7 @@ public class StaticPublisherIntegrationTestHelper {
      * only, i.e. already unpublished), so removal is driven entirely by /live/ markers.
      */
     public static TestCase getWorkingPageInDefaultLangConfiguredForFallbackLang()
-            throws WebAssetException, DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final PageWithDependencies workingPage = new PageWithDependenciesBuilder()
                 .language(defaultLanguage)
