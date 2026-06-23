@@ -153,6 +153,8 @@ jobs:
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
+      # Each push gets a unique SHA → unique sticky marker → new comment instead of overwrite.
+      sticky_namespace: ${{ github.sha }}
       timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
