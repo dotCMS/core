@@ -184,7 +184,7 @@ public class DotTemplateToolTest {
                 host.getIdentifier());
 
         assertEquals("system_theme", themeFromDB.get("title"));
-        assertEquals("//System Host/application/themes/system_theme/", themeFromDB.get("path"));
+        assertEquals("//SYSTEM_HOST/application/themes/system_theme/", themeFromDB.get("path"));
     }
 
     /**
@@ -203,7 +203,7 @@ public class DotTemplateToolTest {
                 host.getIdentifier());
 
         assertEquals("system_theme", themeFromDB.get("title"));
-        assertEquals("//System Host/application/themes/system_theme/", themeFromDB.get("path"));
+        assertEquals("//SYSTEM_HOST/application/themes/system_theme/", themeFromDB.get("path"));
     }
     
     private void check(String hostName, TemplateLayout templateLayout) {

@@ -107,24 +107,27 @@ export class DotUploadFileService {
      * @param file The file to be uploaded or the asset id.
      * @param extraData Additional data to be included in the contentlet object. This will be merged with
      * the base contentlet data in the request body.
+     * @param contentType The content type variable to create the contentlet as. Defaults to `dotAsset`;
+     * pass `FileAsset` (or another binary content type) to upload as a different type.
      * @returns An observable that resolves to the created contentlet.
      */
     uploadDotAsset(
         file: File | string,
-        extraData?: DotActionRequestOptions['data']
+        extraData?: DotActionRequestOptions['data'],
+        contentType = 'dotAsset'
     ): Observable<DotCMSContentlet> {
         if (file instanceof File) {
             const formData = new FormData();
             formData.append('file', file);
 
             return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
-                'dotAsset',
+                contentType,
                 { file: file.name, ...extraData },
                 formData
             );
         }
 
-        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', {
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(contentType, {
             asset: file
         });
     }
