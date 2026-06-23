@@ -82,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -168,7 +168,7 @@ jobs:
     concurrency:
       group: claude-automatic-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
       # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
