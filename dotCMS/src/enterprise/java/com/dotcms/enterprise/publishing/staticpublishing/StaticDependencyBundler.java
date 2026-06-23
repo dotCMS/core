@@ -244,12 +244,25 @@ public class StaticDependencyBundler implements IBundler {
     private Collection<String> pageMarkerLanguages(final Identifier identifier,
             final Set<String> configLanguages) throws DotDataException, DotSecurityException {
         final Set<String> langs = new LinkedHashSet<>();
+        if (identifier == null || configLanguages == null) {
+            return langs;
+        }
         for (final String languageId : configLanguages) {
+            // Bundle languages are language ids; guard against any non-numeric value so a bad entry
+            // skips that language rather than aborting the whole bundle with NumberFormatException.
+            final long langId;
+            try {
+                langId = Long.parseLong(languageId);
+            } catch (final NumberFormatException e) {
+                Logger.warn(StaticDependencyBundler.class,
+                        "Skipping non-numeric bundle language id: " + languageId);
+                continue;
+            }
             try {
                 // live=false: at un-publish time the live version is already gone, but the (now
                 // working) version still resolves through the same fallback Push Publish used.
                 final IHTMLPage page = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(
-                        identifier, Long.parseLong(languageId), false, systemUser, false);
+                        identifier, langId, false, systemUser, false);
                 if (page != null) {
                     langs.add(languageId);
                 }
