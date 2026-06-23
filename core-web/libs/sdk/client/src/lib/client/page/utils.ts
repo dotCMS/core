@@ -275,12 +275,8 @@ export function mapContentResponse(
  * @param {Record<string, unknown>} object - Source object to clean
  * @returns {Record<string, unknown>} New object without `undefined` values
  */
-export function removeUndefinedValues(
-    object: Record<string, unknown>
-): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(object).filter(([, value]) => value !== undefined)
-    );
+export function removeUndefinedValues(object: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
 }
 
 /**
