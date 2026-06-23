@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.liferay.portal.model.User;
+import java.util.Objects;
 
 /**
  * Encapsulates all parameters for {@link FolderAPI#searchFolders}.
@@ -48,6 +49,8 @@ public record FolderSearchParams(
         public Builder orderDirection(final String orderDirection) { this.orderDirection = orderDirection; return this; }
 
         public FolderSearchParams build() {
+            Objects.requireNonNull(siteId, "siteId is required");
+            Objects.requireNonNull(user,   "user is required");
             return new FolderSearchParams(name, path, recursive, siteId, user,
                     respectFrontendRoles, limit, offset, orderBy, orderDirection);
         }

@@ -10,6 +10,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.FolderSearchPaginator;
 import com.dotmarketing.beans.Host;
@@ -173,7 +174,7 @@ public class FolderResourceSearchTest {
         final long ts = System.currentTimeMillis();
         final Host site = new SiteDataGen().nextPersisted();
         for (int i = 0; i < 3; i++) {
-            new FolderDataGen().site(site).name(String.format("paged-%02d-%d", i, ts)).nextPersisted();
+            new FolderDataGen().site(site).name(String.format("paged-%02d-%d", (Integer) i, (Long) ts)).nextPersisted();
         }
 
         final var result = resource.searchFolders(
@@ -226,7 +227,7 @@ public class FolderResourceSearchTest {
             resource.searchFolders(request, response, null, "/", true, "some-site-id",
                     "name", "ASC", 1, 40);
             Assert.fail("Expected security exception");
-        } catch (final Exception e) {
+        } catch (final SecurityException e) {
             // expected
         }
     }
