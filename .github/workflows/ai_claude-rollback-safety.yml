@@ -129,5 +129,3 @@ jobs:
       timeout_minutes: 15
       runner: ubuntu-latest
       enable_mention_detection: false
-    secrets:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
