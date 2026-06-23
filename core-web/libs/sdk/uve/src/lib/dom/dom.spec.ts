@@ -5,13 +5,17 @@ import {
     combineClasses,
     computeScrollIsInBottom,
     findDotCMSElement,
+    getAnalyticsContentletAttributes,
     getColumnPositionClasses,
     getContainersData,
     getContentletsInContainer,
     getDotCMSContentletsBound,
     getDotContainerAttributes,
-    getDotContentletAttributes
+    getDotContentletAttributes,
+    isDotAnalyticsActive
 } from './dom.utils';
+
+import { ANALYTICS_ACTIVE_WINDOW_KEY } from '../../internal/constants';
 
 describe('getDotCMSContentletsBound', () => {
     const createContentlet = ({
@@ -357,6 +361,77 @@ describe('getDotContentletAttributes', () => {
             throw new Error('stylePropertiesAttr should be defined');
         }
         expect(JSON.parse(stylePropertiesAttr)).toEqual(styleProperties);
+    });
+});
+
+describe('getAnalyticsContentletAttributes', () => {
+    it('should return only the minimal attributes Analytics needs', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type',
+            onNumberOfPages: '5',
+            dotStyleProperties: { 'font-size': 20 }
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getAnalyticsContentletAttributes(contentlet);
+
+        expect(result).toEqual({
+            'data-dot-identifier': 'test-id',
+            'data-dot-inode': 'test-inode',
+            'data-dot-title': 'Test Title',
+            'data-dot-type': 'test-type',
+            'data-dot-basetype': 'test-base'
+        });
+    });
+
+    it('should not include editor-only attributes (container, on-number-of-pages, style-properties, object)', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            contentType: 'test-type',
+            dotStyleProperties: { 'font-size': 20 }
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getAnalyticsContentletAttributes(contentlet) as Record<string, unknown>;
+
+        expect(result['data-dot-container']).toBeUndefined();
+        expect(result['data-dot-on-number-of-pages']).toBeUndefined();
+        expect(result['data-dot-style-properties']).toBeUndefined();
+        expect(result['data-dot-object']).toBeUndefined();
+    });
+
+    it('should use widgetTitle if available', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            widgetTitle: 'Widget Title',
+            title: 'Regular Title'
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getAnalyticsContentletAttributes(contentlet);
+
+        expect(result['data-dot-title']).toBe('Widget Title');
+    });
+});
+
+describe('isDotAnalyticsActive', () => {
+    afterEach(() => {
+        delete (window as unknown as Record<string, unknown>)[ANALYTICS_ACTIVE_WINDOW_KEY];
+    });
+
+    it('should return false when the analytics flag is not set', () => {
+        expect(isDotAnalyticsActive()).toBe(false);
+    });
+
+    it('should return true when the analytics flag is set to true', () => {
+        (window as unknown as Record<string, unknown>)[ANALYTICS_ACTIVE_WINDOW_KEY] = true;
+        expect(isDotAnalyticsActive()).toBe(true);
+    });
+
+    it('should return false when the analytics flag is set to a non-true value', () => {
+        (window as unknown as Record<string, unknown>)[ANALYTICS_ACTIVE_WINDOW_KEY] = false;
+        expect(isDotAnalyticsActive()).toBe(false);
     });
 });
 
