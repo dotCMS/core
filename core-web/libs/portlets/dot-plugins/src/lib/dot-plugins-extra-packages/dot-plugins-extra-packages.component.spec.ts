@@ -8,7 +8,10 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotHttpErrorManagerService, DotMessageService, DotOsgiService } from '@dotcms/data-access';
 
-import { DotPluginsExtraPackagesComponent } from './dot-plugins-extra-packages.component';
+import {
+    DotPluginsExtraPackagesComponent,
+    SEARCH_DEBOUNCE_MS
+} from './dot-plugins-extra-packages.component';
 
 describe('DotPluginsExtraPackagesComponent', () => {
     let spectator: Spectator<DotPluginsExtraPackagesComponent>;
@@ -156,13 +159,15 @@ describe('DotPluginsExtraPackagesComponent', () => {
     });
 
     describe('search', () => {
-        const SEARCH_DEBOUNCE_MS = 500;
         const PACKAGES_TEXT =
             'com.example.foo\ncom.example.bar\norg.example.baz\ncom.example.qux';
 
-        function searchInput(): HTMLInputElement {
-            const el = spectator.query(byTestId('plugins-extra-packages-search'));
-            return el as HTMLInputElement;
+        function searchInput(): HTMLInputElement | null {
+            const host = spectator.query(byTestId('plugins-extra-packages-search'));
+            if (!host) return null;
+            return host instanceof HTMLInputElement
+                ? host
+                : host.querySelector<HTMLInputElement>('input');
         }
 
         beforeEach(() => {
@@ -171,7 +176,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         });
 
         it('should keep focus on the search input after typing (debounced)', fakeAsync(() => {
-            const input = searchInput();
+            const input = searchInput()!;
             const textarea = nativeTextarea()!;
             expect(input).toBeTruthy();
             expect(textarea).toBeTruthy();
@@ -188,7 +193,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         }));
 
         it('should pre-select the first match on the textarea while typing without focusing it', fakeAsync(() => {
-            const input = searchInput();
+            const input = searchInput()!;
             const textarea = nativeTextarea()!;
 
             input.focus();
@@ -203,7 +208,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         }));
 
         it('should move focus to the textarea on next-match navigation', fakeAsync(() => {
-            const input = searchInput();
+            const input = searchInput()!;
             const textarea = nativeTextarea()!;
 
             input.focus();
@@ -221,7 +226,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         }));
 
         it('should move focus to the textarea on prev-match navigation', fakeAsync(() => {
-            const input = searchInput();
+            const input = searchInput()!;
             const textarea = nativeTextarea()!;
 
             input.focus();
@@ -236,7 +241,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         }));
 
         it('should leave focus untouched when the query has no matches', fakeAsync(() => {
-            const input = searchInput();
+            const input = searchInput()!;
 
             input.focus();
             spectator.typeInElement('does-not-exist', input);

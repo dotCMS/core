@@ -35,7 +35,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 export const EXTRA_PACKAGES_RESET_RESULT = 'restart' as const;
 
 /** Debounce delay (ms) before scrolling to a match while the user is typing. */
-const SEARCH_DEBOUNCE_MS = 500;
+export const SEARCH_DEBOUNCE_MS = 500;
 
 @Component({
     selector: 'dot-plugins-extra-packages',
