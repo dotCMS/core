@@ -1,0 +1,127 @@
+name: Autodoc — Epic Documentation Audit
+
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  preflight:
+    name: Determine whether to run
+    # Run if the issue carries any of the three trigger labels.
+    if: |
+      contains(github.event.issue.labels.*.name, 'Epic') ||
+      contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
+      contains(github.event.issue.labels.*.name, 'Changelog: Needs Doc')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+
+    steps:
+      - name: Check run conditions
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          # Epic label present means unconditional run — no further checks needed.
+          HAS_EPIC: ${{ contains(github.event.issue.labels.*.name, 'Epic') }}
+        run: |
+          if [ "$HAS_EPIC" = "true" ]; then
+            echo "Issue #$ISSUE_NUMBER has Epic label — proceeding unconditionally."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Non-Epic issue: check whether it is a sub-task of an Epic.
+          # If so, skip — the parent Epic closure will handle documentation.
+          PARENT_LABELS=$(gh api graphql \
+            -f query='
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $number) {
+                    parent {
+                      labels(first: 20) { nodes { name } }
+                    }
+                  }
+                }
+              }
+            ' \
+            -f owner="${REPO%/*}" \
+            -f repo="${REPO#*/}" \
+            -F number="$ISSUE_NUMBER" \
+            --jq '.data.repository.issue.parent.labels.nodes[].name // empty')
+
+          if echo "$PARENT_LABELS" | grep -qx "Epic"; then
+            echo "Issue #$ISSUE_NUMBER is a sub-task of an Epic — skipping; Epic closure will handle docs."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Issue #$ISSUE_NUMBER has a doc label and is not an Epic sub-task — proceeding."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  autodoc:
+    name: Run documentation audit
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write   # post/edit the report comment
+      contents: read
+
+    env:
+      EPIC_NUMBER: ${{ github.event.issue.number }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
+      AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
+      AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
+      AUTODOC_DOTCMS_SITE_FOLDER: ${{ secrets.AUTODOC_DOTCMS_SITE_FOLDER }}
+
+    steps:
+      - name: Checkout triggering repo (for gh context)
+        uses: actions/checkout@v4
+
+      - name: Checkout dotcms-aios (includes autodoc scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: dotCMS/dotcms-aios
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          path: dotcms-aios
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          working-directory: dotcms-aios/autodoc
+
+      - name: Install autodoc dependencies
+        working-directory: dotcms-aios/autodoc
+        run: uv sync
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run eval → Claude
+        working-directory: dotcms-aios/autodoc
+        run: |
+          uv run python scripts/run_eval.py \
+            --epic "$EPIC_NUMBER" \
+            --repo "$REPO" \
+            --prompt burlap \
+            --aios-dir ../ \
+            > /tmp/eval_context.md
+
+          claude --print --allowedTools Bash,Write < /tmp/eval_context.md
+
+      - name: Run finalize (apply + post comment + commit)
+        working-directory: dotcms-aios/autodoc
+        run: |
+          git config user.name "autodoc[bot]"
+          git config user.email "autodoc-bot@users.noreply.github.com"
+
+          uv run python scripts/finalize.py \
+            --epic "$EPIC_NUMBER" \
+            --prompt burlap \
+            --repo "$REPO"
