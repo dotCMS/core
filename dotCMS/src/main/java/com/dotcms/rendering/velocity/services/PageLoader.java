@@ -187,8 +187,18 @@ public class PageLoader implements DotLoader {
             sb.append("#set ($dotThemeLayout = $templatetool.themeLayout(\"")
                 .append(cmsTemplate.getInode())
                 .append("\"))");
-            // Merging our template
-            sb.append("#parse(\"$dotTheme.templatePath\")");
+            // Merging our template. File-asset themes are included with #dotParse so the theme
+            // template.vtl is resolved version-aware (live vs working) from the page's PageMode;
+            // the bundled static fallback templates are plain disk files and stay on #parse.
+            // dontShowThemeTemplateIcon is a one-shot flag consumed by #dotParse so the theme shell
+            // itself is not wrapped in an EDIT_MODE edit-control icon; nested #dotParse includes
+            // (html_head/header/footer) inside the theme still emit their icons.
+            sb.append("#if($dotTheme.templatePathIsFileAsset)")
+                .append("#set($dontShowThemeTemplateIcon = true)")
+                .append("#dotParse(\"$dotTheme.templatePath\")")
+                .append("#else")
+                .append("#parse(\"$dotTheme.templatePath\")")
+                .append("#end");
         } else {
             sb.append("#parse('")
                 .append(folderPath)
