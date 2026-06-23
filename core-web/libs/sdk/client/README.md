@@ -361,7 +361,7 @@ const response = await client.ai.search(
 );
 
 // Access results with match scores
-resp[onse].results.forEach(result => {
+response.results.forEach(result => {
     console.log(result.title);
     console.log('Matches:', result.matches); // Distance and extracted text
 });
@@ -713,7 +713,7 @@ const client = createDotCMSClient({
 });
 
 // Return the whole response so the framework SDK can make it editable
-export async function getPage(path) {
+export async function getPage(path: string) {
     return await client.page.get(path);
 }
 ```
@@ -730,7 +730,7 @@ import { pageComponents } from '@/components/content-types';
 
 export function Page({ pageContent }) {
     // `pageContent` is the full response from client.page.get()
-    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
 
     return (
         <DotCMSLayoutBody
