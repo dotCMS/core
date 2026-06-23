@@ -361,13 +361,16 @@ public class DotTemplateTool implements ViewTool {
         //Getting the theme path
         String themePath;
         final Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
+        // Use the Host.SYSTEM_HOST sentinel for the System Host: its stored hostname is not reliably
+        // resolved by HostAPIImpl.resolveHostName, but "SYSTEM_HOST" has a guaranteed fast-path.
+        final String themeHostname = themeHost.isSystemHost() ? Host.SYSTEM_HOST : themeHost.getHostname();
         if ( themeFolder.getHostId().equals( hostId ) ) {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
             // Host-qualified ("//<themeHost>/...") theme path so a shared theme rendered by another
             // host still resolves against its own host (the themeMap cache is keyed by theme
             // identifier only).
-            themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
+            themePath = "//" + themeHostname + Template.THEMES_PATH + themeFolder.getName() + "/";
         }
 
         //Getting the template.vtl file path
@@ -379,8 +382,8 @@ public class DotTemplateTool implements ViewTool {
             // Built from the asset's own parent path (which is not guaranteed to be directly under
             // /application/themes/<name>/) and host-qualified so #dotParse resolves it against the
             // theme's host, not the rendering page's.
-            themeTemplatePath = "//" + themeHost.getHostname()
-                    + themeTemplate.getFileAsset().getPath() + Template.THEME_TEMPLATE; // parent path already ends with "/"
+            themeTemplatePath = "//" + themeHostname
+                    + themeTemplate.getPath() + Template.THEME_TEMPLATE; // parent path already ends with "/"
             themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
