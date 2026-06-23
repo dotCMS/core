@@ -117,6 +117,7 @@
                 <td data-testId="item-language">
                     @if (!isFolder) {
                         <p-tag
+                            class="whitespace-nowrap"
                             severity="info"
                             [value]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
