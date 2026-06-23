@@ -150,11 +150,16 @@ export class PageClient extends BaseApiClient {
             // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
             mode: UVE_MODE[mode],
             languageId,
-            personaId,
             fireRules,
-            publishDate,
             siteId,
-            variantName,
+            // Only include optional params when defined. Spreading `undefined` would leave
+            // `undefined` values in `requestVariables`, which is returned verbatim on the response
+            // and breaks JSON serialization for consumers like Next.js Pages Router
+            // (getServerSideProps/getStaticProps). The GraphQL request itself is unaffected since
+            // these variables are nullable and JSON.stringify already drops undefined keys.
+            ...(personaId !== undefined && { personaId }),
+            ...(publishDate !== undefined && { publishDate }),
+            ...(variantName !== undefined && { variantName }),
             ...variables
         };
 
