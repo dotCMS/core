@@ -11,7 +11,7 @@ import { MockComponent } from 'ng-mocks';
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
-import { Confirmation, ConfirmationService } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -147,7 +147,19 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
-        it('should close with null when the discard confirmation is accepted', () => {
+        it('should close with null when the secondary "Discard" button is clicked (reject/REJECT)', () => {
+            isDirty.set(true);
+
+            spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
+
+            const confirmation = (confirmationService.confirm as jest.Mock).mock
+                .calls[0][0] as Confirmation;
+            confirmation.reject?.(ConfirmEventType.REJECT);
+
+            expect(dialogRef.close).toHaveBeenCalledWith(null);
+        });
+
+        it('should NOT close when the primary "Keep editing" button is clicked (accept)', () => {
             isDirty.set(true);
 
             spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
@@ -156,7 +168,19 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
                 .calls[0][0] as Confirmation;
             confirmation.accept?.();
 
-            expect(dialogRef.close).toHaveBeenCalledWith(null);
+            expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('should NOT close when the prompt is dismissed via X/ESC (reject/CANCEL)', () => {
+            isDirty.set(true);
+
+            spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
+
+            const confirmation = (confirmationService.confirm as jest.Mock).mock
+                .calls[0][0] as Confirmation;
+            confirmation.reject?.(ConfirmEventType.CANCEL);
+
+            expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
         describe('undo/redo shortcuts', () => {

@@ -3,7 +3,7 @@ import { injectDispatch } from '@ngrx/signals/events';
 import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -158,9 +158,29 @@ export class DotImageEditorComponent {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get('edit.content.image-editor.discard.header'),
             message: this.#dotMessageService.get('edit.content.image-editor.discard.message'),
-            acceptLabel: this.#dotMessageService.get('edit.content.image-editor.discard.confirm'),
-            rejectLabel: this.#dotMessageService.get('edit.content.image-editor.discard.reject'),
-            accept: () => this.#dialogRef.close(null)
+            // Mirror the edit-content unsaved-changes dialog (unsavedChangesGuard):
+            // the safe "Keep editing" is the primary (accept) button and the
+            // destructive "Discard" is the secondary outlined (reject) button, so
+            // the prompt never renders two identical primaries. The labels reuse the
+            // existing message keys; only the accept/reject roles carry the hierarchy.
+            acceptLabel: this.#dotMessageService.get('edit.content.image-editor.discard.reject'),
+            rejectLabel: this.#dotMessageService.get('edit.content.image-editor.discard.confirm'),
+            // Text-only buttons, matching the unsaved-changes prompt.
+            acceptIcon: 'hidden',
+            rejectIcon: 'hidden',
+            rejectButtonStyleClass: 'p-button-outlined',
+            // "Keep editing" (primary): stay in the editor, nothing to do.
+            accept: () => {
+                /* keep editing */
+            },
+            // PrimeNG funnels the secondary button and dismissals (X / ESC / mask
+            // click) through reject(); only the explicit "Discard" click (REJECT)
+            // closes, so a dismissal safely keeps the user's edits.
+            reject: (type?: ConfirmEventType) => {
+                if (type === ConfirmEventType.REJECT) {
+                    this.#dialogRef.close(null);
+                }
+            }
         });
     }
 
