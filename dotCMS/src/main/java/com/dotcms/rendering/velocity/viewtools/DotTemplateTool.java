@@ -357,7 +357,10 @@ public class DotTemplateTool implements ViewTool {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
             Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-            themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
+            // Use the Host.SYSTEM_HOST sentinel for the System Host because its stored hostname
+            // is not reliably resolved by HostAPI.resolveHostName — only "SYSTEM_HOST" has a fast-path.
+            final String themeHostname = themeHost.isSystemHost() ? Host.SYSTEM_HOST : themeHost.getHostname();
+            themePath = "//" + themeHostname + Template.THEMES_PATH + themeFolder.getName() + "/";
         }
 
         //Getting the template.vtl file path
