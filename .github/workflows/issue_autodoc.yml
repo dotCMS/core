@@ -7,7 +7,6 @@ on:
 jobs:
   preflight:
     name: Determine whether to run
-    # Run if the issue carries any of the three trigger labels.
     if: |
       contains(github.event.issue.labels.*.name, 'Epic') ||
       contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
@@ -25,7 +24,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
-          # Epic label present means unconditional run — no further checks needed.
           HAS_EPIC: ${{ contains(github.event.issue.labels.*.name, 'Epic') }}
         run: |
           if [ "$HAS_EPIC" = "true" ]; then
@@ -34,8 +32,6 @@ jobs:
             exit 0
           fi
 
-          # Non-Epic issue: check whether it is a sub-task of an Epic.
-          # If so, skip — the parent Epic closure will handle documentation.
           PARENT_LABELS=$(gh api graphql \
             -f query='
               query($owner: String!, $repo: String!, $number: Int!) {
@@ -51,7 +47,7 @@ jobs:
             -f owner="${REPO%/*}" \
             -f repo="${REPO#*/}" \
             -F number="$ISSUE_NUMBER" \
-            --jq '.data.repository.issue.parent.labels.nodes[].name // empty')
+            --jq '(.data.repository.issue.parent.labels.nodes // []) | .[].name')
 
           if echo "$PARENT_LABELS" | grep -qx "Epic"; then
             echo "Issue #$ISSUE_NUMBER is a sub-task of an Epic — skipping; Epic closure will handle docs."
@@ -67,7 +63,7 @@ jobs:
     if: needs.preflight.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
-      issues: write   # post/edit the report comment
+      issues: write
       contents: read
 
     env:
@@ -81,47 +77,205 @@ jobs:
       AUTODOC_DOTCMS_SITE_FOLDER: ${{ secrets.AUTODOC_DOTCMS_SITE_FOLDER }}
 
     steps:
-      - name: Checkout triggering repo (for gh context)
+      - name: Checkout triggering repo
         uses: actions/checkout@v4
 
-      - name: Checkout dotcms-aios (includes autodoc scripts)
+      - name: Checkout dotcms-aios
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
           token: ${{ secrets.CI_MACHINE_TOKEN }}
           path: dotcms-aios
 
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          working-directory: dotcms-aios/autodoc
-
-      - name: Install autodoc dependencies
-        working-directory: dotcms-aios/autodoc
-        run: uv sync
-
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Run eval → Claude
-        working-directory: dotcms-aios/autodoc
+      - name: Build eval context
         run: |
-          uv run python scripts/run_eval.py \
-            --epic "$EPIC_NUMBER" \
-            --repo "$REPO" \
-            --prompt burlap \
-            --aios-dir ../ \
-            > /tmp/eval_context.md
+          cat > /tmp/ctx.py << 'PYEOF'
+          import json, os, subprocess, sys
 
-          claude --print --allowedTools Bash,Write < /tmp/eval_context.md
+          epic_num = os.environ['EPIC_NUMBER']
+          repo     = os.environ['REPO']
+          MAX_COMMENT_CHARS = 4000
 
-      - name: Run finalize (apply + post comment + commit)
-        working-directory: dotcms-aios/autodoc
+          result = subprocess.run(
+              ['gh', 'issue', 'view', epic_num, '--repo', repo,
+               '--json', 'number,title,body,labels,state,url,'
+                         'closedByPullRequestsReferences,comments'],
+              capture_output=True, text=True, check=True)
+          epic = json.loads(result.stdout)
+
+          labels  = ', '.join(l['name'] for l in epic.get('labels', []))
+          pr_nums = [r['number'] for r in epic.get('closedByPullRequestsReferences', [])]
+
+          def render_comments(comments):
+              parts, skipped = [], 0
+              for c in (comments or []):
+                  body = (c.get('body') or '').strip()
+                  if not body:
+                      continue
+                  if len(body) > MAX_COMMENT_CHARS:
+                      skipped += 1
+                      continue
+                  login = (c.get('author') or {}).get('login', '?')
+                  parts.append(f'**{login}:** {body}')
+              out = '\n\n'.join(parts)
+              if skipped:
+                  out += (f'\n\n*({skipped} comment{"s" if skipped > 1 else ""}'
+                          f' omitted — exceeded {MAX_COMMENT_CHARS}-character limit)*')
+              return out
+
+          lines = [
+              '# Evaluation Context', '',
+              f'## Epic: #{epic["number"]} — {repo}',
+              f'**Title:** {epic["title"]}',
+              f'**URL:** {epic.get("url", "")}',
+              f'**State:** {epic.get("state", "?")}',
+              f'**Labels:** {labels or "(none)"}',
+              f'**Related PRs:** {", ".join(f"#{n}" for n in pr_nums) or "(none)"}',
+              '', '### Epic Body', '',
+              (epic.get('body') or '').strip(),
+          ]
+          ct = render_comments(epic.get('comments'))
+          if ct:
+              lines += ['', '### Comments', '', ct]
+
+          for pr_num in pr_nums:
+              r = subprocess.run(
+                  ['gh', 'pr', 'view', str(pr_num), '--repo', repo,
+                   '--json', 'number,title,body,state,mergedAt,author,comments'],
+                  capture_output=True, text=True)
+              if r.returncode != 0:
+                  continue
+              pr = json.loads(r.stdout)
+              author = (pr.get('author') or {}).get('login', '?')
+              lines += [
+                  '', '---', '',
+                  f'## Related PR: #{pr["number"]} — {pr["title"]}',
+                  f'**State:** {pr.get("state","?")}  |  '
+                  f'**Author:** {author}  |  '
+                  f'**Merged:** {pr.get("mergedAt") or "N/A"}',
+                  '',
+                  (pr.get('body') or '').strip(),
+              ]
+              pct = render_comments(pr.get('comments'))
+              if pct:
+                  lines += ['', '### Comments', '', pct]
+
+          g = subprocess.run(
+              ['grep', '-rl', f'/issues/{epic_num}', 'dotcms-aios/work/epics/'],
+              capture_output=True, text=True)
+          vault_file = g.stdout.strip().split('\n')[0] if g.stdout.strip() else ''
+          if vault_file:
+              lines += ['', '---', '', '## Vault Context', '',
+                        open(vault_file).read().strip()]
+          else:
+              print(f'warning: no vault file for Epic #{epic_num}', file=sys.stderr)
+
+          prompt = open('dotcms-aios/autodoc/prompts/burlap.txt').read().strip()
+          report_path = f'dotcms-aios/autodoc/reports/Epic-{epic_num}_burlap.md'
+          lines += [
+              '', '---', '', '## Prompt: burlap', '', prompt,
+              '', '---', '',
+              f'**Report path:** `{report_path}`',
+              '',
+              'Use the Write tool to write the report to exactly that path.',
+          ]
+
+          with open('/tmp/eval_context.md', 'w') as f:
+              f.write('\n'.join(lines))
+          PYEOF
+          python3 /tmp/ctx.py
+
+      - name: Run Claude
+        run: claude --print --allowedTools Bash,Write < /tmp/eval_context.md
+
+      - name: Post comment, apply to dotCMS, commit report
         run: |
+          REPORT="dotcms-aios/autodoc/reports/Epic-${EPIC_NUMBER}_burlap.md"
+
+          if [ ! -f "$REPORT" ]; then
+            echo "No report at $REPORT — skipping finalize."
+            exit 0
+          fi
+
+          # Post report as issue comment (edit existing autodoc comment if one exists)
+          EXISTING=$(gh api "repos/$REPO/issues/$EPIC_NUMBER/comments" \
+            --jq '.[] | select(.body | contains("<!-- autodoc-report -->")) | .id' \
+            | head -1)
+          if [ -n "$EXISTING" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$EXISTING" \
+              -f "body=@$REPORT"
+          else
+            gh issue comment "$EPIC_NUMBER" --repo "$REPO" --body-file "$REPORT"
+          fi
+
+          # Parse action and urlTitle from the machine-readable meta block
+          ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
+          URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{print $2; exit}' "$REPORT")
+
+          if [ "$ACTION" = "update" ] && [ -n "$URL_TITLE" ]; then
+            IDENTIFIER=$(curl -sk -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
+              -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
+              | jq -r '(.esresponse[0].hits.hits[0]._source.identifier) // empty')
+
+            if [ -n "$IDENTIFIER" ]; then
+              export REPORT IDENTIFIER
+              python3 << 'PYEOF'
+          import json, os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          payload = {'contentlet': {
+              'identifier': os.environ['IDENTIFIER'],
+              'languageId': 1, 'documentation': draft,
+              'disabledWYSIWYG': ['documentation']}}
+          json.dump(payload, open('/tmp/payload.json', 'w'))
+          PYEOF
+              curl -sk -X PUT \
+                "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/EDIT?identifier=$IDENTIFIER" \
+                -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+                -H "Content-Type: application/json" \
+                --data @/tmp/payload.json
+            fi
+
+          elif [ "$ACTION" = "create" ]; then
+            TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^title:/{sub(/^title:[[:space:]]*/,"");print;exit}' "$REPORT")
+            TAGS=$(awk  '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^tags:/{sub(/^tags:[[:space:]]*/,"");print;exit}'  "$REPORT")
+            SEO=$(awk   '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^seoDescription:/{sub(/^seoDescription:[[:space:]]*/,"");print;exit}' "$REPORT")
+            export REPORT URL_TITLE TITLE TAGS SEO
+            python3 << 'PYEOF'
+          import json, os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          sf = os.environ.get('AUTODOC_DOTCMS_SITE_FOLDER', '').strip()
+          payload = {'contentlet': {
+              'contentType': 'DotcmsDocumentation',
+              'urlTitle': os.environ['URL_TITLE'],
+              'title': os.environ['TITLE'],
+              'tag': os.environ['TAGS'],
+              'seoDescription': os.environ['SEO'],
+              'languageId': 1, 'documentation': draft,
+              'disabledWYSIWYG': ['documentation']}}
+          if sf:
+              payload['contentlet']['navFolder'] = sf
+          json.dump(payload, open('/tmp/payload.json', 'w'))
+          PYEOF
+            curl -sk -X PUT \
+              "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/NEW" \
+              -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
+              -H "Content-Type: application/json" \
+              --data @/tmp/payload.json
+          fi
+
+          # Commit the report back to dotcms-aios
+          cd dotcms-aios
           git config user.name "autodoc[bot]"
           git config user.email "autodoc-bot@users.noreply.github.com"
-
-          uv run python scripts/finalize.py \
-            --epic "$EPIC_NUMBER" \
-            --prompt burlap \
-            --repo "$REPO"
+          git add "autodoc/reports/Epic-${EPIC_NUMBER}_burlap.md"
+          git commit -m "eval: Epic-${EPIC_NUMBER} (burlap)" || true
+          git push
