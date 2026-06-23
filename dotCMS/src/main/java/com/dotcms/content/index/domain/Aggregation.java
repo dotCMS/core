@@ -88,6 +88,12 @@ public record Aggregation(
             builder.buckets(terms.getBuckets().stream()
                     .map(AggregationBucket::from)
                     .collect(Collectors.toList()));
+        } else if (esAgg instanceof org.elasticsearch.search.aggregations.bucket.histogram.Histogram) {
+            final org.elasticsearch.search.aggregations.bucket.histogram.Histogram histogram =
+                    (org.elasticsearch.search.aggregations.bucket.histogram.Histogram) esAgg;
+            builder.buckets(histogram.getBuckets().stream()
+                    .map(AggregationBucket::fromHistogram)
+                    .collect(Collectors.toList()));
         } else if (esAgg instanceof org.elasticsearch.search.aggregations.metrics.TopHits) {
             final org.elasticsearch.search.aggregations.metrics.TopHits topHits =
                     (org.elasticsearch.search.aggregations.metrics.TopHits) esAgg;

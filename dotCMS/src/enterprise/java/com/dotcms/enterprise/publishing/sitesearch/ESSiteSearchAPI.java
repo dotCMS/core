@@ -14,6 +14,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -64,7 +66,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
@@ -351,7 +352,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     @Override
-    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException {
+    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException {
         if(indexName==null){
             return false;
         }
@@ -379,7 +380,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             }
 
             if(i++ > 300){
-                throw new ElasticsearchException("index timed out creating");
+                throw new DotSearchException("index timed out creating");
             }
         }
 
@@ -634,7 +635,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -648,10 +649,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting aggregations for query.\n" + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
+            throw new DotSearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
         }
     }
 
@@ -669,7 +670,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName ) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -683,10 +684,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting Facets for query.\n"  + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
+            throw new DotSearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
         }
     }
 
