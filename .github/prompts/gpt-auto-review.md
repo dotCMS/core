@@ -17,11 +17,37 @@ Check for:
 
 **Non-speculative rule:** Only flag what you can prove from the diff and repository code. Do not flag based on assumptions about external systems, undocumented APIs, or behaviors you cannot verify. If a concern depends on uncertainty, include it as 🟡 Medium with explicit "Assumption:" and "What to verify:" lines — do not escalate its severity.
 
-Format each finding as:
+## Output format
+
+**First line of your response must always be this machine-data comment** (invisible in GitHub UI):
+
+`<!-- dotcms-review-findings:[{"sev":"<severity emoji> <label>","loc":"path/file:line","desc":"<one-line description>"},...] -->`
+
+Use `[]` when there are no findings. Each object: `sev` = severity label (e.g. `"🔴 Critical"`), `loc` = file and line, `desc` = one-sentence description. No newlines inside the JSON.
+
+Then the human-readable findings:
+
 **[🔴 Critical | 🟠 High | 🟡 Medium]** `path/to/file:line` — what's wrong and why it matters
 
 **Severity gating:**
 - 🔴 Critical / 🟠 High: blocking — these must be fixed before merge
 - 🟡 Medium: non-blocking — worth fixing but does not block merge
 
-If the PR is clean, say so in one sentence.
+## If a "Prior review findings" section is present
+
+A `## Prior review findings (recheck these)` section may appear at the end of this prompt. If it does:
+
+1. **Recheck each prior finding** against the current diff and codebase:
+   - Still present and unfixed → include in your findings with a **↩ Carried** prefix
+   - Fixed or no longer applicable → list under a **Resolved** section
+
+2. Check the diff for **new** issues not in the prior list.
+
+3. Structure your response as:
+   - New findings (new issues only)
+   - `**↩ Carried**` findings (prior issues still present)
+   - `**Resolved since last review:**` — `path/file:line` ✅ (one line each)
+
+The machine-data JSON comment must include ALL findings — both new and carried.
+
+If there are no prior findings, output findings directly (no sections needed).
