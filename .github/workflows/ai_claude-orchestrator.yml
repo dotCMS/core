@@ -148,8 +148,8 @@ jobs:
     with:
       # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
       # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
-      # Current value: deepseek.r1-v1:0 (reasoning model, better for catching subtle bugs).
-      model_id: ${{ vars.REVIEW_MODEL_ID || 'deepseek.r1-v1:0' }}
+      # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
+      model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
