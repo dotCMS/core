@@ -2,11 +2,15 @@ package com.dotmarketing.portlets.contentlet.business.exporter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -194,7 +198,10 @@ public class ImageFilterExporter implements BinaryContentExporter {
         try {
             final String base = new File(localBase).getCanonicalPath();
             final String full = localFinal.getCanonicalPath();
-            if (!full.startsWith(base)) {
+            // Match on a directory boundary so a sibling like ".../dotGenerated2/x" is not rebased
+            // against base ".../dotGenerated".
+            final String prefix = base.endsWith(File.separator) ? base : base + File.separator;
+            if (!full.startsWith(prefix)) {
                 return null;
             }
             return new File(sharedBase + full.substring(base.length()));
@@ -204,9 +211,14 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
     }
 
+    /** Renditions currently being published, keyed by absolute shared path, to dedupe concurrent copies. */
+    private static final Set<String> publishInFlight = ConcurrentHashMap.newKeySet();
+
     /**
      * Fire-and-forget copy of a finished rendition to the shared store on a virtual thread so the
-     * serving request returns immediately. If another instance already published it, this is a no-op.
+     * serving request returns immediately. A no-op if the rendition is already published, or if another
+     * thread is already publishing this exact target (which also bounds the spawned threads to one per
+     * distinct rendition rather than one per request).
      */
     private void publishToShared(final File localFinal) {
         final File shared = toSharedFile(localFinal);
@@ -216,8 +228,18 @@ public class ImageFilterExporter implements BinaryContentExporter {
         if (shared.exists() && shared.length() >= MIN_VALID_FILE_LENGTH) {
             return;
         }
-        Thread.ofVirtual().name("dotGenerated-share")
-                .start(() -> copyToShared(localFinal, shared, new File(ConfigUtils.getAssetTempPath())));
+        final String key = shared.getAbsolutePath();
+        if (!publishInFlight.add(key)) {
+            return;
+        }
+        final File sharedTmpDir = new File(ConfigUtils.getAssetTempPath());
+        Thread.ofVirtual().name("dotGenerated-share").start(() -> {
+            try {
+                copyToShared(localFinal, shared, sharedTmpDir);
+            } finally {
+                publishInFlight.remove(key);
+            }
+        });
     }
 
     /**
@@ -225,28 +247,44 @@ public class ImageFilterExporter implements BinaryContentExporter {
      * so concurrent readers never observe a partial file.
      *
      * <p>{@code sharedTmpDir} <b>must live on the same filesystem (the shared mount) as
-     * {@code shared}</b> — otherwise {@link Files#move} degrades to a cross-filesystem copy+delete and
-     * loses atomicity. The caller passes {@link ConfigUtils#getAssetTempPath()} (the shared
-     * {@code tmp_upload} dir under the assets root), which sits on the same mount as the shared
-     * {@code dotGenerated} store. Package-visible and synchronous for tests; the virtual-thread
-     * hand-off lives in {@link #publishToShared(File)}.</p>
+     * {@code shared}</b>: the move is attempted as an {@link StandardCopyOption#ATOMIC_MOVE} and only
+     * a same-filesystem rename can satisfy that. The caller passes {@link ConfigUtils#getAssetTempPath()}
+     * (the shared {@code tmp_upload} dir under the assets root), which sits on the same mount as the
+     * shared {@code dotGenerated} store. If the filesystem cannot do an atomic move, it falls back to a
+     * non-atomic replace. The staged temp file is uniquely named (so two cluster instances cannot
+     * collide) and is removed if the publish fails. Package-visible and synchronous for tests; the
+     * virtual-thread hand-off lives in {@link #publishToShared(File)}.</p>
      */
     static void copyToShared(final File localFinal, final File shared, final File sharedTmpDir) {
+        Path tmp = null;
         try {
-            final File parent = shared.getParentFile();
-            if (parent != null && !parent.exists()) {
-                parent.mkdirs();
-            }
-            if (!sharedTmpDir.exists()) {
-                sharedTmpDir.mkdirs();
-            }
-            final File tmp = new File(sharedTmpDir, shared.getName() + "_" + System.nanoTime() + ".tmp");
-            Files.copy(localFinal.toPath(), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            Files.move(tmp.toPath(), shared.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.createDirectories(shared.toPath().getParent());
+            final Path tmpDir = Files.createDirectories(sharedTmpDir.toPath());
+            tmp = Files.createTempFile(tmpDir, shared.getName() + "_", ".tmp");
+            Files.copy(localFinal.toPath(), tmp, StandardCopyOption.REPLACE_EXISTING);
+            moveIntoPlace(tmp, shared.toPath());
+            tmp = null; // moved; nothing to clean up
             Logger.debug(ImageFilterExporter.class, "published rendition to shared store: " + shared);
         } catch (Exception e) {
             Logger.warnAndDebug(ImageFilterExporter.class,
                     "failed to publish rendition to shared store " + shared + ": " + e.getMessage(), e);
+        } finally {
+            if (tmp != null) {
+                final Path orphan = tmp;
+                Try.run(() -> Files.deleteIfExists(orphan));
+            }
+        }
+    }
+
+    /**
+     * Moves {@code tmp} onto {@code target} atomically when the filesystem supports it, falling back to
+     * a non-atomic replace otherwise.
+     */
+    private static void moveIntoPlace(final Path tmp, final Path target) throws IOException {
+        try {
+            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
