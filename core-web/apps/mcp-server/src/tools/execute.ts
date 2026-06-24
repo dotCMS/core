@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createDotCMSRuntime } from '@dotcms/ai';
+import { createRuntime } from '@dotcms/ai/runtime';
 
 export const schema = {
     code: z
@@ -93,7 +93,7 @@ export default async function handler(
 
     // The front door absorbs the executor + adapter + context-cache wiring and injects
     // dotCMS instance context automatically. Auth tokens never enter the sandbox.
-    const dotcms = createDotCMSRuntime({
+    const dotcms = createRuntime({
         url: process.env.DOTCMS_URL ?? '',
         token: process.env.AUTH_TOKEN ?? '',
         sessionId: extra?.sessionId ?? '__default__',

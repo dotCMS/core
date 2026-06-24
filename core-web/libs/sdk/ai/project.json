@@ -33,7 +33,7 @@
                         "glob": "*.md"
                     }
                 ],
-                "main": "libs/sdk/ai/src/index.ts",
+                "main": "libs/sdk/ai/src/runtime.ts",
                 "tsConfig": "libs/sdk/ai/tsconfig.lib.json"
             }
         },

@@ -83,9 +83,9 @@ function toPolicy(allow: RuntimeAllow | undefined): RequestPolicy | undefined {
  * Note: this is an execution runtime, not an agent. There is no LLM, no inference, no
  * prompting inside it. The agent is what the *user* builds on top.
  */
-export function createDotCMSRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
-    if (!config.url) throw new Error('createDotCMSRuntime: `url` is required');
-    if (!config.token) throw new Error('createDotCMSRuntime: `token` is required');
+export function createRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
+    if (!config.url) throw new Error('createRuntime: `url` is required');
+    if (!config.token) throw new Error('createRuntime: `token` is required');
 
     const sessionId = config.sessionId ?? DEFAULT_SESSION_ID;
     const timeout = config.timeout ?? DEFAULT_TIMEOUT_MS;
@@ -185,3 +185,50 @@ export function createDotCMSRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime 
         loadContext: () => loadContext()
     };
 }
+
+// ---- Re-exports a runtime consumer wants alongside the front door --------------------
+// (errors to branch on, the result shape, the binary-response helper, the typed builder,
+// and the instance-context types injected into `run(code)`). Kept here so callers of
+// `@dotcms/ai/runtime` don't have to reach into the lower subpaths for the common cases.
+
+// The typed builder for custom, schema-validated, model-facing operations.
+export { defineAdapter, describeAdapterForLLM } from './sandbox/define-adapter';
+export type {
+    AdapterContext,
+    AdapterDef,
+    AdapterMethodDef,
+    DefinedAdapter
+} from './sandbox/define-adapter';
+
+// The one typed error hierarchy, surfaced identically from `request()` and `run()`.
+export {
+    DotCMSError,
+    ValidationError,
+    PolicyError,
+    HttpError,
+    TimeoutError,
+    AbortError,
+    SandboxError,
+    RuntimeError,
+    isDotCMSError,
+    serializeError
+} from './sandbox/errors';
+export type { DotCMSErrorCode, SerializedDotCMSError } from './sandbox/errors';
+
+// Result shape returned by `run()`, and the binary-response helpers callers need to decode it.
+export type { SandboxResult, SandboxResultError } from './sandbox/types';
+export { isBinaryResponseEnvelope } from './adapter/request-core';
+export type {
+    BinaryResponseEnvelope,
+    RequestOptions,
+    RequestCallEvent
+} from './adapter/request-core';
+
+// Instance-context types injected into `run(code)` as globals.
+export type {
+    DotCMSContext,
+    ContentTypeSummary,
+    SiteSummary,
+    LanguageSummary,
+    CurrentUserSummary
+} from './adapter/context';

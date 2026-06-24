@@ -3,10 +3,6 @@
 The dotCMS **agentic runtime** — run model-written or human-written code safely against a
 dotCMS instance, with auth and policy owned in one place.
 
-> This is an **execution runtime**, not an AI agent. There is no LLM, no inference, and no
-> prompting inside it. It is the layer an agent is built *on top of*. The word "agent"
-> appears nowhere in the API — the agent is what *you* build.
-
 ## Install
 
 ```bash
@@ -16,9 +12,9 @@ npm install @dotcms/ai
 ## The front door — one runtime, two verbs
 
 ```ts
-import { createDotCMSRuntime } from '@dotcms/ai';
+import { createRuntime } from '@dotcms/ai/runtime';
 
-const dotcms = createDotCMSRuntime({
+const dotcms = createRuntime({
     url,          // dotCMS instance URL
     token,        // server-side token — NEVER enters the sandbox
     allow,        // optional allow-list/policy (string[] of path prefixes, or a predicate)
@@ -41,13 +37,14 @@ error model, and cannot drift.
 
 | Subpath | Audience | Contains | Generic? |
 |---|---|---|---|
-| `@dotcms/ai` | Everyone — the install | `createDotCMSRuntime`, `defineAdapter`, errors | dotCMS-wired |
+| `@dotcms/ai/runtime` | Most callers — the front door | `createRuntime`, `defineAdapter`, errors | dotCMS-wired |
 | `@dotcms/ai/sandbox` | Power users / custom adapters | `createSandbox`, `defineAdapter`, `Executor`, types, errors | **fully generic, lint-enforced** |
 | `@dotcms/ai/adapter` | Power users | `dotcmsAdapter`, `requestCore`, context loading + cache | dotCMS-specific |
 | `@dotcms/ai/spec` | The search use case | the OpenAPI spec (opt-in; keeps the ~550KB off the default path) | dotCMS-specific |
 
-`@dotcms/ai` is an **umbrella** — future AI surfaces (RAG, embeddings, …) land as new
-subpaths under the same package.
+`@dotcms/ai` is a pure namespace — there is no bare import; everything is reached through a
+subpath. It is an **umbrella** for growth: future AI surfaces (RAG, embeddings, …) land as
+new subpaths under the same package.
 
 ## Custom, typed operations — `defineAdapter`
 
@@ -96,7 +93,7 @@ A single typed hierarchy, surfaced identically from `request()` and `run()` (one
 string an MCP tool builds is *formatting on top of* this model.
 
 ```ts
-import { isDotCMSError, HttpError } from '@dotcms/ai';
+import { isDotCMSError, HttpError } from '@dotcms/ai/runtime';
 try { await dotcms.request({ path: '/api/v1/site' }); }
 catch (e) { if (e instanceof HttpError) console.error(e.status, e.body); }
 ```

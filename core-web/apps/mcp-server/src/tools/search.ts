@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createDotCMSRuntime } from '@dotcms/ai';
+import { createRuntime } from '@dotcms/ai/runtime';
 import { getSpec } from '@dotcms/ai/spec';
 
 export const schema = {
@@ -60,7 +60,7 @@ export default async function handler(
     }
 
     // The front door injects the instance context AND the `spec` global (includeSpec).
-    const dotcms = createDotCMSRuntime({
+    const dotcms = createRuntime({
         url: process.env.DOTCMS_URL ?? '',
         token: process.env.AUTH_TOKEN ?? '',
         sessionId: extra?.sessionId ?? '__default__',

@@ -120,6 +120,6 @@ export function createSandbox(config: CreateSandboxConfig): Sandbox {
 const notProvided = (): Promise<never> => {
     throw new Error(
         'This adapter needs a host `request` capability. Pass `request` to createSandbox(), ' +
-            'or use createDotCMSRuntime() from "@dotcms/ai" which provides one.'
+            'or use createRuntime() from "@dotcms/ai/runtime" which provides one.'
     );
 };

@@ -16,14 +16,14 @@
     },
     "exports": {
         "./package.json": "./package.json",
-        ".": "./src/index.ts",
+        "./runtime": "./src/runtime.ts",
         "./sandbox": "./src/sandbox/index.ts",
         "./adapter": "./src/adapter/index.ts",
         "./spec": "./src/spec/index.ts"
     },
     "typesVersions": {
         "*": {
-            ".": ["./src/index.d.ts"],
+            "runtime": ["./src/runtime.d.ts"],
             "sandbox": ["./src/sandbox/index.d.ts"],
             "adapter": ["./src/adapter/index.d.ts"],
             "spec": ["./src/spec/index.d.ts"]

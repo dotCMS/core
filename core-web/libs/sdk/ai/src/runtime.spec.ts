@@ -1,4 +1,4 @@
-import { createDotCMSRuntime } from './runtime';
+import { createRuntime } from './runtime';
 import { HttpError, PolicyError } from './sandbox/errors';
 
 /** Build a minimal JSON Response stub. */
@@ -15,7 +15,7 @@ function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): 
     } as unknown as Response;
 }
 
-describe('createDotCMSRuntime.request (direct, no worker)', () => {
+describe('createRuntime.request (direct, no worker)', () => {
     const fetchMock = jest.fn();
 
     beforeEach(() => {
@@ -24,13 +24,13 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
     });
 
     it('requires url and token', () => {
-        expect(() => createDotCMSRuntime({ url: '', token: 't' })).toThrow(/url/);
-        expect(() => createDotCMSRuntime({ url: 'https://x', token: '' })).toThrow(/token/);
+        expect(() => createRuntime({ url: '', token: 't' })).toThrow(/url/);
+        expect(() => createRuntime({ url: 'https://x', token: '' })).toThrow(/token/);
     });
 
     it('injects the bearer token on the host side and returns parsed JSON', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ entity: [{ id: '1' }] }));
-        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
 
         const result = await dotcms.request({ path: '/api/v1/site' });
 
@@ -47,13 +47,13 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
             headers: { get: () => 'text/html' },
             text: async () => 'nope'
         } as unknown as Response);
-        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
 
         await expect(dotcms.request({ path: '/api/v1/missing' })).rejects.toBeInstanceOf(HttpError);
     });
 
     it('rejects a call that fails the allow-list with a PolicyError, before any fetch', async () => {
-        const dotcms = createDotCMSRuntime({
+        const dotcms = createRuntime({
             url: 'https://demo.dotcms.com',
             token: 't',
             allow: ['/api/v1/site'] // only sites allowed
@@ -67,7 +67,7 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
 
     it('allows a call whose path matches an allow-list prefix', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
-        const dotcms = createDotCMSRuntime({
+        const dotcms = createRuntime({
             url: 'https://demo.dotcms.com',
             token: 't',
             allow: ['/api/v1/site']
@@ -79,7 +79,7 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
     it('fires the onCall observability hook without leaking the token', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
         const events: unknown[] = [];
-        const dotcms = createDotCMSRuntime({
+        const dotcms = createRuntime({
             url: 'https://demo.dotcms.com',
             token: 'super-secret',
             onCall: (e) => events.push(e)
@@ -104,7 +104,7 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
                     );
                 })
         );
-        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
 
         const p = dotcms.request({ path: '/api/v1/site' }, { signal: controller.signal });
         controller.abort();
@@ -112,7 +112,7 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
     });
 });
 
-describe('createDotCMSRuntime.run — context-load timeout', () => {
+describe('createRuntime.run — context-load timeout', () => {
     const fetchMock = jest.fn();
 
     beforeEach(() => {
@@ -133,7 +133,7 @@ describe('createDotCMSRuntime.run — context-load timeout', () => {
                 })
         );
         const timeout = 150;
-        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 't', timeout });
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't', timeout });
 
         // The run must RESOLVE (not hang) — the load timeout aborts the stalled context fetch.
         // The loaders degrade to empty context on abort, so the trivial body then runs fine.
