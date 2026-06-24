@@ -18,7 +18,9 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -183,8 +185,8 @@ public class PublishingJobsHelper {
      */
     public PublishingJobView toScheduledJobView(final Map<String, Object> row) {
         final String filterKey = Objects.toString(row.get("filter_key"), null);
-        final Instant scheduledDate = toInstant(asDate(row.get("publish_date")));
-        final Instant enteredDate = toInstant(asDate(row.get("entered_date")));
+        final Instant scheduledDate = toInstant(DateUtil.asDate(row.get("publish_date")));
+        final Instant enteredDate = toInstant(DateUtil.asDate(row.get("entered_date")));
 
         return PublishingJobView.builder()
                 .bundleId(Objects.toString(row.get("bundle_id"), null))
@@ -192,10 +194,10 @@ public class PublishingJobsHelper {
                 .status(Status.SCHEDULED)
                 .filterName(resolveFilterNameByKey(filterKey))
                 .filterKey(filterKey)
-                .assetCount(asInt(row.get("asset_count")))
+                .assetCount(NumberUtil.asInt(row.get("asset_count")))
                 // No audit history exists yet, so there is no per-asset preview to build.
                 .assetPreview(List.of())
-                .environmentCount(asInt(row.get("environment_count")))
+                .environmentCount(NumberUtil.asInt(row.get("environment_count")))
                 // createDate = when it entered the queue; the future run time goes in scheduledPublishDate.
                 .createDate(enteredDate != null ? enteredDate : scheduledDate)
                 .statusUpdated(null)
@@ -311,23 +313,6 @@ public class PublishingJobsHelper {
             Logger.debug(this, "Unable to resolve filter: " + filterKey, e);
             return filterKey;
         }
-    }
-
-    /**
-     * Coerces a DotConnect result value to a Date (JDBC returns java.sql.Timestamp), or null.
-     */
-    private static Date asDate(final Object value) {
-        return value instanceof Date ? (Date) value : null;
-    }
-
-    /**
-     * Coerces a DotConnect result value (Number or numeric String) to an int, defaulting to 0.
-     */
-    private static int asInt(final Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        return value != null ? Integer.parseInt(value.toString()) : 0;
     }
 
     /**
