@@ -31,8 +31,7 @@ nvm use           # Node 22.15+ via nvm, pinned in .nvmrc
   `nvm use` from the repo root before touching frontend code.
 - **Docker:** required for `just dev-run` and Docker-backed tests. dotCMS runs in
   Docker by default, so **you do not need a local PostgreSQL or Elasticsearch
-  install** — they come up in containers. On Apple Silicon,
-  `<<DOCKER RUNTIME — e.g. Docker Desktop / Colima / Rancher; note memory + CPU settings the team recommends>>`.
+  install** — they come up in containers.
 - **`just`:** the command runner used throughout this guide.
   ```bash
   brew install just
@@ -78,26 +77,12 @@ cd core-web && yarn nx serve dotcms-ui
 # served at http://localhost:4200/dotAdmin
 ```
 
-### Enterprise proxy / network setup
-
-If you're behind the corporate proxy or VPN, configure these **before** your first
-build or the dependency download will hang/fail:
-
-- **Maven:** proxy + mirror config in `~/.m2/settings.xml` — `<<LINK TO TEAM settings.xml TEMPLATE>>`
-- **npm/yarn registry:** `<<INTERNAL REGISTRY URL + auth instructions>>`
-- **Docker registry auth:** `<<docker login HOST + where creds live, e.g. 1Password / Vault>>`
-- **TLS/cert bundle:** `<<corporate root CA import steps for the JDK truststore + Node, if applicable>>`
-
-> Credentials live in `<<SECRETS MANAGER — e.g. 1Password vault / Vault path>>`.
-> Never commit them or paste them into this file.
-
 ### Common day-one snags
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Weird compile errors | Wrong JDK | `sdk env install`, confirm `java -version` is 25 |
 | Frontend build fails immediately | Wrong Node | `nvm use` from repo root |
-| Maven hangs downloading deps | Proxy not configured | See proxy section above |
 | `nx: command not found` / odd nx behavior | Used bare `nx` | Use `yarn nx ...` |
 | Build "missing dependency" | Forgot `--am` | `./mvnw install -pl :dotcms-core --am -DskipTests` |
 | **Puppeteer Chromium ARM64 build failure** (Apple Silicon, `dotcms-core-web` FAILURE) | Puppeteer can't fetch an arm64 Chromium | See "Apple Silicon / Puppeteer" below |
@@ -221,9 +206,14 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
 ## 5. Useful local configuration
 
 - **Admin password:** `export DOT_INITIAL_ADMIN_PASSWORD=admin` before first run.
-- **Feature flags:** enable features via `DOT_FEATURE_FLAG_*` env vars in your
-  docker-compose (e.g. `DOT_FEATURE_FLAG_SEO_IMPROVEMENTS: true`). Which flags exist
-  and what they gate: `<<ASK THE TEAM / LINK TO FLAG REFERENCE>>`.
+- **Feature flags:** flags are **on by default**. To turn one off, set it to `false`
+  in your docker-compose file or in `dotmarketing-config.properties`. When a feature
+  ships, its `FF=false` entry must be **removed** from `dotmarketing-config.properties`
+  — removing it enables the implemented feature by default.
+  - When referencing a flag, add the **`DOT_`** prefix to its name (e.g. the flag
+    `FEATURE_FLAG_SEO_IMPROVEMENTS` becomes `DOT_FEATURE_FLAG_SEO_IMPROVEMENTS`).
+  - The list of available flags lives in
+    [`dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java`](dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java).
 - **Edit JSPs without rebuilding:** mount the webapp html dir into the Tomcat root
   via a docker-compose volume (see [`docs/infrastructure/`](docs/infrastructure/) /
   the frontend docker-compose for the exact mapping).
@@ -239,12 +229,18 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
 2. **Commit** using conventional commits (`feat:`, `fix:`, `docs:`, …).
 3. **Open the PR** linked to its issue. Expectations and the PR template are in
    [`docs/core/GITHUB_ISSUE_MANAGEMENT.md`](docs/core/GITHUB_ISSUE_MANAGEMENT.md).
-4. **CI / merge queue:** `<<DESCRIBE: required checks, how the merge queue works, who can approve, typical wait times>>`.
-   Pipeline reference: [`docs/core/CICD_PIPELINE.md`](docs/core/CICD_PIPELINE.md).
+4. **CI / merge queue:** dotCMS uses **GitHub's native merge queue** — the final gate
+   before code lands on `main`. An approved, ready PR isn't merged directly. It's added
+   to a queue where GitHub creates a temporary `merge_group` branch containing your PR
+   plus any PRs already ahead of it, then runs the merge-queue workflow against that
+   combined code. Only if it passes does GitHub fast-forward `main`.
+   - **Some required checks to enter the queue:** Unit / Integration / Postman test
+     validation (test run green), security checks for code vulnerabilities, and at
+     least **1 reviewer approval**.
+   - **Typical wait:** ~1 hour average to merge.
+   - Pipeline reference: [`docs/core/CICD_PIPELINE.md`](docs/core/CICD_PIPELINE.md).
 5. **When CI fails:** ask Claude Code to run the **`cicd-diagnostics`** skill — it
    knows how to read dotCMS build failures and flaky tests.
-
-**Good first issues:** `<<LINK TO good-first-issue LABEL OR STARTER BOARD>>`.
 
 ---
 
@@ -269,12 +265,16 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 > This is the highest-value section and the least discoverable by reading code.
 > The owning team should keep it current.
 
-- **Slack channels:** `<<#eng-general / #core-dev / #ci-alerts / #help — list the ones that matter>>`
-- **Who owns what:** `<<LINK TO CODEOWNERS, team-to-area map, or on-call schedule>>`
-- **Design docs / RFCs / runbooks:** `<<NOTION / CONFLUENCE SPACE LINK>>`
-- **Issue tracker & boards:** `<<GITHUB PROJECT / JIRA LINK>>`
-- **Where to ask "is this expected?"** `<<channel or person>>`
-- **Release process & cadence:** `<<LINK>>`
+- **Slack channels:**
+  - `#eng` — general engineering.
+  - `#eng-adrs` — ADR (architecture decision record) discussions.
+  - `#be-code-review` — look here for PR review requests ("likes").
+  - `#guild-*` — topic-specific discussions (per guild).
+  - `#feat-*` — feature-related discussions.
+  - `#team-*` — team-specific discussions.
+- **Everything else** (who owns what, runbooks, issue tracker &
+  boards, release process & cadence): see our
+  **How we do Engineering** doc.
 
 ---
 
@@ -293,4 +293,5 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 
 ---
 
-*Maintained by `<<OWNING TEAM>>`. Spot something stale or wrong? `<<HOW TO PROPOSE A FIX — PR against this file / ping channel>>`.*
+*Maintained by the Engineering Team. Spot something stale or wrong? Open a PR against
+this file and ping the `#eng` or `#be-code-review` channels.*
