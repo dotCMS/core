@@ -4,10 +4,11 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 0.5rem 0.75rem;
-    background-color: rgba(28, 30, 38, 0.92);
-    // Slightly-less-than-white text, matching the design's dark-chrome treatment
-    // (resting elements at 78% white; full white is reserved for hover/active).
-    color: rgba(255, 255, 255, 0.78);
+    // Header band a touch darker than the white viewer, with a hairline divider.
+    background-color: var(--surface-100, #f1f3f5);
+    // Muted dark text/icons at rest; full-strength dark is reserved for hover/active.
+    color: var(--surface-600, #4b5563);
+    border-bottom: 1px solid var(--surface-200, #e5e7eb);
 }
 
 .address-bar__group {
@@ -43,6 +44,6 @@
     cursor: pointer;
 
     &:hover {
-        color: #fff;
+        color: var(--surface-900, #111827);
     }
 }
