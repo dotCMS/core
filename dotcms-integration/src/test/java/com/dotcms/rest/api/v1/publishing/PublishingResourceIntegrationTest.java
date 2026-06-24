@@ -763,8 +763,241 @@ public class PublishingResourceIntegrationTest {
     }
 
     // =========================================================================
+    // SCHEDULED TIER TESTS - bundles pushed with a future date, no audit row yet
+    // (issue #36267). A scheduled bundle lives in publishing_queue with a non-null
+    // publish_date and has NO publishing_queue_audit row.
+    // =========================================================================
+
+    /**
+     * Given: a bundle pushed with a future publishDate (no audit row)
+     * When: listPublishingJobs is called with no status filter
+     * Then: the bundle is returned with status SCHEDULED and queue/bundle-sourced metadata.
+     */
+    @Test
+    public void test_scheduledBundle_visibleWithScheduledStatus() throws Exception {
+        final Date publishDate = new Date(System.currentTimeMillis() + 3_600_000L); // +1h
+        final Environment environment = createEnvironmentWithPermission("sched-env");
+        final String bundleId = createScheduledBundle("scheduled-visible", 3, publishDate, environment);
+
+        // Precondition: there is genuinely no audit row for this bundle.
+        assertNull("Scheduled bundle must not have an audit row",
+                publishAuditAPI.getPublishAuditStatus(bundleId));
+
+        final PublishingJobView job = findJob(callEndpoint(null, null), bundleId);
+
+        assertNotNull("Scheduled bundle must appear in the unfiltered list", job);
+        assertEquals("Status must be SCHEDULED", Status.SCHEDULED, job.status());
+        assertEquals("Asset count comes from the queue rows", 3, job.assetCount());
+        assertEquals("Environment count comes from publishing_bundle_environment",
+                1, job.environmentCount());
+        assertNull("statusUpdated must be null for a scheduled bundle", job.statusUpdated());
+        assertEquals("numTries must be 0", 0, job.numTries());
+        assertNotNull("scheduledPublishDate must carry the future run time", job.scheduledPublishDate());
+        assertTrue("scheduledPublishDate must be in the future",
+                job.scheduledPublishDate().isAfter(Instant.now()));
+        assertNotNull("createDate must be populated (queue entry time)", job.createDate());
+    }
+
+    /**
+     * Given: a scheduled bundle and an audited (SUCCESS) bundle
+     * When: filtering by ?status=SCHEDULED
+     * Then: only the scheduled bundle is returned; audit rows are excluded.
+     */
+    @Test
+    public void test_statusFilter_scheduledOnly() throws Exception {
+        final String scheduledId = createScheduledBundle("sched-only",
+                2, new Date(System.currentTimeMillis() + 3_600_000L), null);
+        final String successId = createBundleWithStatus("sched-only-success", Status.SUCCESS);
+
+        final List<PublishingJobView> jobs = callEndpoint(null, "SCHEDULED").getEntity();
+
+        assertTrue("Scheduled bundle must be present",
+                jobs.stream().anyMatch(j -> scheduledId.equals(j.bundleId())));
+        assertFalse("Audit (SUCCESS) bundle must be excluded",
+                jobs.stream().anyMatch(j -> successId.equals(j.bundleId())));
+        assertTrue("Every returned job must be SCHEDULED",
+                jobs.stream().allMatch(j -> j.status() == Status.SCHEDULED));
+    }
+
+    /**
+     * Given: a scheduled bundle and a SUCCESS bundle
+     * When: filtering by ?status=SCHEDULED,SUCCESS
+     * Then: both tiers are returned.
+     */
+    @Test
+    public void test_statusFilter_mixedScheduledAndAudit() throws Exception {
+        final String scheduledId = createScheduledBundle("mixed-sched",
+                1, new Date(System.currentTimeMillis() + 3_600_000L), null);
+        final String successId = createBundleWithStatus("mixed-success", Status.SUCCESS);
+
+        final List<PublishingJobView> jobs = callEndpoint(null, "SCHEDULED,SUCCESS").getEntity();
+
+        assertTrue("Scheduled bundle must be present",
+                jobs.stream().anyMatch(j -> scheduledId.equals(j.bundleId())));
+        assertTrue("SUCCESS bundle must be present",
+                jobs.stream().anyMatch(j -> successId.equals(j.bundleId())));
+    }
+
+    /**
+     * Given: scheduled and audited bundles exist
+     * When: listing with no filter
+     * Then: the pagination total equals (all audit rows) + (all scheduled bundles).
+     */
+    @Test
+    public void test_pagination_totalIncludesScheduledTier() throws Exception {
+        createScheduledBundle("total-sched", 1,
+                new Date(System.currentTimeMillis() + 3_600_000L), null);
+        createBundleWithStatus("total-success", Status.SUCCESS);
+
+        final int expectedTotal =
+                publishAuditAPI.countPublishAuditStatus(null, java.util.List.of())
+                        + PublisherAPI.getInstance().countScheduledBundleIds(null);
+
+        final ResponseEntityPublishingJobsView result = callEndpoint(1, 500, null, null);
+
+        assertEquals("Total must be the union of the audit and scheduled tiers",
+                expectedTotal, result.getPagination().getTotalEntries());
+    }
+
+    /**
+     * Given: a scheduled bundle (no audit row)
+     * When: GET /v1/publishing/{bundleId} is called
+     * Then: a SCHEDULED detail view is returned instead of a 404.
+     */
+    @Test
+    public void test_getDetails_scheduledBundle_returnsScheduledDetailNot404() throws Exception {
+        final Date publishDate = new Date(System.currentTimeMillis() + 3_600_000L);
+        final Environment environment = createEnvironmentWithPermission("sched-detail-env");
+        final String bundleId = createScheduledBundle("sched-detail", 2, publishDate, environment);
+
+        final PublishingJobDetailView detail = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId).getEntity();
+
+        assertEquals("Detail status must be SCHEDULED", Status.SCHEDULED, detail.status());
+        assertEquals("Asset count from queue", 2, detail.assetCount());
+        assertNotNull("scheduledPublishDate must be set", detail.scheduledPublishDate());
+        assertNotNull("environments list must not be null", detail.environments());
+        assertNotNull("timestamps.createDate must be populated", detail.timestamps().createDate());
+    }
+
+    /**
+     * Given: a scheduled bundle
+     * When: DELETE /v1/publishing/{bundleId} is called
+     * Then: the bundle is canceled (its publishing_queue rows are removed) and it disappears
+     *       from the SCHEDULED tier.
+     */
+    @Test
+    public void test_deleteScheduledBundle_cancelsAndRemovesFromList() throws Exception {
+        final String bundleId = createScheduledBundle("sched-delete",
+                2, new Date(System.currentTimeMillis() + 3_600_000L), null);
+
+        // Sanity: present before delete.
+        assertNotNull("Scheduled bundle present before delete",
+                findJob(callEndpoint(null, "SCHEDULED"), bundleId));
+
+        publishingResource.deletePublishingJob(mockAuthenticatedRequest(), response, bundleId);
+
+        assertNull("Scheduled bundle must be gone after cancel",
+                findJob(callEndpoint(null, "SCHEDULED"), bundleId));
+        assertTrue("Queue rows must be removed",
+                PublisherAPI.getInstance().getQueueElementsByBundleId(bundleId).isEmpty());
+    }
+
+    /**
+     * Simulates the cron picking the bundle up: once an audit row exists, the bundle must leave
+     * the SCHEDULED tier and surface under its real audit status (WAITING_FOR_PUBLISHING), with no
+     * double-counting.
+     */
+    @Test
+    public void test_transition_whenAuditRowAppears_leavesScheduledTier() throws Exception {
+        final String bundleId = createScheduledBundle("sched-transition",
+                1, new Date(System.currentTimeMillis() + 3_600_000L), null);
+
+        assertNotNull("Scheduled before pickup",
+                findJob(callEndpoint(null, "SCHEDULED"), bundleId));
+
+        // Cron pickup: insert the audit row exactly as PublisherQueueJob does first.
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+        auditStatus.setStatus(Status.WAITING_FOR_PUBLISHING);
+        auditStatus.setStatusPojo(new PublishAuditHistory());
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+
+        assertNull("Must leave the SCHEDULED tier once an audit row exists",
+                findJob(callEndpoint(null, "SCHEDULED"), bundleId));
+        final PublishingJobView waiting = findJob(
+                callEndpoint(null, "WAITING_FOR_PUBLISHING"), bundleId);
+        assertNotNull("Must now surface under its real audit status", waiting);
+        assertEquals(Status.WAITING_FOR_PUBLISHING, waiting.status());
+    }
+
+    /**
+     * Regression guardrail for the original miss: the legacy queue query
+     * ({@link PublisherAPI#getQueueBundleIds(int, int)}, which the JSP "Queue" tab used) and the
+     * new {@code ?status=SCHEDULED} surface must agree that a future-pushed bundle exists. The bug
+     * was precisely that it appeared in the former but not in the API.
+     */
+    @Test
+    public void test_legacyQueueQuery_andScheduledApi_agree() throws Exception {
+        final String bundleId = createScheduledBundle("sched-parity",
+                1, new Date(System.currentTimeMillis() + 3_600_000L), null);
+
+        final boolean inLegacyQueue = PublisherAPI.getInstance()
+                .getQueueBundleIds(500, 0).stream()
+                .anyMatch(row -> bundleId.equals(String.valueOf(row.get("bundle_id"))));
+        final boolean inScheduledApi =
+                findJob(callEndpoint(null, "SCHEDULED"), bundleId) != null;
+
+        assertTrue("Legacy queue query must see the future-pushed bundle", inLegacyQueue);
+        assertTrue("New SCHEDULED API must see the same bundle", inScheduledApi);
+    }
+
+    // =========================================================================
     // HELPER METHODS
     // =========================================================================
+
+    /**
+     * Creates a SCHEDULED bundle the same way a real push with a future date does: it persists a
+     * bundle, (optionally) attaches an environment, writes publishing_queue rows via
+     * {@code saveBundleAssets} and stamps a future {@code publish_date} via
+     * {@code publishBundleAssets} — without ever creating a publishing_queue_audit row.
+     */
+    private String createScheduledBundle(final String bundleName, final int assetCount,
+            final Date publishDate, final Environment environment) throws Exception {
+
+        final var contentType = new ContentTypeDataGen().nextPersisted();
+        final List<String> identifiers = new ArrayList<>();
+        for (int i = 0; i < assetCount; i++) {
+            identifiers.add(new ContentletDataGen(contentType).nextPersisted().getIdentifier());
+        }
+
+        final Bundle bundle = new BundleDataGen()
+                .name(bundleName + "_" + System.currentTimeMillis())
+                .owner(adminUser)
+                .nextPersisted();
+        final String bundleId = bundle.getId();
+        createdBundleIds.add(bundleId);
+
+        if (environment != null) {
+            APILocator.getBundleAPI().saveBundleEnvironment(bundle, environment);
+        }
+
+        final PublisherAPI pubAPI = PublisherAPI.getInstance();
+        pubAPI.saveBundleAssets(identifiers, bundleId, adminUser); // queue rows, publish_date null
+        pubAPI.publishBundleAssets(bundleId, publishDate);         // stamp future date, no audit row
+
+        return bundleId;
+    }
+
+    /**
+     * Finds a job by bundle id in a list response, or null if absent.
+     */
+    private PublishingJobView findJob(final ResponseEntityPublishingJobsView result,
+            final String bundleId) {
+        return result.getEntity().stream()
+                .filter(job -> bundleId.equals(job.bundleId()))
+                .findFirst()
+                .orElse(null);
+    }
 
     private ResponseEntityPublishingJobsView callEndpoint(String filter, String status)
             throws DotPublisherException {

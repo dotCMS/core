@@ -204,13 +204,14 @@ public class PublishingResource {
             @QueryParam("filter") final String filter,
             @Parameter(
                     description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH). " +
-                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, " +
+                            "Valid values: SCHEDULED, BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, " +
                             "SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, " +
                             "RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, SUCCESS, " +
                             "SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
                             "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
                             "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
-                            "LICENSE_REQUIRED",
+                            "LICENSE_REQUIRED. SCHEDULED = bundles pushed with a future publishDate " +
+                            "not yet picked up by the publisher cron.",
                     example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotPublisherException {
@@ -248,19 +249,46 @@ public class PublishingResource {
         // Parse status filter
         final List<Status> statusList = publishingJobsHelper.parseStatuses(status);
 
-        // Retrieve paginated audit statuses with combined filtering
-        final List<PublishAuditStatus> auditStatuses =
-                publishAuditAPI.get().getPublishAuditStatus(
-                        perPage, offset, PublishingJobsHelper.ASSET_PREVIEW_LIMIT, filter, statusList);
-
-        // Get total count for pagination
-        final int totalCount = publishAuditAPI.get()
-                .countPublishAuditStatus(filter, statusList);
-
-        // Transform to view objects with enriched data
-        final List<PublishingJobView> jobs = auditStatuses.stream()
-                .map(publishingJobsHelper::toPublishingJobView)
+        // The result set is the union of two sources: the synthetic SCHEDULED tier (bundles pushed
+        // with a future date, not yet picked up by the cron — read from publishing_queue) and the
+        // audit tier (everything with a publishing_queue_audit row). SCHEDULED is not a persisted
+        // audit status, so it must be stripped before querying the audit table.
+        final boolean statusFilterProvided = UtilMethods.isSet(status);
+        final List<Status> auditStatusList = statusList.stream()
+                .filter(s -> s != Status.SCHEDULED)
                 .collect(Collectors.toList());
+        final boolean wantsScheduled = !statusFilterProvided || statusList.contains(Status.SCHEDULED);
+        // When a status filter is given that resolves to no audit statuses (e.g. ?status=SCHEDULED),
+        // the audit tier must return nothing — NOT everything (empty list = "all statuses").
+        final boolean wantsAudit = !statusFilterProvided || !auditStatusList.isEmpty();
+
+        final int scheduledTotal = wantsScheduled
+                ? com.dotcms.publisher.business.PublisherAPI.getInstance().countScheduledBundleIds(filter) : 0;
+        final int auditTotal = wantsAudit
+                ? publishAuditAPI.get().countPublishAuditStatus(filter, auditStatusList) : 0;
+        final int totalCount = scheduledTotal + auditTotal;
+
+        // Contiguous-tier paging: the SCHEDULED block occupies [0, scheduledTotal), the audit block
+        // follows. This makes cross-source paging exact offset math without an interleaving query.
+        final List<PublishingJobView> jobs = new ArrayList<>();
+
+        if (wantsScheduled && offset < scheduledTotal) {
+            final int scheduledLimit = Math.min(perPage, scheduledTotal - offset);
+            com.dotcms.publisher.business.PublisherAPI.getInstance()
+                    .getScheduledBundleIds(scheduledLimit, offset, filter).stream()
+                    .map(publishingJobsHelper::toScheduledJobView)
+                    .forEach(jobs::add);
+        }
+
+        final int remaining = perPage - jobs.size();
+        if (wantsAudit && remaining > 0) {
+            final int auditOffset = Math.max(0, offset - scheduledTotal);
+            publishAuditAPI.get().getPublishAuditStatus(
+                            remaining, auditOffset, PublishingJobsHelper.ASSET_PREVIEW_LIMIT,
+                            filter, auditStatusList).stream()
+                    .map(publishingJobsHelper::toPublishingJobView)
+                    .forEach(jobs::add);
+        }
 
         // Build pagination metadata
         final Pagination pagination = new Pagination.Builder()
@@ -353,8 +381,15 @@ public class PublishingResource {
         final PublishAuditStatus auditStatus = publishAuditAPI.get()
                 .getPublishAuditStatus(bundleId);
 
+        // No audit row may mean the bundle is SCHEDULED (future publish date, cron hasn't picked it
+        // up yet). Build a synthetic detail from the queue/bundle tables before giving up with 404.
         if (auditStatus == null) {
-            throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+            final PublishingJobDetailView scheduledDetail =
+                    publishingJobsHelper.toScheduledJobDetailView(bundleId);
+            if (scheduledDetail == null) {
+                throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+            }
+            return new ResponseEntityPublishingJobDetailView(scheduledDetail);
         }
 
         // Transform to detailed view
@@ -378,6 +413,7 @@ public class PublishingResource {
      * <ul>
      *   <li>Terminal: SUCCESS, FAILED_TO_PUBLISH, FAILED_TO_BUNDLE, etc.</li>
      *   <li>Queued: WAITING_FOR_PUBLISHING</li>
+     *   <li>SCHEDULED: cancels a future-dated push (removes its publishing_queue rows)</li>
      * </ul>
      *
      * <h3>Non-Deletable Statuses (409 Conflict):</h3>
@@ -946,6 +982,14 @@ public class PublishingResource {
                             inProgressFound.stream()
                                     .map(Status::name)
                                     .collect(Collectors.joining(", "))));
+        }
+
+        // SCHEDULED is a synthetic status with no audit row, so the audit-based bulk purge would
+        // silently match nothing. Reject it explicitly and point at the per-bundle cancel instead.
+        if (statusList.contains(Status.SCHEDULED)) {
+            throw new BadRequestException(
+                    "Cannot purge SCHEDULED bundles in bulk - they have no audit record. "
+                            + "Cancel a scheduled bundle individually via DELETE /api/v1/publishing/{bundleId}.");
         }
 
         Logger.info(this, String.format("Purging publishing jobs with statuses: %s by user: %s",

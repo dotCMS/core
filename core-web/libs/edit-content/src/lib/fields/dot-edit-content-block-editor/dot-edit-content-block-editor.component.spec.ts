@@ -75,8 +75,7 @@ describe('DotEditContentBlockEditorComponent', () => {
                 }
             },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ],
         detectChanges: false
