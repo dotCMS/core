@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: dotCMS/dotcms-aios
-          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          token: ${{ secrets.AUTODOC_AIOS_CI }}
           path: dotcms-aios
 
       - name: Install Claude Code CLI
