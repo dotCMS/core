@@ -33,6 +33,7 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotRelativeDatePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -80,7 +81,8 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
         TooltipModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
-        DotPublishingStatusChipComponent
+        DotPublishingStatusChipComponent,
+        DotRelativeDatePipe
     ],
     providers: [ConfirmationService, DotClipboardUtil],
     templateUrl: './dot-publishing-queue-table.component.html',
@@ -204,6 +206,14 @@ export class DotPublishingQueueTableComponent {
         event.preventDefault();
         this.contextMenuRow.set(row);
         this.contextMenu()?.show(event);
+    }
+
+    /** Rows in any failure bucket render their bundle id in danger-red — same
+     * `text-red-700` the status chip uses for the danger bucket. Gives an
+     * at-a-glance signal even when the Status column is off-screen on narrow
+     * viewports. */
+    isFailedRow(row: PublishingJobView): boolean {
+        return row.status ? FAILURE_STATUSES.has(row.status) : false;
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

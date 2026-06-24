@@ -33,7 +33,7 @@
                 </th>
                 <th
                     style="width: 6rem"
-                    class="whitespace-nowrap text-right"
+                    class="text-right whitespace-nowrap"
                     data-testid="pq-bundles-col-items">
                     {{ 'publishing-queue.column.items' | dm }}
                 </th>
@@ -136,7 +136,11 @@
                              copy button right next to the text instead of
                              floating at the far edge of the column. -->
                         <div class="inline-flex items-center gap-1">
-                            <span class="text-xs" [title]="row.bundleId">
+                            <span
+                                class="text-xs"
+                                [class.text-red-700]="isFailedRow(row)"
+                                [class.font-medium]="isFailedRow(row)"
+                                [title]="row.bundleId">
                                 {{ truncateBundleId(row.bundleId) }}
                             </span>
                             <p-button
@@ -156,7 +160,7 @@
                             {{ row.filterName || row.filterKey || '—' }}
                         </div>
                     </td>
-                    <td class="whitespace-nowrap text-right" data-testid="pq-bundles-items">
+                    <td class="text-right whitespace-nowrap" data-testid="pq-bundles-items">
                         <p-tag
                             severity="secondary"
                             [rounded]="false"
@@ -165,12 +169,15 @@
                     <td
                         class="text-color-secondary text-xs whitespace-nowrap"
                         data-testid="pq-bundles-created">
-                        {{ (row.createDate | date: 'medium') || '—' }}
+                        {{ (row.createDate | date: 'MM/dd/yyyy hh:mma') || '—' }}
                     </td>
                     <td
                         class="text-color-secondary text-xs whitespace-nowrap"
                         data-testid="pq-bundles-modified">
-                        {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
+                        {{
+                            (row.statusUpdated || row.createDate
+                                | dotRelativeDate: 'MM/dd/yyyy hh:mma') || '—'
+                        }}
                     </td>
                     <td class="whitespace-nowrap" data-testid="pq-bundles-status">
                         <dot-publishing-status-chip [status]="row.status" />
