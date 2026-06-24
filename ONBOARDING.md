@@ -109,7 +109,7 @@ core/
 │   └── src/main/java/com/
 │       ├── dotcms/         # Modern, domain-driven — PREFER THIS for new code
 │       └── dotmarketing/   # Legacy (15+ yrs), still very much alive
-├── core-web/               # Frontend: Angular 19+ / Nx monorepo (see core-web/CLAUDE.md)
+├── core-web/               # Frontend: Angular 21+ / Nx monorepo (see core-web/CLAUDE.md)
 ├── dotcms-integration/     # Integration tests (DB + Elasticsearch)
 ├── dotcms-postman/         # Postman API tests
 ├── bom/application/pom.xml # THE place for dependency versions
