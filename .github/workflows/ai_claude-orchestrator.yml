@@ -82,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -168,7 +168,7 @@ jobs:
     concurrency:
       group: claude-automatic-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.5
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
       # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
@@ -177,8 +177,12 @@ jobs:
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
-      # Each push gets a unique SHA → unique sticky marker → new comment instead of overwrite.
-      sticky_namespace: ${{ github.sha }}
+      # Non-sticky: each commit gets its own review comment (fresh per push) instead of one
+      # auto-updating comment, preserving the full feedback→change→feedback history. Supersedes
+      # the old `sticky_namespace: ${{ github.sha }}` hack — the orchestrator now scopes the
+      # marker by head SHA itself (and includes the model id, so it's collision-safe across
+      # models). Requires ai-workflows >= v3.1.8. Set to true (or remove) for one rolling comment.
+      use_sticky_comment: false
       timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
