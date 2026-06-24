@@ -1,12 +1,21 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 /* eslint-disable @nx/enforce-module-boundaries */
@@ -63,9 +72,11 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
         DatePipe,
         ButtonModule,
         ConfirmDialogModule,
+        ContextMenuModule,
         MenuModule,
         SkeletonModule,
         TableModule,
+        TagModule,
         TooltipModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
@@ -177,6 +188,22 @@ export class DotPublishingQueueTableComponent {
 
     kebabFor(row: PublishingJobView): MenuItem[] {
         return this.kebabMenus().get(row.bundleId) ?? [];
+    }
+
+    /** Right-click context menu reuses the same kebab items, scoped to whichever
+     * row was right-clicked. One shared `<p-contextMenu>` instead of one per row
+     * keeps the DOM small even with hundreds of rows. */
+    readonly contextMenu = viewChild<ContextMenu>('rowContextMenu');
+    readonly contextMenuRow = signal<PublishingJobView | null>(null);
+    readonly contextMenuItems = computed<MenuItem[]>(() => {
+        const row = this.contextMenuRow();
+        return row ? this.kebabFor(row) : [];
+    });
+
+    onRowContextMenu(event: MouseEvent, row: PublishingJobView): void {
+        event.preventDefault();
+        this.contextMenuRow.set(row);
+        this.contextMenu()?.show(event);
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {

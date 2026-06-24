@@ -32,12 +32,10 @@
                     {{ 'publishing-queue.column.filter' | dm }}
                 </th>
                 <th
-                    pSortableColumn="status"
-                    style="width: 9rem"
-                    class="whitespace-nowrap"
-                    data-testid="pq-bundles-col-status">
-                    {{ 'publishing-queue.column.status' | dm }}
-                    <p-sortIcon field="status" />
+                    style="width: 6rem"
+                    class="whitespace-nowrap text-right"
+                    data-testid="pq-bundles-col-items">
+                    {{ 'publishing-queue.column.items' | dm }}
                 </th>
                 <th
                     pSortableColumn="created"
@@ -54,6 +52,14 @@
                     data-testid="pq-bundles-col-modified">
                     {{ 'publishing-queue.column.last-update' | dm }}
                     <p-sortIcon field="modified" />
+                </th>
+                <th
+                    pSortableColumn="status"
+                    style="width: 9rem"
+                    class="whitespace-nowrap"
+                    data-testid="pq-bundles-col-status">
+                    {{ 'publishing-queue.column.status' | dm }}
+                    <p-sortIcon field="status" />
                 </th>
                 <th style="width: 3rem" data-testid="pq-bundles-col-actions"></th>
             </tr>
@@ -85,18 +91,23 @@
                         </span>
                     </td>
                     <td>
+                        <span class="flex h-full items-center justify-end">
+                            <p-skeleton height="1.5rem" width="2rem" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
+                    </td>
+                    <td>
+                        <span class="flex h-full items-center">
+                            <p-skeleton height="1.5rem" width="70%" />
+                        </span>
+                    </td>
+                    <td>
                         <span class="flex h-full items-center">
                             <p-skeleton height="1.5rem" width="40%" />
-                        </span>
-                    </td>
-                    <td>
-                        <span class="flex h-full items-center">
-                            <p-skeleton height="1.5rem" width="70%" />
-                        </span>
-                    </td>
-                    <td>
-                        <span class="flex h-full items-center">
-                            <p-skeleton height="1.5rem" width="70%" />
                         </span>
                     </td>
                     <td>
@@ -109,6 +120,7 @@
                 <tr
                     class="group cursor-pointer"
                     (click)="onRowClick(row)"
+                    (contextmenu)="onRowContextMenu($event, row)"
                     data-testid="pq-bundles-row">
                     <td (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="row" />
@@ -144,8 +156,11 @@
                             {{ row.filterName || row.filterKey || '—' }}
                         </div>
                     </td>
-                    <td class="whitespace-nowrap" data-testid="pq-bundles-status">
-                        <dot-publishing-status-chip [status]="row.status" />
+                    <td class="whitespace-nowrap text-right" data-testid="pq-bundles-items">
+                        <p-tag
+                            severity="secondary"
+                            [rounded]="false"
+                            [value]="(row.assetCount ?? 0).toString()" />
                     </td>
                     <td
                         class="text-color-secondary text-xs whitespace-nowrap"
@@ -156,6 +171,9 @@
                         class="text-color-secondary text-xs whitespace-nowrap"
                         data-testid="pq-bundles-modified">
                         {{ (row.statusUpdated || row.createDate | date: 'medium') || '—' }}
+                    </td>
+                    <td class="whitespace-nowrap" data-testid="pq-bundles-status">
+                        <dot-publishing-status-chip [status]="row.status" />
                     </td>
                     <td class="text-right" (click)="$event.stopPropagation()">
                         <p-menu
@@ -185,7 +203,7 @@
 
         <ng-template pTemplate="emptymessage">
             <tr class="h-full hover:bg-transparent!">
-                <td colspan="8" class="h-full border-none p-6 text-center">
+                <td colspan="9" class="h-full border-none p-6 text-center">
                     <div
                         class="flex h-full items-center justify-center"
                         data-testid="pq-bundles-empty">
@@ -199,4 +217,9 @@
     </p-table>
 </div>
 
+<p-contextMenu
+    #rowContextMenu
+    [model]="contextMenuItems()"
+    appendTo="body"
+    data-testid="pq-bundles-context-menu" />
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

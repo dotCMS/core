@@ -127,13 +127,14 @@ describe('DotPublishingQueueTableComponent', () => {
         expect(spectator.query(byTestId('pq-bundles-table'))).toBeTruthy();
     });
 
-    it('renders all six column headers', () => {
+    it('renders all seven column headers', () => {
         expect(spectator.query(byTestId('pq-bundles-col-bundle-name'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-bundle-id'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-filter'))).toBeTruthy();
-        expect(spectator.query(byTestId('pq-bundles-col-status'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-bundles-col-items'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-created'))).toBeTruthy();
         expect(spectator.query(byTestId('pq-bundles-col-modified'))).toBeTruthy();
+        expect(spectator.query(byTestId('pq-bundles-col-status'))).toBeTruthy();
     });
 
     it('row click opens the detail dialog', () => {

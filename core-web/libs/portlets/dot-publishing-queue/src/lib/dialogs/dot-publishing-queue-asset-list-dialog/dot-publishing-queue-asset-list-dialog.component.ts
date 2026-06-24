@@ -22,6 +22,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -47,6 +48,7 @@ const ASSET_SEARCH_THRESHOLD = 10;
         InputTextModule,
         SkeletonModule,
         TableModule,
+        TagModule,
         TooltipModule,
         DotMessagePipe
     ],

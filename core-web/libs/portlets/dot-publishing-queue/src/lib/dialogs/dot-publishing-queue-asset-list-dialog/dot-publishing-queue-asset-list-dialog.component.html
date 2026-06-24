@@ -53,7 +53,9 @@
             <ng-template pTemplate="body" let-asset>
                 <tr class="group" data-testid="pq-asset-list-row">
                     <td data-testid="pq-asset-name">{{ asset.title }}</td>
-                    <td data-testid="pq-asset-type">{{ asset.type }}</td>
+                    <td data-testid="pq-asset-type">
+                        <p-tag severity="secondary" [rounded]="false" [value]="asset.type" />
+                    </td>
                     @if (allowRemove) {
                         <td class="text-right">
                             <p-button

@@ -10,6 +10,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
 
 import { DotPublishingQueueToolbarComponent } from '../components/dot-publishing-queue-toolbar/dot-publishing-queue-toolbar.component';
+import { DotPublishingQueueAssetListDialogHeaderComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog-header.component';
 import { DotPublishingQueueAssetListDialogComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog.component';
 import { DotPublishingQueueBundleDetailsDialogComponent } from '../dialogs/dot-publishing-queue-bundle-details-dialog/dot-publishing-queue-bundle-details-dialog.component';
 import {
@@ -174,17 +175,20 @@ export class DotPublishingQueueShellComponent {
             // Once the bundle is in motion or terminal, the asset list is read-only.
             const row = this.store.bundlesRows().find((r) => r.bundleId === bundleId);
             const allowRemove = EDITABLE_ASSET_STATUSES.has(row?.status ?? null);
+            const bundleName = row?.bundleName ?? null;
 
             this.assetListRef = this.dialogService.open(
                 DotPublishingQueueAssetListDialogComponent,
                 {
-                    header: this.dotMessageService.get('publishing-queue.asset-list.title'),
+                    templates: {
+                        header: DotPublishingQueueAssetListDialogHeaderComponent
+                    },
                     width: '700px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,
                     position: 'center',
-                    data: { allowRemove }
+                    data: { allowRemove, bundleName }
                 }
             );
             this.assetListRef.onClose.pipe(take(1)).subscribe(() => {
