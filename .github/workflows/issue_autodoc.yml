@@ -89,6 +89,8 @@ jobs:
           path: dotcms-aios
 
       - name: Install Claude Code CLI
+        # Version is unpinned intentionally — claude-code updates frequently and
+        # the package is published by Anthropic. Pin if supply-chain policy requires it.
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Build eval context
@@ -220,6 +222,13 @@ jobs:
           ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
           URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{sub(/^urlTitle:[[:space:]]*/,"");print;exit}' "$REPORT")
 
+          # Validate urlTitle is a URL slug before interpolating into the JSON query.
+          # Non-slug chars (quotes, backslashes) would break the shell-built JSON payload.
+          if [ -n "$URL_TITLE" ] && ! echo "$URL_TITLE" | grep -qE '^[a-z0-9][a-z0-9-]*[a-z0-9]$'; then
+            echo "urlTitle '${URL_TITLE}' is not a valid slug — skipping dotCMS apply."
+            ACTION=none
+          fi
+
           if [ "$ACTION" = "update" ] && [ -n "$URL_TITLE" ]; then
             IDENTIFIER=$(curl -s --fail-with-body -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
               -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
@@ -227,7 +236,8 @@ jobs:
               -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
               | jq -r '(.esresponse[0].hits.hits[0]._source.identifier) // empty')
 
-            if [ -n "$IDENTIFIER" ]; then
+            # Verify the identifier is UUID-shaped before placing it in a URL.
+            if echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$' && [ -n "$IDENTIFIER" ]; then
               export REPORT IDENTIFIER
               python3 << 'PYEOF'
           import json, os
@@ -277,10 +287,12 @@ jobs:
               --data @/tmp/payload.json
           fi
 
-          # Commit the report back to dotcms-aios
+          # Commit the report back to dotcms-aios.
+          # Push only runs if commit succeeds (i.e. there were actual changes to commit).
           cd dotcms-aios
           git config user.name "autodoc[bot]"
           git config user.email "autodoc-bot@users.noreply.github.com"
           git add "autodoc/reports/Epic-${EPIC_NUMBER}_burlap.md"
-          git commit -m "eval: Epic-${EPIC_NUMBER} (burlap)" || true
-          git push
+          if git commit -m "eval: Epic-${EPIC_NUMBER} (burlap)"; then
+            git push origin HEAD
+          fi
