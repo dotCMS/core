@@ -9,6 +9,7 @@ import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
 import com.dotcms.content.index.opensearch.OSMappingAPIImplIntegrationTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
+import com.dotcms.content.index.opensearch.OSIndexAPIImplWaitReadyIT;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
@@ -37,6 +38,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         VersionedIndicesAPITest.class,
         OSIndexAPIImplIntegrationTest.class,
+        OSIndexAPIImplWaitReadyIT.class,
         OSMappingAPIImplIntegrationTest.class,
         ContentletIndexOperationsOSIntegrationTest.class,
         OSCreateContentIndexIntegrationTest.class,

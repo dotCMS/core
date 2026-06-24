@@ -624,6 +624,40 @@ describe('DotContentTypesEditComponent', () => {
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
         }));
 
+        it('should close the dialog when cancel button is clicked in edit mode', fakeAsync(() => {
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.show()).toBe(true);
+
+            const cancelButton = de.query(By.css('[data-testId="dotDialogCancelAction"]'));
+            expect(cancelButton).toBeTruthy();
+
+            cancelButton.nativeElement.click();
+            fixture.detectChanges();
+            tick();
+
+            // Edit-mode Cancel must flip show() to false (regression fix for #36298);
+            // routing stays on the edit URL — onDialogHide clears the open-config query param
+            // instead of routing back to the portlet list.
+            expect(comp.show()).toBe(false);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        }));
+
+        it('should mount the form on open and unmount it on dialog hide', fakeAsync(() => {
+            // The "form stays mounted through the close fade" guarantee depends on p-dialog's
+            // post-animation onHide timing, which jsdom doesn't simulate. We assert the unit-
+            // testable invariants: form is mounted while open, unmounted after onDialogHide.
+            clickEditButton();
+            tick();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(true);
+
+            comp.onDialogHide();
+            fixture.detectChanges();
+            expect(comp.$renderForm()).toBe(false);
+        }));
+
         it('should update fields attribute when a field is edit', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
