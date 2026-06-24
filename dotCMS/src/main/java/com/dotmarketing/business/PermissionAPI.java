@@ -372,6 +372,24 @@ public interface PermissionAPI {
 	boolean doesUserHavePermission(Permissionable permissionable, int permissionType, User user, boolean respectFrontendRoles) throws DotDataException;
 
 	/**
+	 * Batch version of {@link #filterCollection(List, int, boolean, User)}.
+	 * Resolves permissions for an entire collection in one SQL round-trip instead of one query
+	 * per item, eliminating N+1 permission-check patterns.
+	 * Use this overload when the input is a {@link Collection} or when batch performance matters.
+	 *
+	 * @param permissionables items to filter
+	 * @param permissionType  required permission (e.g. {@link #PERMISSION_READ})
+	 * @param user            the user whose access is being checked
+	 * @param respectFrontendRoles whether to include anonymous and front-end role permissions
+	 * @return new list containing only the items for which the user holds the required permission
+	 */
+	<P extends Permissionable> List<P> filterCollection(
+			Collection<P> permissionables,
+			int permissionType,
+			User user,
+			boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Remove all individual permissions attached to the asset
 	 * @param o permissionable
 	 * @version 1.8
