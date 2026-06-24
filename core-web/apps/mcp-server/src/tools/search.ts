@@ -1,12 +1,8 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import {
-    createApiAdapter,
-    createExecutor,
-    getSharedContextCache,
-    getSpec
-} from '@dotcms/agentic-tools';
+import { createDotCMSRuntime } from '@dotcms/ai';
+import { getSpec } from '@dotcms/ai/spec';
 
 export const schema = {
     code: z
@@ -57,37 +53,26 @@ export default async function handler(
     { code }: InferSchema<typeof schema>,
     extra?: ToolExtraArguments
 ) {
-    const executor = createExecutor();
     const spec = getSpec();
 
     if (!spec || typeof spec !== 'object' || Object.keys(spec).length === 0) {
         return 'Error: OpenAPI spec is not available. The server may not have been built with a generated spec (run the generate-spec step), so the search tool cannot run.';
     }
 
-    const apiAdapter = createApiAdapter({
-        dotcmsUrl: process.env.DOTCMS_URL ?? '',
-        authToken: process.env.AUTH_TOKEN ?? ''
-    });
-
-    const sessionId = extra?.sessionId ?? '__default__';
-    const cache = getSharedContextCache({
-        onError: (label, error) => {
+    // The front door injects the instance context AND the `spec` global (includeSpec).
+    const dotcms = createDotCMSRuntime({
+        url: process.env.DOTCMS_URL ?? '',
+        token: process.env.AUTH_TOKEN ?? '',
+        sessionId: extra?.sessionId ?? '__default__',
+        timeout: 10000,
+        includeSpec: true,
+        onContextError: (label, error) => {
             const msg = error instanceof Error ? error.message : String(error);
             console.error(`[context] failed to load ${label}: ${msg}`);
         }
     });
-    const context = await cache.get(sessionId, apiAdapter);
 
-    const result = await executor.execute(code, {
-        variables: {
-            spec,
-            contentTypes: context.contentTypes,
-            sites: context.sites,
-            languages: context.languages,
-            currentUser: context.currentUser
-        },
-        sandbox: { timeout: 10000 }
-    });
+    const result = await dotcms.run(code);
 
     if (!result.success) {
         const errorMsg = result.error

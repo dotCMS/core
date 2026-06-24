@@ -1,5 +1,6 @@
-import { type ISandbox, createSandbox } from './sandbox';
+import { createWorkerSandbox } from './factory';
 
+import type { ISandbox } from './interface';
 import type { Adapter, ExecutionContext, SandboxConfig, SandboxResult } from './types';
 
 export interface ExecutorOptions {
@@ -20,7 +21,7 @@ export class Executor {
             timeout: 5000,
             globals: {}
         };
-        this.sandboxFactory = options.sandboxFactory ?? createSandbox;
+        this.sandboxFactory = options.sandboxFactory ?? createWorkerSandbox;
 
         if (options.config?.adapters) {
             for (const adapter of options.config.adapters) {

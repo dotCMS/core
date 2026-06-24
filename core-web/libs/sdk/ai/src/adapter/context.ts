@@ -1,4 +1,4 @@
-import type { Adapter } from './types';
+import type { Adapter } from '../sandbox/types';
 
 export interface ContentTypeSummary {
     id: string;

@@ -1,6 +1,6 @@
 import { createApiAdapter, isBinaryResponseEnvelope } from './http-client';
 
-import type { Adapter, AdapterMethod } from './types';
+import type { Adapter, AdapterMethod } from '../sandbox/types';
 
 /**
  * A real 1x1 red PNG. Its first byte is 0x89, which is not valid UTF-8 — the

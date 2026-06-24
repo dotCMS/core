@@ -1,0 +1,35 @@
+{
+    "extends": ["../../../.eslintrc.base.json"],
+    "ignorePatterns": ["!**/*", "**/node_modules/**", "node_modules/**"],
+    "overrides": [
+        {
+            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+            "rules": {}
+        },
+        {
+            "files": ["*.ts", "*.tsx"],
+            "rules": {}
+        },
+        {
+            "files": ["*.js", "*.jsx"],
+            "rules": {}
+        },
+        {
+            "files": ["src/sandbox/**/*.ts"],
+            "excludedFiles": ["src/sandbox/**/*.spec.ts"],
+            "rules": {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        "patterns": [
+                            {
+                                "group": ["../adapter", "../adapter/*", "../spec", "../spec/*", "../runtime", "../generated/*"],
+                                "message": "@dotcms/ai/sandbox is the generic engine and must not import dotCMS-specific code (adapter, spec, runtime). Keep the generic/dotCMS boundary intact."
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

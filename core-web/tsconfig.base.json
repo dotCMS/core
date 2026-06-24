@@ -103,7 +103,10 @@
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"],
-            "@dotcms/agentic-tools": ["libs/agentic-tools/src/index.ts"]
+            "@dotcms/ai": ["libs/sdk/ai/src/index.ts"],
+            "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
+            "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
+            "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

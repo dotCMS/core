@@ -1,7 +1,7 @@
 import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createApiAdapter, createExecutor, getSharedContextCache } from '@dotcms/agentic-tools';
+import { createDotCMSRuntime } from '@dotcms/ai';
 
 export const schema = {
     code: z
@@ -91,32 +91,20 @@ export default async function handler(
 ) {
     const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
 
-    const executor = createExecutor();
-    const apiAdapter = createApiAdapter({
-        dotcmsUrl: process.env.DOTCMS_URL ?? '',
-        authToken: process.env.AUTH_TOKEN ?? ''
-    });
-    executor.registerAdapter(apiAdapter);
-
-    const sessionId = extra?.sessionId ?? '__default__';
-    const cache = getSharedContextCache({
-        onError: (label, error) => {
+    // The front door absorbs the executor + adapter + context-cache wiring and injects
+    // dotCMS instance context automatically. Auth tokens never enter the sandbox.
+    const dotcms = createDotCMSRuntime({
+        url: process.env.DOTCMS_URL ?? '',
+        token: process.env.AUTH_TOKEN ?? '',
+        sessionId: extra?.sessionId ?? '__default__',
+        timeout,
+        onContextError: (label, error) => {
             const msg = error instanceof Error ? error.message : String(error);
             console.error(`[context] failed to load ${label}: ${msg}`);
         }
     });
-    const context = await cache.get(sessionId, apiAdapter);
 
-    const result = await executor.execute(code, {
-        sandbox: { timeout },
-        adapters: ['api'],
-        variables: {
-            contentTypes: context.contentTypes,
-            sites: context.sites,
-            languages: context.languages,
-            currentUser: context.currentUser
-        }
-    });
+    const result = await dotcms.run(code); // code === the model's output
 
     if (!result.success) {
         const errorMsg = result.error

@@ -298,18 +298,18 @@ yarn nx build mcp-server
 ```
 
 > [!NOTE]
-> Files are located in `core-web/apps/mcp-server` (tools/config) and `core-web/libs/agentic-tools` (runtime primitives + spec). We use [Nx monorepo](https://nx.dev/).
+> Files are located in `core-web/apps/mcp-server` (tools/config) and `core-web/libs/sdk/ai` (runtime primitives + spec). We use [Nx monorepo](https://nx.dev/).
 
 #### Refreshing the OpenAPI Spec
 
-The processed spec lives in `libs/agentic-tools/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
+The processed spec lives in `libs/sdk/ai/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run agentic-tools:generate-spec
+yarn nx run sdk-ai:generate-spec
 
 # Override with a different instance (e.g. local):
-yarn nx run agentic-tools:generate-spec -- http://localhost:8080/api/openapi.json
+yarn nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
 Then commit the updated `spec.json`. CI does not need a live dotCMS instance to build.
@@ -371,7 +371,7 @@ apps/mcp-server/                         # MCP server (thin xmcp wrappers)
 ├── jest.config.ts          # Test configuration
 └── project.json            # Nx project configuration
 
-libs/agentic-tools/                      # Portable runtime primitives
+libs/sdk/ai/                      # Portable runtime primitives
 ├── scripts/
 │   └── generate-spec.ts    # OpenAPI spec processor (run manually to refresh)
 ├── src/
@@ -430,7 +430,7 @@ yarn nx test mcp-server --watch
 
 # Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run agentic-tools:generate-spec
+yarn nx run sdk-ai:generate-spec
 ```
 
 ### Contributing Guidelines
