@@ -429,27 +429,27 @@ export class DotImageEditorCanvasComponent {
      * can position itself over the rendered pixels.
      */
     #measureImageRect(): void {
-        const stage = this.stage()?.nativeElement;
         const img = this.displayImg()?.nativeElement;
 
-        if (!stage || !img) {
+        if (!img) {
             return;
         }
 
-        // The stage carries the zoom as a CSS `transform: scale(...)`, so
-        // getBoundingClientRect returns painted (scaled) values. Divide back out so
-        // the rect is in the stage's logical CSS px — the same space the crop overlay
-        // (a child of the scaled stage) positions itself in. Without this the crop
-        // box drifts at any zoom other than 100%.
-        const scale = this.zoomLevel() / 100;
-        const stageBox = stage.getBoundingClientRect();
-        const imgBox = img.getBoundingClientRect();
-
+        // Measure the image's LAYOUT box (offset*) relative to the stage, not
+        // `getBoundingClientRect()/scale`. The stage carries the zoom as a CSS
+        // `transform: scale(...)` with a 150ms transition; a painted rect read
+        // mid-transition and divided by the final scale yields a slightly-wrong size
+        // that then sticks (ResizeObserver is layout-based, so it never fires again to
+        // correct it) — which left the default crop box a few px short of the image
+        // edges. `offset*` is the true pre-transform size in the stage's logical CSS
+        // px — the exact space the crop overlay positions itself in — so the box
+        // always matches the image at any zoom. (Its `offsetParent` is the
+        // position:relative stage.)
         this.imageRect.set({
-            x: (imgBox.left - stageBox.left) / scale,
-            y: (imgBox.top - stageBox.top) / scale,
-            width: imgBox.width / scale,
-            height: imgBox.height / scale
+            x: img.offsetLeft,
+            y: img.offsetTop,
+            width: img.offsetWidth,
+            height: img.offsetHeight
         });
     }
 

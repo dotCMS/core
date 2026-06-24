@@ -16,16 +16,21 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    // Pills keep their natural (content) width and never shrink, so the tool and the
+    // zoom/undo/redo controls always stay intact; only the URL pill flexes.
+    flex: 0 0 auto;
     min-width: 0;
     padding: 0.125rem;
     border-radius: 1000px;
     background-color: var(--surface-200, #e5e7eb);
 }
 
-// The URL pill grows to fill the row, pushing the tools pill hard to the left edge
-// and the zoom pill to the right edge; the URL truncates inside it.
+// The URL pill fills the free space between the tool and zoom pills. `flex-basis: 0`
+// (not `auto`) is key: the long, server-generated URL truncates inside the pill
+// instead of sizing it to the content and pushing the zoom/undo/redo controls out
+// of the header when more filters are appended.
 .address-bar__pill--url {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     padding-right: 0.75rem;
 }
 
