@@ -177,8 +177,12 @@ jobs:
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
-      # Each push gets a unique SHA → unique sticky marker → new comment instead of overwrite.
-      sticky_namespace: ${{ github.sha }}
+      # Non-sticky: each commit gets its own review comment (fresh per push) instead of one
+      # auto-updating comment, preserving the full feedback→change→feedback history. Supersedes
+      # the old `sticky_namespace: ${{ github.sha }}` hack — the orchestrator now scopes the
+      # marker by head SHA itself (and includes the model id, so it's collision-safe across
+      # models). Requires ai-workflows >= v3.1.8. Set to true (or remove) for one rolling comment.
+      use_sticky_comment: false
       timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
