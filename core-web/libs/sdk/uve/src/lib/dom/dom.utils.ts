@@ -6,13 +6,14 @@ import {
     EditableContainerData
 } from '@dotcms/types';
 import {
+    DotAnalyticsContentletAttributes,
     DotCMSContainerBound,
     DotCMSContentletBound,
     DotContainerAttributes,
     DotContentletAttributes
 } from '@dotcms/types/internal';
 
-import { END_CLASS, START_CLASS } from '../../internal/constants';
+import { ANALYTICS_ACTIVE_WINDOW_KEY, END_CLASS, START_CLASS } from '../../internal/constants';
 
 /**
  * Calculates the bounding information for each page element within the given containers.
@@ -284,6 +285,45 @@ export function getDotContentletAttributes(
             'data-dot-style-properties': JSON.stringify(contentlet.dotStyleProperties)
         })
     };
+}
+
+/**
+ *
+ * Returns the minimal set of contentlet data attributes required by DotCMS
+ * Analytics (impression & click tracking) to identify a contentlet.
+ *
+ * Used in live mode where the full editor metadata is stripped but Analytics
+ * still needs to resolve the contentlet behind an impression/click.
+ *
+ * @param {DotCMSBasicContentlet} contentlet - The contentlet to get the attributes for
+ * @returns {DotAnalyticsContentletAttributes} The Analytics-required data attributes
+ */
+export function getAnalyticsContentletAttributes(
+    contentlet: DotCMSBasicContentlet
+): DotAnalyticsContentletAttributes {
+    return {
+        'data-dot-identifier': contentlet?.identifier,
+        'data-dot-inode': contentlet?.inode,
+        'data-dot-title': contentlet?.['widgetTitle'] || contentlet?.title,
+        'data-dot-type': contentlet?.contentType,
+        'data-dot-basetype': contentlet?.baseType
+    };
+}
+
+/**
+ *
+ * Checks whether DotCMS Analytics is initialized and active on the page.
+ *
+ * The SDKs use this in live mode to decide whether to keep the minimal
+ * contentlet attributes Analytics depends on.
+ *
+ * @returns {boolean} `true` when analytics is active, otherwise `false`
+ */
+export function isDotAnalyticsActive(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        (window as unknown as Record<string, unknown>)[ANALYTICS_ACTIVE_WINDOW_KEY] === true
+    );
 }
 
 /**
