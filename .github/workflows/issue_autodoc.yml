@@ -93,6 +93,101 @@ jobs:
         # the package is published by Anthropic. Pin if supply-chain policy requires it.
         run: npm install -g @anthropic-ai/claude-code
 
+      - name: Write prompt
+        run: |
+          cat > /tmp/burlap.txt << 'PROMPTEOF'
+          The context block above contains an Epic with its related PRs already assembled.
+          Your task is to assess whether this Epic's delivery requires new or updated
+          documentation in the dotCMS docs.
+
+          If a `## Vault Context` section is present in this block, use it to inform the
+          grouping and audience sections of the report — target personas, product pillar,
+          GTM status, and strategic framing. If no Vault Context is present, infer from
+          the Epic and PR content.
+
+          Run one or more dotCMS AI semantic searches to assess current documentation
+          coverage. Use the Bash tool to execute each search:
+
+            curl -s -X POST "https://cdn.dotcms.dev/api/v1/ai/search" \
+              -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_AISEARCH" \
+              -H "Content-Type: application/json" \
+              -H "Origin: https://dev.dotcms.com" \
+              -H "Referer: https://dev.dotcms.com/" \
+              -d '{"model":"gpt-5.2","indexName":"default","prompt":"<your query here>","operator":"cosine","threshold":".25","searchLimit":20}'
+
+          Run multiple searches with varied queries to thoroughly assess coverage. Use the
+          results to determine whether documentation exists, is sufficient, or needs updating.
+
+          Then write the report to the path shown at the bottom of this context block,
+          using the Write tool.
+
+          **Every report, regardless of outcome, must contain a machine-readable metadata
+          block placed immediately after the report header and before the `## Determination`
+          section.** Use exactly this structure and no other:
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: none
+          <!-- END_DOC_META -->
+          ```
+
+          For `update` reports, add `urlTitle` (the urlTitle of the page being updated):
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: update
+          urlTitle: saml-authentication
+          <!-- END_DOC_META -->
+          ```
+
+          For `create` reports, add `urlTitle` (proposed), `title`, `tags`
+          (comma-separated), and `seoDescription`:
+
+          ```
+          <!-- BEGIN_DOC_META -->
+          action: create
+          urlTitle: vanity-urls-s3-static-publishing
+          title: Vanity URLs in S3 Static Publishing
+          tags: static publishing, push publishing, vanity urls, AWS S3
+          seoDescription: Learn how to enable and configure opt-in Vanity URL materialization for AWS S3 static publishing in dotCMS.
+          <!-- END_DOC_META -->
+          ```
+
+          The style of report depends upon a determination that must be made here:
+
+          - There is a chance that no documentation change is warranted. This is common when
+            the Epic delivers internal architecture work, bug fixes, or a feature that is
+            already fully documented. Some cases will be clear and some uncertain — evaluate
+            whether the Epic's delivery is both end-user relevant and documentable. If no
+            documentation is needed, the report must explain why. No `<!-- BEGIN_DOC_DRAFT -->`
+            token appears anywhere in no-documentation reports.
+
+          - There is a chance that relevant documentation exists but needs an update. If the
+            docs are not fully current with what the Epic delivered, the report should first
+            present a differential explaining what changes are necessary and where. After all
+            analysis, the report must end with the token `<!-- BEGIN_DOC_DRAFT -->` on its
+            own line, immediately followed by the **complete, final content of the page's
+            `documentation` field** — the full existing document with all proposed changes
+            already incorporated. This is not a diff and not an insertion fragment: it is the
+            entire field value as it should exist after the update, ready to be submitted to
+            the API as-is. The draft runs to the end of the file with no trailing content
+            after it.
+
+          - There is a chance that the Epic introduces something documentable with no
+            existing coverage. In this case, the report should include a differential on the
+            documentation gap, a list of appropriate tags, a short SEO description, a
+            description of what feature this documentation should be grouped with, and what
+            user personas it is most relevant to. After all analysis, the report must end
+            with the token `<!-- BEGIN_DOC_DRAFT -->` on its own line, immediately followed
+            by the complete draft of the new documentation page. The draft runs to the end
+            of the file with no trailing content after it.
+
+            When drafting the documentation page, use horizontal rules (`---`) sparingly.
+            Headings already provide clear visual and structural separation; `---` should
+            be reserved only for the most stark structural breaks and must not appear
+            between ordinary subsections.
+          PROMPTEOF
+
       - name: Build eval context
         run: |
           cat > /tmp/ctx.py << 'PYEOF'
@@ -176,8 +271,8 @@ jobs:
           else:
               print(f'warning: no vault file for Epic #{epic_num}', file=sys.stderr)
 
-          prompt = open('dotcms-aios/autodoc/prompts/burlap.txt').read().strip()
-          report_path = f'dotcms-aios/autodoc/reports/Epic-{epic_num}_burlap.md'
+          prompt = open('/tmp/burlap.txt').read().strip()
+          report_path = f'/tmp/Epic-{epic_num}_burlap.md'
           lines += [
               '', '---', '', '## Prompt: burlap', '', prompt,
               '', '---', '',
@@ -196,7 +291,7 @@ jobs:
 
       - name: Post comment, apply to dotCMS, commit report
         run: |
-          REPORT="dotcms-aios/autodoc/reports/Epic-${EPIC_NUMBER}_burlap.md"
+          REPORT="/tmp/Epic-${EPIC_NUMBER}_burlap.md"
 
           if [ ! -f "$REPORT" ]; then
             echo "No report at $REPORT — skipping finalize."
