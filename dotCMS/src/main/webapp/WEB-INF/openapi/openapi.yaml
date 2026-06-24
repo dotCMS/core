@@ -26835,6 +26835,21 @@ components:
             type: string
           variable:
             type: string
+    FileRefView:
+      type: object
+      description: "Every file found anywhere under the theme folder (searched recursively),\
+        \ regardless of type. Each entry carries its extension so consumers can filter."
+      properties:
+        extension:
+          type: string
+          description: "Lowercased file extension without the leading dot, e.g. vtl,\
+            \ css, scss, js"
+        identifier:
+          type: string
+          description: File asset identifier
+        path:
+          type: string
+          description: "Host-qualified path to the file, e.g. //demo.dotcms.com/application/themes/travel/header.vtl"
     FileUploadDetail:
       type: object
       properties:
@@ -36317,8 +36332,15 @@ components:
             type: string
     ThemeSourceView:
       type: object
-      description: Theme folder and its VTL files
+      description: Theme folder and every file that composes it
       properties:
+        files:
+          type: array
+          description: "Every file found anywhere under the theme folder (searched\
+            \ recursively), regardless of type. Each entry carries its extension so\
+            \ consumers can filter."
+          items:
+            $ref: "#/components/schemas/FileRefView"
         folderPath:
           type: string
           description: "Host-qualified path to the theme folder, e.g. //demo.dotcms.com/application/themes/travel/"
@@ -36328,11 +36350,6 @@ components:
         name:
           type: string
           description: Theme folder name
-        vtls:
-          type: array
-          description: VTL files found anywhere under the theme folder (searched recursively)
-          items:
-            $ref: "#/components/schemas/VtlFileRefView"
     ThemeView:
       type: object
       properties:
@@ -37842,16 +37859,6 @@ components:
           additionalProperties:
             type: number
             format: float
-    VtlFileRefView:
-      type: object
-      description: VTL files found anywhere under the theme folder (searched recursively)
-      properties:
-        identifier:
-          type: string
-          description: File asset identifier
-        path:
-          type: string
-          description: "Host-qualified path to the VTL file, e.g. //demo.dotcms.com/application/themes/travel/header.vtl"
     WebAssetEntityView:
       type: object
       properties:
