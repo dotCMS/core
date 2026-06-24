@@ -406,13 +406,17 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
 
         indexName = indexName.toLowerCase();
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        // OpenSearch-format settings: the legacy es-sitesearch-settings.json uses ES-only token
-        // filter syntax (e.g. edgeNGram / side) that the typed OpenSearch IndexSettings deserializer
-        // rejects. os-sitesearch-settings.json declares the same analyzers (standard_content,
-        // partial_content) in OpenSearch syntax. The mapping is vendor-neutral and is reused as-is.
+        // OpenSearch-format resources, kept separate from their es-*.json counterparts so the OS
+        // index lifecycle never depends on an ES-named file. Settings: the legacy
+        // es-sitesearch-settings.json uses ES-only token filter syntax (e.g. edgeNGram / side) that
+        // the typed OpenSearch IndexSettings deserializer rejects; os-sitesearch-settings.json
+        // declares the same analyzers (standard_content, partial_content) in OpenSearch syntax.
+        // The mapping is functionally identical to es-sitesearch-mapping.json today, but owning a
+        // dedicated os-sitesearch-mapping.json decouples the two vendors — a future ES mapping
+        // change cannot silently alter OS behaviour.
         URL url = classLoader.getResource("os-sitesearch-settings.json");
         final String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-        url = classLoader.getResource("es-sitesearch-mapping.json");
+        url = classLoader.getResource("os-sitesearch-mapping.json");
         final String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
 
         try {
