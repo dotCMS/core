@@ -246,7 +246,7 @@ We offer multiple channels to get help with the dotCMS Types library:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
 -   **Stack Overflow**: Use the tag `dotcms-types` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support)
 
 When reporting issues, please include:
 
