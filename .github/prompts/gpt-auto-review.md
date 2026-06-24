@@ -19,9 +19,8 @@ Check for:
 
 ## Output format
 
-Always use this exact structure (omit a section entirely if it has no entries):
+Respond with raw GitHub-flavored markdown directly in your reply. Do **not** wrap the whole response in a code block or triple backticks — the sections below are the literal output, not an example to fence. Use this exact structure (omit a section entirely if it has no entries):
 
-```
 #### New Issues
 - 🔴 Critical: `path/file:line` — what's wrong and why it matters
 - 🟠 High: `path/file:line` — what's wrong and why it matters
@@ -32,7 +31,6 @@ Always use this exact structure (omit a section entirely if it has no entries):
 
 #### Resolved
 - ✅ `path/file:line` — brief reason it's now fixed or no longer applicable
-```
 
 If the PR is clean with no prior findings, write: `No issues found.`
 
