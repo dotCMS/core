@@ -118,6 +118,14 @@ jobs:
           Run multiple searches with varied queries to thoroughly assess coverage. Use the
           results to determine whether documentation exists, is sufficient, or needs updating.
 
+          **Source material quality check:** before drafting anything, assess whether the
+          Epic and its PRs contain enough real technical detail to write accurate
+          documentation. If the Epic is a placeholder, has no associated PRs, or describes
+          a feature without specifying its behaviour, configuration, or user-facing surface —
+          set `action: none` and explain that the source material is insufficient. Do not
+          infer, invent, or pad from general knowledge. A short honest `none` report is
+          always preferable to a hallucinated draft.
+
           Then write the report to the path shown at the bottom of this context block,
           using the Write tool.
 
@@ -298,8 +306,24 @@ jobs:
             exit 0
           fi
 
-          # Prepend idempotency marker so subsequent runs can find and edit this comment.
-          { echo '<!-- autodoc-report -->'; cat "$REPORT"; } > /tmp/comment_body.md
+          # Build comment body: prepend idempotency marker and collapse the doc draft
+          # under a <details> block so the comment isn't a wall of text.
+          export REPORT
+          python3 << 'PYEOF'
+          import os
+          report = open(os.environ['REPORT']).read()
+          marker = '<!-- BEGIN_DOC_DRAFT -->'
+          if marker in report:
+              before, draft = report.split(marker, 1)
+              body = (before.rstrip()
+                      + '\n\n<details>\n<summary>Documentation Draft</summary>\n\n'
+                      + draft.lstrip('\n')
+                      + '\n</details>')
+          else:
+              body = report
+          with open('/tmp/comment_body.md', 'w') as f:
+              f.write('<!-- autodoc-report -->\n' + body.rstrip())
+          PYEOF
 
           # Edit the existing autodoc comment if one exists, otherwise create a new one.
           # --paginate ensures we search all comments, not just the first page.
