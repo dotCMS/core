@@ -71,6 +71,7 @@ jobs:
       REPO: ${{ github.repository }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Used by the Claude subprocess when it executes the curl in burlap.txt — not called directly here.
       AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
       AUTODOC_DOTCMS_API_TOKEN_DRAFTING: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
       AUTODOC_DOTCMS_BASE_URL: ${{ secrets.AUTODOC_DOTCMS_BASE_URL }}
@@ -200,23 +201,27 @@ jobs:
             exit 0
           fi
 
-          # Post report as issue comment (edit existing autodoc comment if one exists)
-          EXISTING=$(gh api "repos/$REPO/issues/$EPIC_NUMBER/comments" \
-            --jq '.[] | select(.body | contains("<!-- autodoc-report -->")) | .id' \
-            | head -1)
+          # Prepend idempotency marker so subsequent runs can find and edit this comment.
+          { echo '<!-- autodoc-report -->'; cat "$REPORT"; } > /tmp/comment_body.md
+
+          # Edit the existing autodoc comment if one exists, otherwise create a new one.
+          # --paginate ensures we search all comments, not just the first page.
+          EXISTING=$(gh api "repos/$REPO/issues/$EPIC_NUMBER/comments" --paginate \
+            --jq '[.[] | select(.body | contains("<!-- autodoc-report -->")) | .id] | first // empty')
           if [ -n "$EXISTING" ]; then
             gh api --method PATCH "repos/$REPO/issues/comments/$EXISTING" \
-              -f "body=@$REPORT"
+              -F "body=@/tmp/comment_body.md"
           else
-            gh issue comment "$EPIC_NUMBER" --repo "$REPO" --body-file "$REPORT"
+            gh issue comment "$EPIC_NUMBER" --repo "$REPO" --body-file /tmp/comment_body.md
           fi
 
-          # Parse action and urlTitle from the machine-readable meta block
+          # Parse action and urlTitle from the machine-readable meta block.
+          # All fields use sub() to preserve the full value after the key prefix.
           ACTION=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^action:/{print $2; exit}' "$REPORT")
-          URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{print $2; exit}' "$REPORT")
+          URL_TITLE=$(awk '/BEGIN_DOC_META/{p=1;next} /END_DOC_META/{p=0} p && /^urlTitle:/{sub(/^urlTitle:[[:space:]]*/,"");print;exit}' "$REPORT")
 
           if [ "$ACTION" = "update" ] && [ -n "$URL_TITLE" ]; then
-            IDENTIFIER=$(curl -sk -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
+            IDENTIFIER=$(curl -s --fail-with-body -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
               -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
               -H "Content-Type: application/json" \
               -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
@@ -235,7 +240,7 @@ jobs:
               'disabledWYSIWYG': ['documentation']}}
           json.dump(payload, open('/tmp/payload.json', 'w'))
           PYEOF
-              curl -sk -X PUT \
+              curl -s --fail-with-body -X PUT \
                 "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/EDIT?identifier=$IDENTIFIER" \
                 -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
                 -H "Content-Type: application/json" \
@@ -265,7 +270,7 @@ jobs:
               payload['contentlet']['navFolder'] = sf
           json.dump(payload, open('/tmp/payload.json', 'w'))
           PYEOF
-            curl -sk -X PUT \
+            curl -s --fail-with-body -X PUT \
               "$AUTODOC_DOTCMS_BASE_URL/api/v1/workflow/actions/default/fire/NEW" \
               -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
               -H "Content-Type: application/json" \
