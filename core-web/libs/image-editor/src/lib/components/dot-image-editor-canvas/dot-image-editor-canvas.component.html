@@ -49,8 +49,8 @@
 
             <dot-image-editor-crop-overlay
                 [imageRect]="imageRect()"
-                [initialRect]="capturedCropRect()" />
-            <dot-image-editor-focal-overlay [imageRect]="imageRect()" [scale]="zoomLevel() / 100" />
+                [initialRect]="capturedCropRect()"
+                [aspect]="cropAspect()" />
         </div>
 
         @if (store.previewStatus() === 'loading') {
@@ -74,44 +74,71 @@
                     data-testid="image-editor-retry-btn" />
             </div>
         }
-    </div>
+        @if (store.activeTool() === 'crop') {
+            <!-- Floating action bar: the crop tool's aspect presets, the natural-pixel
+                 width/height readout/editor and apply/cancel actions, centered at the
+                 bottom of the viewport and revealed on hover (like the tool rail). -->
+            <div class="canvas__actions" data-testid="image-editor-canvas-footer">
+                <div
+                    class="canvas__aspects"
+                    role="group"
+                    [attr.aria-label]="'edit.content.image-editor.crop.aspects' | dm">
+                    @for (preset of aspectPresets; track preset.key) {
+                        <button
+                            type="button"
+                            class="canvas__aspect"
+                            [class.canvas__aspect--active]="cropAspect() === preset.aspect"
+                            (click)="cropAspect.set(preset.aspect)"
+                            [attr.data-testid]="'image-editor-aspect-' + preset.key">
+                            {{ preset.label }}
+                        </button>
+                    }
+                </div>
 
-    <!-- Bottom band mirroring the top address bar; hosts the active tool's actions. -->
-    <div class="canvas__footer" data-testid="image-editor-canvas-footer">
-        @switch (store.activeTool()) {
-            @case ('crop') {
+                <span class="canvas__separator" aria-hidden="true"></span>
+
+                <!-- Live crop size in natural image pixels. Read-only when Free
+                     (a pure readout); editable and ratio-locked under a preset. -->
+                <div class="canvas__size">
+                    <p-inputNumber
+                        styleClass="canvas__size-input"
+                        [ngModel]="cropSize().width"
+                        [min]="1"
+                        [useGrouping]="false"
+                        [disabled]="cropAspect() === null"
+                        [attr.aria-label]="'edit.content.image-editor.crop.width' | dm"
+                        (onInput)="onCropWidthChange($event.value)"
+                        (onBlur)="onCropWidthChange(cropSize().width)"
+                        data-testid="image-editor-crop-width-input" />
+                    <span class="canvas__size-glyph" aria-hidden="true">×</span>
+                    <p-inputNumber
+                        styleClass="canvas__size-input"
+                        [ngModel]="cropSize().height"
+                        [min]="1"
+                        [useGrouping]="false"
+                        [disabled]="cropAspect() === null"
+                        [attr.aria-label]="'edit.content.image-editor.crop.height' | dm"
+                        (onInput)="onCropHeightChange($event.value)"
+                        (onBlur)="onCropHeightChange(cropSize().height)"
+                        data-testid="image-editor-crop-height-input" />
+                    <span class="canvas__size-unit">px</span>
+                </div>
+
+                <span class="canvas__separator" aria-hidden="true"></span>
+
                 <p-button
+                    size="small"
                     [text]="true"
                     severity="secondary"
                     [label]="'edit.content.image-editor.crop.cancel' | dm"
                     (onClick)="cancelCrop()"
                     data-testid="image-editor-crop-cancel-btn" />
                 <p-button
+                    size="small"
                     [label]="'edit.content.image-editor.crop.apply' | dm"
                     (onClick)="applyCrop()"
                     data-testid="image-editor-crop-apply-btn" />
-            }
-            @case ('focal') {
-                <div
-                    class="canvas__aspects"
-                    role="group"
-                    [attr.aria-label]="'edit.content.image-editor.focal.aspects' | dm">
-                    @for (preset of aspectPresets; track preset.key) {
-                        <button
-                            type="button"
-                            class="canvas__aspect"
-                            [class.canvas__aspect--active]="selectedAspect().key === preset.key"
-                            (click)="selectedAspect.set(preset)"
-                            [attr.data-testid]="'image-editor-aspect-' + preset.key">
-                            {{ preset.label }}
-                        </button>
-                    }
-                </div>
-                <p-button
-                    [label]="'edit.content.image-editor.focal.crop' | dm"
-                    (onClick)="applyFocalCrop()"
-                    data-testid="image-editor-focal-crop-btn" />
-            }
+            </div>
         }
     </div>
 </div>

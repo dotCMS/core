@@ -14,8 +14,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.content.image-editor.tool.move': 'Move',
-    'edit.content.image-editor.tool.crop': 'Crop',
-    'edit.content.image-editor.tool.focal': 'Focal point'
+    'edit.content.image-editor.tool.crop': 'Crop'
 });
 
 describe('DotImageEditorToolRailComponent', () => {
@@ -42,18 +41,15 @@ describe('DotImageEditorToolRailComponent', () => {
         jest.spyOn(dispatcher, 'dispatch');
     });
 
-    it('should render the three tools with testids and aria-labels', () => {
+    it('should render the two tools with testids and aria-labels', () => {
         const move = spectator.query(byTestId('image-editor-tool-move'));
         const crop = spectator.query(byTestId('image-editor-tool-crop'));
-        const focal = spectator.query(byTestId('image-editor-tool-focal'));
 
         expect(move).toBeTruthy();
         expect(crop).toBeTruthy();
-        expect(focal).toBeTruthy();
 
         expect(move).toHaveAttribute('aria-label', 'Move');
         expect(crop).toHaveAttribute('aria-label', 'Crop');
-        expect(focal).toHaveAttribute('aria-label', 'Focal point');
     });
 
     it('should expose a vertical toolbar role on the host', () => {

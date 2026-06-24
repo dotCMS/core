@@ -7,10 +7,10 @@ import { imageEditorToolEvents, imageEditorViewEvents } from '../image-editor.ev
 /**
  * View feature: the editor's transient view/UI state, as opposed to the edit
  * slices that feed the preview URL and history. It owns which canvas tool is
- * active (move / crop / focal) and whether the dialog is full-screen. The crop
- * and focal interactions themselves live in {@link withCrop} and
- * {@link withFocalPoint}; resizing the dialog to full-screen is the root
- * component's job — this feature only owns the `isFullscreen` flag it reads.
+ * active (move / crop) and whether the dialog is full-screen. The crop
+ * interaction itself lives in {@link withCrop}; resizing the dialog to
+ * full-screen is the root component's job — this feature only owns the
+ * `isFullscreen` flag it reads.
  */
 export function withView() {
     return signalStoreFeature(

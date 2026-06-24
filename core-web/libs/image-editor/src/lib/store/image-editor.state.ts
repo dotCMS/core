@@ -2,7 +2,6 @@ import {
     AdjustState,
     CropState,
     FileInfoState,
-    FocalPointState,
     ImageEditorAssetContext,
     ImageEditorState,
     TransformState,
@@ -62,13 +61,6 @@ export const initialFileInfoState: FileInfoState = {
     originalBytes: null
 };
 
-/** Default focal point slice: centered and inactive. */
-export const initialFocalPointState: FocalPointState = {
-    x: 0.5,
-    y: 0.5,
-    active: false
-};
-
 /** Default zoom slice: 100% and fitted to screen. */
 export const initialZoomState: ZoomState = {
     level: 100,
@@ -82,7 +74,6 @@ export const initialImageEditorState: ImageEditorState = {
     transform: initialTransformState,
     crop: initialCropState,
     fileInfo: initialFileInfoState,
-    focalPoint: initialFocalPointState,
     zoom: initialZoomState,
     activeTool: 'move',
     previewStatus: 'idle',

@@ -1,7 +1,7 @@
 import { CompressionMode, HandlePosition } from './models/image-editor.models';
 
 /**
- * Library-wide constants for the image editor: control ranges, zoom/crop/focal
+ * Library-wide constants for the image editor: control ranges, zoom/crop
  * interaction steps, formatting and behavior tuning. Kept in one place so the
  * components and store share a single source of truth instead of redeclaring
  * magic numbers per file.
@@ -42,10 +42,6 @@ export const CROP_HANDLES: readonly HandlePosition[] = [
     'l'
 ] as const;
 
-/** Focal point keyboard nudge as a fraction of the image (Shift uses the larger step). */
-export const FOCAL_NUDGE_STEP = 0.01;
-export const FOCAL_NUDGE_STEP_LARGE = 0.05;
-
 /** One kibibyte, used to format byte counts for display. */
 export const BYTES_PER_KB = 1024;
 
@@ -66,7 +62,7 @@ export const COMPRESSION_LABELS: Record<CompressionMode, string> = {
 };
 
 /** The editable slices, in snapshot order (used to diff/replay history). */
-export const SLICE_KEYS = ['adjust', 'transform', 'crop', 'focalPoint', 'fileInfo'] as const;
+export const SLICE_KEYS = ['adjust', 'transform', 'crop', 'fileInfo'] as const;
 
 /** localStorage key persisting which editor side panels are expanded. */
 export const IMAGE_EDITOR_PANEL_STATE_KEY = 'DOT_IMAGE_EDITOR_PANEL_STATE';

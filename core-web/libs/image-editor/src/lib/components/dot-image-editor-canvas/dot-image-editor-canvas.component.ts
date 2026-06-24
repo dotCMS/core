@@ -14,8 +14,10 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -26,56 +28,71 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '../../image-editor.constants';
 import { ImageRect } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
-import { imageEditorLifecycleEvents, imageEditorToolEvents } from '../../store/image-editor.events';
+import { imageEditorLifecycleEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
-import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
 
 /**
  * Dark stage that renders the live image preview at the center of the editor.
- * Hosts the top address sub-bar, the floating tool rail, the crop/focal overlays,
- * and a persistent bottom footer band that mirrors the address bar and surfaces
- * the active tool's actions (apply/cancel for crop, set/cancel for focal). Owns
- * three pieces of local UI state the store does not: a two-layer image crossfade
- * between successive previews, the rendered image's bounding rect (measured for
- * the overlays), and the display-only zoom level. Preview loading outcomes are
- * reported back to the store via {@link imageEditorLifecycleEvents}.
+ * Hosts the top address sub-bar, the floating tool rail, the crop overlay, and a
+ * floating bottom action bar that surfaces the crop tool's actions (aspect-ratio
+ * presets, a natural-pixel width/height readout/editor, plus apply/cancel). Owns
+ * three pieces of local UI state the store does
+ * not: a two-layer image crossfade between successive previews, the rendered
+ * image's bounding rect (measured for the overlay), and the display-only zoom
+ * level. Preview loading outcomes are reported back to the store via
+ * {@link imageEditorLifecycleEvents}.
  */
 @Component({
     selector: 'dot-image-editor-canvas',
     templateUrl: './dot-image-editor-canvas.component.html',
     styleUrl: './dot-image-editor-canvas.component.scss',
     imports: [
+        FormsModule,
         ButtonModule,
+        InputNumberModule,
         ProgressSpinnerModule,
         SkeletonModule,
         DotMessagePipe,
         DotImageEditorAddressBarComponent,
         DotImageEditorToolRailComponent,
-        DotImageEditorCropOverlayComponent,
-        DotImageEditorFocalOverlayComponent
+        DotImageEditorCropOverlayComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotImageEditorCanvasComponent {
     protected readonly store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
-    readonly #toolDispatch = injectDispatch(imageEditorToolEvents);
     readonly #destroyRef = inject(DestroyRef);
     readonly #service = inject(DotImageEditorService);
 
-    /** Aspect-ratio presets for the focal-point-centered crop, shown in the focal bar. */
-    protected readonly aspectPresets = [
+    /**
+     * Aspect-ratio presets shown in the crop action bar. Selecting one reshapes and
+     * locks the crop box to that ratio; `Free` (a `null` ratio) clears the lock and
+     * returns to free-form cropping.
+     */
+    protected readonly aspectPresets: { key: string; label: string; aspect: number | null }[] = [
+        { key: 'free', label: 'Free', aspect: null },
         { key: 'square', label: '1:1', aspect: 1 },
         { key: 'wide', label: '16:9', aspect: 16 / 9 },
         { key: 'standard', label: '4:3', aspect: 4 / 3 }
     ];
 
-    /** The aspect preset currently selected in the focal crop bar. */
-    protected readonly selectedAspect = signal(this.aspectPresets[0]);
+    /** The locked crop aspect ratio (width / height), or `null` for free-form. */
+    protected readonly cropAspect = signal<number | null>(null);
+
+    /**
+     * Live size of the crop box in natural image pixels, read from the crop
+     * overlay (the single source of truth for the box). Drives the footer's
+     * width/height readout/inputs and tracks every drag, resize and ratio change.
+     * `0×0` when no overlay/box is present.
+     */
+    protected readonly cropSize = computed(
+        () => this.cropOverlay()?.naturalCropSize() ?? { width: 0, height: 0 }
+    );
 
     /** The image stage, used as the origin for the rendered image rect. */
     protected readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
@@ -84,8 +101,6 @@ export class DotImageEditorCanvasComponent {
 
     /** The crop overlay, so the footer can apply or cancel the active crop. */
     protected readonly cropOverlay = viewChild(DotImageEditorCropOverlayComponent);
-    /** The focal overlay, so the footer can set or cancel the active focal point. */
-    protected readonly focalOverlay = viewChild(DotImageEditorFocalOverlayComponent);
 
     /** Filter URL of the last successfully loaded preview (the bottom layer's identity). */
     protected readonly displayedUrl = signal<string>('');
@@ -198,6 +213,9 @@ export class DotImageEditorCanvasComponent {
             untracked(() => {
                 if (tool !== 'crop') {
                     this.capturedCropRect.set(undefined);
+                    // Leaving crop clears the locked aspect so the next crop session
+                    // starts free-form.
+                    this.cropAspect.set(null);
 
                     return;
                 }
@@ -302,10 +320,34 @@ export class DotImageEditorCanvasComponent {
         this.cropOverlay()?.cancelCrop();
     }
 
-    /** Crops to the selected aspect, centered on the focal point (then exits the tool). */
-    protected applyFocalCrop(): void {
-        const { aspect, label } = this.selectedAspect();
-        this.#toolDispatch.aspectCropApplied({ aspect, label });
+    /**
+     * Commits a width typed into the footer's crop width input. Only editable when
+     * a preset ratio is active, so the height follows from the locked ratio; the
+     * resulting natural size is handed to the overlay, which resizes the box
+     * (clamped, centered). A cleared/invalid value is ignored.
+     */
+    protected onCropWidthChange(width: number | null): void {
+        const aspect = this.cropAspect();
+
+        if (aspect == null || width == null || width <= 0) {
+            return;
+        }
+
+        this.cropOverlay()?.setNaturalCropSize(width, Math.round(width / aspect));
+    }
+
+    /**
+     * Commits a height typed into the footer's crop height input. Mirror of
+     * {@link onCropWidthChange}: the width follows from the locked ratio.
+     */
+    protected onCropHeightChange(height: number | null): void {
+        const aspect = this.cropAspect();
+
+        if (aspect == null || height == null || height <= 0) {
+            return;
+        }
+
+        this.cropOverlay()?.setNaturalCropSize(Math.round(height * aspect), height);
     }
 
     /** Increases the zoom by one step, clamped to the maximum. */
@@ -385,8 +427,8 @@ export class DotImageEditorCanvasComponent {
     }
 
     /**
-     * Measures the displayed image relative to the stage origin so the crop and
-     * focal overlays can position themselves over the rendered pixels.
+     * Measures the displayed image relative to the stage origin so the crop overlay
+     * can position itself over the rendered pixels.
      */
     #measureImageRect(): void {
         const stage = this.stage()?.nativeElement;
@@ -398,9 +440,9 @@ export class DotImageEditorCanvasComponent {
 
         // The stage carries the zoom as a CSS `transform: scale(...)`, so
         // getBoundingClientRect returns painted (scaled) values. Divide back out so
-        // the rect is in the stage's logical CSS px — the same space the overlays
-        // (children of the scaled stage) position themselves in. Without this the
-        // crop/focal markers drift at any zoom other than 100%.
+        // the rect is in the stage's logical CSS px — the same space the crop overlay
+        // (a child of the scaled stage) positions itself in. Without this the crop
+        // box drifts at any zoom other than 100%.
         const scale = this.zoomLevel() / 100;
         const stageBox = stage.getBoundingClientRect();
         const imgBox = img.getBoundingClientRect();

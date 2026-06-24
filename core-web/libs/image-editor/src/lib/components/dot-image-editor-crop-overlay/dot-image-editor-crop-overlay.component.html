@@ -1,5 +1,21 @@
 @if (isActive() && imageRect()) {
     <div class="crop-overlay" @imageEditorOverlayEnterLeave>
+        <!-- Dim everything outside the selection with four solid panels (cheap to
+             repaint, unlike a viewport-sized box-shadow). They stretch to the
+             overlay edges; only the box edges are data-bound. -->
+        <div class="crop-mask crop-mask--top" [style.height.px]="maskBounds().top"></div>
+        <div class="crop-mask crop-mask--bottom" [style.top.px]="maskBounds().bottom"></div>
+        <div
+            class="crop-mask crop-mask--left"
+            [style.top.px]="maskBounds().top"
+            [style.width.px]="maskBounds().left"
+            [style.height.px]="maskBounds().height"></div>
+        <div
+            class="crop-mask crop-mask--right"
+            [style.top.px]="maskBounds().top"
+            [style.left.px]="maskBounds().right"
+            [style.height.px]="maskBounds().height"></div>
+
         <div
             class="crop-box"
             tabindex="0"

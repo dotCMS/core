@@ -11,9 +11,9 @@ import { imageEditorToolEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 
 /**
- * Floating vertical rail of canvas tools (move, crop, focal point). Acts as a
- * `toolbar` with roving tabindex: the active tool is the only focusable button,
- * matching the WAI-ARIA toolbar pattern. Selecting a tool dispatches
+ * Floating vertical rail of canvas tools (move, crop). Acts as a `toolbar` with
+ * roving tabindex: the active tool is the only focusable button, matching the
+ * WAI-ARIA toolbar pattern. Selecting a tool dispatches
  * {@link imageEditorToolEvents.toolSelected} so the store owns the active tool.
  */
 @Component({
@@ -42,11 +42,6 @@ export class DotImageEditorToolRailComponent {
             id: 'crop',
             label: 'edit.content.image-editor.tool.crop',
             testId: 'image-editor-tool-crop'
-        },
-        {
-            id: 'focal',
-            label: 'edit.content.image-editor.tool.focal',
-            testId: 'image-editor-tool-focal'
         }
     ];
 

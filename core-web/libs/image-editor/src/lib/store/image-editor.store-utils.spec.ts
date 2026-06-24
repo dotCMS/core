@@ -6,7 +6,6 @@ import {
     editableSlicesOf,
     errorMessage,
     fileInfoPatch,
-    focalCenteredCrop,
     initialEditableSlices,
     rebuildHistory,
     restoreSlices,
@@ -45,16 +44,10 @@ function stateWith(
 
 describe('image-editor.store-utils', () => {
     describe('editableSlicesOf', () => {
-        it('extracts exactly the five editable slices', () => {
+        it('extracts exactly the four editable slices', () => {
             const slices = editableSlicesOf(initialImageEditorState);
 
-            expect(Object.keys(slices).sort()).toEqual([
-                'adjust',
-                'crop',
-                'fileInfo',
-                'focalPoint',
-                'transform'
-            ]);
+            expect(Object.keys(slices).sort()).toEqual(['adjust', 'crop', 'fileInfo', 'transform']);
             expect(slices.adjust).toBe(initialImageEditorState.adjust);
         });
     });
@@ -208,77 +201,6 @@ describe('image-editor.store-utils', () => {
             ];
 
             expect(rebuildHistory(history, 1).map((e) => e.id)).toEqual(['a']);
-        });
-    });
-
-    describe('focalCenteredCrop', () => {
-        it('uses the full width when the target aspect is wider than the image', () => {
-            const state = stateWith([], -1, {
-                assetContext: {
-                    ...initialImageEditorState.assetContext,
-                    naturalWidth: 1000,
-                    naturalHeight: 800
-                },
-                focalPoint: { x: 0.5, y: 0.5, active: true }
-            });
-
-            // 16:9 (1.78) > 1000/800 (1.25): keep full width, derive a shorter height.
-            const crop = focalCenteredCrop(16 / 9, state);
-
-            expect(crop.w).toBe(1000);
-            expect(crop.h).toBe(Math.round(1000 / (16 / 9)));
-            expect(crop.active).toBe(true);
-        });
-
-        it('uses the full height when the target aspect is taller than the image', () => {
-            const state = stateWith([], -1, {
-                assetContext: {
-                    ...initialImageEditorState.assetContext,
-                    naturalWidth: 1000,
-                    naturalHeight: 800
-                },
-                focalPoint: { x: 0.5, y: 0.5, active: true }
-            });
-
-            // 1:1 (1.0) <= 1.25: keep full height, derive a narrower width.
-            const crop = focalCenteredCrop(1, state);
-
-            expect(crop.h).toBe(800);
-            expect(crop.w).toBe(800);
-        });
-
-        it('centers on the image middle when no focal point is active', () => {
-            const state = stateWith([], -1, {
-                assetContext: {
-                    ...initialImageEditorState.assetContext,
-                    naturalWidth: 1000,
-                    naturalHeight: 800
-                },
-                focalPoint: { x: 0.8, y: 0.8, active: false }
-            });
-
-            // Inactive focal → fx/fy default to 0.5: an 800×800 region centered → x=100, y=0.
-            const crop = focalCenteredCrop(1, state);
-
-            expect(crop.x).toBe(100);
-            expect(crop.y).toBe(0);
-        });
-
-        it('clamps the crop origin to the image bounds for an off-center focal point', () => {
-            const state = stateWith([], -1, {
-                assetContext: {
-                    ...initialImageEditorState.assetContext,
-                    naturalWidth: 1000,
-                    naturalHeight: 800
-                },
-                focalPoint: { x: 0.8, y: 0.5, active: true }
-            });
-
-            // 800 wide region centered on x=800 wants x=400 but clamps to 1000−800=200.
-            const crop = focalCenteredCrop(1, state);
-
-            expect(crop.x).toBe(200);
-            expect(crop.y).toBe(0);
         });
     });
 

@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Dispatcher } from '@ngrx/signals/events';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockInstance } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -15,7 +15,6 @@ import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
-import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
 
 const PREVIEW_URL = '/contentAsset/image/inode-1/fileAsset?byInode=true&r=1';
@@ -65,6 +64,15 @@ Object.defineProperty(HTMLImageElement.prototype, 'naturalHeight', {
 const flushDecode = () => new Promise<void>((resolve) => setTimeout(resolve));
 
 describe('DotImageEditorCanvasComponent', () => {
+    // The crop overlay is mocked with MockComponent, which stubs only its
+    // inputs/outputs — not its public `naturalCropSize` computed nor its
+    // `setNaturalCropSize` method, which the canvas footer reads/calls. Stub both
+    // on the mock so the footer can wire to them: `naturalCropSize` is a signal the
+    // test can drive, `setNaturalCropSize` a spy to assert the canvas forwards edits.
+    MockInstance.scope();
+    const overlayCropSize = signal({ width: 0, height: 0 });
+    const setNaturalCropSize = jest.fn();
+
     let spectator: Spectator<DotImageEditorCanvasComponent>;
     let dispatcher: Dispatcher;
     let service: jest.Mocked<DotImageEditorService>;
@@ -72,7 +80,7 @@ describe('DotImageEditorCanvasComponent', () => {
     const previewUrl = signal(PREVIEW_URL);
     const previewStatus = signal<PreviewStatus>('idle');
     const zoom = signal({ level: 100, fitToScreen: true });
-    const activeTool = signal<'move' | 'crop' | 'focal'>('move');
+    const activeTool = signal<'move' | 'crop'>('move');
     const assetContext = signal({ naturalWidth: 800, naturalHeight: 600 });
 
     const createComponent = createComponentFactory({
@@ -104,16 +112,14 @@ describe('DotImageEditorCanvasComponent', () => {
                         imports: [
                             DotImageEditorAddressBarComponent,
                             DotImageEditorToolRailComponent,
-                            DotImageEditorCropOverlayComponent,
-                            DotImageEditorFocalOverlayComponent
+                            DotImageEditorCropOverlayComponent
                         ]
                     },
                     add: {
                         imports: [
                             MockComponent(DotImageEditorAddressBarComponent),
                             MockComponent(DotImageEditorToolRailComponent),
-                            MockComponent(DotImageEditorCropOverlayComponent),
-                            MockComponent(DotImageEditorFocalOverlayComponent)
+                            MockComponent(DotImageEditorCropOverlayComponent)
                         ]
                     }
                 }
@@ -133,6 +139,12 @@ describe('DotImageEditorCanvasComponent', () => {
     };
 
     beforeEach(() => {
+        // Expose the overlay's public size read/write on the mock for this test.
+        overlayCropSize.set({ width: 0, height: 0 });
+        setNaturalCropSize.mockClear();
+        MockInstance(DotImageEditorCropOverlayComponent, 'naturalCropSize', overlayCropSize);
+        MockInstance(DotImageEditorCropOverlayComponent, 'setNaturalCropSize', setNaturalCropSize);
+
         previewUrl.set(PREVIEW_URL);
         previewStatus.set('idle');
         zoom.set({ level: 100, fitToScreen: true });
@@ -156,7 +168,6 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(spectator.query('dot-image-editor-address-bar')).toExist();
         expect(spectator.query('dot-image-editor-tool-rail')).toExist();
         expect(spectator.query('dot-image-editor-crop-overlay')).toExist();
-        expect(spectator.query('dot-image-editor-focal-overlay')).toExist();
     });
 
     it('should show the skeleton and no spinner when idle', () => {
@@ -290,18 +301,65 @@ describe('DotImageEditorCanvasComponent', () => {
         expect(dispatchedEvent('retryRequested')).toBeDefined();
     });
 
-    describe('footer band', () => {
-        it('should render no action buttons when the move tool is active', () => {
+    describe('tool actions bar', () => {
+        it('should not render the action bar when the move tool is active', () => {
             activeTool.set('move');
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('image-editor-canvas-footer'))).toExist();
+            expect(spectator.query(byTestId('image-editor-canvas-footer'))).not.toExist();
             expect(spectator.query(byTestId('image-editor-crop-apply-btn'))).not.toExist();
             expect(spectator.query(byTestId('image-editor-crop-cancel-btn'))).not.toExist();
-            expect(spectator.query(byTestId('image-editor-focal-crop-btn'))).not.toExist();
         });
 
-        it('should invoke the crop overlay apply/cancel from the footer when cropping', () => {
+        it('should render the action bar with crop actions when the crop tool is active', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('image-editor-canvas-footer'))).toExist();
+            expect(spectator.query(byTestId('image-editor-crop-apply-btn'))).toExist();
+            expect(spectator.query(byTestId('image-editor-crop-cancel-btn'))).toExist();
+        });
+
+        it('should render the aspect presets including Free in the crop bar', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('image-editor-aspect-free'))).toExist();
+            expect(spectator.query(byTestId('image-editor-aspect-square'))).toExist();
+            expect(spectator.query(byTestId('image-editor-aspect-standard'))).toExist();
+            expect(spectator.query(byTestId('image-editor-aspect-wide'))).toExist();
+        });
+
+        it('should lock the crop aspect when a preset pill is clicked and clear it on Free', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            // The component owns cropAspect, which it binds to the crop overlay's
+            // `aspect` input ([aspect]="cropAspect()").
+            const cropAspect = () =>
+                (
+                    spectator.component as unknown as { cropAspect: () => number | null }
+                ).cropAspect();
+
+            spectator.click(spectator.query(byTestId('image-editor-aspect-wide'))!);
+            spectator.detectChanges();
+
+            // The selected pill is highlighted and the locked ratio is stored.
+            const wide = spectator.query(byTestId('image-editor-aspect-wide'));
+            expect(wide).toHaveClass('canvas__aspect--active');
+            expect(cropAspect()).toBeCloseTo(16 / 9, 5);
+
+            // Free clears the lock back to free-form (null) and highlights instead.
+            spectator.click(spectator.query(byTestId('image-editor-aspect-free'))!);
+            spectator.detectChanges();
+            expect(cropAspect()).toBeNull();
+            expect(spectator.query(byTestId('image-editor-aspect-free'))).toHaveClass(
+                'canvas__aspect--active'
+            );
+            expect(wide).not.toHaveClass('canvas__aspect--active');
+        });
+
+        it('should invoke the crop overlay apply/cancel from the action bar when cropping', () => {
             activeTool.set('crop');
             spectator.detectChanges();
 
@@ -318,18 +376,75 @@ describe('DotImageEditorCanvasComponent', () => {
             expect(cancelSpy).toHaveBeenCalled();
         });
 
-        it('should crop to the selected aspect from the focal bar', () => {
-            activeTool.set('focal');
+        it('should render the width/height size inputs when cropping', () => {
+            activeTool.set('crop');
             spectator.detectChanges();
 
-            // Select 16:9, then crop.
-            spectator.click(spectator.query(byTestId('image-editor-aspect-wide'))!);
-            const cropBtn = spectator.query(byTestId('image-editor-focal-crop-btn'));
-            spectator.click(cropBtn!.querySelector('button')!);
+            expect(spectator.query(byTestId('image-editor-crop-width-input'))).toExist();
+            expect(spectator.query(byTestId('image-editor-crop-height-input'))).toExist();
+        });
 
-            const event = dispatchedEvent('aspectCropApplied');
-            expect(event).toBeDefined();
-            expect(event!.payload).toEqual({ aspect: 16 / 9, label: '16:9' });
+        it('should disable the size inputs in Free mode and enable them under a preset', async () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+            // NgModel applies disabled-state changes in a microtask, so flush it
+            // before reading the inner input's disabled state.
+            await Promise.resolve();
+            spectator.detectChanges();
+
+            // The inner PrimeNG <input> carries the disabled state. Free (null) is a
+            // pure readout, so both fields are disabled.
+            const widthInput = () =>
+                spectator.query(byTestId('image-editor-crop-width-input'))!.querySelector('input')!;
+            const heightInput = () =>
+                spectator
+                    .query(byTestId('image-editor-crop-height-input'))!
+                    .querySelector('input')!;
+
+            expect(widthInput().disabled).toBe(true);
+            expect(heightInput().disabled).toBe(true);
+
+            // Selecting a preset locks a ratio and makes the fields editable.
+            spectator.click(spectator.query(byTestId('image-editor-aspect-square'))!);
+            spectator.detectChanges();
+            await Promise.resolve();
+            spectator.detectChanges();
+
+            expect(widthInput().disabled).toBe(false);
+            expect(heightInput().disabled).toBe(false);
+        });
+
+        it('should drive the crop overlay setter when the width is edited under a preset', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            // Lock to 1:1 so the height follows the typed width.
+            spectator.click(spectator.query(byTestId('image-editor-aspect-square'))!);
+            spectator.detectChanges();
+
+            // Editing the width to 320 px drives the overlay setter with the locked
+            // ratio's matching height (320 / 1 = 320).
+            (
+                spectator.component as unknown as {
+                    onCropWidthChange: (value: number | null) => void;
+                }
+            ).onCropWidthChange(320);
+
+            expect(setNaturalCropSize).toHaveBeenCalledWith(320, 320);
+        });
+
+        it('should ignore size edits while in Free mode (pure readout)', () => {
+            activeTool.set('crop');
+            spectator.detectChanges();
+
+            // Free is the default; an edit must not reach the overlay setter.
+            (
+                spectator.component as unknown as {
+                    onCropWidthChange: (value: number | null) => void;
+                }
+            ).onCropWidthChange(320);
+
+            expect(setNaturalCropSize).not.toHaveBeenCalled();
         });
     });
 

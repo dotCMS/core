@@ -14,13 +14,42 @@
     position: absolute;
     box-sizing: border-box;
     border: 1px solid var(--surface-0, #ffffff);
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     cursor: move;
     pointer-events: auto;
     outline: none;
 
     &:focus-visible {
         border-color: var(--primary-color, #426bf0);
+    }
+}
+
+// Solid panels that dim everything outside the selection. Four cheap solid fills
+// replace a viewport-sized `box-shadow`, whose per-frame re-rasterization was the
+// dominant cost of dragging/resizing the box. Geometry comes from `maskBounds`;
+// each panel stretches to the overlay edges via the fixed insets below.
+.crop-mask {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+
+    &--top {
+        top: 0;
+        left: 0;
+        right: 0;
+    }
+
+    &--bottom {
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    &--left {
+        left: 0;
+    }
+
+    &--right {
+        right: 0;
     }
 }
 

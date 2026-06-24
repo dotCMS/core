@@ -64,32 +64,6 @@ export const imageEditorOverlayEnterLeave = (
 };
 
 /**
- * Pop-in with a slight overshoot for the focal point marker.
- * @param duration - Animation duration (default: 250ms; pass '0ms' for reduced motion)
- * @param easing - CSS easing function (default: 'ease-out')
- */
-export const focalPointPop = (
-    duration = '250ms',
-    easing = 'ease-out'
-): AnimationTriggerMetadata => {
-    return trigger('focalPointPop', [
-        transition(':enter', [
-            animate(
-                `${duration} ${easing}`,
-                keyframes([
-                    style({ opacity: 0, transform: 'scale(0)', offset: 0 }),
-                    style({ opacity: 1, transform: 'scale(1.2)', offset: 0.7 }),
-                    style({ opacity: 1, transform: 'scale(1)', offset: 1 })
-                ])
-            )
-        ]),
-        transition(':leave', [
-            animate(`${duration} ${easing}`, style({ opacity: 0, transform: 'scale(0)' }))
-        ])
-    ]);
-};
-
-/**
  * Brief pulse used to acknowledge a successful save.
  * @param duration - Animation duration (default: 400ms; pass '0ms' for reduced motion)
  * @param easing - CSS easing function (default: 'ease-out')

@@ -5,7 +5,6 @@ import {
     ActiveTool,
     CompressionMode,
     CropState,
-    FocalPointState,
     ImageEditorOpenParams
 } from '../models/image-editor.models';
 
@@ -49,17 +48,13 @@ export const imageEditorViewEvents = eventGroup({
     }
 });
 
-/** Events emitted by the canvas tools (move/crop/focal). */
+/** Events emitted by the canvas tools (move/crop). */
 export const imageEditorToolEvents = eventGroup({
     source: 'Image Editor Tool',
     events: {
         toolSelected: type<ActiveTool>(),
         cropApplied: type<CropState>(),
-        cropCancelled: type<void>(),
-        focalPointSet: type<{ x: number; y: number }>(),
-        focalPointCleared: type<void>(),
-        // A crop to the given aspect ratio, centered on the current focal point.
-        aspectCropApplied: type<{ aspect: number; label: string }>()
+        cropCancelled: type<void>()
     }
 });
 
@@ -87,7 +82,6 @@ export const imageEditorLifecycleEvents = eventGroup({
             naturalWidth: number;
             naturalHeight: number;
             originalBytes: number | null;
-            focalPoint?: FocalPointState;
         }>(),
         assetLoadFailed: type<unknown>(),
         previewSizeResolved: type<number>()

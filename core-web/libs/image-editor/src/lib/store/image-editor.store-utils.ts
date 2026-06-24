@@ -2,7 +2,6 @@ import {
     initialAdjustState,
     initialCropState,
     initialFileInfoState,
-    initialFocalPointState,
     initialTransformState
 } from './image-editor.state';
 
@@ -20,14 +19,12 @@ import {
     SlicePatch,
     TransformState
 } from '../models/image-editor.models';
-import { clamp } from '../utils/dimensions.util';
 
 /**
- * Pure helpers for the {@link ImageEditorStore}: history coalescing/replay, the
- * focal-centered crop geometry, asset-context construction, slice-patch reducers
- * and small formatters. Kept out of the store file so it stays focused on the
- * signalStore definition; every function here is side-effect-free and unit-testable
- * in isolation.
+ * Pure helpers for the {@link ImageEditorStore}: history coalescing/replay,
+ * asset-context construction, slice-patch reducers and small formatters. Kept out
+ * of the store file so it stays focused on the signalStore definition; every
+ * function here is side-effect-free and unit-testable in isolation.
  */
 
 /** The pristine values of the editable slices, used to seed and reset history. */
@@ -35,7 +32,6 @@ export const initialEditableSlices: EditableSlices = {
     adjust: initialAdjustState,
     transform: initialTransformState,
     crop: initialCropState,
-    focalPoint: initialFocalPointState,
     fileInfo: initialFileInfoState
 };
 
@@ -45,7 +41,6 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
         adjust: state.adjust,
         transform: state.transform,
         crop: state.crop,
-        focalPoint: state.focalPoint,
         fileInfo: state.fileInfo
     };
 }
@@ -99,7 +94,6 @@ export function restoreSlices(snapshot: EditableSlices): EditableSlices {
         adjust: snapshot.adjust,
         transform: snapshot.transform,
         crop: snapshot.crop,
-        focalPoint: snapshot.focalPoint,
         fileInfo: snapshot.fileInfo
     };
 }
@@ -145,7 +139,6 @@ function applySlicePatch(base: EditableSlices, patch: SlicePatch): EditableSlice
         adjust: { ...base.adjust, ...patch.adjust },
         transform: { ...base.transform, ...patch.transform },
         crop: { ...base.crop, ...patch.crop },
-        focalPoint: { ...base.focalPoint, ...patch.focalPoint },
         fileInfo: { ...base.fileInfo, ...patch.fileInfo }
     };
 }
@@ -179,34 +172,6 @@ export function rebuildHistory(
 
             return { ...entry, snapshot: accumulated };
         });
-}
-
-/**
- * The largest crop of the given aspect ratio that fits the natural image,
- * centered on the active focal point (or the image center when none is set) and
- * clamped to the image bounds. This is what makes the focal point visible: the
- * kept region follows the focal point instead of the center.
- */
-export function focalCenteredCrop(aspect: number, state: ImageEditorState): CropState {
-    const { naturalWidth, naturalHeight } = state.assetContext;
-    const naturalAspect = naturalWidth / naturalHeight;
-
-    let w: number;
-    let h: number;
-    if (aspect > naturalAspect) {
-        w = naturalWidth;
-        h = Math.round(naturalWidth / aspect);
-    } else {
-        h = naturalHeight;
-        w = Math.round(naturalHeight * aspect);
-    }
-
-    const fx = state.focalPoint.active ? state.focalPoint.x : 0.5;
-    const fy = state.focalPoint.active ? state.focalPoint.y : 0.5;
-    const x = clamp(Math.round(fx * naturalWidth - w / 2), 0, naturalWidth - w);
-    const y = clamp(Math.round(fy * naturalHeight - h / 2), 0, naturalHeight - h);
-
-    return { x, y, w, h, active: true, aspect };
 }
 
 /** Produces the asset context for a freshly requested asset. */

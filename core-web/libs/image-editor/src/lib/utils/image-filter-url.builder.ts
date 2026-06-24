@@ -106,11 +106,6 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
         filters.push({ name: 'Hsb', args });
     }
 
-    // The focal point is intentionally NOT a preview filter: the dotCMS FocalPoint
-    // filter only writes metadata (no visible change), so emitting it just forces a
-    // pointless reload. It is persisted on save (persistFocalPoint) and consumed by
-    // the focal-centered aspect crop directly from state.
-
     const compression = compressionFilter(fileInfo.compression, fileInfo.quality);
     if (compression) {
         filters.push(compression);

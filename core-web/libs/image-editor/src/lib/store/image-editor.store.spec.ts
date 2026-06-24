@@ -84,7 +84,6 @@ describe('ImageEditorStore', () => {
         expect(store.adjust().brightness).toBe(0);
         expect(store.transform().scale).toBe(100);
         expect(store.fileInfo().quality).toBe(85);
-        expect(store.focalPoint()).toEqual({ x: 0.5, y: 0.5, active: false });
         expect(store.activeTool()).toBe('move');
         expect(store.previewStatus()).toBe('idle');
         expect(store.history()).toEqual([]);
@@ -182,32 +181,6 @@ describe('ImageEditorStore', () => {
 
             expect(store.crop().active).toBe(false);
             expect(store.activeTool()).toBe('move');
-        });
-
-        it('should set and clear the focal point', () => {
-            tool.focalPointSet({ x: 0.25, y: 0.75 });
-
-            expect(store.focalPoint()).toEqual({ x: 0.25, y: 0.75, active: true });
-            expect(store.history().at(-1)?.category).toBe('focal');
-
-            tool.focalPointCleared();
-
-            expect(store.focalPoint()).toEqual({ x: 0.5, y: 0.5, active: false });
-        });
-
-        it('should apply an aspect crop centered on the focal point', () => {
-            lifecycle.assetRequested(OPEN_PARAMS);
-            lifecycle.assetLoaded({ naturalWidth: 1000, naturalHeight: 800, originalBytes: 5000 });
-            tool.focalPointSet({ x: 0.8, y: 0.5 });
-
-            tool.aspectCropApplied({ aspect: 1, label: '1:1' });
-
-            // 1:1 in a 1000×800 image → an 800×800 region; centered on x=0.8 (=800px)
-            // it wants x=400 but clamps to the right edge (1000−800=200), y centers at 0.
-            expect(store.crop()).toEqual({ x: 200, y: 0, w: 800, h: 800, active: true, aspect: 1 });
-            expect(store.transform().scale).toBe(100);
-            expect(store.activeTool()).toBe('move');
-            expect(store.history().at(-1)?.category).toBe('crop');
         });
     });
 

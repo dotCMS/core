@@ -36,25 +36,55 @@
     padding: 1.5rem;
 }
 
-// Bottom band mirroring `.canvas__address-bar`: same light background and padding,
-// always present so the stage has symmetric top and bottom bands. Hosts the
-// active tool's actions, right-aligned.
-.canvas__footer {
-    flex: 0 0 auto;
-    // Match the address bar's band height (top/bottom symmetry).
-    min-height: 3.5rem;
+// Floating action bar centered at the bottom of the viewport: hosts the crop
+// tool's actions (aspect presets + size inputs + apply/cancel). Light rounded
+// chrome (white card), revealed on hover or keyboard focus so it floats over the
+// image instead of taking a permanent band.
+.canvas__actions {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background-color: var(--surface-100, #f1f3f5);
+    // Size to content (capped to the viewport) so the bar is as wide as it needs to
+    // be. Without an explicit width an absolutely-positioned box is capped at the
+    // space right of `left: 50%`, which squeezed "Apply crop" onto two lines.
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.75rem;
+    background-color: var(--surface-0, #ffffff);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
     color: var(--surface-700, #374151);
-    border-top: 1px solid var(--surface-200, #e5e7eb);
+    // Hidden until the user hovers the canvas (or tabs into an action, for keyboard a11y).
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
 }
 
-// Aspect presets in the (light) focal crop bar: outlined pills, the selected one
-// filled with the primary color.
+// Keep the action button labels (e.g. "Apply crop") on a single line; the bar
+// sizes to content so they never need to wrap.
+:host ::ng-deep .canvas__actions .p-button-label {
+    white-space: nowrap;
+}
+
+.canvas__viewport:hover .canvas__actions,
+.canvas__actions:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__actions {
+        transition: none;
+    }
+}
+
+// Aspect presets in the (light) floating crop action bar: plain dark-gray text
+// pills, the selected one filled with the primary color.
 .canvas__aspects {
     display: flex;
     gap: 0.25rem;
@@ -62,10 +92,10 @@
 
 .canvas__aspect {
     padding: 0.25rem 0.75rem;
-    border: 1px solid var(--surface-300, #cbd5e1);
-    border-radius: 4px;
+    border: none;
+    border-radius: 6px;
     background: transparent;
-    color: var(--surface-700, #374151);
+    color: var(--surface-600, #4b5563);
     font-size: 0.8125rem;
     font-variant-numeric: tabular-nums;
     cursor: pointer;
@@ -75,12 +105,16 @@
 }
 
 .canvas__aspect:hover {
-    background: var(--surface-200, #e5e7eb);
-    color: var(--surface-900, #111827);
+    background: var(--surface-100, #f3f4f6);
+    color: var(--surface-900, #1f2937);
 }
 
 .canvas__aspect--active {
-    border-color: var(--primary-color, #6366f1);
+    background: var(--primary-color, #6366f1);
+    color: #ffffff;
+}
+
+.canvas__aspect--active:hover {
     background: var(--primary-color, #6366f1);
     color: #ffffff;
 }
@@ -89,6 +123,53 @@
     .canvas__aspect {
         transition: none;
     }
+}
+
+// Thin vertical dividers separating the preset group, the size inputs and the
+// action buttons.
+.canvas__separator {
+    width: 1px;
+    height: 1.25rem;
+    background: var(--surface-200, #e5e7eb);
+}
+
+// Natural-pixel width/height readout/editor: white right-aligned number fields
+// flanking an `×` glyph, with a static `px` unit label.
+.canvas__size {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--surface-700, #374151);
+}
+
+.canvas__size-glyph {
+    color: var(--surface-500, #6b7280);
+}
+
+.canvas__size-unit {
+    color: var(--surface-500, #6b7280);
+    font-variant-numeric: tabular-nums;
+}
+
+// Tighten the PrimeNG inputNumber to a compact, right-aligned field that reads as
+// part of the light bar; the disabled (Free) state is visibly muted.
+:host ::ng-deep .canvas__size-input input {
+    width: 4rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--surface-300, #d1d5db);
+    border-radius: 6px;
+    background: var(--surface-0, #ffffff);
+    color: var(--surface-900, #1f2937);
+    font-size: 0.8125rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+:host ::ng-deep .canvas__size-input input:disabled {
+    background: var(--surface-100, #f3f4f6);
+    color: var(--surface-500, #6b7280);
+    opacity: 1;
 }
 
 .canvas__tool-rail {

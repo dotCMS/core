@@ -31,8 +31,8 @@ describe('withView', () => {
         expect(store.activeTool()).toBe('crop');
         expect(store.history()).toHaveLength(0);
 
-        tool.toolSelected('focal');
-        expect(store.activeTool()).toBe('focal');
+        tool.toolSelected('move');
+        expect(store.activeTool()).toBe('move');
     });
 
     it('toggles full-screen on and off', () => {

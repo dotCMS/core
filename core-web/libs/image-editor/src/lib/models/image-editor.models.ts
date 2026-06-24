@@ -6,9 +6,8 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
  * Tool currently selected on the editing canvas.
  * - `move`: pan/zoom the image
  * - `crop`: draw a crop selection
- * - `focal`: place the focal point
  */
-export type ActiveTool = 'move' | 'crop' | 'focal';
+export type ActiveTool = 'move' | 'crop';
 
 /** Output compression strategy applied as the last filter in the chain. */
 export type CompressionMode = 'none' | 'auto' | 'jpeg' | 'webp';
@@ -25,14 +24,7 @@ export interface ImageRect {
 export type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /** Logical category an applied edit belongs to, used for grouping and labels. */
-export type FilterCategory =
-    | 'adjust'
-    | 'crop'
-    | 'rotate'
-    | 'flip'
-    | 'grayscale'
-    | 'compression'
-    | 'focal';
+export type FilterCategory = 'adjust' | 'crop' | 'rotate' | 'flip' | 'grayscale' | 'compression';
 
 /** Server-side filter name as understood by the dotCMS image filter endpoint. */
 export type FilterName =
@@ -42,7 +34,6 @@ export type FilterName =
     | 'Flip'
     | 'Grayscale'
     | 'Hsb'
-    | 'FocalPoint'
     | 'Jpeg'
     | 'WebP'
     | 'Quality';
@@ -115,13 +106,6 @@ export interface CropState {
     aspect: number | null;
 }
 
-/** Focal point as normalized 0..1 coordinates. `active` gates application. */
-export interface FocalPointState {
-    x: number;
-    y: number;
-    active: boolean;
-}
-
 /** Compression configuration and the resulting/original file sizes in bytes. */
 export interface FileInfoState {
     compression: CompressionMode;
@@ -167,7 +151,6 @@ export interface ImageEditorHistoryEntry {
         adjust: AdjustState;
         transform: TransformState;
         crop: CropState;
-        focalPoint: FocalPointState;
         fileInfo: FileInfoState;
     };
 }
@@ -201,7 +184,7 @@ export interface DotImageEditorLauncher {
 
 /**
  * The complete, flat state of the image editor. Each slice owns a domain of the
- * editing experience (color adjustment, geometric transform, crop, focal point,
+ * editing experience (color adjustment, geometric transform, crop,
  * file/compression info, zoom) plus the editor lifecycle bookkeeping (active
  * tool, preview/save status, history and a cache-busting counter).
  */
@@ -216,8 +199,6 @@ export interface ImageEditorState {
     crop: CropState;
     /** Compression configuration and resulting/original file sizes. */
     fileInfo: FileInfoState;
-    /** Normalized focal point slice. */
-    focalPoint: FocalPointState;
     /** Canvas zoom slice. */
     zoom: ZoomState;
     /** Tool currently selected on the canvas. */
@@ -289,12 +270,6 @@ export interface LocalRect {
 /** Identifiers for the eight resize handles around the crop box. */
 export type HandlePosition = 'tl' | 't' | 'tr' | 'r' | 'br' | 'b' | 'bl' | 'l';
 
-/** A normalized point in the unit square, where {x:0.5, y:0.5} is the center. */
-export interface NormalizedPoint {
-    x: number;
-    y: number;
-}
-
 /** Natural pixel dimensions of an image resolved from the browser. */
 export interface NaturalDimensions {
     naturalWidth: number;
@@ -316,6 +291,5 @@ export type SlicePatch = {
     adjust?: Partial<AdjustState>;
     transform?: Partial<TransformState>;
     crop?: Partial<CropState>;
-    focalPoint?: Partial<FocalPointState>;
     fileInfo?: Partial<FileInfoState>;
 };
