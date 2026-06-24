@@ -39,11 +39,18 @@ Pre-loaded instance context (available as globals — no API calls needed to rea
 
 Always use the \`search\` tool first to discover the correct endpoint path and request/response schema before calling \`execute\`.
 
+Transferring file assets? Do NOT use this tool. Use the dedicated \`upload_assets\` /
+\`download_assets\` tools instead — they stream file bytes between disk and dotCMS on the
+server side, so the content never enters your context (and you never need a token or \`.env\`).
+Reach for \`execute\` only for JSON/API work; inlining base64 file bytes here just bloats your
+context. The \`formData\`/base64 path below exists only for small, programmatic payloads — not
+for transferring real files, themes, or directories.
+
 Tips:
 - Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
-- For file uploads use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
+- For a small programmatic upload (NOT real files — use \`upload_assets\` for those) use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
-Binary responses (file assets — images, fonts, PDFs, etc.):
+Binary responses (small/programmatic reads only — for real files use \`download_assets\`):
 - Endpoints that return non-text bodies (e.g. GET \`/api/v2/assets/{identifier}\` and \`/dA/{id}\`, content-type \`application/octet-stream\` or \`image/*\`) come back as an envelope: \`{ __dotcmsBinary: true, contentType, base64, byteLength }\`.
 - The \`base64\` field IS the raw file bytes — base64-decode it to recover the exact file. Do NOT treat it as text; the bytes are intact (not UTF-8-mangled).
 - JSON and textual responses (\`text/*\`, xml, js, \`+json\`/\`+xml\`) are returned as parsed objects / strings as before — only binary bodies use the envelope.

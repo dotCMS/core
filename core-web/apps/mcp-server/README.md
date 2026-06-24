@@ -200,7 +200,7 @@ AI: [Analyzes your Product fields and generates a complete component]
 
 ## Available Tools
 
-The dotCMS MCP Server provides two core tools that enable comprehensive content management through AI:
+The dotCMS MCP Server provides tools that enable comprehensive content management through AI:
 
 ### Search
 
@@ -241,6 +241,42 @@ return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 ```
 
 **Helper utilities available**: `pick(arr, fields)`, `table(arr)`, `count(arr, field)`, `sum(arr, field)`, `first(arr, n)`
+
+### Download Assets
+
+**Tool**: `download_assets`
+
+**Purpose**: Download a dotCMS asset folder to the MCP server filesystem while returning only a small JSON manifest.
+
+```json
+{
+    "path": "/application/themes/travel",
+    "dest": "/absolute/local/path/themes/travel",
+    "recursive": true,
+    "overwrite": "skip",
+    "include": "*.vtl,*.scss"
+}
+```
+
+The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model.
+
+### Upload Assets
+
+**Tool**: `upload_assets`
+
+**Purpose**: Upload a local directory to dotCMS file assets using `/api/v2/assets/publish` or `/api/v2/assets/save`.
+
+```json
+{
+    "src": "/absolute/local/path/themes/travel",
+    "dest": "//demo.dotcms.com/application/themes/travel",
+    "include": "*.vtl,*.scss",
+    "publish": true,
+    "verify": true
+}
+```
+
+The upload destination must be host-qualified. When `publish` and `verify` are true, the tool checks live status with `/api/v1/content/{identifier}` and retries publish for files that did not become live.
 
 ### Pre-loaded Instance Context
 
@@ -365,7 +401,11 @@ apps/mcp-server/                         # MCP server (thin xmcp wrappers)
 ├── src/
 │   ├── tools/
 │   │   ├── search.ts       # API spec exploration tool
-│   │   └── execute.ts      # API execution tool
+│   │   ├── execute.ts      # API execution tool
+│   │   ├── download_assets.ts
+│   │   └── upload_assets.ts
+│   ├── lib/
+│   │   └── assets-transfer.ts
 │   └── prompts/            # Prompt templates (xmcp convention)
 ├── xmcp.config.ts          # xmcp bundler configuration
 ├── jest.config.ts          # Test configuration
