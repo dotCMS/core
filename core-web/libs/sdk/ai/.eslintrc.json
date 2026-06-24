@@ -23,7 +23,14 @@
                     {
                         "patterns": [
                             {
-                                "group": ["../adapter", "../adapter/*", "../spec", "../spec/*", "../runtime", "../generated/*"],
+                                "group": [
+                                    "../adapter",
+                                    "../adapter/*",
+                                    "../spec",
+                                    "../spec/*",
+                                    "../runtime",
+                                    "../generated/*"
+                                ],
                                 "message": "@dotcms/ai/sandbox is the generic engine and must not import dotCMS-specific code (adapter, spec, runtime). Keep the generic/dotCMS boundary intact."
                             }
                         ]

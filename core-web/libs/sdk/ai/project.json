@@ -53,10 +53,7 @@
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": [
-                    "libs/sdk/ai/src/**/*.ts",
-                    "libs/sdk/ai/scripts/**/*.ts"
-                ]
+                "lintFilePatterns": ["libs/sdk/ai/src/**/*.ts", "libs/sdk/ai/scripts/**/*.ts"]
             }
         },
         "test": {

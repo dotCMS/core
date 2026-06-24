@@ -16,11 +16,7 @@ export type { ExecutorOptions } from './executor';
 export { createWorkerSandbox } from './factory';
 export type { ISandbox, SandboxFactory } from './interface';
 
-export {
-    defineAdapter,
-    isDefinedAdapter,
-    describeAdapterForLLM
-} from './define-adapter';
+export { defineAdapter, isDefinedAdapter, describeAdapterForLLM } from './define-adapter';
 export type {
     AdapterContext,
     AdapterDef,

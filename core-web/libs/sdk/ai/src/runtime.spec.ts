@@ -9,7 +9,9 @@ function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): 
         ok,
         status,
         statusText: ok ? 'OK' : 'Error',
-        headers: { get: (n: string) => (n.toLowerCase() === 'content-type' ? 'application/json' : null) },
+        headers: {
+            get: (n: string) => (n.toLowerCase() === 'content-type' ? 'application/json' : null)
+        },
         json: async () => body,
         text: async () => JSON.stringify(body)
     } as unknown as Response;

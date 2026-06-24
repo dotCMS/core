@@ -162,7 +162,6 @@ export class NodeWorkerSandbox implements ISandbox {
         });
     }
 
-
     dispose(): void {
         // Workers are created per execution, nothing to dispose
     }

@@ -4,11 +4,7 @@
  * loading, and the context cache. dotCMS-wired by design (the generic engine is `/sandbox`).
  */
 
-export {
-    createApiAdapter,
-    dotcmsAdapter,
-    isBinaryResponseEnvelope
-} from './http-client';
+export { createApiAdapter, dotcmsAdapter, isBinaryResponseEnvelope } from './http-client';
 export type {
     ApiAdapterConfig,
     DotCMSAdapter,

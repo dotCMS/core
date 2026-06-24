@@ -1,4 +1,10 @@
-import { AbortError, HttpError, PolicyError, RuntimeError, ValidationError } from '../sandbox/errors';
+import {
+    AbortError,
+    HttpError,
+    PolicyError,
+    RuntimeError,
+    ValidationError
+} from '../sandbox/errors';
 
 /**
  * The single shared request core.
@@ -266,7 +272,9 @@ async function resolveFileDescriptor(
             signal?.removeEventListener('abort', onParentAbort);
         }
     }
-    throw new ValidationError(`File descriptor "${desc.name}" must have either "data" (base64) or "url"`);
+    throw new ValidationError(
+        `File descriptor "${desc.name}" must have either "data" (base64) or "url"`
+    );
 }
 
 /**

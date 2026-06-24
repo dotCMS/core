@@ -95,7 +95,6 @@ export function dotcmsAdapter(config: ApiAdapterConfig): DotCMSAdapter {
     const request = adapter.methods.get('request')?.execute;
     return {
         adapter,
-        request: (options: RequestOptions): Promise<unknown> =>
-            Promise.resolve(request?.(options))
+        request: (options: RequestOptions): Promise<unknown> => Promise.resolve(request?.(options))
     };
 }

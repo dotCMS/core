@@ -21,7 +21,11 @@ describe('defineAdapter', () => {
                 input: z.object({ url: z.url() }),
                 output: z.object({ echoed: z.object({}).loose() }).loose(),
                 handler: ({ url }, { request }) =>
-                    request({ method: 'POST', path: '/api/v1/page-scanner/a11y/check', body: { url } })
+                    request({
+                        method: 'POST',
+                        path: '/api/v1/page-scanner/a11y/check',
+                        body: { url }
+                    })
             }
         }
     });
