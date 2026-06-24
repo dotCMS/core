@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Vendor-neutral representation of a single named aggregation result.
@@ -23,36 +24,44 @@ import javax.annotation.Nullable;
  * / {@link #fromOS(Map)} to build that map from a vendor response.</p>
  *
  * <p>The components are named {@code getName} / {@code getType} / {@code getBuckets} / {@code getHits}
- * so the canonical record accessors are bean-style; this keeps {@code $results.aggregations.<name>.buckets}
- * (property access, resolved via {@code getBuckets()}) working from Velocity.</p>
+ * / {@code getMetadata} so the canonical record accessors are bean-style; this keeps
+ * {@code $results.aggregations.<name>.buckets} (property access, resolved via {@code getBuckets()})
+ * working from Velocity.</p>
  *
  * <p>Factory methods are the only places where vendor imports are allowed in this file.</p>
  *
- * @param getName    the aggregation name as declared in the query (e.g. {@code content_types})
- * @param getType    the vendor-reported aggregation type (e.g. {@code sterms}, {@code lterms},
- *                   {@code top_hits}); defaults to {@code unknown}
- * @param getBuckets buckets for multi-bucket ({@code terms}) aggregations; empty for metric aggregations
- * @param getHits    hits for the {@code top_hits} metric aggregation; {@code null} for other types
+ * @param getName     the aggregation name as declared in the query (e.g. {@code content_types})
+ * @param getType     the vendor-reported aggregation type (e.g. {@code sterms}, {@code lterms},
+ *                    {@code top_hits}); defaults to {@code unknown}
+ * @param getBuckets  buckets for multi-bucket ({@code terms}) aggregations; empty for metric aggregations
+ * @param getHits     hits for the {@code top_hits} metric aggregation; {@code null} for other types
+ * @param getMetadata the optional {@code meta} object attached to the aggregation in the query;
+ *                    mirrors {@code org.elasticsearch.search.aggregations.Aggregation#getMetadata()}
+ *                    (and OpenSearch's {@code Aggregate#meta()}) so it survives a rollback to the ES
+ *                    type, which exposes the same accessor; empty map when no {@code meta} was set
  * @see AggregationBucket
  */
 public record Aggregation(
         String getName,
         String getType,
         List<AggregationBucket> getBuckets,
-        @Nullable SearchHits getHits) implements Iterable<AggregationBucket> {
+        @Nullable SearchHits getHits,
+        Map<String, Object> getMetadata) implements Iterable<AggregationBucket> {
 
     /**
-     * Canonical constructor. {@code getType} defaults to {@code "unknown"} and {@code getBuckets}
-     * to an empty list when {@code null} (mirrors the previous Immutables defaults).
+     * Canonical constructor. {@code getType} defaults to {@code "unknown"}, {@code getBuckets}
+     * to an empty list and {@code getMetadata} to an empty map when {@code null} (mirrors the
+     * previous Immutables defaults).
      */
     public Aggregation {
         getType = getType == null ? "unknown" : getType;
         getBuckets = getBuckets == null ? Collections.emptyList() : getBuckets;
+        getMetadata = getMetadata == null ? Collections.emptyMap() : getMetadata;
     }
 
     /** Iterate the buckets directly: {@code #foreach($bucket in $agg)}. */
     @Override
-    public Iterator<AggregationBucket> iterator() {
+    public @NotNull Iterator<AggregationBucket> iterator() {
         return getBuckets().iterator();
     }
 
@@ -80,7 +89,8 @@ public record Aggregation(
     private static Aggregation fromSingle(final org.elasticsearch.search.aggregations.Aggregation esAgg) {
         final Builder builder = builder()
                 .name(esAgg.getName())
-                .type(esAgg.getType());
+                .type(esAgg.getType())
+                .metadata(esAgg.getMetadata());
 
         if (esAgg instanceof org.elasticsearch.search.aggregations.bucket.terms.Terms) {
             final org.elasticsearch.search.aggregations.bucket.terms.Terms terms =
@@ -131,26 +141,38 @@ public record Aggregation(
         final Builder builder = builder().name(name);
 
         if (agg.isSterms()) {
+            final org.opensearch.client.opensearch._types.aggregations.StringTermsAggregate sterms =
+                    agg.sterms();
             return builder.type("sterms")
-                    .buckets(agg.sterms().buckets().array().stream()
+                    .metadata(fromOSMeta(sterms.meta()))
+                    .buckets(sterms.buckets().array().stream()
                             .map(AggregationBucket::fromOS)
                             .collect(Collectors.toList()))
                     .build();
         } else if (agg.isLterms()) {
+            final org.opensearch.client.opensearch._types.aggregations.LongTermsAggregate lterms =
+                    agg.lterms();
             return builder.type("lterms")
-                    .buckets(agg.lterms().buckets().array().stream()
+                    .metadata(fromOSMeta(lterms.meta()))
+                    .buckets(lterms.buckets().array().stream()
                             .map(AggregationBucket::fromOS)
                             .collect(Collectors.toList()))
                     .build();
         } else if (agg.isDterms()) {
+            final org.opensearch.client.opensearch._types.aggregations.DoubleTermsAggregate dterms =
+                    agg.dterms();
             return builder.type("dterms")
-                    .buckets(agg.dterms().buckets().array().stream()
+                    .metadata(fromOSMeta(dterms.meta()))
+                    .buckets(dterms.buckets().array().stream()
                             .map(AggregationBucket::fromOS)
                             .collect(Collectors.toList()))
                     .build();
         } else if (agg.isTopHits()) {
+            final org.opensearch.client.opensearch._types.aggregations.TopHitsAggregate topHits =
+                    agg.topHits();
             return builder.type("top_hits")
-                    .hits(SearchHits.from(agg.topHits().hits()))
+                    .metadata(fromOSMeta(topHits.meta()))
+                    .hits(SearchHits.from(topHits.hits()))
                     .build();
         }
 
@@ -158,9 +180,32 @@ public record Aggregation(
     }
 
     /**
+     * Converts an OpenSearch aggregation {@code meta} map ({@code Map<String, JsonData>}) into the
+     * neutral plain-Java {@code Map<String, Object>} so it matches the shape Elasticsearch already
+     * returns from {@code Aggregation#getMetadata()}. Each {@code JsonData} is unwrapped to its
+     * closest plain value (Map/List/String/Number/Boolean); if a value cannot be mapped it falls
+     * back to its raw JSON string rather than failing the whole aggregation.
+     */
+    private static Map<String, Object> fromOSMeta(
+            final Map<String, org.opensearch.client.json.JsonData> osMeta) {
+        if (osMeta == null || osMeta.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<String, Object> meta = new LinkedHashMap<>();
+        for (final Map.Entry<String, org.opensearch.client.json.JsonData> entry : osMeta.entrySet()) {
+            try {
+                meta.put(entry.getKey(), entry.getValue().to(Object.class));
+            } catch (final RuntimeException cannotMap) {
+                meta.put(entry.getKey(), entry.getValue().toJson().toString());
+            }
+        }
+        return meta;
+    }
+
+    /**
      * Fluent builder for {@link Aggregation}. An unset {@code type} defaults to {@code "unknown"},
-     * unset {@code buckets} to an empty list and {@code hits} to {@code null}, preserving the
-     * lenient behaviour of the former Immutables builder.
+     * unset {@code buckets} to an empty list, {@code hits} to {@code null} and {@code metadata} to
+     * an empty map, preserving the lenient behaviour of the former Immutables builder.
      */
     public static final class Builder {
 
@@ -168,6 +213,7 @@ public record Aggregation(
         private String type;
         private List<AggregationBucket> buckets = Collections.emptyList();
         private SearchHits hits;
+        private Map<String, Object> metadata = Collections.emptyMap();
 
         public Builder name(final String name) {
             this.name = name;
@@ -189,8 +235,13 @@ public record Aggregation(
             return this;
         }
 
+        public Builder metadata(final Map<String, Object> metadata) {
+            this.metadata = metadata;
+            return this;
+        }
+
         public Aggregation build() {
-            return new Aggregation(name, type, buckets, hits);
+            return new Aggregation(name, type, buckets, hits, metadata);
         }
     }
 }

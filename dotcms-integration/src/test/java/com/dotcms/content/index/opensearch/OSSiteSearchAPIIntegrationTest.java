@@ -9,6 +9,8 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.enterprise.publishing.sitesearch.OSSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
@@ -20,6 +22,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -174,20 +177,25 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Given scenario: an index holding a few documents that share a common term.
-     * Expected: a terms aggregation query returns a non-null aggregation tree keyed by the
-     * aggregation name.
+     * Given scenario: an index holding 3 html + 2 pdf documents.
+     * Expected: a terms aggregation on {@code mimeType} maps through the OpenSearch
+     * {@code fromOS(StringTermsBucket)} factory to a neutral {@link Aggregation} with one bucket per
+     * mimeType — correct keys, doc counts, {@code getKeyAsString} mirroring {@code getKey}, a null
+     * numeric key for the non-numeric mimeType, and no top-hits — so the OS path produces the same
+     * neutral shape the ES path does (not merely a non-null map).
      */
     @Test
-    public void test_getAggregations_shouldReturnBuckets() throws Exception {
+    public void test_getAggregations_termsBucketsHaveCorrectKeysAndCounts() throws Exception {
         osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
 
-        for (int i = 0; i < 3; i++) {
+        final int htmlDocs = 3;
+        final int pdfDocs = 2;
+        for (int i = 0; i < htmlDocs + pdfDocs; i++) {
             final SiteSearchResult doc = new SiteSearchResult();
             doc.setId(DOC_ID + "-" + i);
             doc.setUrl("/agg/" + RUN_ID + "/" + i);
             doc.setTitle("Aggregation doc " + i);
-            doc.setMimeType("text/html");
+            doc.setMimeType(i < htmlDocs ? "text/html" : "application/pdf");
             doc.setContent("aggregation bucket sample " + RUN_ID);
             doc.setContentLength(doc.getContent().length());
             osSiteSearchAPI.putToIndex(IDX_ONE, doc, "content");
@@ -197,16 +205,114 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
                 .put("size", 0)
                 .put("aggs", new JSONObject().put("by_mime",
                         new JSONObject().put("terms",
-                                new JSONObject().put("field", "mimeType")))).toString();
+                                new JSONObject().put("field", "mimeType").put("size", 10)))).toString();
 
         final Map<String, Aggregation> aggregations =
                 osSiteSearchAPI.getAggregations(IDX_ONE, aggQuery);
 
         assertNotNull("Aggregations map must not be null", aggregations);
-        assertTrue("Aggregation 'by_mime' must be present", aggregations.containsKey("by_mime"));
+        final Aggregation byMime = aggregations.get("by_mime");
+        assertNotNull("Aggregation 'by_mime' must be present", byMime);
+        assertEquals("aggregation name must round-trip", "by_mime", byMime.getName());
+        assertNull("a terms aggregation carries no top-hits", byMime.getHits());
+        assertEquals("there must be one bucket per mimeType", 2, byMime.getBuckets().size());
 
-        Logger.info(this, "✅ test_getAggregations_shouldReturnBuckets passed – keys: "
-                + aggregations.keySet());
+        final Set<String> expectedMimes = Set.of("text/html", "application/pdf");
+        long htmlCount = -1;
+        long pdfCount = -1;
+        for (final AggregationBucket bucket : byMime.getBuckets()) {
+            assertTrue("bucket key must be a known mimeType", expectedMimes.contains(bucket.getKey()));
+            assertEquals("getKeyAsString must mirror getKey", bucket.getKey(), bucket.getKeyAsString());
+            assertNull("a non-numeric key must yield a null number", bucket.getKeyAsNumber());
+            assertTrue("each bucket must carry documents", bucket.getDocCount() > 0);
+            if ("text/html".equals(bucket.getKey())) {
+                htmlCount = bucket.getDocCount();
+            } else if ("application/pdf".equals(bucket.getKey())) {
+                pdfCount = bucket.getDocCount();
+            }
+        }
+        assertEquals("html bucket must count the html docs", htmlDocs, htmlCount);
+        assertEquals("pdf bucket must count the pdf docs", pdfDocs, pdfCount);
+
+        Logger.info(this, "✅ test_getAggregations_termsBucketsHaveCorrectKeysAndCounts passed");
+    }
+
+    /**
+     * Given scenario: a terms aggregation with a nested {@code top_hits} sub-aggregation.
+     * Expected: the OpenSearch path preserves the nested {@code top_docs} as a neutral
+     * {@link Aggregation} carrying {@link SearchHit}s (each with an id and a non-empty source),
+     * reachable via {@code bucket.getAggregations()} — exercising
+     * {@code AggregationBucket.fromOS} sub-aggregation nesting and {@code SearchHits.from(OS hits)},
+     * which the terms-only test does not reach.
+     */
+    @Test
+    public void test_getAggregations_nestedTopHits_preservedOnOpenSearchPath() throws Exception {
+        osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
+
+        for (int i = 0; i < 3; i++) {
+            final SiteSearchResult doc = new SiteSearchResult();
+            doc.setId(DOC_ID + "-th-" + i);
+            doc.setUrl("/agg-th/" + RUN_ID + "/" + i);
+            doc.setTitle("Top hits doc " + i);
+            doc.setMimeType("text/html");
+            doc.setContent("top hits nested sample " + RUN_ID);
+            doc.setContentLength(doc.getContent().length());
+            osSiteSearchAPI.putToIndex(IDX_ONE, doc, "content");
+        }
+
+        final String aggQuery = new JSONObject()
+                .put("size", 0)
+                .put("aggs", new JSONObject().put("by_mime", new JSONObject()
+                        .put("terms", new JSONObject().put("field", "mimeType").put("size", 10))
+                        .put("aggs", new JSONObject().put("top_docs",
+                                new JSONObject().put("top_hits",
+                                        new JSONObject().put("size", 2)))))).toString();
+
+        final Map<String, Aggregation> aggregations =
+                osSiteSearchAPI.getAggregations(IDX_ONE, aggQuery);
+
+        final Aggregation byMime = aggregations.get("by_mime");
+        assertNotNull("'by_mime' aggregation must be present", byMime);
+        assertFalse("'by_mime' must have buckets", byMime.getBuckets().isEmpty());
+
+        final AggregationBucket firstBucket = byMime.getBuckets().get(0);
+        final Aggregation topDocs = firstBucket.getAggregations().get("top_docs");
+        assertNotNull("nested top_hits sub-aggregation must be preserved on the OS path", topDocs);
+        assertNotNull("top_hits must carry a SearchHits container", topDocs.getHits());
+
+        final List<SearchHit> hits = topDocs.getHits().getHits();
+        assertFalse("top_hits must carry at least one hit", hits.isEmpty());
+        final SearchHit hit = hits.get(0);
+        assertNotNull("each top-hit must expose an id", hit.getId());
+        assertFalse("each top-hit must expose its source document", hit.getSourceAsMap().isEmpty());
+
+        Logger.info(this, "✅ test_getAggregations_nestedTopHits_preservedOnOpenSearchPath passed – "
+                + "hits: " + hits.size());
+    }
+
+    /**
+     * Given scenario: a document write targeting an index name carrying characters OpenSearch
+     * forbids.
+     * Expected: putToIndex fails fast with an IllegalArgumentException (the malformed name never
+     * reaches the cluster as a cryptic HTTP 400).
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_putToIndex_invalidIndexName_throwsFast() {
+        final SiteSearchResult doc = new SiteSearchResult();
+        doc.setId(DOC_ID);
+        doc.setContent("x");
+        doc.setContentLength(1);
+        osSiteSearchAPI.putToIndex("Invalid Name/With*Chars", doc, "content");
+    }
+
+    /**
+     * Given scenario: a delete targeting a blank index name.
+     * Expected: deleteFromIndex fails fast with an IllegalArgumentException rather than NPE-ing on
+     * the null/blank name.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_deleteFromIndex_blankIndexName_throwsFast() {
+        osSiteSearchAPI.deleteFromIndex("   ", DOC_ID);
     }
 
     // =======================================================================

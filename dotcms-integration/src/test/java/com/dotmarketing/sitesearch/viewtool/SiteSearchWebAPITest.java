@@ -22,6 +22,7 @@ import com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI.Facet;
 import com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI.InternalWrapperCountDateHistogramFacet;
 import com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPI.InternalWrapperStringTermsFacet;
 import com.dotmarketing.util.Logger;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,6 +93,17 @@ public class SiteSearchWebAPITest extends IntegrationTestBase {
             "{\"size\":0,\"aggs\":{\"by_len\":{\"histogram\":{\"field\":\"contentLength\","
                     + "\"interval\":25}}}}";
 
+    /** Date histogram over the {@code modified} field — one bucket per UTC day. */
+    private static final String DATE_HISTO_AGG =
+            "{\"size\":0,\"aggs\":{\"by_day\":{\"date_histogram\":{\"field\":\"modified\","
+                    + "\"calendar_interval\":\"day\"}}}}";
+
+    /** One day in millis, used to spread each doc's {@code modified} date into its own day bucket. */
+    private static final long DAY_MILLIS = 86_400_000L;
+
+    /** Fixed UTC-midnight base (2024-01-15T00:00:00Z) so the date-histogram keys are deterministic. */
+    private static final long BASE_MODIFIED = 1_705_276_800_000L;
+
     /** Query matches no doc, so the terms aggregation comes back with empty buckets. */
     private static final String EMPTY_AGG =
             "{\"size\":0,\"query\":{\"term\":{\"mimeType\":\"zzz/none\"}},"
@@ -124,6 +136,9 @@ public class SiteSearchWebAPITest extends IntegrationTestBase {
             doc.setContent("dotcms site search viewtool integration " + TOKEN
                     + " ".repeat(i * 30));
             doc.setContentLength(doc.getContent().length());
+            // Distinct UTC-midnight day per doc so the date histogram on `modified` yields one
+            // populated bucket per doc (exercises the ZonedDateTime -> epoch-millis key conversion).
+            doc.setModified(new Date(BASE_MODIFIED + (i * DAY_MILLIS)));
             siteSearchAPI.putToIndex(IDX, doc, "content");
         }
     }
@@ -399,6 +414,43 @@ public class SiteSearchWebAPITest extends IntegrationTestBase {
         Logger.info(this, "✅ getAggregations_numericHistogram_keyAsNumber passed");
     }
 
+    /**
+     * Given scenario: a {@code date_histogram} on the {@code modified} date field.
+     * Expected: each bucket key is normalized to a numeric epoch-millis timestamp (the ES
+     * {@code date_histogram} key is a {@code ZonedDateTime} under the hood), so
+     * {@link AggregationBucket#getKeyAsNumber()} returns a real timestamp and {@code getKeyAsString}
+     * mirrors it — covering the date-histogram key path, which is distinct from the numeric-histogram
+     * one and was otherwise untested end-to-end.
+     */
+    @Test
+    public void getAggregations_dateHistogram_keyAsEpochMillis() throws Exception {
+        final SiteSearchWebAPI tool = siteSearchWebAPI();
+
+        final Map<String, Aggregation> aggregations = tool.getAggregations(IDX, DATE_HISTO_AGG);
+        final Aggregation byDay = aggregations.get("by_day");
+        assertNotNull("'by_day' date-histogram aggregation must be present", byDay);
+        assertTrue("date_histogram type must be reported as a histogram",
+                byDay.getType().contains("histogram"));
+        assertFalse("date histogram must produce buckets", byDay.getBuckets().isEmpty());
+
+        long totalDocs = 0;
+        for (final AggregationBucket bucket : byDay.getBuckets()) {
+            final Number key = bucket.getKeyAsNumber();
+            // The crux: a ZonedDateTime key must surface as numeric epoch-millis here, NOT a
+            // formatted date string (which would make getKeyAsNumber return null).
+            assertNotNull("a date-histogram bucket key must be numeric (epoch-millis)", key);
+            assertTrue("the key must be a real epoch-millis timestamp (>= the base UTC day)",
+                    key.longValue() >= BASE_MODIFIED);
+            assertEquals("getKeyAsString must mirror the numeric epoch-millis",
+                    String.valueOf(key.longValue()), bucket.getKeyAsString());
+            totalDocs += bucket.getDocCount();
+        }
+        assertEquals("every indexed doc must fall into exactly one day bucket", TOTAL_DOCS, totalDocs);
+
+        Logger.info(this, "✅ getAggregations_dateHistogram_keyAsEpochMillis passed – buckets: "
+                + byDay.getBuckets().size());
+    }
+
     // =========================================================================
     // getFacets — legacy wrapper coverage (terms / histogram / plain)
     // =========================================================================
@@ -468,6 +520,38 @@ public class SiteSearchWebAPITest extends IntegrationTestBase {
         assertTrue("at least one histogram entry must carry a count", sawPopulatedEntry);
 
         Logger.info(this, "✅ getFacets_histogramAggregation_wrapsAsCountHistogramFacet passed");
+    }
+
+    /**
+     * Given scenario: a {@code date_histogram} on the {@code modified} field.
+     * Expected: getFacets wraps it as an {@link InternalWrapperCountDateHistogramFacet} whose
+     * CountEntry rows carry the day's epoch-millis as {@code time} — proving the legacy date-facet
+     * path (which reads {@code getKeyAsNumber().longValue()}) surfaces a real timestamp rather than
+     * the {@code 0L} fallback used when the key fails to parse as a number.
+     */
+    @Test
+    public void getFacets_dateHistogram_exposesEpochMillisTime() throws Exception {
+        final SiteSearchWebAPI tool = siteSearchWebAPI();
+
+        final Map<String, Facet> facets = tool.getFacets(IDX, DATE_HISTO_AGG);
+        final Facet facet = facets.get("by_day");
+        assertNotNull("'by_day' facet must be present", facet);
+        assertTrue("a date histogram must map to InternalWrapperCountDateHistogramFacet",
+                facet instanceof InternalWrapperCountDateHistogramFacet);
+
+        final InternalWrapperCountDateHistogramFacet histoFacet =
+                (InternalWrapperCountDateHistogramFacet) facet;
+        assertFalse("date histogram facet must expose count entries", histoFacet.entries().isEmpty());
+
+        long totalCount = 0;
+        for (final var entry : histoFacet.entries()) {
+            assertTrue("each entry time must be a real epoch-millis (>= the base UTC day), not the "
+                    + "0L parse-failure fallback", entry.getTime() >= BASE_MODIFIED);
+            totalCount += entry.getCount();
+        }
+        assertEquals("every indexed doc must be counted across the day entries", TOTAL_DOCS, totalCount);
+
+        Logger.info(this, "✅ getFacets_dateHistogram_exposesEpochMillisTime passed");
     }
 
     /**

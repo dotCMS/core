@@ -45,10 +45,9 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -414,10 +413,10 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // The mapping is functionally identical to es-sitesearch-mapping.json today, but owning a
         // dedicated os-sitesearch-mapping.json decouples the two vendors — a future ES mapping
         // change cannot silently alter OS behaviour.
-        URL url = classLoader.getResource("os-sitesearch-settings.json");
-        final String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-        url = classLoader.getResource("os-sitesearch-mapping.json");
-        final String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+        // Read via getResourceAsStream so the index lifecycle works when these resources are packaged
+        // inside a JAR (new File(url.getPath()) only works for filesystem URLs and NPEs if missing).
+        final String settings = readResource(classLoader, "os-sitesearch-settings.json");
+        final String mapping = readResource(classLoader, "os-sitesearch-mapping.json");
 
         try {
             indexApi.createIndex(indexName, settings, shards);
@@ -444,6 +443,25 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * aggregations such as {@code mimeType}). Forwarding to the same untagged physical name used by
      * {@code createIndex}/search/put keeps the mapping on the index that is actually hit.</p>
      */
+    /**
+     * Reads a UTF-8 classpath resource fully into a String via {@code getResourceAsStream}, so it
+     * resolves whether the resource sits on the filesystem or inside a packaged JAR. Throws a clear
+     * {@link DotSearchException} when the resource is absent rather than NPE-ing on a null URL.
+     */
+    private static String readResource(final ClassLoader classLoader, final String resource)
+            throws DotSearchException {
+        try (final InputStream in = classLoader.getResourceAsStream(resource)) {
+            if (in == null) {
+                throw new DotSearchException(
+                        "Required OpenSearch site search resource not found on the classpath: " + resource);
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            throw new DotSearchException(
+                    "Error reading OpenSearch site search resource " + resource + ": " + e.getMessage(), e);
+        }
+    }
+
     private void putMapping(final String indexName, final String mapping) throws DotSearchException {
         final String endpoint = "/" + physicalName(indexName) + "/_mapping";
         try (final Response response = clientProvider.getClient().generic()
@@ -475,7 +493,10 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         }
         indexName = indexName.toLowerCase();
         indexApi.createAlias(indexName, alias);
-        return false;
+        // createAlias is void and throws on failure, so reaching here means the alias was created.
+        // (Legacy ESSiteSearchAPI returns false here, but its only caller — ESSiteSearchPublisher —
+        // ignores the result, so the divergence is benign; reporting success honestly is correct.)
+        return true;
     }
 
     /**
@@ -529,6 +550,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             return;
         }
+        requireValidIndexName(idx);
         try {
             if (res.getContentLength() == 0) {
                 return;
@@ -556,8 +578,8 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                 res.setKeywords((String) res.getMap().get("keywords"));
             }
 
-            Logger.info(this.getClass(),
-                    "writing from : " + idx + " type: " + resultType + " url:" + res.getUrl());
+            Logger.debug(this.getClass(),
+                    () -> "writing to index " + idx + " type: " + resultType + " url:" + res.getUrl());
             final String json = new ESMappingAPIImpl().toJsonString(res.getMap());
 
             final String endpoint = "/" + physicalName(idx) + "/_doc/" + res.getId();
@@ -570,12 +592,19 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                             .build())) {
                 final int status = response.getStatus();
                 if (status < 200 || status >= 300) {
-                    Logger.error(this.getClass(), "putToIndex failed for doc " + res.getId()
-                            + " — HTTP " + status);
+                    throw new DotSearchException("putToIndex failed for doc " + res.getId()
+                            + " on index " + idx + " — HTTP " + status);
                 }
             }
+        } catch (final DotSearchException e) {
+            // Already a neutral failure signal — never swallow it. Propagating lets the phase
+            // router apply its per-phase policy: in Phase 3 (OS is primary) the failure is
+            // re-thrown so the publishing pipeline observes the data loss; in the shadow phases
+            // (1/2, OS secondary) PhaseRouter swallows it and logs at WARN, so ES stays unaffected.
+            throw e;
         } catch (final Exception e) {
-            Logger.error(OSSiteSearchAPI.class, e.getMessage(), e);
+            throw new DotSearchException("putToIndex failed for doc " + res.getId()
+                    + " on index " + idx + ": " + e.getMessage(), e);
         }
     }
 
@@ -615,8 +644,9 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             return;
         }
+        requireValidIndexName(idx);
         try {
-            Logger.info(this.getClass(), "deleting from : " + idx + " url:" + docId);
+            Logger.debug(this.getClass(), () -> "deleting doc " + docId + " from index " + idx);
             final String endpoint = "/" + physicalName(idx) + "/_doc/" + docId;
             try (final Response response = clientProvider.getClient().generic()
                     .execute(Requests.builder()
@@ -625,14 +655,17 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                             .query(Map.of("refresh", "true"))
                             .build())) {
                 final int status = response.getStatus();
-                // 404 is benign — the document was already absent.
+                // 404 is benign — the document was already absent (idempotent delete).
                 if (status >= 400 && status != 404) {
-                    Logger.error(this.getClass(), "deleteFromIndex failed for doc " + docId
-                            + " — HTTP " + status);
+                    throw new DotSearchException("deleteFromIndex failed for doc " + docId
+                            + " on index " + idx + " — HTTP " + status);
                 }
             }
+        } catch (final DotSearchException e) {
+            throw e; // propagate; PhaseRouter applies the per-phase primary/shadow policy
         } catch (final Exception e) {
-            Logger.error(OSSiteSearchAPI.class, e.getMessage(), e);
+            throw new DotSearchException("deleteFromIndex failed for doc " + docId
+                    + " on index " + idx + ": " + e.getMessage(), e);
         }
     }
 
@@ -745,6 +778,31 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      */
     private String physicalName(final String indexName) {
         return indexApi.getNameWithClusterIDPrefix(indexName);
+    }
+
+    /** Characters OpenSearch forbids in an index name (plus the space). */
+    private static final java.util.regex.Pattern INVALID_INDEX_NAME_CHARS =
+            java.util.regex.Pattern.compile("[\\\\/*?\"<>|,# ]");
+
+    /**
+     * Guards a caller-supplied site-search index name before it is interpolated into an OpenSearch
+     * REST endpoint (e.g. {@code /<index>/_doc/<id>}). Fails fast with a clear
+     * {@link IllegalArgumentException} on a null/blank name (the NPE risk raised in review) or a name
+     * carrying characters OpenSearch rejects, instead of letting a malformed name reach the cluster
+     * as a cryptic HTTP 400.
+     */
+    private static void requireValidIndexName(final String idx) {
+        if (UtilMethods.isNotSet(idx)) {
+            throw new IllegalArgumentException("Site search index name must not be null or blank");
+        }
+        if (!idx.equals(idx.toLowerCase(java.util.Locale.ROOT))) {
+            throw new IllegalArgumentException(
+                    "Site search index name must be lowercase: `" + idx + "`");
+        }
+        if (INVALID_INDEX_NAME_CHARS.matcher(idx).find()) {
+            throw new IllegalArgumentException(
+                    "Site search index name contains characters OpenSearch forbids: `" + idx + "`");
+        }
     }
 
     /**
