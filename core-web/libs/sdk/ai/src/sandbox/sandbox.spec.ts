@@ -50,6 +50,12 @@ describe('sandbox confinement', () => {
         expect(result.value).toBe('undefined');
     });
 
+    it('blocks dynamic import() so node builtins cannot be re-opened', async () => {
+        const result = await run(`const fs = await import('node:fs'); return typeof fs.readFileSync;`);
+        expect(result.success).toBe(false);
+        expect(result.error?.message).toMatch(/dynamic import\(\) is disabled/i);
+    });
+
     it('empties process.env', async () => {
         const result = await run(`return Object.keys(process.env).length;`);
         expect(result.success).toBe(true);

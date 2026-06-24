@@ -148,6 +148,13 @@ const HARNESS_BODY = `
 
         else if (type === 'execute') {
           try {
+            // Block dynamic import() — \`require\` is already removed, but \`import('node:fs')\`
+            // / \`import('node:net')\` would re-open filesystem/network access and bypass the
+            // adapter boundary. This is a source-level guard (matches the "confinement for
+            // trusted code generators" threat model; not hardened against deliberate obfuscation).
+            if (/\\bimport\\s*\\(/.test(data.code)) {
+              throw new Error('Dynamic import() is disabled in the sandbox; reach the host only through adapters.');
+            }
             const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
             const fn = new AsyncFunction(data.code);
             const result = await fn();

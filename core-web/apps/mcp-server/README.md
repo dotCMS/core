@@ -329,7 +329,8 @@ cd core/core-web
 # Install dependencies
 pnpm install
 
-# Build the server (spec.json is already committed — no live dotCMS instance needed)
+# Build the server. The build regenerates the OpenAPI spec first (via dependsOn) — by
+# default from https://demo.dotcms.com; see "Building against a local dotCMS instance" below.
 pnpm nx build mcp-server
 ```
 
@@ -338,7 +339,7 @@ pnpm nx build mcp-server
 
 #### Refreshing the OpenAPI Spec
 
-The processed spec lives in `libs/sdk/ai/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes. The source is resolved in this order: an explicit CLI arg, then `DOTCMS_SPEC_URL`, then `${DOTCMS_URL}/api/openapi.json`, then the demo instance.
+The processed spec lives at `libs/sdk/ai/src/generated/spec.json`. It is **build-generated and git-ignored** — the `build`/`serve`/`test` targets regenerate it via `dependsOn`, so you rarely run this by hand. The source is resolved in this order: an explicit CLI arg, then `DOTCMS_SPEC_URL`, then `${DOTCMS_URL}/api/openapi.json`, then the demo instance.
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
@@ -349,7 +350,7 @@ pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
 pnpm nx run sdk-ai:generate-spec -- ./openapi.json
 ```
 
-Then commit the updated `spec.json`. CI does not need a live dotCMS instance to build.
+There is nothing to commit — the spec is regenerated at build time. CI builds it from the demo instance by default.
 
 #### Building against a local dotCMS instance
 
@@ -485,7 +486,7 @@ libs/sdk/ai/                      # Portable runtime primitives
 ### Development Commands
 
 ```bash
-# Build for production (spec.json already committed — no live dotCMS needed)
+# Build for production (regenerates the spec from demo by default; see local-build section)
 pnpm nx build mcp-server
 
 # Development mode (with hot reload)

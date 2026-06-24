@@ -8,7 +8,6 @@ import {
 } from './adapter/request-core';
 import { serializeError } from './sandbox/errors';
 import { Executor } from './sandbox/executor';
-import { getSpec } from './spec/spec';
 
 import type { DotCMSContext } from './adapter/context';
 import type { SandboxResult } from './sandbox/types';
@@ -152,6 +151,9 @@ export function createRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
             currentUser: context.currentUser
         };
         if (config.includeSpec) {
+            // Dynamic import so the ~550KB generated spec is only pulled in by consumers that
+            // actually opt into it — a bare `@dotcms/ai/runtime` import never drags in the spec.
+            const { getSpec } = await import('./spec/spec');
             variables.spec = getSpec();
         }
 

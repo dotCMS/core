@@ -97,31 +97,35 @@ catch (e) { if (e instanceof HttpError) console.error(e.status, e.body); }
 
 The governance above is **capability confinement for trusted code generators** — it stops your own model from doing something it shouldn't, not an attacker from breaking out.
 
-- **Stops accidental egress:** `fetch`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`sendBeacon` throw; `require` removed; `process.env` emptied; worker spawned with `env:{}`.
+- **Stops accidental egress:** `fetch`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`sendBeacon` throw; `require` removed; dynamic `import()` is blocked at the source level (so `import('node:fs')`/`import('node:net')` can't re-open host access); `process.env` emptied; worker spawned with `env:{}`.
 - **Stops runaway cost:** wall-clock timeout, `resourceLimits` memory/stack caps, and an `AbortSignal` threaded to adapter calls so a timeout aborts in-flight host work.
-- **Does NOT stop hostile code.** User code runs via `new AsyncFunction(code)` in the same V8 isolate as the worker harness — hostile code can reach shared globals. The intended threat is "our own model hallucinates a `DELETE` or an infinite loop," not "an attacker submits malicious JS."
+- **Does NOT stop hostile code.** User code runs via `new AsyncFunction(code)` in the same V8 isolate as the worker harness — hostile code can reach shared globals, and the `import()` block is a source-level guard (not hardened against deliberate obfuscation). The intended threat is "our own model hallucinates a `DELETE` or an infinite loop," not "an attacker submits malicious JS."
 
 **If you must run genuinely untrusted code, bring your own process/microVM isolation.**
 
 ## Support matrix
 
 - **Node** ≥ 20, **Bun** (native Web Workers). Both worker backends behave identically.
-- **OpenAPI spec ↔ server version:** `@dotcms/ai/spec` is generated from a *specific* dotCMS instance (see "Regenerating the spec"). It is a filtered snapshot, not a live contract — regenerate it against your target server if its REST surface differs from the committed one.
+- **OpenAPI spec ↔ server version:** `@dotcms/ai/spec` is generated from a *specific* dotCMS instance (see "Regenerating the spec"). It is a filtered snapshot, not a live contract — regenerate it against your target server if its REST surface differs from the one you built against.
 - **Semver:** subpaths are part of the public API; a breaking change to any subpath is a major.
 
 ## Regenerating the spec
 
-The committed `src/generated/spec.json` is build-time data — consumers do not need a live instance to build or run.
+`src/generated/spec.json` is **build-generated and git-ignored** — it is NOT committed. The
+`build`/`test`/`serve` targets run `sdk-ai:generate-spec` automatically (via `dependsOn`), so
+you rarely run it by hand; do so only to refresh the local copy or inspect the output.
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
 pnpm nx run sdk-ai:generate-spec
 
-# Override with a different instance:
+# Override with a different instance (URL or local file path):
 pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
-Then **commit the updated `src/generated/spec.json`**. The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/generate-spec.ts`), dereferences `$ref`s, and strips response schemas to keep the file small.
+The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/generate-spec.ts`),
+dereferences `$ref`s, and strips response schemas to keep the file small. Because the spec is
+regenerated at build time, there is nothing to commit.
 
 ## Commands
 
