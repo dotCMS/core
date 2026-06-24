@@ -24,7 +24,8 @@ const ALLOWED_PREFIXES = [
     '/api/v1/containers',
     '/api/v1/themes',
     '/api/v1/templates',
-    '/api/v1/content/_search'
+    '/api/v1/content/_search',
+    '/api/v2/assets'
 ];
 
 const EXCLUDED_PATTERNS = [

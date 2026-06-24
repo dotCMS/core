@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -11,6 +12,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -69,6 +71,23 @@ public class ContentSearchToolTest extends IntegrationTestBase {
     /** Flat terms aggregation on the {@code contenttype} system field — same shape the customer uses. */
     private static final String AGG_QUERY =
             "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contenttype\",\"size\":5}}},"
+                    + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
+
+    /**
+     * The <i>same</i> flat terms aggregation as {@link #AGG_QUERY} but with the field name in
+     * camelCase ({@code contentType}) — exactly how the customer wrote it. The physical index field
+     * is the all-lowercase {@code contenttype}.
+     *
+     * <p>After the fix, <b>both</b> paths resolve this: each lowercases the whole query (via
+     * {@code StringUtils.lowercaseStringExceptMatchingTokens}) before executing it, so
+     * {@code contentType} folds to {@code contenttype}. Before the fix, {@code raw()} forwarded the
+     * query untouched, so {@code contentType} aggregated over a non-existent field and yielded zero
+     * buckets — the customer's empty {@code getBuckets=[]}. The aggregation mapping itself was never
+     * at fault (it is shared by both paths via
+     * {@link ContentSearchResponse#from(org.elasticsearch.action.search.SearchResponse)}).
+     */
+    private static final String CAMELCASE_AGG_QUERY =
+            "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contentType\",\"size\":5}}},"
                     + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
 
     /** Terms aggregation with a nested {@code top_hits} sub-aggregation, as in the customer's query. */
@@ -148,6 +167,81 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #foreach($group in $results.aggregations.content_types)
                 key: $!{group.key()}
                 docCount: $!{group.docCount()}
+            #end
+            """;
+
+    /**
+     * The customer-style aggregation walk driven through {@code $estool.raw($esQuery)} instead of
+     * {@code search()}. Two shapes are exercised against the same response:
+     * <ul>
+     *   <li>the full tree {@code $tree.content_types.buckets} (mirrors the {@code search()} template,
+     *       including the nested {@code top_content} {@code top_hits});</li>
+     *   <li>the flat first-level map {@code $flat.content_types}, which on a
+     *       {@link ContentSearchResponse} is a {@code List<AggregationBucket>} you iterate directly
+     *       (no {@code .buckets}) — the raw-specific shape that differs from {@code search()}.</li>
+     * </ul>
+     *
+     * <p><b>Record accessor note:</b> {@code raw()} returns a {@link ContentSearchResponse}
+     * <i>record</i>, whose accessors are {@code aggregations()} / {@code aggregationTree()} — there
+     * are no {@code get}-prefixed methods. Velocity's property syntax ({@code $results.aggregations})
+     * only resolves {@code getX()}/{@code isX()}/public fields, so on a record it would silently
+     * yield {@code null}. The template therefore calls them with explicit method syntax
+     * ({@code $results.aggregationTree()}). Everything downstream stays property-style because
+     * {@link Aggregation}'s components are named {@code getBuckets}/{@code getHits} and
+     * {@link AggregationBucket} exposes bean getters.</p>
+     *
+     * <p>Uses the camelCase {@code contentType} field name on purpose: after the fix, {@code raw()}
+     * lowercases the whole query (via {@code StringUtils.lowercaseStringExceptMatchingTokens}, the
+     * same helper {@code search()} uses), so this resolves to the physical {@code contenttype} field
+     * and renders buckets just like {@code search()} — exercising the fix end-to-end through
+     * Velocity.</p>
+     */
+    private static final String RAW_VTL = """
+            $response.setContentType("text/plain")
+            $response.setHeader("Cache-Control", "no-cache")
+
+            #set($esQuery = '{
+                "aggs": {
+                    "content_types": {
+                        "terms": { "field": "contentType", "size": 5 },
+                        "aggs": {
+                            "top_content": {
+                                "top_hits": { "size": 3 }
+                            }
+                        }
+                    }
+                },
+                "size": 0,
+                "query": {
+                    "bool": {
+                        "filter": [ { "term": { "live": true } } ]
+                    }
+                }
+            }')
+
+            ## --- raw() --- record accessors need explicit () (see javadoc)
+            #set($results = $estool.raw($esQuery))
+            #set($tree = $results.aggregationTree())
+            #set($flat = $results.aggregations())
+            aggregations: $!{flat}
+            tree CT: $!{tree.content_types}
+
+            ## tree walk — same shape as the search() customer template
+            #set($contentTypeGroups = $tree.content_types.buckets)
+            tree buckets: $!{contentTypeGroups}
+            #foreach($group in $contentTypeGroups)
+              tree key: $!{group.getKeyAsString()}
+              tree docCount: $!{group.getDocCount()}
+              #set($topHits = $group.getAggregations().get("top_content"))
+              #foreach($hit in $topHits.getHits().getHits())
+                tree hit id: $!{hit.id}
+              #end
+            #end
+
+            ## flat first-level map — raw-specific: content_types is a List<AggregationBucket>
+            #foreach($bucket in $flat.content_types)
+              flat key: $!{bucket.getKeyAsString()}
+              flat docCount: $!{bucket.getDocCount()}
             #end
             """;
 
@@ -246,6 +340,32 @@ public class ContentSearchToolTest extends IntegrationTestBase {
     }
 
     /**
+     * Drives {@code $estool.raw($esQuery)} through the dotCMS Velocity engine (the {@code search()}
+     * sibling is {@link #verbatimCustomerVtl_rendersAfterFix()}). Asserts both VTL surfaces of a
+     * {@link ContentSearchResponse} render real data: the tree walk
+     * ({@code $results.aggregationTree.content_types.buckets} with nested {@code top_hits}) and the
+     * flat first-level map ({@code $results.aggregations.content_types}).
+     */
+    @Test
+    public void rawVtl_rendersTreeAndFlatAggregations() throws Exception {
+        final String output = VelocityUtil.eval(RAW_VTL, velocityContext());
+        Logger.info(this, "\n===== raw VTL output =====\n" + output + "\n================================");
+
+        assertTrue("Aggregation data should be present in the response",
+                output.contains("content_types"));
+        assertTrue("raw() tree walk must execute, emitting 'tree key:' lines",
+                output.contains("tree key:"));
+        assertTrue("raw() tree bucket doc counts must render with real numbers",
+                Pattern.compile("tree docCount:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() nested top_hits must be reachable, emitting 'tree hit id:' lines",
+                output.contains("tree hit id:"));
+        assertTrue("raw() flat aggregations map must iterate, emitting 'flat key:' lines",
+                output.contains("flat key:"));
+        assertTrue("raw() flat bucket doc counts must render with real numbers",
+                Pattern.compile("flat docCount:\\s*\\d+").matcher(output).find());
+    }
+
+    /**
      * API-level guarantee (independent of Velocity): {@link ContentSearchResponse#aggregationTree()}
      * preserves the full tree — first-level terms buckets <i>and</i> the nested {@code top_hits}
      * with its hits.
@@ -284,5 +404,55 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 response.aggregations().containsKey("content_types"));
         assertFalse("content_types aggregation must have at least one bucket",
                 response.aggregations().get("content_types").isEmpty());
+    }
+
+    /**
+     * Regression guard for the fix: {@code raw()} now lowercases the whole query before executing it
+     * (via {@code StringUtils.lowercaseStringExceptMatchingTokens}, the same helper {@code search()}
+     * uses), so a camelCase aggregation field such as {@code contentType} resolves to the physical
+     * lower-case index field {@code contenttype} and yields populated buckets — reaching parity with
+     * {@code search()} for the customer's query.
+     *
+     * <ul>
+     *   <li>{@code raw(camelCase)} now populates buckets (previously empty — the customer's bug).</li>
+     *   <li>{@code raw(lowercase)} populates the same buckets — proving parity within {@code raw}.</li>
+     *   <li>{@code search(camelCase)} populates buckets (unchanged) and matches the {@code raw} count.</li>
+     * </ul>
+     *
+     * <p>The aggregation mapping was never at fault: both paths map the response through
+     * {@link ContentSearchResponse#from(org.elasticsearch.action.search.SearchResponse)}. The fix
+     * only adds the same query normalization {@code search()} already had to the {@code raw} path.</p>
+     */
+    @Test
+    public void rawNormalizesQuery_reachingParityWithSearch() throws Exception {
+        final ESContentTool tool = liveContentTool();
+
+        // raw(): the whole query is now lowercased -> camelCase 'contentType' resolves to
+        // 'contenttype' -> buckets populated. This is the fix: the query that used to return empty
+        // getBuckets=[] now works.
+        final ContentSearchResponse rawCamel = tool.raw(CAMELCASE_AGG_QUERY);
+        Logger.info(this, "raw(camelCase) aggregations=" + rawCamel.aggregations());
+        assertTrue("raw() must expose the content_types aggregation",
+                rawCamel.aggregations().containsKey("content_types"));
+        assertFalse("FIX: raw() now lowercases the query, so camelCase 'contentType' resolves to "
+                        + "'contenttype' and populates buckets (was empty before the fix)",
+                rawCamel.aggregations().get("content_types").isEmpty());
+
+        // raw(): the already-lowercase field name resolves to the same result -> parity within raw().
+        final ContentSearchResponse rawLower = tool.raw(AGG_QUERY);
+        Logger.info(this, "raw(lowercase) aggregations=" + rawLower.aggregations());
+        assertEquals("raw() must yield the same bucket count for camelCase and lowercase field names",
+                rawLower.aggregations().get("content_types").size(),
+                rawCamel.aggregations().get("content_types").size());
+
+        // search(): same camelCase query, same bucket count -> raw() reaches parity with search().
+        final ContentSearchResults<Contentlet> searchCamel =
+                APILocator.getSearchAPI().search(CAMELCASE_AGG_QUERY, true, systemUser, true);
+        final Aggregation searchAgg = searchCamel.getResponse().aggregationTree().get("content_types");
+        Logger.info(this, "search(camelCase) content_types=" + searchAgg);
+        assertNotNull("search() must expose the content_types aggregation", searchAgg);
+        assertEquals("raw() and search() must produce the same bucket count for the same camelCase query",
+                searchAgg.getBuckets().size(),
+                rawCamel.aggregations().get("content_types").size());
     }
 }

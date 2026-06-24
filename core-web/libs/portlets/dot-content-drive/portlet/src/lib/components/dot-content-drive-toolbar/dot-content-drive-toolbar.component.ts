@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
     inject,
     output,
@@ -15,6 +16,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
@@ -31,6 +33,58 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
+
+/**
+ * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
+ * Each maps to a precise palette list type and a Material Symbols icon (rendered via the
+ * menu's custom item template, following the design's icon pattern).
+ */
+const BASE_TYPE_MENU_OPTIONS: {
+    labelKey: string;
+    icon: string;
+    listType: DotUVEPaletteListTypes;
+}[] = [
+    {
+        labelKey: 'content-drive.base-type.content',
+        icon: 'description',
+        listType: DotUVEPaletteListTypes.ALL_CONTENT
+    },
+    {
+        labelKey: 'content-drive.base-type.widget',
+        icon: 'widgets',
+        listType: DotUVEPaletteListTypes.ALL_WIDGET
+    },
+    {
+        labelKey: 'content-drive.base-type.fileasset',
+        icon: 'draft',
+        listType: DotUVEPaletteListTypes.ALL_FILEASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.dotasset',
+        icon: 'deployed_code',
+        listType: DotUVEPaletteListTypes.ALL_DOTASSET
+    },
+    {
+        labelKey: 'content-drive.base-type.persona',
+        icon: 'person',
+        listType: DotUVEPaletteListTypes.ALL_PERSONA
+    },
+    {
+        labelKey: 'content-drive.base-type.vanity_url',
+        icon: 'link',
+        listType: DotUVEPaletteListTypes.ALL_VANITY_URL
+    },
+    {
+        labelKey: 'content-drive.base-type.key_value',
+        icon: 'key',
+        listType: DotUVEPaletteListTypes.ALL_KEY_VALUE
+    },
+    {
+        labelKey: 'content-drive.base-type.htmlpage',
+        icon: 'article',
+        listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+    }
+];
 
 /**
  * Interface for managing animation states of toolbar elements
@@ -84,25 +138,45 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $addNewDotAsset = output<void>({ alias: 'addNewDotAsset' });
+    $upload = output<void>({ alias: 'upload' });
 
     readonly $items = signal<MenuItem[]>([
         {
+            label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
+            icon: 'grid_view',
+            command: () => this.#openContentTypeSelector(DotUVEPaletteListTypes.ALL_CONTENT_TYPES)
+        },
+        { separator: true },
+        ...BASE_TYPE_MENU_OPTIONS.map((option) => ({
+            label: this.#dotMessageService.get(option.labelKey),
+            icon: option.icon,
+            command: () => this.#openContentTypeSelector(option.listType)
+        })),
+        { separator: true },
+        {
             label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
+            icon: 'folder',
             command: () => {
                 this.#store.setDialog({
                     type: DIALOG_TYPE.FOLDER,
                     header: this.#dotMessageService.get('content-drive.dialog.folder.header')
                 });
             }
-        },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.asset'),
-            command: () => {
-                this.$addNewDotAsset.emit();
-            }
         }
     ]);
+
+    /**
+     * Opens the content-type selector dialog for the given palette list type.
+     */
+    #openContentTypeSelector(listType: DotUVEPaletteListTypes): void {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+            header: this.#dotMessageService.get(
+                'content-drive.dialog.content-type-selector.header'
+            ),
+            payload: { listType }
+        });
+    }
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
@@ -134,12 +208,19 @@ export class DotContentDriveToolbarComponent {
         minWidth: this.$treeExpanded() ? '0' : undefined
     }));
 
+    /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
+    #animationTimeout: ReturnType<typeof setTimeout> | undefined;
+
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing
         effect(() => {
             const shouldShowActions = this.$showWorkflowActions();
             untracked(() => this.#handleAnimationSequence(shouldShowActions));
         });
+
+        // Cancel a pending transition timer if the toolbar is destroyed mid-animation,
+        // so the callback can't mutate a signal on a torn-down component.
+        inject(DestroyRef).onDestroy(() => clearTimeout(this.#animationTimeout));
     }
 
     /**
@@ -163,12 +244,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show workflow actions (triggers enter animation)
      */
     #transitionToWorkflowActions(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: false,
                 workflowActions: true
@@ -183,12 +265,13 @@ export class DotContentDriveToolbarComponent {
      * 3. Show button (triggers enter animation)
      */
     #transitionToAddNewButton(): void {
+        clearTimeout(this.#animationTimeout);
         this.$animationState.set({
             addNewButton: false,
             workflowActions: false
         });
 
-        setTimeout(() => {
+        this.#animationTimeout = setTimeout(() => {
             this.$animationState.set({
                 addNewButton: true,
                 workflowActions: false

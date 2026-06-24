@@ -1,12 +1,14 @@
 package com.dotcms;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigrationIT;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseSwitchIntegrationTest;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigrationIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
 import com.dotcms.content.index.opensearch.OSMappingAPIImplIntegrationTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
+import com.dotcms.content.index.opensearch.OSIndexAPIImplWaitReadyIT;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
@@ -35,13 +37,15 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         VersionedIndicesAPITest.class,
         OSIndexAPIImplIntegrationTest.class,
+        OSIndexAPIImplWaitReadyIT.class,
         OSMappingAPIImplIntegrationTest.class,
         ContentletIndexOperationsOSIntegrationTest.class,
         OSCreateContentIndexIntegrationTest.class,
         ContentFactoryIndexOperationsOSIntegrationTest.class,
         OSClientProviderIntegrationTest.class,
         OSClientConfigTest.class,
-        ContentletIndexAPIImplMigrationIT.class,
+        ContentletIndexAPIImplMigrationIntegrationTest.class,
+        ContentletIndexAPIImplPhaseSwitchIntegrationTest.class,
         OSSearchAPIImplIntegrationTest.class
 })
 public class OpenSearchUpgradeSuite {

@@ -52,5 +52,37 @@ describe('DotUploadFileService', () => {
 
             expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalled();
         });
+
+        it('should default to the dotAsset content type', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+
+            spectator.service.uploadDotAsset(file).subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalledWith(
+                'dotAsset',
+                expect.anything(),
+                expect.anything()
+            );
+        });
+
+        it('should fire the given content type when one is provided', () => {
+            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+
+            spectator.service.uploadDotAsset(file, { hostFolder: '123' }, 'FileAsset').subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalledWith(
+                'FileAsset',
+                expect.anything(),
+                expect.anything()
+            );
+        });
     });
 });

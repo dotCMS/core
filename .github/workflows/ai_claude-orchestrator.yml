@@ -58,6 +58,8 @@ jobs:
           fi
 
   # Interactive Claude mentions (simplified using centralized logic)
+  # Stays on Anthropic Claude — @claude is intentionally the Claude brand and
+  # developers expect Claude-specific tool use (Bash, Agent, etc.) when they invoke it.
   claude-interactive:
     needs: security-check
     # Never cancel in-progress interactive sessions — a user may be mid-conversation
@@ -80,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -94,13 +96,12 @@ jobs:
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-  # Automatic PR reviews (no @claude mention)
-  claude-automatic-review:
+  # Load the GPT review prompt from its dedicated file so prompt edits don't
+  # require touching the workflow YAML (which is locked to trunk on open PRs).
+  # Only runs when a GPT automatic review would actually fire, avoiding a
+  # wasted checkout on PRs that will use the @claude interactive path instead.
+  load-gpt-prompt:
     needs: security-check
-    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
-    concurrency:
-      group: claude-automatic-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       github.event_name == 'pull_request' &&
@@ -110,15 +111,75 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.0.0
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      prompt: ${{ steps.build.outputs.prompt }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp .github/prompts/gpt-auto-review.md /tmp/full_prompt.md
+
+          # Extract structured findings from the most recent prior AI review comment.
+          # Findings are stored as a JSON array in a hidden HTML comment at the top of each review.
+          PRIOR_FINDINGS=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -r '[.[] | select(.body | test("<!-- dotcms-review-findings:"))] | sort_by(.created_at) | last | .body // empty' \
+            | grep '<!-- dotcms-review-findings:' \
+            | sed 's/.*<!-- dotcms-review-findings:\(.*\) -->.*/\1/' \
+            | head -1)
+
+          if [ -n "$PRIOR_FINDINGS" ]; then
+            # Cap at 15 findings and truncate desc to 300 chars to bound prompt size
+            # and prevent prompt injection via model-generated content in prior reviews.
+            PRIOR_LIST=$(echo "$PRIOR_FINDINGS" \
+              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:300])"')
+            printf '\n\n---\n\n## Prior review findings (recheck these)\n\n%s\n' "$PRIOR_LIST" >> /tmp/full_prompt.md
+          fi
+
+          DELIM="PROMPT_$(openssl rand -hex 8)"
+          {
+            echo "prompt<<${DELIM}"
+            cat /tmp/full_prompt.md
+            echo "${DELIM}"
+          } >> "$GITHUB_OUTPUT"
+
+  # Automatic PR reviews (no @claude mention)
+  # Uses DeepSeek R1 via AWS Bedrock (Converse API, generic-bedrock route) for model
+  # diversity — Claude writes code here, a non-Claude model reviews it so training/weighting
+  # biases from one model family don't carry into the review. Interactive @claude sessions
+  # remain on Anthropic Claude (job above). Prompt lives in .github/prompts/gpt-auto-review.md.
+  #
+  # Was openai.gpt-5.5 (Bedrock Mantle), but as of 2026-06-15 gpt-5.5 is failing on mantle
+  # in both regions ("Engine not found"; AWS-side). Switched to DeepSeek R1 (reasoning model)
+  # which produces higher-quality code review findings than V3.2.
+  ai-automatic-review:
+    needs: [security-check, load-gpt-prompt]
+    # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
+    # or failed this job is skipped too.
+    if: needs.load-gpt-prompt.result == 'success'
+    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
+    concurrency:
+      group: claude-automatic-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
-      model_id: ${{ vars.BEDROCK_MODEL_ID }}
+      # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
+      # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
+      # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
+      model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
-      prompt: |
-        Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
-      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
-      timeout_minutes: 15
+      prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
+      # Each push gets a unique SHA → unique sticky marker → new comment instead of overwrite.
+      sticky_namespace: ${{ github.sha }}
+      timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
     secrets:

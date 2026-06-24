@@ -146,9 +146,16 @@ public class OSSearchAPIImpl implements SearchAPI {
             throw new DotStateException("Search query is null");
         }
 
+        // Normalize the query the same way search() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity; idempotent when the caller already
+        // lowercased (search() delegates here after lowercasing). Symmetric with the ES raw path.
+        final String normalizedQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                query, com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
+
         final JSONObject completeQueryJSON;
         try {
-            completeQueryJSON = new JSONObject(query);
+            completeQueryJSON = new JSONObject(normalizedQuery);
             completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
         } catch (final JSONException e) {
             throw new DotStateException("Unable to parse the given query.", e);

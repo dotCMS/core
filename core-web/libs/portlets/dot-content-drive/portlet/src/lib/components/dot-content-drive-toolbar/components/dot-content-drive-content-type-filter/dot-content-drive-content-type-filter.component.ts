@@ -311,8 +311,17 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             this.$selectedContentTypes.update((list) =>
                 (list ?? []).filter((ct) => ct.baseType !== name)
             );
+            // Unchecking the base type you're viewing resets the right column
+            // to "all content types" — the natural no-filter view. Unchecking a
+            // base type you're NOT viewing leaves the right column untouched.
+            if (this.$focusedBaseType() === name) {
+                this.onFocusChange(ALL_CONTENT);
+            }
         } else {
             this.$selectedBaseTypes.update((list) => [...list, name]);
+            // Checking a base type focuses it, so its content types load on the
+            // right — keeps the checkbox click consistent with a title click.
+            this.onFocusChange(name);
         }
         this.#syncStore();
     }

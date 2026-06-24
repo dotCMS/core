@@ -137,6 +137,23 @@ public class LangChain4jModelFactoryTest {
      * Then an IllegalArgumentException is thrown.
      */
     @Test
+    public void test_buildChatModel_bedrock_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(bedrockConfig("anthropic.claude-3-5-sonnet-20241022-v2:0"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildChatModel_bedrock_missingRegion_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("anthropic.claude-3-5-sonnet-20241022-v2:0")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -194,6 +211,31 @@ public class LangChain4jModelFactoryTest {
      * When buildEmbeddingModel is called,
      * Then an IllegalArgumentException is thrown.
      */
+    @Test
+    public void test_buildEmbeddingModel_bedrock_titan_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("amazon.titan-embed-text-v2:0"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_titan_withDimensions_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("amazon.titan-embed-text-v2:0")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .dimensions(1024)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_cohere_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("cohere.embed-english-v3"));
+        assertNotNull(model);
+    }
+
     @Test
     public void test_buildEmbeddingModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
@@ -253,6 +295,12 @@ public class LangChain4jModelFactoryTest {
      * Then an IllegalArgumentException is thrown.
      */
     @Test
+    public void test_buildImageModel_bedrock_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(bedrockConfig("stability.stable-diffusion-xl-v1")));
+    }
+
+    @Test
     public void test_buildImageModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -260,6 +308,19 @@ public class LangChain4jModelFactoryTest {
                 .apiKey("key")
                 .build();
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    // ── Bedrock edge cases ────────────────────────────────────────────────────
+
+    @Test
+    public void test_buildChatModel_bedrock_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
     }
 
     // ── Vertex AI edge cases ──────────────────────────────────────────────────
@@ -287,6 +348,17 @@ public class LangChain4jModelFactoryTest {
                 .location("us-central1")
                 .build();
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_unknownFamily_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("meta.llama3-70b-instruct-v1:0")));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_cohereUppercase_routesToCohere() {
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("Cohere.embed-english-v3")));
     }
 
     /**
@@ -426,6 +498,52 @@ public class LangChain4jModelFactoryTest {
         assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
     }
 
+    // ── Azure Foundry endpoint auto-detection ─────────────────────────────────
+
+    /**
+     * Given an Azure OpenAI config with a Foundry endpoint (services.ai.azure.com),
+     * When buildImageModel is called,
+     * Then an ImageModel is returned using the plain OpenAI-style path (no isMicrosoftFoundry routing).
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildImageModel(azureFoundryConfig("gpt-image-2")));
+    }
+
+    /**
+     * Given an Azure OpenAI Foundry config with optional size, timeout, and maxRetries,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-image-2")
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
+                .size("1024x1024")
+                .timeout(60)
+                .maxRetries(2)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    /**
+     * Given an Azure OpenAI Foundry config without model or deploymentName,
+     * When buildImageModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildImageModel_azureOpenai_foundryEndpoint_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static ProviderConfig openAiConfig(final String model) {
@@ -433,6 +551,16 @@ public class LangChain4jModelFactoryTest {
                 .provider("openai")
                 .model(model)
                 .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig bedrockConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model(model)
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
                 .build();
     }
 
@@ -457,7 +585,6 @@ public class LangChain4jModelFactoryTest {
             "\"client_id\":\"123456789\"," +
             "\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\"," +
             "\"token_uri\":\"https://oauth2.googleapis.com/token\"}";
-
     private static ProviderConfig azureOpenAiConfig(final String model) {
         return ImmutableProviderConfig.builder()
                 .provider("azure_openai")
@@ -466,6 +593,15 @@ public class LangChain4jModelFactoryTest {
                 .endpoint("https://my-company.openai.azure.com/")
                 .deploymentName(model)
                 .apiVersion("2024-02-01")
+                .build();
+    }
+
+    private static ProviderConfig azureFoundryConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model(model)
+                .apiKey("test-key")
+                .endpoint("https://my-resource.services.ai.azure.com/openai/v1/")
                 .build();
     }
 

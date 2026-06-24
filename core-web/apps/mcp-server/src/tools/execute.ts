@@ -43,6 +43,11 @@ Tips:
 - Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
 - For file uploads use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
+Binary responses (file assets — images, fonts, PDFs, etc.):
+- Endpoints that return non-text bodies (e.g. GET \`/api/v2/assets/{identifier}\` and \`/dA/{id}\`, content-type \`application/octet-stream\` or \`image/*\`) come back as an envelope: \`{ __dotcmsBinary: true, contentType, base64, byteLength }\`.
+- The \`base64\` field IS the raw file bytes — base64-decode it to recover the exact file. Do NOT treat it as text; the bytes are intact (not UTF-8-mangled).
+- JSON and textual responses (\`text/*\`, xml, js, \`+json\`/\`+xml\`) are returned as parsed objects / strings as before — only binary bodies use the envelope.
+
 Block Editor (Story Block) fields:
 - A Story Block field stores a string. When creating or updating content via a fire endpoint, send the field value as an **HTML or Markdown string** — do NOT hand-author the ProseMirror/JSON document. dotCMS stores it as-is and converts it to the Block Editor structure when the contentlet is opened in the editor.
 - Example: \`{ "contentType": "Blog", "title": "My Post", "body": "<h2>Intro</h2><p>Hello <strong>world</strong>.</p>" }\` — where \`body\` is the Story Block field.
