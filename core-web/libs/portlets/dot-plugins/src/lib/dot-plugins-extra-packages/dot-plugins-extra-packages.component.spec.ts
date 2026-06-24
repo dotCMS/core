@@ -159,8 +159,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
     });
 
     describe('search', () => {
-        const PACKAGES_TEXT =
-            'com.example.foo\ncom.example.bar\norg.example.baz\ncom.example.qux';
+        const PACKAGES_TEXT = 'com.example.foo\ncom.example.bar\norg.example.baz\ncom.example.qux';
 
         function searchInput(): HTMLInputElement | null {
             const host = spectator.query(byTestId('plugins-extra-packages-search'));
