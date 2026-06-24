@@ -53,27 +53,6 @@
     <button
         pButton
         type="button"
-        [icon]="store.isFullscreen() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
-        [text]="true"
-        severity="secondary"
-        [attr.aria-pressed]="store.isFullscreen()"
-        [attr.aria-label]="
-            (store.isFullscreen()
-                ? 'edit.content.image-editor.fullscreen.exit.aria'
-                : 'edit.content.image-editor.fullscreen.enter.aria'
-            ) | dm
-        "
-        [pTooltip]="
-            (store.isFullscreen()
-                ? 'edit.content.image-editor.fullscreen.exit.aria'
-                : 'edit.content.image-editor.fullscreen.enter.aria'
-            ) | dm
-        "
-        data-testid="image-editor-fullscreen-btn"
-        (click)="toggleFullscreen()"></button>
-    <button
-        pButton
-        type="button"
         icon="pi pi-undo"
         [text]="true"
         severity="secondary"

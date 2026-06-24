@@ -10,17 +10,15 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { imageEditorHistoryEvents, imageEditorViewEvents } from '../../store/image-editor.events';
+import { imageEditorHistoryEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
 
 /**
- * Address sub-bar shown on the dark canvas. Surfaces the cache-busted preview
- * URL with a copy action on the left, and zoom, full-screen and undo/redo
- * controls on the right. Zoom is emitted as outputs (`zoomIn`/`zoomOut`/`fit`)
- * for the canvas to apply a CSS transform; undo/redo dispatch
- * {@link imageEditorHistoryEvents} and the full-screen toggle dispatches
- * {@link imageEditorViewEvents}. The root component owns the actual dialog
- * resize, reacting to `store.isFullscreen()`.
+ * Address sub-bar shown on the canvas. Surfaces the cache-busted preview URL with
+ * a copy action on the left, and zoom and undo/redo controls on the right. Zoom is
+ * emitted as outputs (`zoomIn`/`zoomOut`/`fit`) for the canvas to apply a CSS
+ * transform; undo/redo dispatch {@link imageEditorHistoryEvents}. (The full-screen
+ * toggle lives in the dialog header, next to the close button.)
  */
 @Component({
     selector: 'dot-image-editor-address-bar',
@@ -32,7 +30,6 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 export class DotImageEditorAddressBarComponent {
     protected readonly store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorHistoryEvents);
-    readonly #viewDispatch = injectDispatch(imageEditorViewEvents);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
@@ -75,11 +72,6 @@ export class DotImageEditorAddressBarComponent {
         const origin = this.#document.location?.origin ?? '';
 
         return /^https?:\/\//.test(url) ? url : `${origin}${url}`;
-    }
-
-    /** Toggles the editor dialog between its windowed size and full-screen. */
-    protected toggleFullscreen(): void {
-        this.#viewDispatch.fullscreenToggled();
     }
 
     /** Steps back one entry in the edit history. */

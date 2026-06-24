@@ -1,4 +1,7 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { Dispatcher } from '@ngrx/signals/events';
+
+import { signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -6,16 +9,26 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotImageEditorHeaderComponent } from './dot-image-editor-header.component';
 
+import { imageEditorViewEvents } from '../../store/image-editor.events';
+import { ImageEditorStore } from '../../store/image-editor.store';
+
 describe('DotImageEditorHeaderComponent', () => {
     let spectator: Spectator<DotImageEditorHeaderComponent>;
+    let dispatcher: Dispatcher;
+
+    const isFullscreen = signal(false);
 
     const createComponent = createComponentFactory({
         component: DotImageEditorHeaderComponent,
-        imports: [ButtonModule, DotMessagePipe]
+        imports: [ButtonModule, DotMessagePipe],
+        componentProviders: [Dispatcher, mockProvider(ImageEditorStore, { isFullscreen })]
     });
 
     beforeEach(() => {
+        isFullscreen.set(false);
         spectator = createComponent();
+        dispatcher = spectator.inject(Dispatcher, true);
+        jest.spyOn(dispatcher, 'dispatch');
     });
 
     it('should render the title', () => {
@@ -25,8 +38,9 @@ describe('DotImageEditorHeaderComponent', () => {
         expect(header).toHaveText('edit.content.image-editor.title');
     });
 
-    it('should expose the header and close testids', () => {
+    it('should expose the header, full-screen and close testids', () => {
         expect(spectator.query(byTestId('image-editor-header'))).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-fullscreen-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-close-btn'))).toBeTruthy();
     });
 
@@ -37,5 +51,29 @@ describe('DotImageEditorHeaderComponent', () => {
         spectator.click(button as HTMLElement);
 
         expect(closeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should dispatch fullscreenToggled when the full-screen button is clicked', () => {
+        const button = spectator
+            .query(byTestId('image-editor-fullscreen-btn'))
+            ?.querySelector('button');
+
+        spectator.click(button as HTMLElement);
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            imageEditorViewEvents.fullscreenToggled(),
+            {
+                scope: 'self'
+            }
+        );
+    });
+
+    it('should swap the full-screen icon to "minimize" while full-screen', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(
+            spectator.query(byTestId('image-editor-fullscreen-btn'))?.querySelector('.pi')
+        ).toHaveClass('pi-window-minimize');
     });
 });

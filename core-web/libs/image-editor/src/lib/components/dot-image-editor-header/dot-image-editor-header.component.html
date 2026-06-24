@@ -1,11 +1,33 @@
 <div class="flex items-center justify-between" data-testid="image-editor-header">
     <h2 class="m-0 text-lg font-semibold">{{ 'edit.content.image-editor.title' | dm }}</h2>
 
-    <p-button
-        [text]="true"
-        [rounded]="true"
-        icon="pi pi-times"
-        [attr.aria-label]="'edit.content.image-editor.close.aria' | dm"
-        (onClick)="close.emit()"
-        data-testid="image-editor-close-btn" />
+    <div class="flex items-center gap-1">
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            [icon]="store.isFullscreen() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
+            [attr.aria-pressed]="store.isFullscreen()"
+            [attr.aria-label]="
+                (store.isFullscreen()
+                    ? 'edit.content.image-editor.fullscreen.exit.aria'
+                    : 'edit.content.image-editor.fullscreen.enter.aria'
+                ) | dm
+            "
+            [pTooltip]="
+                (store.isFullscreen()
+                    ? 'edit.content.image-editor.fullscreen.exit.aria'
+                    : 'edit.content.image-editor.fullscreen.enter.aria'
+                ) | dm
+            "
+            (onClick)="toggleFullscreen()"
+            data-testid="image-editor-fullscreen-btn" />
+
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            icon="pi pi-times"
+            [attr.aria-label]="'edit.content.image-editor.close.aria' | dm"
+            (onClick)="close.emit()"
+            data-testid="image-editor-close-btn" />
+    </div>
 </div>
