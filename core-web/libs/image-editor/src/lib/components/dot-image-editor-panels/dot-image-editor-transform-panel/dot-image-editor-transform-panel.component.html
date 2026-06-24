@@ -56,18 +56,24 @@
                 [ngModel]="store.transform().flipH"
                 [onLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
                 [offLabel]="'edit.content.image-editor.transform.flip.horizontal' | dm"
-                onIcon="pi pi-arrows-h"
-                offIcon="pi pi-arrows-h"
                 data-testid="image-editor-flip-horizontal-btn"
-                (onChange)="flipHToggled()" />
+                (onChange)="flipHToggled()">
+                <ng-template #content>
+                    <i class="material-symbols-outlined">flip</i>
+                    <span>{{ 'edit.content.image-editor.transform.flip.horizontal' | dm }}</span>
+                </ng-template>
+            </p-toggleButton>
             <p-toggleButton
                 [ngModel]="store.transform().flipV"
                 [onLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
                 [offLabel]="'edit.content.image-editor.transform.flip.vertical' | dm"
-                onIcon="pi pi-arrows-v"
-                offIcon="pi pi-arrows-v"
                 data-testid="image-editor-flip-vertical-btn"
-                (onChange)="flipVToggled()" />
+                (onChange)="flipVToggled()">
+                <ng-template #content>
+                    <i class="material-symbols-outlined icon-rotate-90">flip</i>
+                    <span>{{ 'edit.content.image-editor.transform.flip.vertical' | dm }}</span>
+                </ng-template>
+            </p-toggleButton>
         </div>
     </div>
 

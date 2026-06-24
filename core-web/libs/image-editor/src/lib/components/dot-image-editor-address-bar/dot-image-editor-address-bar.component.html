@@ -1,75 +1,137 @@
-<div class="address-bar__group">
-    <i class="pi pi-link address-bar__link-icon" aria-hidden="true"></i>
-    <!-- Read-only, server-generated URL — plain text, not an editable input. -->
+<!-- Tools pill: move/grab + crop toggles. The active tool reads as a filled white
+     rounded square sitting inside the gray pill; the inactive one is transparent. -->
+<div
+    class="address-bar__pill"
+    role="group"
+    [attr.aria-label]="'edit.content.image-editor.tool.move' | dm">
+    @for (tool of tools; track tool.id) {
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            severity="secondary"
+            [styleClass]="
+                store.activeTool() === tool.id
+                    ? 'address-bar__tool address-bar__tool--active'
+                    : 'address-bar__tool'
+            "
+            [attr.aria-pressed]="store.activeTool() === tool.id"
+            [attr.aria-label]="tool.label | dm"
+            [pTooltip]="tool.label | dm"
+            tooltipPosition="bottom"
+            [attr.data-testid]="tool.testId"
+            (onClick)="selectTool(tool.id)">
+            <ng-template #icon>
+                @switch (tool.id) {
+                    @case ('move') {
+                        <i class="material-symbols-outlined">pan_tool</i>
+                    }
+                    @case ('crop') {
+                        <i class="material-symbols-outlined">crop</i>
+                    }
+                }
+            </ng-template>
+        </p-button>
+    }
+</div>
+
+<!-- URL pill: copy action + the read-only, server-generated preview URL (plain
+     text, not an editable input). -->
+<div class="address-bar__pill address-bar__pill--url">
+    <p-button
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.address.copy.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.address.copy.aria' | dm"
+        tooltipPosition="bottom"
+        data-testid="image-editor-copy-url-btn"
+        (onClick)="copyUrl()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">content_copy</i>
+        </ng-template>
+    </p-button>
     <span
         class="address-bar__field truncate font-mono"
         [title]="store.previewUrl()"
         data-testid="image-editor-address-field">
         {{ store.previewUrl() }}
     </span>
-    <button
-        pButton
-        type="button"
-        icon="pi pi-copy"
-        [text]="true"
-        severity="secondary"
-        [attr.aria-label]="'edit.content.image-editor.address.copy.aria' | dm"
-        [pTooltip]="'edit.content.image-editor.address.copy.aria' | dm"
-        data-testid="image-editor-copy-url-btn"
-        (click)="copyUrl()"></button>
 </div>
 
-<div class="address-bar__group">
-    <button
-        pButton
-        type="button"
-        icon="pi pi-minus"
+<!-- Zoom pill: zoom out / fit (the value button) / zoom in, then undo / redo. -->
+<div class="address-bar__pill">
+    <p-button
         [text]="true"
+        [rounded]="true"
+        size="small"
         severity="secondary"
         [attr.aria-label]="'edit.content.image-editor.zoom.out.aria' | dm"
         [pTooltip]="'edit.content.image-editor.zoom.out.aria' | dm"
+        tooltipPosition="bottom"
         data-testid="image-editor-zoom-out-btn"
-        (click)="zoomOut.emit()"></button>
+        (onClick)="zoomOut.emit()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">remove</i>
+        </ng-template>
+    </p-button>
     <!-- Clicking the zoom value resets the zoom so the image fits the stage. -->
     <button
         type="button"
         class="address-bar__zoom-value"
         [attr.aria-label]="'edit.content.image-editor.zoom.fit.aria' | dm"
         [pTooltip]="'edit.content.image-editor.zoom.fit.aria' | dm"
+        tooltipPosition="bottom"
         data-testid="image-editor-fit-btn"
         (click)="fit.emit()">
         {{ zoomLevel() }}%
     </button>
-    <button
-        pButton
-        type="button"
-        icon="pi pi-plus"
+    <p-button
         [text]="true"
+        [rounded]="true"
+        size="small"
         severity="secondary"
         [attr.aria-label]="'edit.content.image-editor.zoom.in.aria' | dm"
         [pTooltip]="'edit.content.image-editor.zoom.in.aria' | dm"
+        tooltipPosition="bottom"
         data-testid="image-editor-zoom-in-btn"
-        (click)="zoomIn.emit()"></button>
-    <button
-        pButton
-        type="button"
-        icon="pi pi-undo"
+        (onClick)="zoomIn.emit()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">add</i>
+        </ng-template>
+    </p-button>
+
+    <span class="address-bar__divider" aria-hidden="true"></span>
+
+    <p-button
         [text]="true"
+        [rounded]="true"
+        size="small"
         severity="secondary"
         [disabled]="!store.canUndo()"
         [attr.aria-label]="'edit.content.image-editor.undo.aria' | dm"
         [pTooltip]="'edit.content.image-editor.undo.aria' | dm"
+        tooltipPosition="bottom"
         data-testid="image-editor-undo-btn"
-        (click)="undo()"></button>
-    <button
-        pButton
-        type="button"
-        icon="pi pi-refresh"
+        (onClick)="undo()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">undo</i>
+        </ng-template>
+    </p-button>
+    <p-button
         [text]="true"
+        [rounded]="true"
+        size="small"
         severity="secondary"
         [disabled]="!store.canRedo()"
         [attr.aria-label]="'edit.content.image-editor.redo.aria' | dm"
         [pTooltip]="'edit.content.image-editor.redo.aria' | dm"
+        tooltipPosition="bottom"
         data-testid="image-editor-redo-btn"
-        (click)="redo()"></button>
+        (onClick)="redo()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">redo</i>
+        </ng-template>
+    </p-button>
 </div>

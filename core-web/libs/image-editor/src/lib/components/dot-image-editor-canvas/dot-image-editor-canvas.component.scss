@@ -172,30 +172,6 @@
     opacity: 1;
 }
 
-.canvas__tool-rail {
-    position: absolute;
-    top: 50%;
-    left: 1rem;
-    transform: translateY(-50%);
-    z-index: 2;
-    // Hidden until the user hovers the canvas (or tabs into a tool, for keyboard a11y).
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 200ms ease;
-}
-
-.canvas__viewport:hover .canvas__tool-rail,
-.canvas__tool-rail:focus-within {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .canvas__tool-rail {
-        transition: none;
-    }
-}
-
 .canvas__stage {
     position: relative;
     // Grid + centered items: stack both image layers in one cell and center them with
@@ -281,6 +257,12 @@
 .canvas__error-icon {
     font-size: 2.5rem;
     color: var(--yellow-500, #f5a623);
+}
+
+// The retry button's glyph is projected into PrimeNG's button; pierce with
+// ::ng-deep to scale the Material Symbol down to the previous icon footprint.
+:host ::ng-deep .canvas__error .p-button .material-symbols-outlined {
+    font-size: 1.125rem;
 }
 
 .canvas__error-message {

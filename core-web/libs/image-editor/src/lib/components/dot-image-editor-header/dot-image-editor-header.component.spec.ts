@@ -68,12 +68,22 @@ describe('DotImageEditorHeaderComponent', () => {
         );
     });
 
-    it('should swap the full-screen icon to "minimize" while full-screen', () => {
+    it('should show the "enter full screen" icon while windowed', () => {
+        const icon = spectator
+            .query(byTestId('image-editor-fullscreen-btn'))
+            ?.querySelector('.material-symbols-outlined');
+
+        expect(icon?.textContent?.trim()).toBe('open_in_full');
+    });
+
+    it('should swap the full-screen icon to "exit full screen" while full-screen', () => {
         isFullscreen.set(true);
         spectator.detectChanges();
 
-        expect(
-            spectator.query(byTestId('image-editor-fullscreen-btn'))?.querySelector('.pi')
-        ).toHaveClass('pi-window-minimize');
+        const icon = spectator
+            .query(byTestId('image-editor-fullscreen-btn'))
+            ?.querySelector('.material-symbols-outlined');
+
+        expect(icon?.textContent?.trim()).toBe('close_fullscreen');
     });
 });

@@ -7,8 +7,6 @@
         (fit)="fit()" />
 
     <div class="canvas__viewport">
-        <dot-image-editor-tool-rail class="canvas__tool-rail" />
-
         <div
             #stage
             class="canvas__stage"
@@ -63,15 +61,20 @@
 
         @if (store.previewStatus() === 'error') {
             <div class="canvas__error" role="alert" data-testid="image-editor-error">
-                <i class="pi pi-exclamation-triangle canvas__error-icon" aria-hidden="true"></i>
+                <i class="material-symbols-outlined canvas__error-icon" aria-hidden="true">
+                    warning
+                </i>
                 <p class="canvas__error-message">
                     {{ 'edit.content.image-editor.canvas.error.message' | dm }}
                 </p>
                 <p-button
-                    icon="pi pi-refresh"
                     [label]="'edit.content.image-editor.canvas.error.retry' | dm"
                     (onClick)="retry()"
-                    data-testid="image-editor-retry-btn" />
+                    data-testid="image-editor-retry-btn">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined">refresh</i>
+                    </ng-template>
+                </p-button>
             </div>
         }
         @if (store.activeTool() === 'crop') {

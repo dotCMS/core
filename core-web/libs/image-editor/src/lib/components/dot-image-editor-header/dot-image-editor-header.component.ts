@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -30,6 +30,11 @@ export class DotImageEditorHeaderComponent {
 
     /** Emitted when the user clicks the close (✕) button. */
     close = output<void>();
+
+    /** Material Symbol ligature for the full-screen toggle, by current state. */
+    protected readonly fullscreenIcon = computed(() =>
+        this.store.isFullscreen() ? 'close_fullscreen' : 'open_in_full'
+    );
 
     /** Toggles the editor dialog between its windowed size and full-screen. */
     protected toggleFullscreen(): void {

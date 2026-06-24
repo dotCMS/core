@@ -63,6 +63,26 @@
     gap: 0.5rem;
 }
 
+// The flip toggles project their icon + label into PrimeNG's toggle button, so
+// pierce its content slot with ::ng-deep to size the Material Symbol down to the
+// previous icon footprint and keep the glyph and label on one centered row.
+:host ::ng-deep {
+    .p-togglebutton-content {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .ie-transform__flip .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+
+    // Vertical flip reuses the `flip` glyph rotated a quarter turn.
+    .icon-rotate-90 {
+        transform: rotate(90deg);
+    }
+}
+
 .ie-transform__dimensions {
     display: flex;
     align-items: flex-start;

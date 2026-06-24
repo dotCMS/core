@@ -7,10 +7,13 @@
 
     <p-button
         severity="secondary"
-        icon="pi pi-download"
         [label]="'edit.content.image-editor.footer.download' | dm"
         [attr.aria-label]="'edit.content.image-editor.footer.download.aria' | dm"
         [disabled]="store.isBusy()"
         (onClick)="onDownload()"
-        data-testid="image-editor-download-btn" />
+        data-testid="image-editor-download-btn">
+        <ng-template #icon>
+            <i class="material-symbols-outlined text-[1.25rem]">download</i>
+        </ng-template>
+    </p-button>
 </div>

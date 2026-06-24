@@ -33,14 +33,13 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
-import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
 
 /**
  * Dark stage that renders the live image preview at the center of the editor.
- * Hosts the top address sub-bar, the floating tool rail, the crop overlay, and a
- * floating bottom action bar that surfaces the crop tool's actions (aspect-ratio
- * presets, a natural-pixel width/height readout/editor, plus apply/cancel). Owns
- * three pieces of local UI state the store does
+ * Hosts the top address sub-bar (which carries the canvas tools), the crop overlay,
+ * and a floating bottom action bar that surfaces the crop tool's actions
+ * (aspect-ratio presets, a natural-pixel width/height readout/editor, plus
+ * apply/cancel). Owns three pieces of local UI state the store does
  * not: a two-layer image crossfade between successive previews, the rendered
  * image's bounding rect (measured for the overlay), and the display-only zoom
  * level. Preview loading outcomes are reported back to the store via
@@ -58,7 +57,6 @@ import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/d
         SkeletonModule,
         DotMessagePipe,
         DotImageEditorAddressBarComponent,
-        DotImageEditorToolRailComponent,
         DotImageEditorCropOverlayComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush

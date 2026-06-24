@@ -15,7 +15,6 @@ import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { ImageEditorStore } from '../../store/image-editor.store';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
-import { DotImageEditorToolRailComponent } from '../dot-image-editor-tool-rail/dot-image-editor-tool-rail.component';
 
 const PREVIEW_URL = '/contentAsset/image/inode-1/fileAsset?byInode=true&r=1';
 const NEXT_PREVIEW_URL = '/contentAsset/image/inode-1/fileAsset?byInode=true&r=2';
@@ -111,14 +110,12 @@ describe('DotImageEditorCanvasComponent', () => {
                     remove: {
                         imports: [
                             DotImageEditorAddressBarComponent,
-                            DotImageEditorToolRailComponent,
                             DotImageEditorCropOverlayComponent
                         ]
                     },
                     add: {
                         imports: [
                             MockComponent(DotImageEditorAddressBarComponent),
-                            MockComponent(DotImageEditorToolRailComponent),
                             MockComponent(DotImageEditorCropOverlayComponent)
                         ]
                     }
@@ -166,8 +163,11 @@ describe('DotImageEditorCanvasComponent', () => {
     it('should render the canvas stage and child components', () => {
         expect(spectator.query(byTestId('image-editor-canvas'))).toExist();
         expect(spectator.query('dot-image-editor-address-bar')).toExist();
-        expect(spectator.query('dot-image-editor-tool-rail')).toExist();
         expect(spectator.query('dot-image-editor-crop-overlay')).toExist();
+    });
+
+    it('should no longer render the floating tool rail', () => {
+        expect(spectator.query('dot-image-editor-tool-rail')).not.toExist();
     });
 
     it('should show the skeleton and no spinner when idle', () => {

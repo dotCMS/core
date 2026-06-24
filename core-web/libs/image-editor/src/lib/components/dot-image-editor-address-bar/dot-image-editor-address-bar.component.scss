@@ -1,33 +1,69 @@
 :host {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    // Header band a touch darker than the white viewer, with a hairline divider.
-    background-color: var(--surface-100, #f1f3f5);
+    // White header band; the gray pills sit on it (UVE toolbar-center look).
+    background-color: var(--surface-0, #ffffff);
     // Muted dark text/icons at rest; full-strength dark is reserved for hover/active.
     color: var(--surface-600, #4b5563);
     border-bottom: 1px solid var(--surface-200, #e5e7eb);
 }
 
-.address-bar__group {
+// Rounded-full gray pill grouping a row of small icon buttons (mirrors the UVE
+// editor toolbar-center segments).
+.address-bar__pill {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     min-width: 0;
+    padding: 0.125rem;
+    border-radius: 1000px;
+    background-color: var(--surface-200, #e5e7eb);
 }
 
-.address-bar__link-icon {
-    flex: 0 0 auto;
+// The URL pill grows to fill the row, pushing the tools pill hard to the left edge
+// and the zoom pill to the right edge; the URL truncates inside it.
+.address-bar__pill--url {
+    flex: 1 1 auto;
+    padding-right: 0.75rem;
+}
+
+// Material Symbols default to 24px; scale the bar's glyphs (projected into the
+// pButton-component icons and the inline tool glyphs) down to the previous
+// footprint (~1.125rem) so they read as compact controls.
+:host ::ng-deep .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+// Tool toggle: the active tool renders as a filled white rounded square inside the
+// gray pill (subtle shadow); the inactive one stays transparent. `styleClass` puts
+// `address-bar__tool--active` directly on the inner PrimeNG `.p-button`, so the
+// override targets that element (and its hover) and uses `!important` to beat the
+// theme's text-button background.
+:host ::ng-deep .p-button.address-bar__tool--active,
+:host ::ng-deep .p-button.address-bar__tool--active:hover {
+    background-color: var(--surface-0, #ffffff) !important;
+    // Circular (like the rounded icon buttons and the pill), so it sits cleanly
+    // inside the pill instead of a square poking past its rounded ends.
+    border-radius: 9999px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    color: var(--surface-900, #111827) !important;
 }
 
 .address-bar__field {
     flex: 1 1 auto;
     min-width: 0;
-    max-width: 28rem;
     color: inherit;
     font-size: 0.8125rem;
+}
+
+// Hairline divider grouping items inside a pill.
+.address-bar__divider {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 1rem;
+    background-color: var(--surface-300, #d1d5db);
 }
 
 .address-bar__zoom-value {

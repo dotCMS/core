@@ -4,6 +4,12 @@
     gap: 1rem;
 }
 
+// The remove/reset glyphs are projected into PrimeNG buttons; pierce with
+// ::ng-deep to scale the Material Symbol down to the previous icon footprint.
+:host ::ng-deep .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
 .ie-history__list {
     display: flex;
     flex-direction: column;

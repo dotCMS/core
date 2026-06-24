@@ -5,7 +5,6 @@
         <p-button
             [text]="true"
             [rounded]="true"
-            [icon]="store.isFullscreen() ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"
             [attr.aria-pressed]="store.isFullscreen()"
             [attr.aria-label]="
                 (store.isFullscreen()
@@ -20,14 +19,21 @@
                 ) | dm
             "
             (onClick)="toggleFullscreen()"
-            data-testid="image-editor-fullscreen-btn" />
+            data-testid="image-editor-fullscreen-btn">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">{{ fullscreenIcon() }}</i>
+            </ng-template>
+        </p-button>
 
         <p-button
             [text]="true"
             [rounded]="true"
-            icon="pi pi-times"
             [attr.aria-label]="'edit.content.image-editor.close.aria' | dm"
             (onClick)="close.emit()"
-            data-testid="image-editor-close-btn" />
+            data-testid="image-editor-close-btn">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">close</i>
+            </ng-template>
+        </p-button>
     </div>
 </div>
