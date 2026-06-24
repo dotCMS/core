@@ -1,8 +1,8 @@
 # @dotcms/ai
 
-Every other CMS hands an AI a *fixed menu of tools* — it can only do what the vendor pre-built. `@dotcms/ai` does the opposite: the model writes code, and the CMS runs it in a sandbox against the whole API, with auth and policy owned in one place. The ceiling isn't a tool list; it's the API itself.
+Every other CMS hands an AI a *fixed menu of tools* — it can only do what the vendor pre-built. `@dotcms/ai` does the opposite: the model writes code, and the runtime runs it in a sandbox against the whole dotCMS API, with auth and policy owned in one place. The ceiling isn't a tool list; it's the API itself.
 
-You bring the model — there's no LLM, inference, or prompting inside this. It's the execution layer your agent runs *on*.
+You bring whatever drives it — a model, an agent framework, an automation tool like n8n. This is the execution layer beneath them: no LLM inside, it only runs the code, safely.
 
 It's also the layer dotCMS's own MCP server and first-party agents run on. We ship on it, not just publish it.
 
@@ -12,8 +12,7 @@ Safety isn't a setting you turn on; it's the shape of the runtime:
 
 - **Your token never enters the sandbox.** Auth is injected on the host side; the executing code cannot read it.
 - **Adapters are the only way out.** Sandbox code reaches the network/host *only* through an adapter you grant — direct `fetch`/`require`/`process.env` are removed.
-- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose
-  `delete`.
+- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose `delete`.
 
 ## Install
 
@@ -28,7 +27,7 @@ import { createRuntime } from '@dotcms/ai/runtime';
 
 const dotcms = createRuntime({
     url,          // dotCMS instance URL
-    token,        // server-side token — NEVER enters the sandbox
+    token,        // dotCMS auth token — NEVER enters the sandbox
     allow,        // optional allow-list/policy (string[] of path prefixes, or a predicate)
     sessionId,    // context-cache + isolation key
     includeSpec,  // inject the `spec` global for the search use case
@@ -50,9 +49,7 @@ await dotcms.run(code);       // SANDBOXED — a model wrote `code`.
 | `@dotcms/ai/adapter` | Power users | `dotcmsAdapter`, `requestCore`, context loading + cache | dotCMS-specific |
 | `@dotcms/ai/spec` | The search use case | the OpenAPI spec (opt-in; keeps the ~550KB off the default path) | dotCMS-specific |
 
-`@dotcms/ai` is a pure namespace — there is no bare import; everything is reached through a
-subpath. It is an **umbrella** for growth: future AI surfaces (RAG, embeddings, …) land as
-new subpaths under the same package.
+`@dotcms/ai` is a pure namespace — there is no bare import; everything is reached through a subpath. It is an **umbrella** for growth: future AI surfaces (RAG, embeddings, custom agents, harness) land as new subpaths under the same package.
 
 ## Custom, typed operations — `defineAdapter`
 
@@ -98,8 +95,7 @@ catch (e) { if (e instanceof HttpError) console.error(e.status, e.body); }
 
 ## Threat model — capability confinement, NOT adversarial isolation
 
-The governance above is **capability confinement for trusted code generators** — it stops
-your own model from doing something it shouldn't, not an attacker from breaking out.
+The governance above is **capability confinement for trusted code generators** — it stops your own model from doing something it shouldn't, not an attacker from breaking out.
 
 - **Stops accidental egress:** `fetch`/`XMLHttpRequest`/`WebSocket`/`EventSource`/`sendBeacon` throw; `require` removed; `process.env` emptied; worker spawned with `env:{}`.
 - **Stops runaway cost:** wall-clock timeout, `resourceLimits` memory/stack caps, and an `AbortSignal` threaded to adapter calls so a timeout aborts in-flight host work.
