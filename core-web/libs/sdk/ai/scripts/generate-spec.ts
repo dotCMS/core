@@ -80,8 +80,26 @@ function matchesPattern(pathKey: string, pattern: string): boolean {
     return regex.test(pathKey);
 }
 
+/**
+ * Resolve the OpenAPI spec source (a URL or local file path), in priority order:
+ *   1. an explicit CLI arg (`... generate-spec -- <url-or-path>`)
+ *   2. `DOTCMS_SPEC_URL` — env vars are inherited by the `generate-spec` task that `build`
+ *      runs via `dependsOn` (CLI args are NOT), so this is what lets
+ *      `DOTCMS_SPEC_URL=… nx build mcp-server` regenerate from a local instance in one command.
+ *   3. `${DOTCMS_URL}/api/openapi.json` — convenience: reuse the same instance the runtime targets.
+ *   4. the demo instance (so CI builds with no env set produce the committed spec).
+ */
 function resolveSpecSource(): string {
-    return process.argv[2] || DEFAULT_SPEC_URL;
+    if (process.argv[2]) {
+        return process.argv[2];
+    }
+    if (process.env.DOTCMS_SPEC_URL) {
+        return process.env.DOTCMS_SPEC_URL;
+    }
+    if (process.env.DOTCMS_URL) {
+        return `${process.env.DOTCMS_URL.replace(/\/+$/, '')}${DEFAULT_SPEC_PATH}`;
+    }
+    return DEFAULT_SPEC_URL;
 }
 
 async function fetchSpec(source: string): Promise<string> {

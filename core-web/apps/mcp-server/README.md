@@ -327,10 +327,10 @@ git clone https://github.com/dotCMS/core.git
 cd core/core-web
 
 # Install dependencies
-yarn install
+pnpm install
 
 # Build the server (spec.json is already committed — no live dotCMS instance needed)
-yarn nx build mcp-server
+pnpm nx build mcp-server
 ```
 
 > [!NOTE]
@@ -338,17 +338,49 @@ yarn nx build mcp-server
 
 #### Refreshing the OpenAPI Spec
 
-The processed spec lives in `libs/sdk/ai/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
+The processed spec lives in `libs/sdk/ai/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes. The source is resolved in this order: an explicit CLI arg, then `DOTCMS_SPEC_URL`, then `${DOTCMS_URL}/api/openapi.json`, then the demo instance.
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run sdk-ai:generate-spec
+pnpm nx run sdk-ai:generate-spec
 
-# Override with a different instance (e.g. local):
-yarn nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
+# Override with a different instance — CLI arg (URL or local file path):
+pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
+pnpm nx run sdk-ai:generate-spec -- ./openapi.json
 ```
 
 Then commit the updated `spec.json`. CI does not need a live dotCMS instance to build.
+
+#### Building against a local dotCMS instance
+
+The `search` tool exposes whatever endpoints are in the bundled `spec.json`, so to describe your
+**local** instance you must regenerate the spec as part of the build.
+
+> [!IMPORTANT]
+> Don't run `generate-spec` and then `build` as two separate steps. The `build` target re-runs
+> `generate-spec` itself (via `dependsOn`), and with no source set it falls back to the demo
+> instance — overwriting the spec you just generated. Pass the source so the build's own
+> `generate-spec` uses it.
+
+Set `DOTCMS_SPEC_URL` — it's an environment variable, so it flows into the `generate-spec` task
+that `build` runs automatically (a CLI `--` arg would not). One command:
+
+```bash
+# Regenerate the spec from your local instance AND build, in one step
+DOTCMS_SPEC_URL=http://localhost:8080/api/openapi.json pnpm nx build mcp-server
+
+# Then run it against the same instance (provide a local API token)
+npx @modelcontextprotocol/inspector \
+  -e DOTCMS_URL=http://localhost:8080 \
+  -e AUTH_TOKEN=your-local-api-token \
+  node dist/apps/mcp-server/stdio.js
+```
+
+> [!NOTE]
+> The spec source (what `search` describes) and `DOTCMS_URL` (where the tools send requests at
+> runtime) are separate. Point them at the same instance so the spec matches what the API serves.
+> If `DOTCMS_URL` is already exported in your shell, `generate-spec` will reuse it
+> (`${DOTCMS_URL}/api/openapi.json`) and you can drop `DOTCMS_SPEC_URL` entirely.
 
 #### 2. Use MCP Inspector for debug
 
@@ -454,23 +486,23 @@ libs/sdk/ai/                      # Portable runtime primitives
 
 ```bash
 # Build for production (spec.json already committed — no live dotCMS needed)
-yarn nx build mcp-server
+pnpm nx build mcp-server
 
 # Development mode (with hot reload)
-yarn nx serve mcp-server
+pnpm nx serve mcp-server
 
 # Lint the code
-yarn nx lint mcp-server
+pnpm nx lint mcp-server
 
 # Run all tests
-yarn nx test mcp-server
+pnpm nx test mcp-server
 
 # Run tests in watch mode
-yarn nx test mcp-server --watch
+pnpm nx test mcp-server --watch
 
 # Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
 # Defaults to https://demo.dotcms.com/api/openapi.json
-yarn nx run sdk-ai:generate-spec
+pnpm nx run sdk-ai:generate-spec
 ```
 
 ### Contributing Guidelines
@@ -518,7 +550,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 2. Create a feature branch (`git checkout -b feature/amazing-mcp-feature`)
 3. Make your changes in the `apps/mcp-server` directory
 4. Add tests for new functionality
-5. Run the test suite (`yarn nx test mcp-server`)
+5. Run the test suite (`pnpm nx test mcp-server`)
 6. Commit your changes (`git commit -m 'Add amazing MCP feature'`)
 7. Push to the branch (`git push origin feature/amazing-mcp-feature`)
 8. Open a Pull Request
