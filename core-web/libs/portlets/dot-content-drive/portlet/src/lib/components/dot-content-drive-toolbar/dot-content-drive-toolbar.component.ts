@@ -138,7 +138,7 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $addNewDotAsset = output<void>({ alias: 'addNewDotAsset' });
+    $upload = output<void>({ alias: 'upload' });
 
     readonly $items = signal<MenuItem[]>([
         {

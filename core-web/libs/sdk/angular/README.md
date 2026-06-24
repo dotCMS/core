@@ -1,15 +1,18 @@
 # dotCMS Angular SDK
 
-The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers Angular developers to build powerful, editable websites and applications in no time.
+The `@dotcms/angular` SDK is the official dotCMS Angular library. It empowers Angular developers to build powerful, editable websites and applications in no time.
 
 ## Table of Contents
 
 -   [Prerequisites & Setup](#prerequisites--setup)
-    -   [dotCMS Instance](#dotcms-instance)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Get a dotCMS Environment](#get-a-dotcms-environment)
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
+    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Installation](#installation)
-    -   [dotCMS Client Configuration](#dotcms-client-configuration)
+-   [Configuration](#configuration)
+    -   [Basic Configuration](#basic-configuration)
+    -   [Custom HTTP Client Configuration](#custom-http-client-configuration)
+    -   [Using the Client](#using-the-client)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
     -   [Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
@@ -160,7 +163,7 @@ export class MyComponent {
 
   ngOnInit() {
     this.dotcmsClient.page
-        .get({ url: '/about-us' })
+        .get('/about-us')
         .then(({ pageAsset }) => {
             console.log(pageAsset);
         });
@@ -345,13 +348,15 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 
 ```typescript
 // /src/app/pages/dotcms-page.component.ts
-import { Component, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 
-import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular';
+import {
+    DotCMSClient,
+    DotCMSEditablePageService,
+    DotCMSLayoutBodyComponent
+} from '@dotcms/angular';
 import { getUVEState } from '@dotcms/uve';
-import { DotCMSPageAsset } from '@dotcms/types';
-
-import { DOTCMS_CLIENT_TOKEN } from './app.config';
+import { DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
 
 const DYNAMIC_COMPONENTS = {
     Blog: import('./blog.component').then(c => c.BlogComponent),
@@ -361,12 +366,12 @@ const DYNAMIC_COMPONENTS = {
 @Component({
     selector: 'app-pages',
     standalone: true,
-    imports: [DotCMSLayoutBody],
-    providers: [DotCMSEditablePageService, DOTCMS_CLIENT_TOKEN],
+    imports: [DotCMSLayoutBodyComponent],
+    providers: [DotCMSEditablePageService],
     template: `
         @if (pageAsset()) {
             <dotcms-layout-body
-                [pageAsset]="pageAsset"
+                [page]="pageAsset()!"
                 [components]="components()"
             />
         } @else {
@@ -374,29 +379,29 @@ const DYNAMIC_COMPONENTS = {
         }
     `
 })
-export class PagesComponent {
-    private readonly dotCMSClient: DotCMSClient = inject(DOTCMS_CLIENT_TOKEN);
+export class PagesComponent implements OnInit {
+    private readonly dotCMSClient = inject(DotCMSClient);
     private readonly editablePageService = inject(DotCMSEditablePageService);
     readonly components = signal(DYNAMIC_COMPONENTS);
     readonly pageAsset = signal<DotCMSPageAsset | null>(null);
 
     ngOnInit() {
         this.dotCMSClient.page
-            .get({ url: '/my-page' })
-            .then(({ pageAsset }) => {
-                if(getUVEState()) {
-                   this.#subscribeToPageUpdates(response);
-                   return;
-               }
+            .get('/my-page')
+            .then((pageResponse) => {
+                if (getUVEState()) {
+                    this.#subscribeToPageUpdates(pageResponse);
+                    return;
+                }
 
-                this.pageAsset.set(pageAsset);
+                this.pageAsset.set(pageResponse.pageAsset);
             });
     }
 
-    #subscribeToPageUpdates(response: DotCMSPageResponse) {
+    #subscribeToPageUpdates(pageResponse: DotCMSPageResponse) {
         this.editablePageService
-            .listen(response)
-            .subscribe({ pageAsset } => this.pageAsset.set(pageAsset));
+            .listen(pageResponse)
+            .subscribe(({ pageAsset }) => this.pageAsset.set(pageAsset));
     }
 }
 ```
@@ -433,26 +438,25 @@ All components, directives, and services should be imported from `@dotcms/angula
 #### Usage
 
 ```typescript
-import { Component, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody } from '@dotcms/angular';
-
-import { DOTCMS_CLIENT_TOKEN } from './app.config';
+import { DotCMSClient, DotCMSLayoutBodyComponent } from '@dotcms/angular';
 
 @Component({
+    imports: [DotCMSLayoutBodyComponent],
     template: `
-        <dotcms-layout-body [page]="pageAsset()" [components]="components()" mode="development" />
+        <dotcms-layout-body [page]="pageAsset()!" [components]="components()" mode="development" />
     `
 })
-export class MyPageComponent {
+export class MyPageComponent implements OnInit {
     protected readonly components = signal({
         Blog: import('./blog.component').then((c) => c.BlogComponent)
     });
     protected readonly pageAsset = signal<DotCMSPageAsset | null>(null);
-    private readonly dotCMSClient = inject(DOTCMS_CLIENT_TOKEN);
+    private readonly dotCMSClient = inject(DotCMSClient);
 
     ngOnInit() {
-        this.dotCMSClient.page.get({ url: '/my-page' }).then(({ pageAsset }) => {
+        this.dotCMSClient.page.get('/my-page').then(({ pageAsset }) => {
             this.pageAsset.set(pageAsset);
         });
     }
@@ -491,7 +495,7 @@ const DYNAMIC_COMPONENTS = {
 |--------------|---------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `contentlet` | `T extends DotCMSBasicContentlet`  | ✅       | The contentlet containing the editable field                                                                                                   |
 | `fieldName`  | `keyof T`                     | ✅       | Name of the field to edit, which must be a valid key of the contentlet type `T`                                                                |
-| `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
+| `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Supports text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
 | `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
 
 #### Usage
@@ -535,7 +539,7 @@ export class MyBannerComponent {
 #### Editor Integration
 
 -   Detects UVE edit mode and enables inline TinyMCE editing
--   Triggers a `Save` [workflow action](https://dev.dotcms.com/docs/workflows) on blur without needing full content dialog.
+-   Triggers a `Save` [workflow action](https://dev.dotcms.com/docs/workflows) on blur without needing the full content dialog.
 
 ### DotCMSBlockEditorRendererNative
 
@@ -583,7 +587,7 @@ export class MyBannerComponent {
 #### Recommendations
 
 -   Should not be used with [`DotCMSEditableText`](#dotcmseditabletext).
--   Take into account the CSS cascade can affect the look and feel of your blocks.
+-   Keep in mind that the CSS cascade can affect the look and feel of your blocks.
 
 ### DotCMSShowWhen
 
@@ -596,20 +600,24 @@ export class MyBannerComponent {
 #### Usage
 
 ```typescript
+import { Component } from '@angular/core';
+
+import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
-import { DotCMSShowWhen } from '@dotcms/angular';
 
 @Component({
     selector: 'app-your-component',
-    imports: [DotCMSShowWhen],
+    imports: [DotCMSShowWhenDirective],
     template: `
-        <div *dotCMSShowWhen="UVE_MODE.EDIT">Only visible in edit mode</div>
+        <div *dotCMSShowWhen="uveMode.EDIT">Only visible in edit mode</div>
     `
 })
-export class YourComponent {}
+export class YourComponent {
+    readonly uveMode = UVE_MODE;
+}
 ```
 
-📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/uve).
+📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/universal-visual-editor).
 
 ### DotCMSEditablePageService
 
@@ -641,14 +649,22 @@ import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody, DotCMSEditablePageService, DotCMSClient } from '@dotcms/angular';
+import {
+    DotCMSClient,
+    DotCMSEditablePageService,
+    DotCMSLayoutBodyComponent
+} from '@dotcms/angular';
+
+const DYNAMIC_COMPONENTS = {
+    Blog: import('./blog.component').then((c) => c.BlogComponent)
+};
 
 @Component({
-    imports: [DotCMSLayoutBody],
+    imports: [DotCMSLayoutBodyComponent],
     providers: [DotCMSEditablePageService],
     template: `
         @if (pageAsset()) {
-            <dotcms-layout-body [page]="pageAsset()" [components]="components()" />
+            <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
         } @else {
             <div>Loading...</div>
         }
@@ -656,12 +672,13 @@ import { DotCMSLayoutBody, DotCMSEditablePageService, DotCMSClient } from '@dotc
 })
 export class PageComponent implements OnInit, OnDestroy {
     private subscription?: Subscription;
-    private readonly dotCMSClient = inject(DOTCMS_CLIENT_TOKEN);
+    private readonly dotCMSClient = inject(DotCMSClient);
     private readonly editablePageService = inject(DotCMSEditablePageService);
+    readonly components = signal(DYNAMIC_COMPONENTS);
     readonly pageAsset = signal<DotCMSPageAsset | null>(null);
 
     ngOnInit() {
-        this.dotCMSClient.page.get({ url: '/about-us' }).then((pageResponse) => {
+        this.dotCMSClient.page.get('/about-us').then((pageResponse) => {
             // Only subscribe to changes when in the editor
             if (getUVEState()) {
                 this.subscription = this.editablePageService
@@ -781,7 +798,7 @@ We offer multiple channels to get help with the dotCMS Angular SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-angular` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 

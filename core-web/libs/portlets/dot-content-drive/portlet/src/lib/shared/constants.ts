@@ -78,10 +78,32 @@ export const PANEL_SCROLL_HEIGHT = '25rem';
 // Dialog type
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
-    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR'
+    CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
+    UPLOAD_SELECTOR: 'UPLOAD_SELECTOR'
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
+
+/**
+ * Options shown in the upload-type selector dialog. `contentType` is the content type variable
+ * fired to the upload endpoint: `dotAsset` for Assets, `FileAsset` for Files.
+ */
+export const UPLOAD_SELECTOR_OPTIONS = [
+    {
+        contentType: 'dotAsset',
+        icon: 'image',
+        labelKey: 'content-drive.dialog.upload-selector.asset',
+        descriptionKey: 'content-drive.dialog.upload-selector.asset.description',
+        recommended: true
+    },
+    {
+        contentType: 'FileAsset',
+        icon: 'code_blocks',
+        labelKey: 'content-drive.dialog.upload-selector.file',
+        descriptionKey: 'content-drive.dialog.upload-selector.file.description',
+        recommended: false
+    }
+] as const;
 
 export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
     '*.jpg',
