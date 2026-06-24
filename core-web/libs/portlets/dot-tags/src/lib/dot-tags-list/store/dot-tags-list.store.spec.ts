@@ -76,6 +76,15 @@ describe('DotTagsListStore', () => {
         spectator.flushEffects();
     });
 
+    function readBlob(blob: Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsText(blob);
+        });
+    }
+
     describe('Initial State', () => {
         it('should have default initial state values after effect triggers loadTags', () => {
             expect(store.tags()).toEqual(MOCK_TAGS);
@@ -292,15 +301,6 @@ describe('DotTagsListStore', () => {
     });
 
     describe('exportSelected', () => {
-        function readBlob(blob: Blob): Promise<string> {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsText(blob);
-            });
-        }
-
         it('should dump the selection to CSV without calling the backend', async () => {
             const mockGetDownloadLink = getDownloadLink as jest.Mock;
             mockGetDownloadLink.mockClear();
@@ -385,15 +385,6 @@ describe('DotTagsListStore', () => {
     });
 
     describe('exportAll', () => {
-        function readBlob(blob: Blob): Promise<string> {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsText(blob);
-            });
-        }
-
         it('should fetch the entire filtered set in one request sized by totalRecords', async () => {
             const mockGetDownloadLink = getDownloadLink as jest.Mock;
             mockGetDownloadLink.mockClear();
