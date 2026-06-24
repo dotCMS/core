@@ -47,9 +47,11 @@ export interface DotCMSRuntimeConfig {
 export interface DotCMSRuntime {
     /**
      * DIRECT — you write the call. No worker. Use this whenever you author the call yourself.
-     * Routes through the same shared request core as `run`.
+     * Routes through the same shared request core as `run`. Pass `opts.signal` to make the
+     * call abortable (e.g. to wrap it in your own timeout) — the direct path has no surrounding
+     * timeout of its own.
      */
-    request(options: RequestOptions): Promise<unknown>;
+    request(options: RequestOptions, opts?: { signal?: AbortSignal }): Promise<unknown>;
     /**
      * SANDBOXED — runs `code` you did NOT write (a model did) in a confined worker whose
      * `api.request` forwards to the same request core. Returns the structured sandbox result.
@@ -107,11 +109,12 @@ export function createDotCMSRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime 
     const loadContext = (signal?: AbortSignal): Promise<DotCMSContext> =>
         contextCache.get(sessionId, config.url, createApiAdapter(adapterConfig(signal)));
 
-    const request = (options: RequestOptions): Promise<unknown> =>
+    const request = (options: RequestOptions, opts?: { signal?: AbortSignal }): Promise<unknown> =>
         requestCore(options, {
             baseUrl: config.url,
             authToken: config.token,
             policy,
+            signal: opts?.signal,
             onCall: config.onCall
         });
 
@@ -124,6 +127,10 @@ export function createDotCMSRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime 
 
         // dotCMS instance context is THE defining feature of a dotCMS runtime, so the
         // runtime loads and injects it — absorbing the per-tool wiring consumers used to repeat.
+        // Context loading is covered by the SAME timeout+abort as the sandbox run, so a hanging
+        // context API request can't make run() hang past `timeout` (the load shares the
+        // controller, whose signal the adapter already carries into the fetch).
+        const loadTimer = setTimeout(() => controller.abort(), timeout);
         let context: DotCMSContext;
         try {
             context = await contextCache.get(sessionId, config.url, adapter);
@@ -134,6 +141,8 @@ export function createDotCMSRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime 
                 logs: [],
                 executionTime: 0
             };
+        } finally {
+            clearTimeout(loadTimer);
         }
 
         const variables: Record<string, unknown> = {

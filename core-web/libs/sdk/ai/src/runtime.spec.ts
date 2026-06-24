@@ -92,4 +92,57 @@ describe('createDotCMSRuntime.request (direct, no worker)', () => {
         expect(serialized).not.toContain('super-secret');
         expect(serialized).toContain('/api/v1/site');
     });
+
+    it('passes a caller-supplied AbortSignal through the direct request path', async () => {
+        const controller = new AbortController();
+        // fetch that rejects only when its signal aborts (a hanging request that honors abort).
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise((_resolve, reject) => {
+                    init.signal?.addEventListener('abort', () =>
+                        reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+                    );
+                })
+        );
+        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        const p = dotcms.request({ path: '/api/v1/site' }, { signal: controller.signal });
+        controller.abort();
+        await expect(p).rejects.toMatchObject({ code: 'ABORT' });
+    });
+});
+
+describe('createDotCMSRuntime.run — context-load timeout', () => {
+    const fetchMock = jest.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    it('does not hang when context loading stalls — the run timeout aborts the load', async () => {
+        let aborts = 0;
+        // Every context fetch hangs until its abort signal fires (a stalled instance).
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise((_resolve, reject) => {
+                    init.signal?.addEventListener('abort', () => {
+                        aborts++;
+                        reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+                    });
+                })
+        );
+        const timeout = 150;
+        const dotcms = createDotCMSRuntime({ url: 'https://demo.dotcms.com', token: 't', timeout });
+
+        // The run must RESOLVE (not hang) — the load timeout aborts the stalled context fetch.
+        // The loaders degrade to empty context on abort, so the trivial body then runs fine.
+        const start = Date.now();
+        const result = await dotcms.run(`return 1;`);
+        const elapsed = Date.now() - start;
+
+        expect(aborts).toBeGreaterThan(0); // the stalled load WAS aborted
+        expect(elapsed).toBeLessThan(2000); // resolved promptly, did not hang
+        expect(result.value).toBe(1);
+    }, 5000);
 });

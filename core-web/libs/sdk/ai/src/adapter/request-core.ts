@@ -168,6 +168,13 @@ async function readBinaryResponse(
  * Sandbox code can put any string in `desc.url`, and the fetch runs on the
  * host with host network access — so we restrict it to public http(s) targets
  * and reject loopback, link-local, and private (RFC 1918 / unique-local) hosts.
+ *
+ * KNOWN LIMITATION (DNS rebinding): this validates the literal hostname/IP in the URL, not
+ * the address it ultimately resolves to. A hostname that resolves to a private/link-local/
+ * metadata IP at fetch time bypasses this check. `redirect: 'error'` blocks the redirect
+ * vector, but not rebinding. This matches the package threat model — capability confinement
+ * for trusted code generators, not adversarial isolation. A consumer accepting genuinely
+ * untrusted file URLs must front this with a hardened fetcher that resolves and pins the IP.
  */
 function assertSafeRemoteUrl(rawUrl: string): URL {
     let parsed: URL;
