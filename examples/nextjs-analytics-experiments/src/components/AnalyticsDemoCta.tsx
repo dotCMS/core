@@ -8,9 +8,9 @@ export function AnalyticsDemoCta() {
   const { track } = useContentAnalytics(analyticsConfig);
 
   const handleClick = () => {
-    track("cta-click", {
-      button: "Get started",
-      location: "demo-banner",
+    track("demo-cta-click", {
+      label: "Track demo CTA click",
+      location: "header",
     });
   };
 
