@@ -69,6 +69,7 @@ export async function downloadAssets(options: {
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
+    const warnings: string[] = [];
     const directAssetPath = looksLikeAssetPath(input.path);
 
     // Each download is wrapped in the same try/catch so one failure records a failure and
@@ -99,6 +100,10 @@ export async function downloadAssets(options: {
             options.include
         );
 
+        if (assets.length === 0) {
+            warnings.push(zeroMatchWarning(options.path, input));
+        }
+
         for (const asset of assets) {
             const assetPath = asset.path ? normalizeDotCMSPath(asset.path).path : '';
             const rel = relativeAssetPath(input.path, assetPath) || assetPath || '(unknown)';
@@ -126,7 +131,8 @@ export async function downloadAssets(options: {
         bytes: sumBytes(files),
         files,
         failures,
-        skipped
+        skipped,
+        warnings
     });
 }
 
@@ -173,6 +179,15 @@ export async function uploadAssets(options: {
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
+    const warnings: string[] = [];
+
+    if (localFiles.length === 0) {
+        warnings.push(
+            options.include
+                ? `No files under "${src}" matched the include filter "${options.include}".`
+                : `No files found under "${src}".`
+        );
+    }
 
     for (const file of localFiles) {
         try {
@@ -203,7 +218,8 @@ export async function uploadAssets(options: {
         files,
         failures,
         skipped,
-        notLive
+        notLive,
+        warnings
     });
 }
 
@@ -396,6 +412,30 @@ function normalizeDotCMSPath(input: string): { siteQualified?: string; path: str
 /** The path to send to the `/api/v2/assets?path=` query — host-qualified when available. */
 function assetQueryPath(normalized: { siteQualified?: string; path: string }): string {
     return normalized.siteQualified || normalized.path;
+}
+
+/**
+ * Message for a folder enumeration that matched 0 assets. The common cause is the `//host/path`
+ * ambiguity: a `//`-prefixed input has its FIRST segment consumed as the site, so `//application/themes`
+ * searches the path `/themes` on site `application` — which usually doesn't exist. Surface exactly
+ * that so the agent can correct it instead of treating an empty result as success.
+ */
+function zeroMatchWarning(rawInput: string, parsed: { siteQualified?: string; path: string }): string {
+    const base = `No assets matched "${parsed.path}" — check the path. The result is empty, not a success.`;
+    const trimmed = rawInput.trim();
+    if (trimmed.startsWith('//')) {
+        const site = parsed.siteQualified?.slice(2, parsed.siteQualified.length - parsed.path.length);
+        // The plain-path form is the input with one leading slash removed — i.e. the FULL path
+        // including the segment that "//" consumed as the site (e.g. "//application/themes" → "/application/themes").
+        const asPlainPath = trimmed.slice(1).replace(/\/+$/, '');
+        return (
+            `${base} Note: "${rawInput}" was read as site="${site}", path="${parsed.path}" ` +
+            `(a leading "//" treats the first segment as the dotCMS site). ` +
+            `If you meant a path on the default site, use "${asPlainPath}"; ` +
+            `if you meant a host-qualified path, keep "//<site>/<path>".`
+        );
+    }
+    return base;
 }
 
 function relativeAssetPath(folder: string, assetPath: string): string {
