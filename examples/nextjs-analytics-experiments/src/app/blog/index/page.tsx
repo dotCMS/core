@@ -9,8 +9,13 @@ import {
 } from "@/utils/pageResponse";
 import { BlogPage } from "@/views/BlogPage";
 
-export async function generateMetadata() {
-  const pageContent = await getDotCMSPage("/blog/index");
+interface BlogIndexPageProps {
+  searchParams: Promise<{ variantName?: string }>;
+}
+
+export async function generateMetadata({ searchParams }: BlogIndexPageProps) {
+  const { variantName } = await searchParams;
+  const pageContent = await getDotCMSPage("/blog/index", variantName);
 
   if (isPageError(pageContent)) {
     return { title: "Blog — Error" };
@@ -19,8 +24,9 @@ export async function generateMetadata() {
   return { title: `${getPageTitle(pageContent, "Blog")} — Blog` };
 }
 
-export default async function BlogIndexPage() {
-  const pageContent = await getDotCMSPage("/blog/index");
+export default async function BlogIndexPage({ searchParams }: BlogIndexPageProps) {
+  const { variantName } = await searchParams;
+  const pageContent = await getDotCMSPage("/blog/index", variantName);
 
   if (isPageError(pageContent)) {
     if (getErrorStatus(pageContent.error) === 404) {

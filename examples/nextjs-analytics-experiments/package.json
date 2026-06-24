@@ -9,12 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@dotcms/analytics": "^1.5.6",
-    "@dotcms/client": "^1.5.6",
-    "@dotcms/experiments": "^1.5.6",
-    "@dotcms/react": "^1.5.6",
-    "@dotcms/types": "^1.5.6",
-    "@dotcms/uve": "^1.5.6",
+    "@dotcms/analytics": "latest",
+    "@dotcms/client": "latest",
+    "@dotcms/experiments": "latest",
+    "@dotcms/react": "latest",
+    "@dotcms/types": "latest",
+    "@dotcms/uve": "latest",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"

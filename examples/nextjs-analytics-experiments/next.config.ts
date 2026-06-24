@@ -27,10 +27,12 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Redirect bare / to /index so window.location.pathname matches the
+      // dotCMS page URL (/index) and experiments regex matching works.
       {
-        source: "/:path*/index",
-        destination: "/:path*/",
-        permanent: true,
+        source: "/",
+        destination: "/index",
+        permanent: false,
       },
     ];
   },

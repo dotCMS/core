@@ -23,5 +23,3 @@ export const experimentsConfig = {
   server: dotCMSHost,
   debug,
 } as const;
-
-export const experimentsEnabled = Boolean(analyticsKey && dotCMSHost);

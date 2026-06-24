@@ -65,16 +65,20 @@ Use the **`jsKey`** value for `NEXT_PUBLIC_DOTCMS_ANALYTICS_KEY`. This single ke
 
 ## SDK Versions
 
-All `@dotcms/*` packages should be aligned:
+This example uses `"latest"` for all `@dotcms/*` packages (same approach as [examples/nextjs](../nextjs)):
 
 ```json
-"@dotcms/client": "^1.5.6",
-"@dotcms/react": "^1.5.6",
-"@dotcms/experiments": "^1.5.6",
-"@dotcms/analytics": "^1.5.6"
+"@dotcms/client": "latest",
+"@dotcms/react": "latest",
+"@dotcms/experiments": "latest",
+"@dotcms/analytics": "latest",
+"@dotcms/types": "latest",
+"@dotcms/uve": "latest"
 ```
 
-> `@dotcms/analytics` is published on npm alongside other `@dotcms/*` SDK packages — keep versions aligned.
+After `npm install`, verify in `package-lock.json` that all `@dotcms/*` packages resolved to the **same version line** (e.g. `1.5.6`). Mixing versions across packages is a common source of integration issues.
+
+> **Note:** `@dotcms/experiments` on npm may ship incomplete TypeScript declarations (`index.d.ts` → missing `./src/index`). This example avoids local `src/types/` shims; `BlogPage.tsx` uses a targeted `@ts-expect-error` until the package types are fixed upstream ([issue #36225](https://github.com/dotCMS/core/issues/36225)).
 
 ### dotCMS Platform Compatibility
 
@@ -91,7 +95,7 @@ All `@dotcms/*` packages should be aligned:
 | `src/app/layout.tsx` | `<DotContentAnalytics />` for site-wide page views |
 | `src/views/Page.tsx` | Standard page render (analytics only) |
 | `src/views/BlogPage.tsx` | Blog render with `withExperiments(DotCMSLayoutBody)` — always called on this route |
-| `src/components/AnalyticsDemoCta.tsx` | Example `useContentAnalytics().track()` call |
+| `src/components/AnalyticsDemoCta.tsx` | Example `useContentAnalytics(analyticsConfig).track()` call |
 
 ## Why experiments only on `/blog`
 
