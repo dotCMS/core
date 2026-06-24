@@ -351,6 +351,8 @@ export class DotImageEditorCanvasComponent {
     /** Increases the zoom by one step, clamped to the maximum. */
     protected zoomIn(): void {
         this.zoomLevel.update((level) => Math.min(ZOOM_MAX, level + ZOOM_STEP));
+        const { x, y } = this.panOffset();
+        this.panOffset.set(this.#clampPan(x, y));
     }
 
     /** Decreases the zoom by one step, clamped to the minimum; recenters at/below fit. */
@@ -360,6 +362,11 @@ export class DotImageEditorCanvasComponent {
 
         if (level <= ZOOM_DEFAULT) {
             this.panOffset.set({ x: 0, y: 0 });
+        } else {
+            // A smaller zoom shrinks the pannable range; re-clamp so the prior
+            // offset can't leave empty space past an edge.
+            const { x, y } = this.panOffset();
+            this.panOffset.set(this.#clampPan(x, y));
         }
     }
 
@@ -387,10 +394,12 @@ export class DotImageEditorCanvasComponent {
         const origin = this.panOffset();
 
         const move = (moveEvent: PointerEvent) => {
-            this.panOffset.set({
-                x: origin.x + (moveEvent.clientX - startX),
-                y: origin.y + (moveEvent.clientY - startY)
-            });
+            this.panOffset.set(
+                this.#clampPan(
+                    origin.x + (moveEvent.clientX - startX),
+                    origin.y + (moveEvent.clientY - startY)
+                )
+            );
         };
         const up = () => {
             this.panning.set(false);
@@ -410,6 +419,38 @@ export class DotImageEditorCanvasComponent {
     #detachPan(): void {
         this.#panCleanup?.();
         this.#panCleanup = null;
+    }
+
+    /**
+     * Constrains a candidate pan offset so the zoomed image always covers the
+     * stage — the drag can't pull empty space in past the top/left or
+     * bottom/right edge. Mirrors the center-origin `translate(pan) scale(zoom)`
+     * geometry that #computeVisibleImageRect inverts. On an axis where the scaled
+     * image is still smaller than the stage (nothing to pan), it is pinned to the
+     * centering offset.
+     */
+    #clampPan(x: number, y: number): { x: number; y: number } {
+        const rect = this.imageRect();
+        const stage = this.stage()?.nativeElement;
+        const scale = this.zoomLevel() / 100;
+
+        if (!rect || !stage || scale <= 1) {
+            return { x: 0, y: 0 };
+        }
+
+        const axis = (stageSize: number, rectStart: number, rectSize: number, pan: number) => {
+            const center = stageSize / 2;
+            // Offsets at which the scaled image's near/far edge meets the stage box.
+            const max = center * (scale - 1) - scale * rectStart;
+            const min = stageSize - center - scale * (rectStart + rectSize - center);
+
+            return min > max ? (min + max) / 2 : clamp(pan, min, max);
+        };
+
+        return {
+            x: axis(stage.clientWidth, rect.x, rect.width, x),
+            y: axis(stage.clientHeight, rect.y, rect.height, y)
+        };
     }
 
     /** Lazily attaches a single ResizeObserver to the displayed image element. */
