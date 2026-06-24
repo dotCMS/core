@@ -9,10 +9,9 @@ canonical reference for build commands, project structure, and coding patterns.
 > *"walk me through opening my first PR"*. The repo-specific skills listed below are
 > aware of dotCMS conventions.
 
-> ⚠️ **Fill-in markers:** anything in `<<ANGLE BRACKETS>>` is a placeholder the
-> owning team must replace with real values (Slack channels, doc links, etc.).
-> Nothing secret (proxy passwords, tokens, internal IPs) belongs in this file —
-> link to where credentials live instead.
+> **See also:** [`dotFrontendOnboarding.md`](dotFrontendOnboarding.md) and
+> [`dotBackendOnboarding.md`](dotBackendOnboarding.md) for deeper, discipline-specific
+> onboarding.
 
 ---
 
