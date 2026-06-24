@@ -6,18 +6,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
-import { EndpointDetailView, PublishAuditStatus } from '@dotcms/dotcms-models';
+import { EndpointDetailView } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingStatusChipComponent } from '../../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
-
-const SUCCESS_STATUSES = new Set<PublishAuditStatus>([
-    PublishAuditStatus.SUCCESS,
-    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-    PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY,
-    PublishAuditStatus.SUCCESS_WITH_WARNINGS
-]);
 
 /** Flattened row used by the endpoints table — each endpoint carries its
  * environment name as a column, so all groups share one uniform grid. */
@@ -96,10 +89,13 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
         }
     ];
 
-    readonly canDownload = computed(() => {
-        const status = this.store.detail()?.status;
-        return status ? SUCCESS_STATUSES.has(status) : false;
-    });
+    /** Both download buttons are driven by HEAD probes the store fires on
+     * `openDetail` — `true` only after the probe confirms the artifact is
+     * actually downloadable right now. `null` (in flight) stays hidden so the
+     * UI doesn't flicker on the way in. See
+     * `DotPublishingQueueService.probeBundleDownload` for the full why. */
+    readonly canDownloadBundle = computed(() => this.store.canDownloadBundle() === true);
+    readonly canDownloadManifest = computed(() => this.store.canDownloadManifest() === true);
 
     /** Flattens environments → one row per endpoint, with the env name carried
      * as a column. Single table, no subheader rows. */
@@ -138,5 +134,9 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
 
     downloadHref(bundleId: string): string {
         return this.publishingService.getBundleDownloadUrl(bundleId);
+    }
+
+    manifestHref(bundleId: string): string {
+        return this.publishingService.getBundleManifestUrl(bundleId);
     }
 }

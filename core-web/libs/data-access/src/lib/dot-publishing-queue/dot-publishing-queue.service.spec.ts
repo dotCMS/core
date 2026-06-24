@@ -208,4 +208,63 @@ describe('DotPublishingQueueService', () => {
             req.flush({ identifier: 'id', label: 'name', items: [], numRows: 0 });
         });
     });
+
+    describe('download URL builders', () => {
+        it('getBundleDownloadUrl returns the /api/bundle/_download path', () => {
+            expect(service.getBundleDownloadUrl('b-1')).toBe('/api/bundle/_download/b-1');
+        });
+
+        it('getBundleManifestUrl returns the /api/bundle/{id}/manifest path', () => {
+            expect(service.getBundleManifestUrl('b-1')).toBe('/api/bundle/b-1/manifest');
+        });
+    });
+
+    // These probes mirror the legacy JSP's file-existence checks because the
+    // current detail response does not expose `hasBundle` / `hasManifest`. See
+    // the service-level docs on `probeBundleDownload` for the full why.
+    describe('probeBundleDownload', () => {
+        it('issues a HEAD against /api/bundle/_download/{id} and maps 200 → true', () => {
+            let result: boolean | undefined;
+            service.probeBundleDownload('b-1').subscribe((value) => (result = value));
+
+            const req = httpMock.expectOne('/api/bundle/_download/b-1');
+            expect(req.request.method).toBe('HEAD');
+            req.flush(null, { status: 200, statusText: 'OK' });
+
+            expect(result).toBe(true);
+        });
+
+        it('maps non-2xx (file purged) to false via catchError', () => {
+            let result: boolean | undefined;
+            service.probeBundleDownload('b-1').subscribe((value) => (result = value));
+
+            const req = httpMock.expectOne('/api/bundle/_download/b-1');
+            req.flush(null, { status: 404, statusText: 'Not Found' });
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('probeBundleManifest', () => {
+        it('issues a HEAD against /api/bundle/{id}/manifest and maps 200 → true', () => {
+            let result: boolean | undefined;
+            service.probeBundleManifest('b-1').subscribe((value) => (result = value));
+
+            const req = httpMock.expectOne('/api/bundle/b-1/manifest');
+            expect(req.request.method).toBe('HEAD');
+            req.flush(null, { status: 200, statusText: 'OK' });
+
+            expect(result).toBe(true);
+        });
+
+        it('maps non-2xx (no manifest / archive missing) to false', () => {
+            let result: boolean | undefined;
+            service.probeBundleManifest('b-1').subscribe((value) => (result = value));
+
+            const req = httpMock.expectOne('/api/bundle/b-1/manifest');
+            req.flush(null, { status: 404, statusText: 'Not Found' });
+
+            expect(result).toBe(false);
+        });
+    });
 });

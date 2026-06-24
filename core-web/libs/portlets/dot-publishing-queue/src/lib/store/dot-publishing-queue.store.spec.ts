@@ -72,6 +72,8 @@ describe('DotPublishingQueueStore', () => {
                 listPublishingJobs: jest.fn().mockReturnValue(of(BUNDLES_RESPONSE)),
                 getBundleAssets: jest.fn().mockReturnValue(of(MOCK_ASSETS)),
                 getPublishingJobDetails: jest.fn().mockReturnValue(of(MOCK_DETAIL)),
+                probeBundleDownload: jest.fn().mockReturnValue(of(true)),
+                probeBundleManifest: jest.fn().mockReturnValue(of(true)),
                 removeAssetsFromBundle: jest
                     .fn()
                     .mockReturnValue(of([{ assetId: 'a1', success: true, message: 'ok' }])),

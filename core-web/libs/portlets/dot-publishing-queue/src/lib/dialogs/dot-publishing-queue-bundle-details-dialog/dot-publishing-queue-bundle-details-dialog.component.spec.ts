@@ -58,13 +58,21 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
 
     const detail = signal<PublishingJobDetailView | null>(null);
     const detailStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loading');
+    const canDownloadBundle = signal<boolean | null>(null);
+    const canDownloadManifest = signal<boolean | null>(null);
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueBundleDetailsDialogComponent,
         providers: [
-            mockProvider(DotPublishingQueueStore, { detail, detailStatus }),
+            mockProvider(DotPublishingQueueStore, {
+                detail,
+                detailStatus,
+                canDownloadBundle,
+                canDownloadManifest
+            }),
             mockProvider(DotPublishingQueueService, {
-                getBundleDownloadUrl: jest.fn((id: string) => `/api/bundle/_download/${id}`)
+                getBundleDownloadUrl: jest.fn((id: string) => `/api/bundle/_download/${id}`),
+                getBundleManifestUrl: jest.fn((id: string) => `/api/bundle/${id}/manifest`)
             }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ]
@@ -73,6 +81,8 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
     beforeEach(() => {
         detail.set(null);
         detailStatus.set('loading');
+        canDownloadBundle.set(null);
+        canDownloadManifest.set(null);
         spectator = createComponent();
     });
 
@@ -88,18 +98,51 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
         expect(spectator.queryAll(byTestId('pq-detail-endpoint-row')).length).toBe(1);
     });
 
-    it('shows download button only for completed bundles', () => {
-        detail.set(detailFixture({ status: PublishAuditStatus.SUCCESS }));
-        detailStatus.set('loaded');
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeTruthy();
-    });
+    describe('download buttons (probe-driven)', () => {
+        beforeEach(() => {
+            detail.set(detailFixture());
+            detailStatus.set('loaded');
+        });
 
-    it('hides download button for failed bundles', () => {
-        detail.set(detailFixture({ status: PublishAuditStatus.FAILED_TO_PUBLISH }));
-        detailStatus.set('loaded');
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeFalsy();
+        it('hides both buttons while probes are in flight (null)', () => {
+            canDownloadBundle.set(null);
+            canDownloadManifest.set(null);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-detail-download-manifest-btn'))).toBeFalsy();
+        });
+
+        it('shows the bundle button only when probeBundleDownload returned true', () => {
+            canDownloadBundle.set(true);
+            canDownloadManifest.set(false);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-download-manifest-btn'))).toBeFalsy();
+        });
+
+        it('shows the manifest button only when probeBundleManifest returned true', () => {
+            canDownloadBundle.set(false);
+            canDownloadManifest.set(true);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-detail-download-manifest-btn'))).toBeTruthy();
+        });
+
+        it('shows both when both probes returned true', () => {
+            canDownloadBundle.set(true);
+            canDownloadManifest.set(true);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-detail-download-manifest-btn'))).toBeTruthy();
+        });
+
+        it('hides both when both probes returned false (artifacts purged)', () => {
+            canDownloadBundle.set(false);
+            canDownloadManifest.set(false);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-detail-download-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-detail-download-manifest-btn'))).toBeFalsy();
+        });
     });
 
     it('shows empty-endpoints message when environments is empty', () => {

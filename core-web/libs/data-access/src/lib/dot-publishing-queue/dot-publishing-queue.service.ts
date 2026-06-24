@@ -1,9 +1,9 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import {
     BundleAssetView,
@@ -158,6 +158,61 @@ export class DotPublishingQueueService {
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
     getBundleDownloadUrl(bundleId: string): string {
         return `/api/bundle/_download/${bundleId}`;
+    }
+
+    /** Builds the absolute download URL for a bundle's manifest CSV. */
+    getBundleManifestUrl(bundleId: string): string {
+        return `/api/bundle/${bundleId}/manifest`;
+    }
+
+    /**
+     * Returns `true` when the bundle's `.tar.gz` is downloadable right now.
+     *
+     * Why this probe exists:
+     * The legacy JSP gates the "Download Bundle" button on two server-side
+     * conditions:
+     *   1. the `.tar.gz` file existing on disk (it may have been purged via
+     *      `DELETE /api/bundle/olderthan/{N}` — there is no scheduled cleanup
+     *      built into the core, so this happens only on manual admin action);
+     *   2. the targeted environments not being static-publish / S3 (those
+     *      protocols don't produce a downloadable archive).
+     *
+     * Neither piece of state is exposed on the current detail response
+     * (`GET /api/v1/publishing/{bundleId}`). Until the BE adds a `hasBundle`
+     * (or `endpointProtocols`) flag we can read directly, the FE has to ask
+     * the actual download endpoint. HEAD is the lightweight option — JAX-RS
+     * auto-handles HEAD by invoking the `@GET` handler and discarding the
+     * body, so we get the file-existence answer without paying for the
+     * payload. A 404 (file purged) becomes `false` via `catchError`.
+     *
+     * @see `RemotePublishAjaxAction.downloadBundle` and `BundleResource._download`
+     *      for the server-side behavior.
+     */
+    probeBundleDownload(bundleId: string): Observable<boolean> {
+        return this.http.head(this.getBundleDownloadUrl(bundleId), { observe: 'response' }).pipe(
+            map((response) => response.status === 200),
+            catchError(() => of(false))
+        );
+    }
+
+    /**
+     * Returns `true` when the bundle's manifest CSV is downloadable right now.
+     *
+     * Same rationale as {@link probeBundleDownload}: the legacy JSP calls
+     * `ManifestUtil.manifestExists(bundleId)` server-side, which (a) checks
+     * that the `.tar.gz` is on disk and (b) scans the archive for a manifest
+     * entry — bundles built before the manifest feature was introduced have
+     * no entry. Neither check is exposed on `GET /api/v1/publishing/{bundleId}`,
+     * so the FE probes the actual download endpoint with HEAD.
+     *
+     * @see `BundleResource.downloadManifest` and `ManifestUtil.manifestExists`
+     *      for the server-side behavior.
+     */
+    probeBundleManifest(bundleId: string): Observable<boolean> {
+        return this.http.head(this.getBundleManifestUrl(bundleId), { observe: 'response' }).pipe(
+            map((response) => response.status === 200),
+            catchError(() => of(false))
+        );
     }
 
     /**

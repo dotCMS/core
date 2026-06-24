@@ -52,7 +52,9 @@ describe('DotPublishingQueueShellComponent', () => {
                     })
                 ),
                 getBundleAssets: jest.fn().mockReturnValue(of([])),
-                getPublishingJobDetails: jest.fn().mockReturnValue(of({}))
+                getPublishingJobDetails: jest.fn().mockReturnValue(of({})),
+                probeBundleDownload: jest.fn().mockReturnValue(of(true)),
+                probeBundleManifest: jest.fn().mockReturnValue(of(true))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),

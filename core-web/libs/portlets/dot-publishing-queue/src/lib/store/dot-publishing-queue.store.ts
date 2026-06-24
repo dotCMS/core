@@ -66,6 +66,19 @@ interface DotPublishingQueueState {
      * Asset List modal's `selectedAssets` so the two modals don't fight over state). */
     detailAssets: BundleAssetView[];
     detailAssetsStatus: LoadStatus;
+
+    /** File-on-disk probes for the detail dialog's two download buttons.
+     *
+     * `null` = unknown (probe in flight or not yet started — buttons stay hidden).
+     * `true`/`false` = HEAD probe completed; the button shows when `true`.
+     *
+     * We need these as state instead of computing from `detail` because the
+     * existence of the `.tar.gz` (and a manifest entry inside it) is not
+     * exposed on the detail response — see
+     * `DotPublishingQueueService.probeBundleDownload` /
+     * `probeBundleManifest` for the full rationale. */
+    canDownloadBundle: boolean | null;
+    canDownloadManifest: boolean | null;
 }
 
 const initialState: DotPublishingQueueState = {
@@ -89,7 +102,9 @@ const initialState: DotPublishingQueueState = {
     detail: null,
     detailStatus: 'init',
     detailAssets: [],
-    detailAssetsStatus: 'init'
+    detailAssetsStatus: 'init',
+    canDownloadBundle: null,
+    canDownloadManifest: null
 };
 
 export const DotPublishingQueueStore = signalStore(
@@ -182,6 +197,41 @@ export const DotPublishingQueueStore = signalStore(
                 )
                 .subscribe((detail) => {
                     patchState(store, { detail, detailStatus: 'loaded' });
+                });
+        }
+
+        /**
+         * Fires two parallel HEAD probes so the detail dialog knows whether to
+         * render each of its download buttons. We have to do this client-side
+         * because `GET /api/v1/publishing/{bundleId}` does not expose either:
+         *   - whether the `.tar.gz` is still on disk (it may have been purged
+         *     via `DELETE /api/bundle/olderthan/{N}`), or
+         *   - whether the archive contains a manifest entry (older bundles
+         *     pre-dating the manifest feature don't).
+         *
+         * Two extra requests per dialog open is the price of mirroring the
+         * legacy JSP's file-existence gates without a backend change. When the
+         * detail response grows `hasBundle` / `hasManifest` flags, delete this
+         * function and read directly from `detail`.
+         */
+        function probeDownloads() {
+            const bundleId = store.detailBundleId();
+            if (!bundleId) {
+                return;
+            }
+
+            service
+                .probeBundleDownload(bundleId)
+                .pipe(take(1))
+                .subscribe((canDownload) => {
+                    patchState(store, { canDownloadBundle: canDownload });
+                });
+
+            service
+                .probeBundleManifest(bundleId)
+                .pipe(take(1))
+                .subscribe((canDownload) => {
+                    patchState(store, { canDownloadManifest: canDownload });
                 });
         }
 
@@ -347,10 +397,13 @@ export const DotPublishingQueueStore = signalStore(
                     detail: null,
                     detailStatus: 'init',
                     detailAssets: [],
-                    detailAssetsStatus: 'init'
+                    detailAssetsStatus: 'init',
+                    canDownloadBundle: null,
+                    canDownloadManifest: null
                 });
                 loadDetail();
                 loadDetailAssets();
+                probeDownloads();
             },
 
             loadDetailAssets,
@@ -361,7 +414,9 @@ export const DotPublishingQueueStore = signalStore(
                     detail: null,
                     detailStatus: 'init',
                     detailAssets: [],
-                    detailAssetsStatus: 'init'
+                    detailAssetsStatus: 'init',
+                    canDownloadBundle: null,
+                    canDownloadManifest: null
                 });
             },
 

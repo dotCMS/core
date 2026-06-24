@@ -110,16 +110,28 @@
             }
         </section>
 
-        @if (canDownload()) {
-            <div class="flex justify-end pt-2">
-                <a
-                    [href]="downloadHref(detail.bundleId)"
-                    [download]="detail.bundleName || detail.bundleId"
-                    class="p-button p-button-outlined"
-                    data-testid="pq-detail-download-btn">
-                    <i class="pi pi-download mr-2"></i>
-                    {{ 'publishing-queue.detail.download' | dm }}
-                </a>
+        @if (canDownloadBundle() || canDownloadManifest()) {
+            <div class="flex justify-end gap-2 pt-2">
+                @if (canDownloadManifest()) {
+                    <a
+                        [href]="manifestHref(detail.bundleId)"
+                        [download]="'manifest_' + detail.bundleId + '.csv'"
+                        class="p-button p-button-outlined"
+                        data-testid="pq-detail-download-manifest-btn">
+                        <i class="pi pi-file mr-2"></i>
+                        {{ 'publishing-queue.detail.download-manifest' | dm }}
+                    </a>
+                }
+                @if (canDownloadBundle()) {
+                    <a
+                        [href]="downloadHref(detail.bundleId)"
+                        [download]="detail.bundleName || detail.bundleId"
+                        class="p-button p-button-outlined"
+                        data-testid="pq-detail-download-btn">
+                        <i class="pi pi-download mr-2"></i>
+                        {{ 'publishing-queue.detail.download' | dm }}
+                    </a>
+                }
             </div>
         }
     } @else if (store.detailStatus() === 'error') {
