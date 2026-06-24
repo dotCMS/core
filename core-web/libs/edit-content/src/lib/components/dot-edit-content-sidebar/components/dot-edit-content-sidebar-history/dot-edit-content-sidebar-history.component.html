@@ -25,9 +25,10 @@
         } @else {
             <!-- History content -->
             <ng-template #versionMarker let-item>
-                <span
-                    [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
-                    [attr.data-testid]="'timeline-marker-' + getRealIndex(item)"></span>
+                <div
+                    class="p-timeline-event-marker"
+                    [class]="getMarkerClass(item)"
+                    [attr.data-testid]="'timeline-marker-' + getRealIndex(item)"></div>
             </ng-template>
             <ng-template #versionContent let-item>
                 <dot-history-timeline-item

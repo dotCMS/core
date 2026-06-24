@@ -82,7 +82,7 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.4
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
@@ -114,24 +114,52 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      issues: read
     outputs:
-      prompt: ${{ steps.read.outputs.prompt }}
+      prompt: ${{ steps.build.outputs.prompt }}
     steps:
       - uses: actions/checkout@v4
-      - id: read
+      - id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
+          cp .github/prompts/gpt-auto-review.md /tmp/full_prompt.md
+
+          # Extract structured findings from the most recent prior AI review comment.
+          # Findings are stored as a JSON array in a hidden HTML comment at the top of each review.
+          PRIOR_FINDINGS=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -r '[.[] | select(.body | test("<!-- dotcms-review-findings:"))] | sort_by(.created_at) | last | .body // empty' \
+            | grep '<!-- dotcms-review-findings:' \
+            | sed 's/.*<!-- dotcms-review-findings:\(.*\) -->.*/\1/' \
+            | head -1)
+
+          if [ -n "$PRIOR_FINDINGS" ]; then
+            # Cap at 15 findings and truncate desc to 300 chars to bound prompt size
+            # and prevent prompt injection via model-generated content in prior reviews.
+            PRIOR_LIST=$(echo "$PRIOR_FINDINGS" \
+              | jq -r '.[0:15][] | "- **[\(.sev)]** `\(.loc)` — \(.desc | .[0:300])"')
+            printf '\n\n---\n\n## Prior review findings (recheck these)\n\n%s\n' "$PRIOR_LIST" >> /tmp/full_prompt.md
+          fi
+
+          DELIM="PROMPT_$(openssl rand -hex 8)"
           {
-            echo 'prompt<<PROMPT_EOF'
-            cat .github/prompts/gpt-auto-review.md
-            echo 'PROMPT_EOF'
+            echo "prompt<<${DELIM}"
+            cat /tmp/full_prompt.md
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
   # Automatic PR reviews (no @claude mention)
-  # Uses GPT-5.5 via AWS Bedrock Mantle for model diversity — Claude writes code here,
-  # GPT reviews it so training/weighting biases from one model family don't carry into
-  # the review. Interactive @claude sessions remain on Anthropic Claude (job above).
-  # Prompt lives in .github/prompts/gpt-auto-review.md — edit it there, not here.
-  gpt-automatic-review:
+  # Uses DeepSeek R1 via AWS Bedrock (Converse API, generic-bedrock route) for model
+  # diversity — Claude writes code here, a non-Claude model reviews it so training/weighting
+  # biases from one model family don't carry into the review. Interactive @claude sessions
+  # remain on Anthropic Claude (job above). Prompt lives in .github/prompts/gpt-auto-review.md.
+  #
+  # Was openai.gpt-5.5 (Bedrock Mantle), but as of 2026-06-15 gpt-5.5 is failing on mantle
+  # in both regions ("Engine not found"; AWS-side). Switched to DeepSeek R1 (reasoning model)
+  # which produces higher-quality code review findings than V3.2.
+  ai-automatic-review:
     needs: [security-check, load-gpt-prompt]
     # load-gpt-prompt enforces all the PR/no-mention conditions; if it was skipped
     # or failed this job is skipped too.
@@ -140,13 +168,21 @@ jobs:
     concurrency:
       group: claude-automatic-${{ github.event.pull_request.number }}
       cancel-in-progress: true
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.1.4
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
-      model_id: openai.gpt-5.5
+      # Routes to bedrock-generic (Converse) executor for non-Anthropic/OpenAI models.
+      # Set REVIEW_MODEL_ID in GitHub repo variables (Settings → Variables → Actions).
+      # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
+      model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
-      reasoning_effort: medium
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
+      # Non-sticky: each commit gets its own review comment (fresh per push) instead of one
+      # auto-updating comment, preserving the full feedback→change→feedback history. Supersedes
+      # the old `sticky_namespace: ${{ github.sha }}` hack — the orchestrator now scopes the
+      # marker by head SHA itself (and includes the model id, so it's collision-safe across
+      # models). Requires ai-workflows >= v3.1.8. Set to true (or remove) for one rolling comment.
+      use_sticky_comment: false
       timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false

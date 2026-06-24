@@ -1,5 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    inject,
+    input,
+    OnInit,
+    output
+} from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -10,11 +20,13 @@ import { DotCardFieldLabelComponent } from '../../../dot-card-field/components/d
 import { DotCardFieldComponent } from '../../../dot-card-field/dot-card-field.component';
 import { BaseWrapperField } from '../../../shared/base-wrapper-field';
 import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binary-field.component';
+import { DotLegacyImageEditorLauncherService } from '../../service/dot-legacy-image-editor/dot-legacy-image-editor-launcher.service';
 
 /**
- * JSON field editor component that uses Monaco Editor for JSON content editing.
- * Uses DotEditContentMonacoEditorControl for editor functionality with JSON language forced.
- * Supports language variable insertion through DotLanguageVariableSelectorComponent.
+ * Wrapper for binary fields in the content editor card layout.
+ *
+ * Enables the legacy image editor by wiring {@link DotLegacyImageEditorLauncherService}
+ * to the binary field web component lifecycle.
  */
 @Component({
     selector: 'dot-binary-field-wrapper',
@@ -27,6 +39,7 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
         DotMessagePipe,
         DotEditContentBinaryFieldComponent
     ],
+    providers: [DialogService, DotLegacyImageEditorLauncherService],
     templateUrl: './dot-binary-field-wrapper.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -36,7 +49,10 @@ import { DotEditContentBinaryFieldComponent } from '../../dot-edit-content-binar
         }
     ]
 })
-export class DotBinaryFieldWrapperComponent extends BaseWrapperField {
+export class DotBinaryFieldWrapperComponent extends BaseWrapperField implements OnInit {
+    readonly #legacyImageEditorLauncher = inject(DotLegacyImageEditorLauncherService);
+    readonly #destroyRef = inject(DestroyRef);
+
     /**
      * A signal that holds the field.
      * It is used to display the field in the binary field wrapper component.
@@ -56,4 +72,15 @@ export class DotBinaryFieldWrapperComponent extends BaseWrapperField {
      * It is used to display the value in the binary field wrapper component.
      */
     valueUpdated = output<{ value: string; fileName: string }>();
+
+    /**
+     * Starts listening for legacy image editor events for this field and cleans up on destroy.
+     */
+    ngOnInit(): void {
+        this.#legacyImageEditorLauncher.listen(this.$field().variable);
+
+        this.#destroyRef.onDestroy(() => {
+            this.#legacyImageEditorLauncher.stopListening();
+        });
+    }
 }

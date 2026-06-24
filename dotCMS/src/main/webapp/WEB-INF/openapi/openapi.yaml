@@ -8048,7 +8048,7 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        ⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.
+        ⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]`) absent from the body will be removed. **Exception: `metadata`** — if the `metadata` key is absent from the request body, the server preserves the existing metadata unchanged. To explicitly clear all metadata, send `"metadata": null`.
 
         **Recommended update pattern:**
         1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
@@ -8146,6 +8146,60 @@ paths:
         "500":
           description: Internal Server Error
       summary: Updates a content type
+      tags:
+      - Content Type
+  /v1/contenttype/id/{idOrVar}/metadata:
+    patch:
+      description: |-
+        Merges the provided key/value pairs into the Content Type's `metadata` map without touching fields, workflows, or any other structural property. Keys present in the body are added or overwritten; keys absent from the body are left unchanged. To remove a key, set its value explicitly to `null`.
+
+        Known metadata keys:
+        - `CONTENT_EDITOR2_ENABLED` *(boolean)* — enables the new content editor
+        - `DOT_STYLE_EDITOR_SCHEMA` *(JSON string)* — Style Editor schema definition
+      operationId: updateContentTypeMetadata
+      parameters:
+      - description: |-
+          The ID or Velocity variable name of the Content Type to update.
+
+          Example value: `htmlpageasset` (Default page content type)
+        in: path
+        name: idOrVar
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            example:
+              DOT_STYLE_EDITOR_SCHEMA: "{\"contentType\":\"htmlpageasset\",\"sections\"\
+                :[{\"title\":\"New Section\",\"fields\":[{\"type\":\"dropdown\",\"\
+                label\":\"Color\",\"id\":\"color\",\"config\":{\"options\":[{\"label\"\
+                :\"Red\",\"value\":\"red\"}]}}]}]}"
+            schema:
+              type: object
+              description: Metadata key/value pairs to merge
+        description: A flat JSON object whose keys are merged into the Content Type's
+          existing metadata. Set a key's value to `null` to remove it. An absent or
+          empty body is treated as a no-op — the current metadata is returned unchanged
+          with HTTP 200.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeDetailView"
+          description: Metadata updated successfully
+        "400":
+          description: Bad request — invalid JSON body
+        "401":
+          description: User not authenticated
+        "403":
+          description: User does not have permission to edit this Content Type
+        "404":
+          description: Content Type not found
+        "500":
+          description: Internal server error
+      summary: Updates the metadata of a Content Type
       tags:
       - Content Type
   /v1/contenttype/page:
@@ -12473,6 +12527,75 @@ paths:
         "404":
           description: Page not found at the specified path
       summary: Check user permission on a page
+      tags:
+      - Page
+  /v1/page/_render-sources/{uri}:
+    get:
+      description: |-
+        Returns references only (path + identifier, no file content, no container code) mapping a rendered page to its source files. The page is identified by a URI path segment, exactly like `GET /api/v1/page/render/{uri}`.
+
+        The URI must be a plain path (e.g. `index`, `about/team`). To address a specific site, use the `host_id` query parameter.
+
+        Includes the page reference, theme VTL files, all containers referenced by the template (only content types actually placed under the applied persona/variant are included), and widget contentlets placed on the page.
+
+        **Widget source field:**
+        Each widget entry includes a `source` field:
+        - `FILE` — the widget's Velocity lives in a file asset; `path` and `identifier` are populated. Retrieve the VTL content via `GET /api/v2/assets`.
+        - `CODE` — the widget's Velocity is inline (in the content type's `widgetCode` field and/or the contentlet's own fields). No `path`/`identifier` are returned. Retrieve the content type definition via `GET /api/v1/contenttype/id/{contentTypeVar}` and the placed contentlet via `GET /api/v1/content/id/{contentletId}`.
+
+        **Other source lookups:**
+        - Theme folder files: `GET /api/v1/folder/sitename/{site}/uri/{uri}`
+        - DB container code: `GET /api/v1/containers/working?containerId=<id>&includeContentType=true`
+        - FILE container VTL content: `GET /api/v2/assets`
+      operationId: getPageRenderSources
+      parameters:
+      - description: Page URI path (e.g. 'index' or 'about/team'). Must be a plain
+          path without an embedded host; use host_id to target a specific site.
+        in: path
+        name: uri
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      - description: Explicit host identifier; if omitted the default site is used
+        in: query
+        name: host_id
+        schema:
+          type: string
+      - description: Language identifier; defaults to the default language
+        in: query
+        name: language_id
+        schema:
+          type: string
+      - description: Persona contentlet identifier for personalization lookup
+        in: query
+        name: persona_id
+        schema:
+          type: string
+      - description: Variant name; defaults to DEFAULT
+        in: query
+        name: variantName
+        schema:
+          type: string
+      - description: "Page mode: EDIT_MODE, PREVIEW_MODE, LIVE; defaults to PREVIEW_MODE"
+        in: query
+        name: mode
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPageRenderSourcesView"
+          description: Render sources retrieved successfully
+        "400":
+          description: Invalid request parameter (e.g. an unknown mode value)
+        "403":
+          description: User does not have READ permission on the page
+        "404":
+          description: "Page not found, wrong language, or unknown host"
+      summary: Get render sources for a page
       tags:
       - Page
   /v1/page/actions:
@@ -21301,6 +21424,209 @@ paths:
           description: default response
       tags:
       - System Monitoring
+  /v2/assets:
+    get:
+      description: "Streams the raw bytes of a file asset addressed by a host-qualified\
+        \ path (//hostname/path/file.ext).  Returns the working version by default;\
+        \ use version=live for the published version.  Responds with 404 when the\
+        \ asset or language version does not exist, 400 when the path points at a\
+        \ folder."
+      operationId: getFileAssetByPath
+      parameters:
+      - description: "Host-qualified asset path, e.g. //demo.dotcms.com/application/foo.vtl"
+        example: //demo.dotcms.com/application/containers/default/banner.vtl
+        in: query
+        name: path
+        required: true
+        schema:
+          type: string
+      - description: Language tag (e.g. en-US). Defaults to site default language.
+        example: en-US
+        in: query
+        name: language
+        schema:
+          type: string
+      - description: "Asset version to retrieve. Accepted values: working (default),\
+          \ live."
+        example: working
+        in: query
+        name: version
+        schema:
+          type: string
+          default: working
+          enum:
+          - working
+          - live
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Raw file bytes streamed with resolved MIME type and Content-Disposition
+            header
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — path is missing, ambiguous, points at a folder,\
+            \ or unknown language/version value"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient read permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Not Found — host, path, or language version does not exist"
+      summary: Get raw file-asset content by path
+      tags:
+      - File Assets
+  /v2/assets/publish:
+    put:
+      description: "Creates or updates a file asset at the given host-qualified path\
+        \ and immediately publishes it (promotes to live). Submit via multipart/form-data\
+        \ with fields: file (binary), path (//host/folder/file.ext), language (optional)."
+      operationId: publishFileAsset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFileAssetView"
+          description: Asset saved and published successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — missing file part, zero-byte file, unknown language,\
+            \ or invalid path"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient permissions on target folder
+        "404":
+          content:
+            application/json: {}
+          description: Not Found — unknown host in path
+      summary: Publish file asset (working + live)
+      tags:
+      - File Assets
+  /v2/assets/save:
+    put:
+      description: "Creates or updates a file asset at the given host-qualified path.\
+        \ Only the working version is affected — the live version is NOT changed.\
+        \ Submit via multipart/form-data with fields: file (binary), path (//host/folder/file.ext),\
+        \ language (optional)."
+      operationId: saveFileAsset
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              description: "Flat multipart form: file, path, language"
+        description: "Multipart form with fields: file (binary content, required),\
+          \ path (host-qualified asset path including filename, required), language\
+          \ (language tag, optional — defaults to site default)"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFileAssetView"
+          description: Asset saved successfully as working version
+        "400":
+          content:
+            application/json: {}
+          description: "Bad Request — missing file part, zero-byte file, unknown language,\
+            \ or invalid path"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — insufficient permissions on target folder
+        "404":
+          content:
+            application/json: {}
+          description: Not Found — unknown host in path
+      summary: Save file asset (working version)
+      tags:
+      - File Assets
+  /v2/assets/{identifier}:
+    get:
+      description: Streams the raw bytes of a file asset addressed by its dotCMS identifier
+        (UUID). Returns the working version in the site default language by default.
+        READ permission is enforced — 403 is returned when the user lacks permission.
+      operationId: getFileAssetById
+      parameters:
+      - description: Asset identifier (UUID)
+        example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        in: path
+        name: identifier
+        required: true
+        schema:
+          type: string
+      - description: Language tag (e.g. en-US). Defaults to site default language.
+        example: en-US
+        in: query
+        name: language
+        schema:
+          type: string
+      - description: "Asset version to retrieve. Accepted values: working (default),\
+          \ live."
+        example: working
+        in: query
+        name: version
+        schema:
+          type: string
+          default: working
+          enum:
+          - working
+          - live
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Raw file bytes streamed with resolved MIME type and Content-Disposition
+            header
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request — unknown language tag or version value
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden — user does not have READ permission on this asset
+        "404":
+          content:
+            application/json: {}
+          description: "Not Found — identifier not found, not a file asset, or language\
+            \ version unavailable"
+      summary: Get raw file-asset content by identifier
+      tags:
+      - File Assets
   /v2/contenttype/{typeIdOrVarName}/fields:
     delete:
       deprecated: true
@@ -24844,6 +25170,24 @@ components:
               type: object
               additionalProperties:
                 type: object
+    ContainerSourceView:
+      type: object
+      description: "Containers referenced by the page template, keyed by container\
+        \ identifier (UUID for DB containers, host-qualified path for FILE containers).\
+        \ Only content types placed on the page appear inside each entry."
+      properties:
+        contentTypes:
+          type: array
+          description: Content types placed on the page for this container. DB entries
+            contain only contentTypeVar; FILE entries also include path and identifier.
+          items:
+            $ref: "#/components/schemas/ContentTypeEntryView"
+        source:
+          type: string
+          description: "Container source type: DB or FILE"
+          enum:
+          - DB
+          - FILE
     ContainerStructure:
       type: object
       properties:
@@ -25005,6 +25349,20 @@ components:
           type: string
       required:
       - clazz
+    ContentTypeEntryView:
+      type: object
+      description: Content types placed on the page for this container. DB entries
+        contain only contentTypeVar; FILE entries also include path and identifier.
+      properties:
+        contentTypeVar:
+          type: string
+          description: Velocity variable name of the Content Type
+        identifier:
+          type: string
+          description: File asset identifier of the VTL file (FILE containers only)
+        path:
+          type: string
+          description: Host-qualified path to the VTL file (FILE containers only)
     ContentTypeForm:
       type: object
       properties:
@@ -26373,6 +26731,43 @@ components:
             type: string
           versionable:
             type: boolean
+    FileAssetView:
+      type: object
+      description: File asset view returned after a save or publish operation
+      properties:
+        fileSize:
+          type: integer
+          format: int64
+          description: File size in bytes as stored in the content repository
+          example: 4096
+        identifier:
+          type: string
+          description: Asset identifier
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        inode:
+          type: string
+          description: Asset inode
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        lang:
+          type: string
+          description: Language tag for the asset version
+          example: en-US
+        live:
+          type: boolean
+          description: Whether this is the live (published) version
+          example: false
+        name:
+          type: string
+          description: File name
+          example: banner.vtl
+        path:
+          type: string
+          description: Host-qualified path to the asset
+          example: //demo.dotcms.com/application/containers/default/banner.vtl
+        working:
+          type: boolean
+          description: Whether this is the working version
+          example: true
     FileField:
       type: object
       allOf:
@@ -26437,6 +26832,21 @@ components:
             type: string
           variable:
             type: string
+    FileRefView:
+      type: object
+      description: "Every file found anywhere under the theme folder (searched recursively),\
+        \ regardless of type. Each entry carries its extension so consumers can filter."
+      properties:
+        extension:
+          type: string
+          description: "Lowercased file extension without the leading dot, e.g. vtl,\
+            \ css, scss, js"
+        identifier:
+          type: string
+          description: File asset identifier
+        path:
+          type: string
+          description: "Host-qualified path to the file, e.g. //demo.dotcms.com/application/themes/travel/header.vtl"
     FileUploadDetail:
       type: object
       properties:
@@ -29180,11 +29590,48 @@ components:
           type: string
         renderWorking:
           type: string
+    PageRenderSourcesView:
+      type: object
+      properties:
+        containers:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerSourceView"
+          description: "Containers referenced by the page template, keyed by container\
+            \ identifier (UUID for DB containers, host-qualified path for FILE containers).\
+            \ Only content types placed on the page appear inside each entry."
+        page:
+          $ref: "#/components/schemas/PageSourceRefView"
+        theme:
+          $ref: "#/components/schemas/ThemeSourceView"
+        urlContentMap:
+          $ref: "#/components/schemas/UrlContentMapView"
+        widgets:
+          type: array
+          description: Widget contentlets placed on the page
+          items:
+            $ref: "#/components/schemas/WidgetSourceView"
     PageScanCheckForm:
       type: object
       properties:
         url:
           type: string
+    PageSourceRefView:
+      type: object
+      description: "Lightweight page reference. When the request URI was a URL-mapped\
+        \ path, identifier is the detail page identifier and uri is the originally\
+        \ requested URI (host-qualified)."
+      properties:
+        identifier:
+          type: string
+          description: Page identifier
+        languageId:
+          type: integer
+          format: int64
+          description: Language ID under which the page was resolved
+        uri:
+          type: string
+          description: Host-qualified page URI (e.g. //demo.dotcms.com/index)
     PageView:
       type: object
       properties:
@@ -31185,6 +31632,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityFileAssetView:
+      type: object
+      description: Response entity wrapping a FileAssetView after a save or publish
+        operation
+      properties:
+        entity:
+          $ref: "#/components/schemas/FileAssetView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityFolderSearchResultView:
       type: object
       properties:
@@ -31851,6 +32323,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/PageLivePreviewVersionBean"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPageRenderSourcesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PageRenderSourcesView"
         errors:
           type: array
           items:
@@ -35818,6 +36313,26 @@ components:
             type: string
           variable:
             type: string
+    ThemeSourceView:
+      type: object
+      description: Theme folder and every file that composes it
+      properties:
+        files:
+          type: array
+          description: "Every file found anywhere under the theme folder (searched\
+            \ recursively), regardless of type. Each entry carries its extension so\
+            \ consumers can filter."
+          items:
+            $ref: "#/components/schemas/FileRefView"
+        folderPath:
+          type: string
+          description: "Host-qualified path to the theme folder, e.g. //demo.dotcms.com/application/themes/travel/"
+        id:
+          type: string
+          description: Theme folder identifier
+        name:
+          type: string
+          description: Theme folder name
     ThemeView:
       type: object
       properties:
@@ -36393,6 +36908,29 @@ components:
           type: string
       required:
       - upgradeTaskClass
+    UrlContentMapView:
+      type: object
+      description: Present only when the requested URI resolved via a URL-map pattern.
+        Identifies the specific mapped contentlet that owns the URL. Absent for regular
+        (literal) HTML page requests.
+      properties:
+        contentTypeVar:
+          type: string
+          description: Velocity variable name of the URL-mapped Content Type (e.g.
+            'Blog')
+        contentletId:
+          type: string
+          description: "Stable identifier of the URL-mapped contentlet (same across\
+            \ all language/variant versions). Use GET /api/v1/content/id/{contentletId}\
+            \ to retrieve it."
+        contentletInode:
+          type: string
+          description: "Inode of the exact version of the URL-mapped contentlet resolved\
+            \ for this request (language- and variant-specific). Use GET /api/v1/content/inode/{contentletInode}\
+            \ to retrieve the precise version."
+        title:
+          type: string
+          description: Title of the URL-mapped contentlet
     UsageSummary:
       type: object
       properties:
@@ -37384,6 +37922,42 @@ components:
             type: string
           versionable:
             type: boolean
+    WidgetSourceView:
+      type: object
+      description: Widget contentlets placed on the page
+      properties:
+        contentTypeVar:
+          type: string
+          description: Velocity variable name of the Widget Content Type
+        contentletId:
+          type: string
+          description: "Stable identifier of the placed Widget contentlet (same across\
+            \ all language and variant versions). Use GET /api/v1/content/id/{contentletId}\
+            \ to retrieve the contentlet."
+        contentletInode:
+          type: string
+          description: "Inode of the exact version of the placed Widget contentlet\
+            \ resolved for this request (language- and variant-specific). Use GET\
+            \ /api/v1/content/inode/{contentletInode} to retrieve the precise placed\
+            \ version."
+        identifier:
+          type: string
+          description: File asset identifier of the widget VTL file (FILE source only)
+        path:
+          type: string
+          description: Host-qualified path to the widget VTL file (FILE source only)
+        source:
+          type: string
+          description: "Source of the widget Velocity code. FILE: VTL lives in a file\
+            \ asset (see path/identifier). CODE: Velocity is inline in the content\
+            \ type's widgetCode field and/or contentlet fields — retrieve via GET\
+            \ /api/v1/contenttype/id/{contentTypeVar} and GET /api/v1/content/id/{contentletId}."
+          enum:
+          - FILE
+          - CODE
+        title:
+          type: string
+          description: Title of the placed Widget contentlet
     WorkFlowActionlet:
       type: object
       properties:
