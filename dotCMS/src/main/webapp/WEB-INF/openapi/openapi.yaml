@@ -10305,11 +10305,9 @@ paths:
       - Content Type Field
   /v1/folder/byPath:
     post:
+      deprecated: true
       description: "Retrieves subfolders of a given path, filtered by the path sent.\
-        \ The path format supports site-specific search (//siteName/path) or global\
-        \ search (/path). For example: '//default/folder1/' returns subfolder1, subfolder2\
-        \ under folder1 in the 'default' site. '/folder1/s' returns all subfolders\
-        \ starting with 's' under folder1 across all sites."
+        \ This endpoint is deprecated — use GET /api/v1/folder/search instead."
       operationId: findSubFoldersByPath
       parameters:
       - description: Number of results to skip for pagination. Must be >= 0.
@@ -10338,7 +10336,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityFolderSearchResultView"
-          description: Subfolders retrieved successfully
+          description: Subfolders retrieved successfully (deprecated endpoint)
         "400":
           description: Path property must be sent
         "401":
@@ -10347,7 +10345,7 @@ paths:
           description: Insufficient permissions
         "404":
           description: Site not found
-      summary: Find subfolders by path
+      summary: Find subfolders by path (deprecated)
       tags:
       - Folders
   /v1/folder/createfolders/{siteName}:
@@ -10383,6 +10381,87 @@ paths:
         "404":
           description: Site not found
       summary: Create folders by paths on a site
+      tags:
+      - Folders
+  /v1/folder/search:
+    get:
+      description: "Returns folders within a site matching an optional name filter\
+        \ and/or path scope. Supports recursive depth control, standard pagination,\
+        \ and sorting. With no 'name' and default path '/' + recursive=true, all site\
+        \ folders are returned."
+      operationId: searchFolders
+      parameters:
+      - description: Optional case-insensitive partial match on folder name (minimum
+          3 characters when provided)
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: Path scope for the search. Defaults to '/' (site root).
+        in: query
+        name: path
+        schema:
+          type: string
+          default: /
+      - description: false = direct children of 'path' only (default); true = search
+          all descendants
+        in: query
+        name: recursive
+        schema:
+          type: boolean
+          default: false
+      - description: Site ID to scope the search (required)
+        in: query
+        name: siteId
+        schema:
+          type: string
+      - description: Column to sort by.
+        in: query
+        name: orderby
+        schema:
+          type: string
+          default: name
+          enum:
+          - name
+          - mod_date
+      - description: Sort direction
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+          enum:
+          - ASC
+          - DESC
+      - description: "Page number (1-based, default 1)"
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Number of results per page (default 40)
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Paginated list of matching folders
+        "400":
+          description: '''siteId'' is required; ''name'' must be at least 3 characters
+            if provided'
+        "401":
+          description: User is not authenticated
+        "500":
+          description: Internal server error
+      summary: Search folders
       tags:
       - Folders
   /v1/folder/siteId/{siteId}/path/{path}:
