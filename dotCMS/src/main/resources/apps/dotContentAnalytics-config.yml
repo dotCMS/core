@@ -14,6 +14,50 @@ params:
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
 
+  # Section Event Manager Credentials
+  header_admin:
+    type: "HEADING"
+    label: "Event Manager Token"
+  info_admin:
+    type: "INFO"
+    hint: |
+      **One-time token exchange — neither the admin username nor password is stored.**
+
+      The tenant ID is read from the environment variable `DOT_ANALYTICS_TENANT` and is
+      managed by your infrastructure, not in this form.
+
+      1. Enter the **Admin Username** and **Admin Password** for your event manager
+         (the values set on the event manager as `ANALYTICS_ADMIN_USER` and
+         `ANALYTICS_ADMIN_PASSWORD`).
+      2. Click **Save**. dotCMS will use those credentials to call the event manager's
+         token endpoint and mint a bearer token scoped to your tenant.
+      3. On success, **both fields are cleared automatically** and only the bearer
+         token is retained (encrypted). To rotate or replace the token, re-enter both
+         credentials and save again.
+
+      Neither credential is persisted to the app configuration after the exchange.
+  adminUser:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Admin Username (not stored)"
+    hint: "Global admin username on the event manager (matches the event manager's `ANALYTICS_ADMIN_USER`). Used once to mint a bearer token, then cleared — never persisted to the app config."
+    required: false
+  adminPassword:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Admin Password (not stored)"
+    hint: "Password for the event manager's global admin account (matches `ANALYTICS_ADMIN_PASSWORD` on the event manager). Used once to exchange for a bearer token, then cleared — never persisted to the app config."
+    required: false
+  bearerToken:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Auth Token (do not edit)"
+    hint: "Managed by the save flow above. Leave the masked value alone."
+    required: false
+
   # Section Server-Rendered Pages
   header_server:
     type: "HEADING"

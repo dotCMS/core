@@ -127,26 +127,28 @@ const writeIndexesToDropdowns = async () => {
 
 const writeModelToDropdown = async () => {
     const modelName = document.getElementById("modelName");
-    let options = modelName.getElementsByTagName('option');
+    modelName.innerHTML = '<option disabled value="">Select a Model</option>';
 
-    for (i = 1; i < options.length; i++) {
-        indexName.removeChild(options[i]);
+    let models = [];
+    try {
+        const providerConfig = JSON.parse(dotAiState.config.providerConfig);
+        const chatModel = providerConfig?.chat?.model ?? '';
+        models = chatModel.split(',').map(m => m.trim()).filter(m => m.length > 0);
+    } catch (e) {
+        console.error('[DotAI] writeModelToDropdown: providerConfig missing or not valid JSON', e);
     }
 
-    for (i = 0; i < dotAiState.config.availableModels.length; i++) {
-        if (dotAiState.config.availableModels[i].type !== 'TEXT') {
-            continue;
-        }
-
-        const newOption = document.createElement("option");
-        newOption.value = dotAiState.config.availableModels[i].name;
-        newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i].current) {
-            newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
-        }
-        modelName.appendChild(newOption);
+    if (models.length === 0) {
+        console.warn('[DotAI] writeModelToDropdown: models is empty, dropdown will not be populated');
     }
+
+    models.forEach((model, index) => {
+        const opt = document.createElement("option");
+        opt.value = model;
+        opt.text = index === 0 ? `${model} (default)` : model;
+        if (index === 0) opt.selected = true;
+        modelName.appendChild(opt);
+    });
 };
 
 
@@ -416,6 +418,25 @@ const showClearPrompt = (idToClear) => {
 }
 
 
+const loadSitesDropdown = () => {
+    fetch("/api/v1/site?perPage=500&showSystem=false&showLive=true")
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById("siteFilterSelect");
+            if (!select) return;
+            (data.entity || [])
+                .filter(site => site.identifier && site.hostname)
+                .sort((a, b) => a.hostname.localeCompare(b.hostname))
+                .forEach(site => {
+                    const opt = document.createElement("option");
+                    opt.value = site.identifier;
+                    opt.textContent = site.hostname;
+                    select.appendChild(opt);
+                });
+        })
+        .catch(err => console.warn("Could not load sites for dropdown:", err));
+};
+
 const setUpValuesFromPreferences = () => {
     const prefs = preferences();
 
@@ -519,6 +540,9 @@ const loadPrompt = (num) =>{
 }
 
 const doImageJson = () => {
+    if (!document.getElementById("imageForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitImage").style.display = "none";
     document.getElementById("loaderImage").style.display = "block";
     setTimeout(function () {
@@ -566,14 +590,14 @@ const doImageJsonDebounced = async () => {
         const temp =  json.response;
         const width = formData.size.split("x")[0];
         const height = formData.size.split("x")[1];
-        const jsonString=JSON.stringify(json, 2);
+        const jsonString = JSON.stringify(json, null, 2);
         const rewrittenPrompt = json.revised_prompt;
         const imageTemplate =`
-            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;">
+            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;overflow:hidden;">
                 <a href="/dA/${temp}/asset.png" target="_blank">
                     <img src="/dA/${temp}/asset.png" style="max-width:750px;max-height:750px;display: block;margin:auto;"  />
                 </a>
-                
+
                 <div style="padding:1rem;margin:auto;text-align: center">
                     <button id="saveImageButton" class="button dijit dijitReset dijitInline dijitButton"
                             onclick="saveImage('${temp}')">
@@ -581,12 +605,13 @@ const doImageJsonDebounced = async () => {
                     </button><br>
                     <div id="imageSavedMessage">&nbsp;</div>
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;overflow-wrap:break-word;word-break:break-word;">
                     <b>OpenAI Prompt (Rewritten):</b> <br>
                     ${rewrittenPrompt}
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
-                    <b>JSON Response:</b> <br>${jsonString}
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;">
+                    <b>JSON Response:</b>
+                    <pre style="white-space:pre-wrap;word-break:break-word;overflow-x:auto;overflow-y:auto;max-height:300px;margin:0.5rem 0 0 0;font-size:0.85em;">${jsonString}</pre>
                 </div>
             </div>
 
@@ -646,6 +671,9 @@ const clearSaveMessage =() =>{
 
 
 const doSearchChatJson = () => {
+    if (!document.getElementById("chatForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitChat").style.display = "none";
     document.getElementById("loaderChat").style.display = "block";
     setTimeout(function () {

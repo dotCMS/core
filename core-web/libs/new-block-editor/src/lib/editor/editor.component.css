@@ -16,7 +16,23 @@
    force font-size 0.875rem on many controls. Tailwind v4 emits prose +
    utilities inside @layer, so unlayered author CSS beats them regardless of
    specificity. These (unlayered) rules match that priority, then revert-layer
-   falls back to prose/utilities. */
+   falls back to prose/utilities.
+
+   PrimeNG widgets are excluded: PrimeNG's theme is injected UNLAYERED (no
+   `cssLayer` configured), so `.p-button` (0,1,0) already out-specifies JSP's
+   `button` (0,0,1) and wins on its own. It never needed this defense — and
+   reverting its padding/margin/font-size would roll back to Tailwind preflight
+   (0) and strip its design tokens. `[class~="p-component"]` is PrimeNG's host
+   marker on every widget root; the `, [class~="p-component"] *` also excludes
+   everything inside it (labels, icons, inner controls). A token match (`~=`)
+   avoids the `[class*="p-"]` trap of also matching Tailwind's `p-4` utility.
+
+   SPECIFICITY IS LOAD-BEARING: the exclusion is wrapped in `:where()` (which
+   contributes ZERO specificity) so the whole rule stays at (0,1,1) — high enough
+   to beat JSP's element selectors (0,0,1), but BELOW this file's own component
+   rules like `.tiptap { padding }` (0,2,0). Without `:where()`, each bare
+   `:not([class~=…])` would add (0,1,0), pushing the rule past our own styles and
+   reverting the editor's own padding/spacing to nothing. */
 :host(dotcms-block-editor) {
     display: block;
     font-family:
@@ -32,7 +48,9 @@
     color: #1f2937;
 }
 
-:host(dotcms-block-editor) ::ng-deep * {
+:host(dotcms-block-editor)
+    ::ng-deep
+    *:not(:where([class~='p-component'], [class~='p-component'] *)) {
     margin: revert-layer;
     padding: revert-layer;
     font-size: revert-layer;
@@ -50,8 +68,16 @@
 }
 
 /* ─── Editor padding ────────────────────────────────────── */
+/*
+ * The left padding has to clear the left-margin furniture without it being clipped by
+ * `.editor-scroll-container` (whose `overflow-y: auto` forces `overflow-x: auto`, so it
+ * clips horizontally at x=0). Two things live in that left strip:
+ *   - the block gutter (~50px wide, pushed a further GUTTER_OFFSET=15px left), and
+ *   - the table row handle (protrudes 12px left of the table).
+ * 5rem (80px) keeps the gutter's left edge ~14px inside the clip boundary.
+ */
 :host ::ng-deep .tiptap {
-    padding: 2rem 4rem;
+    padding: 2rem 5rem;
 }
 
 /* ─── Scroll lock while overlays are open ───────────────── */
@@ -105,6 +131,63 @@
    (image-wrap-left/right) are excluded because they live outside normal flow. */
 :host ::ng-deep .ProseMirror > * + *:not(.image-wrap-left):not(.image-wrap-right) {
     margin-top: 2.5rem;
+}
+
+/* ─── Lists ─────────────────────────────────────────────── */
+/* Self-contained list rendering. We do NOT rely on the host page's Tailwind
+   Typography (`prose`) for markers: Tailwind's preflight resets
+   `ol, ul, menu { list-style: none }` in `@layer base`, and depending on the
+   consuming app's layer order that can beat `prose` (it does in the
+   `dotcms-block-editor` web-component build, where lists rendered with no
+   bullets/numbers). These rules are unlayered component CSS, so they win over
+   any layered Tailwind reset regardless of host. `padding-left` is required for
+   the markers to be visible (`list-style-position: outside` paints them in the
+   indent); it also out-specifies the host-style `revert-layer` defense (0,1,1),
+   which would otherwise strip the list's padding and clip the markers. */
+:host ::ng-deep .tiptap ul,
+:host ::ng-deep .tiptap ol {
+    padding-left: 1.625rem;
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap ul {
+    list-style: disc;
+}
+
+:host ::ng-deep .tiptap ol {
+    list-style: decimal;
+}
+
+/* Nested markers cycle so depth stays legible */
+:host ::ng-deep .tiptap ul ul {
+    list-style: circle;
+}
+
+:host ::ng-deep .tiptap ul ul ul {
+    list-style: square;
+}
+
+/* `list-style: inherit` is load-bearing: the admin JSP ships an unlayered
+   `li { list-style: none }` that sets the property *directly on the <li>*,
+   overriding the value `list-style-type` would otherwise inherit from the
+   <ul>/<ol> above. Forcing the li to inherit re-derives the correct marker
+   (disc / decimal / circle / square) from its list parent. `.tiptap li`
+   (0,2,1) out-specifies the JSP's `li` (0,0,1). */
+:host ::ng-deep .tiptap li {
+    margin: 0.25rem 0;
+    list-style: inherit;
+}
+
+/* Markers default to Tailwind prose's light-gray bullet/counter color; match
+   them to the editor's text color so they read as part of the content. */
+:host ::ng-deep .tiptap li::marker {
+    color: currentColor;
+}
+
+/* TipTap wraps list-item content in a <p>; collapse its prose margins so the
+   marker stays vertically aligned with the first line of text. */
+:host ::ng-deep .tiptap li > p {
+    margin: 0;
 }
 
 /* ─── Figures / Images ──────────────────────────────────── */
@@ -207,17 +290,28 @@
     border-collapse: collapse;
     width: 100%;
     table-layout: fixed;
-    overflow: hidden;
+    /* No `overflow: hidden` — the cell-anchored handles (.dot-cell-handle) sit on the
+       table's outer border via negative top/left offsets and would otherwise be clipped. */
     margin: 0;
 }
 
 :host ::ng-deep .tiptap td,
 :host ::ng-deep .tiptap th {
     border: 1px solid #e5e7eb;
-    padding: 8px 12px;
+    padding: 6px 10px;
     vertical-align: top;
     position: relative;
     min-width: 80px;
+}
+
+/*
+ * Tailwind Typography's `prose` adds vertical margins to <p> globally; inside a table
+ * cell those margins compound with the cell's padding and make every cell feel bloated.
+ * Reset paragraph margins inside the NodeView's content wrapper so the cell padding
+ * (4px 8px above) is the only spacing.
+ */
+:host ::ng-deep .tiptap .dot-cell-content > * {
+    margin: 0;
 }
 
 :host ::ng-deep .tiptap th {
@@ -242,7 +336,95 @@
 }
 
 :host ::ng-deep .tiptap .tableWrapper {
-    overflow-x: auto;
+    /* `overflow: visible` (instead of `overflow-x: auto`) so the column / row handles can
+       protrude past the table's outer edges without being clipped. Wide-table horizontal
+       scrolling is handled by the editor's outer scroll container; combined with
+       `table-layout: fixed; width: 100%` above, tables stay within the editor width by
+       resizing columns instead of overflowing. */
+    overflow: visible;
+}
+
+/* ─── Table contextual handles (cell-anchored NodeView) ─── */
+/*
+ * Handles live INSIDE the cell DOM (rendered by the DotTableCell / DotTableHeader
+ * NodeViews). Pure CSS positioning — no floating-ui, no autoUpdate. The cell's
+ * `position: relative` is already set on the .tiptap td/th rule above; the handles
+ * absolute-position themselves against the cell.
+ */
+:host ::ng-deep .tiptap .dot-cell-handle {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #4f46e5;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle .material-symbols-outlined {
+    font-size: 14px;
+    line-height: 1;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle:hover {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--col {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--row {
+    top: 50%;
+    left: -12px;
+    transform: translateY(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--selection {
+    top: 50%;
+    right: -12px;
+    transform: translateY(-50%);
+}
+
+/*
+ * Visibility rules — the TableActiveCellsPlugin marks every cell in the cursor's
+ * column with `is-active-column` and every cell in the cursor's row with `is-active-row`.
+ * For multi-cell `CellSelection`, only the bottom-right cell of the selection gets
+ * `is-selection-anchor` (column / row decorations are skipped in that branch).
+ *
+ * Column handle only shows on the first-row cell of the active column; row handle only
+ * shows on the first cell of the active row; selection handle only shows on the chosen
+ * anchor cell.
+ */
+:host ::ng-deep .tiptap tbody > tr:first-child > .is-active-column > .dot-cell-handle--col {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap tbody > tr > .is-active-row:first-child > .dot-cell-handle--row {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap .is-selection-anchor > .dot-cell-handle--selection {
+    display: inline-flex;
+}
+
+/*
+ * Even-row-count selections: the plugin anchors to the cell at floor(N/2) from the top.
+ * Override the default `top: 50%` so the handle sits at the cell's top border — which is
+ * the boundary between the two middle rows = the selection's vertical center.
+ */
+:host ::ng-deep .tiptap .is-selection-anchor--edge > .dot-cell-handle--selection {
+    top: 0;
 }
 
 /* ─── Placeholders ──────────────────────────────────────── */
@@ -591,4 +773,11 @@
 :host ::ng-deep .ProseMirror .editor-block-target::selection {
     background: transparent;
     color: inherit;
+}
+
+/* ─── Exact selection highlight while the link popover is open (insert mode) ─── */
+/* Matches the `.link-editing` indigo tint so creating and editing a link look alike. */
+:host ::ng-deep .ProseMirror .editor-link-selection {
+    background-color: rgba(99, 102, 241, 0.18);
+    border-radius: 2px;
 }

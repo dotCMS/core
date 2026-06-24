@@ -176,7 +176,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.felix.framework.OSGIUtil;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -2767,13 +2766,16 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				contentletAPI.search(luceneQueryWithSteps, limit, offset, null, user, !RESPECT_FRONTEND_ROLES)
 		).build();
 		}catch (Exception e){
-			final Throwable rootCause = ExceptionUtil.getRootCause(e);
-			if(rootCause instanceof QueryPhaseExecutionException){
-				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
-				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
-			} else {
-				Logger.error(getClass(),"Unexpected Error fetching contentlets from ES", e);
-			}
+			// A single generic message covers both the window-limit case (offset > max_result_window)
+			// and any other unexpected search failure. The ES-specific QueryPhaseExecutionException
+			// branch was removed because: (a) it never fires via the REST client — the client wraps
+			// all server errors as ElasticsearchStatusException — and (b) no typed OS equivalent exists
+			// in OpenSearch Java client 3.x. Detection at this call-site would require fragile message
+			// parsing. Full vendor-neutral handling belongs at the factory layer (Phase 3).
+			Logger.warnAndDebug(getClass(),
+					String.format("Unexpected error fetching contentlets at offset=%d — "
+							+ "possibly an index window-limit exceeded if offset surpasses max_result_window. %s",
+							offset, e.getMessage()), e);
 		}
 
 		return Collections.emptyList();
@@ -3043,11 +3045,29 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			successCount.updateAndGet(value -> value - list.size());
 		});
 
+		final String skipReason = skipsCount > 0 ? buildSchemeMismatchSkipReason(action) : null;
+
 		return new BulkActionsResultView(
 				successCount.get(),
 				skipsCount,
-				ImmutableList.copyOf(fails)
+				ImmutableList.copyOf(fails),
+				skipReason
 		);
+	}
+
+	/**
+	 * Builds the human-readable reason returned with {@link BulkActionsResultView#getSkipReason()}
+	 * when the bulk fire ran with input contentlets that are not associated with the workflow
+	 * scheme that owns the supplied action. Today this is the only path that increments
+	 * {@code skippedCount}; revisit if other skip reasons are introduced.
+	 */
+	private String buildSchemeMismatchSkipReason(final WorkflowAction action) {
+		return String.format(
+				"Workflow action '%s' (%s) does not own the workflow steps that the skipped "
+						+ "contentlets are currently in. Use PUT /api/v1/workflow/actions/{actionId}/fire "
+						+ "to bypass scheme checks (e.g. for System Workflow actions like Move on content "
+						+ "from a non-system scheme).",
+				action.getName(), action.getId());
 	}
 
 	/**

@@ -295,8 +295,8 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 10, 0, null);
 
         assertNotNull("searchHits must never return null", hits);
-        assertFalse("searchHits must return at least one result", hits.hits().isEmpty());
-        assertEquals("totalHits must be 1", 1L, hits.totalHits().value());
+        assertFalse("searchHits must return at least one result", hits.getHits().isEmpty());
+        assertEquals("totalHits must be 1", 1L, hits.getTotalHits().value());
     }
 
     /**
@@ -313,8 +313,8 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 1, 0, null);
 
         assertNotNull("searchHits must not be null", hits);
-        assertEquals("Only 1 hit must be returned when limit=1", 1, hits.hits().size());
-        assertEquals("totalHits must reflect all 3 indexed documents", 3L, hits.totalHits().value());
+        assertEquals("Only 1 hit must be returned when limit=1", 1, hits.getHits().size());
+        assertEquals("totalHits must reflect all 3 indexed documents", 3L, hits.getTotalHits().value());
     }
 
     /**
@@ -349,7 +349,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits hits = ops.searchHits("+contenttype:" + CONTENT_TYPE, 10, 0, null);
 
         assertNotNull("searchHits must not return null for an empty index", hits);
-        assertTrue("Empty index must produce no hits", hits.hits().isEmpty());
+        assertTrue("Empty index must produce no hits", hits.getHits().isEmpty());
     }
 
     /**
@@ -374,14 +374,14 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         final SearchHits liveHits = ops.searchHits(
                 "+live:true +contenttype:" + CONTENT_TYPE, 10, 0, null);
         assertNotNull("searchHits must not return null for live query", liveHits);
-        assertFalse("Live query must find the document in the live index", liveHits.hits().isEmpty());
+        assertFalse("Live query must find the document in the live index", liveHits.getHits().isEmpty());
 
         // No +live:true → routed to working index (empty) → no results
         final SearchHits workingHits = ops.searchHits(
                 "+contenttype:" + CONTENT_TYPE, 10, 0, null);
         assertNotNull("searchHits must not return null for working query", workingHits);
         assertTrue("Working query must return no results — document is only in the live index",
-                workingHits.hits().isEmpty());
+                workingHits.getHits().isEmpty());
     }
 
     // =========================================================================
@@ -606,7 +606,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
 
         // Phase 1: empty index → 0 hits, result now cached
         final SearchHits hitsEmpty = ops.searchHits(query, 10, 0, null);
-        assertEquals("Empty index must return 0 hits", 0L, hitsEmpty.totalHits().value());
+        assertEquals("Empty index must return 0 hits", 0L, hitsEmpty.getTotalHits().value());
 
         // Phase 2: index a doc + refresh (OS now has 1 visible doc)
         indexSingleDoc(fullWorking);
@@ -614,13 +614,13 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         // Phase 3: cache still valid — must return the stale 0
         final SearchHits hitsCached = ops.searchHits(query, 10, 0, null);
         assertEquals("Cache must return stale 0-hit result before clear",
-                0L, hitsCached.totalHits().value());
+                0L, hitsCached.getTotalHits().value());
 
         // Phase 4: clear cache → fresh request → 1 doc
         CacheLocator.getOSQueryCache().clearCache();
         final SearchHits hitsFresh = ops.searchHits(query, 10, 0, null);
         assertEquals("After cache clear, fresh query must return the indexed document",
-                1L, hitsFresh.totalHits().value());
+                1L, hitsFresh.getTotalHits().value());
     }
 
     /**
@@ -671,23 +671,23 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         // Different limit values → independent cache entries
         final SearchHits limit2 = ops.searchHits(query, 2, 0, null);
         final SearchHits limit3 = ops.searchHits(query, 3, 0, null);
-        assertEquals("limit=2 must return 2 hits", 2, limit2.hits().size());
-        assertEquals("limit=3 must return 3 hits", 3, limit3.hits().size());
+        assertEquals("limit=2 must return 2 hits", 2, limit2.getHits().size());
+        assertEquals("limit=3 must return 3 hits", 3, limit3.getHits().size());
         assertEquals("totalHits must reflect all 3 docs regardless of limit",
-                3L, limit2.totalHits().value());
+                3L, limit2.getTotalHits().value());
 
         // Repeat limit=2 → cache hit, same result
         final SearchHits limit2Again = ops.searchHits(query, 2, 0, null);
         assertEquals("Repeated limit=2 call must return same hit count (cache hit)",
-                limit2.hits().size(), limit2Again.hits().size());
+                limit2.getHits().size(), limit2Again.getHits().size());
         assertEquals("Repeated limit=2 call must return same totalHits (cache hit)",
-                limit2.totalHits().value(), limit2Again.totalHits().value());
+                limit2.getTotalHits().value(), limit2Again.getTotalHits().value());
 
         // Different offset → independent cache entry, different page
         final SearchHits page2 = ops.searchHits(query, 2, 1, null);
-        assertEquals("limit=2,offset=1 must return 2 hits (page 2)", 2, page2.hits().size());
+        assertEquals("limit=2,offset=1 must return 2 hits (page 2)", 2, page2.getHits().size());
         assertNotEquals("Page 2 must start at a different document than page 1",
-                page2.hits().get(0).id(), limit2.hits().get(0).id());
+                page2.getHits().get(0).getId(), limit2.getHits().get(0).getId());
     }
 
     // =========================================================================

@@ -58,8 +58,17 @@ RUN apt update && \
         libapr1 \
         libarchive-tools \
         libpq-dev \
+        libvips42 \
+        libheif-plugin-aomenc \
         apt-transport-https && \
     rm -rf /var/lib/apt/lists/*
+
+# libvips42 (Ubuntu 24.04 = libvips 8.15.1) backs the optional libvips image engine
+# (IMAGE_API_USE_LIBVIPS=true). The stock package bundles the PDF (poppler), HEIC/AVIF
+# decode (libheif), SVG (rsvg), WebP and JPEG-XL delegates. AVIF *encode* additionally
+# needs an AV1 encoder, supplied by libheif-plugin-aomenc (a Recommends that
+# --no-install-recommends would otherwise drop). The engine is off by default; when off
+# these libraries are simply unused.
 
 # Install PostgreSQL client, pg_dump and MS jaz (java launcher).
 # postgresql-common is installed and purged in the same layer so it does not

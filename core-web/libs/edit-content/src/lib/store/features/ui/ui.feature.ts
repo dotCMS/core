@@ -48,7 +48,8 @@ export function withUI() {
             /**
              * Computed property that returns the beta message visibility state
              */
-            isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible)
+            isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible),
+            localeSelectorTab: computed(() => store.uiState().localeSelectorTab ?? 'all')
         })),
         withMethods((store) => ({
             /**
@@ -95,6 +96,12 @@ export function withUI() {
                     activeSidebarTab: tab
                 };
                 patchState(store, { uiState: newState });
+            },
+
+            setLocaleSelectorTab(tab: 'all' | 'translated' | 'pending'): void {
+                patchState(store, {
+                    uiState: { ...store.uiState(), localeSelectorTab: tab }
+                });
             },
 
             /**

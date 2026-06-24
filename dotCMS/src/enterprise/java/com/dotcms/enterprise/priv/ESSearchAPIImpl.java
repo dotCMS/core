@@ -19,6 +19,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -75,9 +76,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		for (SearchHit sh : contents.getHits()) {
 			try {
 				Map<String, Object> sourceMap = sh.getSourceAsMap();
-				ContentletSearch conwrapper = new ContentletSearch();
-				conwrapper.setInode(sourceMap.get("inode").toString());
-				list.add(conwrapper);
+				list.add(ImmutableContentletSearch.builder()
+						.inode(sourceMap.get("inode").toString())
+						.build());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -105,6 +106,13 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         if (!UtilMethods.isSet(esQuery)) {
             throw new DotStateException("ES Query is null");
         }
+
+        // Normalize the query the same way esSearch() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity with esSearch(); idempotent when the
+        // caller already lowercased (esSearch delegates here after lowercasing).
+        esQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                esQuery, ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
 
         JSONObject completeQueryJSON;
 

@@ -6,11 +6,13 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.Lazy;
 import java.net.URI;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.TrustAllStrategy;
 import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.ssl.SSLContexts;
@@ -24,9 +26,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,7 +43,6 @@ class ConfigurableOpenSearchProvider {
     private static final String CERT_AUTH_TYPE = "CERT";
 
     private static final String HTTPS_PROTOCOL = "https";
-    private static final String HTTP_PROTOCOL = "http";
 
     private OpenSearchClient client;
     private OpenSearchTransport transport;
@@ -68,7 +66,7 @@ class ConfigurableOpenSearchProvider {
      */
     private void buildClient() {
         try {
-            OSClientConfig config = loadConfigurationFromProperties();
+            OSClientConfig config = configFromProperties();
             buildClient(config);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client from properties", e);
@@ -84,7 +82,10 @@ class ConfigurableOpenSearchProvider {
             transport = createTransport(config);
             client = new OpenSearchClient(transport);
 
-            Logger.info(this.getClass(), "OpenSearch client initialized successfully with endpoints: " + config.endpoints());
+            // The human-readable, masked configuration banner is logged once at startup by
+            // IndexStartupValidator (alongside the connection outcome). Here we keep only a quiet
+            // DEBUG line so runtime (re)builds remain observable without duplicating the banner.
+            Logger.debug(this.getClass(), "OpenSearch client built for endpoints: " + config.endpoints());
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client", e);
             throw new DotRuntimeException("Failed to build OpenSearch client", e);
@@ -92,9 +93,16 @@ class ConfigurableOpenSearchProvider {
     }
 
     /**
-     * Load configuration from dotCMS properties
+     * Resolves an {@link OSClientConfig} from dotCMS properties. Package-private and {@code static}
+     * so {@link IndexStartupValidator} (same package) can re-resolve the configuration from the same
+     * properties — for the startup banner and the endpoint-separation check — without exposing any
+     * configuration accessor outside this package or widening the {@link OSClientProvider} contract.
+     *
+     * <p>Resolution is deterministic from properties: the validator's re-resolution matches what the
+     * client is built with at startup. It is a re-resolution, not a readback of the live client's
+     * stored config; the two could only differ if properties changed without a client rebuild.</p>
      */
-    private OSClientConfig loadConfigurationFromProperties() {
+    static OSClientConfig configFromProperties() {
         Builder builder = OSClientConfig.builder();
 
         // Load endpoints
@@ -123,16 +131,16 @@ class ConfigurableOpenSearchProvider {
             }
         }
 
-        // Load TLS settings
+        // Load TLS settings — trust flags are always loaded so they apply even when
+        // OS_TLS_ENABLED=false but the endpoint scheme is https://
         boolean tlsEnabled = IndexConfigHelper.getBoolean(OSIndexProperty.TLS_ENABLED, false);
         builder.tlsEnabled(tlsEnabled);
+        builder.certRequired(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_CERT_REQUIRED, false));
+        builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
 
-        if (tlsEnabled) {
-            builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
-            String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
-            if (UtilMethods.isSet(caCert)) {
-                builder.caCertPath(caCert);
-            }
+        String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
+        if (UtilMethods.isSet(caCert)) {
+            builder.caCertPath(caCert);
         }
 
         // Load connection settings with defaults
@@ -152,7 +160,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Get default endpoints if not configured
      */
-    private String[] getDefaultEndpoints() {
+    private static String[] getDefaultEndpoints() {
         String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
         String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, HTTPS_PROTOCOL);
         int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
@@ -172,8 +180,8 @@ class ConfigurableOpenSearchProvider {
         builder.setHttpClientConfigCallback(httpClientBuilder -> {
             try {
                 configureAuthentication(httpClientBuilder, config);
-                configureTLS(httpClientBuilder, config);
-                configureTimeouts(httpClientBuilder, config);
+                configureRequestTimeouts(httpClientBuilder, config);
+                configureConnectionManager(httpClientBuilder, config);
                 return httpClientBuilder;
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error configuring HTTP client", e);
@@ -217,74 +225,78 @@ class ConfigurableOpenSearchProvider {
         }
 
         // JWT authentication will be handled via headers in the request interceptor
-        if (config.jwtToken().isPresent()) {
-            httpClientBuilder.addRequestInterceptorLast((request, entity, context) -> {
-                request.setHeader("Authorization", "Bearer " + config.jwtToken().get());
-            });
+        config.jwtToken().ifPresent(token -> {
+            httpClientBuilder.addRequestInterceptorLast(
+                (request, entity, context) -> request.setHeader("Authorization", "Bearer " + token));
             Logger.info(this.getClass(), "OpenSearch client configured with JWT authentication");
-        }
+        });
     }
 
     /**
-     * Configure TLS for HTTP client
+     * Configure request timeouts (connect + response).
      */
-    private void configureTLS(org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-                            OSClientConfig config) throws GeneralSecurityException {
-        if (!config.tlsEnabled()) {
-            return;
-        }
-
-        SSLContext sslContext;
-
-        if (config.clientCertPath().isPresent() && config.clientKeyPath().isPresent()) {
-            // Certificate-based authentication (would need PEM reader implementation)
-            Logger.warn(this.getClass(), "Certificate-based TLS not yet implemented, using trust-self-signed strategy");
-            sslContext = createTrustSelfSignedSSLContext();
-        } else if (config.trustSelfSigned()) {
-            sslContext = createTrustSelfSignedSSLContext();
-        } else {
-            sslContext = SSLContext.getDefault();
-        }
-
-        // For HttpClient5, SSL is configured via the connection manager
-        // This is a simplified approach - SSL context will be used by default connection manager
-        Logger.info(this.getClass(), "OpenSearch client configured with TLS");
-    }
-
-    /**
-     * Create SSL context that trusts self-signed certificates
-     */
-    private SSLContext createTrustSelfSignedSSLContext() throws GeneralSecurityException {
-        try {
-            return SSLContexts.custom()
-                .loadTrustMaterial(new TrustSelfSignedStrategy())
-                .build();
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            Logger.error(this.getClass(), "Error creating trust-self-signed SSL context", e);
-            throw new GeneralSecurityException("Failed to create SSL context", e);
-        }
-    }
-
-    /**
-     * Configure timeouts for HTTP client
-     */
-    private void configureTimeouts(org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-                                 OSClientConfig config) {
+    private void configureRequestTimeouts(
+            org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
+            OSClientConfig config) {
         org.apache.hc.client5.http.config.RequestConfig requestConfig =
             org.apache.hc.client5.http.config.RequestConfig.custom()
                 .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(config.connectionTimeout().toMillis()))
                 .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(config.socketTimeout().toMillis()))
                 .build();
-
         httpClientBuilder.setDefaultRequestConfig(requestConfig);
+    }
 
-        // Connection pool configuration for async client
+    /**
+     * Configure the async connection manager with TLS strategy and connection pool settings.
+     *
+     * <p>TLS is applied whenever the config has {@code tlsEnabled=true} OR any endpoint uses
+     * the {@code https} scheme. The trust strategy is resolved in priority order:
+     * skip-cert (default) → {@code trustSelfSigned} → JVM strict (when {@code certRequired=true}).
+     */
+    private void configureConnectionManager(
+            org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
+            OSClientConfig config) throws GeneralSecurityException {
+
         org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder connManagerBuilder =
             org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder.create()
                 .setMaxConnTotal(config.maxConnections())
                 .setMaxConnPerRoute(config.maxConnectionsPerRoute());
 
+        if (needsTls(config)) {
+            SSLContext sslContext = buildSSLContext(config);
+            ClientTlsStrategyBuilder tlsBuilder = ClientTlsStrategyBuilder.create()
+                .setSslContext(sslContext);
+            if (!config.certRequired()) {
+                tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            }
+            connManagerBuilder.setTlsStrategy(tlsBuilder.build());
+            Logger.info(this.getClass(), "OpenSearch TLS configured (certRequired=" + config.certRequired()
+                + ", trustSelfSigned=" + config.trustSelfSigned() + ")");
+        }
+
         httpClientBuilder.setConnectionManager(connManagerBuilder.build());
+    }
+
+    private boolean needsTls(OSClientConfig config) {
+        if (config.tlsEnabled()) {
+            return true;
+        }
+        return config.endpoints().stream()
+            .anyMatch(e -> e.toLowerCase().startsWith("https://"));
+    }
+
+    private SSLContext buildSSLContext(OSClientConfig config) throws GeneralSecurityException {
+        if (!config.certRequired()) {
+            return SSLContexts.custom()
+                .loadTrustMaterial(TrustAllStrategy.INSTANCE)
+                .build();
+        }
+        if (config.trustSelfSigned()) {
+            return SSLContexts.custom()
+                .loadTrustMaterial(new TrustSelfSignedStrategy())
+                .build();
+        }
+        return SSLContext.getDefault();
     }
 
     /**

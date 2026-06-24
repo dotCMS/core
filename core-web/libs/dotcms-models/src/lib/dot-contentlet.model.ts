@@ -24,7 +24,8 @@ export interface DotCMSContentlet {
     language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
-    lockedBy?: DotContentletLockUser;
+    lockedBy?: DotContentletLockUser | string;
+    lockedByName?: string;
     mimeType?: string;
     modDate: string;
     modUser: string;

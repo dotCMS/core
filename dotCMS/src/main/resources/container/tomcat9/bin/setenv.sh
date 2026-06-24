@@ -3,12 +3,55 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational "}
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true  -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
+# Auto-tune GC algorithm based on available vCPUs:
+#   1-3 cores → G1GC (default) + G1PeriodicGCInterval to return memory to OS on idle
+#   4+        → ZGC  (Java 25 uses GenerationalZGC by default; sub-ms pauses, scales with cores)
+# Override by setting JAVA_OPTS_MEMORY before this script runs.
+if [ -z "${JAVA_OPTS_MEMORY+set}" ]; then
+  _cpus=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 2)
+  _mem_base="-XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -Djdk.nio.maxCachedBufferSize=262144"
+
+  if [ "$_cpus" -le 3 ]; then
+    _gc="-XX:G1PeriodicGCInterval=10000"
+  else
+    _gc="-XX:+UseZGC"
+  fi
+
+  export JAVA_OPTS_MEMORY="$_mem_base $_gc"
+  echo "setenv: auto-GC: ${_gc} (${_cpus} vCPU; override via JAVA_OPTS_MEMORY)"
+fi
+
+# Calculate direct (off-heap) buffer memory based on container memory to prevent unbound growth 
+# can't use a percentage here so we have to calc it ourselves
+if [ -z "${JAVA_OPTS_DIRECT+set}" ]; then
+  _cg_limit=""
+  if [ -r /sys/fs/cgroup/memory.max ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)                   # cgroup v2
+  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null) # cgroup v1
+  fi
+  # Treat missing / "max" / non-numeric / > 256GB (i.e. no real limit) as unbounded.
+  if [ -z "$_cg_limit" ] || [ "$_cg_limit" = "max" ] \
+     || [ -n "$(printf '%s' "$_cg_limit" | tr -d '0-9')" ] \
+     || { [ "$_cg_limit" -gt 274877906944 ] 2>/dev/null; }; then
+    JAVA_OPTS_DIRECT=""
+  else
+    _pct=${DOT_DIRECT_MEM_PCT:-20}
+    _min=${DOT_DIRECT_MEM_MIN_MB:-128}
+    _max=${DOT_DIRECT_MEM_MAX_MB:-4096}
+    _mb=$(( _cg_limit / 1048576 * _pct / 100 ))
+    [ "$_mb" -lt "$_min" ] && _mb=$_min
+    [ "$_mb" -gt "$_max" ] && _mb=$_max
+    JAVA_OPTS_DIRECT="-XX:MaxDirectMemorySize=${_mb}m"
+    echo "setenv: ${JAVA_OPTS_DIRECT} (${_pct}% of $(( _cg_limit / 1048576 ))MB cgroup limit; override via DOT_DIRECT_MEM_PCT / DOT_DIRECT_MEM_MIN_MB / DOT_DIRECT_MEM_MAX_MB / JAVA_OPTS_DIRECT)"
+  fi
+  export JAVA_OPTS_DIRECT
+fi
 
 # $CMS_JAVA_OPTS is last so it trumps them all
-export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
+export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $JAVA_OPTS_DIRECT $CMS_JAVA_OPTS"}
 
 # Asset and Internal Paths
 export DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:-"/data/shared/assets"}
@@ -99,7 +142,7 @@ export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE:-"true"}
 
 # Remote IP Valve settings
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}
-export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|169\\.254\\.\\d{1,3}\\.\\d{1,3}|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|0:0:0:0:0:0:0:1"}
+export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"(10|127)\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1"}
 # Cookie settings
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 
@@ -112,17 +155,14 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
 
 # Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
-# jaz is a transparent shim that invokes `java` from PATH, adding crash-dump
-# capture and arg validation. Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
-# Set _RUNJAVA=/java/bin/java to bypass jaz.
-if [ -z "$_RUNJAVA" ] && command -v jaz >/dev/null 2>&1; then
+# Set JAZ_IGNORE_USER_TUNING=1 to use jaz.
+if [ -n "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
   export _RUNJAVA="$(command -v jaz)"
 fi
 
 # This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-
-export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8"
+export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8 --enable-native-access=ALL-UNNAMED "
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.lang=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED"
@@ -144,7 +184,6 @@ export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.nio.cs=ALL-UNNAME
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.calendar=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.locale=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
-
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"

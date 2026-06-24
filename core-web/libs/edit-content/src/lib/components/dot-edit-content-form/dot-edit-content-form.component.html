@@ -1,19 +1,7 @@
 @let contentType = $store.contentType();
 @let contentlet = $store.contentlet();
 @let showSidebar = $store.isSidebarOpen();
-@let actions = $store.getActions();
-@let showWorkflowActions = $store.showWorkflowActions();
 @let activeIndex = $store.activeTab();
-
-<!--Locales-->
-@let currentLocale = $store.currentLocale();
-@let currentLocaleId = currentLocale ? currentLocale.id.toString() : '';
-@let currentIdentifier = $store.currentIdentifier();
-
-<!--Lock-->
-@let isContentLocked = $store.isContentLocked();
-@let canLock = $store.canLock();
-@let lockSwitchLabel = $store.lockSwitchLabel();
 @let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
@@ -31,9 +19,10 @@
             <ng-template
                 dotTabViewInsert
                 [dotTabViewAppend]="appendContent"
-                [dotTabViewAppendContext]="$appendContext" />
+                [dotTabViewAppendContext]="$appendContext()" />
 
-            <p-tablist class="border-b border-[var(--p-inputtext-border-color)] px-8">
+            <p-tablist
+                class="min-h-[53px] border-b border-surface-200 px-8 [&_.p-tab]:h-full [&_.p-tablist-tab-list]:h-full">
                 <!--
                 WARNING: TABS MUST NOT BE LAZY!
                 Custom fields need to execute code that doesn't depend on whether the tab is active or not.
@@ -45,7 +34,9 @@
                     </p-tab>
                 }
             </p-tablist>
-            <p-tabpanels>
+            <!-- Zero the tabpanel's own padding; the inner content div (p-4) is the single
+                 source of content padding, so the panel doesn't double-pad. -->
+            <p-tabpanels class="[&_.p-tabpanel]:p-0!">
                 @for (tab of tabs; track tab; let i = $index) {
                     <p-tabpanel [value]="i">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
@@ -56,20 +47,24 @@
 
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
-            @if ($shouldRenderFields()) {
-                @let hiddenFields = $store.hiddenFields();
-                <div class="p-4">
-                    @for (row of tab.layout; track row) {
-                        <div
-                            class="grid grid-flow-col auto-cols-fr gap-4 mb-4 last:mb-0"
-                            [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
-                            data-testId="row">
-                            @for (column of row.columns; track column) {
-                                <div
-                                    class="flex flex-col gap-4"
-                                    [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
-                                    data-testId="column">
-                                    @for (field of column.fields; track field) {
+            @let hiddenFields = $store.hiddenFields();
+            <div class="p-4">
+                @for (row of tab.layout; track row) {
+                    <div
+                        class="mb-4 grid auto-cols-fr grid-flow-col gap-4 last:mb-0"
+                        [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
+                        data-testId="row">
+                        @for (column of row.columns; track column) {
+                            <div
+                                class="flex flex-col gap-4"
+                                [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
+                                data-testId="column">
+                                @for (field of column.fields; track field) {
+                                    @if (
+                                        isPreservedField(field.fieldType)
+                                            ? $shouldRenderPreservedFields()
+                                            : $shouldRenderFields()
+                                    ) {
                                         <dot-edit-content-field
                                             [contentType]="contentType"
                                             [contentlet]="contentlet"
@@ -80,12 +75,12 @@
                                             "
                                             data-testId="field" />
                                     }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </ng-template>
     </form>
 }
@@ -93,37 +88,25 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="flex items-center w-full min-h-[50px] gap-4 ml-auto"
+        class="ml-auto flex min-h-12 w-full items-center gap-2"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
-        <!-- Left group for lock controls -->
-        @if (!$store.isViewingHistoricalVersion()) {
-            @if (canLock) {
-                <div
-                    class="flex items-center gap-2"
-                    [class.locked]="isContentLocked"
-                    data-testid="content-lock-controls">
-                    <p-toggleSwitch
-                        [ngModel]="isContentLocked"
-                        [disabled]="!canLock"
-                        (onChange)="onContentLockChange($event)"
-                        inputId="lockSwitch"
-                        data-testId="content-lock-switch" />
-                    <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
-                </div>
-            }
-        }
-
         @if ($store.isViewingHistoricalVersion()) {
-            <!-- Historical version actions - only Restore -->
-            <button
-                pButton
-                (click)="$store.restoreCurrentHistoricalVersion()"
-                data-testId="restore-historical-version-button">
-                {{ 'edit.content.sidebar.history.restore' | dm }}
-            </button>
-            <!-- Compare button hidden as requested -->
+            <span class="text-sm text-gray-500" data-testId="previewing-label">
+                {{ 'edit.content.sidebar.history.previewing' | dm }}
+                {{ $store.contentlet()?.modDate | dotRelativeDate }}
+            </span>
         } @else {
+            <!-- Status badge: the shared component derives its label + severity from the
+                 contentlet state (a brand-new contentlet has no state yet, so it shows
+                 the translated "New"). -->
+            <dot-contentlet-status-badge
+                [state]="$statusState()"
+                data-testId="content-status-tag" />
+
+            <!-- Vertical separator between the status tag and the actions -->
+            <div class="my-2 h-6 border-l border-surface-200" data-testId="status-separator"></div>
+
             <!-- Normal actions -->
             @if ($showPreviewLink()) {
                 <button pButton [text]="true" data-testId="preview-button" (click)="showPreview()">
@@ -131,27 +114,22 @@
                 </button>
             }
 
-            @if (showWorkflowActions) {
-                <dot-workflow-actions
-                    data-testId="workflow-actions"
-                    [loading]="$store.isSaving()"
-                    [disabled]="$store.isSaving()"
-                    (actionFired)="
-                        fireWorkflowAction({
-                            workflow: $event,
-                            inode: contentlet?.inode,
-                            contentType: contentType.variable,
-                            languageId: currentLocaleId,
-                            identifier: currentIdentifier
-                        })
-                    "
-                    [actions]="actions" />
+            <!-- Overflow actions menu, only for existing content -->
+            @if (!$store.isNew()) {
+                <dot-edit-content-command-bar-actions
+                    [contentlet]="$store.contentlet()"
+                    [identifier]="$store.currentIdentifier() ?? ''"
+                    [languageId]="$store.contentlet()?.languageId ?? 0"
+                    [isPage]="$store.isPage()"
+                    [hasReferences]="$hasReferences()"
+                    [title]="$store.contentlet()?.title ?? ''"
+                    data-testId="command-bar-actions" />
             }
         }
 
         <!-- Sidebar toggle: always visible, icon reflects open/closed state (matches UVE pattern) -->
         <div
-            class="flex items-center min-h-[52px] shrink-0 justify-center -mr-4"
+            class="-mr-4 flex min-h-[52px] shrink-0 items-center justify-center"
             data-testId="sidebar-toggle">
             <p-button
                 [rounded]="true"

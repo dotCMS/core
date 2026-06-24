@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.listeners.SessionMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
@@ -13,15 +14,19 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
@@ -35,9 +40,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -49,6 +58,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -66,17 +76,28 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.management.LockInfo;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -991,6 +1012,255 @@ public class MaintenanceResource implements Serializable {
                 jobHelper().getLatestJob(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE));
     }
 
+    // -------------------------------------------------------------------------
+    //  Session management endpoints — back the Logged Users tab
+    // -------------------------------------------------------------------------
+
+    /**
+     * HTTP session attribute that holds the CSRF token issued by
+     * {@link #listSessions} and required by {@link #killSession}.
+     */
+    @VisibleForTesting
+    static final String CSRF_TOKEN_ATTRIBUTE = "maintenanceSessionCsrf";
+
+    /**
+     * HTTP session attribute that holds the {@link Instant} at which the
+     * {@link #CSRF_TOKEN_ATTRIBUTE} was issued. Used to enforce the 15-minute expiry.
+     */
+    @VisibleForTesting
+    static final String CSRF_TOKEN_TIMESTAMP_ATTRIBUTE = "maintenanceSessionCsrfTimestamp";
+
+    /**
+     * Lifetime of a CSRF token issued by {@link #listSessions}. After this window
+     * a subsequent call to {@link #killSession} will return 403 and the client
+     * must call {@link #listSessions} again to refresh the token.
+     */
+    private static final Duration CSRF_TOKEN_EXPIRY = Duration.ofMinutes(15);
+
+    /**
+     * Lists all active HTTP sessions tracked by {@link SessionMonitor}. Issues a fresh
+     * CSRF token, stores it in the caller's HTTP session, and uses it to HMAC each
+     * real session id before returning. Real session ids are never sent to the client.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return All active sessions with HMAC-obfuscated tokens.
+     */
+    @Operation(
+            summary = "List active HTTP sessions",
+            description = "Returns every active HTTP session tracked by SessionMonitor. "
+                    + "Real session ids are never exposed; each entry instead carries a "
+                    + "short HMAC-derived token that must be passed back to "
+                    + "DELETE /v1/maintenance/_sessions/{token} to invalidate the session. "
+                    + "The CSRF secret used to derive these tokens is stored in the caller's "
+                    + "HTTP session and is valid for 15 minutes — re-call this endpoint to refresh."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "List of active sessions",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySessionListView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_sessions")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySessionListView listSessions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final HttpSession callingSession = request.getSession();
+        final String csrfToken = UUID.randomUUID().toString();
+        callingSession.setAttribute(CSRF_TOKEN_ATTRIBUTE, csrfToken);
+        callingSession.setAttribute(CSRF_TOKEN_TIMESTAMP_ATTRIBUTE, Instant.now());
+
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+        final List<SessionView> sessions = new ArrayList<>();
+
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            User sessionUser = Try.of(() -> PortalUtil.getUser(session)).getOrNull();
+            if (sessionUser == null) {
+                Logger.warn(this, "Could not resolve user for a tracked session in /_sessions (PortalUtil.getUser returned null or failed); falling back to anonymous user");
+                sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
+                        .getOrElseThrow(e -> new DotRuntimeException(
+                                "Could not resolve session user (primary PortalUtil.getUser returned null or failed) and the anonymous-user fallback also failed", e));
+            }
+
+            sessions.add(SessionView.builder()
+                    .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
+                    .isCurrent(callingSession.getId().equals(session.getId()))
+                    .userId(sessionUser.getUserId())
+                    .userEmail(sessionUser.getEmailAddress())
+                    .userFullName(sessionUser.getFullName())
+                    .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
+                    .sessionTime(DateUtil.prettyDateSince(
+                            new Date(session.getCreationTime()),
+                            PublicCompanyFactory.getDefaultCompany().getLocale()))
+                    .build());
+        }
+
+        return new ResponseEntitySessionListView(sessions);
+    }
+
+    /**
+     * Invalidates a single session identified by its HMAC-obfuscated token.
+     * <p>
+     * Requires a fresh CSRF secret stored in the caller's HTTP session (issued by
+     * {@link #listSessions}); the caller cannot invalidate its own session.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param token    HMAC-obfuscated session token returned by {@link #listSessions}
+     * @return A success message when the session was invalidated.
+     */
+    @Operation(
+            summary = "Invalidate a single session",
+            description = "Invalidates the session whose HMAC-obfuscated token is supplied. "
+                    + "The caller's own session cannot be invalidated this way. The CSRF secret "
+                    + "must have been issued by GET /v1/maintenance/_sessions within the last "
+                    + "15 minutes — otherwise this endpoint returns 403 and the client must "
+                    + "re-list to refresh."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Session invalidated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - attempting to invalidate caller's own session",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - missing or expired CSRF token, or insufficient role",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No active session matches the supplied token",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_sessions/{token}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityStringView killSession(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "HMAC-obfuscated session token returned by GET /_sessions",
+                    required = true)
+            @PathParam("token") final String token) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        if (!UtilMethods.isSet(token)) {
+            throw new BadRequestException("token path parameter is required");
+        }
+
+        final HttpSession callingSession = request.getSession();
+        final String csrfSecret = getValidCsrfSecret(callingSession);
+
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            if (!SessionTokenUtil.validateSessionId(session.getId(), csrfSecret, token)) {
+                continue;
+            }
+            if (callingSession.getId().equals(session.getId())) {
+                throw new BadRequestException("Cannot invalidate your own session");
+            }
+
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format("User '%s' invalidating session of user '%s' from ip: %s",
+                            user.getUserId(),
+                            Try.of(() -> PortalUtil.getUser(session).getUserId())
+                                    .getOrElse("unknown"),
+                            request.getRemoteAddr()));
+
+            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+            session.invalidate();
+            return new ResponseEntityStringView("Session invalidated");
+        }
+
+        throw new NotFoundException("No active session matches the supplied token");
+    }
+
+    /**
+     * Invalidates every active HTTP session except the caller's own.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return The number of sessions invalidated.
+     */
+    @Operation(
+            summary = "Invalidate all sessions except the caller's",
+            description = "Walks every active HTTP session tracked by SessionMonitor, "
+                    + "skips the caller's own session, and invalidates the rest. "
+                    + "Returns the count of invalidated sessions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Sessions invalidated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityKillSessionsResultView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_sessions")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityKillSessionsResultView killAllSessions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+        final HttpSession callingSession = request.getSession();
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' is invalidating all other sessions from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
+
+        int killed = 0;
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            if (callingSession.getId().equals(session.getId())) {
+                continue;
+            }
+            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+            session.invalidate();
+            killed++;
+        }
+
+        return new ResponseEntityKillSessionsResultView(
+                KillSessionsResultView.builder().killedCount(killed).build());
+    }
+
+    /**
+     * Returns the unexpired CSRF secret previously stored by {@link #listSessions},
+     * or throws {@link ForbiddenException} if it is missing or older than
+     * {@link #CSRF_TOKEN_EXPIRY}.
+     */
+    private static String getValidCsrfSecret(final HttpSession callingSession) {
+        final String csrf = (String) callingSession.getAttribute(CSRF_TOKEN_ATTRIBUTE);
+        final Object rawTimestamp = callingSession.getAttribute(CSRF_TOKEN_TIMESTAMP_ATTRIBUTE);
+        if (csrf == null || !(rawTimestamp instanceof Instant)
+                || Instant.now().isAfter(((Instant) rawTimestamp).plus(CSRF_TOKEN_EXPIRY))) {
+            throw new ForbiddenException("CSRF token is missing or expired; call GET /_sessions to refresh");
+        }
+        return csrf;
+    }
+
     /**
      * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Uses the full
      * double-checked locking pattern (volatile field + synchronized inner block) so that at
@@ -1007,6 +1277,404 @@ public class MaintenanceResource implements Serializable {
             }
         }
         return local;
+    }
+
+    // -------------------------------------------------------------------------
+    //  Thread diagnostics endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Captures a structured JVM thread dump including stack traces, lock info, and deadlock
+     * detection. Replaces the legacy DWR call {@code ThreadMonitorTool.getThreads(boolean)} which
+     * returned an HTML {@code <pre>} blob — this endpoint returns JSON for the Angular UI.
+     *
+     * @param request    The current {@link HttpServletRequest}
+     * @param response   The current {@link HttpServletResponse}
+     * @param hideSystem When {@code true} (default), only includes threads whose stack trace
+     *                   contains a {@code com.dotmarketing} or {@code com.dotcms} frame.
+     * @return Structured thread dump
+     */
+    @Operation(
+            summary = "JVM thread dump",
+            description = "Returns a full JVM thread dump as structured JSON, including state, "
+                    + "priority, stack traces, locked monitors/synchronizers, and deadlock "
+                    + "detection. Use hideSystem=true (default) to filter to dotCMS threads only."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Thread dump captured",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityThreadDumpView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_threads")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityThreadDumpView getThreadDump(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "When true (default), only return threads with com.dotmarketing or com.dotcms frames")
+            @DefaultValue("true") @QueryParam("hideSystem") final boolean hideSystem) {
+
+        assertBackendUser(request, response);
+
+        final ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+        final ThreadInfo[] infos = mxBean.dumpAllThreads(true, true);
+
+        final long[] deadLockedIds = mxBean.findDeadlockedThreads();
+        final Set<Long> deadlocks = new HashSet<>();
+        if (deadLockedIds != null) {
+            for (final long id : deadLockedIds) {
+                deadlocks.add(id);
+            }
+        }
+
+        // ThreadInfo doesn't expose daemon/priority — look them up via the live Thread map.
+        final Map<Long, Thread> threadMap = new HashMap<>();
+        for (final Thread t : Thread.getAllStackTraces().keySet()) {
+            threadMap.put(t.getId(), t);
+        }
+
+        final List<ThreadDescriptorView> threads = new ArrayList<>();
+        for (final ThreadInfo info : infos) {
+            final Thread thread = threadMap.get(info.getThreadId());
+            final boolean isDeadlocked = deadlocks.contains(info.getThreadId());
+
+            // Always include deadlocked threads so deadlockedCount matches the visible threads —
+            // an operator triaging an incident must never see "deadlockedCount: 3" with zero
+            // deadlocked threads in the list.
+            if (hideSystem && !isDeadlocked && !containsDotCMSFrame(info.getStackTrace())) {
+                continue;
+            }
+
+            final List<String> stack = new ArrayList<>();
+            for (final StackTraceElement ste : info.getStackTrace()) {
+                stack.add(ste.toString());
+            }
+
+            final List<String> monitors = new ArrayList<>();
+            for (final MonitorInfo mi : info.getLockedMonitors()) {
+                monitors.add(mi.getClassName() + " at depth " + mi.getLockedStackDepth());
+            }
+
+            final List<String> syncs = new ArrayList<>();
+            for (final LockInfo li : info.getLockedSynchronizers()) {
+                syncs.add(li.toString());
+            }
+
+            // thread can be null if it terminated between dumpAllThreads() and the live-thread
+            // map snapshot; ThreadInfo still has everything except daemon/priority, so emit with
+            // conservative defaults rather than dropping the descriptor entirely.
+            final boolean daemon = thread != null && thread.isDaemon();
+            final int priority = thread != null ? thread.getPriority() : Thread.NORM_PRIORITY;
+            final String state = thread != null
+                    ? thread.getState().name()
+                    : info.getThreadState().name();
+
+            final ThreadDescriptorView.Builder builder = ThreadDescriptorView.builder()
+                    .name(info.getThreadName())
+                    .id(info.getThreadId())
+                    .daemon(daemon)
+                    .priority(priority)
+                    .state(state)
+                    .deadlocked(isDeadlocked)
+                    .stackTrace(stack)
+                    .lockedMonitors(monitors)
+                    .lockedSynchronizers(syncs);
+
+            final LockInfo lockInfo = info.getLockInfo();
+            if (lockInfo != null) {
+                builder.lockInfo(lockInfo.toString())
+                        .lockOwnerName(info.getLockOwnerName())
+                        .lockOwnerId(info.getLockOwnerId());
+            }
+
+            threads.add(builder.build());
+        }
+
+        final ThreadDumpView dump = ThreadDumpView.builder()
+                .serverId(currentServerId())
+                .serverName(currentServerName())
+                .timestamp(new Date().toString())
+                .vmInfo(System.getProperty("java.vm.name") + " "
+                        + System.getProperty("java.runtime.version"))
+                .threadCount(threads.size())
+                .deadlockedCount(deadlocks.size())
+                .threads(threads)
+                .build();
+
+        return new ResponseEntityThreadDumpView(dump);
+    }
+
+    /**
+     * Returns lightweight JVM startup and thread-count information. Replaces the legacy DWR
+     * call {@code ThreadMonitorTool.getSysProps()} which returned a {@code Map<String,String>}
+     * of pre-formatted strings; this endpoint also exposes raw millis values so the UI can
+     * compute uptime client-side.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return JVM startup time and thread counts
+     */
+    @Operation(
+            summary = "JVM thread info",
+            description = "Returns lightweight JVM startup and thread-count summary "
+                    + "(start time, uptime, current and peak thread count)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "JVM thread info",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityThreadSystemInfoView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_threads/info")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityThreadSystemInfoView getThreadInfo(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final RuntimeMXBean rmxbean = ManagementFactory.getRuntimeMXBean();
+        final ThreadMXBean tb = ManagementFactory.getThreadMXBean();
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        final long startTimeMillis = rmxbean.getStartTime();
+
+        final ThreadSystemInfoView info = ThreadSystemInfoView.builder()
+                .serverId(currentServerId())
+                .serverName(currentServerName())
+                .systemStartupTime(sdf.format(new Date(startTimeMillis)))
+                .startTimeMillis(startTimeMillis)
+                .uptimeMillis(rmxbean.getUptime())
+                .currentThreadCount(tb.getThreadCount())
+                .peakThreadCount(tb.getPeakThreadCount())
+                .build();
+
+        return new ResponseEntityThreadSystemInfoView(info);
+    }
+
+    private static String currentServerId() {
+        return APILocator.getServerAPI().readServerId();
+    }
+
+    private static String currentServerName() {
+        return Try.of(() -> {
+            final Server s = APILocator.getServerAPI().getCurrentServer();
+            return s != null ? s.getName() : null;
+        }).getOrNull();
+    }
+
+    private static boolean containsDotCMSFrame(final StackTraceElement[] stack) {
+        for (final StackTraceElement ste : stack) {
+            final String cls = ste.getClassName();
+            if (cls.startsWith("com.dotmarketing") || cls.startsWith("com.dotcms")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Lists all Quartz scheduler jobs across every job group, with trigger details
+     * including next fire time, misfire policy, and current running status.
+     * <p>
+     * Jobs whose detail or trigger cannot be loaded (e.g. {@code ClassNotFoundException}
+     * after an upgrade removed the job class) are still surfaced with an {@code error}
+     * field so they can be deleted via {@link #deleteSystemJob}. Jobs with no trigger
+     * are skipped, mirroring the legacy {@code system_jobs.jsp} behavior.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return List of Quartz job descriptors.
+     */
+    @Operation(
+            summary = "List Quartz scheduler jobs",
+            description = "Returns every Quartz scheduler job across all job groups, with "
+                    + "trigger details (next fire time, misfire instruction) and current "
+                    + "running status. Errored jobs (e.g. class not found after upgrade) "
+                    + "are returned with an 'error' field so admins can clean them up. "
+                    + "Note: these are Quartz scheduler jobs, NOT the JobQueueManager "
+                    + "jobs exposed at /api/v1/jobs — those are a separate system."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "List of Quartz scheduler jobs",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySystemJobListView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_systemJobs")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySystemJobListView listSystemJobs(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final List<Map<String, Object>> jobs = new ArrayList<>();
+        final org.quartz.Scheduler scheduler = QuartzUtils.getScheduler();
+        final SimpleDateFormat fireTimeFormat = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+        final String[] groups;
+        try {
+            groups = scheduler.getJobGroupNames();
+        } catch (Exception e) {
+            Logger.error(this, "Unable to read Quartz job group names: " + e.getMessage(), e);
+            throw new DotRuntimeException("Unable to read Quartz scheduler groups", e);
+        }
+
+        for (final String group : groups) {
+            final String[] taskNames;
+            try {
+                taskNames = scheduler.getJobNames(group);
+            } catch (Exception e) {
+                Logger.warn(this, "Unable to read job names for group '" + group + "': " + e.getMessage());
+                continue;
+            }
+
+            for (final String taskName : taskNames) {
+                try {
+                    final JobDetail detail = scheduler.getJobDetail(taskName, group);
+                    final Trigger[] triggers = scheduler.getTriggersOfJob(taskName, group);
+                    final Trigger trigger = (triggers != null && triggers.length > 0) ? triggers[0] : null;
+                    if (trigger == null) {
+                        continue;
+                    }
+
+                    final Map<String, Object> job = new LinkedHashMap<>();
+                    job.put("name", taskName);
+                    job.put("className", detail.getJobClass().getSimpleName());
+                    job.put("group", group);
+                    job.put("durable", detail.isDurable());
+                    job.put("stateful", detail.isStateful());
+                    job.put("volatile", detail.isVolatile());
+                    job.put("running", QuartzUtils.isJobRunning(detail.getName(), detail.getGroup()));
+
+                    if (trigger.getNextFireTime() != null) {
+                        job.put("nextFireTime", trigger.getNextFireTime().getTime());
+                        job.put("nextFireTimeFormatted",
+                                fireTimeFormat.format(trigger.getNextFireTime()));
+                    }
+
+                    if (trigger instanceof CronTrigger) {
+                        final int misfire = trigger.getMisfireInstruction();
+                        if (misfire == CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING) {
+                            job.put("misfireInstruction", "DO_NOTHING");
+                        } else if (misfire == CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW) {
+                            job.put("misfireInstruction", "FIRE_ONCE_NOW");
+                        } else {
+                            job.put("misfireInstruction", "UNKNOWN");
+                        }
+                    }
+
+                    jobs.add(job);
+                } catch (Exception e) {
+                    final Map<String, Object> errorJob = new LinkedHashMap<>();
+                    errorJob.put("name", taskName);
+                    errorJob.put("group", group);
+                    errorJob.put("error", e.getMessage());
+                    jobs.add(errorJob);
+                }
+            }
+        }
+
+        return new ResponseEntitySystemJobListView(jobs);
+    }
+
+    /**
+     * Deletes a Quartz scheduler job by its group and name. Primarily used to remove
+     * errored jobs that can no longer execute (e.g., class not found after an upgrade).
+     * Returns 404 if the job does not exist in the scheduler.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param group    Quartz job group name
+     * @param name     Quartz job name
+     * @return Confirmation containing the deleted job's name and group.
+     */
+    @Operation(
+            summary = "Delete a Quartz scheduler job",
+            description = "Removes a Quartz scheduler job (and all associated triggers) "
+                    + "from the scheduler by its group and name. Used to clean up errored "
+                    + "or orphaned jobs after upgrades. Returns 404 if no matching job "
+                    + "exists in the scheduler."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Job deleted",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySystemJobDeleteView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No job matches the supplied group and name",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_systemJobs/{group}/{name}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySystemJobDeleteView deleteSystemJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "Quartz job group name", required = true)
+            @PathParam("group") final String group,
+            @Parameter(description = "Quartz job name", required = true)
+            @PathParam("name") final String name) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        Logger.info(this, "Deleting Quartz job with name=" + name + " and group=" + group);
+        SecurityLogger.logInfo(this.getClass(), String.format(
+                "User '%s' (ip=%s) is deleting Quartz job name='%s' group='%s'",
+                user.getUserId(), request.getRemoteAddr(), name, group));
+
+        final boolean removed;
+        try {
+            removed = QuartzUtils.removeJob(name, group);
+        } catch (Exception e) {
+            Logger.error(this, "Failed to delete Quartz job name=" + name + " group=" + group
+                    + ": " + e.getMessage(), e);
+            throw new DotRuntimeException("Failed to delete Quartz job: " + e.getMessage(), e);
+        }
+
+        if (!removed) {
+            throw new NotFoundException(String.format(
+                    "No Quartz job found with name='%s' and group='%s'", name, group));
+        }
+
+        Logger.info(this, "Quartz job with name=" + name + " and group=" + group + " deleted");
+
+        final Map<String, Object> result = new LinkedHashMap<>();
+        result.put("deleted", true);
+        result.put("name", name);
+        result.put("group", group);
+        return new ResponseEntitySystemJobDeleteView(result);
     }
 
     /**

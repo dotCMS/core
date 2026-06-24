@@ -66,7 +66,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.HashSet;
 import java.util.Set;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -736,20 +737,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     query = query.replace("{2}", String.valueOf(limit));
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("recent-contents");
-      JSONArray ja = jo.getJSONArray("buckets");
-      List<ContentType> ret = new ArrayList<>();
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject joe = ja.getJSONObject(i);
-        String var = joe.getString("key");
-
-        ret.add(find(var));
+      final List<ContentType> ret = new ArrayList<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("recent-contents", List.of())) {
+        ret.add(find(bucket.key()));
       }
-
-
 
       return ImmutableList.copyOf(ret);
     } catch (Exception e) {
@@ -781,21 +776,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     String query = queryBuilder.toString();
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("sterms#entries");
-      JSONArray ja = jo.getJSONArray("buckets");
-
-      Map<String, Long> result = new HashMap<>();
-
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject jsonObject = ja.getJSONObject(i);
-        String contentTypeName = jsonObject.getString("key");
-        long count = jsonObject.getLong("doc_count");
-
-        result.put(contentTypeName, count);
+      final Map<String, Long> result = new HashMap<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("entries", java.util.List.of())) {
+          result.put(bucket.key(), bucket.docCount());
       }
-
       return result;
     } catch (Exception e) {
       throw new DotStateException(e);

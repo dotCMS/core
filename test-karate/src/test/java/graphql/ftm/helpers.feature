@@ -23,7 +23,7 @@ Feature: Reusable Functions and Helpers
             {
               "contentType": contentType,
               "title": title,
-              "host":"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+              "hostFolder":"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
             }
           ]
         };

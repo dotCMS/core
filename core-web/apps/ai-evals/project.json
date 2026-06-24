@@ -1,0 +1,92 @@
+{
+    "name": "ai-evals",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/ai-evals/src",
+    "projectType": "application",
+    "targets": {
+        "build": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "platform": "node",
+                "outputPath": "dist/apps/ai-evals",
+                "format": ["cjs"],
+                "bundle": false,
+                "main": "apps/ai-evals/src/main.ts",
+                "tsConfig": "apps/ai-evals/tsconfig.app.json",
+                "assets": ["apps/ai-evals/src/assets"],
+                "generatePackageJson": true,
+                "esbuildOptions": {
+                    "sourcemap": true,
+                    "outExtension": {
+                        ".js": ".js"
+                    }
+                }
+            },
+            "configurations": {
+                "development": {},
+                "production": {
+                    "esbuildOptions": {
+                        "sourcemap": false,
+                        "outExtension": {
+                            ".js": ".js"
+                        }
+                    }
+                }
+            }
+        },
+        "prune-lockfile": {
+            "dependsOn": ["build"],
+            "cache": true,
+            "executor": "@nx/js:prune-lockfile",
+            "outputs": [
+                "{workspaceRoot}/dist/apps/ai-evals/package.json",
+                "{workspaceRoot}/dist/apps/ai-evals/pnpm-lock.yaml"
+            ],
+            "options": {
+                "buildTarget": "build"
+            }
+        },
+        "copy-workspace-modules": {
+            "dependsOn": ["build"],
+            "cache": true,
+            "outputs": ["{workspaceRoot}/dist/apps/ai-evals/workspace_modules"],
+            "executor": "@nx/js:copy-workspace-modules",
+            "options": {
+                "buildTarget": "build"
+            }
+        },
+        "prune": {
+            "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+            "executor": "nx:noop"
+        },
+        "smoke": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsx --tsconfig tsconfig.base.json apps/ai-evals/src/main.ts",
+                "cwd": "{workspaceRoot}",
+                "forwardAllArgs": true
+            }
+        },
+        "serve": {
+            "continuous": true,
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "ai-evals:build",
+                "runBuildTargetDependencies": false
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "ai-evals:build:development"
+                },
+                "production": {
+                    "buildTarget": "ai-evals:build:production"
+                }
+            }
+        }
+    },
+    "tags": ["scope:agentic"]
+}

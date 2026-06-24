@@ -12,6 +12,7 @@ import { Router, UrlSegment } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
@@ -70,6 +71,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotLocalstorageService,
                 useValue: defaultLocalStorageMock
             },
+            mockProvider(LoginService, { currentUserLanguageId: 'en-US' }),
             mockProvider(Router)
         ]
     });

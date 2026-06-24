@@ -22,8 +22,9 @@ import { generateBase64Credentials } from '@utils/generateBase64Credential';
  * - The p-dialog host (data-testid="dot-wizard") is always "hidden" in Playwright
  *   because PrimeNG's appendTo="body" moves the visual content to the body portal.
  *   Inner elements (.dot-wizard__view) ARE in the portal and detect wizard visibility.
- * - The wizard action may render as an inline p-button or inside the overflow (...)
- *   popup menu depending on how many actions fit in the toolbar viewport.
+ * - Workflow actions live in the sidebar's Actions tab (data-testid="sidebar-workflow-actions"),
+ *   which is the tab selected by default. In stacked mode every action renders as a full-width
+ *   p-button labelled with the action name — there is no overflow (...) menu.
  */
 
 function authHeaders() {
@@ -38,26 +39,16 @@ async function navigateToContent(page: import('@playwright/test').Page, inode: s
 }
 
 async function openWizardDialog(page: import('@playwright/test').Page, actionName: string) {
-    await page.getByTestId('workflow-actions').waitFor({ state: 'visible', timeout: 15000 });
+    // The sidebar Actions tab is selected by default, so the stacked workflow-action buttons
+    // are visible without switching tabs. Each action renders as a full-width button labelled
+    // with the action name (no overflow menu in stacked mode), so click it directly.
+    await page
+        .getByTestId('sidebar-workflow-actions')
+        .waitFor({ state: 'visible', timeout: 15000 });
 
-    const inlineButton = page.getByRole('button', { name: actionName });
-    const overflowButton = page.getByTestId('overflow-button');
-
-    // Wait for either the inline button or the overflow trigger to appear before
-    // checking which path to take — count() has no timeout so we must wait first.
-    await Promise.race([
-        inlineButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
-        overflowButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null)
-    ]);
-
-    if ((await inlineButton.count()) > 0) {
-        await inlineButton.click();
-    } else {
-        await overflowButton.click();
-        const menuItem = page.getByRole('menuitem', { name: actionName });
-        await menuItem.waitFor({ state: 'visible', timeout: 5000 });
-        await menuItem.click();
-    }
+    const actionButton = page.getByRole('button', { name: actionName });
+    await actionButton.waitFor({ state: 'visible', timeout: 10000 });
+    await actionButton.click();
 
     await page.locator('.dot-wizard__view').waitFor({ state: 'visible', timeout: 10000 });
 }

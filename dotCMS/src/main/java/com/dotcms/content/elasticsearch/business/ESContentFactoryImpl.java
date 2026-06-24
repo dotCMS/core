@@ -2092,7 +2092,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<>();
 	    for(SearchHit h : hits){
-            inodes.add(Try.of(()->h.sourceAsMap().get("inode").toString()).getOrNull());
+            inodes.add(Try.of(()->h.getSourceAsMap().get("inode").toString()).getOrNull());
         }
 	    return findContentlets(inodes);
 	}

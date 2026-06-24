@@ -5,11 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
+import com.dotmarketing.util.Config;
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.configuration.MapConfiguration;
 import org.junit.Test;
 
 /**
@@ -17,6 +20,46 @@ import org.junit.Test;
  * draining, and concurrent access scenarios.
  */
 public class LeakyTokenBucketImplTest extends UnitTestBase {
+
+    /**
+     * Test: Runtime config overrides must reach a running bucket once the memoization TTL
+     * lapses, and reads within the TTL must serve the cached value. Pins the contract that the
+     * getters consult Config (not the constructor-captured fields), so rate limiting can be
+     * toggled at runtime without a restart.
+     */
+    @Test
+    public void test_runtimeConfigOverride_reachesRunningBucket() throws Exception {
+        final String key = "RATE_LIMIT_MAX_BUCKET_SIZE";
+        try {
+            // TTL of 1ns: every read consults Config
+            LeakyTokenBucket bucket = new LeakyTokenBucketImpl(true, 100, 1000, 1);
+            assertEquals(1000, bucket.getMaximumBucketSize());
+
+            Config.setProperty(key, 2000L);
+            assertEquals("runtime override must reach a running bucket",
+                    2000, bucket.getMaximumBucketSize());
+
+            // long TTL: the value is read once and cached
+            LeakyTokenBucket cached = new LeakyTokenBucketImpl(true, 100, 1000,
+                    TimeUnit.HOURS.toNanos(1));
+            assertEquals(2000, cached.getMaximumBucketSize());
+            Config.setProperty(key, 3000L);
+            assertEquals("reads within the TTL must not walk Config",
+                    2000, cached.getMaximumBucketSize());
+        } finally {
+            clearConfigProperty(key);
+        }
+    }
+
+    /**
+     * Config has no public removal API; clear via reflection so the leftover property cannot
+     * leak into the other tests in this class (their getters consult Config first).
+     */
+    private static void clearConfigProperty(final String key) throws Exception {
+        final Field propsField = Config.class.getDeclaredField("props");
+        propsField.setAccessible(true);
+        ((MapConfiguration) propsField.get(null)).clearProperty(key);
+    }
 
     /**
      * Test: New bucket should allow requests Expected: allow() returns true when bucket has tokens

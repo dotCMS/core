@@ -5,11 +5,17 @@
             [value]="$activeTabIndices()"
             (valueChange)="onAccordionChange($event)">
             @for (section of $sections(); track section.title; let index = $index) {
-                <p-accordion-panel [value]="index" [pt]="{ root: { class: 'relative isolate' } }">
+                <p-accordion-panel [value]="index">
                     <p-accordion-header [pt]="{ root: { class: 'border-none!' } }">
                         {{ section.title }}
                     </p-accordion-header>
-                    <p-accordion-content [pt]="{ content: { class: 'border-none!' } }">
+                    <p-accordion-content
+                        [pt]="{
+                            root: {
+                                class: 'group/uve-section data-[p-active=false]:overflow-hidden'
+                            },
+                            content: { class: 'border-none!' }
+                        }">
                         <div class="flex flex-col gap-4">
                             @for (field of section.fields; track field.id) {
                                 @switch (field.type) {
@@ -24,7 +30,9 @@
                                         <dot-uve-style-editor-field-radio [field]="field" />
                                     }
                                     @case (STYLE_EDITOR_FIELD_TYPES.INPUT) {
-                                        <dot-uve-style-editor-field-input [field]="field" />
+                                        <dot-uve-style-editor-field-input
+                                            [field]="field"
+                                            (commit)="onInputCommit()" />
                                     }
                                 }
                             }

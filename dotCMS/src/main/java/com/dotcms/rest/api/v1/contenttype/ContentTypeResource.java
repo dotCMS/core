@@ -19,6 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
+import com.dotcms.rest.PATCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -29,12 +30,12 @@ import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.PaginationUtilParams.Builder;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
@@ -656,8 +657,10 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-			"⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. " +
-			"Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.\n\n" +
+			"⚠️ **Destructive semantics.** (with one exception). This endpoint treats the request body as the full desired state. " +
+			"Any editable property (including items in `fields[]`) absent from the body will be removed. " +
+			"**Exception: `metadata`** — if the `metadata` key is absent from the request body, the server " +
+			"preserves the existing metadata unchanged. To explicitly clear all metadata, send `\"metadata\": null`.\n\n" +
 			"**Recommended update pattern:**\n" +
 			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
 			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
@@ -775,12 +778,15 @@ public class ContentTypeResource implements Serializable {
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
 		try {
 			checkNotNull(form, "The 'form' parameter is required");
-			final ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
+			ContentType contentType = contentTypeHelper.evaluateContentTypeRequest(
 					idOrVar, form.getContentType(), user, false
 			);
 			Logger.debug(this, String.format("Updating content type: '%s'", form.getRequestJson()));
 			checkNotEmpty(contentType.id(), BadRequestException.class,
 					"Content Type 'id' attribute must be set");
+
+			contentType = contentTypeHelper.preserveMetadataIfAbsent(
+					contentType, form.getRequestJson(), contentTypeAPI);
 
 			final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 =
 					this.saveContentTypeAndDependencies(contentType, user,
@@ -1173,7 +1179,7 @@ public class ContentTypeResource implements Serializable {
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
 					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, false, null);
 	}
 
 	@GET
@@ -1254,9 +1260,14 @@ public class ContentTypeResource implements Serializable {
 					schema = @Schema(type = "integer")) final Long languageId,
 			@QueryParam("live") @Parameter(
 					description = "Determines whether live versions of language variables are used in the returned object.",
-					schema = @Schema(type = "boolean")) final Boolean paramLive) throws DotDataException {
+					schema = @Schema(type = "boolean")) final Boolean paramLive,
+			@QueryParam("inode") @Parameter(
+					description = "Optional contentlet inode. When provided, contentlet-specific " +
+								  "Velocity variables ($inode, $identifier, $lang, etc.) will be " +
+								  "available when rendering Custom Fields.",
+					schema = @Schema(type = "string")) final String contentletInode) throws DotDataException {
 		req.setAttribute("contentTypeId", idOrVar);
-		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true);
+		return retrieveContentType(req, res, idOrVar, languageId, paramLive, true, contentletInode);
 	}
 
 	/**
@@ -1271,6 +1282,8 @@ public class ContentTypeResource implements Serializable {
 	 *                           the returned object.
 	 * @param renderCustomFields If the Velocity code in all Custom Fields must be parsed, set this
 	 *                           to {@code true}.
+	 * @param contentletInode    Optional contentlet inode for providing contentlet-specific
+	 *                           Velocity variables when rendering Custom Fields.
 	 *
 	 * @return The specified {@link ContentType} in its JSON format.
 	 *
@@ -1279,7 +1292,8 @@ public class ContentTypeResource implements Serializable {
 	private Response retrieveContentType(final HttpServletRequest httpRequest,
 										 final HttpServletResponse httpResponse, final String idOrVar,
 										 final Long languageId, final Boolean paramLive,
-										 final boolean renderCustomFields) throws DotDataException {
+										 final boolean renderCustomFields,
+										 final String contentletInode) throws DotDataException {
 		final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, false, null);
 		final User user = initData.getUser();
 		final ContentTypeAPI tapi = APILocator.getContentTypeAPI(user, true);
@@ -1306,7 +1320,8 @@ public class ContentTypeResource implements Serializable {
 					new ContentTypeInternationalization(languageId, live, user) : null;
 			final ImmutableMap<String, Object> resultMap = ImmutableMap.<String, Object>builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
-							contentTypeInternationalization, renderCustomFields, user))
+							contentTypeInternationalization, renderCustomFields, user,
+							contentletInode))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
 							type.id(), initData.getUser()))
 					.put(MAP_KEY_SYSTEM_ACTION_MAPPINGS,
@@ -2009,6 +2024,106 @@ public class ContentTypeResource implements Serializable {
         }
         return util.getPageView(builder.build());
 	}
+
+    @PATCH
+    @Path("/id/{idOrVar}/metadata")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Operation(
+            operationId = "updateContentTypeMetadata",
+            summary = "Updates the metadata of a Content Type",
+            description = "Merges the provided key/value pairs into the Content Type's `metadata` " +
+                    "map without touching fields, workflows, or any other structural property. " +
+                    "Keys present in the body are added or overwritten; keys absent from the body " +
+                    "are left unchanged. To remove a key, set its value explicitly to `null`.\n\n" +
+                    "Known metadata keys:\n" +
+                    "- `CONTENT_EDITOR2_ENABLED` *(boolean)* — enables the new content editor\n" +
+                    "- `DOT_STYLE_EDITOR_SCHEMA` *(JSON string)* — Style Editor schema definition",
+            tags = {"Content Type"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Metadata updated successfully",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request — invalid JSON body"),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "User does not have permission to edit this Content Type"),
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public final Response updateContentTypeMetadata(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("idOrVar") @Parameter(
+                    required = true,
+                    description = "The ID or Velocity variable name of the Content Type to update.\n\n" +
+                            "Example value: `htmlpageasset` (Default page content type)",
+                    schema = @Schema(type = "string")
+            ) final String idOrVar,
+            @RequestBody(
+                    description = "A flat JSON object whose keys are merged into the Content Type's " +
+                            "existing metadata. Set a key's value to `null` to remove it. " +
+                            "An absent or empty body is treated as a no-op — the current metadata " +
+                            "is returned unchanged with HTTP 200.",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(type = "object", description = "Metadata key/value pairs to merge"),
+                            examples = @ExampleObject(
+                                    value = "{\n" +
+                                            "  \"DOT_STYLE_EDITOR_SCHEMA\": \"{\\\"contentType\\\":\\\"htmlpageasset\\\"," +
+                                            "\\\"sections\\\":[{\\\"title\\\":\\\"New Section\\\",\\\"fields\\\":" +
+                                            "[{\\\"type\\\":\\\"dropdown\\\",\\\"label\\\":\\\"Color\\\"," +
+                                            "\\\"id\\\":\\\"color\\\",\\\"config\\\":{\\\"options\\\":" +
+                                            "[{\\\"label\\\":\\\"Red\\\",\\\"value\\\":\\\"red\\\"}]}}]}]}\"\n" +
+                                            "}"
+                            )
+                    )
+            ) final Map<String, Object> metadataPatch) {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        try {
+            if (!UtilMethods.isSet(idOrVar)) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+
+            if (metadataPatch == null || metadataPatch.isEmpty()) {
+                Logger.warn(this, "No metadata patch found for " + idOrVar);
+                final ContentType existing = contentTypeAPI.find(idOrVar);
+                return Response.ok(new ResponseEntityContentTypeDetailView(
+                        new HashMap<>(contentTypeHelper.contentTypeToMap(existing, user)))).build();
+            }
+
+            final ContentType saved = contentTypeHelper.mergeAndSaveMetadata(idOrVar, metadataPatch, contentTypeAPI);
+            return Response.ok(new ResponseEntityContentTypeDetailView(
+                    new HashMap<>(contentTypeHelper.contentTypeToMap(saved, user)))).build();
+        } catch (final NotFoundInDbException e) {
+            Logger.warn(this, String.format("Content Type '%s' was not found", idOrVar));
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", idOrVar))
+                    )).build();
+        } catch (final BadRequestException e) {
+            Logger.warn(this, String.format("Bad metadata patch for Content Type '%s': %s", idOrVar, e.getMessage()));
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityContentTypeDetailView(
+                            List.of(new ErrorEntity("INVALID_METADATA", e.getMessage(), "DOT_STYLE_EDITOR_SCHEMA"))
+                    )).build();
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Error updating metadata for Content Type '%s'", idOrVar), e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 	private static long getLanguageId(final String language) {
 

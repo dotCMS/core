@@ -2,17 +2,17 @@ import { TiptapEditorDirective } from 'ngx-tiptap';
 
 import { DOCUMENT } from '@angular/common';
 import {
+    booleanAttribute,
     ChangeDetectionStrategy,
     Component,
-    Injector,
-    OnDestroy,
-    booleanAttribute,
     computed,
     effect,
     forwardRef,
     inject,
+    Injector,
     input,
     numberAttribute,
+    OnDestroy,
     output,
     signal
 } from '@angular/core';
@@ -23,6 +23,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
+import { type EditorView } from '@tiptap/pm/view';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -34,7 +35,9 @@ import { ImagePropertiesPopoverComponent } from './components/image-popover/imag
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
+import { TableHandlePopoverComponent } from './components/table-popover/table-handle-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
+import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
@@ -53,6 +56,49 @@ import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-ext
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
     return JSON.stringify(editor.getJSON());
+}
+
+/**
+ * Keeps "scroll the caret into view" confined to the editor's own scroll container.
+ *
+ * ProseMirror's default scroll-into-view (fired by edits such as deleting an empty line, and by
+ * any command chained with `.scrollIntoView()`) walks up the DOM and scrolls **every** scrollable
+ * ancestor so the caret is visible — including the host page's main scroll. Inside dotCMS the
+ * editor lives in a taller scrollable page (new Edit Content, UVE), so that ancestor walk yanks the
+ * whole viewport even though the caret never left the editor. See issue #35980 (bug 2).
+ *
+ * We instead scroll only the editor's `.editor-scroll-container`, and only by the minimum needed to
+ * reveal the caret, then return `true` so ProseMirror treats scrolling as handled and leaves the
+ * page scroll alone. Returns `false` (defer to default behaviour) if the container or caret
+ * coordinates can't be resolved.
+ *
+ * CONTRACT: the `.editor-scroll-container` element (rendered by this component's template) is the
+ * required scroll boundary. If the editor is ever embedded without that wrapper, this returns
+ * `false` and ProseMirror's default page-level scroll-into-view takes over — i.e. the bug-2 jump
+ * comes back. Keep the class on the scroll wrapper whenever this editor is reused.
+ */
+function scrollCaretIntoEditorContainer(view: EditorView): boolean {
+    const container = view.dom.closest<HTMLElement>('.editor-scroll-container');
+    if (!container) return false;
+
+    let caretTop: number;
+    let caretBottom: number;
+    try {
+        const coords = view.coordsAtPos(view.state.selection.head);
+        caretTop = coords.top;
+        caretBottom = coords.bottom;
+    } catch {
+        return false;
+    }
+
+    const box = container.getBoundingClientRect();
+    const margin = 12;
+    if (caretTop < box.top + margin) {
+        container.scrollTop -= box.top + margin - caretTop;
+    } else if (caretBottom > box.bottom - margin) {
+        container.scrollTop += caretBottom - (box.bottom - margin);
+    }
+    return true;
 }
 
 /**
@@ -135,12 +181,7 @@ function normalizeEditorContent(
         EditorModalService,
         EditorToolbarStore,
         ContentletEditUrlService,
-        // Component-scoped DialogService so each editor instance has its own PrimeNG
-        // dynamic-dialog factory; prevents the AI image prompt opened from one editor
-        // from accidentally being closed by another editor on the same page.
         DialogService,
-        // Component-scoped ConfirmationService pairs 1:1 with the local <p-confirmdialog>
-        // below — keeps two editors on the same page from sharing confirmation state.
         ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
@@ -153,6 +194,8 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TablePopoverComponent,
+        TableHandlePopoverComponent,
+        TablePropertiesPopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
         AssetByUrlPopoverComponent,
@@ -170,7 +213,7 @@ function normalizeEditorContent(
                         (fullscreenToggle)="toggleFullscreen()"
                         (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        class="relative overflow-y-auto overscroll-contain editor-scroll-container"
+                        class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="
                             isFullscreen()
@@ -219,6 +262,8 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-popover [editor]="ed" />
+                    <dot-table-handle-popover [editor]="ed" />
+                    <dot-table-properties-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
                     <dot-asset-by-url-popover [editor]="ed" />
@@ -386,7 +431,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
                         (file) => this.dotUpload.uploadVideo(file)
-                    )
+                    ),
+                handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
             extensions: createEditorExtensions(
                 this.menuService,
@@ -467,7 +513,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] max-w-7xl h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
+            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
             : 'relative rounded-lg border border-gray-200'
     );
 

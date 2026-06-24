@@ -1,1 +1,27 @@
 /* PrimeNG/Lara + Tailwind handle all styling for this component. */
+
+/* Sidebar cards use a borderless variant of `p-card` for a flat, uniform
+ * look across tabs (Information, Activities, Settings). The subtle card
+ * shadow handles visual separation from the panel background.
+ */
+:host ::ng-deep .p-card {
+    border: none !important;
+}
+
+/* Tab content transition: each panel plays a subtle fade + slide as it becomes
+ * visible. PrimeNG keeps all panels mounted and only toggles `[hidden]`; a CSS
+ * animation restarts whenever an element goes from display:none to displayed, so
+ * this fires on every tab switch. */
+:host ::ng-deep .p-tabpanel {
+    animation: ec-tab-fade-in 180ms ease-out;
+}
+
+@keyframes ec-tab-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}

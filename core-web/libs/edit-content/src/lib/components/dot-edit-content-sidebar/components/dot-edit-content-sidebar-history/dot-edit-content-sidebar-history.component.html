@@ -1,139 +1,114 @@
 @let historicalVersionInode = $historicalVersionInode();
 
-<section class="h-full flex flex-col min-h-0" role="region" aria-label="Content Version History">
-    <dot-sidebar-accordion
-        [initialActiveTab]="'versions'"
-        (activeTabChange)="onAccordionTabChange($event)">
-        <!-- Versions Tab -->
-        <dot-sidebar-accordion-tab
-            id="versions"
-            [label]="'edit.content.sidebar.history.versions' | dm">
-            <div class="flex flex-col h-full min-h-0 gap-5">
-                @if ($isLoading()) {
-                    <!-- Loading state -->
-                    <div data-testid="loading-state">
-                        @for (item of [1, 2, 3, 4]; track $index) {
-                            <div>
-                                <p-skeleton width="100%" height="80px" />
-                            </div>
-                        }
-                    </div>
-                } @else if (!$hasHistoryItems()) {
-                    <!-- Empty state -->
-                    <dot-empty-container
-                        [configuration]="{
-                            title: '',
-                            subtitle: 'edit.content.sidebar.history.empty.message' | dm,
-                            icon: 'pi-folder-open'
-                        }"
-                        [hideContactUsLink]="true" />
-                } @else {
-                    <!-- History content -->
-                    <div
-                        class="flex-1 min-h-0 overflow-y-auto p-2"
-                        (scroll)="onTimelineScroll($event)"
-                        data-testid="history-timeline-container">
-                        <p-timeline
-                            [value]="$historyItems()"
-                            layout="vertical"
-                            [pt]="{
-                                eventOpposite: {
-                                    class: 'p-0! flex-none!'
-                                }
-                            }"
-                            data-testid="history-timeline">
-                            <ng-template #marker let-item>
-                                <span
-                                    [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
-                                    [attr.data-testid]="
-                                        'timeline-marker-' + getRealIndex(item)
-                                    "></span>
-                            </ng-template>
-                            <ng-template #content let-item>
-                                <dot-history-timeline-item
-                                    [item]="item"
-                                    [itemIndex]="getRealIndex(item)"
-                                    [isActive]="historicalVersionInode === item.inode"
-                                    (click)="
-                                        timelineItemAction.emit({
-                                            type: 'view',
-                                            item
-                                        })
-                                    "
-                                    (actionTriggered)="timelineItemAction.emit($event)" />
-                            </ng-template>
-                        </p-timeline>
+<section
+    class="flex h-full min-h-0 flex-col overflow-y-auto px-4"
+    role="region"
+    aria-label="Content Version History">
+    <!-- Versions Section -->
+    <dot-edit-content-sidebar-section
+        [title]="'edit.content.sidebar.history.versions' | dm"
+        key="history.versions">
+        @if ($isLoading()) {
+            <!-- Loading state -->
+            <div data-testid="loading-state">
+                @for (item of [1, 2, 3, 4]; track $index) {
+                    <div>
+                        <p-skeleton width="100%" height="80px" />
                     </div>
                 }
             </div>
-        </dot-sidebar-accordion-tab>
+        } @else if (!$hasHistoryItems()) {
+            <!-- Empty state -->
+            <p class="px-2 py-3 text-sm text-gray-500" data-testid="empty-state">
+                {{ 'edit.content.sidebar.history.empty.message' | dm }}
+            </p>
+        } @else {
+            <!-- History content -->
+            <ng-template #versionMarker let-item>
+                <div
+                    class="p-timeline-event-marker"
+                    [class]="getMarkerClass(item)"
+                    [attr.data-testid]="'timeline-marker-' + getRealIndex(item)"></div>
+            </ng-template>
+            <ng-template #versionContent let-item>
+                <dot-history-timeline-item
+                    [item]="item"
+                    [itemIndex]="getRealIndex(item)"
+                    [isActive]="
+                        historicalVersionInode
+                            ? historicalVersionInode === item.inode
+                            : item.working
+                    "
+                    (click)="
+                        timelineItemAction.emit({
+                            type: 'view',
+                            item
+                        })
+                    "
+                    (actionTriggered)="timelineItemAction.emit($event)" />
+            </ng-template>
+            <dot-history-timeline-list
+                [items]="$historyItems()"
+                [markerTemplate]="versionMarker"
+                [contentTemplate]="versionContent"
+                containerTestId="history-timeline-container"
+                timelineTestId="history-timeline"
+                (reachedEnd)="onTimelineReachedEnd()" />
+        }
+    </dot-edit-content-sidebar-section>
 
-        <!-- Push Publish Tab -->
-        <dot-sidebar-accordion-tab
-            id="push-publish"
-            [label]="'edit.content.sidebar.history.push.publish' | dm">
-            <div
-                slot="header-content"
-                class="dot-edit-content-sidebar-history__push-publish__actions">
+    <!-- Push Publish Section -->
+    <dot-edit-content-sidebar-section
+        [title]="'edit.content.sidebar.history.push.publish' | dm"
+        key="history.push-publish"
+        class="[&_.dot-section]:border-b-0">
+        <!-- Header action template must live outside any @if so the section's
+             @ContentChild('sectionAction') can resolve it; gate its content instead. -->
+        <ng-template #sectionAction>
+            @if ($hasPushPublishHistoryItems()) {
                 <p-button
                     icon="pi pi-ellipsis-v"
-                    styleClass="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
+                    class="p-button-rounded p-button-sm p-button-text dot-edit-content-sidebar-history__menu-button p-button-tertiary"
                     (click)="ppMenu.toggle($event); $event.stopPropagation()"
-                    [disabled]="!$hasPushPublishHistoryItems()"
                     data-testid="push-publish-menu-button" />
-                <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
-            </div>
-            <div class="flex flex-col h-full min-h-0 gap-5">
-                @if ($isLoading()) {
-                    <!-- Loading state for push publish -->
-                    <div data-testid="push-publish-loading-state">
-                        @for (item of [1, 2, 3, 4]; track $index) {
-                            <div>
-                                <p-skeleton width="100%" height="80px" />
-                            </div>
-                        }
-                    </div>
-                } @else if (!$hasPushPublishHistoryItems()) {
-                    <!-- Empty state for push publish -->
-                    <dot-empty-container
-                        [configuration]="{
-                            title: '',
-                            subtitle:
-                                'edit.content.sidebar.history.push.publish.empty.message' | dm,
-                            icon: 'pi-folder-open'
-                        }"
-                        [hideContactUsLink]="true" />
-                } @else {
-                    <!-- Push Publish History content -->
-                    <div
-                        class="flex-1 min-h-0 overflow-y-auto p-2"
-                        (scroll)="onPushPublishTimelineScroll($event)"
-                        data-testid="push-publish-timeline-container">
-                        <p-timeline
-                            [value]="$pushPublishHistoryItems()"
-                            layout="vertical"
-                            [pt]="{
-                                eventOpposite: {
-                                    class: 'p-0! flex-none!'
-                                }
-                            }"
-                            data-testid="push-publish-timeline">
-                            <ng-template #marker let-item>
-                                <span
-                                    class="timeline-marker timeline-marker--default"
-                                    [attr.data-testid]="
-                                        'pushpublish-timeline-marker-' + getPushPublishIndex(item)
-                                    "></span>
-                            </ng-template>
-                            <ng-template #content let-item>
-                                <dot-pushpublish-timeline-item
-                                    [item]="item"
-                                    data-testid="pushpublish-timeline-item" />
-                            </ng-template>
-                        </p-timeline>
+                <p-menu #ppMenu appendTo="body" [model]="$menuItems()" [popup]="true" />
+            }
+        </ng-template>
+        @if ($isLoading()) {
+            <!-- Loading state for push publish -->
+            <div data-testid="push-publish-loading-state">
+                @for (item of [1, 2, 3, 4]; track $index) {
+                    <div>
+                        <p-skeleton width="100%" height="80px" />
                     </div>
                 }
             </div>
-        </dot-sidebar-accordion-tab>
-    </dot-sidebar-accordion>
+        } @else if (!$hasPushPublishHistoryItems()) {
+            <!-- Empty state for push publish -->
+            <p class="px-2 py-3 text-sm text-gray-500" data-testid="push-publish-empty-state">
+                {{ 'edit.content.sidebar.history.push.publish.empty.message' | dm }}
+            </p>
+        } @else {
+            <!-- Push Publish History content -->
+            <ng-template #pushPublishMarker let-item>
+                <span
+                    class="timeline-marker timeline-marker--default"
+                    [attr.data-testid]="
+                        'pushpublish-timeline-marker-' + getPushPublishIndex(item)
+                    "></span>
+            </ng-template>
+            <ng-template #pushPublishContent let-item>
+                <dot-pushpublish-timeline-item
+                    [item]="item"
+                    data-testid="pushpublish-timeline-item" />
+            </ng-template>
+            <dot-history-timeline-list
+                [items]="$pushPublishHistoryItems()"
+                [markerTemplate]="pushPublishMarker"
+                [contentTemplate]="pushPublishContent"
+                containerTestId="push-publish-timeline-container"
+                timelineTestId="push-publish-timeline"
+                (reachedEnd)="onPushPublishTimelineReachedEnd()" />
+        }
+    </dot-edit-content-sidebar-section>
 </section>

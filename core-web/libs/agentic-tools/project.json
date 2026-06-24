@@ -1,0 +1,47 @@
+{
+    "name": "agentic-tools",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/agentic-tools/src",
+    "projectType": "library",
+    "tags": ["scope:agentic"],
+    "targets": {
+        "generate-spec": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npx tsx scripts/generate-spec.ts",
+                "cwd": "libs/agentic-tools"
+            }
+        },
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "dependsOn": ["generate-spec"],
+            "options": {
+                "outputPath": "dist/libs/agentic-tools",
+                "tsConfig": "libs/agentic-tools/tsconfig.lib.json",
+                "packageJson": "libs/agentic-tools/package.json",
+                "main": "libs/agentic-tools/src/index.ts",
+                "assets": ["libs/agentic-tools/*.md"]
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "libs/agentic-tools/src/**/*.ts",
+                    "libs/agentic-tools/scripts/**/*.ts"
+                ]
+            }
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "dependsOn": ["generate-spec"],
+            "options": {
+                "jestConfig": "libs/agentic-tools/jest.config.ts",
+                "passWithNoTests": true
+            }
+        }
+    }
+}

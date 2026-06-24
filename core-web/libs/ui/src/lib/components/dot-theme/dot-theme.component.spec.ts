@@ -6,7 +6,7 @@ import {
     SpectatorHost,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { EMPTY, of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,8 +17,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 
-import { DotThemesService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotEventsSocket, DotThemesService } from '@dotcms/data-access';
 import { DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -89,10 +88,7 @@ describe('DotThemeComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -354,10 +350,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -465,10 +458,7 @@ describe('DotThemeComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {

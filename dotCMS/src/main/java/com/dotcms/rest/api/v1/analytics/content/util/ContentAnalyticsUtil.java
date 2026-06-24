@@ -51,6 +51,9 @@ public class ContentAnalyticsUtil {
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
 
+    /** App-secret key under which the HMAC bearer token minted by the save flow is stored. */
+    public static final String BEARER_TOKEN_KEY = "bearerToken";
+
     /**
      * Persists a user-defined event to the Content Analytics system. Several validation criteria
      * can be applied to the event payload before it is persisted. The
@@ -268,6 +271,19 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Retrieves the bearer token from Content Analytics app secrets for the given site.
+     *
+     * @param site the site to retrieve the bearer token for
+     * @return the bearer token if configured, empty otherwise
+     */
+    public static Optional<String> getBearerTokenFromAppSecrets(final Host site) {
+        final Secret tokenSecret = getAppSecrets(site).get(BEARER_TOKEN_KEY);
+        return (tokenSecret != null && UtilMethods.isSet(tokenSecret.getString()))
+                ? Optional.of(tokenSecret.getString())
+                : Optional.empty();
+    }
+
+    /**
      * Retrieves the site key from Content Analytics app secrets for the given site.
      * This method looks up the app secrets and extracts the 'siteKey' value.
      *
@@ -292,6 +308,42 @@ public class ContentAnalyticsUtil {
                     "Error retrieving site key from app secrets for site: " + currentSite.getIdentifier(), e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Returns true when the Content Analytics app is configured for the given site and at least one
+     * of {@code contentImpression} or {@code contentClick} tracking is enabled.
+     *
+     * @param currentSite The site to check
+     * @return true if analytics content tracking is active for the site
+     */
+    public static boolean isContentTrackingEnabled(final Host currentSite) {
+        final String siteId = null != currentSite ? currentSite.getIdentifier() : "null";
+        final Map<String, Secret> secrets = getAppSecrets(currentSite);
+        if (secrets.isEmpty()) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': Content Analytics app has no secrets configured",
+                    siteId));
+            return false;
+        }
+        final Secret siteAuth = secrets.get("siteAuth");
+        if (siteAuth == null || !UtilMethods.isSet(siteAuth.getString())) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': 'siteAuth' is missing or blank (fromEnv=%s)",
+                    siteId, null != siteAuth && siteAuth.isFromEnv()));
+            return false;
+        }
+        final Secret contentImpression = secrets.get("contentImpression");
+        final Secret contentClick = secrets.get("contentClick");
+        final boolean impressionEnabled =
+                contentImpression != null && Boolean.parseBoolean(contentImpression.getString());
+        final boolean clickEnabled =
+                contentClick != null && Boolean.parseBoolean(contentClick.getString());
+        final boolean enabled = impressionEnabled || clickEnabled;
+        Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                "Content tracking for site '%s': enabled=%s (contentImpression=%s, contentClick=%s)",
+                siteId, enabled, impressionEnabled, clickEnabled));
+        return enabled;
     }
 
     /**

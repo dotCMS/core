@@ -22,6 +22,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditorToolbarStore } from './editor-toolbar.store';
 
+import {
+    FULLSCREEN_AWARE_OVERLAY_OPTIONS,
+    OVERLAY_ABOVE_FULLSCREEN_Z_INDEX
+} from '../../config.utils';
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorModalService } from '../../services/editor-modal.service';
@@ -48,7 +52,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStore);
     protected readonly store = inject(EditorStore);
-    private readonly popovers = inject(EditorPopoverService);
+    protected readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentletEditUrl = inject(ContentletEditUrlService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -68,8 +72,19 @@ export class ToolbarComponent implements OnDestroy {
      */
     protected readonly overlayTooltipOptions = computed(
         (): TooltipOptions =>
-            this.isFullscreen() ? { tooltipZIndex: '10050' } : { tooltipZIndex: 'auto' }
+            this.isFullscreen()
+                ? { tooltipZIndex: `${OVERLAY_ABOVE_FULLSCREEN_Z_INDEX}` }
+                : { tooltipZIndex: 'auto' }
     );
+
+    /**
+     * Overlay options for the block-type `<p-select>` panel, which appends to `document.body`.
+     * Like the tooltips above, its default base z-index (≈1000) would be painted under the
+     * fullscreen shell's `z-[9998]` backdrop, leaving the dropdown invisible/unclickable in
+     * fullscreen. An open dropdown anchored to its trigger should sit on top in either mode, so
+     * it is lifted unconditionally — the single rule every body-portaled editor overlay follows.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
 
     readonly fullscreenToggle = output<void>();
     readonly contentletEdit = output<ContentletEditEvent>();
@@ -567,50 +582,44 @@ export class ToolbarComponent implements OnDestroy {
         });
     }
 
-    // ── Table actions ────────────────────────────────────────────────────────
+    // Row / column actions are rendered inline INSIDE each cell by the DotTableCell /
+    // DotTableHeader NodeViews — see `extensions/table-extensions.ts` and
+    // `extensions/table-active-cells.plugin.ts`. The toolbar keeps the "Insert table"
+    // entry + the `table_edit` button below for a11y properties (caption / aria).
 
-    protected tableInsertRowAbove(): void {
-        this.editor().chain().focus().addRowBefore().run();
+    // ── Table properties (caption + aria-*) ──────────────────────────────────
+
+    protected openTablePropertiesDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.popovers.isOpen('table-properties')) {
+            this.popovers.close();
+            return;
+        }
+
+        const editor = this.editor();
+        const tableAttrs = editor.getAttributes('table');
+        const btn = event.currentTarget as HTMLElement;
+
+        this.popovers.openTableProperties(() => btn.getBoundingClientRect(), {
+            initialValues: {
+                caption: this.readActiveTableCaption(editor),
+                ariaLabel: tableAttrs['ariaLabel'] ?? '',
+                ariaLabelledby: tableAttrs['ariaLabelledby'] ?? ''
+            }
+        });
     }
 
-    protected tableInsertRowBelow(): void {
-        this.editor().chain().focus().addRowAfter().run();
-    }
-
-    protected tableInsertColLeft(): void {
-        this.editor().chain().focus().addColumnBefore().run();
-    }
-
-    protected tableInsertColRight(): void {
-        this.editor().chain().focus().addColumnAfter().run();
-    }
-
-    protected tableMerge(): void {
-        this.editor().chain().focus().mergeCells().run();
-    }
-
-    protected tableSplit(): void {
-        this.editor().chain().focus().splitCell().run();
-    }
-
-    protected tableToggleRowHeader(): void {
-        this.editor().chain().focus().toggleHeaderRow().run();
-    }
-
-    protected tableToggleColHeader(): void {
-        this.editor().chain().focus().toggleHeaderColumn().run();
-    }
-
-    protected tableDeleteRow(): void {
-        this.editor().chain().focus().deleteRow().run();
-    }
-
-    protected tableDeleteCol(): void {
-        this.editor().chain().focus().deleteColumn().run();
-    }
-
-    protected tableDeleteTable(): void {
-        this.editor().chain().focus().deleteTable().run();
+    /** Reads the active table's `caption` attribute from the current selection. */
+    private readActiveTableCaption(editor: Editor): string {
+        const { $from } = editor.state.selection;
+        for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth);
+            if (node.type.name !== 'table') continue;
+            return (node.attrs['caption'] as string | null) ?? '';
+        }
+        return '';
     }
 
     // ── Keyboard navigation (roving tabindex) ────────────────────────────────

@@ -16,7 +16,6 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule, TableRowReorderEvent } from 'primeng/table';
@@ -24,8 +23,8 @@ import { TableModule, TableRowReorderEvent } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
+import { DotContentletStatusBadgeComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
@@ -34,7 +33,6 @@ import { PaginationComponent } from './../pagination/pagination.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
@@ -46,8 +44,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ButtonModule,
         MenuModule,
         DotMessagePipe,
-        ChipModule,
-        ContentletStatusPipe,
+        DotContentletStatusBadgeComponent,
         LanguagePipe,
         PaginationComponent
     ],
@@ -163,14 +160,25 @@ export class DotRelationshipFieldComponent
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
 
     /**
-     * Computed signal that holds the field and contentlet.
+     * Computed signal that holds the field, contentlet, and locale context.
+     * When copying a locale (manual translation or populate), passes both the
+     * target language id and the full DotLanguage object so related items can be
+     * resolved to their translated versions and the language column renders correctly.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $inputs = computed(() => ({
-        field: this.$field(),
-        contentlet: this.$contentlet()
-    }));
+    $inputs = computed(() => {
+        const locale = this.#editContentStore.isCopyingLocale()
+            ? this.#editContentStore.currentLocale()
+            : undefined;
+
+        return {
+            field: this.$field(),
+            contentlet: this.$contentlet(),
+            targetLanguageId: locale?.id,
+            targetLanguage: locale
+        };
+    });
 
     /**
      * Computed signal that holds the total number of columns.
@@ -193,10 +201,15 @@ export class DotRelationshipFieldComponent
     /**
      * Initializes the store with the field and contentlet.
      *
+     * Passes the signal reference (not its value) so that signalMethod creates a
+     * reactive effect — the store re-initializes whenever $inputs changes. This is
+     * required for manual translation, where this component is preserved (not flushed)
+     * and ngOnInit does not run again.
+     *
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs());
+        this.initialize(this.$inputs);
     }
 
     /**
@@ -376,11 +389,10 @@ export class DotRelationshipFieldComponent
     readonly initialize = signalMethod<{
         field: DotCMSContentTypeField;
         contentlet: DotCMSContentlet;
+        targetLanguageId?: number;
+        targetLanguage?: DotLanguage;
     }>((params) => {
-        this.store.initialize({
-            field: params.field,
-            contentlet: params.contentlet
-        });
+        this.store.initialize(params);
     });
 
     /**

@@ -24,7 +24,9 @@ import static org.mockito.Mockito.when;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -137,7 +139,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -563,12 +564,12 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
         final String path = pagePath;
 
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final Contentlet contentlet = pageAsset;
 
         final List contentlets = list(contentlet);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         final String query = String.format("{"
                 + "query: {"
                 + "query_string: {"
@@ -578,7 +579,7 @@ public class PageResourceTest {
                 + "}", path.replace("/", "\\\\/"));
 
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -603,10 +604,10 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
 
         final String path = String.format("//%s/%s/%s", hostName, folderName, pageName);
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final List contentlets = list(pageAsset);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
         final String query = String.format("{"
                 + "query: {"
@@ -616,7 +617,7 @@ public class PageResourceTest {
                 + "}"
                 + "}", preparedPagePath, host.getHostname());
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -746,6 +747,87 @@ public class PageResourceTest {
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(pageView.getNumberContents(), 1);
+    }
+
+    /**
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * Given Scenario: A page has a container with a single contentlet, and that contentlet is then
+     *                 archived. Archiving keeps the working version (it only sets deleted=true on the
+     *                 version info), so a showLive=false lookup still resolves it in EDIT/PREVIEW mode.
+     * Expected Result: The archived contentlet must NOT be rendered on the page in EDIT or PREVIEW mode,
+     *                 consistent with LIVE-mode behavior. See issue #35993.
+     */
+    @Test
+    public void testArchivedContentNotRenderedInEditAndPreviewMode()
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+
+        final ContentType containerContentType = new ContentTypeDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withContentType(containerContentType, "")
+                .friendlyName("container-archived-friendly-name").title("container-archived-title")
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier())
+                .nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPI().checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+        APILocator.getContentletAPI().checkin(checkout, systemUser, false);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(languageId).nextPersisted();
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(),
+                contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+
+        // Baseline: while the contentlet is live/working it must render in PREVIEW mode.
+        // This proves the test setup actually places the content on the page.
+        final int previewCountBeforeArchive = renderAndCountContents(PageMode.PREVIEW_MODE);
+        assertEquals("Content should render in PREVIEW mode before archiving", 1,
+                previewCountBeforeArchive);
+
+        // Archive the contentlet placed in the container
+        APILocator.getContentletAPI().archive(contentlet, systemUser, false);
+        assertTrue("Contentlet should be archived", contentlet.isArchived());
+
+        // PREVIEW_MODE: archived content must not render
+        assertEquals("Archived content must not render in PREVIEW mode", 0,
+                renderAndCountContents(PageMode.PREVIEW_MODE));
+
+        // EDIT_MODE: archived content must not render
+        assertEquals("Archived content must not render in EDIT mode", 0,
+                renderAndCountContents(PageMode.EDIT_MODE));
+    }
+
+    /**
+     * Renders {@code pagePath} in the given {@link PageMode} via {@link PageResource#loadJson} and
+     * returns the number of contentlets placed in the page's containers.
+     */
+    private int renderAndCountContents(final PageMode mode)
+            throws DotDataException, DotSecurityException {
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, mode.name(), null, "1", null, null);
+        RestUtilTest.verifySuccessResponse(response);
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        return pageView.getNumberContents();
     }
 
     @Test

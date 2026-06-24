@@ -15,12 +15,13 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.34.0</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.41.34</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
+        <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.70</bouncy-castle.version>
+        <bouncy-castle.version>1.84</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
@@ -28,7 +29,8 @@
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
+        <langchain4j.version>1.15.1</langchain4j.version>
+        <commonmark.version>0.22.0</commonmark.version>
     </properties>
     <dependencyManagement>
 
@@ -81,12 +83,54 @@
             </dependency>
 
 
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
+            <!-- google-http-client: pin to 1.45.0 to resolve conflict between existing deps (1.19.0)
+                 and langchain4j-vertex-ai-gemini (1.45+). Required for PercentEscaper(String). -->
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.45.0</version>
+            </dependency>
 
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+            <!-- reactor-core: pin to 3.4.41 to resolve conflict between existing deps (3.3.16)
+                 and langchain4j-azure-open-ai (3.4+). Required for ContextView. -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.4.41</version>
+            </dependency>
+
+            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
+                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-resolver</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>4.1.118.Final</version>
+            </dependency>
 
 
             <!--
@@ -439,6 +483,21 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.txtmark</artifactId>
                 <version>0.14-SNAPSHOT_1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-tables</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+                <version>${commonmark.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -1060,6 +1119,12 @@
                 <artifactId>webp-imageio</artifactId>
                 <version>0.2.2</version>
             </dependency>
+            <!-- libvips bindings (FFM, JDK 23+) — alternative image engine, requires native libvips on host -->
+            <dependency>
+                <groupId>app.photofox.vips-ffm</groupId>
+                <artifactId>vips-ffm-core</artifactId>
+                <version>${vips-ffm.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
                 <artifactId>imageio-batik</artifactId>
@@ -1179,12 +1244,12 @@
 
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
 
@@ -1557,7 +1622,7 @@
             <dependency>
                 <groupId>com.dotcms</groupId>
                 <artifactId>tomcat-redis-session-manager</artifactId>
-                <version>1.5</version>
+                <version>2.0</version>
                 <scope>provided</scope>
             </dependency>
 

@@ -1,11 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
-import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotLanguagesService
+} from '@dotcms/data-access';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
@@ -52,6 +63,7 @@ describe('DotContentDriveToolbarComponent', () => {
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of())
             }),
+            mockProvider(DotHttpErrorManagerService),
             provideHttpClient()
         ],
         detectChanges: false
@@ -153,6 +165,86 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('$items', () => {
+        it('should open the content type selector for "All Content Types"', () => {
+            const items = spectator.component.$items();
+
+            const allContentTypesItem = items.find(
+                (item) => item.label === 'content-drive.add-new.all-content-types'
+            );
+
+            expect(allContentTypesItem).toBeTruthy();
+
+            allContentTypesItem?.command?.({});
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+                header: 'content-drive.dialog.content-type-selector.header',
+                payload: { listType: DotUVEPaletteListTypes.ALL_CONTENT_TYPES }
+            });
+        });
+
+        it('should NOT render the removed "Asset" menu item', () => {
+            const items = spectator.component.$items();
+
+            const assetItem = items.find(
+                (item) => item.label === 'content-drive.add-new.context-menu.asset'
+            );
+
+            expect(assetItem).toBeUndefined();
+        });
+
+        it.each([
+            {
+                labelKey: 'content-drive.base-type.content',
+                listType: DotUVEPaletteListTypes.ALL_CONTENT
+            },
+            {
+                labelKey: 'content-drive.base-type.widget',
+                listType: DotUVEPaletteListTypes.ALL_WIDGET
+            },
+            {
+                labelKey: 'content-drive.base-type.fileasset',
+                listType: DotUVEPaletteListTypes.ALL_FILEASSET
+            },
+            {
+                labelKey: 'content-drive.base-type.dotasset',
+                listType: DotUVEPaletteListTypes.ALL_DOTASSET
+            },
+            {
+                labelKey: 'content-drive.base-type.persona',
+                listType: DotUVEPaletteListTypes.ALL_PERSONA
+            },
+            {
+                labelKey: 'content-drive.base-type.vanity_url',
+                listType: DotUVEPaletteListTypes.ALL_VANITY_URL
+            },
+            {
+                labelKey: 'content-drive.base-type.key_value',
+                listType: DotUVEPaletteListTypes.ALL_KEY_VALUE
+            },
+            {
+                labelKey: 'content-drive.base-type.htmlpage',
+                listType: DotUVEPaletteListTypes.ALL_HTMLPAGE
+            }
+        ])(
+            'should open the content type selector for base type "$labelKey" with listType "$listType"',
+            ({ labelKey, listType }) => {
+                const items = spectator.component.$items();
+
+                const baseTypeItem = items.find((item) => item.label === labelKey);
+
+                expect(baseTypeItem).toBeTruthy();
+
+                baseTypeItem?.command?.({});
+
+                expect(store.setDialog).toHaveBeenCalledWith({
+                    type: DIALOG_TYPE.CONTENT_TYPE_SELECTOR,
+                    header: 'content-drive.dialog.content-type-selector.header',
+                    payload: { listType }
+                });
+            }
+        );
+
         it('should call setDialog for folders', () => {
             const items = spectator.component.$items();
 
@@ -166,6 +258,24 @@ describe('DotContentDriveToolbarComponent', () => {
                 type: DIALOG_TYPE.FOLDER,
                 header: 'content-drive.dialog.folder.header'
             });
+        });
+    });
+
+    describe('Upload button', () => {
+        it('should render the upload button', () => {
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+        });
+
+        it('should emit upload when the upload button is clicked', () => {
+            const emitSpy = jest.fn();
+            spectator.component.$upload.subscribe(emitSpy);
+
+            const uploadButton = spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('button');
+            spectator.click(uploadButton as HTMLElement);
+
+            expect(emitSpy).toHaveBeenCalledTimes(1);
         });
     });
 });

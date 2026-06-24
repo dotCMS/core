@@ -18,9 +18,9 @@ import {
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
@@ -32,7 +32,7 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -44,8 +44,8 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     selector: 'dot-folder-list-view',
     imports: [
         ButtonModule,
-        ChipModule,
-        DotContentletStatusChipComponent,
+        TagModule,
+        DotContentletStatusBadgeComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,

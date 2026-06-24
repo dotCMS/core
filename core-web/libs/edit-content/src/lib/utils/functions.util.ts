@@ -239,6 +239,61 @@ export const isValidJson = (value: string): boolean => {
 };
 
 /**
+ * Escapes HTML special characters so an API-provided value (e.g. a user display name) can be
+ * safely interpolated into a string that is rendered via `[innerHTML]`. Angular already
+ * sanitizes `[innerHTML]`, but escaping at the source neutralizes the markup entirely and
+ * keeps the value rendering as plain text.
+ *
+ * @param {string} value - The raw value to escape.
+ * @returns {string} - The value with `& < > " '` replaced by their HTML entities.
+ */
+export const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => {
+        switch (char) {
+            case '&':
+                return '&amp;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '"':
+                return '&quot;';
+            default:
+                return '&#39;';
+        }
+    });
+
+/**
+ * Resolves the user that holds the lock on a contentlet.
+ *
+ * The `lockedBy` field has two shapes depending on the API endpoint: a plain string (userId)
+ * with the display name in `lockedByName`, or a `{ userId, firstName, lastName }` object.
+ * TODO: remove this branching once the backend normalizes the shape across content types.
+ *
+ * @param {DotCMSContentlet | null | undefined} contentlet - The contentlet to inspect.
+ * @returns `{ userId, displayName }`, or null when the content is not locked.
+ */
+export const resolveLocker = (
+    contentlet: DotCMSContentlet | null | undefined
+): { userId: string; displayName: string } | null => {
+    const lockedBy = contentlet?.lockedBy;
+
+    if (!lockedBy) {
+        return null;
+    }
+
+    const isLockedByString = typeof lockedBy === 'string';
+    const userId = isLockedByString ? lockedBy : lockedBy.userId;
+    const displayName = (
+        isLockedByString
+            ? (contentlet?.lockedByName ?? '')
+            : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+    ).trim();
+
+    return { userId, displayName };
+};
+
+/**
  * Parses an array of `DotCMSContentTypeFieldVariable` objects and returns a new object
  * with key-value pairs.
  *
@@ -383,26 +438,52 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
+ * Generates an edit-page URL for a given page contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated edit-page URL.
+ */
+export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
+    if (!contentlet.url || !contentlet.host || contentlet.languageId === undefined) {
+        console.warn('Missing required contentlet attributes to generate edit page URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.url}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
+    const defaults: UIState = {
+        view: 'form',
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
+    };
+
     try {
         const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
-            return JSON.parse(storedState);
+            return { ...defaults, ...JSON.parse(storedState) };
         }
     } catch (e) {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
-    // Default values
-    return {
-        view: 'form',
-        activeTab: 0,
-        isSidebarOpen: true,
-        activeSidebarTab: 0,
-        isBetaMessageVisible: true
-    };
+    return defaults;
 };
 
 /**
@@ -417,17 +498,29 @@ export const saveStoreUIState = (state: UIState): void => {
 };
 
 /**
- * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ * Prepares a contentlet for copying by ensuring it's not locked and clearing binary fields.
+ * Binary assets live on the filesystem and must be re-uploaded per locale, so they are nulled out.
  *
  * @param contentlet - The original contentlet to be copied
- * @returns The contentlet with locked=false and no lockedBy property
+ * @param fields - The content type fields used to identify binary fields to clear
+ * @returns The contentlet ready to populate a new locale version
  */
-export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
-    ...contentlet,
-    inode: undefined,
-    locked: false,
-    lockedBy: undefined
-});
+export const prepareContentletForCopy = (
+    contentlet: DotCMSContentlet,
+    fields?: DotCMSContentTypeField[]
+): DotCMSContentlet => {
+    const clearedBinaryFields = (fields ?? [])
+        .filter((f) => f.fieldType === FIELD_TYPES.BINARY)
+        .reduce((acc, f) => ({ ...acc, [f.variable]: null }), {});
+
+    return {
+        ...contentlet,
+        inode: undefined,
+        locked: false,
+        lockedBy: undefined,
+        ...clearedBinaryFields
+    };
+};
 
 /**
  * Extracts and parses custom field options from field variables.

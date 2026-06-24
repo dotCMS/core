@@ -4,9 +4,17 @@ import {
     DotFolder,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 
-import { DIALOG_TYPE } from './constants';
+import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+
+/**
+ * Content type variables the upload selector can produce, derived from the selector options so the
+ * type and the rendered choices never drift apart.
+ */
+export type DotContentDriveUploadContentType =
+    (typeof UPLOAD_SELECTOR_OPTIONS)[number]['contentType'];
 
 /**
  * The status of the content drive.
@@ -82,7 +90,39 @@ export interface DotContentDriveContextMenu {
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
-    payload?: DotContentDriveFolder;
+    payload?:
+        | DotContentDriveFolder
+        | DotContentDriveContentTypeSelectorPayload
+        | DotContentDriveUploadSelectorPayload;
+}
+
+/**
+ * Payload for the content-type selector dialog: the palette list type that
+ * encodes which base type(s) to show (e.g. ALL_CONTENT_TYPES or a single base type).
+ */
+export interface DotContentDriveContentTypeSelectorPayload {
+    listType: DotUVEPaletteListTypes;
+}
+
+/**
+ * Payload passed INTO the upload-type selector dialog. `files` is present for the drag-and-drop
+ * flow (the dropped files are already known) and absent for the Upload-button flow (the OS file
+ * picker opens after the user picks a type).
+ */
+export interface DotContentDriveUploadSelectorPayload {
+    targetFolder?: DotFolderTreeNodeData;
+    files?: FileList;
+}
+
+/**
+ * Object emitted BACK by the upload-type selector dialog. Carries everything needed to trigger the
+ * upload (and, in the future, to remember the chosen type per folder — see epic #35436).
+ * `targetFolder` is omitted when nothing is selected (uploads to the site root).
+ */
+export interface DotContentDriveUploadSelection {
+    contentType: DotContentDriveUploadContentType;
+    targetFolder?: DotFolderTreeNodeData;
+    files?: FileList;
 }
 
 export interface DotContentDrivePage {
@@ -120,6 +160,8 @@ export type DotKnownContentDriveFilters = {
     contentType: string[];
     title: string;
     languageId: string[];
+    // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
+    workflow: string[];
 };
 
 /**

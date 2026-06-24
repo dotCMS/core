@@ -71,6 +71,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.RelationshipUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -97,6 +98,7 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.comparators.ContentMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -235,8 +237,8 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
 
 
 /**
@@ -348,12 +350,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public ESSearchResults esSearch(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
@@ -1680,19 +1684,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final com.dotcms.content.index.domain.SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
-            list.setTotalResults(searchHits.totalHits().value());
+            list.setTotalResults(searchHits.getTotalHits().value());
 
-            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
+            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.getHits()) {
                 try {
-                    final Map<String, Object> sourceMap = searchHit.sourceAsMap();
-                    final ContentletSearch conWrapper = new ContentletSearch();
-                    conWrapper.setId(searchHit.id());
-                    conWrapper.setIndex(searchHit.index());
-                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conWrapper.setInode(sourceMap.get("inode").toString());
-                    conWrapper.setScore(searchHit.score());
-
-                    list.add(conWrapper);
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    list.add(ImmutableContentletSearch.builder()
+                            .id(searchHit.getId())
+                            .index(searchHit.getIndex())
+                            .identifier(sourceMap.get("identifier").toString())
+                            .inode(sourceMap.get("inode").toString())
+                            .score(searchHit.getScore())
+                            .build());
                 } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
                 }
@@ -2381,28 +2384,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean DONT_PULL_PARENTS = Boolean.FALSE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, DONT_PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
                 //Search for related content in other versions of the same contentlet
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName,
                                 DONT_PULL_PARENTS, WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() == null) {
+            if (response.hits().getHits().isEmpty()) {
                 return result;
             }
 
-            for (final SearchHit sh : response.getHits()) {
+            for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
                 final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(
@@ -2475,24 +2478,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
             final int limit = limitParam <= 0 ? MAX_LIMIT : limitParam;
 
-            SearchResponse response;
+            ContentSearchResponse response;
             final boolean PULL_PARENTS = Boolean.TRUE;
 
             //Search for related content in existing contentlet
             if (UtilMethods.isSet(contentlet.getInode())) {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet, relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet, relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             } else {
-                response = APILocator.getEsSearchAPI()
-                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
+                response = APILocator.getSearchAPI()
+                        .searchRelated(contentlet.getIdentifier(), relationshipName, PULL_PARENTS,
                                 WORKING_VERSION, user,
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.getHits() != null) {
-                for (final SearchHit sh : response.getHits()) {
+            if (!response.hits().getHits().isEmpty()) {
+                for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
                     final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
@@ -6711,8 +6714,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);
-                    relationshipRecords.getRecords()
-                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+                    // The contentlet map normally holds a List<Contentlet> for a relationship
+                    // field, but some flows (e.g. "Translate Manually" / saveDraft) leave the raw
+                    // comma-separated UUID String set by MapToContentletPopulator. Inspect the
+                    // runtime type and resolve the String via RelationshipUtil when needed.
+                    final Object fieldValue = contentlet.get(field.variable());
+                    if (fieldValue instanceof List) {
+                        relationshipRecords.getRecords().addAll((List<Contentlet>) fieldValue);
+                    } else if (fieldValue instanceof String && UtilMethods.isSet((String) fieldValue)) {
+                        try {
+                            relationshipRecords.getRecords().addAll(RelationshipUtil.filterContentlet(
+                                    contentlet.getLanguageId(), (String) fieldValue, user, false));
+                        } catch (DotDataException | DotSecurityException | DotStateException e) {
+                            Logger.warn(this, "Could not resolve relationship field '"
+                                    + field.variable() + "': " + e.getMessage());
+                        }
+                    }
 
                     contentRelationships.getRelationshipsRecords().add(relationshipRecords);
                 }
@@ -7580,13 +7597,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "The contentlet's Content Type Inode must be set");
         }
 
-        if (value == null || !UtilMethods.isSet(value.toString())) {
-            contentlet.setProperty(field.getVelocityVarName(), null);
-            return;
-        }
-
         final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(
                 field);
+
+        if (value == null || !UtilMethods.isSet(value.toString())) {
+            clearOrNullifyProperty(contentlet, newField, value);
+            return;
+        }
 
         FieldHandlerStrategyFactory.getInstance().get(newField).apply(contentlet, newField, value);
     }
@@ -7607,11 +7624,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (value == null || !UtilMethods.isSet(value.toString())) {
-            contentlet.setProperty(field.variable(), null);
+            clearOrNullifyProperty(contentlet, field, value);
             return;
         }
 
         FieldHandlerStrategyFactory.getInstance().get(field).apply(contentlet, field, value);
+    }
+
+    /**
+     * Clears a field whose incoming value is null or empty. For most field types this nullifies the
+     * property (which removes the key from the contentlet map). For {@link TagField}s, however, an
+     * explicit empty string means "remove all tags": it is preserved as an empty string instead of
+     * being collapsed to null. Storing it as null would remove the key from the map, letting
+     * {@link Contentlet#setTags()} re-hydrate the previous version's tags during checkin and thus
+     * silently keep the old value (see issue #35861). Keeping the empty string makes the checkin tag
+     * logic ({@code prepareTags}/{@code relateTags}) wipe the {@code tag_inode} rows and prevents the
+     * re-hydration, while a genuinely null/absent value still leaves existing tags untouched
+     * (partial update).
+     *
+     * @param contentlet the contentlet being populated
+     * @param field      the (modern) field whose value is being cleared
+     * @param value      the incoming value (null or not-set)
+     */
+    private void clearOrNullifyProperty(final Contentlet contentlet,
+            final com.dotcms.contenttype.model.field.Field field, final Object value) {
+        if (field instanceof TagField && value != null) {
+            contentlet.setStringProperty(field.variable(), StringPool.BLANK);
+        } else {
+            contentlet.setProperty(field.variable(), null);
+        }
     }
 
     /**

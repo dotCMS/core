@@ -14,7 +14,6 @@ import {
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
-    ANALYTICS_CATEGORY_CHART_PALETTE,
     AnalyticsChartColors,
     BAR_CHART_STYLE,
     TIME_RANGE_API_MAPPING,
@@ -24,12 +23,13 @@ import {
 import {
     ApiGranularity,
     ApiRangeParams,
+    BrowserBreakdownData,
     ChartData,
     ChartDataset,
     ContentAttributionData,
+    DeviceBreakdownData,
     Granularity,
     PieChartEntry,
-    PageViewDeviceBrowsersEntity,
     RequestState,
     TablePageData,
     TimeRangeCubeJS,
@@ -429,61 +429,88 @@ export const transformContentConversionsData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format.
- * The new API returns browser and device already parsed, no user-agent parsing needed.
+ * Default maximum pie slices when {@link PieSliceAggregationOptions.maxSlices} is omitted.
  */
-export const transformDeviceBrowsersData = (
-    data: PageViewDeviceBrowsersEntity[] | null
-): ChartData => {
-    if (!data || data.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
-                    data: [],
-                    backgroundColor: []
-                }
-            ]
-        };
-    }
-
-    const sorted = [...data].sort((a, b) => b.total - a.total).slice(0, 10);
-
-    const labels = sorted.map((item) => `${item.browser} (${item.device})`);
-    const chartData = sorted.map((item) => item.total);
-
-    const colorPalette = [...ANALYTICS_CATEGORY_CHART_PALETTE];
-
-    return {
-        labels,
-        datasets: [
-            {
-                label: 'analytics.charts.device-breakdown.dataset-label',
-                data: chartData,
-                backgroundColor: colorPalette.slice(0, labels.length)
-            }
-        ]
-    };
-};
+const DEFAULT_PIE_SLICES_CAP = 10;
 
 /**
- * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
+ * Options for capping pie slices and aggregating the remainder into an "Other" slice.
  */
-export const transformDeviceBrowsersToPieChartEntries = (
-    data: PageViewDeviceBrowsersEntity[] | null
+export interface PieSliceAggregationOptions {
+    /**
+     * Maximum number of slices (default {@link DEFAULT_PIE_SLICES_CAP}).
+     */
+    maxSlices?: number;
+    /**
+     * When non-empty and categories exceed the cap, the remainder is summed into one slice with this label.
+     * When omitted or blank, overflow categories are omitted after the cap (legacy truncation).
+     */
+    otherLabel?: string;
+}
+
+/**
+ * Maps sorted name→total pairs into {@link PieChartEntry}, applying optional cap and "Other" aggregation.
+ *
+ * @param sortedDescending - `[name, total]` pairs sorted by total descending.
+ * @param options - Slice cap and optional remainder label.
+ * @returns Rows for the pie chart.
+ */
+function mapSortedTotalsToPieChartEntries(
+    sortedDescending: [string, number][],
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] {
+    const maxSlices = options?.maxSlices ?? DEFAULT_PIE_SLICES_CAP;
+    const remainderLabel = options?.otherLabel?.trim();
+
+    if (sortedDescending.length <= maxSlices) {
+        return sortedDescending.map(([name, value]) => ({ name, value }));
+    }
+
+    if (remainderLabel) {
+        const head = sortedDescending.slice(0, maxSlices - 1);
+        const tail = sortedDescending.slice(maxSlices - 1);
+        const otherValue = tail.reduce((sum, [, v]) => sum + v, 0);
+        return [
+            ...head.map(([name, value]) => ({ name, value })),
+            { name: remainderLabel, value: otherValue }
+        ];
+    }
+
+    return sortedDescending.slice(0, maxSlices).map(([name, value]) => ({ name, value }));
+}
+
+/**
+ * Maps backend `groupBy=device` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
+ */
+export const transformDeviceBreakdownToPieChartEntries = (
+    data: DeviceBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
 ): PieChartEntry[] => {
-    if (!data || data.length === 0) {
+    if (!data?.length) {
         return [];
     }
 
-    return [...data]
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 10)
-        .map((item) => ({
-            name: `${item.browser} (${item.device})`,
-            value: item.total
-        }));
+    const sorted = [...data]
+        .map((row): [string, number] => [row.device, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
+};
+
+/**
+ * Maps backend `groupBy=browser` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
+ */
+export const transformBrowserBreakdownToPieChartEntries = (
+    data: BrowserBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] => {
+    if (!data?.length) {
+        return [];
+    }
+
+    const sorted = [...data]
+        .map((row): [string, number] => [row.browser, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
 };
 
 /**
@@ -647,18 +674,18 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         return [startDate, endDate];
     }
 
+    // Relative ranges resolve to whole, completed days ending YESTERDAY — today is still in
+    // progress and is excluded. Mirrors the upstream `last_7_days` / `last_30_days` semantics
+    // used by toApiRangeParams, so the client-side fill window lines up exactly with the data
+    // the API returns (otherwise chart labels drift +1 day and today shows as an empty bucket).
+    const yesterday = endOfDay(subDays(today, 1));
+
     switch (timeRange) {
-        case TIME_RANGE_OPTIONS.last7days: {
-            const sevenDaysAgo = subDays(today, 6);
+        case TIME_RANGE_OPTIONS.last7days:
+            return [startOfDay(subDays(today, 7)), yesterday];
 
-            return [startOfDay(sevenDaysAgo), endOfDay(today)];
-        }
-
-        case TIME_RANGE_OPTIONS.last30days: {
-            const thirtyDaysAgo = subDays(today, 29);
-
-            return [startOfDay(thirtyDaysAgo), endOfDay(today)];
-        }
+        case TIME_RANGE_OPTIONS.last30days:
+            return [startOfDay(subDays(today, 30)), yesterday];
 
         default:
             return [startOfDay(today), endOfDay(today)];

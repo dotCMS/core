@@ -7,7 +7,7 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.ESSeachAPI;
+import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -18,6 +18,7 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.comparators.GenericMapFieldComparator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -803,7 +804,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
         final boolean live = !browserQuery.showWorking;
-        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
 
         try {
@@ -815,7 +816,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
-            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+            searchAPI.search(esQuery, live, browserQuery.user, false).forEach(result -> {
                 final Contentlet contentlet = (Contentlet) result;
                 collectedInodes.add(contentlet.getInode());
             });
@@ -1573,6 +1574,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
         }
+        appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
+                browserQuery.workflowStepIds, parameters);
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -1767,6 +1770,54 @@ public class BrowserAPIImpl implements BrowserAPI {
         parameters.add("%" + filterText + "%");
 
 
+    }
+
+    /**
+     * Appends a workflow filter to the query. Two independent, OR'd buckets:
+     * <ul>
+     *   <li><b>Scheme-only entries</b> ({@code workflowSchemeIds}) match by content-type
+     *   assignment via {@code workflow_scheme_x_structure}, so content that has never run a
+     *   workflow action — e.g. imported or push-published content with no {@code workflow_task}
+     *   row — still appears under the schemes its type is governed by.</li>
+     *   <li><b>Step-pinned entries</b> ({@code workflowStepIds}) match the contentlet's current
+     *   task via {@code workflow_task.status}.</li>
+     * </ul>
+     * No-ops when both sets are empty. All ids are sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)} and bound as {@code ?} parameters.
+     */
+    private void appendWorkflowQuery(final StringBuilder sqlQuery,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final List<Object> parameters) {
+
+        final boolean hasSchemes = UtilMethods.isSet(workflowSchemeIds);
+        final boolean hasSteps = UtilMethods.isSet(workflowStepIds);
+        if (!hasSchemes && !hasSteps) {
+            return;
+        }
+
+        final List<String> orClauses = new ArrayList<>();
+
+        if (hasSchemes) {
+            final String placeholders = workflowSchemeIds.stream()
+                    .map(id -> "?").collect(Collectors.joining(","));
+            orClauses.add(" exists (select 1 from workflow_scheme_x_structure wss "
+                    + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
+                    + ")) ");
+            workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        }
+
+        if (hasSteps) {
+            final String placeholders = workflowStepIds.stream()
+                    .map(id -> "?").collect(Collectors.joining(","));
+            // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
+            // not a step name — so workflowStepIds are matched against it directly.
+            orClauses.add(" exists (select 1 from workflow_task wt "
+                    + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
+                    + " and wt.status in (" + placeholders + ")) ");
+            workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        }
+
+        sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
     }
 
     /**

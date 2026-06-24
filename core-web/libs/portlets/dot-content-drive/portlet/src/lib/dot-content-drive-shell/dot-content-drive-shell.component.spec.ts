@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -16,6 +16,7 @@ import {
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotHttpErrorManagerService,
     DotSiteService,
     DotSystemConfigService,
     DotWorkflowActionsFireService,
@@ -36,9 +37,9 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
+    DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
-    DotContentDriveMoveItems,
-    ALL_FOLDER
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 
@@ -61,7 +62,11 @@ import {
     MOCK_SITES,
     MOCK_BASE_TYPES
 } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveDialog,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
@@ -76,6 +81,8 @@ describe('DotContentDriveShellComponent', () => {
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
+    // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
+    let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -117,7 +124,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest.fn().mockReturnValue(of({}))
-            })
+            }),
+            mockProvider(DotHttpErrorManagerService)
         ],
         componentProviders: [DotContentDriveStore],
         detectChanges: false
@@ -126,6 +134,7 @@ describe('DotContentDriveShellComponent', () => {
     beforeEach(() => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
+        dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
 
         spectator = createComponent({
             providers: [
@@ -155,7 +164,7 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
-                    dialog: jest.fn().mockReturnValue(undefined),
+                    dialog: dialogSignal,
                     setDialog: jest.fn(),
                     loadFolders: jest.fn(),
                     loadChildFolders: jest.fn(),
@@ -322,7 +331,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should have a dialog when dialog is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -337,7 +347,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should not have a dialog when dialog is not set', () => {
-            store.dialog.mockReturnValue(undefined);
+            dialogSignal.set(undefined);
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -351,8 +362,22 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should configure the dialog as closable and closeOnEscape', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.closable).toBe(true);
+            expect(dialogComponent.closeOnEscape).toBe(true);
+        });
+
         it('should show dialog-folder component when folder dialog type is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            spectator.flushEffects();
             spectator.detectChanges();
 
             const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
@@ -530,16 +555,31 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('onHideDialog', () => {
-        it('should reset the dialog state', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+    describe('dialog close', () => {
+        it('should close the dialog in the store on a user-driven close (visibleChange false)', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
             spectator.detectComponentChanges();
 
-            const dialog = spectator.query('[data-testid="dialog"]');
-            dialog.dispatchEvent(new Event('visibleChange'));
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(false);
             spectator.detectComponentChanges();
 
             expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should not close the dialog in the store when it becomes visible', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.flushEffects();
+            spectator.detectComponentChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(true);
+            spectator.detectComponentChanges();
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });
 
@@ -607,347 +647,193 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('file upload integration', () => {
-        let mockFile: File;
+    const TARGET_FOLDER_DATA = {
+        id: 'folder-123',
+        hostname: 'localhost',
+        path: 'folder-123',
+        type: 'folder'
+    } as DotFolderTreeNodeData;
 
+    const createFile = (name = 'test.jpg') =>
+        new File(['test content'], name, { type: 'image/jpeg' });
+
+    const createFileList = (files: File[]): FileList =>
+        ({
+            ...files,
+            length: files.length,
+            item: (index: number) => files[index] ?? null
+        }) as unknown as FileList;
+
+    // Opens the upload selector with the given context and emits the user's choice back to the
+    // shell, mirroring the dialog's (selectUploadType) output.
+    const selectUploadType = (selection: {
+        targetFolder?: DotFolderTreeNodeData;
+        contentType: string;
+        files?: FileList;
+    }) => {
+        dialogSignal.set({
+            type: DIALOG_TYPE.UPLOAD_SELECTOR,
+            header: 'Upload',
+            payload: { targetFolder: selection.targetFolder, files: selection.files }
+        });
+        spectator.detectChanges();
+
+        const dialog = spectator.debugElement.query(
+            By.css('[data-testId="dialog-upload-selector"]')
+        );
+        spectator.triggerEventHandler(dialog, 'selectUploadType', selection);
+    };
+
+    describe('upload type selector — opening', () => {
         beforeEach(() => {
-            mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
             spectator.detectChanges();
         });
 
-        it('should upload file when file input changes', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            store.selectedNode.mockReturnValue(mockNode as DotFolderTreeNodeItem);
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-
-        it('should sent the current site identifier when the selected node is the all folder', () => {
+        it('should open the upload selector with the selected folder when the upload button is clicked', () => {
             store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
+                data: TARGET_FOLDER_DATA
+            } as DotFolderTreeNodeItem);
+
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+            spectator.triggerEventHandler(toolbar, 'upload', undefined);
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.UPLOAD_SELECTOR,
+                header: expect.any(String),
+                payload: { targetFolder: TARGET_FOLDER_DATA }
             });
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            spectator.detectChanges();
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: MOCK_SITES[0].identifier,
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-
-        it('should show info message when upload starts', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
-        });
-
-        it('should show error message on upload failure', () => {
-            const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-            store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
-            });
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: ERROR_MESSAGE_LIFE
-            });
-        });
-
-        it('should show error message on upload failure with errors', () => {
-            const error = {
-                error: {
-                    errors: [{ message: 'Upload failed' }]
-                }
-            };
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-            store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
-            });
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledTimes(2);
-            expect(addSpy).toHaveBeenNthCalledWith(1, {
-                severity: 'info',
-                summary: 'content-drive.file-upload-in-progress',
-                detail: 'content-drive.file-upload-in-progress-detail'
-            });
-            expect(addSpy).toHaveBeenNthCalledWith(2, {
-                severity: 'error',
-                summary: 'content-drive.add-dotasset-error',
-                detail: 'Upload failed',
-                life: ERROR_MESSAGE_LIFE
-            });
-        });
-
-        it('should not upload when no files are selected', () => {
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [],
-                writable: false
-            });
-
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
             expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
-            expect(store.setStatus).not.toHaveBeenCalled();
         });
 
-        it('should show warning message when multiple files are selected and upload only the first file', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should open the upload selector carrying the files when the dropzone emits uploadFiles', () => {
+            const files = createFileList([createFile()]);
 
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFile3 = new File(['test content 3'], 'test3.jpg', { type: 'image/jpeg' });
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            store.selectedNode.mockReturnValue(mockNode);
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile1, mockFile2, mockFile3],
-                writable: false
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files,
+                targetFolder: TARGET_FOLDER_DATA
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.UPLOAD_SELECTOR,
+                header: expect.any(String),
+                payload: { targetFolder: TARGET_FOLDER_DATA, files }
+            });
+            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+        });
 
-            // Should show warning message
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
+        it('should open the upload selector carrying the files when the sidebar emits uploadFiles', () => {
+            const files = createFileList([createFile()]);
+
+            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
+                files,
+                targetFolder: TARGET_FOLDER_DATA
             });
 
-            // Should upload only the first file
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.UPLOAD_SELECTOR,
+                header: expect.any(String),
+                payload: { targetFolder: TARGET_FOLDER_DATA, files }
             });
+            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+        });
+
+        it('should render the upload selector dialog body when the dialog type is UPLOAD_SELECTOR', () => {
+            dialogSignal.set({
+                type: DIALOG_TYPE.UPLOAD_SELECTOR,
+                header: 'Upload',
+                payload: { targetFolder: TARGET_FOLDER_DATA }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-upload-selector"]')).toBeTruthy();
         });
     });
 
-    describe('sidebar file upload', () => {
+    describe('upload — drag-and-drop flow (files already chosen)', () => {
         beforeEach(() => {
             spectator.detectChanges();
         });
 
-        it('should trigger resolveFilesUpload when sidebar emits uploadFiles event with single file', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
+        it('should upload the file as dotAsset when Asset is selected', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
 
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([file]),
+                contentType: 'dotAsset'
             });
 
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: mockNode.data.id,
-                indexPolicy: 'WAIT_FOR'
-            });
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
+                file,
+                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
+                'dotAsset'
+            );
         });
 
-        it('should trigger resolveFilesUpload when sidebar emits uploadFiles event with multiple files', () => {
+        it('should upload the file as FileAsset when File is selected', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([file]),
+                contentType: 'FileAsset'
+            });
+
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
+                file,
+                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
+                'FileAsset'
+            );
+        });
+
+        it('should upload to the site root when no folder is selected', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([file]),
+                contentType: 'dotAsset'
+            });
+
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
+                file,
+                { hostFolder: '', indexPolicy: 'WAIT_FOR' },
+                'dotAsset'
+            );
+        });
+
+        it('should show the info message when the upload starts', () => {
             uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
             const addSpy = jest.spyOn(messageService, 'add');
 
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile1,
-                1: mockFile2,
-                length: 2,
-                item: (index: number) => {
-                    if (index === 0) return mockFile1;
-                    if (index === 1) return mockFile2;
-
-                    return null;
-                }
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-456',
-                    hostname: 'localhost',
-                    path: 'folder-456',
-                    type: 'folder'
-                },
-                key: 'folder-456',
-                label: 'folder-456'
-            };
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                contentType: 'dotAsset'
             });
 
-            // Should show warning message for multiple files
             expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
+                severity: 'info',
                 summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
-            });
-
-            // Should upload only the first file
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-456',
-                indexPolicy: 'WAIT_FOR'
+                detail: expect.any(String)
             });
         });
 
-        it('should show success message after successful upload from sidebar', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const mockContentlet = {
-                title: 'test.jpg',
-                contentType: 'image/jpeg'
-            } as DotCMSContentlet;
-            uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
+        it('should show a success message after a successful upload', () => {
+            uploadService.uploadDotAsset.mockReturnValue(
+                of({ title: 'test.jpg', contentType: 'image/jpeg' } as DotCMSContentlet)
+            );
             const addSpy = jest.spyOn(messageService, 'add');
 
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                contentType: 'dotAsset'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -958,33 +844,16 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should show error message after failed upload from sidebar', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-
+        it('should show an error message on upload failure', () => {
+            uploadService.uploadDotAsset.mockReturnValue(
+                throwError(() => new Error('Upload failed'))
+            );
             const addSpy = jest.spyOn(messageService, 'add');
 
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                contentType: 'dotAsset'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -994,96 +863,99 @@ describe('DotContentDriveShellComponent', () => {
                 life: ERROR_MESSAGE_LIFE
             });
         });
-    });
 
-    describe('dropzone file upload', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
-
-        it('should trigger resolveFilesUpload when dropzone emits uploadFiles event with single file', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: mockNode.data.id,
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-
-        it('should trigger resolveFilesUpload when dropzone emits uploadFiles event with multiple files', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+        it('should show the server error message on failure with an errors payload', () => {
+            uploadService.uploadDotAsset.mockReturnValue(
+                throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
+            );
             const addSpy = jest.spyOn(messageService, 'add');
 
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile1,
-                1: mockFile2,
-                length: 2,
-                item: (index: number) => {
-                    if (index === 0) return mockFile1;
-                    if (index === 1) return mockFile2;
-
-                    return null;
-                }
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                contentType: 'dotAsset'
             });
 
-            // Should show warning message for multiple files
+            expect(addSpy).toHaveBeenCalledWith({
+                severity: 'error',
+                summary: 'content-drive.add-dotasset-error',
+                detail: 'Upload failed',
+                life: ERROR_MESSAGE_LIFE
+            });
+        });
+
+        it('should warn and upload only the first file when multiple files are selected', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const addSpy = jest.spyOn(messageService, 'add');
+            const file1 = createFile('test1.jpg');
+            const file2 = createFile('test2.jpg');
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([file1, file2]),
+                contentType: 'dotAsset'
+            });
+
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'warn',
                 summary: expect.any(String),
                 detail: expect.any(String),
                 life: WARNING_MESSAGE_LIFE
             });
-
-            // Should upload only the first file
             expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
+                file1,
+                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
+                'dotAsset'
+            );
+        });
+    });
+
+    describe('upload — button flow (file picker opens after choosing)', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should open the file picker after a type is chosen, then upload with that type', () => {
+            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            const clickSpy = jest.spyOn(fileInput, 'click');
+
+            // Button flow: dialog opens with NO files in the payload.
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, contentType: 'FileAsset' });
+
+            expect(clickSpy).toHaveBeenCalled();
+            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+
+            Object.defineProperty(fileInput, 'files', {
+                value: [file],
+                writable: true,
+                configurable: true
             });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
+                file,
+                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
+                'FileAsset'
+            );
+        });
+
+        it('should not upload when the file picker is dismissed without files', () => {
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, contentType: 'dotAsset' });
+
+            Object.defineProperty(fileInput, 'files', {
+                value: [],
+                writable: true,
+                configurable: true
+            });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
         });
     });
 
@@ -1988,8 +1860,8 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('onAddNewDotAsset', () => {
-        it('should trigger file input click', () => {
+    describe('onUpload', () => {
+        it('should open the upload selector dialog instead of the file picker directly', () => {
             spectator.detectChanges();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
@@ -1997,9 +1869,12 @@ describe('DotContentDriveShellComponent', () => {
 
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
 
-            spectator.triggerEventHandler(toolbar, 'addNewDotAsset', undefined);
+            spectator.triggerEventHandler(toolbar, 'upload', undefined);
 
-            expect(clickSpy).toHaveBeenCalled();
+            expect(store.setDialog).toHaveBeenCalledWith(
+                expect.objectContaining({ type: DIALOG_TYPE.UPLOAD_SELECTOR })
+            );
+            expect(clickSpy).not.toHaveBeenCalled();
         });
     });
 

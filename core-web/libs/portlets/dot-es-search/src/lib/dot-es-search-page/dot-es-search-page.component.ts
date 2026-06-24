@@ -34,11 +34,15 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotContentState } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusChipComponent,
+    DOT_MONACO_BASE_OPTIONS,
+    DOT_MONACO_RAW_OPTIONS,
+    DotClipboardUtil,
+    DotContentletStatusBadgeComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
+import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
 import { DotEsSearchStore, ESSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
 
@@ -80,21 +84,9 @@ export interface ParsedSuggester {
 const BUCKET_RESERVED_KEYS = new Set(['key', 'key_as_string', 'doc_count']);
 
 const QUERY_EDITOR_OPTIONS = {
-    theme: 'vs',
-    language: 'json',
-    minimap: { enabled: false },
-    lineNumbers: 'on',
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    fontSize: 13,
-    fontFamily: 'JetBrains Mono, Fira Code, Consolas, monospace'
-};
-
-const RAW_EDITOR_OPTIONS = {
-    ...QUERY_EDITOR_OPTIONS,
-    readOnly: true,
-    lineNumbers: 'off'
-};
+    ...DOT_MONACO_BASE_OPTIONS,
+    language: 'json'
+} as const;
 
 @Component({
     selector: 'dot-es-search-page',
@@ -116,11 +108,11 @@ const RAW_EDITOR_OPTIONS = {
         SkeletonModule,
         MessageModule,
         TagModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
-    providers: [DotEsSearchStore, DotEsSearchService, DotCurrentUserService],
+    providers: [DotEsSearchStore, DotEsSearchService, DotCurrentUserService, DotClipboardUtil],
     templateUrl: './dot-es-search-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -130,6 +122,7 @@ export class DotEsSearchPageComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
     readonly #globalMessage = inject(DotGlobalMessageService);
+    readonly #clipboard = inject(DotClipboardUtil);
 
     readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
@@ -138,7 +131,7 @@ export class DotEsSearchPageComponent {
         ...QUERY_EDITOR_OPTIONS,
         wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
-    readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
+    readonly RAW_EDITOR_OPTIONS = DOT_MONACO_RAW_OPTIONS;
     readonly MAX_HITS = MAX_HITS;
 
     readonly ComponentStatus = ComponentStatus;
@@ -256,21 +249,21 @@ export class DotEsSearchPageComponent {
         this.helpPopover().hide();
     }
 
-    copyQuery(query: string): void {
-        navigator.clipboard.writeText(query).catch(() => this.#globalMessage.error());
-    }
-
     copyToClipboard(value: unknown): void {
-        navigator.clipboard.writeText(String(value ?? '')).catch(() => this.#globalMessage.error());
+        this.#copy(String(value ?? ''));
     }
 
     downloadRawJson(): void {
-        const a = this.#document.createElement('a');
-        a.href = `data:application/json;charset=utf-8,${encodeURIComponent(this.store.rawJson())}`;
-        a.download = 'es-search-results.json';
-        this.#document.body.appendChild(a);
-        a.click();
-        this.#document.body.removeChild(a);
+        const blob = new Blob([this.store.rawJson()], { type: 'application/json' });
+        const link = getDownloadLink(blob, 'es-search-results.json');
+        this.#document.body.appendChild(link);
+        link.click();
+        this.#document.body.removeChild(link);
+    }
+
+    async #copy(text: string): Promise<void> {
+        const ok = await this.#clipboard.copy(text);
+        if (!ok) this.#globalMessage.error();
     }
 
     asContentState(contentlet: Record<string, unknown>): DotContentState {
@@ -342,42 +335,23 @@ export class DotEsSearchPageComponent {
     }
 
     private copyAs(format: 'curl' | 'fetch'): void {
-        const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
-        navigator.clipboard.writeText(snippet).catch(() => this.#globalMessage.error());
-    }
-
-    private buildCurlSnippet(): string {
         const qs = this.buildApiQueryString();
+        const path = `/api/es/search${qs ? '?' + qs : ''}`;
         const origin = this.#document.defaultView?.location.origin ?? '';
-        const url = `${origin}/api/es/search${qs ? '?' + qs : ''}`;
-        const safeBody = this.store.query().trim().replace(/'/g, `'\\''`);
-        return [
-            `curl -X POST "${url}" \\`,
-            `  -H "Content-Type: application/json" \\`,
-            `  -H "Authorization: Bearer <your-api-token>" \\`,
-            `  -d '${safeBody}'`
-        ].join('\n');
+        const body = this.parseQueryBody();
+        const snippet =
+            format === 'curl'
+                ? buildCurlSnippet({ url: `${origin}${path}`, body })
+                : buildFetchSnippet({ url: path, body });
+        this.#copy(snippet);
     }
 
-    private buildFetchSnippet(): string {
-        const qs = this.buildApiQueryString();
-        const url = `/api/es/search${qs ? '?' + qs : ''}`;
-        let parsed: unknown;
+    private parseQueryBody(): unknown {
         try {
-            parsed = JSON.parse(this.store.query());
+            return JSON.parse(this.store.query());
         } catch {
-            parsed = {};
+            return {};
         }
-        const body = JSON.stringify(parsed, null, 2);
-        return [
-            `const response = await fetch('${url}', {`,
-            `  method: 'POST',`,
-            `  credentials: 'include',`,
-            `  headers: { 'Content-Type': 'application/json' },`,
-            `  body: JSON.stringify(${body})`,
-            `});`,
-            `const data = await response.json();`
-        ].join('\n');
     }
 
     private buildApiQueryString(): string {

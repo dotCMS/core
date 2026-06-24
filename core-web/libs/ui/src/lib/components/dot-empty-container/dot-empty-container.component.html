@@ -1,20 +1,20 @@
-<div class="flex w-full max-w-[480px] gap-6 flex-col">
+<div class="flex w-full max-w-[480px] flex-col gap-6">
     <div
-        class="message__principal-wrapper flex items-center flex-col gap-2 break-words"
+        class="message__principal-wrapper flex flex-col items-center gap-2 wrap-break-word"
         data-testid="message-principal">
         @if (configuration.icon) {
             <i
-                [class]="'pi !text-6xl p-3 text-[var(--gray-700)] ' + configuration.icon"
+                [class]="'pi p-3 text-6xl! text-gray-700 ' + configuration.icon"
                 data-testid="message-icon"></i>
         }
         <h1
-            class="message__title m-0 text-center leading-[1.4] text-lg font-medium"
+            class="message__title m-0 text-center text-lg leading-[1.4] font-medium"
             data-testid="message-title">
             {{ configuration.title }}
         </h1>
         @if (configuration.subtitle) {
             <h2
-                class="message__subtitle m-0 text-center leading-[1.4] text-base font-medium text-[var(--gray-700)]"
+                class="message__subtitle m-0 text-center text-base leading-[1.4] font-medium text-gray-700"
                 data-testid="message-subtitle">
                 {{ configuration.subtitle }}
             </h2>
@@ -22,7 +22,7 @@
     </div>
 
     @if (!hideContactUsLink || buttonLabel) {
-        <div class="flex items-center flex-col gap-2" data-testid="message-extra">
+        <div class="flex flex-col items-center gap-2" data-testid="message-extra">
             @if (buttonLabel) {
                 <button
                     pButton

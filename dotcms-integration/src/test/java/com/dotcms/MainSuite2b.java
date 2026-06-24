@@ -43,7 +43,7 @@ import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldVali
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
-import com.dotcms.csspreproc.CSSPreProcessServletTest;
+import com.dotcms.csspreproc.CSSPreProcessServletIT;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
@@ -114,6 +114,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
@@ -161,6 +162,7 @@ import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
+import com.dotmarketing.quartz.job.EncryptPlainPasswordsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
@@ -366,7 +368,7 @@ import org.junit.runners.Suite.SuiteClasses;
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
-        CSSPreProcessServletTest.class,
+        CSSPreProcessServletIT.class,
         VariantFactoryTest.class,
         VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
@@ -397,6 +399,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
         AssetPathResolverImplIntegrationTest.class,
         WebAssetHelperIntegrationTest.class,
+        WebAssetResourceV2IntegrationTest.class,
         SystemTableFactoryTest.class,
         Task230707CreateSystemTableTest.class,
         SystemAPITest.class,
@@ -471,6 +474,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.tag.business.TagAPITest.class,
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
+        EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,

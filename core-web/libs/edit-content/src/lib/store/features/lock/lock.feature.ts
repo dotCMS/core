@@ -20,8 +20,9 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
+import { escapeHtml, resolveLocker } from '../../../utils/functions.util';
 import { EditContentState } from '../../edit-content.store';
 
 export function withLock() {
@@ -42,6 +43,13 @@ export function withLock() {
             }),
 
             /**
+             * Determines if a lock/unlock request is currently in flight
+             *
+             * @returns boolean - True while the lock or unlock API call is pending
+             */
+            isLocking: computed(() => store.lockStatus() === ComponentStatus.LOADING),
+
+            /**
              * Generates a user-friendly message about who has locked the content
              *
              * @returns string - Localized message indicating who locked the content or empty string if not locked
@@ -49,34 +57,67 @@ export function withLock() {
             lockWarningMessage: computed((): string | null => {
                 const userCanLock = store.canLock();
                 const currentUser = store.currentUser();
-                const contentlet = store.contentlet();
+                const locker = resolveLocker(store.contentlet());
 
-                if (!contentlet) {
+                if (!locker || currentUser?.userId === locker.userId) {
                     return null;
                 }
 
-                const { lockedBy } = contentlet;
+                // The message keys already bold {0} (`<b>{0}.</b>`) and the banner renders via
+                // [innerHTML], so escape the API-provided name before interpolating it.
+                const safeName = escapeHtml(locker.displayName);
 
-                const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
-
-                // content is not locked or locked by the current user
-                if (!lockedBy || isLockedByCurrentUser) {
-                    return null;
-                }
-
-                const userDisplay = [lockedBy.firstName, lockedBy.lastName]
-                    .filter(Boolean)
-                    .join(' ');
-
-                // If user doesn't have permission to lock, use the no permission message
+                // If user doesn't have permission to lock, use the no permission message.
+                // Fall back to the name-less key when the locker's display name is unavailable.
                 if (!userCanLock) {
-                    return dotMessageService.get(
-                        'edit.content.locked.no.permission.user',
-                        userDisplay
-                    );
+                    return safeName
+                        ? dotMessageService.get('edit.content.locked.no.permission.user', safeName)
+                        : dotMessageService.get('edit.content.locked.no.permission');
                 }
 
-                return dotMessageService.get('edit.content.locked.by.user', userDisplay);
+                // Without a display name, the "Content locked by <b>{name}.</b>" template would
+                // render as "Content locked by ." — suppress the banner instead. The lock switch
+                // UI still indicates the locked state.
+                if (!safeName) {
+                    return null;
+                }
+
+                return dotMessageService.get('edit.content.locked.by.user', safeName);
+            }),
+
+            /**
+             * Display name of the user who locked the content, when it is locked by someone
+             * other than the current user. Used in the release-lock confirmation dialog.
+             *
+             * @returns string | null - The locker's display name, or null when not applicable.
+             */
+            lockedByName: computed((): string | null => {
+                const currentUser = store.currentUser();
+                const locker = resolveLocker(store.contentlet());
+
+                if (!locker || currentUser?.userId === locker.userId) {
+                    return null;
+                }
+
+                return locker.displayName || null;
+            }),
+
+            /**
+             * Determines whether the content is locked by a user other than the current one.
+             * Drives the "Release Lock" affordance (vs a plain "Unlock" of the user's own lock).
+             *
+             * @returns boolean - True when the content is locked by a different user.
+             */
+            isLockedByAnotherUser: computed(() => {
+                const contentlet = store.contentlet();
+                const currentUser = store.currentUser();
+                const locker = resolveLocker(contentlet);
+
+                if (!contentlet?.locked || !locker) {
+                    return false;
+                }
+
+                return !!currentUser && currentUser.userId !== locker.userId;
             })
         })),
 
@@ -96,7 +137,8 @@ export function withLock() {
                     pipe(
                         tap(() =>
                             patchState(store, {
-                                lockError: null
+                                lockError: null,
+                                lockStatus: ComponentStatus.LOADING
                             })
                         ),
                         switchMap(() =>
@@ -105,9 +147,14 @@ export function withLock() {
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
                                         if (!current) {
+                                            patchState(store, {
+                                                lockStatus: ComponentStatus.LOADED
+                                            });
+
                                             return;
                                         }
                                         patchState(store, {
+                                            lockStatus: ComponentStatus.LOADED,
                                             contentlet: {
                                                 ...current,
                                                 locked: updated.locked,
@@ -120,7 +167,8 @@ export function withLock() {
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
-                                            lockError: error.message
+                                            lockError: error.message,
+                                            lockStatus: ComponentStatus.ERROR
                                         });
                                     }
                                 })
@@ -139,7 +187,8 @@ export function withLock() {
                     pipe(
                         tap(() =>
                             patchState(store, {
-                                lockError: null
+                                lockError: null,
+                                lockStatus: ComponentStatus.LOADING
                             })
                         ),
                         switchMap(() =>
@@ -148,9 +197,14 @@ export function withLock() {
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
                                         if (!current) {
+                                            patchState(store, {
+                                                lockStatus: ComponentStatus.LOADED
+                                            });
+
                                             return;
                                         }
                                         patchState(store, {
+                                            lockStatus: ComponentStatus.LOADED,
                                             contentlet: {
                                                 ...current,
                                                 locked: updated.locked,
@@ -163,7 +217,8 @@ export function withLock() {
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
-                                            lockError: error.message
+                                            lockError: error.message,
+                                            lockStatus: ComponentStatus.ERROR
                                         });
                                     }
                                 })

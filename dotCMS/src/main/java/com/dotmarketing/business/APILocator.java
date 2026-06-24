@@ -907,9 +907,24 @@ public class APILocator extends Locator<APIIndex> {
 	 * Creates a single instance of the {@link ESSeachAPI} class.
 	 *
 	 * @return The {@link ESSeachAPI} class.
+	 * @deprecated Use {@link #getSearchAPI()} for vendor-neutral search access.
 	 */
+	@Deprecated
 	public static ESSeachAPI getEsSearchAPI () {
 		return (ESSeachAPI) getInstance( APIIndex.ES_SEARCH_API );
+	}
+
+	/**
+	 * Returns the vendor-neutral {@link com.dotcms.content.index.SearchAPI} router.
+	 *
+	 * <p>Routes search operations to the active provider (Elasticsearch or OpenSearch)
+	 * based on the current migration phase.  Prefer this over the deprecated
+	 * {@link #getEsSearchAPI()} for all new call sites.</p>
+	 *
+	 * @return the {@link com.dotcms.content.index.SearchAPI} instance.
+	 */
+	public static com.dotcms.content.index.SearchAPI getSearchAPI() {
+		return (com.dotcms.content.index.SearchAPI) getInstance(APIIndex.SEARCH_API);
 	}
 
 	/**
@@ -1449,7 +1464,8 @@ enum APIIndex
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
     OPENSEARCH_INDEX_API,
-    CONTENT_MAPPING_API
+    CONTENT_MAPPING_API,
+    SEARCH_API
     ;
 
 	Object create() {
@@ -1554,6 +1570,7 @@ enum APIIndex
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
             case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
             case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
+            case SEARCH_API: return new com.dotcms.content.index.SearchAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

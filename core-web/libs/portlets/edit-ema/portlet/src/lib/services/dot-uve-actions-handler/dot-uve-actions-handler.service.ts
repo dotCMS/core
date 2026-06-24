@@ -147,12 +147,55 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
+                const contentArea = uveStore.editorContentArea();
+                const { contentlet, container } = contentArea.payload;
+
+                // Move focus to an inline field that has already cleared (or does
+                // not need) the copy/edit decision: headless via postMessage,
+                // traditional via TinyMCE init.
+                const focusInlineField = (data: {
+                    oldInode: string;
+                    inode: string;
+                    fieldName: string;
+                    mode: string;
+                    language: string;
+                }) => {
+                    if (uveStore.pageType() === PageType.HEADLESS) {
+                        contentWindow?.postMessage(
+                            {
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: data
+                            },
+                            host
+                        );
+
+                        return;
+                    }
+
+                    inlineEditingService.setTargetInlineMCEDataset(data);
+                    inlineEditingService.initEditor();
+                };
+
                 if (uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
+                    // Already inline-editing. When the click targets another field
+                    // on the SAME contentlet, the copy/edit decision was already
+                    // made for it — just move focus to the new field instead of
+                    // re-opening the dialog. Without this the guard silently drops
+                    // the click and the user cannot edit any other field on a
+                    // content that has many inline-editable fields.
+                    if (contentlet?.inode === payload.dataset.inode) {
+                        focusInlineField({
+                            oldInode: payload.dataset.inode,
+                            inode: payload.dataset.inode,
+                            fieldName: payload.dataset.fieldName,
+                            mode: payload.dataset.mode,
+                            language: payload.dataset.language
+                        });
+                    }
+
                     return;
                 }
 
-                const contentArea = uveStore.editorContentArea();
-                const { contentlet, container } = contentArea.payload;
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService
@@ -257,18 +300,26 @@ export class DotUveActionsHandlerService {
             }) => {
                 const isClientReady = uveStore.isClientReady();
 
-                if (isClientReady) {
-                    return;
-                }
-
                 const { graphql, params } = devConfig || {};
                 const { query, variables } = graphql || {};
 
+                // Always refresh the stored client request — it is page-scoped.
+                // When the app re-announces itself on a client-side route change,
+                // the new page's CLIENT_READY arrives right before its
+                // NAVIGATION_UPDATE; installing the config here lets the upcoming
+                // pageLoad fetch the new page with its own query/variables instead
+                // of the previous page's.
                 if (query) {
                     uveStore.setCustomClient({
                         query,
                         variables: (variables ?? {}) as Record<string, string>
                     });
+                }
+
+                if (isClientReady) {
+                    // Already initialized: don't reload. The navigation (if any)
+                    // drives the fetch; a duplicate CLIENT_READY is a no-op.
+                    return;
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);

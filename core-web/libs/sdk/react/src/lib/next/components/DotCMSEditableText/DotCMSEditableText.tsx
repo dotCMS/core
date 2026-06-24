@@ -97,9 +97,14 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
                 return;
             }
 
-            const { oldInode, inode } = payload;
+            const { oldInode, inode, fieldName: focusedFieldName } = payload;
             const currentInode = contentlet.inode;
-            const shouldFocus = currentInode === oldInode || currentInode === inode;
+            const matchesInode = currentInode === oldInode || currentInode === inode;
+
+            // Match the field too: a contentlet's fields all share one inode, so an
+            // inode-only check focuses every editable field on the contentlet (the
+            // last one wins) instead of the one the user clicked.
+            const shouldFocus = matchesInode && focusedFieldName === fieldName;
 
             if (shouldFocus) {
                 editorRef.current?.focus();
@@ -111,7 +116,7 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
         return () => {
             window.removeEventListener('message', onMessage);
         };
-    }, [contentlet?.inode]);
+    }, [contentlet?.inode, fieldName]);
 
     const onMouseDown = (event: MouseEvent) => {
         const { onNumberOfPages = 1 } = contentlet;

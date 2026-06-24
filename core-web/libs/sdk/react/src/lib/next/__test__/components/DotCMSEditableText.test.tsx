@@ -216,19 +216,36 @@ describe('DotCMSEditableText', () => {
                     focusSpy = jest.spyOn(TINYMCE_EDITOR_MOCK, 'focus');
                 });
 
-                it("should focus on the editor when the message is 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should focus on the editor when the message is 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS' and the field name matches", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
                                 name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: MOCK_CONTENTLET['inode'],
-                                    inode: '456'
+                                    inode: '456',
+                                    fieldName: 'title'
                                 }
                             }
                         })
                     );
                     expect(focusSpy).toHaveBeenCalled();
+                });
+
+                it('should not focus on the editor when the inode matches but the field name is for another field', () => {
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            data: {
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                payload: {
+                                    oldInode: MOCK_CONTENTLET['inode'],
+                                    inode: '456',
+                                    fieldName: 'anotherField'
+                                }
+                            }
+                        })
+                    );
+                    expect(focusSpy).not.toHaveBeenCalled();
                 });
 
                 it("should not focus on the editor when the message is not 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {

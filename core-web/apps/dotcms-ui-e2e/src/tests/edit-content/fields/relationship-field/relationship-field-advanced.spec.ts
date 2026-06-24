@@ -1,4 +1,9 @@
 import { NewEditContentFormPage } from '@pages';
+import {
+    createFakePayloadRelationshipField,
+    createFakePayloadTextField,
+    IMMUTABLE_SIMPLE_CONTENT_TYPE
+} from '@utils/dot-content-types.mock';
 
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
@@ -11,10 +16,6 @@ import {
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
 
-const IMMUTABLE_SIMPLE_CT = 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType';
-const IMMUTABLE_TEXT_FIELD = 'com.dotcms.contenttype.model.field.ImmutableTextField';
-const IMMUTABLE_REL_FIELD = 'com.dotcms.contenttype.model.field.ImmutableRelationshipField';
-
 /**
  * Blog content type with title + `authors` (1:N) and optional extra relationship fields.
  */
@@ -22,15 +23,15 @@ function blogTypeWithRelationships(
     name: string,
     variable: string,
     authorTypeVariable: string,
-    extraRelationshipFields: Array<{
+    extraRelationshipFields: {
         name: string;
         variable: string;
         sortOrder: number;
         cardinality: number;
-    }> = []
+    }[] = []
 ): Record<string, unknown> {
     return {
-        clazz: IMMUTABLE_SIMPLE_CT,
+        clazz: IMMUTABLE_SIMPLE_CONTENT_TYPE,
         name,
         variable,
         host: 'SYSTEM_HOST',
@@ -38,14 +39,12 @@ function blogTypeWithRelationships(
         metadata: { CONTENT_EDITOR2_ENABLED: true },
         workflow: [SYSTEM_WORKFLOW_ID],
         fields: [
-            {
-                clazz: IMMUTABLE_TEXT_FIELD,
+            createFakePayloadTextField({
                 name: 'Title',
                 variable: 'title',
                 sortOrder: 1
-            },
-            {
-                clazz: IMMUTABLE_REL_FIELD,
+            }),
+            createFakePayloadRelationshipField({
                 name: 'Authors',
                 variable: 'authors',
                 sortOrder: 2,
@@ -53,17 +52,18 @@ function blogTypeWithRelationships(
                     velocityVar: authorTypeVariable,
                     cardinality: CARDINALITY.ONE_TO_MANY
                 }
-            },
-            ...extraRelationshipFields.map((f) => ({
-                clazz: IMMUTABLE_REL_FIELD,
-                name: f.name,
-                variable: f.variable,
-                sortOrder: f.sortOrder,
-                relationships: {
-                    velocityVar: authorTypeVariable,
-                    cardinality: f.cardinality
-                }
-            }))
+            }),
+            ...extraRelationshipFields.map((f) =>
+                createFakePayloadRelationshipField({
+                    name: f.name,
+                    variable: f.variable,
+                    sortOrder: f.sortOrder,
+                    relationships: {
+                        velocityVar: authorTypeVariable,
+                        cardinality: f.cardinality
+                    }
+                })
+            )
         ]
     };
 }

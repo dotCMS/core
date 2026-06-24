@@ -5,7 +5,6 @@
 - **Use Tailwind utility classes** for layout, spacing, typography, colors, sizing, flexbox, and grid. Avoid custom SCSS when a Tailwind class exists.
 - **Use PrimeNG components** instead of building custom UI (e.g. `p-button`, `p-inputText`, `p-card`, `p-dialog`, `p-table`). PrimeNG theme tokens handle component styling automatically.
 - **Minimize custom CSS** — component `.scss` files should be the exception, not the default. Most components should need zero or near-zero custom styles.
-- **PrimeFlex is deprecated and uninstalled** — do NOT use PrimeFlex classes (`flex`, `grid`, `col-*`, `p-m-*`, `gap-*`, `align-items-*`, `justify-content-*`). Replace with Tailwind equivalents.
 
 ## Tailwind Usage
 
@@ -20,9 +19,6 @@
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
   <p-card *ngFor="..." />
 </div>
-
-<!-- ❌ NEVER: PrimeFlex (deprecated) -->
-<div class="flex align-items-center gap-3 p-3">...</div>
 
 <!-- ❌ NEVER: custom CSS for what Tailwind handles -->
 <div class="my-custom-flex-container">...</div>
@@ -75,31 +71,45 @@ Custom SCSS is only allowed for:
 
 - **Tailwind first** — use utility classes for layout, spacing, colors, typography, sizing.
 - **PrimeNG theme** — rely on the theme for component styling; avoid overriding PrimeNG styles unless necessary.
-- **No PrimeFlex** — it is deprecated and uninstalled. Replace any remaining usage with Tailwind.
 - **NEVER hardcode** colors, spacing, or shadows in SCSS — use SCSS variables or Tailwind classes.
 - **`::ng-deep` must be scoped** inside `:host` — never bare.
 - **BEM naming** (`Block__Element--Modifier`) only when custom SCSS is truly needed.
 - **Flat SCSS structure** — no deeply nested selectors (max 3 levels).
 - **No `!important`** unless justified with a comment.
 
-## PrimeFlex → Tailwind Migration Reference
+## Tags vs Chips
 
-| PrimeFlex (deprecated) | Tailwind |
-|---|---|
-| `flex` | `flex` |
-| `align-items-center` | `items-center` |
-| `justify-content-between` | `justify-between` |
-| `gap-3` | `gap-3` |
-| `p-3` (padding) | `p-3` |
-| `m-2` (margin) | `m-2` |
-| `col-6` | `w-1/2` or `grid grid-cols-2` |
-| `text-center` | `text-center` |
-| `font-bold` | `font-bold` |
-| `w-full` | `w-full` |
-| `hidden` | `hidden` |
-| `grid` | `grid` |
-| `flex-column` | `flex-col` |
-| `flex-wrap` | `flex-wrap` |
+PrimeNG ships two visually similar but semantically different components. Pick by intent, not appearance.
+
+- **`p-tag`** — informative, read-only status display. Use it for anything that communicates state the user does not interact with directly: content status badges, locale labels, etc. Tags carry a `severity`, so colors come from native severity states (configured once in the `tag` block of the theme preset), never from per-template classes.
+- **`p-chip`** — interactive or removable elements: filters, removable selections, anything the user can click or dismiss. Chips are mostly neutral gray and do not express severity.
+
+### Decision rule
+
+1. **Showing a contentlet status?** Use the shared **`<dot-contentlet-status-badge>`** component (`libs/ui`). It takes the `DotContentState` and resolves the label, severity, and translation internally — do not hand-roll a `p-tag` for contentlet statuses.
+
+   ```html
+   <dot-contentlet-status-badge [state]="contentlet" />
+   ```
+
+2. **Showing any other status / read-only state?** Use `p-tag` with the matching `severity` (see mapping below). Example: the version-history timeline shows *per-version* states — not a contentlet `DotContentState` — so it uses raw tags: this version is live → `success`, working copy → `warn`, experiment variant → `info`.
+3. **Anything without a status** — interactive, removable, or clickable items (filters, selections) — use `p-chip`.
+
+### Severity mapping convention
+
+| Severity  | Status |
+|-----------|--------|
+| `success` | Published / live |
+| `danger`  | Archived / deleted |
+| `info`    | Revision / new |
+| `warn`    | Draft |
+
+### Rules
+
+- **Always use `<dot-contentlet-status-badge>` for contentlet statuses** — never a raw `p-tag` or `p-chip`.
+- **Locale/language labels use `p-tag severity="info"`** — locales are informative, never chips (e.g. the Locale column in Content Drive, the asset card language label). This applies to read-only locale *display*; interactive locale *selectors* are designed per area.
+- **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
+- **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
 
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates
