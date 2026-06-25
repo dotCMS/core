@@ -37,20 +37,14 @@
             aria-label="Cancel button"
             data-testid="cancel-button" />
         <div class="dot-form-import-url__import-btn-wrap">
-            @if (store.isLoading()) {
-                <p-button
-                    [icon]="'pi pi-spin pi-spinner'"
-                    type="button"
-                    aria-label="Loading button"
-                    data-testid="loading-button" />
-            } @else {
-                <p-button
-                    [label]="'dot.common.import' | dm"
-                    [icon]="'pi pi-download'"
-                    type="submit"
-                    aria-label="Import button"
-                    data-testid="import-button" />
-            }
+            <p-button
+                [label]="'dot.common.import' | dm"
+                [icon]="'pi pi-download'"
+                [loading]="store.isLoading()"
+                [disabled]="store.isLoading()"
+                type="submit"
+                aria-label="Import button"
+                data-testid="import-button" />
         </div>
     </div>
 </form>
