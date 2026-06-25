@@ -10,7 +10,7 @@ import java.sql.SQLException;
 /**
  * Creates the operational table that stores vanity aliases published on S3.
  */
-public class Task260506CreateS3VanityAliasTable extends AbstractJDBCStartupTask {
+public class Task260507CreateS3VanityAliasTable extends AbstractJDBCStartupTask {
 
     private static final String TABLE_NAME = "static_s3_vanity_mapping";
 
@@ -46,14 +46,14 @@ public class Task260506CreateS3VanityAliasTable extends AbstractJDBCStartupTask 
      */
     private String getScript() {
         return "CREATE TABLE IF NOT EXISTS static_s3_vanity_mapping (" // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
-                + " endpoint_id varchar not null,"
-                + " host_id varchar not null,"
+                + " endpoint_id varchar(36) not null,"
+                + " host_id varchar(36) not null,"
                 + " language_id bigint not null,"
                 + " canonical_path varchar not null,"
-                + " canonical_path_hash varchar not null,"
+                + " canonical_path_hash varchar(64) not null,"
                 + " vanity_path varchar not null,"
-                + " vanity_path_hash varchar not null,"
-                + " vanity_url_id varchar,"
+                + " vanity_path_hash varchar(64) not null,"
+                + " vanity_url_id varchar(36),"
                 + " bucket_name varchar not null,"
                 + " bucket_region varchar,"
                 + " bucket_prefix varchar,"
