@@ -1,4 +1,4 @@
-import type { Adapter, AdapterMethod } from '@dotcms/agentic-tools';
+import type { Adapter, AdapterMethod } from '@dotcms/ai/sandbox';
 
 /**
  * Path allowlist — the structural safety boundary (plan §3, stage B).
