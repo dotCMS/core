@@ -49,6 +49,8 @@
                 [imageRect]="imageRect()"
                 [initialRect]="capturedCropRect()"
                 [aspect]="cropAspect()" />
+
+            <dot-image-editor-focal-overlay [imageRect]="imageRect()" [scale]="zoomLevel() / 100" />
         </div>
 
         @if (store.previewStatus() === 'loading') {

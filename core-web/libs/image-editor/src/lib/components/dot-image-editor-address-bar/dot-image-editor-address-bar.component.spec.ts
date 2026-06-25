@@ -20,7 +20,8 @@ const messageServiceMock = new MockDotMessageService({
     'edit.content.image-editor.address.copy.success': 'Copied',
     'edit.content.image-editor.address.copy.error': 'Could not copy',
     'edit.content.image-editor.tool.move': 'Move',
-    'edit.content.image-editor.tool.crop': 'Crop'
+    'edit.content.image-editor.tool.crop': 'Crop',
+    'edit.content.image-editor.tool.focal': 'Focal point'
 });
 
 describe('DotImageEditorAddressBarComponent', () => {
@@ -85,6 +86,19 @@ describe('DotImageEditorAddressBarComponent', () => {
         spectator.click(button('image-editor-copy-url-btn'));
 
         expect(writeText).toHaveBeenCalledWith(document.location.origin + PREVIEW_URL);
+    });
+
+    it('should open the absolute preview URL in a new tab when the preview button is clicked', () => {
+        const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+        spectator.click(button('image-editor-preview-url-btn'));
+
+        expect(openSpy).toHaveBeenCalledWith(
+            document.location.origin + PREVIEW_URL,
+            '_blank',
+            'noopener'
+        );
+        openSpy.mockRestore();
     });
 
     it('should dispatch undoRequested when undo is clicked', () => {
@@ -156,6 +170,19 @@ describe('DotImageEditorAddressBarComponent', () => {
             );
         });
 
+        it('should render the focal tool toggle and dispatch toolSelected when clicked', () => {
+            const focal = spectator.query(byTestId('image-editor-tool-focal'));
+            expect(focal).toBeTruthy();
+            expect(focal).toHaveAttribute('aria-label', 'Focal point');
+
+            spectator.click(button('image-editor-tool-focal'));
+
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                imageEditorToolEvents.toolSelected('focal'),
+                { scope: 'self' }
+            );
+        });
+
         it('should reflect the store active tool with aria-pressed and the active styleClass', () => {
             activeTool.set('crop');
             spectator.detectChanges();
@@ -176,8 +203,10 @@ describe('DotImageEditorAddressBarComponent', () => {
     it('should expose the expected testids', () => {
         expect(spectator.query(byTestId('image-editor-address-field'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-copy-url-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-preview-url-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-tool-move'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-tool-crop'))).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-tool-focal'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-zoom-out-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-zoom-in-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('image-editor-fit-btn'))).toBeTruthy();

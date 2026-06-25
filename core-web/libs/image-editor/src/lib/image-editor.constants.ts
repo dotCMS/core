@@ -27,6 +27,10 @@ export const ZOOM_DEFAULT = 100;
 export const CROP_NUDGE_STEP = 1;
 export const CROP_NUDGE_STEP_LARGE = 10;
 
+/** Focal point keyboard nudge as a fraction of the image (Shift uses the larger step). */
+export const FOCAL_NUDGE_STEP = 0.01;
+export const FOCAL_NUDGE_STEP_LARGE = 0.1;
+
 /** Smallest allowed crop dimension in CSS px to keep the box usable. */
 export const MIN_CROP_SIZE = 16;
 

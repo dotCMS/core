@@ -35,6 +35,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 import { clamp } from '../../utils/dimensions.util';
 import { DotImageEditorAddressBarComponent } from '../dot-image-editor-address-bar/dot-image-editor-address-bar.component';
 import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-overlay/dot-image-editor-crop-overlay.component';
+import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 
 /**
  * Dark stage that renders the live image preview at the center of the editor.
@@ -61,7 +62,8 @@ import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-ove
         TooltipModule,
         DotMessagePipe,
         DotImageEditorAddressBarComponent,
-        DotImageEditorCropOverlayComponent
+        DotImageEditorCropOverlayComponent,
+        DotImageEditorFocalOverlayComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

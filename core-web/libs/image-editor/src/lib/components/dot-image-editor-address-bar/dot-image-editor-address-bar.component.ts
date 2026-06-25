@@ -49,6 +49,11 @@ export class DotImageEditorAddressBarComponent {
             id: 'crop',
             label: 'edit.content.image-editor.tool.crop',
             testId: 'image-editor-tool-crop'
+        },
+        {
+            id: 'focal',
+            label: 'edit.content.image-editor.tool.focal',
+            testId: 'image-editor-tool-focal'
         }
     ];
 
@@ -84,6 +89,14 @@ export class DotImageEditorAddressBarComponent {
                 detail: this.#dotMessageService.get('edit.content.image-editor.address.copy.error')
             });
         }
+    }
+
+    /**
+     * Opens the current preview URL (the same absolute URL `copyUrl` copies) in a new
+     * browser tab so the user can inspect the server-rendered result on its own.
+     */
+    protected openPreview(): void {
+        this.#document.defaultView?.open(this.#absoluteUrl(), '_blank', 'noopener');
     }
 
     /**

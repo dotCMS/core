@@ -29,6 +29,9 @@
                     @case ('crop') {
                         <i class="material-symbols-outlined">crop</i>
                     }
+                    @case ('focal') {
+                        <i class="material-symbols-outlined">center_focus_strong</i>
+                    }
                 }
             </ng-template>
         </p-button>
@@ -58,6 +61,21 @@
         data-testid="image-editor-address-field">
         {{ store.previewUrl() }}
     </span>
+    <!-- Opens the generated preview URL in a new tab (same URL the copy action uses). -->
+    <p-button
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        severity="secondary"
+        [attr.aria-label]="'edit.content.image-editor.address.preview.aria' | dm"
+        [pTooltip]="'edit.content.image-editor.address.preview.aria' | dm"
+        tooltipPosition="bottom"
+        data-testid="image-editor-preview-url-btn"
+        (onClick)="openPreview()">
+        <ng-template #icon>
+            <i class="material-symbols-outlined">open_in_new</i>
+        </ng-template>
+    </p-button>
 </div>
 
 <!-- Zoom pill: zoom out / fit (the value button) / zoom in, then undo / redo. -->

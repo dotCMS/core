@@ -6,8 +6,15 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
  * Tool currently selected on the editing canvas.
  * - `move`: pan/zoom the image
  * - `crop`: draw a crop selection
+ * - `focal`: place the focal point marker
  */
-export type ActiveTool = 'move' | 'crop';
+export type ActiveTool = 'move' | 'crop' | 'focal';
+
+/** A point expressed as normalized 0..1 coordinates, independent of zoom/pan. */
+export interface NormalizedPoint {
+    x: number;
+    y: number;
+}
 
 /** Output compression strategy applied as the last filter in the chain. */
 export type CompressionMode = 'none' | 'auto' | 'jpeg' | 'webp' | 'avif';
@@ -203,6 +210,11 @@ export interface ImageEditorState {
     fileInfo: FileInfoState;
     /** Canvas zoom slice. */
     zoom: ZoomState;
+    /**
+     * Normalized 0..1 focal point persisted directly as asset metadata. It is NOT
+     * a filter slice: it never enters the preview filter chain nor the edit history.
+     */
+    focalPoint: NormalizedPoint;
     /** Tool currently selected on the canvas. */
     activeTool: ActiveTool;
     /** Loading lifecycle of the preview image. */

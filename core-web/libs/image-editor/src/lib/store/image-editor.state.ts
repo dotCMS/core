@@ -4,6 +4,7 @@ import {
     FileInfoState,
     ImageEditorAssetContext,
     ImageEditorState,
+    NormalizedPoint,
     TransformState,
     ZoomState
 } from '../models/image-editor.models';
@@ -67,6 +68,9 @@ export const initialZoomState: ZoomState = {
     fitToScreen: true
 };
 
+/** Default focal point: the center of the image. */
+export const initialFocalPointState: NormalizedPoint = { x: 0.5, y: 0.5 };
+
 /** The pristine state of the editor before any asset is loaded. */
 export const initialImageEditorState: ImageEditorState = {
     assetContext: initialAssetContext,
@@ -75,6 +79,7 @@ export const initialImageEditorState: ImageEditorState = {
     crop: initialCropState,
     fileInfo: initialFileInfoState,
     zoom: initialZoomState,
+    focalPoint: initialFocalPointState,
     activeTool: 'move',
     previewStatus: 'idle',
     previewRetries: 0,

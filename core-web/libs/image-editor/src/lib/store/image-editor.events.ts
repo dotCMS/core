@@ -5,7 +5,8 @@ import {
     ActiveTool,
     CompressionMode,
     CropState,
-    ImageEditorOpenParams
+    ImageEditorOpenParams,
+    NormalizedPoint
 } from '../models/image-editor.models';
 
 /** Events emitted by the Adjust panel (color & light). */
@@ -48,13 +49,14 @@ export const imageEditorViewEvents = eventGroup({
     }
 });
 
-/** Events emitted by the canvas tools (move/crop). */
+/** Events emitted by the canvas tools (move/crop/focal). */
 export const imageEditorToolEvents = eventGroup({
     source: 'Image Editor Tool',
     events: {
         toolSelected: type<ActiveTool>(),
         cropApplied: type<CropState>(),
-        cropCancelled: type<void>()
+        cropCancelled: type<void>(),
+        focalPointSet: type<NormalizedPoint>()
     }
 });
 
