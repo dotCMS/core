@@ -169,13 +169,26 @@ describe('PageClient', () => {
                         mode: 'LIVE',
                         languageId: '1',
                         fireRules: false,
-                        siteId: 'test-site',
-                        personaId: undefined,
-                        publishDate: undefined,
-                        variantName: undefined
+                        siteId: 'test-site'
                     }
                 }
             });
+        });
+
+        // Regression: https://github.com/dotCMS/core/issues/36108
+        // The returned response must be JSON-serializable so consumers like Next.js Pages Router
+        // can return it from getServerSideProps/getStaticProps without throwing on `undefined`.
+        it('returns a JSON-serializable response with no undefined values in graphql.variables', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            const result = await pageClient.get('/graphql-page');
+
+            const variables = result.graphql.variables;
+            expect(Object.values(variables).some((value) => value === undefined)).toBe(false);
+
+            // Round-trips without losing data and without throwing on undefined values.
+            expect(() => JSON.stringify(result.graphql.variables)).not.toThrow();
+            expect(JSON.parse(JSON.stringify(variables))).toEqual(variables);
         });
 
         it('should print graphql errors', async () => {
@@ -355,10 +368,7 @@ describe('PageClient', () => {
                         mode: 'LIVE',
                         languageId: '1',
                         fireRules: false,
-                        siteId: 'test-site',
-                        personaId: undefined,
-                        publishDate: undefined,
-                        variantName: undefined
+                        siteId: 'test-site'
                     });
                 }
             }
@@ -591,7 +601,6 @@ describe('PageClient', () => {
                         fireRules: false,
                         siteId: 'test-site',
                         personaId: 'test-persona',
-                        publishDate: undefined,
                         variantName: 'test-variant',
                         customVar: 'customValue'
                     });
@@ -920,10 +929,7 @@ describe('PageClient', () => {
                     mode: 'LIVE',
                     languageId: '1',
                     fireRules: false,
-                    siteId: 'test-site',
-                    personaId: undefined,
-                    publishDate: undefined,
-                    variantName: undefined
+                    siteId: 'test-site'
                 });
             });
 
@@ -1051,6 +1057,23 @@ describe('PageClient', () => {
                 await pageClient.get('/already-slash');
 
                 expect(getRequestBody().variables.url).toBe('/already-slash');
+            });
+
+            // Regression: https://github.com/dotCMS/core/issues/36108
+            // Optional params left undefined must be omitted from the variables object so the
+            // returned page response is JSON-serializable (Next.js Pages Router throws otherwise).
+            it('omits optional params left undefined instead of sending undefined values', async () => {
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
+                await pageClient.get('/home');
+
+                const vars = getRequestBody().variables;
+                expect(vars).not.toHaveProperty('personaId');
+                expect(vars).not.toHaveProperty('publishDate');
+                expect(vars).not.toHaveProperty('variantName');
             });
         });
 
