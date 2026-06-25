@@ -15,7 +15,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { DotCMSPageAsset, DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
@@ -191,11 +191,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                             patchState(store, {
                                 uveStatus: UVE_STATUS.LOADING,
                                 pageParams,
-                                // Language data belongs to the page being left.
-                                // Clear it so $translatePageEffect cannot fire
-                                // with stale translated:false data from the
-                                // previous page while the new fetch is in flight.
-                                pageLanguages: [],
                                 // Selection belongs to the page being left.
                                 // Clear both the active contentlet (drives
                                 // the quick-edit panel) and the selected
@@ -279,23 +274,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                     ? { pageAsset, content: graphQLContent }
                                                     : { pageAsset };
 
-                                            // When the loaded language has no page version the editor
-                                            // is read-only (isMissingTranslation blocks edits in
-                                            // withEditor). Switch the mode dropdown to PREVIEW so it
-                                            // accurately reflects what the user sees. This also means
-                                            // that when the user later navigates to a language that
-                                            // DOES exist, the dropdown stays on PREVIEW — the user
-                                            // must explicitly choose Draft to re-enable editing,
-                                            // making the state transition visible and intentional.
-                                            const currentLanguageId =
-                                                pageAsset.viewAs?.language?.id;
-                                            const currentLang = languages.find(
-                                                (lang) => lang.id === currentLanguageId
-                                            );
-                                            const isMissingTranslation =
-                                                currentLang !== undefined &&
-                                                !currentLang.translated;
-
                                             // Both writes land in the same synchronous tap.
                                             // Angular batches them before flushing effects, so
                                             // $translatePageEffect always sees a consistent state.
@@ -310,13 +288,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                     pageParams.clientHost,
                                                     dotWindow.location.origin
                                                 ),
-                                                uveStatus: UVE_STATUS.LOADED,
-                                                ...(isMissingTranslation && {
-                                                    pageParams: {
-                                                        ...store.pageParams(),
-                                                        mode: UVE_MODE.PREVIEW
-                                                    }
-                                                })
+                                                uveStatus: UVE_STATUS.LOADED
                                             });
                                             deps.setPageAsset(payload);
                                             deps.addHistory(payload);

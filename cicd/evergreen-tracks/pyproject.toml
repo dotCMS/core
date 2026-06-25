@@ -1,0 +1,27 @@
+[project]
+name = "evergreen-tracks"
+version = "0.1.0"
+description = "Floating Docker track tags (latest/standard/trailing) for dotCMS releases"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32",
+]
+
+[project.scripts]
+evergreen-tracks = "evergreen_tracks.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "responses>=0.25",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evergreen_tracks"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

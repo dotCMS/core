@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -264,9 +265,15 @@ public class ESIndexResource {
     @Produces("text/plain")
     public Response createIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest, httpServletResponse);
+            InitDataObject init=auth(httpServletRequest, httpServletResponse, params);
 
-            int shards=Integer.parseInt(init.getParamsMap().get("shards"));
+            final String shardsParam = init.getParamsMap().get("shards");
+            if (!UtilMethods.isSet(shardsParam) || !Try.of(() -> Integer.parseInt(shardsParam)).isSuccess()) {
+                Logger.warn(this, "createIndex called with missing/invalid 'shards' param. URI: " + httpServletRequest.getRequestURI());
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Missing or invalid required 'shards' parameter").build();
+            }
+            final int shards = Integer.parseInt(shardsParam);
             boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
             String indexName = init.getParamsMap().get("index");
 
@@ -296,7 +303,7 @@ public class ESIndexResource {
     @Path("/clear/{params:.*}")
     public Response clearIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
 
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.CLEAR.name());
     }
@@ -404,7 +411,7 @@ public class ESIndexResource {
     @PUT
     @Path("/activate/{params:.*}")
     public Response activateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.ACTIVATE.name());
     }
@@ -421,7 +428,7 @@ public class ESIndexResource {
     @PUT
     @Path("/deactivate/{params:.*}")
     public Response deactivateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.DEACTIVATE.name());
     }
@@ -437,7 +444,7 @@ public class ESIndexResource {
     @PUT
     @Path("/close/{params:.*}")
     public Response closeIndex(@Context HttpServletRequest httpServletRequest,@Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
-        InitDataObject init=auth(httpServletRequest,httpServletResponse);
+        InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.CLOSE.name());
     }
@@ -454,7 +461,7 @@ public class ESIndexResource {
     @Path("/open/{params:.*}")
     public Response openIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
         try {
-            InitDataObject init=auth(httpServletRequest, httpServletResponse);
+            InitDataObject init=auth(httpServletRequest, httpServletResponse, params);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             APILocator.getESIndexAPI().openIndex(indexName);
 

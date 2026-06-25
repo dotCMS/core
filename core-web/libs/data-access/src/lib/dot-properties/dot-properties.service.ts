@@ -108,30 +108,6 @@ export class DotPropertiesService {
     }
 
     /**
-     * Like {@link getFeatureFlag} but with an explicit default for `FEATURE_FLAG_NOT_FOUND`.
-     * Use this when the feature should be **off** by default if the key is missing on the
-     * server — typical for new opt-in features whose backend key may not yet exist on older
-     * dotCMS images. Bypasses the shared cache so callers with different defaults don't
-     * collide on the same key.
-     *
-     * @param {FeaturedFlags} key
-     * @param {boolean} defaultValue - returned when the server replies with `FEATURE_FLAG_NOT_FOUND`.
-     * @returns {Observable<boolean>}
-     */
-    getFeatureFlagWithDefault(key: FeaturedFlags, defaultValue: boolean): Observable<boolean> {
-        return this.getKey(key).pipe(
-            map((value) => {
-                if (typeof value === 'boolean') return value;
-                if (value === FEATURE_FLAG_NOT_FOUND) return defaultValue;
-
-                // Lowercase the comparison so env-var-driven configs ("True", "TRUE") aren't
-                // silently treated as falsy.
-                return value.toLowerCase() === 'true';
-            })
-        );
-    }
-
-    /**
      * Retrieves feature flags for given keys.
      *
      * Value resolution (mirrors {@link getFeatureFlag}):
