@@ -4,7 +4,7 @@ import { Dispatcher } from '@ngrx/signals/events';
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
-import { SelectButton } from 'primeng/selectbutton';
+import { Select } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -50,12 +50,12 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
     });
 
     it('should dispatch compressionChanged on the select change', () => {
-        const select = spectator.query(SelectButton);
-        select!.onChange.emit({ originalEvent: new Event('click'), value: 'webp' });
+        const select = spectator.query(Select);
+        select!.onChange.emit({ originalEvent: new Event('change'), value: 'avif' });
 
         const event = dispatchedEvent(imageEditorFileInfoEvents.compressionChanged.type);
         expect(event).toBeDefined();
-        expect(event!.payload).toBe('webp');
+        expect(event!.payload).toBe('avif');
     });
 
     describe('when compression is none', () => {

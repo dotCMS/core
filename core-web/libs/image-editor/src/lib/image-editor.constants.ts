@@ -58,7 +58,8 @@ export const COMPRESSION_LABELS: Record<CompressionMode, string> = {
     none: 'None',
     auto: 'Auto',
     jpeg: 'JPEG',
-    webp: 'WebP'
+    webp: 'WebP',
+    avif: 'AVIF'
 };
 
 /** The editable slices, in snapshot order (used to diff/replay history). */

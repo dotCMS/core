@@ -1,19 +1,22 @@
 <div class="ie-fileinfo">
     <div class="ie-field">
         <label>{{ 'edit.content.image-editor.fileinfo.compression' | dm }}</label>
-        <p-selectButton
+        <p-select
+            appendTo="body"
+            styleClass="w-full"
             [options]="compressionOptions"
             [ngModel]="store.fileInfo().compression"
             optionLabel="label"
             optionValue="value"
-            [allowEmpty]="false"
             data-testid="image-editor-compression-select"
-            (onChange)="compressionChanged($event.value)"
-            (onOptionClick)="compressionChanged($event.option.value)">
+            (onChange)="compressionChanged($event.value)">
+            <ng-template #selectedItem let-option>
+                {{ option.label | dm }}
+            </ng-template>
             <ng-template #item let-option>
                 {{ option.label | dm }}
             </ng-template>
-        </p-selectButton>
+        </p-select>
     </div>
 
     @if (isCompressing()) {

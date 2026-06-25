@@ -29,6 +29,10 @@ function compressionFilter(mode: CompressionMode, quality: number): AppliedFilte
             return { name: 'Jpeg', args: `/jpeg_q/${q}` };
         case 'webp':
             return { name: 'WebP', args: `/webp_q/${q}` };
+        // AVIF is a libvips-only filter (registered lowercase as `avif`); it
+        // takes the same 0..100 quality as jpeg/webp via `avif_q`.
+        case 'avif':
+            return { name: 'avif', args: `/avif_q/${q}` };
         case 'auto':
             return { name: 'Quality', args: `/quality_q/${q}` };
         case 'none':

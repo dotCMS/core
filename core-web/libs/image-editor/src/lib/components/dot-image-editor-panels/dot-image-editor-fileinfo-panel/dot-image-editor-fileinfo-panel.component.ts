@@ -3,7 +3,7 @@ import { injectDispatch } from '@ngrx/signals/events';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { SelectButtonModule } from 'primeng/selectbutton';
+import { SelectModule } from 'primeng/select';
 import { SliderModule, SliderSlideEndEvent } from 'primeng/slider';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -23,7 +23,7 @@ import { ImageEditorStore } from '../../../store/image-editor.store';
 @Component({
     selector: 'dot-image-editor-fileinfo-panel',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, SelectButtonModule, SliderModule, DotMessagePipe],
+    imports: [FormsModule, SelectModule, SliderModule, DotMessagePipe],
     templateUrl: './dot-image-editor-fileinfo-panel.component.html',
     styleUrl: './dot-image-editor-fileinfo-panel.component.scss'
 })
@@ -39,7 +39,8 @@ export class DotImageEditorFileInfoPanelComponent {
         { label: 'edit.content.image-editor.fileinfo.compression.none', value: 'none' },
         { label: 'edit.content.image-editor.fileinfo.compression.auto', value: 'auto' },
         { label: 'edit.content.image-editor.fileinfo.compression.jpeg', value: 'jpeg' },
-        { label: 'edit.content.image-editor.fileinfo.compression.webp', value: 'webp' }
+        { label: 'edit.content.image-editor.fileinfo.compression.webp', value: 'webp' },
+        { label: 'edit.content.image-editor.fileinfo.compression.avif', value: 'avif' }
     ];
 
     /** Whether a compression strategy is active (so quality applies). */

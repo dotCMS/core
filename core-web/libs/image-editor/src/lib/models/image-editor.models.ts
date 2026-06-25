@@ -10,7 +10,7 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 export type ActiveTool = 'move' | 'crop';
 
 /** Output compression strategy applied as the last filter in the chain. */
-export type CompressionMode = 'none' | 'auto' | 'jpeg' | 'webp';
+export type CompressionMode = 'none' | 'auto' | 'jpeg' | 'webp' | 'avif';
 
 /** Axis-aligned rectangle of the rendered image inside the canvas, in CSS px. */
 export interface ImageRect {
@@ -36,7 +36,9 @@ export type FilterName =
     | 'Hsb'
     | 'Jpeg'
     | 'WebP'
-    | 'Quality';
+    | 'Quality'
+    // libvips-only modern format (AV1); registered lowercase as `avif`.
+    | 'avif';
 
 /**
  * Resolved information about the asset being edited, including the source
@@ -253,7 +255,7 @@ export interface ToolRailItem {
     testId: string;
 }
 
-/** A selectable compression option shown in the compression select button. */
+/** A selectable compression option shown in the compression dropdown. */
 export interface CompressionOption {
     label: string;
     value: CompressionMode;

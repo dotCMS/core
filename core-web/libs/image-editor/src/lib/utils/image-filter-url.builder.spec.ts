@@ -210,21 +210,19 @@ describe('image-filter-url.builder', () => {
     });
 
     describe('buildFilterChain - compression', () => {
-        const cases: Array<[CompressionMode, string]> = [
-            ['jpeg', '/jpeg_q/80'],
-            ['webp', '/webp_q/80'],
-            ['auto', '/quality_q/80']
+        const cases: Array<[CompressionMode, string, string]> = [
+            ['jpeg', '/jpeg_q/80', 'Jpeg'],
+            ['webp', '/webp_q/80', 'WebP'],
+            ['avif', '/avif_q/80', 'avif'],
+            ['auto', '/quality_q/80', 'Quality']
         ];
 
-        it.each(cases)('appends %s compression last', (mode, args) => {
+        it.each(cases)('appends %s compression last', (mode, args, name) => {
             const result = chain({
                 adjust: { grayscale: true },
                 fileInfo: { compression: mode, quality: 80 }
             });
-            expect(result[result.length - 1]).toEqual({
-                name: mode === 'jpeg' ? 'Jpeg' : mode === 'webp' ? 'WebP' : 'Quality',
-                args
-            });
+            expect(result[result.length - 1]).toEqual({ name, args });
         });
 
         it('adds no compression filter for mode none', () => {
@@ -235,7 +233,7 @@ describe('image-filter-url.builder', () => {
         it('applies only one compression filter (mutual exclusion)', () => {
             const result = chain({ fileInfo: { compression: 'webp', quality: 50 } });
             const compressionFilters = result.filter((f) =>
-                ['Jpeg', 'WebP', 'Quality'].includes(f.name)
+                ['Jpeg', 'WebP', 'avif', 'Quality'].includes(f.name)
             );
             expect(compressionFilters).toHaveLength(1);
         });
