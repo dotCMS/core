@@ -14210,11 +14210,13 @@ paths:
         schema:
           type: string
       - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
-          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
-          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
-          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
-          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
-          \ INVALID_TOKEN, LICENSE_REQUIRED"
+          \ Valid values: SCHEDULED, BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING,\
+          \ SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE,\
+          \ BUNDLE_SAVED_SUCCESSFULLY, SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE,\
+          \ FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,\
+          \ FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED.\
+          \ SCHEDULED = bundles pushed with a future publishDate not yet picked up\
+          \ by the publisher cron."
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
@@ -26414,6 +26416,7 @@ components:
           - LICENSE_REQUIRED
           - SUCCESS_WITH_WARNINGS
           - FAILED_INTEGRITY_CHECK
+          - SCHEDULED
           example: SUCCESS
         statusMessage:
           type: string
@@ -30252,6 +30255,12 @@ components:
           format: int32
           description: Number of publish attempts
           example: 1
+        scheduledPublishDate:
+          type: string
+          format: date-time
+          description: Scheduled execution time (future publishDate) for SCHEDULED
+            bundles; null for all other statuses
+          example: 2026-03-15T14:30:00Z
         status:
           type: string
           description: Current publishing status
@@ -30274,6 +30283,7 @@ components:
           - LICENSE_REQUIRED
           - SUCCESS_WITH_WARNINGS
           - FAILED_INTEGRITY_CHECK
+          - SCHEDULED
           example: SUCCESS
         timestamps:
           $ref: "#/components/schemas/TimestampsView"
@@ -30335,6 +30345,12 @@ components:
           format: int32
           description: Number of publish attempts
           example: 1
+        scheduledPublishDate:
+          type: string
+          format: date-time
+          description: Scheduled execution time (future publishDate) for SCHEDULED
+            bundles; null for all other statuses
+          example: 2026-03-15T14:30:00Z
         status:
           type: string
           description: Current publishing status
@@ -30357,6 +30373,7 @@ components:
           - LICENSE_REQUIRED
           - SUCCESS_WITH_WARNINGS
           - FAILED_INTEGRITY_CHECK
+          - SCHEDULED
           example: SUCCESS
         statusUpdated:
           type: string
