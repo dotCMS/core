@@ -4,8 +4,11 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -41,6 +44,11 @@ public class S3VanityAliasServiceTest {
     private final AWSS3EndPointPublisher endpointPublisher = mock(AWSS3EndPointPublisher.class);
     private final Host host = mock(Host.class);
     private final Language language = mock(Language.class);
+    private final HTMLPageAssetAPI htmlPageAssetAPI = mock(HTMLPageAssetAPI.class);
+    private final S3VanityTargetResolver targetResolver = mock(S3VanityTargetResolver.class);
+    private final UserAPI userAPI = mock(UserAPI.class);
+    private final HostAPI hostAPI = mock(HostAPI.class);
+    private final LanguageAPI languageAPI = mock(LanguageAPI.class);
     private final File canonicalFile = new File("canonical.html");
     private final S3VanityAliasLookup lookup =
             new S3VanityAliasLookup(ENDPOINT_ID, HOST_ID, LANGUAGE_ID, CANONICAL_PATH);
@@ -49,7 +57,7 @@ public class S3VanityAliasServiceTest {
                     canonicalFile, endpointPublisher);
     private final S3VanityAliasService service =
             new S3VanityAliasService(vanityUrlAPI, new S3VanityAliasSupport(), repository,
-                    mock(HTMLPageAssetAPI.class), mock(S3VanityTargetResolver.class));
+                    htmlPageAssetAPI, targetResolver, userAPI, hostAPI, languageAPI);
 
     @Test
     public void publishAliasesShouldReturnVoidAndRefreshOnlyPersistedAliases() throws Exception {
@@ -122,6 +130,19 @@ public class S3VanityAliasServiceTest {
         verify(endpointPublisher).deleteFilesFromEndpoint(BUCKET, PREFIX, "/promo");
         verify(endpointPublisher).deleteFilesFromEndpoint(BUCKET, PREFIX, "/landing");
         verify(repository).deleteByLookup(lookup);
+        verify(repository, never()).deleteAlias(any());
+    }
+
+    @Test
+    public void unpublishAliasesShouldReturnVoidAndSkipS3WhenNoAliasesArePersisted() throws Exception {
+        when(repository.findByLookup(lookup)).thenReturn(List.of());
+
+        final Void result = invokeVoid(() -> service.unpublishAliases(context));
+
+        Assert.assertNull(result);
+        verify(endpointPublisher, never()).deleteFilesFromEndpoint(any(), any(), any());
+        verify(repository).deleteByLookup(lookup);
+        verify(repository, never()).deleteAlias(any());
     }
 
     @Test
@@ -137,6 +158,7 @@ public class S3VanityAliasServiceTest {
 
         Assert.assertNotNull(result);
         verify(repository, never()).deleteByLookup(lookup);
+        verify(repository, never()).deleteAlias(any());
     }
 
     private Void invokeVoid(final VoidMethod method) throws Exception {

@@ -2281,6 +2281,25 @@ CREATE TABLE publishing_end_point (
 	auth_key text COMPRESSION lz4,
 	sending bool);
 
+CREATE TABLE static_s3_vanity_mapping (
+    endpoint_id varchar(36) not null,
+    host_id varchar(36) not null,
+    language_id bigint not null,
+    canonical_path varchar not null,
+    canonical_path_hash varchar(64) not null,
+    vanity_path varchar not null,
+    vanity_path_hash varchar(64) not null,
+    vanity_url_id varchar(36),
+    bucket_name varchar not null,
+    bucket_region varchar,
+    bucket_prefix varchar,
+    mod_date timestamptz not null,
+    primary key (endpoint_id, host_id, language_id, canonical_path_hash, vanity_path_hash)
+);
+
+CREATE INDEX idx_static_s3_vanity_mapping_vurl
+    ON static_s3_vanity_mapping (endpoint_id, vanity_url_id);
+
 create table publishing_environment(
 	id varchar(36) NOT NULL  primary key,
 	name varchar(255) NOT NULL unique,
@@ -2599,4 +2618,3 @@ CREATE TABLE IF NOT EXISTS unique_fields
     unique_key_val VARCHAR PRIMARY KEY,
     supporting_values JSONB COMPRESSION lz4
 );
-
