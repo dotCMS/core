@@ -62,6 +62,7 @@ describe('DotPublishingQueueTableComponent', () => {
             bundlesSelectedIds,
             rowsPerPage,
             setBundlesPage: jest.fn((p: number) => bundlesPage.set(p)),
+            setRowsPerPage: jest.fn((r: number) => rowsPerPage.set(r)),
             cycleBundlesSort: jest.fn(),
             setBundlesSelection: jest.fn((ids: string[]) => bundlesSelectedIds.set(ids)),
             clearBundlesSelection: jest.fn(() => bundlesSelectedIds.set([])),
@@ -145,6 +146,22 @@ describe('DotPublishingQueueTableComponent', () => {
     it('row click opens the detail dialog', () => {
         spectator.component.onRowClick(row('b1'));
         expect(store.openDetail).toHaveBeenCalledWith('b1');
+    });
+
+    describe('pagination', () => {
+        it('persists a rows-per-page change so the next fetch picks it up', () => {
+            // PrimeNG fires onLazyLoad with the new `rows` when the page-size
+            // dropdown changes. The handler must route that into the store, or
+            // the next fetch still goes out with the stale size.
+            spectator.component.onLazyLoad({ first: 0, rows: 40 });
+            expect(store.setRowsPerPage).toHaveBeenCalledWith(40);
+        });
+
+        it('routes a page-only change through setBundlesPage (not setRowsPerPage)', () => {
+            spectator.component.onLazyLoad({ first: 10, rows: 10 }); // page 2 with same size
+            expect(store.setBundlesPage).toHaveBeenCalledWith(2);
+            expect(store.setRowsPerPage).not.toHaveBeenCalled();
+        });
     });
 
     it('renders a dot-publishing-status-chip per row', () => {

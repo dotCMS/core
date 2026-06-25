@@ -100,6 +100,10 @@ export class DotPublishingQueueTableComponent {
 
     readonly first = computed(() => (this.store.bundlesPage() - 1) * this.store.rowsPerPage());
 
+    /** Page-size dropdown options. Mirrors `dot-folder-list-view` (content-drive)
+     * for visual consistency across the admin UI. The store seeds at 20 too. */
+    readonly rowsPerPageOptions = [20, 40, 60];
+
     /** Pass-through config:
      * - `table-layout: fixed` so each `<th style="width:…">` is honored exactly.
      * - When there are rows: `width: auto` so the table sits at the natural sum
@@ -220,7 +224,13 @@ export class DotPublishingQueueTableComponent {
         const rows = (event.rows as number) ?? this.store.rowsPerPage();
         const first = (event.first as number) ?? 0;
         const page = Math.floor(first / rows) + 1;
-        if (page !== this.store.bundlesPage()) {
+
+        // Persist a rows-per-page change BEFORE the page change so the next
+        // fetch goes out with the new size. The store's effect debounces both
+        // patches into a single `loadBundles` call.
+        if (rows !== this.store.rowsPerPage()) {
+            this.store.setRowsPerPage(rows);
+        } else if (page !== this.store.bundlesPage()) {
             this.store.setBundlesPage(page);
         }
 

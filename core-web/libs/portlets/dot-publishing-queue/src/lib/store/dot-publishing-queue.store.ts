@@ -90,7 +90,7 @@ const initialState: DotPublishingQueueState = {
     bundlesSortDirection: 'desc',
     bundlesSelectedIds: [],
 
-    rowsPerPage: 10,
+    rowsPerPage: 20,
     search: '',
     statusFilter: [],
 
@@ -318,6 +318,17 @@ export const DotPublishingQueueStore = signalStore(
                 patchState(store, { bundlesPage: page });
             },
 
+            /** Updates the rows-per-page size and snaps back to page 1 so the
+             * user doesn't land on an out-of-range page when shrinking the
+             * window. The `withHooks` effect tracks `rowsPerPage` and refetches
+             * automatically. */
+            setRowsPerPage(rows: number) {
+                if (rows === store.rowsPerPage()) {
+                    return;
+                }
+                patchState(store, { rowsPerPage: rows, bundlesPage: 1 });
+            },
+
             cycleBundlesSort(field: PublishingSortField) {
                 const current = store.bundlesSort();
                 const dir = store.bundlesSortDirection();
@@ -510,6 +521,7 @@ export const DotPublishingQueueStore = signalStore(
                     store.bundlesPage();
                     store.bundlesSort();
                     store.bundlesSortDirection();
+                    store.rowsPerPage();
                     untracked(() => store.loadBundles());
                 });
 
