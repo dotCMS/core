@@ -48,23 +48,6 @@
                 "!**/node_modules/**"
             ]
         },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug ai-agents with Nx",
-            "runtimeExecutable": "pnpm exec",
-            "runtimeArgs": ["nx", "serve", "ai-agents"],
-            "env": {
-                "NODE_OPTIONS": "--inspect=9230"
-            },
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "skipFiles": ["<node_internals>/**"],
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceFolder}/apps/ai-agents/dist/**/*.(m|c|)js",
-                "!**/node_modules/**"
-            ]
-        }
+
     ]
 }
