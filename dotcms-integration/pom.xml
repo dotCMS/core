@@ -637,13 +637,13 @@
               Runs the regular MainSuite battery under a chosen ES->OS migration phase, against a
               single OpenSearch 3.x cluster, to measure how the existing test flow behaves on OS.
 
-              Activate + pick the phase:
-                ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
-                    -Dopensearch.phase.test=true -Dopensearch.phase=3
+              Activate + pick the phase with a SINGLE property (its presence activates the profile,
+              its value is the phase ordinal):
+                ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase=3
 
               Notes:
                 - Same single-cluster wiring as opensearch-upgrade (ES and OS point at the OS 3.x
-                  container). The phase is injected via DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, which
+                  container). The phase ordinal flows into DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, which
                   IntegrationTestInitService.init() reads to bootstrap the OS index set (and fail
                   fast if OS is unreachable).
                 - Single cluster => only phase 3 (OpenSearch-only) is meaningful: in phases 0/1/2 the
@@ -654,14 +654,12 @@
             -->
             <id>opensearch-phase-suite</id>
             <activation>
+                <!-- Activates on the mere presence of -Dopensearch.phase=<ordinal> -->
                 <property>
-                    <name>opensearch.phase.test</name>
-                    <value>true</value>
+                    <name>opensearch.phase</name>
                 </property>
             </activation>
             <properties>
-                <!-- Migration phase the battery runs under (0-3). Override with -Dopensearch.phase=N -->
-                <opensearch.phase>3</opensearch.phase>
                 <!-- Bring up the OpenSearch 3.x container and route ES at it (single cluster) -->
                 <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
                 <test.es.endpoints>${test.os.upgrade.endpoints}</test.es.endpoints>
