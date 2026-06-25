@@ -24,7 +24,7 @@ console.log(`[proxy-dev] proxying dotCMS backend → ${target}`);
  * credential from its own A11Y_AGENT_DEV_TOKEN env (see routes.ts), mirroring the
  * production trust boundary where the dotCMS proxy injects the JWT (plan §8.2).
  */
-const agentTarget = process.env.A11Y_AGENT_TARGET || 'http://localhost:3001';
+const agentTarget = process.env.A11Y_AGENT_TARGET || 'http://localhost:3000';
 console.log(`[proxy-dev] proxying /ai-agents → ${agentTarget}`);
 
 export default [
