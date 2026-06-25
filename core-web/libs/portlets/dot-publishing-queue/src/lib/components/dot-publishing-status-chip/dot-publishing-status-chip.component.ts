@@ -29,6 +29,8 @@ const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     // info: in the queue, waiting to start
     [PublishAuditStatus.WAITING_FOR_PUBLISHING]: 'info',
     [PublishAuditStatus.BUNDLE_REQUESTED]: 'info',
+    // info: future-dated bundle, not yet picked up by the publisher job
+    [PublishAuditStatus.SCHEDULED]: 'info',
 
     // warning: actively being packed/sent (in-flight)
     [PublishAuditStatus.BUNDLING]: 'warning',

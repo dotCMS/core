@@ -23,7 +23,14 @@ export enum PublishAuditStatus {
     INVALID_TOKEN = 'INVALID_TOKEN',
     LICENSE_REQUIRED = 'LICENSE_REQUIRED',
     SUCCESS_WITH_WARNINGS = 'SUCCESS_WITH_WARNINGS',
-    FAILED_INTEGRITY_CHECK = 'FAILED_INTEGRITY_CHECK'
+    FAILED_INTEGRITY_CHECK = 'FAILED_INTEGRITY_CHECK',
+    /**
+     * Synthetic status for bundles pushed with a future publish date but not yet
+     * picked up by `PublisherQueueJob` — synthesized at read time by the v1
+     * publishing API, never persisted. Mirrors the BE sentinel introduced in
+     * `PublishAuditStatus.Status.SCHEDULED` (#36267).
+     */
+    SCHEDULED = 'SCHEDULED'
 }
 
 /** Bundles authored but not yet sent — populate the Queue tab's READY TO SEND column. */

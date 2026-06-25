@@ -25,6 +25,7 @@ describe('publishingStatusBucket (pure fn)', () => {
         [PublishAuditStatus.LICENSE_REQUIRED, 'danger'],
         [PublishAuditStatus.WAITING_FOR_PUBLISHING, 'info'],
         [PublishAuditStatus.BUNDLE_REQUESTED, 'info'],
+        [PublishAuditStatus.SCHEDULED, 'info'],
         [PublishAuditStatus.BUNDLING, 'warning'],
         [PublishAuditStatus.SENDING_TO_ENDPOINTS, 'warning'],
         [PublishAuditStatus.PUBLISHING_BUNDLE, 'warning'],
