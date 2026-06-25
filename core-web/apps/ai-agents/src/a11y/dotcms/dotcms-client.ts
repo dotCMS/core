@@ -1,4 +1,5 @@
-import { createApiAdapter, createExecutor } from '@dotcms/agentic-tools';
+import { createApiAdapter } from '@dotcms/ai/adapter';
+import { createExecutor } from '@dotcms/ai/sandbox';
 
 import { withAllowlist } from './allowlist';
 

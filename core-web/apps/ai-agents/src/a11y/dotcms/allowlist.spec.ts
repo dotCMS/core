@@ -1,4 +1,4 @@
-import type { Adapter, AdapterMethod } from '@dotcms/agentic-tools';
+import type { Adapter, AdapterMethod } from '@dotcms/ai/sandbox';
 
 import { DisallowedRequestError, isAllowed, withAllowlist } from './allowlist';
 
