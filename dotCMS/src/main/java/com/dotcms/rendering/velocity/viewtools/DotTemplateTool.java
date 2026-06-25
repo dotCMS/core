@@ -323,6 +323,13 @@ public class DotTemplateTool implements ViewTool {
     /**
      * Method that will create a map of required data for the Layout template, basically paths
      * where the different elements of the theme can be found.
+     * <p>
+     * The returned map includes {@code templatePathIsFileAsset}: {@code true} when the theme provides
+     * its own {@code template.vtl} file asset (so {@code PageLoader} includes it with version-aware
+     * {@code #dotParse}), {@code false} for the bundled static-fallback templates (included with
+     * {@code #parse}). For file-asset themes {@code templatePath} is host-qualified
+     * ({@code //<themeHost>/...}) so {@code #dotParse} resolves it against the theme's own host
+     * regardless of which host renders the page, since the cache is keyed by theme identifier only.
      *
      * @param themeFolder
      * @param hostId
@@ -353,13 +360,16 @@ public class DotTemplateTool implements ViewTool {
 
         //Getting the theme path
         String themePath;
+        final Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
+        // Use the Host.SYSTEM_HOST sentinel for the System Host: its stored hostname is not reliably
+        // resolved by HostAPIImpl.resolveHostName, but "SYSTEM_HOST" has a guaranteed fast-path.
+        final String themeHostname = themeHost.isSystemHost() ? Host.SYSTEM_HOST : themeHost.getHostname();
         if ( themeFolder.getHostId().equals( hostId ) ) {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
-            Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-            // Use the Host.SYSTEM_HOST sentinel for the System Host because its stored hostname
-            // is not reliably resolved by HostAPI.resolveHostName — only "SYSTEM_HOST" has a fast-path.
-            final String themeHostname = themeHost.isSystemHost() ? Host.SYSTEM_HOST : themeHost.getHostname();
+            // Host-qualified ("//<themeHost>/...") theme path so a shared theme rendered by another
+            // host still resolves against its own host (the themeMap cache is keyed by theme
+            // identifier only).
             themePath = "//" + themeHostname + Template.THEMES_PATH + themeFolder.getName() + "/";
         }
 
@@ -367,9 +377,13 @@ public class DotTemplateTool implements ViewTool {
         String themeTemplatePath;
         boolean themeTemplateIsFileAsset;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
-            // Logical, host-relative file-asset path (NOT the physical working-inode disk path) so the
+            // Logical, host-qualified file-asset path (NOT the physical working-inode disk path) so the
             // page render can include it with #dotParse and resolve live vs working from the PageMode.
-            themeTemplatePath = themePath + Template.THEME_TEMPLATE; // themePath already ends with "/"
+            // Built from the asset's own parent path (which is not guaranteed to be directly under
+            // /application/themes/<name>/) and host-qualified so #dotParse resolves it against the
+            // theme's host, not the rendering page's.
+            themeTemplatePath = "//" + themeHostname
+                    + themeTemplate.getPath() + Template.THEME_TEMPLATE; // parent path already ends with "/"
             themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;

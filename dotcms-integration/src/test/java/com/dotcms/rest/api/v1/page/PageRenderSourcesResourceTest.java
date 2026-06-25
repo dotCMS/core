@@ -656,7 +656,7 @@ public class PageRenderSourcesResourceTest {
         // extension — no type is dropped, including the .scss preprocessor file.
         final List<FileRefView> files = view.getTheme().getFiles();
         final Set<String> extensions = files.stream()
-                .map(FileRefView::getExtension)
+                .map(FileRefView::extension)
                 .collect(Collectors.toSet());
         assertTrue("VTL file should be returned", extensions.contains("vtl"));
         assertTrue("CSS file should be returned", extensions.contains("css"));
@@ -667,7 +667,7 @@ public class PageRenderSourcesResourceTest {
         // The extension always matches the path's real extension.
         assertTrue("extension must match the file's path",
                 files.stream().allMatch(f ->
-                        f.getPath().toLowerCase().endsWith("." + f.getExtension())));
+                        f.path().toLowerCase().endsWith("." + f.extension())));
     }
 
     // -----------------------------------------------------------------------

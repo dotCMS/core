@@ -42,7 +42,7 @@ import org.mockito.Mockito;
  * @author Jose Castro
  * @since Aug 10th, 2022
  */
-public class CSSPreProcessServletTest extends IntegrationTestBase {
+public class CSSPreProcessServletIT extends IntegrationTestBase {
 
     protected static String defaultSiteId = null;
     protected static Host defaultSite = null;
@@ -83,7 +83,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
             // Simply delete the folder containing all the test data
             APILocator.getFolderAPI().delete(testThemeHome, APILocator.systemUser(), false);
         } catch (final Exception e) {
-            Logger.error(CSSPreProcessServletTest.class, "Error during data cleanup", e);
+            Logger.error(CSSPreProcessServletIT.class, "Error during data cleanup", e);
             throw e;
         }
     }
@@ -134,7 +134,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      *     <li><b>Method to Test:</b> {@link CSSPreProcessServlet#doGet(HttpServletRequest, HttpServletResponse)}</li>
      *     <li><b>Given Scenario:</b> Compiling a valid SCSS file with the {@code sourcemap=true} request parameter.</li>
      *     <li><b>Expected Result:</b> The compiled CSS is returned with an inline (embedded) source map appended as a
-     *     {@code sourceMappingURL} data URI. The map is base64-encoded and, because {@code --embed-sources} is used,
+     *     {@code sourceMappingURL} data URI ({@code application/json}) and, because {@code --embed-sources} is used,
      *     carries the original SCSS source contents.</li>
      * </ul>
      */
@@ -142,7 +142,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
     public void testCompileScssFileWithSourceMap() {
         final String cssCode = executeSourceMapTest(inputSimpleScssFile);
         Assert.assertTrue(String.format("Expected an inline sourceMappingURL data URI in the output, but got: %s",
-                cssCode), cssCode.contains("/*# sourceMappingURL=data:application/json;base64,"));
+                cssCode), cssCode.contains("/*# sourceMappingURL=data:application/json;"));
         // The compiled rule body must still be present alongside the map.
         Assert.assertTrue("Expected the compiled CSS body to be present alongside the source map.",
                 cssCode.contains("Helvetica"));

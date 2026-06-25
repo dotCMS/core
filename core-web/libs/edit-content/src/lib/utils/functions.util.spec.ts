@@ -438,13 +438,13 @@ describe('Utils Functions', () => {
                 ]);
             });
 
-            it('should handle mixed formats (pipes take precedence)', () => {
-                // When pipes are present, comma splitting should not occur
+            it('should parse comma-separated pipe-format items individually', () => {
+                // Each comma-separated item has its own pipe applied for label/value
                 expect(
                     getSingleSelectableFieldOptions('label1|value1,label2|value2', 'text')
                 ).toEqual([
-                    { label: 'label1|value1', value: 'label1|value1' },
-                    { label: 'label2|value2', value: 'label2|value2' }
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
                 ]);
             });
 
@@ -506,6 +506,33 @@ describe('Utils Functions', () => {
                     { label: 'Second Option', value: 'second' }
                 ]);
             });
+        });
+
+        describe('Single-option pipe format (issue #36157)', () => {
+            it('should parse a single pipe-format option using label and value (AC8)', () => {
+                expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'yes' }
+                ]);
+            });
+
+            it('should use the whole string as label and value for a single option without pipe (AC9)', () => {
+                expect(getSingleSelectableFieldOptions('Yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'Yes' }
+                ]);
+            });
+
+            // AC10: Checkbox, Radio, Select and Multiselect all delegate to this util
+            // with a text dataType, so a single `Yes|yes` option must resolve identically.
+            it.each(['Checkbox', 'Radio', 'Select', 'Multiselect'])(
+                'should parse single-option pipe format for %s field',
+                (fieldType) => {
+                    expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                        { label: 'Yes', value: 'yes' }
+                    ]);
+                    // fieldType is documented in the case name to clarify intent
+                    expect(fieldType).toBeDefined();
+                }
+            );
         });
     });
 

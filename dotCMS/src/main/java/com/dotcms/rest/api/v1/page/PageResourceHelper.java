@@ -1437,7 +1437,7 @@ public class PageResourceHelper implements Serializable {
                 // FILE-backed widget: path and VTL file identifier are known
                 result.add(new WidgetSourceView(ct.variable(), c.getTitle(),
                         widgetContentletId, widgetContentletInode,
-                        fileRef.get().getPath(), fileRef.get().getIdentifier()));
+                        fileRef.get().path(), fileRef.get().identifier()));
             } else {
                 // CODE widget: Velocity lives in widgetCode / contentlet fields
                 result.add(new WidgetSourceView(ct.variable(), c.getTitle(),

@@ -112,8 +112,10 @@ public class SpeedyAssetServlet extends HttpServlet {
         // ?mode=LIVE. getWithReferer() honors the mode declared on the page's Referer in that case;
         // anonymous users remain forced to LIVE.
         PageMode mode = PageMode.getWithReferer(request);
-        Logger.debug(this, () -> "SpeedyAssetServlet_service PageMode: " + mode + " (referer="
-                + request.getHeader("Referer") + ", ?mode=" + request.getParameter("mode") + ")");
+        // Log only the resolved mode and the explicit ?mode= param; the raw Referer header can carry
+        // sensitive query-string data and is unnecessary now that the mode is already resolved.
+        Logger.debug(this, () -> "SpeedyAssetServlet_service PageMode: " + mode
+                + " (?mode=" + request.getParameter("mode") + ")");
 
 
         //GIT-4506
