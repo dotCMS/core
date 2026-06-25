@@ -16,8 +16,7 @@ import { initialImageEditorState } from './image-editor.state';
 
 /**
  * NgRx SignalStore for the image editor, composed from one vertical feature per
- * area of functionality (see
- * https://ngrx.io/guide/signals/signal-store/custom-store-features). Each feature
+ * area of functionality. Each feature
  * bundles its own reducers, derived selectors and effects, so a domain lives in a
  * single place (`features/with-*.feature.ts`).
  *
