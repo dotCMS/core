@@ -101,7 +101,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
             mockProvider(DotPropertiesService, {
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(false))
+                getFeatureFlag: jest.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DialogService,

@@ -53,7 +53,7 @@ This is a **Next.js 15 application** using **App Router** that integrates with *
 - `@dotcms/react` - React components and hooks for rendering
 - `@dotcms/uve` - Universal Visual Editor integration
 - `@dotcms/types` - TypeScript type definitions
-- `@dotcms/experiments` - A/B testing capabilities
+- `@dotcms/experiments` - A/B testing capabilities (see [`examples/nextjs-analytics-experiments`](../nextjs-analytics-experiments) for headless integration)
 
 ## Project Structure
 
