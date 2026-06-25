@@ -266,9 +266,37 @@ export class DotFileFieldComponent
      */
     ngOnInit() {
         const field = this.$field();
+
+        // Parse the systemOptions field variable saved from the Settings tab.
+        // `allowCodeWrite` in settings maps to `allowCreateFile` in the store.
+        const systemOptionsVar = field.fieldVariables?.find((v) => v.key === 'systemOptions');
+        let systemOptionsOverrides: Parameters<
+            typeof this.store.initLoad
+        >[0]['systemOptionsOverrides'] = {};
+
+        if (systemOptionsVar?.value) {
+            try {
+                const parsed = JSON.parse(systemOptionsVar.value) as Record<string, boolean>;
+                systemOptionsOverrides = {
+                    ...(parsed['allowURLImport'] !== undefined && {
+                        allowURLImport: parsed['allowURLImport']
+                    }),
+                    ...(parsed['allowCodeWrite'] !== undefined && {
+                        allowCreateFile: parsed['allowCodeWrite']
+                    }),
+                    ...(parsed['allowGenerateImg'] !== undefined && {
+                        allowGenerateImg: parsed['allowGenerateImg']
+                    })
+                };
+            } catch {
+                // ignore malformed JSON — fall back to INPUT_CONFIG defaults
+            }
+        }
+
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPE
+            inputType: field.fieldType as INPUT_TYPE,
+            systemOptionsOverrides
         });
     }
 
@@ -278,8 +306,8 @@ export class DotFileFieldComponent
      * Hydrates the preview from the contentlet for:
      * - Binary fields, whose value is stored inline on the contentlet (so there
      *   is no separate asset to fetch via {@link getAssetData}).
-     * - File/Image fields driven imperatively (binary web component) instead of
-     *   via a reactive form value.
+     * - File/Image fields driven imperatively (legacy web component bridge) instead
+     *   of via a reactive form value.
      */
     ngAfterViewInit() {
         const field = this.$field();
@@ -300,8 +328,6 @@ export class DotFileFieldComponent
 
         const isBinary = this.store.inputType() === INPUT_TYPES.Binary;
 
-        // File/Image fields hydrate from the reactive form via getAssetData unless
-        // driven imperatively by the legacy CE bridge (no reactive form value).
         if (!isBinary) {
             if (!this.$useLegacyDojoImageEditor()) {
                 return;

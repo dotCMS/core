@@ -141,8 +141,12 @@ export const FileFieldStore = signalStore(
                 inputType: INPUT_TYPE;
                 fieldVariable: FileFieldState['fieldVariable'];
                 isAIPluginInstalled?: boolean;
+                systemOptionsOverrides?: Partial<
+                    Pick<FileFieldState, 'allowURLImport' | 'allowCreateFile' | 'allowGenerateImg'>
+                >;
             }) => {
-                const { inputType, fieldVariable, isAIPluginInstalled } = initState;
+                const { inputType, fieldVariable, isAIPluginInstalled, systemOptionsOverrides } =
+                    initState;
 
                 const actions = INPUT_CONFIG[inputType] || {};
 
@@ -153,7 +157,9 @@ export const FileFieldStore = signalStore(
                     // Binary fields upload to the temp endpoint (legacy contract);
                     // File/Image fields create a dotAsset contentlet directly.
                     uploadType: inputType === INPUT_TYPES.Binary ? 'temp' : 'dotasset',
-                    ...actions
+                    ...actions,
+                    // Saved field-variable settings override the static INPUT_CONFIG defaults
+                    ...systemOptionsOverrides
                 });
             },
             /**
@@ -393,6 +399,9 @@ export const FileFieldStore = signalStore(
              */
             getAssetData: rxMethod<string>(
                 pipe(
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
                     switchMap((id) => {
                         return uploadService.getContentById(id).pipe(
                             tapResponse({

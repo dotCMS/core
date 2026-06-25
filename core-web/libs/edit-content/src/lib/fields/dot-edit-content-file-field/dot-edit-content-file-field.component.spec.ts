@@ -140,7 +140,8 @@ describe('DotFileFieldComponent', () => {
             expect(spyInitLoad).toHaveBeenCalledTimes(1);
             expect(spyInitLoad).toHaveBeenCalledWith({
                 fieldVariable: FILE_FIELD_MOCK.variable,
-                inputType: FILE_FIELD_MOCK.fieldType
+                inputType: FILE_FIELD_MOCK.fieldType,
+                systemOptionsOverrides: {}
             });
         });
 
