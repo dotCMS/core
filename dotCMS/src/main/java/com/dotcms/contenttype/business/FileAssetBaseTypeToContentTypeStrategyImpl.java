@@ -34,6 +34,17 @@ public class FileAssetBaseTypeToContentTypeStrategyImpl implements BaseTypeToCon
 
     private final BaseTypeMimeTypeMatcher mimeTypeMatcher = new BaseTypeMimeTypeMatcher();
 
+    /**
+     * Resolves the File Asset content type for an upload described by the given context. The
+     * uploaded binary's mime type is matched against the "accept" field variable of the FILEASSET
+     * content types via {@link BaseTypeMimeTypeMatcher}; when nothing matches (or the binary cannot
+     * be read) it falls back to the system default {@code FileAsset} content type.
+     *
+     * @param baseContentType the base type being resolved (always {@link BaseContentType#FILEASSET} here)
+     * @param contextMap      the resolution context: {@code user}, {@code host}, {@code contentletMap},
+     *                        {@code binaryFiles} and {@code accessingList}
+     * @return Optional of the resolved content type, empty if it could not be resolved
+     */
     @Override
     public Optional<ContentType> apply(final BaseContentType baseContentType, final Map<String, Object> contextMap) {
 
@@ -68,6 +79,16 @@ public class FileAssetBaseTypeToContentTypeStrategyImpl implements BaseTypeToCon
         }
     }
 
+    /**
+     * Locates the uploaded binary for the contentlet: from the {@code fileAsset} field in the
+     * contentlet map (either a {@link File} or a temporary-file id) or, failing that, the first of
+     * the request's binary files (the Content Drive upload path).
+     *
+     * @param binaryFiles   the binary files attached to the request
+     * @param contentletMap the contentlet properties being created
+     * @param accessingList the identifiers used to look up a temporary file by id
+     * @return the binary file to inspect, or {@code null} if none could be found
+     */
     private File getBinary (final List<File> binaryFiles, final Map<String, Object> contentletMap,
                             final List<String> accessingList) {
 

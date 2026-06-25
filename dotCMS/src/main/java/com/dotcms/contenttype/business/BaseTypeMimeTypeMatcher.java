@@ -35,7 +35,7 @@ import java.util.Optional;
  * "accept" restriction); within each tier, content types on the current site win over content
  * types on the system host. A binary field with no "accept" field variable is treated as the total
  * wildcard, so a content type that accepts everything resolves as the catch-all when nothing
- * stricter matches.</p>
+ * stricter matches. See {@link MimeTypeBuckets} for the explicit precedence model.</p>
  *
  * @author dotCMS
  */
@@ -59,49 +59,34 @@ public class BaseTypeMimeTypeMatcher {
 
         if (UtilMethods.isSet(contentTypes)) {
 
-            // Stores the content type indexed by mimetypes, on each index stores the subsets
-            // 0:Exact/on Site, 1:Exact/SYSTEM_HOST, 2:Partial Wildcard/on Site, 3:Partial Wildcard/SYSTEM_HOST,
-            // 4:Total Wildcard (or null)/on Site, 5:Total Wildcard (or null)/SYSTEM_HOST
-            final Map<String, ContentType>[] mimeTypeMappingArray = new Map[6];
-
+            final MimeTypeBuckets buckets = new MimeTypeBuckets();
             contentTypes.stream()
                     .filter(contentType -> isSystemHostOrCurrentHost(contentType, currentHost))
                     .map(contentType -> mapToContentTypeMimeType(contentType, binaryFieldVar))
-                    .forEach(contentTypeMimeType -> {
+                    .forEach(buckets::add);
 
-                        for (final String mimeTypeItem : contentTypeMimeType.mimeTypeFieldVariables) {
-
-                            if (DotAssetAPI.ALL_MIME_TYPE.equals(mimeTypeItem)) {
-
-                                this.getMap(mimeTypeMappingArray, contentTypeMimeType.systemHost ? 5 : 4).put(mimeTypeItem, contentTypeMimeType.contentType);
-                            } else if (mimeTypeItem.endsWith(DotAssetAPI.PARTIAL_MIME_TYPE)) {
-
-                                this.getMap(mimeTypeMappingArray, contentTypeMimeType.systemHost ? 3 : 2).put(mimeTypeItem, contentTypeMimeType.contentType);
-                            } else {
-
-                                this.getMap(mimeTypeMappingArray, contentTypeMimeType.systemHost ? 1 : 0).put(mimeTypeItem, contentTypeMimeType.contentType);
-                            }
-                        }
-                    });
-
-            return findContentType(mimeType, mimeTypeMappingArray);
+            return findContentType(mimeType, buckets);
         }
 
         return Optional.empty();
     }
 
-    private Optional<ContentType> findContentType(final String mimeType,
-                                                  final Map<String, ContentType>... mimeTypeMappingArray) {
+    /**
+     * Returns the first content type whose accepted mime type matches {@code mimeType}, scanning the
+     * candidate buckets in resolution-precedence order (see {@link MimeTypeBuckets}).
+     *
+     * @param mimeType the mime type to resolve
+     * @param buckets  the candidate content types grouped by specificity and host
+     * @return Optional of the matching content type, empty if none matches
+     */
+    private Optional<ContentType> findContentType(final String mimeType, final MimeTypeBuckets buckets) {
 
-        for (final Map<String, ContentType> mimeTypeContentTypeMap : mimeTypeMappingArray) {
+        for (final Map<String, ContentType> bucket : buckets.inPrecedenceOrder()) {
+            for (final Map.Entry<String, ContentType> entry : bucket.entrySet()) {
 
-            if (null != mimeTypeContentTypeMap) {
-                for (final Map.Entry<String, ContentType> entry : mimeTypeContentTypeMap.entrySet()) {
+                if (MimeTypeUtils.match(entry.getKey(), mimeType)) {
 
-                    if (MimeTypeUtils.match(entry.getKey(), mimeType)) {
-
-                        return Optional.ofNullable(entry.getValue());
-                    }
+                    return Optional.ofNullable(entry.getValue());
                 }
             }
         }
@@ -109,16 +94,15 @@ public class BaseTypeMimeTypeMatcher {
         return Optional.empty();
     }
 
-    private Map<String, ContentType> getMap(final Map<String, ContentType>[] mimeTypeMappingArray, final int index) {
-
-        if (null == mimeTypeMappingArray[index]) {
-
-            mimeTypeMappingArray[index] = new HashMap<>();
-        }
-
-        return mimeTypeMappingArray[index];
-    }
-
+    /**
+     * Reads the accepted mime types from a content type's binary field "accept" field variable.
+     * A binary field with no (or empty) {@link BinaryField#ALLOWED_FILE_TYPES} variable is treated
+     * as the total wildcard ({@code *}{@code /}{@code *}), i.e. it accepts everything.
+     *
+     * @param contentType    the content type to inspect
+     * @param binaryFieldVar the variable name of the binary field that holds the "accept" variable
+     * @return the content type paired with its accepted mime types and whether it lives on the system host
+     */
     private ContentTypeMimeType mapToContentTypeMimeType(final ContentType contentType, final String binaryFieldVar) {
 
         final String systemHostId          = APILocator.systemHost().getIdentifier();
@@ -143,6 +127,14 @@ public class BaseTypeMimeTypeMatcher {
         return new ContentTypeMimeType(mimeTypeFieldVariables, contentType, isSystemHost);
     }
 
+    /**
+     * Keeps content types that can be resolved for the current request: those on the current site,
+     * on the system host, or with no host set.
+     *
+     * @param contentType the content type to evaluate
+     * @param currentHost the current site
+     * @return {@code true} if the content type is eligible for matching
+     */
     private boolean isSystemHostOrCurrentHost (final ContentType contentType, final Host currentHost) {
 
         final String contentTypeHostId = contentType.host();
@@ -151,6 +143,70 @@ public class BaseTypeMimeTypeMatcher {
                 contentTypeHostId.equals(currentHost.getIdentifier()) || contentTypeHostId.equals(systemHostId);
     }
 
+    /**
+     * Groups the candidate content types into buckets by mime specificity and host, in the order a
+     * match must be resolved:
+     * <ol>
+     *     <li>exact accept (e.g. {@code image/png}) on the current site</li>
+     *     <li>exact accept on the system host</li>
+     *     <li>partial wildcard (e.g. {@code image/*}) on the current site</li>
+     *     <li>partial wildcard on the system host</li>
+     *     <li>total wildcard ({@code *}{@code /}{@code *} or no accept restriction) on the current site</li>
+     *     <li>total wildcard on the system host</li>
+     * </ol>
+     * The more specific the accept, and the closer to the current site, the higher the precedence.
+     */
+    private static final class MimeTypeBuckets {
+
+        private final Map<String, ContentType> exactCurrentSite    = new HashMap<>();
+        private final Map<String, ContentType> exactSystemHost     = new HashMap<>();
+        private final Map<String, ContentType> partialCurrentSite  = new HashMap<>();
+        private final Map<String, ContentType> partialSystemHost   = new HashMap<>();
+        private final Map<String, ContentType> wildcardCurrentSite = new HashMap<>();
+        private final Map<String, ContentType> wildcardSystemHost  = new HashMap<>();
+
+        /**
+         * Files the given content type under the bucket matching the specificity of each of its
+         * accepted mime types and whether it lives on the system host.
+         */
+        private void add(final ContentTypeMimeType candidate) {
+
+            for (final String accept : candidate.mimeTypeFieldVariables) {
+                this.bucketFor(accept, candidate.systemHost).put(accept, candidate.contentType);
+            }
+        }
+
+        /**
+         * Resolves the destination bucket for an accept value and host (see class javadoc for the order).
+         */
+        private Map<String, ContentType> bucketFor(final String accept, final boolean systemHost) {
+
+            if (DotAssetAPI.ALL_MIME_TYPE.equals(accept)) {
+                return systemHost ? this.wildcardSystemHost : this.wildcardCurrentSite;
+            }
+
+            if (accept.endsWith(DotAssetAPI.PARTIAL_MIME_TYPE)) {
+                return systemHost ? this.partialSystemHost : this.partialCurrentSite;
+            }
+
+            return systemHost ? this.exactSystemHost : this.exactCurrentSite;
+        }
+
+        /**
+         * @return the buckets in the order a match must be resolved (most specific + current site first).
+         */
+        private List<Map<String, ContentType>> inPrecedenceOrder() {
+
+            return List.of(this.exactCurrentSite, this.exactSystemHost,
+                    this.partialCurrentSite, this.partialSystemHost,
+                    this.wildcardCurrentSite, this.wildcardSystemHost);
+        }
+    }
+
+    /**
+     * Holds a content type together with the mime types its binary field accepts and whether it
+     * lives on the system host. Used as the intermediate value while bucketing candidates.
+     */
     private static class ContentTypeMimeType {
 
         private final boolean systemHost;
