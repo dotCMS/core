@@ -40,7 +40,7 @@ export default [
         timeout: 300000,
         proxyTimeout: 300000,
         followRedirects: false,
-        pathRewrite: { '^/ai-agents': '' }
+        pathRewrite: { '^/ai-agents/a11y': '/agent/a11y' }
     },
     // 1. Dedicated WebSocket Proxy (Must be first)
     {
