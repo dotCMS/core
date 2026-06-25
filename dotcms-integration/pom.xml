@@ -632,5 +632,57 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <!--
+              Runs the regular MainSuite battery under a chosen ES->OS migration phase, against a
+              single OpenSearch 3.x cluster, to measure how the existing test flow behaves on OS.
+
+              Activate + pick the phase:
+                ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+                    -Dopensearch.phase.test=true -Dopensearch.phase=3
+
+              Notes:
+                - Same single-cluster wiring as opensearch-upgrade (ES and OS point at the OS 3.x
+                  container). The phase is injected via DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, which
+                  IntegrationTestInitService.init() reads to bootstrap the OS index set (and fail
+                  fast if OS is unreachable).
+                - Single cluster => only phase 3 (OpenSearch-only) is meaningful: in phases 0/1/2 the
+                  legacy ES client writes content to the OS 3.x backend and fails (NPE in
+                  DocWriteResponse). Phases 1/2 need two separate ES and OS clusters.
+                - Includes are inherited from the base config (MainSuite*/Junit5Suite*); narrow a run
+                  with -Dit.test=<Class> as usual. This is the full battery — expect a long run.
+            -->
+            <id>opensearch-phase-suite</id>
+            <activation>
+                <property>
+                    <name>opensearch.phase.test</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <!-- Migration phase the battery runs under (0-3). Override with -Dopensearch.phase=N -->
+                <opensearch.phase>3</opensearch.phase>
+                <!-- Bring up the OpenSearch 3.x container and route ES at it (single cluster) -->
+                <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
+                <test.es.endpoints>${test.os.upgrade.endpoints}</test.es.endpoints>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <DOT_ES_ENDPOINTS>${test.os.upgrade.endpoints}</DOT_ES_ENDPOINTS>
+                                <OS_ENDPOINTS>${test.os.upgrade.endpoints}</OS_ENDPOINTS>
+                                <OS_TLS_ENABLED>false</OS_TLS_ENABLED>
+                                <!-- Drives MigrationPhase.current() for the whole forked test JVM -->
+                                <DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE>${opensearch.phase}</DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
