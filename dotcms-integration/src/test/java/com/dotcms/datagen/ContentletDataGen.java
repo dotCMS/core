@@ -1,7 +1,6 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -18,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -31,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Supplier;
 
 import static com.dotmarketing.business.ModDateTestUtil.updateContentletVersionDate;
 
@@ -54,7 +51,6 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     private Date modDate;
     protected String variantId;
     private User innerUser;
-    private MigrationPhase overridePhase = null;
 
 
     public ContentletDataGen(final ContentType contentType) {
@@ -173,58 +169,6 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     }
 
     /**
-     * Coarse-grained target store for the contentlet, expressed independently of the
-     * ES&rarr;OS migration phase ordinals. Maps onto a {@link MigrationPhase} internally.
-     */
-    public enum TargetStore {
-        /** ElasticSearch only — maps to {@link MigrationPhase#PHASE_0_MIGRATION_NOT_STARTED}. */
-        ES,
-        /** OpenSearch only — maps to {@link MigrationPhase#PHASE_3_OPENSEARCH_ONLY}. */
-        OS,
-        /** Both stores (dual-write) — maps to {@link MigrationPhase#PHASE_1_DUAL_WRITE_ES_READS}. */
-        BOTH
-    }
-
-    /**
-     * Overrides the active ES&rarr;OS {@link MigrationPhase} for the duration of each
-     * persist/publish performed by this data-gen, restoring the prior value afterward
-     * (per-checkin scope). This lets a single test create contentlets under specific
-     * migration phases without leaking the feature-flag state across operations.
-     *
-     * <p>When no override is set the data-gen respects the globally-active phase, so
-     * existing tests are unaffected.</p>
-     *
-     * @param phase the phase to force while persisting; {@code null} clears the override
-     * @return this data-gen for chaining
-     */
-    public ContentletDataGen migrationPhase(final MigrationPhase phase) {
-        this.overridePhase = phase;
-        return this;
-    }
-
-    /**
-     * Convenience over {@link #migrationPhase(MigrationPhase)} that selects the target
-     * store directly instead of a phase ordinal.
-     *
-     * @param store the store(s) the contentlet should be indexed into
-     * @return this data-gen for chaining
-     */
-    public ContentletDataGen targetStore(final TargetStore store) {
-        switch (store) {
-            case ES:
-                this.overridePhase = MigrationPhase.PHASE_0_MIGRATION_NOT_STARTED;
-                break;
-            case OS:
-                this.overridePhase = MigrationPhase.PHASE_3_OPENSEARCH_ONLY;
-                break;
-            case BOTH:
-                this.overridePhase = MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS;
-                break;
-        }
-        return this;
-    }
-
-    /**
      * Creates a new {@link Contentlet} instance kept in memory (not persisted)
      * @return Contentlet instance created
      */
@@ -280,8 +224,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
-        final Contentlet checkin = withPhaseOverride(
-                () -> checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE));
+        final Contentlet checkin = checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE);
 
         if (modDate != null) {
             updateContentletVersionDate(checkin, modDate);
@@ -297,7 +240,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @return
      */
     public Contentlet persist(final Contentlet contentlet, final List<Category> categories) {
-        final Contentlet checkin = withPhaseOverride(() -> checkin(contentlet, categories, getUser()));
+        final Contentlet checkin = checkin(contentlet, categories, getUser());
 
         if (modDate != null) {
             updateContentletVersionDate(checkin, modDate);
@@ -363,27 +306,6 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     private User getUser() {
         return user == null ? APILocator.systemUser() : user;
-    }
-
-    /**
-     * Runs {@code action} with the migration phase forced to {@link #overridePhase} (if set),
-     * restoring the previously configured {@code FEATURE_FLAG_OPEN_SEARCH_PHASE} value afterward.
-     *
-     * <p>The prior value is captured before the call and restored in a {@code finally} block —
-     * including the case where it was unset (restored to {@code null}) and the case where
-     * {@code action} throws. When no override is configured the action runs unchanged.</p>
-     */
-    private <R> R withPhaseOverride(final Supplier<R> action) {
-        if (overridePhase == null) {
-            return action.get();
-        }
-        final String prior = Config.getStringProperty(MigrationPhase.FLAG_KEY, null);
-        try {
-            Config.setProperty(MigrationPhase.FLAG_KEY, String.valueOf(overridePhase.ordinal()));
-            return action.get();
-        } finally {
-            Config.setProperty(MigrationPhase.FLAG_KEY, prior);
-        }
     }
 
     @WrapInTransaction
@@ -529,7 +451,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public Contentlet nextPersistedAndPublish() {
         final Contentlet contentlet = nextPersisted();
-        withPhaseOverride(() -> publish(contentlet));
+        publish(contentlet);
         return contentlet;
     }
 

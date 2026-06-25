@@ -1,7 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
@@ -11,13 +10,12 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.VersionedIndices;
-import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.ContentletDataGen.TargetStore;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.MigrationPhaseStoreBootstrap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -39,45 +37,49 @@ import org.opensearch.client.opensearch.core.CountRequest;
 import org.opensearch.client.opensearch.indices.RefreshRequest;
 
 /**
- * Integration tests for the migration-phase / store control added to {@link ContentletDataGen}
- * (issue #36266).
+ * Integration tests for {@link MigrationPhaseStoreBootstrap} — the phase-aware bootstrap that lets
+ * the <em>whole</em> indexing flow run under a chosen ES&rarr;OS {@link MigrationPhase} (issue
+ * #36266).
  *
  * <h2>What this verifies</h2>
- * <p>That a contentlet created through {@link ContentletDataGen} lands in the search store(s)
- * dictated by the per-checkin phase override — ElasticSearch only, OpenSearch only, or both —
- * and that the override restores the previously-configured migration phase afterward.</p>
+ * <p>That, once the active migration phase is set and the stores are bootstrapped via
+ * {@link MigrationPhaseStoreBootstrap}, a contentlet created through the <strong>ordinary</strong>
+ * {@link ContentletDataGen} (no per-checkin override) is routed into the search store(s) the phase
+ * dictates — exactly as production routes every index operation. No data-gen instrumentation is
+ * involved: the phase is global config and the phase router does the rest.</p>
  *
  * <h2>How it asserts placement</h2>
- * <p>Both stores are bootstrapped once in {@link #setUp()} (phase 1 +
- * {@link ContentletIndexAPI#checkAndInitializeIndex()}), so an ES <em>and</em> an OS working
- * index always exist. Each test then creates a single contentlet with a per-checkin override and
- * checks whether <strong>that exact document</strong> ({@code identifier_languageId_variantId})
- * exists in each provider's working index, queried directly by {@code _id}:
- * {@link RestHighLevelClientProvider} for ES and the OpenSearch client for OS. Targeting the
- * document by id on a known physical index (rather than the high-level read path) is noise-free
- * and sidesteps the {@code inferIndexToHit} bootstrap gap that affects the suite.</p>
+ * <p>Both stores are bootstrapped once in {@link #setUp()} via
+ * {@link MigrationPhaseStoreBootstrap#ensureStoresForCurrentPhase()} under phase 1, so an ES
+ * <em>and</em> an OS working index always exist (and the bootstrap fails hard if the OS service is
+ * unreachable). Each test then sets the phase, persists a single contentlet, and checks whether
+ * <strong>that exact document</strong> ({@code identifier_languageId_variantId}) exists in each
+ * provider's working index, queried directly by {@code _id}: {@link RestHighLevelClientProvider}
+ * for ES and the OpenSearch client for OS. Targeting the document by id on a known physical index
+ * (rather than the high-level read path) is noise-free and sidesteps the {@code inferIndexToHit}
+ * bootstrap gap that affects the suite.</p>
  *
  * <h2>Single-cluster vs two-cluster</h2>
- * <p>Scenarios that write content through the ES leg (ES-only and dual-write) require a
+ * <p>Scenarios that write content through the ES leg (the phase-1 dual-write test) require a
  * <strong>separate</strong> ES cluster: the legacy ES {@code RestHighLevelClient} cannot parse an
  * OpenSearch 3.x content bulk-write response, so it cannot index content against an OS backend.
  * In the single-cluster {@code opensearch-upgrade} profile ({@code DOT_ES_ENDPOINTS == OS_ENDPOINTS})
- * those tests skip themselves via {@link org.junit.Assume}. The OS-only placement test and the
- * per-checkin restore test run in both single- and two-cluster setups.</p>
+ * that test skips itself via {@link org.junit.Assume}. The phase-3 OpenSearch-only placement test
+ * runs in both single- and two-cluster setups.</p>
  *
  * <h2>Run command</h2>
  * <pre>
  *   ./mvnw verify -pl :dotcms-integration \
  *       -Dcoreit.test.skip=false \
  *       -Dopensearch.upgrade.test=true \
- *       -Dit.test=ContentletDataGenPhaseControlIT
+ *       -Dit.test=MigrationPhaseStoreBootstrapIT
  * </pre>
  *
  * @author Fabrizzio Araya
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
-public class ContentletDataGenPhaseControlIT extends IntegrationTestBase {
+public class MigrationPhaseStoreBootstrapIT extends IntegrationTestBase {
 
     private static final String SEPARATE_CLUSTERS_REQUIRED =
             "ES content writes require a separate ES cluster — the legacy ES client cannot index "
@@ -86,9 +88,6 @@ public class ContentletDataGenPhaseControlIT extends IntegrationTestBase {
     /** Poll budget for asynchronously-applied shadow writes to become visible. */
     private static final int  AWAIT_ATTEMPTS = 50;
     private static final long AWAIT_SLEEP_MS = 100L;
-
-    @Inject
-    private ContentletIndexOperationsOS opsOS;
 
     @Inject
     private OSClientProvider clientProvider;
@@ -118,11 +117,11 @@ public class ContentletDataGenPhaseControlIT extends IntegrationTestBase {
         savedOsIndices = APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices();
 
         // Bootstrap BOTH stores so an ES and an OS working index exist for the whole test.
-        // Phase 1 (dual-write) makes checkAndInitializeIndex() create + register the OS index set
-        // alongside the already-present ES one.
+        // Phase 1 (dual-write) makes the bootstrap create + register the OS index set alongside
+        // the already-present ES one. ensureStoresForCurrentPhase() additionally fails hard, with a
+        // clear message, when the phase needs OpenSearch but the OS service is unreachable.
         setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
-        contentletIndexAPI().checkAndInitializeIndex();
-        APILocator.getVersionedIndicesAPI().clearCache();
+        MigrationPhaseStoreBootstrap.ensureStoresForCurrentPhase();
 
         esPhysicalWorking = APILocator.getIndiciesAPI().loadIndicies().getWorking();
         osPhysicalWorking = APILocator.getVersionedIndicesAPI()
@@ -150,118 +149,64 @@ public class ContentletDataGenPhaseControlIT extends IntegrationTestBase {
     }
 
     // =========================================================================
-    // Store-placement — store-oriented API (targetStore)
+    // Store placement driven purely by the active migration phase
     // =========================================================================
 
     /**
-     * Given: a data-gen with {@code targetStore(BOTH)} (dual-write).
-     * When : a contentlet is persisted.
-     * Then : the document is present in BOTH the ES and OS working indices.
+     * Given: the active phase is PHASE_3_OPENSEARCH_ONLY and both stores are bootstrapped.
+     * When : a contentlet is persisted through the ordinary data-gen.
+     * Then : the document is present in the OS working index and absent from the ES one — the
+     *        phase router sent the write to OpenSearch only, with no data-gen instrumentation.
      */
     @Test
-    public void test_targetStoreBoth_indexesInBothStores() {
-        assumeFalse(SEPARATE_CLUSTERS_REQUIRED, esSameAsOs());
+    public void test_phase3_indexesIntoOpenSearchOnly() {
+        setPhase(MigrationPhase.PHASE_3_OPENSEARCH_ONLY);
 
-        final String docId = docId(newGen().targetStore(TargetStore.BOTH).nextPersisted());
+        final String docId = docId(newContentlet());
 
-        assertTrue("BOTH: document must be present in the ES working index",
-                awaitDoc(() -> esHasDoc(docId)));
-        assertTrue("BOTH: document must be present in the OS working index",
-                awaitDoc(() -> osHasDoc(docId)));
-        Logger.info(this, "✅ targetStore(BOTH) — indexed into ES and OS");
-    }
-
-    /**
-     * Given: a data-gen with {@code targetStore(OS)} (OpenSearch only, phase 3).
-     * When : a contentlet is persisted.
-     * Then : the document is present in the OS working index and absent from the ES one.
-     */
-    @Test
-    public void test_targetStoreOs_indexesInOsOnly() {
-        final String docId = docId(newGen().targetStore(TargetStore.OS).nextPersisted());
-
-        assertTrue("OS-only: document must be present in the OS working index",
+        assertTrue("phase 3: document must be present in the OS working index",
                 awaitDoc(() -> osHasDoc(docId)));
         refreshAll();
-        assertFalse("OS-only: document must be absent from the ES working index",
+        assertFalse("phase 3: document must be absent from the ES working index",
                 esHasDoc(docId));
-        Logger.info(this, "✅ targetStore(OS) — indexed into OS only");
+        Logger.info(this, "✅ phase 3 — ordinary flow indexed into OpenSearch only");
     }
 
     /**
-     * Given: a data-gen with {@code targetStore(ES)} (ElasticSearch only, phase 0).
-     * When : a contentlet is persisted.
-     * Then : the document is present in the ES working index and absent from the OS one.
+     * Given: the active phase is PHASE_1_DUAL_WRITE_ES_READS and both stores are bootstrapped.
+     * When : a contentlet is persisted through the ordinary data-gen.
+     * Then : the document fans out to BOTH stores. Requires two separate clusters — skipped in the
+     *        single-cluster profile (the legacy ES client cannot write content to an OS 3.x backend).
      */
     @Test
-    public void test_targetStoreEs_indexesInEsOnly() {
+    public void test_phase1_dualWriteIndexesIntoBothStores() {
         assumeFalse(SEPARATE_CLUSTERS_REQUIRED, esSameAsOs());
+        setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
 
-        final String docId = docId(newGen().targetStore(TargetStore.ES).nextPersisted());
-
-        assertTrue("ES-only: document must be present in the ES working index",
-                awaitDoc(() -> esHasDoc(docId)));
-        refreshAll();
-        assertFalse("ES-only: document must be absent from the OS working index",
-                osHasDoc(docId));
-        Logger.info(this, "✅ targetStore(ES) — indexed into ES only");
-    }
-
-    // =========================================================================
-    // Store-placement — phase-oriented API (migrationPhase, the primary surface)
-    // =========================================================================
-
-    /**
-     * Given: a data-gen with {@code migrationPhase(PHASE_1_DUAL_WRITE_ES_READS)}.
-     * When : a contentlet is persisted.
-     * Then : the document fans out to BOTH stores — exercising the real phase router.
-     */
-    @Test
-    public void test_migrationPhaseDualWrite_indexesInBothStores() {
-        assumeFalse(SEPARATE_CLUSTERS_REQUIRED, esSameAsOs());
-
-        final String docId = docId(
-                newGen().migrationPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS).nextPersisted());
+        final String docId = docId(newContentlet());
 
         assertTrue("phase 1: document must be present in the ES working index",
                 awaitDoc(() -> esHasDoc(docId)));
         assertTrue("phase 1: document must be present in the OS working index",
                 awaitDoc(() -> osHasDoc(docId)));
-        Logger.info(this, "✅ migrationPhase(PHASE_1) — dual-write fan-out");
-    }
-
-    // =========================================================================
-    // Per-checkin scope — the override restores the prior phase
-    // =========================================================================
-
-    /**
-     * Given: the global migration phase is set to PHASE_2 and the data-gen overrides it to
-     *        PHASE_3 for a single persist.
-     * When : the contentlet is persisted.
-     * Then : after persistence the global phase is back to PHASE_2 — the override is scoped to
-     *        the checkin and restores the previously-configured value (not blindly cleared).
-     */
-    @Test
-    public void test_override_restoresPriorPhaseAfterPersist() {
-        setPhase(MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS);
-
-        newGen().migrationPhase(MigrationPhase.PHASE_3_OPENSEARCH_ONLY).nextPersisted();
-
-        assertEquals("Override must restore the prior phase after the checkin",
-                MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS, MigrationPhase.current());
-        Logger.info(this, "✅ per-checkin override restored prior phase (PHASE_2)");
+        Logger.info(this, "✅ phase 1 — ordinary flow dual-wrote to ES and OS");
     }
 
     // =========================================================================
     // Helpers
     // =========================================================================
 
-    private ContentletDataGen newGen() {
-        // skipValidation avoids required-field failures for the bare generated content type;
-        // WAIT_FOR makes the primary write synchronous so the document is observable right after persist.
+    /**
+     * Persists a contentlet of the dedicated test type through the ordinary {@link ContentletDataGen}.
+     * {@code skipValidation} avoids required-field failures for the bare generated content type;
+     * {@code WAIT_FOR} makes the primary write synchronous so the document is observable right after
+     * persist.
+     */
+    private Contentlet newContentlet() {
         return new ContentletDataGen(contentType.id())
                 .skipValidation(true)
-                .setPolicy(IndexPolicy.WAIT_FOR);
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
     }
 
     /** The ES/OS document {@code _id} dotCMS assigns to an indexed contentlet version. */
@@ -316,9 +261,5 @@ public class ContentletDataGenPhaseControlIT extends IntegrationTestBase {
         final String esEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS", "http://localhost:9207");
         final String osEndpoint = Config.getStringProperty("OS_ENDPOINTS", "http://localhost:9201");
         return esEndpoint.trim().equalsIgnoreCase(osEndpoint.trim());
-    }
-
-    private static ContentletIndexAPI contentletIndexAPI() {
-        return APILocator.getContentletIndexAPI();
     }
 }
