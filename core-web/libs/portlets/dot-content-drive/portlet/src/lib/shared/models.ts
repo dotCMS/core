@@ -13,8 +13,7 @@ import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
  * Base types the upload selector can produce, derived from the selector options so the type and the
  * rendered choices never drift apart.
  */
-export type DotContentDriveUploadBaseType =
-    (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
+export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
 
 /**
  * The status of the content drive.

@@ -68,7 +68,6 @@ describe('DotUploadFileService', () => {
                 expect.anything()
             );
         });
-
     });
 
     describe('uploadFileByBaseType', () => {
