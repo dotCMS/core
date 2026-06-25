@@ -3131,8 +3131,10 @@ public class WorkflowResource {
 
                 throw new BadRequestException(String.format(
                         "System fields %s cannot be set via this endpoint. "
-                                + "To change a contentlet's location, fire a workflow action that includes "
-                                + "the Move actionlet (see 'pathToMove').",
+                                + "To set or change a contentlet's location, fire a workflow action that includes "
+                                + "the Move actionlet and pass the target location via the top-level 'pathToMove' "
+                                + "property (a sibling of 'contentlet', not a field inside it), "
+                                + "e.g. {\"pathToMove\": \"//demo.dotcms.com/application\", \"contentlet\": {...}}.",
                         protectedFields));
             }
         }
@@ -3215,6 +3217,13 @@ public class WorkflowResource {
                     "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
                     "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
                     "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
+                    "⚠️ **Setting a contentlet's location (host/folder):** Do **not** put `host`, `hostId`, `hostname`, " +
+                    "or `folder` inside the `contentlet` object — these system fields are rejected with " +
+                    "`400 System fields [...] cannot be set via this endpoint`. To place or move a contentlet, fire an " +
+                    "action that includes the **Move actionlet** and pass the target location via the top-level " +
+                    "`pathToMove` property (sibling of `contentlet`, not inside it), e.g. " +
+                    "`{\"pathToMove\": \"//demo.dotcms.com/application\", \"contentlet\": {...}}`. " +
+                    "The path must include a host. See the `pathToMove` row in the request body table below.\n\n" +
                     "**Binary and image fields** — These fields cannot receive raw file data or asset paths in the JSON body. " +
                     "Use one of the patterns below.\n\n" +
                     "**Pattern A — single-use file (works for all binary/image fields):**\n\n" +

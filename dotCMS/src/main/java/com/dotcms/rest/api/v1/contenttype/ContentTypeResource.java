@@ -518,6 +518,10 @@ public class ContentTypeResource implements Serializable {
 														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
 														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
 														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
+														   "  ⚠️ **`dataType` is restricted per field class** — sending a value outside a class's accepted set fails with " +
+														   "`400 Field Type:... does not accept datatype ...`. Use: `ImmutableImageField`, `ImmutableBinaryField` → `TEXT`; " +
+														   "`ImmutableTextAreaField`, `ImmutableStoryBlockField` → `LONG_TEXT`; `ImmutableCustomField` → `LONG_TEXT` (or `TEXT`); " +
+														   "`ImmutableTextField` → `TEXT`, `LONG_TEXT`, `INTEGER`, or `FLOAT`. Do **not** send `dataType: SYSTEM` for an image field.\n" +
 														   "- `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. " +
 														   "For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\\r\\nFalse|false'` — there is no dedicated Boolean field class.\n\n" +
 														   "**Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. " +
