@@ -11,10 +11,7 @@ export const schema = {
         .describe(
             'dotCMS folder or asset path to download, e.g. /application/themes/travel or //demo.dotcms.com/application/themes/travel/css/styles.scss'
         ),
-    dest: z
-        .string()
-        .min(1)
-        .describe('Absolute local directory the MCP server writes files into'),
+    dest: z.string().min(1).describe('Absolute local directory the MCP server writes files into'),
     recursive: z.boolean().default(true).describe('Include files in nested folders'),
     overwrite: z
         .enum(['skip', 'overwrite', 'error'])
@@ -57,7 +54,10 @@ a JSON manifest — never the file bytes.`,
     }
 };
 
-export default async function handler(args: InferSchema<typeof schema>, extra?: ToolExtraArguments) {
+export default async function handler(
+    args: InferSchema<typeof schema>,
+    extra?: ToolExtraArguments
+) {
     try {
         const manifest = await downloadAssets({
             dotcms: runtimeFromEnv(extra?.sessionId),

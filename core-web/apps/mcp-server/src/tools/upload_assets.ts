@@ -5,10 +5,7 @@ import { uploadAssets } from '../lib/assets-transfer';
 import { errorMessage, runtimeFromEnv } from '../lib/runtime';
 
 export const schema = {
-    src: z
-        .string()
-        .min(1)
-        .describe('Absolute local directory the MCP server reads files from'),
+    src: z.string().min(1).describe('Absolute local directory the MCP server reads files from'),
     dest: z
         .string()
         .min(1)
@@ -63,7 +60,10 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
     }
 };
 
-export default async function handler(args: InferSchema<typeof schema>, extra?: ToolExtraArguments) {
+export default async function handler(
+    args: InferSchema<typeof schema>,
+    extra?: ToolExtraArguments
+) {
     try {
         const manifest = await uploadAssets({
             dotcms: runtimeFromEnv(extra?.sessionId),

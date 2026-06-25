@@ -51,7 +51,9 @@ describe('sandbox confinement', () => {
     });
 
     it('blocks dynamic import() so node builtins cannot be re-opened', async () => {
-        const result = await run(`const fs = await import('node:fs'); return typeof fs.readFileSync;`);
+        const result = await run(
+            `const fs = await import('node:fs'); return typeof fs.readFileSync;`
+        );
         expect(result.success).toBe(false);
         expect(result.error?.message).toMatch(/dynamic import\(\) is disabled/i);
     });

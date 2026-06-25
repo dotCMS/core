@@ -74,7 +74,11 @@ export async function downloadAssets(options: {
 
     // Each download is wrapped in the same try/catch so one failure records a failure and
     // doesn't abort the batch — both the single-asset path and the folder loop go through it.
-    const download = async (rel: string, fetchBytes: () => Promise<Buffer>, identifier?: string) => {
+    const download = async (
+        rel: string,
+        fetchBytes: () => Promise<Buffer>,
+        identifier?: string
+    ) => {
         try {
             const result = await writeDownloadedFile(
                 { dest, rel, overwrite: options.overwrite },
@@ -90,7 +94,10 @@ export async function downloadAssets(options: {
 
     if (directAssetPath) {
         await download(basename(input.path), () =>
-            downloadAssetBytes(options.dotcms, { path: '/api/v2/assets', query: { path: assetQueryPath(input) } })
+            downloadAssetBytes(options.dotcms, {
+                path: '/api/v2/assets',
+                query: { path: assetQueryPath(input) }
+            })
         );
     } else {
         const assets = await enumerateAssets(
@@ -172,7 +179,9 @@ export async function uploadAssets(options: {
     const dest = normalizeDotCMSPath(options.dest);
 
     if (!dest.siteQualified) {
-        throw new Error('Upload destination must be host-qualified, e.g. //demo.dotcms.com/application/themes/travel');
+        throw new Error(
+            'Upload destination must be host-qualified, e.g. //demo.dotcms.com/application/themes/travel'
+        );
     }
 
     const localFiles = await collectLocalFiles(src, options.include);
@@ -208,7 +217,8 @@ export async function uploadAssets(options: {
         }
     }
 
-    const notLive = options.publish && options.verify ? await verifyLive(options.dotcms, files) : [];
+    const notLive =
+        options.publish && options.verify ? await verifyLive(options.dotcms, files) : [];
 
     return sortManifest({
         src,
@@ -420,11 +430,17 @@ function assetQueryPath(normalized: { siteQualified?: string; path: string }): s
  * searches the path `/themes` on site `application` — which usually doesn't exist. Surface exactly
  * that so the agent can correct it instead of treating an empty result as success.
  */
-function zeroMatchWarning(rawInput: string, parsed: { siteQualified?: string; path: string }): string {
+function zeroMatchWarning(
+    rawInput: string,
+    parsed: { siteQualified?: string; path: string }
+): string {
     const base = `No assets matched "${parsed.path}" — check the path. The result is empty, not a success.`;
     const trimmed = rawInput.trim();
     if (trimmed.startsWith('//')) {
-        const site = parsed.siteQualified?.slice(2, parsed.siteQualified.length - parsed.path.length);
+        const site = parsed.siteQualified?.slice(
+            2,
+            parsed.siteQualified.length - parsed.path.length
+        );
         // The plain-path form is the input with one leading slash removed — i.e. the FULL path
         // including the segment that "//" consumed as the site (e.g. "//application/themes" → "/application/themes").
         const asPlainPath = trimmed.slice(1).replace(/\/+$/, '');
