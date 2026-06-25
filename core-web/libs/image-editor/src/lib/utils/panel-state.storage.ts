@@ -12,16 +12,16 @@ import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../image-editor.constants';
  * them, even after closing the tab.
  *
  * The stored value (under {@link IMAGE_EDITOR_PANEL_STATE_KEY}) is the array of
- * open `p-accordion-panel` values (e.g. `['adjust']`); the default is an empty
- * array so every section starts collapsed.
+ * open `p-accordion-panel` values (e.g. `['adjust']`); the default opens every
+ * section so a first-time user sees all the controls at once.
  */
 
-/** Every accordion section collapsed by default. */
-const DEFAULT_PANEL_STATE: string[] = [];
+/** Every accordion section open by default (first use / no stored layout). */
+const DEFAULT_PANEL_STATE: string[] = ['adjust', 'transform', 'fileinfo', 'history'];
 
 /**
  * Reads the persisted set of open accordion sections, or returns the default
- * (all collapsed) when nothing is stored or the stored value is unusable.
+ * (all sections open) when nothing is stored or the stored value is unusable.
  */
 export const getStoredPanelState = (): string[] => {
     try {

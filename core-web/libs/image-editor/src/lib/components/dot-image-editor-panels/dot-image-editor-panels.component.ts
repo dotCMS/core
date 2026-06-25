@@ -19,9 +19,9 @@ import { getStoredPanelState, savePanelState } from '../../utils/panel-state.sto
  * container only owns the accordion layout and section headers.
  *
  * Which sections are open is persisted to `localStorage` (same approach as the
- * Edit Content sidebar): the panel starts from the stored set — empty, so every
- * section is collapsed on first use — and an effect writes the set back whenever
- * it changes, so the user's layout is remembered the way they left it.
+ * Edit Content sidebar): the panel starts from the stored set — or, on first use
+ * with nothing stored, every section open — and an effect writes the set back
+ * whenever it changes, so the user's layout is remembered the way they left it.
  */
 @Component({
     selector: 'dot-image-editor-panels',

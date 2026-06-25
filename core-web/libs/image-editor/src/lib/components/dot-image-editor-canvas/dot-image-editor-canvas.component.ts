@@ -19,7 +19,9 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -54,7 +56,9 @@ import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-ove
         ButtonModule,
         InputNumberModule,
         ProgressSpinnerModule,
+        SelectModule,
         SkeletonModule,
+        TooltipModule,
         DotMessagePipe,
         DotImageEditorAddressBarComponent,
         DotImageEditorCropOverlayComponent
@@ -68,9 +72,9 @@ export class DotImageEditorCanvasComponent {
     readonly #service = inject(DotImageEditorService);
 
     /**
-     * Aspect-ratio presets shown in the crop action bar. Selecting one reshapes and
-     * locks the crop box to that ratio; `Free` (a `null` ratio) clears the lock and
-     * returns to free-form cropping.
+     * Aspect-ratio presets offered in the crop action bar's dropdown. Each ratio is
+     * the landscape value; the orientation toggle inverts it for portrait. `Free`
+     * (a `null` ratio) clears the lock and returns to free-form cropping.
      */
     protected readonly aspectPresets: { key: string; label: string; aspect: number | null }[] = [
         { key: 'free', label: 'Free', aspect: null },
@@ -79,8 +83,37 @@ export class DotImageEditorCanvasComponent {
         { key: 'standard', label: '4:3', aspect: 4 / 3 }
     ];
 
-    /** The locked crop aspect ratio (width / height), or `null` for free-form. */
-    protected readonly cropAspect = signal<number | null>(null);
+    /** Selected aspect preset key (the dropdown value); `free` clears the lock. */
+    protected readonly cropPreset = signal<string>('free');
+
+    /** Crop box orientation; flips a ratio'd preset (e.g. 16:9 -> 9:16). */
+    protected readonly cropOrientation = signal<'landscape' | 'portrait'>('landscape');
+
+    /** Base (landscape) ratio of the selected preset, or `null` for Free. */
+    readonly #presetRatio = computed(
+        () => this.aspectPresets.find((preset) => preset.key === this.cropPreset())?.aspect ?? null
+    );
+
+    /**
+     * The effective locked aspect ratio (width / height) handed to the crop overlay:
+     * the selected preset's ratio, inverted when portrait is chosen. `null` for Free
+     * (no lock).
+     */
+    protected readonly cropAspect = computed(() => {
+        const ratio = this.#presetRatio();
+        if (ratio === null) {
+            return null;
+        }
+
+        return this.cropOrientation() === 'portrait' ? 1 / ratio : ratio;
+    });
+
+    /** Orientation only changes non-square ratios; disabled for Free and 1:1. */
+    protected readonly orientationDisabled = computed(() => {
+        const ratio = this.#presetRatio();
+
+        return ratio === null || ratio === 1;
+    });
 
     /**
      * Live size of the crop box in natural image pixels, read from the crop
@@ -129,8 +162,16 @@ export class DotImageEditorCanvasComponent {
     /** Rendered bounds of the displayed image within the stage, in CSS px. */
     protected readonly imageRect = signal<ImageRect | undefined>(undefined);
 
-    /** Display-only zoom percentage applied as a CSS transform to the stage. */
+    /** Internal zoom multiplier (×100) applied as a CSS transform; 100 = fit-to-stage. */
     protected readonly zoomLevel = signal<number>(ZOOM_DEFAULT);
+
+    /**
+     * Ratio of the rendered (fit) image to its natural pixels — `renderedWidth /
+     * naturalWidth`. A huge image shrunk to fit has a ratio < 1; an image smaller
+     * than the stage stays at 1 (it is never upscaled). Measured on load with the
+     * rect; drives the natural-relative zoom readout.
+     */
+    protected readonly fitRatio = signal<number>(1);
 
     /** Pan offset (CSS px) applied to the stage so a zoomed-in image can be dragged. */
     protected readonly panOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -149,6 +190,14 @@ export class DotImageEditorCanvasComponent {
 
         return `translate(${x}px, ${y}px) scale(${this.zoomLevel() / 100})`;
     });
+
+    /**
+     * Zoom percentage shown to the user, relative to the image's NATURAL pixels
+     * (not the fit size): `fitRatio × zoomLevel`. A huge image shown whole reads as
+     * e.g. 30%, and 100% means 1:1 with the source pixels — while `zoomLevel` stays
+     * the internal transform multiplier the +/- and fit controls operate on.
+     */
+    protected readonly displayZoom = computed(() => Math.round(this.fitRatio() * this.zoomLevel()));
 
     /**
      * The visible image region (image-local CSS px) captured when the crop tool is
@@ -212,8 +261,9 @@ export class DotImageEditorCanvasComponent {
                 if (tool !== 'crop') {
                     this.capturedCropRect.set(undefined);
                     // Leaving crop clears the locked aspect so the next crop session
-                    // starts free-form.
-                    this.cropAspect.set(null);
+                    // starts free-form (and landscape).
+                    this.cropPreset.set('free');
+                    this.cropOrientation.set('landscape');
 
                     return;
                 }
@@ -492,6 +542,15 @@ export class DotImageEditorCanvasComponent {
             width: img.offsetWidth,
             height: img.offsetHeight
         });
+
+        // The <img> intrinsic size is the current preview's real pixels; its layout
+        // width is the fit size. Their ratio is the true on-screen scale at
+        // zoomLevel 100, used to report zoom relative to natural pixels. Require both
+        // to be measured (a not-yet-laid-out image reports 0) so we never store a
+        // bogus 0 ratio — the next measure (load / ResizeObserver) sets the real one.
+        this.fitRatio.set(
+            img.naturalWidth && img.offsetWidth ? img.offsetWidth / img.naturalWidth : 1
+        );
     }
 
     /**

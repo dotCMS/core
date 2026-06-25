@@ -6,6 +6,8 @@ import { Observable, of, throwError } from 'rxjs';
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
+import { Select } from 'primeng/select';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotImageEditorCanvasComponent } from './dot-image-editor-canvas.component';
@@ -320,43 +322,78 @@ describe('DotImageEditorCanvasComponent', () => {
             expect(spectator.query(byTestId('image-editor-crop-cancel-btn'))).toExist();
         });
 
-        it('should render the aspect presets including Free in the crop bar', () => {
+        it('should render the aspect dropdown and orientation toggle in the crop bar', () => {
             activeTool.set('crop');
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('image-editor-aspect-free'))).toExist();
-            expect(spectator.query(byTestId('image-editor-aspect-square'))).toExist();
-            expect(spectator.query(byTestId('image-editor-aspect-standard'))).toExist();
-            expect(spectator.query(byTestId('image-editor-aspect-wide'))).toExist();
+            expect(spectator.query(byTestId('image-editor-aspect-select'))).toExist();
+            expect(spectator.query(byTestId('image-editor-orient-landscape'))).toExist();
+            expect(spectator.query(byTestId('image-editor-orient-portrait'))).toExist();
         });
 
-        it('should lock the crop aspect when a preset pill is clicked and clear it on Free', () => {
+        it('should derive the locked aspect from the selected preset and orientation', () => {
             activeTool.set('crop');
             spectator.detectChanges();
 
-            // The component owns cropAspect, which it binds to the crop overlay's
-            // `aspect` input ([aspect]="cropAspect()").
-            const cropAspect = () =>
-                (
-                    spectator.component as unknown as { cropAspect: () => number | null }
-                ).cropAspect();
+            // The component owns cropPreset/cropOrientation; cropAspect is the
+            // orientation-adjusted ratio it binds to the overlay's `aspect` input.
+            const cmp = spectator.component as unknown as {
+                cropPreset: { set: (value: string) => void };
+                cropOrientation: { set: (value: 'landscape' | 'portrait') => void };
+                cropAspect: () => number | null;
+                orientationDisabled: () => boolean;
+            };
 
-            spectator.click(spectator.query(byTestId('image-editor-aspect-wide'))!);
+            // Free: no lock, orientation disabled.
+            expect(cmp.cropAspect()).toBeNull();
+            expect(cmp.orientationDisabled()).toBe(true);
+
+            // 16:9 landscape; orientation now applies.
+            cmp.cropPreset.set('wide');
+            expect(cmp.cropAspect()).toBeCloseTo(16 / 9, 5);
+            expect(cmp.orientationDisabled()).toBe(false);
+
+            // Portrait flips the ratio to 9:16.
+            cmp.cropOrientation.set('portrait');
+            expect(cmp.cropAspect()).toBeCloseTo(9 / 16, 5);
+
+            // 1:1 is square: orientation has no effect and is disabled.
+            cmp.cropPreset.set('square');
+            expect(cmp.cropAspect()).toBe(1);
+            expect(cmp.orientationDisabled()).toBe(true);
+        });
+
+        it('should set the preset from the aspect dropdown selection', () => {
+            activeTool.set('crop');
             spectator.detectChanges();
 
-            // The selected pill is highlighted and the locked ratio is stored.
-            const wide = spectator.query(byTestId('image-editor-aspect-wide'));
-            expect(wide).toHaveClass('canvas__aspect--active');
-            expect(cropAspect()).toBeCloseTo(16 / 9, 5);
+            spectator
+                .query(Select)!
+                .onChange.emit({ originalEvent: new Event('change'), value: 'standard' });
 
-            // Free clears the lock back to free-form (null) and highlights instead.
-            spectator.click(spectator.query(byTestId('image-editor-aspect-free'))!);
+            expect(
+                (spectator.component as unknown as { cropAspect: () => number | null }).cropAspect()
+            ).toBeCloseTo(4 / 3, 5);
+        });
+
+        it('should flip orientation from the toolbar buttons', () => {
+            activeTool.set('crop');
             spectator.detectChanges();
-            expect(cropAspect()).toBeNull();
-            expect(spectator.query(byTestId('image-editor-aspect-free'))).toHaveClass(
-                'canvas__aspect--active'
+
+            const cmp = spectator.component as unknown as {
+                cropPreset: { set: (value: string) => void };
+                cropOrientation: () => 'landscape' | 'portrait';
+            };
+            cmp.cropPreset.set('wide');
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('image-editor-orient-portrait'))!);
+            spectator.detectChanges();
+
+            expect(cmp.cropOrientation()).toBe('portrait');
+            expect(spectator.query(byTestId('image-editor-orient-portrait'))).toHaveClass(
+                'canvas__orient-btn--active'
             );
-            expect(wide).not.toHaveClass('canvas__aspect--active');
         });
 
         it('should invoke the crop overlay apply/cancel from the action bar when cropping', () => {
@@ -405,7 +442,9 @@ describe('DotImageEditorCanvasComponent', () => {
             expect(heightInput().disabled).toBe(true);
 
             // Selecting a preset locks a ratio and makes the fields editable.
-            spectator.click(spectator.query(byTestId('image-editor-aspect-square'))!);
+            (
+                spectator.component as unknown as { cropPreset: { set: (value: string) => void } }
+            ).cropPreset.set('square');
             spectator.detectChanges();
             await Promise.resolve();
             spectator.detectChanges();
@@ -419,7 +458,9 @@ describe('DotImageEditorCanvasComponent', () => {
             spectator.detectChanges();
 
             // Lock to 1:1 so the height follows the typed width.
-            spectator.click(spectator.query(byTestId('image-editor-aspect-square'))!);
+            (
+                spectator.component as unknown as { cropPreset: { set: (value: string) => void } }
+            ).cropPreset.set('square');
             spectator.detectChanges();
 
             // Editing the width to 320 px drives the overlay setter with the locked

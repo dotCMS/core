@@ -85,42 +85,63 @@
 
 // Aspect presets in the (light) floating crop action bar: plain dark-gray text
 // pills, the selected one filled with the primary color.
-.canvas__aspects {
+// Compact aspect-ratio preset dropdown; the floating bar is tight so cap the
+// trigger width. The overlay panel (appended to body) keeps the default theme.
+:host ::ng-deep .canvas__aspect-select {
+    min-width: 5.5rem;
+}
+
+:host ::ng-deep .canvas__aspect-select .p-select-label {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+// Orientation toggle: two square icon buttons (landscape / portrait). Active
+// reads as a filled primary chip; disabled (Free / 1:1) dims out.
+.canvas__orient {
     display: flex;
     gap: 0.25rem;
 }
 
-.canvas__aspect {
-    padding: 0.25rem 0.75rem;
+.canvas__orient-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    padding: 0;
     border: none;
     border-radius: 6px;
     background: transparent;
     color: var(--surface-600, #4b5563);
-    font-size: 0.8125rem;
-    font-variant-numeric: tabular-nums;
     cursor: pointer;
     transition:
         background 150ms ease,
         color 150ms ease;
+
+    .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
 }
 
-.canvas__aspect:hover {
+.canvas__orient-btn:hover:not(:disabled) {
     background: var(--surface-100, #f3f4f6);
     color: var(--surface-900, #1f2937);
 }
 
-.canvas__aspect--active {
+.canvas__orient-btn--active,
+.canvas__orient-btn--active:hover {
     background: var(--primary-color, #6366f1);
     color: #ffffff;
 }
 
-.canvas__aspect--active:hover {
-    background: var(--primary-color, #6366f1);
-    color: #ffffff;
+.canvas__orient-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .canvas__aspect {
+    .canvas__orient-btn {
         transition: none;
     }
 }

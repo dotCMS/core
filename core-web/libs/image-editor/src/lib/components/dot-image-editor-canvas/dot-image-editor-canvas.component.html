@@ -1,7 +1,7 @@
 <div class="canvas" data-testid="image-editor-canvas">
     <dot-image-editor-address-bar
         class="canvas__address-bar"
-        [zoomLevel]="zoomLevel()"
+        [zoomLevel]="displayZoom()"
         (zoomIn)="zoomIn()"
         (zoomOut)="zoomOut()"
         (fit)="fit()" />
@@ -82,20 +82,52 @@
                  width/height readout/editor and apply/cancel actions, centered at the
                  bottom of the viewport and revealed on hover (like the tool rail). -->
             <div class="canvas__actions" data-testid="image-editor-canvas-footer">
+                <!-- Aspect-ratio preset dropdown (Free / 1:1 / 16:9 / 4:3). -->
+                <p-select
+                    appendTo="body"
+                    styleClass="canvas__aspect-select"
+                    [options]="aspectPresets"
+                    [ngModel]="cropPreset()"
+                    optionLabel="label"
+                    optionValue="key"
+                    [attr.aria-label]="'edit.content.image-editor.crop.aspects' | dm"
+                    data-testid="image-editor-aspect-select"
+                    (onChange)="cropPreset.set($event.value)" />
+
+                <span class="canvas__separator" aria-hidden="true"></span>
+
+                <!-- Orientation: landscape / portrait. Flips a ratio'd preset
+                     (16:9 -> 9:16); disabled for Free and 1:1, where it has no effect. -->
                 <div
-                    class="canvas__aspects"
+                    class="canvas__orient"
                     role="group"
-                    [attr.aria-label]="'edit.content.image-editor.crop.aspects' | dm">
-                    @for (preset of aspectPresets; track preset.key) {
-                        <button
-                            type="button"
-                            class="canvas__aspect"
-                            [class.canvas__aspect--active]="cropAspect() === preset.aspect"
-                            (click)="cropAspect.set(preset.aspect)"
-                            [attr.data-testid]="'image-editor-aspect-' + preset.key">
-                            {{ preset.label }}
-                        </button>
-                    }
+                    [attr.aria-label]="'edit.content.image-editor.crop.orientation' | dm">
+                    <button
+                        type="button"
+                        class="canvas__orient-btn"
+                        [class.canvas__orient-btn--active]="cropOrientation() === 'landscape'"
+                        [disabled]="orientationDisabled()"
+                        [attr.aria-pressed]="cropOrientation() === 'landscape'"
+                        [attr.aria-label]="'edit.content.image-editor.crop.landscape' | dm"
+                        [pTooltip]="'edit.content.image-editor.crop.landscape' | dm"
+                        tooltipPosition="top"
+                        (click)="cropOrientation.set('landscape')"
+                        data-testid="image-editor-orient-landscape">
+                        <i class="material-symbols-outlined">crop_landscape</i>
+                    </button>
+                    <button
+                        type="button"
+                        class="canvas__orient-btn"
+                        [class.canvas__orient-btn--active]="cropOrientation() === 'portrait'"
+                        [disabled]="orientationDisabled()"
+                        [attr.aria-pressed]="cropOrientation() === 'portrait'"
+                        [attr.aria-label]="'edit.content.image-editor.crop.portrait' | dm"
+                        [pTooltip]="'edit.content.image-editor.crop.portrait' | dm"
+                        tooltipPosition="top"
+                        (click)="cropOrientation.set('portrait')"
+                        data-testid="image-editor-orient-portrait">
+                        <i class="material-symbols-outlined">crop_portrait</i>
+                    </button>
                 </div>
 
                 <span class="canvas__separator" aria-hidden="true"></span>

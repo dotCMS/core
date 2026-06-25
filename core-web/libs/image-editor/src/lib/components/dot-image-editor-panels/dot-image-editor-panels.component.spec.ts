@@ -62,10 +62,15 @@ describe('DotImageEditorPanelsComponent', () => {
         expect(spectator.query(byTestId('image-editor-panel-history'))).toExist();
     });
 
-    it('should start with every section collapsed by default', () => {
+    it('should start with every section open by default', () => {
         spectator = createComponent();
 
-        expect(spectator.component['openPanels']()).toEqual([]);
+        expect(spectator.component['openPanels']()).toEqual([
+            'adjust',
+            'transform',
+            'fileinfo',
+            'history'
+        ]);
     });
 
     it('should seed the open sections from localStorage', () => {

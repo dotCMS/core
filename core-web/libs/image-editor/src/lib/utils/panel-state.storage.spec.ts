@@ -2,6 +2,9 @@ import { getStoredPanelState, savePanelState } from './panel-state.storage';
 
 import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../image-editor.constants';
 
+/** The default (no stored layout) opens every section. */
+const ALL_OPEN = ['adjust', 'transform', 'fileinfo', 'history'];
+
 describe('panel-state.storage', () => {
     afterEach(() => {
         localStorage.clear();
@@ -9,8 +12,8 @@ describe('panel-state.storage', () => {
     });
 
     describe('getStoredPanelState', () => {
-        it('returns an empty array (all collapsed) when nothing is stored', () => {
-            expect(getStoredPanelState()).toEqual([]);
+        it('returns every section (all open) when nothing is stored', () => {
+            expect(getStoredPanelState()).toEqual(ALL_OPEN);
         });
 
         it('returns the persisted open sections', () => {
@@ -25,13 +28,13 @@ describe('panel-state.storage', () => {
         it('falls back to the default when the stored value is corrupt', () => {
             localStorage.setItem(IMAGE_EDITOR_PANEL_STATE_KEY, '{ not json');
 
-            expect(getStoredPanelState()).toEqual([]);
+            expect(getStoredPanelState()).toEqual(ALL_OPEN);
         });
 
         it('falls back to the default when the stored value is not an array of strings', () => {
             localStorage.setItem(IMAGE_EDITOR_PANEL_STATE_KEY, JSON.stringify({ adjust: true }));
 
-            expect(getStoredPanelState()).toEqual([]);
+            expect(getStoredPanelState()).toEqual(ALL_OPEN);
         });
     });
 
