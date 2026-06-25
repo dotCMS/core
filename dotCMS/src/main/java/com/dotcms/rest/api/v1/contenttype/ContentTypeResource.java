@@ -518,7 +518,7 @@ public class ContentTypeResource implements Serializable {
 														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
 														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
 														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
-														   "  ⚠️ **`dataType` is restricted per field class** — sending a value outside a class's accepted set fails with " +
+														   "  **Note: `dataType` is restricted per field class** — sending a value outside a class's accepted set fails with " +
 														   "`400 Field Type:... does not accept datatype ...`. Use: `ImmutableImageField`, `ImmutableBinaryField` → `TEXT`; " +
 														   "`ImmutableTextAreaField`, `ImmutableStoryBlockField` → `LONG_TEXT`; `ImmutableCustomField` → `LONG_TEXT` (or `TEXT`); " +
 														   "`ImmutableTextField` → `TEXT`, `LONG_TEXT`, `INTEGER`, or `FLOAT`. Do **not** send `dataType: SYSTEM` for an image field.\n" +

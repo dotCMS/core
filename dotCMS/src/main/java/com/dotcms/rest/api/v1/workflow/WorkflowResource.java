@@ -3217,7 +3217,7 @@ public class WorkflowResource {
                     "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
                     "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
                     "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
-                    "⚠️ **Setting a contentlet's location (host/folder):** Do **not** put `host`, `hostId`, `hostname`, " +
+                    "**Setting a contentlet's location (host/folder):** Do **not** put `host`, `hostId`, `hostname`, " +
                     "or `folder` inside the `contentlet` object — these system fields are rejected with " +
                     "`400 System fields [...] cannot be set via this endpoint`. To place or move a contentlet, fire an " +
                     "action that includes the **Move actionlet** and pass the target location via the top-level " +
