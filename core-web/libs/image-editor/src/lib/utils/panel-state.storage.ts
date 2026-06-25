@@ -32,8 +32,9 @@ export const getStoredPanelState = (): string[] => {
                 return parsed;
             }
         }
-    } catch (e) {
-        console.warn('Error reading image editor panel state from localStorage:', e);
+    } catch {
+        // Reading the layout is non-critical UI persistence; on any storage error
+        // (blocked/corrupt) fall through to the default rather than surface it.
     }
 
     return [...DEFAULT_PANEL_STATE];
@@ -43,7 +44,7 @@ export const getStoredPanelState = (): string[] => {
 export const savePanelState = (state: string[]): void => {
     try {
         localStorage.setItem(IMAGE_EDITOR_PANEL_STATE_KEY, JSON.stringify(state));
-    } catch (e) {
-        console.warn('Error saving image editor panel state to localStorage:', e);
+    } catch {
+        // Persisting the layout is best-effort; ignore storage errors (quota/blocked).
     }
 };

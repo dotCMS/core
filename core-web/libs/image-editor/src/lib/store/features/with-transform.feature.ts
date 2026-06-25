@@ -26,7 +26,7 @@ export function withTransform() {
                 const transform: TransformState = { ...state.transform, scale: value };
                 const crop = value !== 100 ? initialCropState : state.crop;
 
-                return transformPatch(state, transform, crop, 'adjust', `Scale ${value}%`);
+                return transformPatch(state, transform, crop, 'resize', `Scale ${value}%`);
             }),
             on(imageEditorTransformEvents.rotateChanged, ({ payload }, state) => {
                 const value = clamp(payload, RANGES.rotate.min, RANGES.rotate.max);
@@ -59,7 +59,7 @@ export function withTransform() {
                 const isResizing = payload.width != null || payload.height != null;
                 const crop = isResizing ? initialCropState : state.crop;
 
-                return transformPatch(state, transform, crop, 'adjust', 'Resize');
+                return transformPatch(state, transform, crop, 'resize', 'Resize');
             })
         ),
         withComputed((store) => ({

@@ -38,7 +38,7 @@ import { DotImageEditorCropOverlayComponent } from '../dot-image-editor-crop-ove
 import { DotImageEditorFocalOverlayComponent } from '../dot-image-editor-focal-overlay/dot-image-editor-focal-overlay.component';
 
 /**
- * Dark stage that renders the live image preview at the center of the editor.
+ * Stage that renders the live image preview at the center of the editor.
  * Hosts the top address sub-bar (which carries the canvas tools), the crop overlay,
  * and a floating bottom action bar that surfaces the crop tool's actions
  * (aspect-ratio presets, a natural-pixel width/height readout/editor, plus

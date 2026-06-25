@@ -1,10 +1,11 @@
 import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 import { Dispatcher, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
+import { EMPTY } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 
-import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 
 import { AUTO_PREVIEW_RETRY_LIMIT } from '../../image-editor.constants';
 import { ImageEditorState } from '../../models/image-editor.models';
@@ -95,15 +96,16 @@ export function withPreview() {
                     debounceTime(250),
                     distinctUntilChanged(),
                     switchMap((url) =>
-                        service
-                            .getFileSize(url)
-                            .pipe(
-                                tap((bytes) =>
-                                    dispatcher.dispatch(
-                                        imageEditorLifecycleEvents.previewSizeResolved(bytes)
-                                    )
+                        service.getFileSize(url).pipe(
+                            tap((bytes) =>
+                                dispatcher.dispatch(
+                                    imageEditorLifecycleEvents.previewSizeResolved(bytes)
                                 )
-                            )
+                            ),
+                            // Keep the long-lived size stream alive if a dispatch ever
+                            // throws, so the file-size readout doesn't freeze for the session.
+                            catchError(() => EMPTY)
+                        )
                     )
                 )
             };

@@ -40,5 +40,8 @@ describe('withFileInfo', () => {
     it('clamps quality into 0..100', () => {
         fileInfo.qualityChanged(150);
         expect(store.fileInfo().quality).toBe(100);
+
+        fileInfo.qualityChanged(-50);
+        expect(store.fileInfo().quality).toBe(0);
     });
 });

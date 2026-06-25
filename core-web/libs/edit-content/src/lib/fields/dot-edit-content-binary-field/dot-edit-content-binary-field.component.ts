@@ -435,7 +435,14 @@ export class DotEditContentBinaryFieldComponent
                 filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((tempFile) => this.#dotBinaryFieldStore.setFileFromTemp(tempFile));
+            .subscribe({
+                next: (tempFile) => this.#dotBinaryFieldStore.setFileFromTemp(tempFile),
+                // The dialog stream isn't expected to error, but guard it so an
+                // unexpected failure surfaces in the console instead of being swallowed
+                // by the global handler with the edited image silently never applied.
+                error: (error) =>
+                    console.error('Image editor failed to apply the edited image', error)
+            });
     }
 
     /**

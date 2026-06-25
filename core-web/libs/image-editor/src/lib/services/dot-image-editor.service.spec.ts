@@ -150,15 +150,22 @@ describe('DotImageEditorService', () => {
             const createSpy = jest
                 .spyOn(document, 'createElement')
                 .mockReturnValue(anchor as HTMLAnchorElement);
+            const appendSpy = jest.spyOn(document.body, 'appendChild');
+            const removeSpy = jest.spyOn(anchor, 'remove');
 
             spectator.service.triggerDownload('/dA/asset.png', 'edited.png');
 
             expect(createSpy).toHaveBeenCalledWith('a');
             expect(anchor.getAttribute('href')).toBe('/dA/asset.png');
             expect(anchor.download).toBe('edited.png');
+            // The anchor must be attached, clicked, then detached so the click works
+            // cross-browser and leaves no orphan node behind.
+            expect(appendSpy).toHaveBeenCalledWith(anchor);
             expect(clickSpy).toHaveBeenCalled();
+            expect(removeSpy).toHaveBeenCalled();
 
             createSpy.mockRestore();
+            appendSpy.mockRestore();
         });
     });
 });

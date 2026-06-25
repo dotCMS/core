@@ -93,7 +93,9 @@ describe('DotImageEditorTransformPanelComponent', () => {
 
         const event = dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type);
         expect(event).toBeDefined();
-        expect(event!.payload).toEqual({ width: 1024, height: null });
+        // The unchanged dimension carries the currently-displayed (computed) value,
+        // not the raw stored null, so persisted matches what the field shows.
+        expect(event!.payload).toEqual({ width: 1024, height: 600 });
     });
 
     it('should dispatch outputDimsChanged with the new height on height input', () => {
@@ -101,7 +103,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
 
         const event = dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type);
         expect(event).toBeDefined();
-        expect(event!.payload).toEqual({ width: null, height: 768 });
+        expect(event!.payload).toEqual({ width: 800, height: 768 });
     });
 
     it('should show the min error and dispatch a null dimension when width is below 1', () => {
@@ -112,7 +114,7 @@ describe('DotImageEditorTransformPanelComponent', () => {
         expect(dispatchedEvent(imageEditorTransformEvents.outputDimsChanged.type)!.payload).toEqual(
             {
                 width: null,
-                height: null
+                height: 600
             }
         );
     });

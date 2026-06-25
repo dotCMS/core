@@ -186,17 +186,19 @@ export class DotImageEditorComponent {
 
     /** Whether the event originated from an editable control (keeps its native undo). */
     #isEditableTarget(target: EventTarget | null): boolean {
-        const el = target as HTMLElement | null;
-
-        if (!el) {
+        if (!(target instanceof HTMLElement)) {
             return false;
         }
 
         return (
-            el.tagName === 'INPUT' ||
-            el.tagName === 'TEXTAREA' ||
-            el.tagName === 'SELECT' ||
-            el.isContentEditable
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable ||
+            // PrimeNG p-select/p-dropdown/p-autocomplete expose a focusable element with
+            // role="combobox"; treat it (and its contents) as an editable control so the
+            // undo/redo shortcuts don't hijack keyboard selection inside an open control.
+            target.closest('[role="combobox"]') !== null
         );
     }
 }

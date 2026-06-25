@@ -31,7 +31,14 @@ export interface ImageRect {
 export type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /** Logical category an applied edit belongs to, used for grouping and labels. */
-export type FilterCategory = 'adjust' | 'crop' | 'rotate' | 'flip' | 'grayscale' | 'compression';
+export type FilterCategory =
+    | 'adjust'
+    | 'resize'
+    | 'crop'
+    | 'rotate'
+    | 'flip'
+    | 'grayscale'
+    | 'compression';
 
 /** Server-side filter name as understood by the dotCMS image filter endpoint. */
 export type FilterName =

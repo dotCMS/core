@@ -57,6 +57,9 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
  * @param snapshot - The editable slices to capture
  * @returns The new `history` array and `historyIndex`
  */
+/** Process-local monotonic sequence backing unique, collision-free history-entry ids. */
+let historyEntrySeq = 0;
+
 export function coalesceHistory(
     state: ImageEditorState,
     category: FilterCategory,
@@ -78,7 +81,9 @@ export function coalesceHistory(
     }
 
     const entry: ImageEditorHistoryEntry = {
-        id: `${category}-${Date.now()}-${state.cacheBust}`,
+        // A monotonic counter keeps ids collision-free even for two entries created
+        // in the same millisecond (Date.now() could collide, e.g. under fake timers).
+        id: `${category}-${++historyEntrySeq}`,
         category,
         label,
         snapshot

@@ -113,9 +113,12 @@ export class DotImageEditorTransformPanelComponent {
     /** Dispatches a change to the explicit output width, guarding the minimum. */
     protected outputWidthChanged(value: number | null): void {
         this.widthError.set(this.#isBelowMinimum(value));
+        // Pair the new width with the currently-DISPLAYED height (the computed
+        // `outputDimensions`, which falls back to the natural size), not the raw —
+        // possibly null — stored value, so what is persisted matches what the field shows.
         this.dispatch.outputDimsChanged({
             width: this.#toDimension(value),
-            height: this.store.transform().outputHeight
+            height: this.store.outputDimensions().height
         });
     }
 
@@ -123,7 +126,7 @@ export class DotImageEditorTransformPanelComponent {
     protected outputHeightChanged(value: number | null): void {
         this.heightError.set(this.#isBelowMinimum(value));
         this.dispatch.outputDimsChanged({
-            width: this.store.transform().outputWidth,
+            width: this.store.outputDimensions().width,
             height: this.#toDimension(value)
         });
     }
