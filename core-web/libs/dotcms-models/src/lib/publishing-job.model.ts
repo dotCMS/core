@@ -56,3 +56,36 @@ export interface PublishingJobsResponse {
     entity: PublishingJobView[];
     pagination: PublishingJobsPagination;
 }
+
+/** Operation values accepted by the push-bundle endpoint. Same vocabulary as
+ * the legacy push-publish form's `pushActionSelected`. */
+export type PushBundleOperation = 'publish' | 'expire' | 'publishexpire';
+
+/**
+ * Request body for `POST /api/v1/publishing/push/{bundleId}`.
+ * Mirrors `com.dotcms.rest.api.v1.publishing.PushBundleForm`.
+ *
+ * Dates must be ISO 8601 with timezone offset (e.g. `2025-03-15T14:30:00-05:00`).
+ * `publishDate` is required for `publish` / `publishexpire`; `expireDate` is
+ * required for `expire` / `publishexpire` — the BE enforces this.
+ */
+export interface PushBundleForm {
+    operation: PushBundleOperation;
+    publishDate?: string;
+    expireDate?: string;
+    environments: string[];
+    filterKey: string;
+}
+
+/**
+ * Response payload from `POST /api/v1/publishing/push/{bundleId}`.
+ * Mirrors `com.dotcms.rest.api.v1.publishing.AbstractPushBundleResultView`.
+ */
+export interface PushBundleResultView {
+    bundleId: string;
+    operation: PushBundleOperation;
+    publishDate: string | null;
+    expireDate: string | null;
+    environments: string[];
+    filterKey: string;
+}

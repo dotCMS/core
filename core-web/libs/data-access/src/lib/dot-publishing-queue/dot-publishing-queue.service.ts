@@ -11,6 +11,8 @@ import {
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobsResponse,
+    PushBundleForm,
+    PushBundleResultView,
     RemoveAssetResultView,
     RetryBundleResultView,
     UnsentBundlesResponse
@@ -113,6 +115,25 @@ export class DotPublishingQueueService {
     retryBundles(payload: RetryBundlesPayload): Observable<RetryBundleResultView[]> {
         return this.http
             .post<DotCMSResponse<RetryBundleResultView[]>>('/api/v1/publishing/retry', payload)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Queues a bundle for publishing via the modern v1 REST endpoint.
+     * Replaces the legacy `/DotAjaxDirector/.../cmd/pushBundle` AJAX action — same
+     * effect, proper JSON in/out + proper HTTP status codes.
+     *
+     * BE endpoint: `POST /api/v1/publishing/push/{bundleId}` (see
+     * `com.dotcms.rest.api.v1.publishing.PublishingResource.pushBundle`).
+     * Single-bundle per call; callers needing to push N bundles must fan out
+     * (e.g. via `forkJoin`).
+     */
+    pushBundle(bundleId: string, form: PushBundleForm): Observable<PushBundleResultView> {
+        return this.http
+            .post<DotCMSResponse<PushBundleResultView>>(
+                `/api/v1/publishing/push/${bundleId}`,
+                form
+            )
             .pipe(map((response) => response.entity));
     }
 

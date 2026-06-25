@@ -1,4 +1,4 @@
-import { EMPTY, Subject } from 'rxjs';
+import { EMPTY, Subject, forkJoin, of } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -26,19 +27,29 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, debounceTime, distinctUntilChanged, finalize, take } from 'rxjs/operators';
 
 /* eslint-disable @nx/enforce-module-boundaries */
-// `DotDownloadBundleDialogService` lives in apps/dotcms-ui (not yet promoted to
-// a shared lib). Same pattern as `dot-publishing-queue-table`. Tracked
-// alongside the v1 consolidation work (#36048).
+// Both `DotDownloadBundleDialogService` and `DotPushPublishFormComponent` live
+// in apps/dotcms-ui (not yet promoted to shared libs). Same pattern as
+// `dot-publishing-queue-table`. Tracked alongside the v1 consolidation work
+// (#36048).
 
+import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
     DotContentletEditUrlService,
     DotCurrentUserService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotPublishingQueueService
+    DotPublishingQueueService,
+    DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    BundleAssetView,
+    DotCMSContentlet,
+    DotPushPublishData,
+    DotPushPublishDialogData,
+    PushBundleForm,
+    PushBundleOperation
+} from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
@@ -96,9 +107,13 @@ const ASSETS_PER_PAGE = 10;
         TagModule,
         TooltipModule,
         DotCopyButtonComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotPushPublishFormComponent
     ],
-    providers: [ConfirmationService],
+    // `DotPushPublishFiltersService` is provided here (same as the legacy global
+    // `DotPushPublishDialogComponent` does) so the embedded
+    // `<dot-push-publish-form>` can inject it without leaking outside this dialog.
+    providers: [ConfirmationService, DotPushPublishFiltersService],
     templateUrl: './dot-publishing-queue-select-bundle-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex h-full min-h-0 flex-col' }
@@ -110,9 +125,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
-    private readonly pushPublishService = inject(DotPushPublishDialogService);
     private readonly downloadService = inject(DotDownloadBundleDialogService);
     private readonly editUrlService = inject(DotContentletEditUrlService);
+    private readonly globalMessage = inject(DotGlobalMessageService);
+    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
 
     private userId: string | null = null;
 
@@ -154,6 +170,37 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly hasChecked = computed(() => this.checkedBundleIds().length > 0);
     readonly hasActive = computed(() => this.activeBundleId() !== null);
+
+    /** Two-step wizard inside this single modal: step 1 picks bundles, step 2
+     * embeds the push-publish form and submits to /api/v1/publishing/push. */
+    readonly step = signal<'select' | 'configure'>('select');
+    readonly isSending = signal(false);
+
+    /** Latest form value emitted by the embedded `<dot-push-publish-form>`. The
+     * form re-emits on every keystroke; we just hold the most recent. */
+    readonly configureFormValue = signal<DotPushPublishData | null>(null);
+    readonly configureFormValid = signal(false);
+
+    /** Send is enabled only when the form is valid AND we're not already
+     * pushing. Disabled-while-sending prevents double-submit. */
+    readonly canSend = computed(() => this.configureFormValid() && !this.isSending());
+
+    /** Data fed to the embedded `<dot-push-publish-form>`. `assetIdentifier`
+     * keys the env selector's "remember last push" — for multi-bundle we use
+     * the first checked id (same form values get applied to all, so they share
+     * the same "last push" memory anyway). */
+    readonly configureFormData = computed<DotPushPublishDialogData>(() => {
+        const ids = this.checkedBundleIds();
+        const first = ids[0] ?? '';
+        const firstName = this.bundles().find((b) => b.id === first)?.name ?? first;
+        const title = ids.length <= 1 ? firstName : `${ids.length} bundles`;
+
+        return {
+            assetIdentifier: first,
+            title,
+            isBundle: true
+        };
+    });
 
     /** Bundle rows currently selected via checkbox. p-table's `[selection]`
      * binding wants the row objects (not just ids), so we re-derive them from
@@ -315,23 +362,78 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         });
     }
 
-    onDownloadActive(): void {
-        const id = this.activeBundleId();
-        if (id) {
-            this.downloadService.open(id);
-        }
-    }
-
-    onConfigureActive(): void {
-        const bundle = this.activeBundle();
-        if (!bundle) {
+    /** Download is single-target by design — `DotDownloadBundleDialogService.open`
+     * accepts one bundle id. The button is gated in the template to be enabled
+     * only when exactly one bundle is checked. */
+    onDownloadChecked(): void {
+        const ids = this.checkedBundleIds();
+        if (ids.length !== 1) {
             return;
         }
-        this.pushPublishService.open({
-            assetIdentifier: bundle.id,
-            title: bundle.name || bundle.id,
-            isBundle: true
-        });
+        this.downloadService.open(ids[0]);
+    }
+
+    onOpenConfigureStep(): void {
+        if (!this.hasChecked()) {
+            return;
+        }
+        this.step.set('configure');
+    }
+
+    onBackToList(): void {
+        this.step.set('select');
+    }
+
+    onConfigureFormValue(value: DotPushPublishData): void {
+        this.configureFormValue.set(value);
+    }
+
+    onConfigureFormValid(valid: boolean): void {
+        this.configureFormValid.set(valid);
+    }
+
+    /**
+     * Fans out one `POST /api/v1/publishing/push/{bundleId}` per checked bundle
+     * with the same form payload. The user filled the form once; the parallel
+     * calls are an implementation detail invisible to them.
+     */
+    onSend(): void {
+        const ids = this.checkedBundleIds();
+        const value = this.configureFormValue();
+        if (!value || ids.length === 0 || !this.configureFormValid()) {
+            return;
+        }
+
+        const form = toPushBundleForm(value);
+
+        this.isSending.set(true);
+        forkJoin(
+            ids.map((id) =>
+                this.publishingService
+                    .pushBundle(id, form)
+                    .pipe(catchError(() => of(null)))
+            )
+        )
+            .pipe(
+                take(1),
+                finalize(() => this.isSending.set(false))
+            )
+            .subscribe((results) => {
+                const failed = results.filter((r) => r === null).length;
+
+                if (failed === 0) {
+                    this.dialogRef?.close();
+                    return;
+                }
+
+                this.globalMessage.error(
+                    this.dotMessageService.get(
+                        'publishing-queue.select-bundle.send-partial-fail',
+                        String(failed),
+                        String(ids.length)
+                    )
+                );
+            });
     }
 
     private loadBundles(): void {
@@ -431,4 +533,105 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     editUrlFor(asset: BundleAssetView): string | null {
         return this.assetEditUrls().get(asset.asset) ?? null;
     }
+}
+
+/**
+ * Translates the embedded form's `DotPushPublishData` (the same shape the
+ * legacy AJAX dialog produces) into the v1 REST endpoint's `PushBundleForm`.
+ *
+ * Field map:
+ *   pushActionSelected → operation        (same vocabulary, just renamed)
+ *   environment[]      → environments[]   (renamed)
+ *   filterKey          → filterKey
+ *   publishDate + timezoneId → publishDate (ISO 8601 with TZ offset)
+ *   expireDate  + timezoneId → expireDate  (same)
+ *
+ * Date conversion uses the user-selected `timezoneId` so the BE receives the
+ * intended wall-clock time + offset (mirrors `PublishingJobsHelper#parseISO8601Date`
+ * server-side).
+ */
+function toPushBundleForm(value: DotPushPublishData): PushBundleForm {
+    const operation = value.pushActionSelected as PushBundleOperation;
+    const form: PushBundleForm = {
+        operation,
+        environments: value.environment,
+        filterKey: value.filterKey ?? ''
+    };
+
+    if (operation === 'publish' || operation === 'publishexpire') {
+        if (value.publishDate) {
+            form.publishDate = toIso8601WithOffset(
+                new Date(value.publishDate),
+                value.timezoneId
+            );
+        }
+    }
+
+    if (operation === 'expire' || operation === 'publishexpire') {
+        if (value.expireDate) {
+            form.expireDate = toIso8601WithOffset(
+                new Date(value.expireDate),
+                value.timezoneId
+            );
+        }
+    }
+
+    return form;
+}
+
+/**
+ * Formats `date` as ISO 8601 with the timezone offset of `timezoneId`.
+ *
+ * The wall-clock parts (yyyy-MM-ddTHH:mm:ss) come from the browser's local time
+ * — this matches what the user picked in the date picker, and what the legacy
+ * AJAX path sends. The offset suffix is computed for the user-selected timezone
+ * at that instant (handles DST transitions correctly via `Intl.DateTimeFormat`).
+ */
+function toIso8601WithOffset(date: Date, timezoneId: string): string {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const mm = pad(date.getMonth() + 1);
+    const dd = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mi = pad(date.getMinutes());
+    const ss = pad(date.getSeconds());
+
+    const offsetMinutes = getTimezoneOffsetMinutes(date, timezoneId);
+    const sign = offsetMinutes >= 0 ? '+' : '-';
+    const abs = Math.abs(offsetMinutes);
+    const offHH = pad(Math.floor(abs / 60));
+    const offMM = pad(abs % 60);
+
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}${sign}${offHH}:${offMM}`;
+}
+
+/** Returns minutes east of UTC for `timezoneId` at the instant `date` — e.g.
+ * `-300` for America/New_York during EST, `+60` for Europe/Madrid in winter.
+ * Diffs the wall-clock parts emitted by `Intl.DateTimeFormat` in UTC vs the
+ * target zone; correct across DST. */
+function getTimezoneOffsetMinutes(date: Date, timezoneId: string): number {
+    const fields: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    const utcParts = partsToEpoch(
+        new Intl.DateTimeFormat('en-US', { ...fields, timeZone: 'UTC' }).formatToParts(date)
+    );
+    const tzParts = partsToEpoch(
+        new Intl.DateTimeFormat('en-US', { ...fields, timeZone: timezoneId }).formatToParts(date)
+    );
+
+    return Math.round((tzParts - utcParts) / 60000);
+}
+
+function partsToEpoch(parts: Intl.DateTimeFormatPart[]): number {
+    const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+    let hour = get('hour');
+    if (hour === 24) hour = 0;
+    return Date.UTC(get('year'), get('month') - 1, get('day'), hour, get('minute'), get('second'));
 }
