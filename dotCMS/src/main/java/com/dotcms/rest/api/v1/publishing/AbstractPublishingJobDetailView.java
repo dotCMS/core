@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.immutables.value.Value;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -130,5 +131,20 @@ public interface AbstractPublishingJobDetailView {
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     int numTries();
+
+    /**
+     * Scheduled execution time for a bundle in {@code SCHEDULED} status — the future
+     * {@code publishDate} it was pushed with, before the publisher cron picks it up. Null for
+     * every other status.
+     *
+     * @return Scheduled publish date/time, or null when the bundle is not in SCHEDULED status
+     */
+    @Schema(
+            description = "Scheduled execution time (future publishDate) for SCHEDULED bundles; "
+                    + "null for all other statuses",
+            example = "2026-03-15T14:30:00Z"
+    )
+    @Nullable
+    Instant scheduledPublishDate();
 
 }

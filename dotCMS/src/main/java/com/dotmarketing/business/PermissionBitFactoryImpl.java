@@ -69,8 +69,10 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -2719,6 +2721,62 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			permIdCount++;
 		}
 		return permsToReturn;
+	}
+
+	@Override
+	Set<String> getPermittedIds(final Collection<String> inodeIds,
+			final int permission, final List<String> roleIds) throws DotDataException {
+
+		if (inodeIds.isEmpty() || roleIds.isEmpty()) {
+			return Set.of();
+		}
+
+		final String rolePlaceholders  = roleIds.stream().map(r -> "?").collect(Collectors.joining(", "));
+		final String refBitAnd = DbConnectionFactory.isOracle()
+				? "bitand(permission.permission, ?) > 0"
+				: "(permission.permission & ?) > 0";
+		final String indBitAnd = DbConnectionFactory.isOracle()
+				? "bitand(permission, ?) > 0"
+				: "(permission & ?) > 0";
+
+		final Set<String> permitted = new HashSet<>();
+		final List<String> idList = new ArrayList<>(inodeIds);
+		for (int i = 0; i < idList.size(); i += 500) {
+			final List<String> chunk = idList.subList(i, Math.min(i + 500, idList.size()));
+			final String inodePlaceholders = chunk.stream().map(id -> "?").collect(Collectors.joining(", "));
+
+			final String sql =
+					"SELECT permission_reference.asset_id AS permitted_id " +
+					"FROM permission_reference, permission " +
+					"WHERE permission_reference.reference_id = permission.inode_id " +
+					"  AND permission.permission_type = permission_reference.permission_type " +
+					"  AND permission.roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + refBitAnd +
+					"  AND permission_reference.asset_id IN (" + inodePlaceholders + ") " +
+					"UNION " +
+					"SELECT inode_id AS permitted_id " +
+					"FROM permission " +
+					"WHERE permission_type = 'individual' " +
+					"  AND roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + indBitAnd +
+					"  AND inode_id IN (" + inodePlaceholders + ")";
+
+			final DotConnect dc = new DotConnect().setSQL(sql);
+			// Parameters for the first SELECT (permission_reference join):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+			// Parameters for the second SELECT (individual permission):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+
+			dc.loadObjectResults().stream()
+					.map(row -> (String) row.get("permitted_id"))
+					.filter(java.util.Objects::nonNull)
+					.forEach(permitted::add);
+		}
+		return permitted;
 	}
 
 	@Override
