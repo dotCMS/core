@@ -50,7 +50,7 @@ app.get('/health', (c) => c.json({ ok: true, service: 'ai-agents' }));
 // The a11y-fix agent: POST /a11y/fix, GET /a11y/active-run.
 app.route('/a11y', createA11yRoutes());
 
-const port = Number(process.env.PORT ?? 3001);
+const port = Number(process.env.PORT ?? 3000);
 
 serve({ fetch: app.fetch, port }, (info) => {
     // eslint-disable-next-line no-console
