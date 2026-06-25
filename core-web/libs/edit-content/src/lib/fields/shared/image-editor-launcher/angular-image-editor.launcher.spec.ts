@@ -16,7 +16,7 @@ describe('AngularImageEditorLauncher', () => {
     // Drives the new-image-editor flag; `next()` flows through `toSignal` so the same
     // service instance reflects on/off without re-creating it.
     const featureFlag$ = new BehaviorSubject<boolean>(true);
-    const getFeatureFlagWithDefault = jest.fn(() => featureFlag$);
+    const getFeatureFlag = jest.fn(() => featureFlag$);
 
     const params: ImageEditorOpenParams = {
         inode: 'inode-1',
@@ -26,7 +26,7 @@ describe('AngularImageEditorLauncher', () => {
 
     const createService = createServiceFactory({
         service: AngularImageEditorLauncher,
-        providers: [mockProvider(DotPropertiesService, { getFeatureFlagWithDefault })],
+        providers: [mockProvider(DotPropertiesService, { getFeatureFlag })],
         mocks: [DialogService]
     });
 
@@ -41,10 +41,7 @@ describe('AngularImageEditorLauncher', () => {
 
     it('should be available when FEATURE_FLAG_NEW_IMAGE_EDITOR is on', () => {
         expect(spectator.service.isAvailable()).toBe(true);
-        expect(getFeatureFlagWithDefault).toHaveBeenCalledWith(
-            FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR,
-            false
-        );
+        expect(getFeatureFlag).toHaveBeenCalledWith(FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR);
     });
 
     it('should NOT be available when the feature flag is off', () => {

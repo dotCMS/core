@@ -17,8 +17,9 @@ import {
  * Launches the Angular `@dotcms/image-editor` modal through PrimeNG's `DialogService`.
  *
  * Gated behind the {@link FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR} feature flag:
- * `isAvailable()` resolves to the server-configured value (off by default), so the
- * binary field falls back to the legacy Dojo editor until an admin enables it.
+ * `isAvailable()` resolves to the server-configured value, which ships as `false`
+ * for rollback safety (mirroring the other new-editor flags), so the binary field
+ * falls back to the legacy Dojo editor until an admin enables it.
  */
 @Injectable()
 export class AngularImageEditorLauncher implements DotImageEditorLauncher {
@@ -27,10 +28,7 @@ export class AngularImageEditorLauncher implements DotImageEditorLauncher {
 
     /** Resolved value of the new-image-editor feature flag (off until the server replies). */
     readonly #enabled = toSignal(
-        this.#propertiesService.getFeatureFlagWithDefault(
-            FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR,
-            false
-        ),
+        this.#propertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR),
         { initialValue: false }
     );
 
