@@ -314,19 +314,31 @@
                     (onClick)="onRemoveBundles()"
                     data-testid="pq-select-bundle-remove-btn" />
                 <p-button
-                    [label]="'publishing-queue.select-bundle.download' | dm"
+                    [label]="
+                        isDownloading()
+                            ? ('publishing-queue.select-bundle.download.in-progress' | dm)
+                            : ('publishing-queue.select-bundle.download' | dm)
+                    "
                     icon="pi pi-chevron-down"
                     iconPos="right"
                     [outlined]="true"
-                    [disabled]="!hasChecked() || checkedBundleIds().length !== 1"
+                    [loading]="isDownloading()"
+                    [disabled]="!hasChecked() || checkedBundleIds().length !== 1 || isDownloading()"
                     [pTooltip]="
                         hasChecked() && checkedBundleIds().length > 1
                             ? ('publishing-queue.select-bundle.download.single-only' | dm)
                             : null
                     "
                     tooltipPosition="top"
-                    (onClick)="onDownloadChecked()"
+                    (onClick)="onDownloadButtonClick($event)"
                     data-testid="pq-select-bundle-download-btn" />
+                <p-tieredMenu
+                    #downloadMenu
+                    [model]="downloadMenuItems()"
+                    [popup]="true"
+                    appendTo="body"
+                    (onShow)="onDownloadMenuShow()"
+                    data-testid="pq-select-bundle-download-menu" />
                 <p-button
                     [label]="
                         hasChecked()

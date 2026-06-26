@@ -130,10 +130,7 @@ export class DotPublishingQueueService {
      */
     pushBundle(bundleId: string, form: PushBundleForm): Observable<PushBundleResultView> {
         return this.http
-            .post<DotCMSResponse<PushBundleResultView>>(
-                `/api/v1/publishing/push/${bundleId}`,
-                form
-            )
+            .post<DotCMSResponse<PushBundleResultView>>(`/api/v1/publishing/push/${bundleId}`, form)
             .pipe(map((response) => response.entity));
     }
 
@@ -179,6 +176,48 @@ export class DotPublishingQueueService {
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
     getBundleDownloadUrl(bundleId: string): string {
         return `/api/bundle/_download/${bundleId}`;
+    }
+
+    /**
+     * Mirrors the legacy `DotDownloadBundleDialogComponent` submit: POSTs to
+     * `/api/bundle/_generate` and returns the resulting `.tar.gz` blob plus the
+     * filename parsed from the `content-disposition` header.
+     *
+     * Used by the inline Download menu in the Select Bundle dialog — picking a
+     * filter from the menu must produce the exact same file a customer gets
+     * from the legacy modal, so the wire payload here is byte-identical:
+     *   `{ bundleId, operation: '0' | '1', filterKey }`
+     * where `'0'` = publish, `'1'` = unpublish (BE vocabulary, not the v1 REST
+     * `'publish'` / `'expire'` strings — the `_generate` endpoint predates
+     * v1).
+     *
+     * Uses `HttpClient.post` with `{ observe: 'response', responseType: 'blob' }`
+     * so the project's auth + error interceptors apply and the headers are
+     * available for the filename parse — the legacy dialog used raw `fetch`
+     * only because of how it bootstrapped pre-v1.
+     */
+    generateBundle(
+        bundleId: string,
+        operation: '0' | '1',
+        filterKey: string
+    ): Observable<{ blob: Blob; filename: string }> {
+        return this.http
+            .post(
+                '/api/bundle/_generate',
+                { bundleId, operation, filterKey },
+                {
+                    observe: 'response',
+                    responseType: 'blob'
+                }
+            )
+            .pipe(
+                map((response) => ({
+                    blob: response.body as Blob,
+                    filename: parseFilenameFromContentDisposition(
+                        response.headers.get('content-disposition')
+                    )
+                }))
+            );
     }
 
     /** Builds the absolute download URL for a bundle's manifest CSV. */
@@ -291,4 +330,21 @@ export class DotPublishingQueueService {
             >('DELETE', `/api/v1/bundles/${bundleId}/assets`, { body: { assetIds } })
             .pipe(map((response) => response.entity));
     }
+}
+
+/** Pulls `filename` out of a `content-disposition` header. Mirrors the parse
+ * the legacy download dialog does (`contentDisposition.slice(idx + 'filename='.length)`)
+ * so generated filenames match exactly. Returns an empty string when the
+ * header is missing or malformed — `getDownloadLink` will still produce a
+ * usable anchor in that case. */
+function parseFilenameFromContentDisposition(header: string | null): string {
+    if (!header) {
+        return '';
+    }
+    const key = 'filename=';
+    const idx = header.indexOf(key);
+    if (idx < 0) {
+        return '';
+    }
+    return header.slice(idx + key.length).replace(/^"|"$/g, '');
 }

@@ -7,12 +7,13 @@ import {
     OnInit,
     computed,
     inject,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -22,15 +23,15 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TieredMenu, TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, debounceTime, distinctUntilChanged, finalize, take } from 'rxjs/operators';
 
 /* eslint-disable @nx/enforce-module-boundaries */
-// Both `DotDownloadBundleDialogService` and `DotPushPublishFormComponent` live
-// in apps/dotcms-ui (not yet promoted to shared libs). Same pattern as
-// `dot-publishing-queue-table`. Tracked alongside the v1 consolidation work
-// (#36048).
+// `DotPushPublishFormComponent` lives in apps/dotcms-ui (not yet promoted to
+// shared libs). Same pattern as `dot-publishing-queue-table`. Tracked alongside
+// the v1 consolidation work (#36048).
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
@@ -40,6 +41,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotPublishingQueueService,
+    DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import {
@@ -51,7 +53,7 @@ import {
     PushBundleOperation
 } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { getDownloadLink } from '@dotcms/utils';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -105,15 +107,18 @@ const ASSETS_PER_PAGE = 10;
         SkeletonModule,
         TableModule,
         TagModule,
+        TieredMenuModule,
         TooltipModule,
         DotCopyButtonComponent,
         DotMessagePipe,
         DotPushPublishFormComponent
     ],
-    // `DotPushPublishFiltersService` is provided here (same as the legacy global
-    // `DotPushPublishDialogComponent` does) so the embedded
-    // `<dot-push-publish-form>` can inject it without leaking outside this dialog.
-    providers: [ConfirmationService, DotPushPublishFiltersService],
+    // `DotPushPublishFiltersService` is `providedIn: 'root'` (libs/data-access)
+    // — both the embedded `<dot-push-publish-form>` and the inline Download
+    // menu inject the root-scoped singleton. No need to component-provide it
+    // (the legacy DotPushPublishDialogComponent did, but that's a stateless
+    // HttpClient wrapper so the per-instance copy was redundant).
+    providers: [ConfirmationService],
     templateUrl: './dot-publishing-queue-select-bundle-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex h-full min-h-0 flex-col' }
@@ -125,7 +130,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
-    private readonly downloadService = inject(DotDownloadBundleDialogService);
+    private readonly filtersService = inject(DotPushPublishFiltersService);
     private readonly editUrlService = inject(DotContentletEditUrlService);
     private readonly globalMessage = inject(DotGlobalMessageService);
     private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
@@ -185,6 +190,52 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * pushing. Disabled-while-sending prevents double-submit. */
     readonly canSend = computed(() => this.configureFormValid() && !this.isSending());
 
+    /** Push publish filters powering the inline Download menu. Loaded once on
+     * `ngOnInit` from the same source the legacy global dialog uses
+     * (`/api/v1/pushpublish/filters/`). Empty until the fetch returns — the
+     * menu just shows "To Unpublish" in the meantime. */
+    readonly downloadFilters = signal<DotPushPublishFilter[]>([]);
+
+    /** True while a `_generate` POST is in flight — disables the Download
+     * button and swaps its label so the user can't double-click. */
+    readonly isDownloading = signal(false);
+
+    /** Refs used to flip the Download tiered menu so it opens upward — the
+     * button sits in the dialog footer, so the default downward popup would
+     * either clip against the dialog body or fall off the bottom of the
+     * viewport. PrimeNG's auto-positioning measures the viewport, not the
+     * dialog container, so we reposition explicitly in `onDownloadMenuShow`. */
+    private readonly downloadMenuRef = viewChild<TieredMenu>('downloadMenu');
+    private downloadTrigger: HTMLElement | null = null;
+
+    /** Two-level menu model for the Download chevron. "To Publish" reveals
+     * the filter list as a submenu; "To Unpublish" is a leaf that fires the
+     * download with an empty filterKey (the legacy dialog disables the filter
+     * dropdown entirely for unpublish, so there's no meaningful sub-choice). */
+    readonly downloadMenuItems = computed<MenuItem[]>(() => {
+        const filters = this.downloadFilters();
+        const filterItems: MenuItem[] = filters.map((filter) => ({
+            label: filter.title,
+            command: () => this.onDownloadOption('0', filter.key)
+        }));
+
+        return [
+            {
+                label: this.dotMessageService.get(
+                    'publishing-queue.select-bundle.download.to-publish'
+                ),
+                items: filterItems,
+                disabled: filterItems.length === 0
+            },
+            {
+                label: this.dotMessageService.get(
+                    'publishing-queue.select-bundle.download.to-unpublish'
+                ),
+                command: () => this.onDownloadOption('1', '')
+            }
+        ];
+    });
+
     /** Data fed to the embedded `<dot-push-publish-form>`. `assetIdentifier`
      * keys the env selector's "remember last push" — for multi-bundle we use
      * the first checked id (same form values get applied to all, so they share
@@ -237,6 +288,16 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 this.userId = user.userId;
                 this.loadBundles();
             });
+
+        // Eager-load filters for the inline Download menu. We tolerate errors
+        // silently — the menu just falls back to a single "To Unpublish" leaf.
+        this.filtersService
+            .get()
+            .pipe(
+                take(1),
+                catchError(() => of([] as DotPushPublishFilter[]))
+            )
+            .subscribe((filters) => this.downloadFilters.set(filters));
     }
 
     onBundleSearch(value: string): void {
@@ -362,15 +423,76 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         });
     }
 
-    /** Download is single-target by design — `DotDownloadBundleDialogService.open`
-     * accepts one bundle id. The button is gated in the template to be enabled
-     * only when exactly one bundle is checked. */
-    onDownloadChecked(): void {
-        const ids = this.checkedBundleIds();
-        if (ids.length !== 1) {
+    /**
+     * Captures the trigger button reference for the menu flip-up logic, then
+     * delegates to the menu's own toggle.
+     */
+    onDownloadButtonClick(event: MouseEvent): void {
+        this.downloadTrigger = (event.currentTarget as HTMLElement) ?? null;
+        this.downloadMenuRef()?.toggle(event);
+    }
+
+    /**
+     * Repositions the tiered-menu popup so it opens *above* the Download
+     * button instead of below it.
+     *
+     * Why: PrimeNG's `DomHandler.absolutePosition` measures the viewport, not
+     * the surrounding dialog. The Download button lives in the dialog footer,
+     * so the default downward popup either clips against the dialog body or
+     * spills out the viewport's bottom. We always want it above.
+     *
+     * Called from the `<p-tieredMenu (onShow)>` event after PrimeNG has placed
+     * the overlay. We read the trigger rect captured by
+     * `onDownloadButtonClick` and re-set `top` so the popup's bottom edge sits
+     * just above the trigger.
+     */
+    onDownloadMenuShow(): void {
+        const trigger = this.downloadTrigger;
+        const overlay = this.downloadMenuRef()?.containerViewChild?.nativeElement as
+            | HTMLElement
+            | undefined;
+        if (!trigger || !overlay) {
             return;
         }
-        this.downloadService.open(ids[0]);
+        const triggerRect = trigger.getBoundingClientRect();
+        const gap = 4;
+        const overlayHeight = overlay.offsetHeight;
+        overlay.style.top = `${triggerRect.top + window.scrollY - overlayHeight - gap}px`;
+    }
+
+    /**
+     * Fires the inline Download menu's leaf click. Replicates the legacy
+     * `DotDownloadBundleDialogComponent` submit exactly — same endpoint, same
+     * payload, same blob-anchor click — but with no modal.
+     *
+     * `operation`: '0' = publish, '1' = unpublish (BE vocabulary the
+     * `/api/bundle/_generate` endpoint expects).
+     * `filterKey`: '' for unpublish, the chosen filter's key otherwise.
+     *
+     * Gated to a single checked bundle in the template — the endpoint accepts
+     * one bundleId per call.
+     */
+    onDownloadOption(operation: '0' | '1', filterKey: string): void {
+        const ids = this.checkedBundleIds();
+        if (ids.length !== 1 || this.isDownloading()) {
+            return;
+        }
+        const bundleId = ids[0];
+
+        this.isDownloading.set(true);
+        this.publishingService
+            .generateBundle(bundleId, operation, filterKey)
+            .pipe(
+                take(1),
+                catchError((error) => {
+                    this.httpErrorManager.handle(error);
+                    return EMPTY;
+                }),
+                finalize(() => this.isDownloading.set(false))
+            )
+            .subscribe(({ blob, filename }) => {
+                getDownloadLink(blob, filename).click();
+            });
     }
 
     onOpenConfigureStep(): void {

@@ -267,4 +267,77 @@ describe('DotPublishingQueueService', () => {
             expect(result).toBe(false);
         });
     });
+
+    // Mirrors the legacy DotDownloadBundleDialogComponent payload byte-for-byte
+    // so users get the same .tar.gz from the inline menu and the global modal.
+    describe('generateBundle', () => {
+        it('POSTs { bundleId, operation, filterKey } to /api/bundle/_generate', () => {
+            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe();
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toEqual({
+                bundleId: 'b-1',
+                operation: '0',
+                filterKey: 'ForcePush.yml'
+            });
+            req.flush(new Blob(['x']), {
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-disposition': 'attachment; filename=b-1.tar.gz' }
+            });
+        });
+
+        it('emits { blob, filename } parsed from content-disposition', (done) => {
+            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe(({ blob, filename }) => {
+                expect(blob).toBeInstanceOf(Blob);
+                expect(filename).toBe('b-1.tar.gz');
+                done();
+            });
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            req.flush(new Blob(['x']), {
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-disposition': 'attachment; filename=b-1.tar.gz' }
+            });
+        });
+
+        it('strips surrounding quotes from the filename', (done) => {
+            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe(({ filename }) => {
+                expect(filename).toBe('b-1.tar.gz');
+                done();
+            });
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            req.flush(new Blob(['x']), {
+                status: 200,
+                statusText: 'OK',
+                headers: { 'content-disposition': 'attachment; filename="b-1.tar.gz"' }
+            });
+        });
+
+        it('returns an empty filename when content-disposition is missing (still emits the blob)', (done) => {
+            service.generateBundle('b-1', '1', '').subscribe(({ blob, filename }) => {
+                expect(blob).toBeInstanceOf(Blob);
+                expect(filename).toBe('');
+                done();
+            });
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            req.flush(new Blob(['x']), { status: 200, statusText: 'OK' });
+        });
+
+        it('passes empty filterKey for unpublish operation', () => {
+            service.generateBundle('b-1', '1', '').subscribe();
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            expect(req.request.body).toEqual({
+                bundleId: 'b-1',
+                operation: '1',
+                filterKey: ''
+            });
+            req.flush(new Blob(['x']), { status: 200, statusText: 'OK' });
+        });
+    });
 });

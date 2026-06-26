@@ -15,11 +15,11 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotPublishingQueueService,
-    DotPushPublishFiltersService
+    DotPushPublishFiltersService,
+    PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 
 import { DotPublishingQueueSelectBundleDialogComponent } from './dot-publishing-queue-select-bundle-dialog.component';
@@ -39,13 +39,23 @@ const MOCK_ASSETS = [
     { asset: 'a2', title: 'hero-spring.jpg', type: 'contentlet' }
 ];
 
+// Mock the blob-download helper so the click side-effect is observable in tests.
+const mockAnchorClick = jest.fn();
+jest.mock('@dotcms/utils', () => {
+    const actual = jest.requireActual('@dotcms/utils');
+    return {
+        ...actual,
+        getDownloadLink: jest.fn(() => ({ click: mockAnchorClick }) as unknown as HTMLAnchorElement)
+    };
+});
+
 describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueSelectBundleDialogComponent>;
     let service: jest.Mocked<DotPublishingQueueService>;
     let confirmationService: jest.Mocked<ConfirmationService>;
-    let downloadService: jest.Mocked<DotDownloadBundleDialogService>;
     let dialogRef: jest.Mocked<DynamicDialogRef>;
     let globalMessage: jest.Mocked<DotGlobalMessageService>;
+    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueSelectBundleDialogComponent,
@@ -66,25 +76,46 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                         environments: ['env-1'],
                         filterKey: 'default.yml'
                     })
-                )
+                ),
+                generateBundle: jest
+                    .fn()
+                    .mockReturnValue(of({ blob: new Blob(['x']), filename: 'bundle.tar.gz' }))
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: jest
                     .fn()
                     .mockReturnValue(of({ userId: 'dotcms.org.1', email: 'admin@dotcms.com' }))
             }),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getContentType: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
-            // The dialog provides DotPushPublishFiltersService at the component level
-            // (mirrors the legacy DotPushPublishDialogComponent). The embedded
-            // <dot-push-publish-form> calls .get() on it during ngOnInit.
+            // The dialog provides DotPushPublishFiltersService at the component
+            // level (mirrors the legacy DotPushPublishDialogComponent). Both the
+            // embedded <dot-push-publish-form> AND the inline Download menu call
+            // .get() on it during ngOnInit.
             mockProvider(DotPushPublishFiltersService, {
-                get: jest.fn().mockReturnValue(of([]))
+                get: jest.fn().mockReturnValue(
+                    of([
+                        {
+                            key: 'ForcePush.yml',
+                            title: 'Force Push Everything',
+                            defaultFilter: false
+                        },
+                        {
+                            key: 'OnlySelected.yml',
+                            title: 'Only Selected Items',
+                            defaultFilter: false
+                        },
+                        {
+                            key: 'ContentDeps.yml',
+                            title: 'Content, Assets and Pages',
+                            defaultFilter: true
+                        }
+                    ])
+                )
             }),
             // The form also calls DotcmsConfigService.getTimeZones() during ngOnInit.
             mockProvider(DotcmsConfigService, {
@@ -93,23 +124,30 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // The form injects DotParseHtmlService (only used when `customCode` is in
             // data; we don't pass that, but the DI lookup happens unconditionally).
             mockProvider(DotParseHtmlService, { parse: jest.fn() }),
+            // PushPublishEnvSelectorComponent (rendered inside the embedded form)
+            // injects PushPublishService for the "remember last push" env list.
+            mockProvider(PushPublishService, {
+                getEnvironments: jest.fn().mockReturnValue(of([])),
+                pushPublishContent: jest.fn().mockReturnValue(of({}))
+            }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
     });
 
     beforeEach(() => {
+        mockAnchorClick.mockClear();
         spectator = createComponent();
         service = spectator.inject(
             DotPublishingQueueService
         ) as jest.Mocked<DotPublishingQueueService>;
-        downloadService = spectator.inject(
-            DotDownloadBundleDialogService
-        ) as jest.Mocked<DotDownloadBundleDialogService>;
         dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
         globalMessage = spectator.inject(
             DotGlobalMessageService
         ) as jest.Mocked<DotGlobalMessageService>;
+        httpErrorManager = spectator.inject(
+            DotHttpErrorManagerService
+        ) as jest.Mocked<DotHttpErrorManagerService>;
         confirmationService = spectator.inject(
             ConfirmationService,
             true
@@ -257,19 +295,67 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
     });
 
-    describe('download (gated to a single checked bundle)', () => {
-        beforeEach(() => spectator.detectChanges());
-
-        it('opens the download dialog for the only checked bundle', () => {
+    describe('inline download menu', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
             spectator.component.onCheckedChange([{ id: 'bundle-2', name: 'Blog content sync' }]);
-            spectator.component.onDownloadChecked();
-            expect(downloadService.open).toHaveBeenCalledWith('bundle-2');
+        });
+
+        it('builds a 2-level menu: To Publish (with filters) + To Unpublish (leaf)', () => {
+            const items = spectator.component.downloadMenuItems();
+            expect(items.length).toBe(2);
+            // To Publish parent has the 3 fixture filters as children.
+            expect(items[0].items?.length).toBe(3);
+            expect(items[0].items?.map((i) => i.label)).toEqual([
+                'Force Push Everything',
+                'Only Selected Items',
+                'Content, Assets and Pages'
+            ]);
+            // To Unpublish is a leaf (no children, direct command).
+            expect(items[1].items).toBeUndefined();
+            expect(items[1].command).toBeDefined();
+        });
+
+        it('picking a filter leaf calls generateBundle(bundleId, "0", filterKey)', () => {
+            const items = spectator.component.downloadMenuItems();
+            const forcePush = items[0].items?.find((i) => i.label === 'Force Push Everything');
+            forcePush?.command?.({} as never);
+            expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '0', 'ForcePush.yml');
+            expect(mockAnchorClick).toHaveBeenCalled();
+        });
+
+        it('picking To Unpublish calls generateBundle(bundleId, "1", "")', () => {
+            const items = spectator.component.downloadMenuItems();
+            items[1].command?.({} as never);
+            expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '1', '');
+            expect(mockAnchorClick).toHaveBeenCalled();
+        });
+
+        it('toggles isDownloading around the network call', () => {
+            const subject = new Subject<{ blob: Blob; filename: string }>();
+            (service.generateBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
+
+            expect(spectator.component.isDownloading()).toBe(false);
+            spectator.component.onDownloadOption('1', '');
+            expect(spectator.component.isDownloading()).toBe(true);
+            subject.next({ blob: new Blob(['x']), filename: 'bundle-2.tar.gz' });
+            subject.complete();
+            expect(spectator.component.isDownloading()).toBe(false);
+        });
+
+        it('hands errors off to DotHttpErrorManagerService and releases isDownloading', () => {
+            const error = new Error('boom');
+            (service.generateBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            spectator.component.onDownloadOption('0', 'ForcePush.yml');
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(spectator.component.isDownloading()).toBe(false);
+            expect(mockAnchorClick).not.toHaveBeenCalled();
         });
 
         it('is a no-op when no bundles are checked', () => {
             spectator.component.checkedBundleIds.set([]);
-            spectator.component.onDownloadChecked();
-            expect(downloadService.open).not.toHaveBeenCalled();
+            spectator.component.onDownloadOption('1', '');
+            expect(service.generateBundle).not.toHaveBeenCalled();
         });
 
         it('is a no-op when more than one bundle is checked', () => {
@@ -277,8 +363,25 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 { id: 'bundle-1', name: 'a' },
                 { id: 'bundle-2', name: 'b' }
             ]);
-            spectator.component.onDownloadChecked();
-            expect(downloadService.open).not.toHaveBeenCalled();
+            spectator.component.onDownloadOption('1', '');
+            expect(service.generateBundle).not.toHaveBeenCalled();
+        });
+
+        it('does not re-fire while a download is already in flight', () => {
+            spectator.component.isDownloading.set(true);
+            spectator.component.onDownloadOption('1', '');
+            expect(service.generateBundle).not.toHaveBeenCalled();
+        });
+
+        it('disables the To Publish item when no filters loaded yet', () => {
+            // Fresh component instance with the filters service returning nothing
+            // would yield an empty filter list. Here we simulate that state
+            // directly on the signal to keep the rest of the suite stable.
+            spectator.component.downloadFilters.set([]);
+            const items = spectator.component.downloadMenuItems();
+            expect(items[0].disabled).toBe(true);
+            // To Unpublish stays usable.
+            expect(items[1].command).toBeDefined();
         });
     });
 
