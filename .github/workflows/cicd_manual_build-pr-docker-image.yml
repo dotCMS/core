@@ -54,9 +54,48 @@ jobs:
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "ref=${BRANCH}" >> "$GITHUB_OUTPUT"
 
+  # Look for a docker-build-context artifact already produced for this exact
+  # commit by another run (e.g. the PR's normal CI). If found, we skip our own
+  # build and feed that run's artifact straight to deploy-docker.
+  discover:
+    name: Find Existing Build
+    needs: [prep]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      actions: read
+    outputs:
+      run_id: ${{ steps.find.outputs.run_id }}
+    steps:
+      - name: Find docker-build-context for this SHA
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          THIS_RUN: ${{ github.run_id }}
+        run: |
+          run_id=""
+          # Runs are returned newest-first; take the most recent one that still
+          # has a non-expired docker-build-context artifact.
+          for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=50" \
+                        --jq '.workflow_runs[].id'); do
+            [ "${rid}" = "${THIS_RUN}" ] && continue
+            has=$(gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
+                    --jq '.artifacts[] | select(.name=="docker-build-context" and .expired==false) | .id' \
+                  | head -1)
+            if [ -n "${has}" ]; then run_id="${rid}"; break; fi
+          done
+          if [ -n "${run_id}" ]; then
+            echo "Reusing docker-build-context from run ${run_id}"
+          else
+            echo "No reusable artifact for ${SHA}; will build."
+          fi
+          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build
-    needs: [prep]
+    needs: [prep, discover]
+    if: needs.discover.outputs.run_id == ''
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -69,12 +108,15 @@ jobs:
 
   push:
     name: Push Test Image
-    needs: [prep, build]
+    needs: [prep, discover, build]
+    # build is skipped when we reuse an existing artifact — proceed unless it failed.
+    if: always() && needs.build.result != 'failure' && needs.build.result != 'cancelled'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
       packages: write
       pull-requests: write
+      actions: read
     steps:
       - name: Checkout core
         uses: actions/checkout@v4
@@ -97,7 +139,8 @@ jobs:
         with:
           image_name: dotcms/dotcms-test
           docker_platforms: linux/amd64
-          build_run_id: ${{ github.run_id }}
+          # Reuse the discovered run's artifact when present, else our own build.
+          build_run_id: ${{ needs.discover.outputs.run_id || github.run_id }}
           commit_id: ${{ github.event.pull_request.head.sha }}
           docker-use-ref: false
           version: ${{ needs.prep.outputs.tag }}
