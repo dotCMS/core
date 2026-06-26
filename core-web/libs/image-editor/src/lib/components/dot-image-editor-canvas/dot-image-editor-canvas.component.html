@@ -48,6 +48,7 @@
             <dot-image-editor-crop-overlay
                 [imageRect]="imageRect()"
                 [initialRect]="capturedCropRect()"
+                [naturalSize]="displayedNaturalSize()"
                 [aspect]="cropAspect()" />
 
             <dot-image-editor-focal-overlay [imageRect]="imageRect()" [scale]="zoomLevel() / 100" />

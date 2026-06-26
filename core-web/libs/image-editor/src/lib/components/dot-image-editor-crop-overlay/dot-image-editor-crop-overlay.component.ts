@@ -62,6 +62,15 @@ export class DotImageEditorCropOverlayComponent {
      */
     aspect = input<number | null>(null);
 
+    /**
+     * Intrinsic pixel size of the DISPLAYED image — i.e. the source after the
+     * rotate/flip/resize currently in effect, not the original asset. Crop boxes are
+     * drawn on this displayed image, so its dimensions are the space the box must be
+     * converted into; using the original asset size here would mis-scale a crop made
+     * on a rotated preview. `0×0` until the image is measured (no conversion).
+     */
+    naturalSize = input<Dimensions>({ width: 0, height: 0 });
+
     readonly #store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
     readonly #zone = inject(NgZone);
@@ -87,11 +96,11 @@ export class DotImageEditorCropOverlayComponent {
             const rect = this.imageRect();
             const crop = this.cropRect();
 
-            if (!rect || rect.width === 0 || rect.height === 0) {
+            const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
+
+            if (!rect || rect.width === 0 || rect.height === 0 || !naturalWidth || !naturalHeight) {
                 return { width: 0, height: 0 };
             }
-
-            const { naturalWidth, naturalHeight } = this.#store.assetContext();
 
             return {
                 width: Math.round((crop.width * naturalWidth) / rect.width),
@@ -262,12 +271,12 @@ export class DotImageEditorCropOverlayComponent {
      */
     applyCrop(): void {
         const rect = this.imageRect();
+        const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
 
-        if (!rect || rect.width === 0 || rect.height === 0) {
+        if (!rect || rect.width === 0 || rect.height === 0 || !naturalWidth || !naturalHeight) {
             return;
         }
 
-        const { naturalWidth, naturalHeight } = this.#store.assetContext();
         const crop = this.cropRect();
         const scaleX = naturalWidth / rect.width;
         const scaleY = naturalHeight / rect.height;
@@ -300,12 +309,20 @@ export class DotImageEditorCropOverlayComponent {
      */
     setNaturalCropSize(width: number, height: number): void {
         const rect = this.imageRect();
+        const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
 
-        if (!rect || rect.width === 0 || rect.height === 0 || width <= 0 || height <= 0) {
+        if (
+            !rect ||
+            rect.width === 0 ||
+            rect.height === 0 ||
+            !naturalWidth ||
+            !naturalHeight ||
+            width <= 0 ||
+            height <= 0
+        ) {
             return;
         }
 
-        const { naturalWidth, naturalHeight } = this.#store.assetContext();
         const scaleX = rect.width / naturalWidth;
         const scaleY = rect.height / naturalHeight;
 

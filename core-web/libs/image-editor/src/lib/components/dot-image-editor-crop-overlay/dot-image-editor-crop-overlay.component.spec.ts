@@ -10,7 +10,9 @@ import { DotImageEditorCropOverlayComponent } from './dot-image-editor-crop-over
 import { ImageEditorStore } from '../../store/image-editor.store';
 
 const IMAGE_RECT = { x: 0, y: 0, width: 400, height: 300 };
-const NATURAL = { naturalWidth: 800, naturalHeight: 600 };
+// Intrinsic size of the displayed image, handed to the overlay via the `naturalSize`
+// input (the space crop boxes are converted into).
+const NATURAL = { width: 800, height: 600 };
 
 describe('DotImageEditorCropOverlayComponent', () => {
     let spectator: Spectator<DotImageEditorCropOverlayComponent>;
@@ -25,8 +27,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
         ],
         componentProviders: [
             mockProvider(ImageEditorStore, {
-                activeTool: () => 'crop',
-                assetContext: () => NATURAL
+                activeTool: () => 'crop'
             })
         ]
     });
@@ -34,6 +35,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         spectator.setInput('imageRect', IMAGE_RECT);
+        spectator.setInput('naturalSize', NATURAL);
         dispatcher = spectator.inject(Dispatcher, true);
         jest.spyOn(dispatcher, 'dispatch');
         spectator.detectChanges();

@@ -28,7 +28,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ZOOM_DEFAULT, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '../../image-editor.constants';
-import { ImageRect } from '../../models/image-editor.models';
+import { Dimensions, ImageRect } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { imageEditorLifecycleEvents } from '../../store/image-editor.events';
 import { ImageEditorStore } from '../../store/image-editor.store';
@@ -163,6 +163,14 @@ export class DotImageEditorCanvasComponent {
 
     /** Rendered bounds of the displayed image within the stage, in CSS px. */
     protected readonly imageRect = signal<ImageRect | undefined>(undefined);
+
+    /**
+     * Intrinsic pixel size of the displayed image — its real resolution after the
+     * rotate/flip/resize in effect (a rotation swaps width/height). Handed to the crop
+     * overlay so a crop box is converted in the coordinate space the user actually drew
+     * on, not the original asset's. `0×0` until the first image is measured.
+     */
+    protected readonly displayedNaturalSize = signal<Dimensions>({ width: 0, height: 0 });
 
     /** Internal zoom multiplier (×100) applied as a CSS transform; 100 = fit-to-stage. */
     protected readonly zoomLevel = signal<number>(ZOOM_DEFAULT);
@@ -553,6 +561,15 @@ export class DotImageEditorCanvasComponent {
         this.fitRatio.set(
             img.naturalWidth && img.offsetWidth ? img.offsetWidth / img.naturalWidth : 1
         );
+
+        // The displayed image's real resolution (post rotate/flip/resize), so the crop
+        // overlay scales boxes against the pixels the user is actually looking at.
+        if (img.naturalWidth && img.naturalHeight) {
+            this.displayedNaturalSize.set({
+                width: img.naturalWidth,
+                height: img.naturalHeight
+            });
+        }
     }
 
     /**

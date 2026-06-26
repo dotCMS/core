@@ -269,6 +269,14 @@ export interface FilterChainInput {
     naturalWidth: number;
     /** Natural image height, needed to translate scale% into resize pixels. */
     naturalHeight: number;
+    /**
+     * Whether the crop was applied BEFORE any rotate/flip (true) or after (false).
+     * The crop box is captured in the coordinate space of the image as it looked
+     * when drawn, so the chain must place `Crop` at that same point: before the
+     * rotate/flip it predates, or after the transforms it was drawn on top of.
+     * Defaults to crop-last (the legacy "crop what you see" position).
+     */
+    cropBeforeTransforms?: boolean;
 }
 
 /** A selectable tool on the floating canvas rail. */

@@ -62,16 +62,30 @@ export function withPreview() {
             }))
         ),
         withComputed((store) => {
-            const appliedFilters = computed(() =>
-                buildFilterChain({
+            const appliedFilters = computed(() => {
+                // Place the crop before/after the rotate/flip transforms based on which
+                // the user applied first (the history records the order). A crop made
+                // before rotating is in the un-rotated image's coordinates and must run
+                // first; one made on an already-rotated preview runs after.
+                const history = store.history();
+                const cropIndex = history.findIndex((entry) => entry.category === 'crop');
+                const firstTransformIndex = history.findIndex(
+                    (entry) => entry.category === 'rotate' || entry.category === 'flip'
+                );
+                const cropBeforeTransforms =
+                    cropIndex !== -1 &&
+                    (firstTransformIndex === -1 || cropIndex < firstTransformIndex);
+
+                return buildFilterChain({
                     adjust: store.adjust(),
                     transform: store.transform(),
                     crop: store.crop(),
                     fileInfo: store.fileInfo(),
                     naturalWidth: store.assetContext().naturalWidth,
-                    naturalHeight: store.assetContext().naturalHeight
-                })
-            );
+                    naturalHeight: store.assetContext().naturalHeight,
+                    cropBeforeTransforms
+                });
+            });
 
             return {
                 /** The ordered server filter chain derived from the current edits. */

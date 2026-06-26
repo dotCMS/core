@@ -396,6 +396,31 @@ describe('ImageEditorStore', () => {
             expect(after).not.toBe(before);
             expect(after).toContain('/filter/');
         });
+
+        it('orders Crop before Rotate when the crop was applied first', () => {
+            lifecycle.assetRequested(OPEN_PARAMS);
+
+            // Crop the un-rotated image, then rotate: the server must crop first (in
+            // original coordinates) and rotate the result — not crop the rotated image
+            // with original-space coords (which cut the image, issue repro).
+            tool.cropApplied({ x: 10, y: 20, w: 100, h: 50, active: true, aspect: null });
+            transform.rotateChanged(90);
+
+            const url = store.previewUrl();
+            expect(url).toContain('/filter/Crop,Rotate/');
+            expect(url.indexOf('crop_w')).toBeLessThan(url.indexOf('rotate_a'));
+        });
+
+        it('orders Crop after Rotate when the crop was drawn on the rotated preview', () => {
+            lifecycle.assetRequested(OPEN_PARAMS);
+
+            transform.rotateChanged(90);
+            tool.cropApplied({ x: 10, y: 20, w: 100, h: 50, active: true, aspect: null });
+
+            const url = store.previewUrl();
+            expect(url).toContain('/filter/Rotate,Crop/');
+            expect(url.indexOf('rotate_a')).toBeLessThan(url.indexOf('crop_w'));
+        });
     });
 
     describe('debounced size effect', () => {

@@ -65,6 +65,7 @@ function chain(
         fileInfo: Partial<FileInfoState>;
         naturalWidth: number;
         naturalHeight: number;
+        cropBeforeTransforms: boolean;
     }> = {}
 ) {
     return buildFilterChain({
@@ -73,7 +74,8 @@ function chain(
         crop: { ...baseCrop, ...overrides.crop },
         fileInfo: { ...baseFileInfo, ...overrides.fileInfo },
         naturalWidth: overrides.naturalWidth ?? 1000,
-        naturalHeight: overrides.naturalHeight ?? 800
+        naturalHeight: overrides.naturalHeight ?? 800,
+        cropBeforeTransforms: overrides.cropBeforeTransforms
     });
 }
 
@@ -121,10 +123,11 @@ describe('image-filter-url.builder', () => {
             expect(result).toEqual([]);
         });
 
-        it('applies Crop after Flip/Rotate so it crops the image as displayed', () => {
+        it('applies Crop after Flip/Rotate when the crop was drawn on the transformed preview', () => {
             const result = chain({
                 transform: { flipH: true, rotateDeg: 90 },
-                crop: { active: true, x: 10, y: 20, w: 100, h: 50 }
+                crop: { active: true, x: 10, y: 20, w: 100, h: 50 },
+                cropBeforeTransforms: false
             });
             const names = result.map((f) => f.name);
             const rotateIdx = names.indexOf('Rotate');
@@ -133,6 +136,25 @@ describe('image-filter-url.builder', () => {
 
             expect(cropIdx).toBeGreaterThan(rotateIdx);
             expect(cropIdx).toBeGreaterThan(flipIdx);
+        });
+
+        it('applies Crop before Rotate/Flip when the crop predates the rotation', () => {
+            // Regression: cropping first then rotating must crop the un-rotated image
+            // (original coordinates), then rotate the result — otherwise the crop is
+            // applied to the rotated image with original-space coords and cuts wrongly.
+            const result = chain({
+                transform: { flipH: true, rotateDeg: 90 },
+                crop: { active: true, x: 10, y: 20, w: 100, h: 50 },
+                cropBeforeTransforms: true
+            });
+            const names = result.map((f) => f.name);
+            const cropIdx = names.indexOf('Crop');
+            const rotateIdx = names.indexOf('Rotate');
+            const flipIdx = names.indexOf('Flip');
+
+            expect(cropIdx).toBeLessThan(rotateIdx);
+            expect(cropIdx).toBeLessThan(flipIdx);
+            expect(names).toEqual(['Crop', 'Rotate', 'Flip']);
         });
 
         it('builds a Rotate filter', () => {
