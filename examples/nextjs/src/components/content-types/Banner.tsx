@@ -17,14 +17,14 @@ function Banner(contentlet: BannerProps) {
     const { title, caption, image, link, buttonText, dotStyleProperties } = contentlet;
 
     // Extract style properties with defaults
-    const titleSize = (dotStyleProperties?.['title-size'] as string) || 'text-6xl';
-    const captionSize = (dotStyleProperties?.['caption-size'] as string) || 'text-xl';
-    const titleStyle = (dotStyleProperties?.['title-style'] as Record<string, boolean>) || {};
-    const textAlignment = (dotStyleProperties?.['text-alignment'] as string) || 'center';
-    const overlayStyle = (dotStyleProperties?.['overlay-style'] as string) || 'none';
-    const buttonColor = (dotStyleProperties?.['button-color'] as string) || 'blue';
-    const buttonSize = (dotStyleProperties?.['button-size'] as string) || 'medium';
-    const buttonStyle = (dotStyleProperties?.['button-style'] as Record<string, boolean>) || {};
+    const titleSize = dotStyleProperties?.['title-size'] || 'text-6xl';
+    const captionSize = dotStyleProperties?.['caption-size'] || 'text-xl';
+    const titleStyle = dotStyleProperties?.['title-style'] || {};
+    const textAlignment = dotStyleProperties?.['text-alignment'] || 'center';
+    const overlayStyle = dotStyleProperties?.['overlay-style'] || 'none';
+    const buttonColor = dotStyleProperties?.['button-color'] || 'blue';
+    const buttonSize = dotStyleProperties?.['button-size'] || 'medium';
+    const buttonStyle = dotStyleProperties?.['button-style'] || {};
 
     // Build title classes
     const titleClasses = [

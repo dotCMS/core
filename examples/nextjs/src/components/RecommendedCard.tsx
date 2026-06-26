@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { EditButton } from './editor/EditButton';
 import type { Blog, Destination } from '@/types/content';
+import { formatDate } from '@/utils/formatDate';
 
 interface RecommendedCardProps {
     contentlet: Blog | Destination;
@@ -9,11 +10,6 @@ interface RecommendedCardProps {
 const RecommendedCard = ({ contentlet }: RecommendedCardProps) => {
     const { title, inode, urlMap, modDate } = contentlet;
     const url = 'url' in contentlet ? contentlet.url : undefined;
-    const dateFormatOptions: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
 
     return (
         <div className="flex gap-7 min-h-16 relative">
@@ -26,7 +22,7 @@ const RecommendedCard = ({ contentlet }: RecommendedCardProps) => {
                     {title}
                 </a>
                 <time className="text-gray-400">
-                    {new Date(modDate ?? '').toLocaleDateString('en-US', dateFormatOptions)}
+                    {formatDate(modDate)}
                 </time>
             </div>
         </div>

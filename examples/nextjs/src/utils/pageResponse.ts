@@ -1,11 +1,7 @@
-import type { PageExtraContent } from "@/types/content";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 /** Either a composed page response or the `{ error }` shape on failure. */
 export type PageResponse = Awaited<ReturnType<typeof getDotCMSPage>>;
-
-/** A successful page response (the `{ error }` branch removed). */
-export type PageSuccess = Extract<PageResponse, { pageAsset?: unknown }>;
 
 /** Narrows a response to the error branch. */
 export function isPageError(
@@ -29,15 +25,6 @@ export function getPageTitle(pageContent: PageResponse, fallback = "Page") {
     return fallback;
   }
 
-  const page = (pageContent as PageSuccess).pageAsset?.page;
+  const page = pageContent.pageAsset?.page;
   return page?.friendlyName || page?.title || fallback;
-}
-
-/** The extra GraphQL content (blogs, destinations, navigation), or `{}`. */
-export function getPageContent(pageContent: PageResponse): PageExtraContent {
-  if (isPageError(pageContent)) {
-    return {};
-  }
-
-  return ((pageContent as PageSuccess).content ?? {}) as PageExtraContent;
 }

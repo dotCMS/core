@@ -1,4 +1,7 @@
-import type { DotCMSBasicContentlet } from "@dotcms/types";
+import type {
+  DotCMSBasicContentlet,
+  DotCMSNavigationItem,
+} from "@dotcms/types";
 
 /**
  * Shared domain types for the example.
@@ -9,8 +12,33 @@ import type { DotCMSBasicContentlet } from "@dotcms/types";
  * content type adds, so components stay typed without resorting to `any`.
  */
 
-/** Free-form, per-field styling overrides set by editors in the UVE. */
-export type DotStyleProperties = Record<string, unknown>;
+/** Toggle group set by editors (e.g. `{ bold: true, italic: false }`). */
+export type StyleFlags = Record<string, boolean>;
+
+/**
+ * Per-field styling overrides set by editors in the UVE. Most fields are a
+ * Tailwind-class token; the `*-style`/`*-effects` fields are flag maps. Typed
+ * with the known keys so component reads don't need casting.
+ */
+export interface DotStyleProperties {
+  "title-size"?: string;
+  "title-style"?: StyleFlags;
+  "caption-size"?: string;
+  "description-size"?: string;
+  "text-alignment"?: string;
+  "overlay-style"?: string;
+  "image-height"?: string;
+  "card-background"?: string;
+  "card-effects"?: StyleFlags;
+  "border-radius"?: string;
+  "button-color"?: string;
+  "button-size"?: string;
+  "button-style"?: StyleFlags;
+  layout?: string;
+  // Allow other editor-defined keys while keeping the known ones typed; also
+  // keeps this assignable to the SDK's `Record<string, unknown>` field.
+  [key: string]: string | StyleFlags | undefined;
+}
 
 /** A dotCMS image/file reference as returned by the page and GraphQL APIs. */
 export interface DotCMSImage {
@@ -58,20 +86,8 @@ export interface Destination {
   activities?: string[];
 }
 
-/** Navigation node returned by `navigationQuery` (mirrors DotCMSNavigationItem). */
-export interface NavItem {
-  code?: string;
-  folder: string;
-  hash?: number;
-  host?: string;
-  href: string;
-  languageId?: number;
-  order?: number;
-  target?: string;
-  title: string;
-  type?: string;
-  children?: NavItem[];
-}
+/** Navigation node returned by `navigationQuery`. */
+export type NavItem = DotCMSNavigationItem;
 
 /** Extra GraphQL content composed into the page response by `getDotCMSPage`. */
 export interface PageExtraContent {

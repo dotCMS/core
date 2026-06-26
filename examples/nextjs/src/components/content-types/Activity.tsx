@@ -13,17 +13,17 @@ interface ActivityProps {
 
 function Activity({ title, description, image, urlTitle, dotStyleProperties }: ActivityProps) {
     // Extract style properties with defaults
-    const titleSize = (dotStyleProperties?.['title-size'] as string) || 'text-xl';
-    const descriptionSize = (dotStyleProperties?.['description-size'] as string) || 'text-base';
-    const titleStyle = (dotStyleProperties?.['title-style'] as Record<string, boolean>) || {};
-    const layout = (dotStyleProperties?.layout as string) || 'left';
-    const imageHeight = (dotStyleProperties?.['image-height'] as string) || 'h-56';
-    const cardBackground = (dotStyleProperties?.['card-background'] as string) || 'white';
-    const borderRadius = (dotStyleProperties?.['border-radius'] as string) || 'small';
-    const cardEffects = (dotStyleProperties?.['card-effects'] as Record<string, boolean>) || {};
-    const buttonColor = (dotStyleProperties?.['button-color'] as string) || 'blue';
-    const buttonSize = (dotStyleProperties?.['button-size'] as string) || 'medium';
-    const buttonStyle = (dotStyleProperties?.['button-style'] as Record<string, boolean>) || {};
+    const titleSize = dotStyleProperties?.['title-size'] || 'text-xl';
+    const descriptionSize = dotStyleProperties?.['description-size'] || 'text-base';
+    const titleStyle = dotStyleProperties?.['title-style'] || {};
+    const layout = dotStyleProperties?.layout || 'left';
+    const imageHeight = dotStyleProperties?.['image-height'] || 'h-56';
+    const cardBackground = dotStyleProperties?.['card-background'] || 'white';
+    const borderRadius = dotStyleProperties?.['border-radius'] || 'small';
+    const cardEffects = dotStyleProperties?.['card-effects'] || {};
+    const buttonColor = dotStyleProperties?.['button-color'] || 'blue';
+    const buttonSize = dotStyleProperties?.['button-size'] || 'medium';
+    const buttonStyle = dotStyleProperties?.['button-style'] || {};
 
     // Build title classes
     const titleClasses = [

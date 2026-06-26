@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { DotCMSBasicContentlet } from "@dotcms/types";
+import type { DotCMSAISearchMatch, DotCMSBasicContentlet } from "@dotcms/types";
 import {
     BlogIcon,
     DestinationIcon,
@@ -18,7 +18,7 @@ interface SearchResultItem extends Omit<DotCMSBasicContentlet, "contentType"> {
     contentType?: string;
     URL_MAP_FOR_CONTENT?: string;
     category?: Record<string, unknown>[];
-    matches?: { distance?: number; extractedText?: string }[];
+    matches?: DotCMSAISearchMatch[];
 }
 
 /**

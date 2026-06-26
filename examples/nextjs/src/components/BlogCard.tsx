@@ -3,12 +3,7 @@ import { editContentlet } from '@dotcms/uve';
 import Image from 'next/image';
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 import type { Blog } from '@/types/content';
-
-const dateFormatOptions: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-};
+import { formatDate } from '@/utils/formatDate';
 
 interface BlogCardProps {
     blog: Blog;
@@ -55,7 +50,7 @@ export default function BlogCard({ blog }: BlogCardProps) {
 
                 <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                     <time className="text-sm text-gray-500">
-                        {new Date(modDate ?? '').toLocaleDateString('en-US', dateFormatOptions)}
+                        {formatDate(modDate)}
                     </time>
                 </div>
             </div>

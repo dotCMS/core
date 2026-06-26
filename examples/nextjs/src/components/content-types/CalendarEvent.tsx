@@ -98,9 +98,7 @@ function CalendarEvent({ image, title, urlMap, description, location }: Calendar
                     dangerouslySetInnerHTML={{ __html: description ?? '' }}
                 />
                 <Link href={urlMap}>
-                    <div
-                        className="flex items-center gap-2 px-6 py-3 text-xs font-bold text-center uppercase align-middle transition-all rounded-lg select-none disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none hover:bg-gray-900/10 active:bg-gray-900/20"
-                        {...{ type: 'button' }}>
+                    <div className="flex items-center gap-2 px-6 py-3 text-xs font-bold text-center uppercase align-middle transition-all rounded-lg select-none hover:bg-gray-900/10 active:bg-gray-900/20">
                         Learn More
                     </div>
                 </Link>
