@@ -23,6 +23,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -114,6 +115,9 @@ export class DotEditContentBinaryFieldComponent
 {
     readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
     readonly #dotMessageService = inject(DotMessageService);
+    // Optional: the field renders in several contexts; a toast is best-effort feedback
+    // and must never make the field fail to construct where no global toast is provided.
+    readonly #messageService = inject(MessageService, { optional: true });
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
@@ -420,13 +424,24 @@ export class DotEditContentBinaryFieldComponent
         const metadata = this.contentlet
             ? (getFileMetadata(this.contentlet) as Partial<DotFileMetadata>)
             : null;
+        const fieldName = this.$field()?.name;
+        const variable = this.variable;
+
+        // The launcher contract requires a resolved field/variable; the image-editor lib
+        // treats them as guaranteed strings. Bail (rather than leak `undefined`) if the
+        // field input hasn't resolved yet.
+        if (!fieldName || !variable) {
+            console.error('Image editor: cannot open, the binary field is not resolved');
+
+            return;
+        }
 
         launcher
             .open({
                 inode,
                 tempId: this.tempId,
-                variable: this.variable,
-                fieldName: this.$field()?.name,
+                variable,
+                fieldName,
                 byInode: !!inode,
                 fileName: this.contentlet?.fileName ?? metadata?.name,
                 mimeType: metadata?.contentType
@@ -438,10 +453,18 @@ export class DotEditContentBinaryFieldComponent
             .subscribe({
                 next: (tempFile) => this.#dotBinaryFieldStore.setFileFromTemp(tempFile),
                 // The dialog stream isn't expected to error, but guard it so an
-                // unexpected failure surfaces in the console instead of being swallowed
-                // by the global handler with the edited image silently never applied.
-                error: (error) =>
-                    console.error('Image editor failed to apply the edited image', error)
+                // unexpected failure both logs and tells the user, instead of being
+                // swallowed with the edited image silently never applied.
+                error: (error) => {
+                    console.error('Image editor failed to apply the edited image', error);
+                    this.#messageService?.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('dot.common.message.error'),
+                        detail: this.#dotMessageService.get(
+                            'dot.binary.field.image.editor.apply.error'
+                        )
+                    });
+                }
             });
     }
 

@@ -20,6 +20,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { MessageService } from 'primeng/api';
 import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -127,6 +128,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
             },
+            { provide: MessageService, useValue: { add: jest.fn() } },
             FormGroupDirective
         ]
     });
