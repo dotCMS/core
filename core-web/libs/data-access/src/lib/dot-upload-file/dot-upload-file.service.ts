@@ -107,29 +107,61 @@ export class DotUploadFileService {
      * @param file The file to be uploaded or the asset id.
      * @param extraData Additional data to be included in the contentlet object. This will be merged with
      * the base contentlet data in the request body.
-     * @param contentType The content type variable to create the contentlet as. Defaults to `dotAsset`;
-     * pass `FileAsset` (or another binary content type) to upload as a different type.
      * @returns An observable that resolves to the created contentlet.
      */
     uploadDotAsset(
         file: File | string,
-        extraData?: DotActionRequestOptions['data'],
-        contentType = 'dotAsset'
+        extraData?: DotActionRequestOptions['data']
     ): Observable<DotCMSContentlet> {
         if (file instanceof File) {
             const formData = new FormData();
             formData.append('file', file);
 
             return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
-                contentType,
+                'dotAsset',
                 { file: file.name, ...extraData },
                 formData
             );
         }
 
-        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(contentType, {
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', {
             asset: file
         });
+    }
+
+    /**
+     * Uploads a file by resolving the content type from a base type instead of an explicit content
+     * type. The base type is sent to the backend, which resolves the matching content type for it
+     * (e.g. `FILEASSET` → File Asset, `DOTASSET` → dotAsset).
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @param baseType The base type to create the contentlet as (e.g. `FILEASSET`, `DOTASSET`).
+     * @param extraData Additional data to be included in the contentlet object. This will be merged
+     * with the base contentlet data in the request body.
+     * @returns An observable that resolves to the created contentlet.
+     */
+    uploadFileByBaseType(
+        file: File | string,
+        baseType: string,
+        extraData?: DotActionRequestOptions['data']
+    ): Observable<DotCMSContentlet> {
+        if (file instanceof File) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+                baseType,
+                { file: file.name, ...extraData },
+                formData
+            );
+        }
+
+        return this.#workflowActionsFireService.newContentletByBaseType<DotCMSContentlet>(
+            baseType,
+            {
+                asset: file
+            }
+        );
     }
 
     /**
