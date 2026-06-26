@@ -14,6 +14,7 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { DotFileFieldComponent } from './dot-file-field.component';
 
 import { BINARY_FIELD_MOCK, IMAGE_FIELD_MOCK } from '../../../../utils/mocks';
+import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
@@ -26,6 +27,14 @@ import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot
 describe('DotFileFieldComponent', () => {
     let spectator: Spectator<DotFileFieldComponent>;
 
+    // Shared mock for the new Angular image editor launcher. Configured per-test
+    // (provided at factory level so it survives component re-creation without
+    // triggering a post-instantiation `overrideProvider`).
+    const mockImageEditorLauncher = {
+        isAvailable: jest.fn().mockReturnValue(false),
+        open: jest.fn().mockReturnValue(of(null))
+    };
+
     const createComponent = createComponentFactory({
         component: DotFileFieldComponent,
         imports: [ReactiveFormsModule],
@@ -36,6 +45,7 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
+            { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
             }),
@@ -48,6 +58,9 @@ describe('DotFileFieldComponent', () => {
     });
 
     beforeEach(() => {
+        mockImageEditorLauncher.isAvailable.mockReset().mockReturnValue(false);
+        mockImageEditorLauncher.open.mockReset().mockReturnValue(of(null));
+
         spectator = createComponent({
             props: {
                 field: IMAGE_FIELD_MOCK,
@@ -93,7 +106,10 @@ describe('DotFileFieldComponent', () => {
             });
 
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockReturnValue({ onClose: of(AI_IMAGE) });
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(AI_IMAGE),
+                close: jest.fn()
+            });
 
             spectator.detectChanges();
 
@@ -131,6 +147,71 @@ describe('DotFileFieldComponent', () => {
                 file: AI_CONTENTLET
             });
             expect(spectator.component.store.value()).toBe('ai-contentlet-identifier');
+        });
+    });
+
+    describe('image editor', () => {
+        const EDITED_TEMP_FILE = { id: 'edited-temp-id', fileName: 'edited.png' };
+
+        // Puts an image temp file in preview so `$canEditImage()` is true (Binary + isImage).
+        const setupBinaryWithImage = () => {
+            spectator = createComponent({
+                props: {
+                    field: BINARY_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+
+            spectator.component.store.setPreviewFile({
+                source: 'temp',
+                file: {
+                    id: 'temp-1',
+                    fileName: 'img.png',
+                    metadata: { isImage: true, contentType: 'image/png', name: 'img.png' }
+                }
+            } as never);
+            spectator.detectChanges();
+        };
+
+        it('should open the new Angular editor when its launcher is available', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
+            setupBinaryWithImage();
+
+            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+
+            spectator.component.onEditImage();
+
+            expect(mockImageEditorLauncher.open).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    tempId: 'temp-1',
+                    variable: BINARY_FIELD_MOCK.variable,
+                    fieldName: BINARY_FIELD_MOCK.variable,
+                    mimeType: 'image/png'
+                })
+            );
+            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+        });
+
+        it('should fall back to the legacy editor when the new launcher is unavailable', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(false);
+            setupBinaryWithImage();
+
+            const legacy = spectator.fixture.debugElement.injector.get(
+                LegacyDialogImageEditorLauncher
+            );
+            const legacyOpenSpy = jest
+                .spyOn(legacy, 'open')
+                .mockReturnValue(of(EDITED_TEMP_FILE) as never);
+            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+
+            spectator.component.onEditImage();
+
+            expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
+            expect(legacyOpenSpy).toHaveBeenCalled();
+            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
         });
     });
 

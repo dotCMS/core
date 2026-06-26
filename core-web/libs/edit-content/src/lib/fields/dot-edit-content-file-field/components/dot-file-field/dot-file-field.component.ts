@@ -1,4 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
+import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -59,6 +60,7 @@ import {
     UploadedFile
 } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 
 @Component({
     selector: 'dot-file-field',
@@ -100,6 +102,14 @@ export class DotFileFieldComponent
     readonly #legacyDialogImageEditorLauncher = inject(LegacyDialogImageEditorLauncher);
     /** Dispatches Dojo image-editor events (legacy web-component bridge only). */
     readonly #legacyDojoImageEditorLauncher = inject(LegacyDojoImageEditorLauncher);
+    /**
+     * New Angular image editor launcher. Provided by the Angular edit-content shell
+     * ({@link EditContentShellComponent}) and gated behind the
+     * `FEATURE_FLAG_NEW_IMAGE_EDITOR` flag via its `isAvailable()`. Injected as
+     * `{ optional: true }`: when absent (e.g. the legacy web-component host) or its
+     * flag is off, `onEditImage()` falls back to the legacy launchers.
+     */
+    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -397,15 +407,55 @@ export class DotFileFieldComponent
                 ? String(uploaded.file['titleImage'] ?? variable)
                 : variable;
 
-        const launcher = this.$useLegacyDojoImageEditor()
+        // Prefer the new Angular image editor when its launcher is provided (Angular
+        // edit-content shell) and its feature flag is on. Otherwise fall back to the
+        // legacy editor: Dojo DOM events for the web-component bridge, dialog iframe
+        // elsewhere.
+        const newLauncher = this.#imageEditorLauncher;
+
+        if (newLauncher?.isAvailable()) {
+            const metadata = this.#currentMetadata();
+
+            this.#applyEditedImage(
+                newLauncher.open({
+                    inode,
+                    tempId,
+                    variable: editorVariable,
+                    fieldName: editorVariable,
+                    byInode: !!inode,
+                    fileName: this.$currentFileName() || undefined,
+                    mimeType: metadata?.contentType
+                })
+            );
+
+            return;
+        }
+
+        const legacyLauncher = this.$useLegacyDojoImageEditor()
             ? this.#legacyDojoImageEditorLauncher
             : this.#legacyDialogImageEditorLauncher;
-        // Future PR: replace the dialog launcher path with the native Angular image editor.
 
-        launcher
-            .open({ inode, tempId, variable: editorVariable, fieldName: editorVariable })
+        this.#applyEditedImage(
+            legacyLauncher.open({
+                inode,
+                tempId,
+                variable: editorVariable,
+                fieldName: editorVariable
+            })
+        );
+    }
+
+    /**
+     * Applies the edited image emitted by an image-editor launcher to the preview,
+     * shared by the new Angular editor and the legacy launchers. Ignores a closed
+     * editor (no temp file) and surfaces a server error if the stream fails.
+     *
+     * @param result$ the launcher's close stream, emitting the edited temp file or null
+     */
+    #applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
+        result$
             .pipe(
-                filter((tempFile) => !!tempFile),
+                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe({
