@@ -49,61 +49,67 @@ function CalendarEvent({ image, title, urlMap, description, location }: Calendar
     const { locations, activities } = extractLocationsAndActivities(location);
 
     return (
-        <div className="relative flex bg-clip-border rounded-xl shadow-md w-full flex-row bg-slate-100">
-            <div className="relative w-2/5 m-0 overflow-hidden bg-slate-100 rounded-r-none bg-clip-border rounded-xl shrink-0">
+        <article className="flex w-full flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-sm sm:flex-row">
+            <div className="relative h-56 shrink-0 bg-surface sm:h-auto sm:w-2/5">
                 {image?.identifier && (
-                    <Image src={image?.identifier} alt={title ?? ''} fill={true} />
+                    <Image
+                        src={image.identifier}
+                        alt={title ?? ''}
+                        fill
+                        sizes="(min-width: 640px) 40vw, 100vw"
+                        className="object-cover"
+                    />
                 )}
             </div>
-            <div className="p-6">
-                <h4 className="block mb-2 text-2xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
+            <div className="flex flex-col gap-4 p-6 sm:p-8">
+                <h3 className="font-display text-2xl font-semibold leading-snug text-ink">
                     {title}
-                </h4>
+                </h3>
+
                 {!!locations.length && !!locations[0]?.title && (
-                    <div className="block mb-2 text-base antialiased leading-snug tracking-normal text-blue-gray-900 break-all">
-                        <span className="cursor-auto select-none font-semibold underline">
-                            Locations:
-                        </span>
-                        &nbsp;
-                        {locations.map(({ title, url }, index) => {
-                            return (
-                                <Link key={index} href={url ?? ''}>
-                                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
-                                        {title}
-                                    </span>
-                                </Link>
-                            );
-                        })}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-muted">Locations</span>
+                        {locations.map(({ title, url }, index) => (
+                            <Link
+                                key={index}
+                                href={url ?? ''}
+                                className="rounded-full bg-primary-tint px-2.5 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-bg"
+                            >
+                                {title}
+                            </Link>
+                        ))}
                     </div>
                 )}
+
                 {!!activities.length && !!activities[0]?.title && (
-                    <div className="block mb-2 text-base antialiased leading-snug tracking-normal text-blue-gray-900 break-all">
-                        <span className="cursor-auto select-none font-semibold underline">
-                            Activities:
-                        </span>
-                        &nbsp;
-                        {activities.slice(0, 3).map(({ title, urlMap }, index) => {
-                            return (
-                                <Link key={index} href={urlMap ?? ''}>
-                                    <span className="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-indigo-900 dark:text-indigo-300">
-                                        {title}
-                                    </span>
-                                </Link>
-                            );
-                        })}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-muted">Activities</span>
+                        {activities.slice(0, 3).map(({ title, urlMap }, index) => (
+                            <Link
+                                key={index}
+                                href={urlMap ?? ''}
+                                className="rounded-full bg-surface px-2.5 py-0.5 text-xs font-medium text-ink transition-colors hover:bg-surface-2"
+                            >
+                                {title}
+                            </Link>
+                        ))}
                     </div>
                 )}
+
                 <div
-                    className="block mb-8 text-base antialiased font-normal leading-relaxed line-clamp-3"
+                    className="line-clamp-3 leading-relaxed text-muted"
                     dangerouslySetInnerHTML={{ __html: description ?? '' }}
                 />
-                <Link href={urlMap}>
-                    <div className="flex items-center gap-2 px-6 py-3 text-xs font-bold text-center uppercase align-middle transition-all rounded-lg select-none hover:bg-gray-900/10 active:bg-gray-900/20">
-                        Learn More
-                    </div>
+
+                <Link
+                    href={urlMap}
+                    className="mt-1 inline-flex w-fit items-center gap-1.5 font-semibold text-primary transition-colors hover:text-primary-deep"
+                >
+                    Learn more
+                    <span aria-hidden="true">→</span>
                 </Link>
             </div>
-        </div>
+        </article>
     );
 }
 

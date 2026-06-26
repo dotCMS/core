@@ -109,7 +109,7 @@ function SearchResult({ result }: SearchResultProps) {
 
     // Select icon based on content type
     const getIcon = () => {
-        const iconProps = { size: 28, className: "text-orange-500" };
+        const iconProps = { size: 28, className: "text-accent" };
 
         const normalizedType = contentType?.toLowerCase();
 
@@ -127,40 +127,34 @@ function SearchResult({ result }: SearchResultProps) {
     };
 
     return (
-        <div className="bg-blue-50 rounded-lg p-6 hover:bg-blue-100 transition-colors">
+        <div className="rounded-xl border border-line bg-surface p-5 transition-colors hover:bg-surface-2">
             <div className="flex gap-4">
                 {/* Icon */}
                 <div className="shrink-0">{getIcon()}</div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                     {/* Header with title and metadata */}
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900 flex-1">
+                    <div className="mb-2 flex items-start justify-between gap-4">
+                        <h3 className="flex-1 font-display text-lg font-semibold text-ink">
                             {title || "Untitled"}
                         </h3>
-                        <div className="flex items-center gap-4 shrink-0 text-sm text-gray-600">
+                        <div className="flex shrink-0 items-center gap-3 text-sm text-muted">
                             {contentType && (
-                                <span className="font-medium">
-                                    {contentType}
-                                </span>
+                                <span className="font-medium">{contentType}</span>
                             )}
                             {scorePercentage !== null && (
-                                <span className="font-medium">
-                                    Score: {scorePercentage}%
-                                </span>
+                                <span className="font-medium">{scorePercentage}% match</span>
                             )}
                             {matchesText && (
-                                <span className="font-medium">
-                                    {matchesText}
-                                </span>
+                                <span className="font-medium">{matchesText}</span>
                             )}
                         </div>
                     </div>
 
                     {/* Extracted Text */}
                     {matches?.[0]?.extractedText && (
-                        <p className="text-gray-700 text-base mb-3 line-clamp-2">
+                        <p className="mb-3 line-clamp-2 leading-relaxed text-muted">
                             {matches[0].extractedText}
                         </p>
                     )}
@@ -169,7 +163,7 @@ function SearchResult({ result }: SearchResultProps) {
                     {actualURL && (
                         <Link
                             href={actualURL}
-                            className="text-purple-600 hover:text-purple-700 text-sm inline-flex items-center gap-1 hover:underline"
+                            className="inline-flex items-center gap-1 text-sm text-primary transition-colors hover:text-primary-deep hover:underline"
                         >
                             <LinkIcon className="shrink-0" />
                             {actualURL}

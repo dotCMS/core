@@ -12,6 +12,11 @@ const ImageLoader = ({
   src: string;
   width?: number;
 }): string => {
+  // Absolute URLs (e.g. external/stock imagery) are served as-is.
+  if (/^https?:\/\//.test(src)) {
+    return src;
+  }
+
   const dotcmsURL = new URL(dotCMSHost || "http://localhost:8080").origin;
   const imageSRC = src.includes("/dA/") ? src : `/dA/${src}`;
 

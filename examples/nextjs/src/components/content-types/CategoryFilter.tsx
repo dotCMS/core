@@ -14,41 +14,25 @@ interface CategoryFilterProps {
 export default function CategoryFilter({ widgetCodeJSON }: CategoryFilterProps) {
     const categories = widgetCodeJSON.categories;
 
-    if (!categories) {
-        console.warn("No categories found in CategoryFilter");
-
+    if (!categories?.length) {
         return null;
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-sm p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Categories
-            </h3>
-            <div className="space-y-2">
-                {categories?.map((category) => (
-                    <CategoryItem
-                        key={category.url}
-                        title={category.title}
-                        url={category.url}
-                    />
+        <div className="rounded-2xl border border-line bg-bg p-6">
+            <h3 className="mb-4 font-display text-lg font-semibold text-ink">Categories</h3>
+            <ul className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                    <li key={category.url}>
+                        <Link
+                            href={category.url}
+                            className="inline-flex rounded-full border border-line px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-primary/40 hover:bg-primary-tint hover:text-primary"
+                        >
+                            {category.title}
+                        </Link>
+                    </li>
                 ))}
-            </div>
-        </div>
-    );
-}
-
-function CategoryItem({ title, url }: Category) {
-    return (
-        <div className="border-b border-gray-100 pb-2">
-            <div className="flex items-center justify-between">
-                <Link
-                    href={url}
-                    className="text-blue-600 hover:text-blue-800 transition-colors duration-200 py-1 block"
-                >
-                    {title}
-                </Link>
-            </div>
+            </ul>
         </div>
     );
 }

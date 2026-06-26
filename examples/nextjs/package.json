@@ -9,11 +9,11 @@
         "lint": "eslint"
     },
     "dependencies": {
-        "@dotcms/client": "^1.5.6",
-        "@dotcms/experiments": "latest",
-        "@dotcms/react": "latest",
-        "@dotcms/types": "latest",
-        "@dotcms/uve": "latest",
+        "@dotcms/client": "next",
+        "@dotcms/experiments": "next",
+        "@dotcms/react": "next",
+        "@dotcms/types": "next",
+        "@dotcms/uve": "next",
         "@tinymce/tinymce-react": "6.2.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

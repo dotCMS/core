@@ -18,15 +18,17 @@ export function Page({ pageContent }: PageProps) {
     const navigation = pageContentData.navigation;
 
     return (
-        <div className="flex flex-col gap-6 bg-slate-50">
+        <div className="flex min-h-dvh flex-col bg-bg">
             {pageAsset?.layout.header && <Header navItems={navigation?.children} />}
 
-            <main className="container mx-auto">
-                <DotCMSLayoutBody
-                    page={pageAsset}
-                    components={pageComponents}
-                    mode={dotCMSMode}
-                />
+            <main className="flex-1">
+                <div className="container mx-auto flex flex-col gap-16 px-4 py-10 sm:px-6 sm:py-14 md:gap-24">
+                    <DotCMSLayoutBody
+                        page={pageAsset}
+                        components={pageComponents}
+                        mode={dotCMSMode}
+                    />
+                </div>
             </main>
 
             {pageAsset?.layout.footer && (

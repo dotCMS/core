@@ -1,7 +1,8 @@
-import { useIsEditMode } from '@/hooks/useIsEditMode';
-import { editContentlet } from '@dotcms/uve';
 import Image from 'next/image';
 import type { DotCMSBasicContentlet } from '@dotcms/types';
+
+import { useIsEditMode } from '@/hooks/useIsEditMode';
+import { editContentlet } from '@dotcms/uve';
 import type { Blog } from '@/types/content';
 import { formatDate } from '@/utils/formatDate';
 
@@ -11,49 +12,56 @@ interface BlogCardProps {
 
 export default function BlogCard({ blog }: BlogCardProps) {
     const { title, urlMap, inode, modDate, urlTitle, teaser } = blog;
-
     const isEditMode = useIsEditMode();
 
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative flex flex-col h-full">
+        <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-primary-deep/5">
             {isEditMode && (
                 <button
+                    type="button"
                     // The Blog fragment is identified by `identifier`; widen at
                     // the SDK boundary to the full contentlet shape it expects.
                     onClick={() => editContentlet(blog as DotCMSBasicContentlet)}
-                    className="absolute top-2 right-2 z-10 bg-blue-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600">
+                    className="absolute right-3 top-3 z-10 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-bg shadow-md transition-colors hover:bg-primary-deep"
+                >
                     Edit
                 </button>
             )}
 
-            <div className="relative h-48 w-full">
+            <div className="relative aspect-[3/2] w-full overflow-hidden bg-surface">
                 {inode ? (
                     <Image
                         src={inode}
                         alt={urlTitle || title}
-                        fill={true}
-                        className="object-cover"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover transition-transform duration-700 ease-(--ease-out-quart) group-hover:scale-105"
                     />
                 ) : (
-                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-400">No image</span>
+                    <div className="grid h-full place-items-center text-sm text-muted">
+                        No image
                     </div>
                 )}
             </div>
 
-            <div className="p-4 flex flex-col grow">
-                <h3 className="text-lg font-bold mb-2 hover:text-blue-600">
-                    <a href={urlMap}>{title}</a>
+            <div className="flex grow flex-col p-5">
+                <h3 className="font-display text-xl font-semibold leading-snug text-ink">
+                    <a
+                        href={urlMap}
+                        className="transition-colors after:absolute after:inset-0 hover:text-primary"
+                    >
+                        {title}
+                    </a>
                 </h3>
 
-                {teaser && <p className="text-gray-600 text-sm mb-3 line-clamp-2">{teaser}</p>}
+                {teaser && (
+                    <p className="mt-2 line-clamp-2 leading-relaxed text-muted">{teaser}</p>
+                )}
 
-                <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
-                    <time className="text-sm text-gray-500">
-                        {formatDate(modDate)}
-                    </time>
-                </div>
+                {modDate && (
+                    <time className="mt-auto pt-4 text-sm text-muted">{formatDate(modDate)}</time>
+                )}
             </div>
-        </div>
+        </article>
     );
 }

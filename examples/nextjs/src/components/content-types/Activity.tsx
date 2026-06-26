@@ -59,10 +59,10 @@ const contentContainerVariants = cva('', {
 const cardBackgroundVariants = cva('', {
     variants: {
         background: {
-            white: 'bg-white',
-            gray: 'bg-gray-100',
-            'light-blue': 'bg-blue-50',
-            'light-green': 'bg-green-50'
+            white: 'bg-bg',
+            gray: 'bg-surface',
+            'light-blue': 'bg-primary-tint',
+            'light-green': 'bg-surface-2'
         }
     },
     defaultVariants: { background: 'white' }
@@ -72,9 +72,9 @@ const borderRadiusVariants = cva('', {
     variants: {
         radius: {
             none: 'rounded-none',
-            small: 'rounded-sm',
-            medium: 'rounded-md',
-            large: 'rounded-lg'
+            small: 'rounded-lg',
+            medium: 'rounded-xl',
+            large: 'rounded-2xl'
         }
     },
     defaultVariants: { radius: 'small' }
@@ -107,29 +107,34 @@ function Activity({ title, description, image, urlTitle, dotStyleProperties }: A
     const isOverlap = layout === 'overlap';
 
     const titleClasses = cn(
-        'mb-2',
+        'mb-2 font-display leading-tight text-ink',
         titleSize,
-        titleStyle.bold ? 'font-bold' : 'font-normal',
+        titleStyle.bold ? 'font-semibold' : 'font-medium',
         titleStyle.italic && 'italic',
         titleStyle.underline && 'underline'
     );
 
     const articleClasses = cn(
+        'group',
         articleVariants({ layout }),
         cardBackgroundVariants({ background: variant(cardBackground, BACKGROUNDS) }),
         borderRadiusVariants({ radius: variant(borderRadius, RADII) }),
-        cardEffects.shadow ? 'shadow-lg' : 'shadow-md',
-        cardEffects.border && 'border border-gray-200'
+        cardEffects.shadow ? 'shadow-xl shadow-primary-deep/5' : 'shadow-sm',
+        cardEffects.border && 'border border-line'
     );
 
-    const buttonClasses = cn(
-        'inline-block font-bold text-white transition duration-300',
-        buttonColorVariants({ color: variant(buttonColor, BUTTON_COLORS) }),
-        buttonSizeVariants({ size: variant(buttonSize, BUTTON_SIZES) }),
-        // Note: both rounded and full-rounded fall back to a pill in this layout.
-        buttonStyle.rounded ? 'rounded-lg' : 'rounded-full',
-        buttonStyle.shadow && 'shadow-lg'
-    );
+    // Default: a quiet, premium text link. When an editor picks a button color,
+    // honor it as a filled pill.
+    const colorKey = variant(buttonColor, BUTTON_COLORS);
+    const buttonClasses = colorKey
+        ? cn(
+              'inline-flex items-center gap-1.5 font-semibold text-bg transition-transform duration-300 ease-(--ease-out-quart) hover:-translate-y-0.5',
+              buttonColorVariants({ color: colorKey }),
+              buttonSizeVariants({ size: variant(buttonSize, BUTTON_SIZES) }),
+              buttonStyle.rounded ? 'rounded-lg' : 'rounded-full',
+              buttonStyle.shadow && 'shadow-md'
+          )
+        : 'group/btn inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary-deep';
 
     return (
         <article className={articleClasses}>
@@ -137,20 +142,29 @@ function Activity({ title, description, image, urlTitle, dotStyleProperties }: A
                 <div className={imageContainerVariants({ layout })}>
                     <div className={cn('relative w-full overflow-hidden', isOverlap ? 'h-full' : imageHeight)}>
                         <Image
-                            className="object-cover"
+                            className="object-cover transition-transform duration-700 ease-(--ease-out-quart) group-hover:scale-105"
                             src={image.identifier}
                             fill={true}
-                            alt="Activity Image"
+                            sizes="(min-width: 768px) 50vw, 100vw"
+                            alt={title || 'Activity'}
                         />
                     </div>
                 </div>
             )}
             <div className={contentContainerVariants({ layout })}>
-                <p className={titleClasses}>{title}</p>
-                <p className={cn('line-clamp-3 mb-4', descriptionSize)}>{description}</p>
+                <h3 className={titleClasses}>{title}</h3>
+                <p className={cn('mb-5 line-clamp-3 leading-relaxed text-muted', descriptionSize)}>
+                    {description}
+                </p>
                 <div className={layout === 'center' ? 'flex justify-center' : ''}>
                     <Link href={`/activities/${urlTitle || '#'}`} className={buttonClasses}>
-                        Link to detail →
+                        View detail
+                        <span
+                            aria-hidden="true"
+                            className="transition-transform duration-300 ease-(--ease-out-quart) group-hover/btn:translate-x-0.5"
+                        >
+                            →
+                        </span>
                     </Link>
                 </div>
             </div>

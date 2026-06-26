@@ -20,24 +20,23 @@ type BannerProps = ContentTypeProps & {
     buttonText?: string;
 };
 
-// Layout variants driven by `dotStyleProperties`. Unknown values fall back to
-// the `defaultVariants` below.
-// The wrapping JSX only renders this when the overlay is not 'none', so the
-// `none`/default case just contributes no background.
-const overlayVariants = cva('absolute inset-0', {
+// Editor-controlled overlay (dotStyleProperties). This sits ON TOP of an
+// always-present bottom scrim, so overlaid text keeps its contrast even when an
+// editor picks 'none' or 'light'.
+const overlayVariants = cva('pointer-events-none absolute inset-0', {
     variants: {
         style: {
             dark: 'bg-black/40',
             light: 'bg-white/20',
-            gradient: 'bg-gradient-to-b from-black/50 via-transparent to-black/50',
-            none: ''
+            gradient: 'bg-gradient-to-b from-black/45 via-transparent to-black/45',
+            none: 'hidden'
         }
     },
     defaultVariants: { style: 'none' }
 });
 
 const contentVariants = cva(
-    'absolute inset-0 flex flex-col justify-center p-4 text-white',
+    'relative z-10 flex h-full flex-col justify-end gap-4 p-6 text-bg sm:p-10 md:p-14',
     {
         variants: {
             alignment: {
@@ -46,16 +45,16 @@ const contentVariants = cva(
                 right: 'items-end text-right'
             }
         },
-        defaultVariants: { alignment: 'center' }
+        defaultVariants: { alignment: 'left' }
     }
 );
 
 const buttonSizeVariants = cva('', {
     variants: {
         size: {
-            small: 'px-3 py-2 text-base',
-            medium: 'px-4 py-2 text-xl',
-            large: 'px-6 py-4 text-2xl'
+            small: 'px-5 py-2.5 text-sm',
+            medium: 'px-6 py-3 text-base',
+            large: 'px-8 py-4 text-lg'
         }
     },
     defaultVariants: { size: 'medium' }
@@ -64,8 +63,6 @@ const buttonSizeVariants = cva('', {
 function Banner(contentlet: BannerProps) {
     const { title, caption, image, link, buttonText, dotStyleProperties } = contentlet;
 
-    const titleSize = dotStyleProperties?.['title-size'] || 'text-6xl';
-    const captionSize = dotStyleProperties?.['caption-size'] || 'text-xl';
     const titleStyle = dotStyleProperties?.['title-style'] || {};
     const textAlignment = dotStyleProperties?.['text-alignment'];
     const overlayStyle = dotStyleProperties?.['overlay-style'] || 'none';
@@ -74,41 +71,57 @@ function Banner(contentlet: BannerProps) {
     const buttonStyle = dotStyleProperties?.['button-style'] || {};
 
     const titleClasses = cn(
-        'mb-2 text-white text-shadow',
-        titleSize,
-        titleStyle.bold ? 'font-bold' : 'font-normal',
+        'max-w-3xl font-display text-[clamp(2.25rem,1.4rem+3.6vw,4.5rem)] font-semibold leading-[1.03] tracking-tight text-shadow',
         titleStyle.italic && 'italic',
         titleStyle.underline && 'underline'
     );
 
+    // CTA defaults to the warm brand accent; an editor-set `button-color` wins.
+    const colorKey = variant(buttonColor, BUTTON_COLORS);
     const buttonClasses = cn(
-        'transition duration-300 text-white font-bold',
-        buttonColorVariants({ color: variant(buttonColor, BUTTON_COLORS) }),
+        'inline-flex items-center gap-2 font-semibold text-bg shadow-lg transition-transform duration-300 ease-(--ease-out-quart) hover:-translate-y-0.5',
+        colorKey ? buttonColorVariants({ color: colorKey }) : 'bg-accent hover:bg-accent/90',
         buttonSizeVariants({ size: variant(buttonSize, BUTTON_SIZES) }),
-        buttonStyle.rounded ? 'rounded-lg' : buttonStyle['full-rounded'] ? 'rounded-full' : 'rounded-sm',
-        buttonStyle.shadow && 'shadow-lg'
+        buttonStyle.rounded ? 'rounded-lg' : buttonStyle['full-rounded'] ? 'rounded-full' : 'rounded-xl'
     );
 
     return (
-        <div className="relative w-full p-4 bg-gray-200 h-96">
+        <section className="relative isolate overflow-hidden rounded-3xl bg-surface-2 [height:clamp(26rem,60vh,40rem)]">
             {image?.identifier && (
-                <Image src={image?.identifier} fill={true} className="object-cover" alt={title} />
+                <Image
+                    src={image.identifier}
+                    fill
+                    priority
+                    sizes="(min-width: 1280px) 1216px, 100vw"
+                    className="object-cover motion-safe:animate-[heroIn_1.2s_var(--ease-out-expo)_both]"
+                    alt={title || 'Featured destination'}
+                />
             )}
-            {overlayStyle !== 'none' && (
-                <div className={overlayVariants({ style: variant(overlayStyle, OVERLAYS) })} />
-            )}
+
+            {/* Always-on scrim guarantees text contrast over any photo. */}
+            <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10"
+            />
+            <div aria-hidden="true" className={overlayVariants({ style: variant(overlayStyle, OVERLAYS) })} />
+
             <div className={contentVariants({ alignment: variant(textAlignment, ALIGNMENTS) })}>
-                <h2 className={titleClasses}>
+                <h1 className={titleClasses}>
                     <DotCMSEditableText contentlet={contentlet} fieldName="title" />
-                </h2>
-                {caption && <p className={cn('mb-4 text-white text-shadow', captionSize)}>{caption}</p>}
+                </h1>
+                {caption && (
+                    <p className="max-w-xl text-base text-bg/90 text-shadow sm:text-lg">
+                        {caption}
+                    </p>
+                )}
                 {link && (
                     <Link className={buttonClasses} href={link}>
-                        {buttonText || 'See more'}
+                        {buttonText || 'Explore'}
+                        <span aria-hidden="true">→</span>
                     </Link>
                 )}
             </div>
-        </div>
+        </section>
     );
 }
 

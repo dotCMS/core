@@ -26,11 +26,18 @@ interface SearchButtonProps {
 function SearchButton({ onClick }: SearchButtonProps) {
     return (
         <button
-            aria-label="toggle-search"
-            className="flex items-center justify-center pl-2 hover:cursor-pointer"
+            type="button"
+            aria-label="Search destinations and stories"
             onClick={onClick}
+            className="group flex items-center gap-2.5 rounded-full border border-line bg-surface px-3 text-muted transition-colors hover:border-primary/40 hover:bg-primary-tint hover:text-primary md:h-11 md:w-72 md:px-4 lg:w-80"
         >
-            <SearchIcon className="text-white hover:text-gray-300" />
+            <SearchIcon size={20} className="shrink-0 transition-colors" />
+            <span className="hidden text-[0.95rem] md:inline">
+                Search destinations &amp; stories
+            </span>
+            <kbd className="ml-auto hidden rounded-md border border-line bg-bg px-1.5 py-0.5 font-sans text-xs font-medium text-muted md:inline-block">
+                /
+            </kbd>
         </button>
     );
 }

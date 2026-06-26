@@ -10,10 +10,10 @@ export default function Blogs({ blogs }: BlogsProps) {
 
     return (
         <div className="flex flex-col">
-            <h2 className="text-2xl font-bold mb-7 text-white">
-                Latest Blog Posts
+            <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-bg/60">
+                Latest stories
             </h2>
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
                 {blogs.map((blog) => (
                     <RecommendedCard key={blog.identifier} contentlet={blog} />
                 ))}

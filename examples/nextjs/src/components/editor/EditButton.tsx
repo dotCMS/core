@@ -22,10 +22,11 @@ export function EditButton({ contentlet }: EditButtonProps) {
     return (
         isEditMode && (
             <button
+                type="button"
                 onClick={() =>
                     editContentlet(contentlet as DotCMSBasicContentlet)
                 }
-                className="absolute bottom-2 right-2 z-10 bg-blue-500 cursor-pointer text-white rounded-md py-1 px-3 text-sm shadow-md hover:bg-blue-600"
+                className="absolute bottom-3 right-3 z-(--z-dropdown) cursor-pointer rounded-full bg-primary px-3.5 py-1.5 text-sm font-semibold text-bg shadow-md transition-colors hover:bg-primary-deep"
             >
                 Edit
             </button>
