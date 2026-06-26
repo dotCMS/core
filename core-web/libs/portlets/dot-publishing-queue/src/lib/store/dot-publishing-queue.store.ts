@@ -116,8 +116,23 @@ export const DotPublishingQueueStore = signalStore(
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
 
-        function loadBundles() {
-            patchState(store, { bundlesStatus: 'loading' });
+        /**
+         * Fetches the bundles list.
+         *
+         * `silent` controls the visible loading state:
+         * - **false** (default) — user-initiated reload: flips `bundlesStatus`
+         *   to `'loading'` so the table renders skeleton rows. Used for the
+         *   first fetch, search/filter/sort/page changes, and post-action
+         *   refresh — anywhere the user is waiting and needs feedback.
+         * - **true** — background poll: leaves the existing rows on screen
+         *   and only patches in the new data when the response arrives.
+         *   Prevents the every-15s skeleton flash the polling otherwise
+         *   causes.
+         */
+        function loadBundles(silent = false) {
+            if (!silent) {
+                patchState(store, { bundlesStatus: 'loading' });
+            }
 
             const filter = store.statusFilter();
 
@@ -136,8 +151,14 @@ export const DotPublishingQueueStore = signalStore(
                 .pipe(
                     take(1),
                     catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { bundlesStatus: 'error' });
+                        // Silent polls swallow transient errors: keep showing the
+                        // existing rows, let the next tick retry. Surfacing an
+                        // error toast / red-state on a background blink would be
+                        // worse UX than nothing.
+                        if (!silent) {
+                            httpErrorManager.handle(error);
+                            patchState(store, { bundlesStatus: 'error' });
+                        }
 
                         return EMPTY;
                     })
@@ -277,7 +298,9 @@ export const DotPublishingQueueStore = signalStore(
                 if (document.hidden) {
                     return;
                 }
-                loadBundles();
+                // Silent: keep existing rows on screen, only swap when the
+                // response arrives. No skeleton flash every 15 s.
+                loadBundles(true);
             }, POLL_INTERVAL_MS);
         }
 
