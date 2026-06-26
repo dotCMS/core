@@ -15,5 +15,9 @@ export const dotCMSSiteId = process.env.NEXT_PUBLIC_DOTCMS_SITE_ID ?? "";
 export const dotCMSMode = (process.env.NEXT_PUBLIC_DOTCMS_MODE ??
   "production") as DotCMSPageRendererMode;
 
+/** Verbose client logging in development, quiet otherwise. */
+export const dotCMSLogLevel =
+  process.env.NODE_ENV === "development" ? "verbose" : "default";
+
 /** Index used by the AI search dialog. Create it in dotCMS before searching. */
 export const aiSearchIndexName = "example-travel-lux";
