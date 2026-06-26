@@ -3,7 +3,6 @@ import { Subject } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     DestroyRef,
     inject
 } from '@angular/core';
@@ -21,7 +20,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { StudioPageRow } from '../models/accessibility-studio.models';
 import { AccessibilityStudioStore } from '../store/accessibility-studio.store';
 
 /**
@@ -51,15 +49,8 @@ export class DotAccessibilityStudioPickerComponent {
     /** Skeleton rows to render while a page of results loads. */
     readonly skeletonRows = Array.from({ length: 8 });
 
-    /** Pass-through config so the table fills height when empty. */
-    readonly $ptConfig = computed(() => ({
-        table: {
-            style: {
-                'table-layout': 'fixed' as const,
-                ...(this.store.pages().length === 0 && { width: '100%' })
-            }
-        }
-    }));
+    /** Pass-through config: fixed table layout so column widths hold on empty state. */
+    readonly $ptConfig = { table: { style: { 'table-layout': 'fixed' as const } } };
 
     private readonly destroyRef = inject(DestroyRef);
     private readonly searchSubject = new Subject<string>();
@@ -81,7 +72,4 @@ export class DotAccessibilityStudioPickerComponent {
         this.store.setPagination(page, rows);
     }
 
-    openPage(row: StudioPageRow): void {
-        this.store.openPage(row);
-    }
 }

@@ -25,7 +25,7 @@ export interface A11yGroup {
     code: string;
     type: A11yFindingType;
     message: string;
-    impact: AxeImpact;
+    impact: AxeImpact | null;
     helpUrl: string;
     items: A11yGroupItem[];
     count: number;

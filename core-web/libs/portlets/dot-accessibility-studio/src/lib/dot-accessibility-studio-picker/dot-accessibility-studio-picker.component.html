@@ -57,7 +57,7 @@
             [first]="(store.page() - 1) * store.rows()"
             [rowsPerPageOptions]="[10, 25, 50]"
             [rowHover]="true"
-            [pt]="$ptConfig()"
+            [pt]="$ptConfig"
             dataKey="identifier"
             data-testid="studio-pages-table">
             <ng-template pTemplate="header">
@@ -85,7 +85,7 @@
                     <tr
                         data-testid="studio-page-row"
                         class="cursor-pointer"
-                        (click)="openPage(row)">
+                        (click)="store.openPage(row)">
                         <td
                             class="truncate font-semibold text-gray-900"
                             data-testid="studio-page-title">

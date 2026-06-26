@@ -17,6 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { AxeImpact } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe, SafeUrlPipe } from '@dotcms/ui';
 
@@ -115,6 +116,7 @@ export class DotAccessibilityStudioRunComponent {
     readonly store = inject(AccessibilityStudioStore);
 
     private readonly markerService = inject(A11yMarkerService);
+    private readonly messageService = inject(DotMessageService);
 
     /** The preview iframe — markers are injected into its (same-origin) document. */
     private readonly previewFrame =
@@ -171,8 +173,6 @@ export class DotAccessibilityStudioRunComponent {
         return this.previewMode() === 'LIVE'; // post-fix: only the unfixed LIVE render
     });
 
-    /** The big number in the donut center — the live open-issue count. */
-    readonly centerCount = computed<number>(() => this.store.openCount());
 
     /**
      * The section-header label above the scrollable body, by phase:
@@ -281,9 +281,6 @@ export class DotAccessibilityStudioRunComponent {
         }
     ]);
 
-    /** True while the agent is actively running (SSE in flight). */
-    readonly isFixing = computed(() => this.store.isFixing());
-
     /**
      * Live agent activity — one entry per streamed SSE `step` event. Rendered
      * while the agent runs so the user watches the work happen in real time.
@@ -314,86 +311,63 @@ export class DotAccessibilityStudioRunComponent {
             return [];
         }
 
-        const steps: RecipeStep[] = [
+        const msg = (key: string, ...args: string[]) => this.messageService.get(key, ...args);
+        return [
             {
                 id: 'scan',
                 icon: 'pi pi-search',
-                text: 'Scanned page against WCAG 2.2 AA',
-                sub: `${report.scan.before.violations} issues found`,
-                tone: 'info'
+                text: msg('accessibility.studio.recipe.scan'),
+                sub: msg('accessibility.studio.recipe.scan.sub', String(report.scan.before.violations)),
+                tone: 'info' as const
             },
             {
                 id: 'locate',
                 icon: 'pi pi-sitemap',
-                text: 'Located source templates & containers',
-                tone: 'info'
-            }
-        ];
-
-        this.store.fixedResults().forEach((r, i) => {
-            steps.push({
+                text: msg('accessibility.studio.recipe.locate'),
+                tone: 'info' as const
+            },
+            ...this.store.fixedResults().map((r, i) => ({
                 id: `fixed-${i}`,
                 icon: 'pi pi-check',
-                text: r.review ?? `Fixed ${r.ruleId}`,
+                text: r.review ?? msg('accessibility.studio.recipe.fixed', r.ruleId),
                 sub: this.ruleAndFile(r),
-                tone: 'fixed'
-            });
-        });
-
-        this.store.reportedResults().forEach((r, i) => {
-            // Distinct icon per non-fixed status: reverted → undo, regressed → undo,
-            // everything else (reported/skipped/failed) → flag.
-            const reverted = r.reverted || r.status === 'regressed';
-            steps.push({
+                tone: 'fixed' as const
+            })),
+            ...this.store.reportedResults().map((r, i) => ({
                 id: `reported-${i}`,
-                icon: reverted ? 'pi pi-replay' : 'pi pi-flag',
-                text: r.review ?? r.reason ?? `Flagged ${r.ruleId}`,
+                // Distinct icon: reverted/regressed → undo, everything else → flag.
+                icon: r.reverted || r.status === 'regressed' ? 'pi pi-replay' : 'pi pi-flag',
+                text: r.review ?? r.reason ?? msg('accessibility.studio.recipe.flagged', r.ruleId),
                 sub: this.ruleAndFile(r),
-                tone: 'reported'
-            });
-        });
-
-        steps.push({
-            id: 'rescan',
-            icon: 'pi pi-verified',
-            text: 'Re-scanned working copy — fixes confirmed',
-            sub: `${report.scan.before.violations} → ${report.scan.after.violations} violations`,
-            tone: 'info'
-        });
-
-        return steps;
+                tone: 'reported' as const
+            })),
+            {
+                id: 'rescan',
+                icon: 'pi pi-verified',
+                text: msg('accessibility.studio.recipe.rescan'),
+                sub: msg('accessibility.studio.recipe.rescan.sub',
+                    String(report.scan.before.violations),
+                    String(report.scan.after.violations)),
+                tone: 'info' as const
+            }
+        ];
     });
 
-    /** Footer headline copy by phase. */
-    readonly footerTitleKey = computed(() => {
-        switch (this.store.phase()) {
-            case 'ready':
-                return 'accessibility.studio.footer.ready.title';
-            case 'scanning':
-                return 'accessibility.studio.footer.scanning.title';
-            case 'scanned':
-                return 'accessibility.studio.footer.scanned.title';
-            case 'fixing':
-                return 'accessibility.studio.footer.fixing.title';
-            case 'done':
-                return 'accessibility.studio.footer.done.title';
-            case 'published':
-                return 'accessibility.studio.footer.published.title';
-            default:
-                return '';
-        }
+    /** Footer title + sub keys derived from the current phase — single switch. */
+    readonly footerKeys = computed(() => {
+        const p = this.store.phase();
+        const base = `accessibility.studio.footer.${p}`;
+        return { titleKey: `${base}.title`, subKey: `${base}.sub` };
     });
 
     /** Interpolation args for the footer title, by phase. */
     readonly footerArgs = computed<string[]>(() => {
         switch (this.store.phase()) {
             case 'scanned':
-                // "N issues ready to fix"
                 return [this.store.openCount().toString()];
             case 'fixing':
             case 'done':
             case 'published':
-                // "N fixed to working …" / "N fixed · M flagged"
                 return [
                     this.store.fixedCount().toString(),
                     this.store.reportedCount().toString()
@@ -412,25 +386,6 @@ export class DotAccessibilityStudioRunComponent {
                 return { icon: 'pi pi-bolt', cls: 'bg-orange-50 text-orange-600' };
             default:
                 return null;
-        }
-    });
-
-    readonly footerSubKey = computed(() => {
-        switch (this.store.phase()) {
-            case 'ready':
-                return 'accessibility.studio.footer.ready.sub';
-            case 'scanning':
-                return 'accessibility.studio.footer.scanning.sub';
-            case 'scanned':
-                return 'accessibility.studio.footer.scanned.sub';
-            case 'fixing':
-                return 'accessibility.studio.footer.fixing.sub';
-            case 'done':
-                return 'accessibility.studio.footer.done.sub';
-            case 'published':
-                return 'accessibility.studio.footer.published.sub';
-            default:
-                return '';
         }
     });
 
@@ -515,7 +470,7 @@ export class DotAccessibilityStudioRunComponent {
     }
 
     /** Dot color for an issue-type row, by axe impact (used by the BY ISSUE TYPE list). */
-    severityColorFor(impact: AxeImpact): string {
+    severityColorFor(impact: AxeImpact | null): string {
         return SEVERITY_COLOR[impactToSeverity(impact)];
     }
 

@@ -38,7 +38,7 @@
                     <span
                         class="text-4xl font-extrabold text-gray-900"
                         data-testid="studio-score-count">
-                        {{ centerCount() }}
+                        {{ store.openCount() }}
                     </span>
                     <span
                         class="mt-0.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase">
@@ -67,7 +67,7 @@
                         <i class="pi pi-arrow-right text-surface-300" aria-hidden="true"></i>
                         <div class="flex flex-col">
                             <span class="text-2xl leading-none font-extrabold text-gray-900">
-                                {{ centerCount() }}
+                                {{ store.openCount() }}
                             </span>
                             <span class="mt-0.5 text-xs text-gray-400">
                                 {{
@@ -358,10 +358,10 @@
                 }
                 <div class="min-w-0">
                     <div class="text-sm leading-snug font-bold text-gray-900">
-                        {{ footerTitleKey() | dm: footerArgs() }}
+                        {{ footerKeys().titleKey | dm: footerArgs() }}
                     </div>
                     <div class="mt-px text-xs leading-snug text-gray-400">
-                        {{ footerSubKey() | dm: [store.selected()?.path ?? ''] }}
+                        {{ footerKeys().subKey | dm: [store.selected()?.path ?? ''] }}
                     </div>
                 </div>
             </div>

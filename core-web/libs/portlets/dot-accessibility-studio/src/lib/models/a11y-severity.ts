@@ -33,7 +33,7 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
 };
 
 /** Map an axe impact (or null) to a Severity bucket — null → minor. */
-export function impactToSeverity(impact: AxeImpact): Severity {
+export function impactToSeverity(impact: AxeImpact | null): Severity {
     switch (impact) {
         case 'critical':
             return 'critical';

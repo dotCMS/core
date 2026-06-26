@@ -160,7 +160,7 @@ export const AccessibilityStudioStore = signalStore(
                 .filter((g) => g.type === 'error')
                 .reduce((total, g) => total + g.count, 0)
         ),
-        /** Violations remaining after the (mocked) fix pass. */
+        /** Violations remaining after the fix pass. */
         afterCount: computed(() => store.report()?.scan.after.violations ?? 0),
         fixedResults: computed<FixResult[]>(
             () => store.report()?.results.filter((r) => r.status === 'fixed-to-working') ?? []
@@ -173,22 +173,8 @@ export const AccessibilityStudioStore = signalStore(
                         ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
                     ) ?? []
         ),
-        fixedCount: computed(
-            () =>
-                store.report()?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0
-        ),
-        reportedCount: computed(
-            () =>
-                store
-                    .report()
-                    ?.results.filter((r) =>
-                        ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
-                    ).length ?? 0
-        ),
-        /** The most recent agent step — drives the headline status line while fixing. */
         latestStep: computed<StudioStep | null>(() => {
             const steps = store.steps();
-
             return steps.length ? steps[steps.length - 1] : null;
         }),
         /**
@@ -214,9 +200,10 @@ export const AccessibilityStudioStore = signalStore(
          * as fixes land; before any run it's the scan's before-count.
          */
         openCount: computed<number>(() => {
-            const before = buildA11yGroups(store.scanResult())
-                .filter((g) => g.type === 'error')
-                .reduce((total, g) => total + g.count, 0);
+            const errorGroups = buildA11yGroups(store.scanResult()).filter(
+                (g) => g.type === 'error'
+            );
+            const before = errorGroups.reduce((total, g) => total + g.count, 0);
             const report = store.report();
             if (report) {
                 return report.scan.after.violations;
@@ -229,7 +216,18 @@ export const AccessibilityStudioStore = signalStore(
                 return Math.max(0, before - cleared);
             }
             return before;
-        })
+        }),
+        fixedCount: computed<number>(() =>
+            store.report()?.results.filter((r) => r.status === 'fixed-to-working').length ?? 0
+        ),
+        reportedCount: computed<number>(
+            () =>
+                store
+                    .report()
+                    ?.results.filter((r) =>
+                        ['reported', 'skipped', 'regressed', 'failed'].includes(r.status)
+                    ).length ?? 0
+        )
     })),
     withMethods((store) => {
         const contentSearchService = inject(DotContentSearchService);
