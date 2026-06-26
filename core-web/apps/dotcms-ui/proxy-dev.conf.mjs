@@ -17,31 +17,7 @@ const target =
         : 'http://localhost:8080');
 console.log(`[proxy-dev] proxying dotCMS backend → ${target}`);
 
-/**
- * ai-agents host (the a11y-fix agent). In dev the Studio calls it same-origin
- * via `/ai-agents/*`; this proxy strips the prefix and forwards to the agent.
- * The browser holds no dotCMS token — in dev the AGENT itself supplies the
- * credential from its own A11Y_AGENT_DEV_TOKEN env (see routes.ts), mirroring the
- * production trust boundary where the dotCMS proxy injects the JWT (plan §8.2).
- */
-const agentTarget = process.env.A11Y_AGENT_TARGET || 'http://localhost:3000';
-console.log(`[proxy-dev] proxying /ai-agents → ${agentTarget}`);
-
 export default [
-    // 0. ai-agents (a11y-fix agent) — SSE-capable.
-    {
-        context: ['/ai-agents'],
-        target: agentTarget,
-        secure: false,
-        changeOrigin: true,
-        logLevel: 'debug',
-        // SSE: don't buffer; keep the connection open for streamed `step` events.
-        selfHandleResponse: false,
-        timeout: 300000,
-        proxyTimeout: 300000,
-        followRedirects: false,
-        pathRewrite: { '^/ai-agents/a11y': '/agent/a11y' }
-    },
     // 1. Dedicated WebSocket Proxy (Must be first)
     {
         context: ['/api/ws'],
@@ -51,7 +27,7 @@ export default [
         changeOrigin: true,
         logLevel: 'debug'
     },
-    // 1b. Embedded dotCMS page proxy (a11y portlet iframe).
+    // 2. Embedded dotCMS page proxy (a11y portlet iframe).
     // Lets the portlet iframe load live/edit-mode pages same-origin in dev.
     // Use src="/dot-page/index?mode=EDIT_MODE" — the prefix is stripped so it
     // hits the dotCMS page renderer (e.g. /index) on the BE. The sentinel prefix

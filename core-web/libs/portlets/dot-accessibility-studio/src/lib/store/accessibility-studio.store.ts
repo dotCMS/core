@@ -413,23 +413,12 @@ export const AccessibilityStudioStore = signalStore(
                 }
                 patchState(store, { phase: 'fixing', steps: [], fixError: null, report: null });
 
-                const uri = page.path.startsWith('/') ? page.path : `/${page.path}`;
-                const origin = backendOrigin();
+                // The Java proxy (plan §8.1) resolves page details and builds the full
+                // FixRequest; the Studio sends only the identifier, languageId, and skipCss.
                 const request: AgentFixRequest = {
-                    runId: `r_${page.identifier}_${page.languageId}`,
-                    // The dotCMS backend origin — the agent renders the page (server-side
-                    // scan) and calls the dotCMS API against this. In prod it equals the
-                    // page origin; in dev backendOrigin() maps :4200 → :8080 (see above).
-                    dotcmsBaseUrl: origin,
-                    page: {
-                        identifier: page.identifier,
-                        uri,
-                        liveUrl: new URL(uri, origin).toString(),
-                        host: page.hostName,
-                        hostId: page.hostId,
-                        languageId: page.languageId
-                    },
-                    options: { skipCss: store.skipCss() }
+                    identifier: page.identifier,
+                    languageId: page.languageId,
+                    skipCss: store.skipCss()
                 };
 
                 let nextStepId = 0;

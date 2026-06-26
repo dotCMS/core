@@ -20,6 +20,8 @@ tags:
   name: Content Type
 - description: Legacy tag management endpoints (deprecated - use v2 TagResource instead)
   name: Tag (v1)
+- description: Streaming a11y-fix agent proxy
+  name: Accessibility Agent
 - description: Endpoints that perform operations related to validating accessibility
     in content.
   name: Accessibility Checker
@@ -2621,6 +2623,58 @@ paths:
       summary: Retrieves Accessibility Guidelines
       tags:
       - Accessibility Checker
+  /v1/agent/a11y/active-run:
+    get:
+      operationId: activeRun
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Agent
+  /v1/agent/a11y/fix:
+    post:
+      operationId: fix
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/A11yAgentFixForm"
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Agent
+  /v1/agent/a11y/fix/stream:
+    post:
+      operationId: fixStream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/A11yAgentFixForm"
+      responses:
+        default:
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/EventOutput"
+          description: default response
+      tags:
+      - Accessibility Agent
+  /v1/agent/a11y/stop:
+    post:
+      operationId: stop
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Agent
   /v1/ai/completions:
     post:
       description: Creates AI-powered content summaries and completions based on provided
@@ -12554,7 +12608,7 @@ paths:
       - OSGi Plugins
   /v1/osgi/jar/{jar}/_stop:
     put:
-      operationId: stop
+      operationId: stop_1
       parameters:
       - in: path
         name: jar
@@ -23684,6 +23738,16 @@ paths:
       - Administration
 components:
   schemas:
+    A11yAgentFixForm:
+      type: object
+      properties:
+        identifier:
+          type: string
+        languageId:
+          type: integer
+          format: int32
+        skipCss:
+          type: boolean
     AIImageRequestDTO:
       type: object
       properties:

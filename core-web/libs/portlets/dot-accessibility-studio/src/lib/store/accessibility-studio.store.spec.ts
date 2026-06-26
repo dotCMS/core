@@ -48,8 +48,18 @@ const MOCK_SCAN_RESPONSE = {
                 helpUrl: 'https://example.com/button-name',
                 tags: [],
                 nodes: [
-                    { html: '<button>', target: ['button.x'], impact: 'serious', failureSummary: '' },
-                    { html: '<button>', target: ['button.y'], impact: 'serious', failureSummary: '' }
+                    {
+                        html: '<button>',
+                        target: ['button.x'],
+                        impact: 'serious',
+                        failureSummary: ''
+                    },
+                    {
+                        html: '<button>',
+                        target: ['button.y'],
+                        impact: 'serious',
+                        failureSummary: ''
+                    }
                 ]
             }
         ],
@@ -326,11 +336,11 @@ describe('AccessibilityStudioStore', () => {
             store.runScan();
             store.startFix();
             const request = agentService.fixStream.mock.calls[0][0];
-            expect(request.page.identifier).toBe('id-1');
-            expect(request.page.uri).toBe('/about-us');
-            expect(request.page.hostId).toBe('host-id-1');
-            expect(request.page.languageId).toBe(1);
-            expect(request.options.skipCss).toBe(true);
+            // The proxy-request shape (plan §8.1): identifier + languageId + skipCss only.
+            // The Java proxy resolves the page and builds the full FixRequest.
+            expect(request.identifier).toBe('id-1');
+            expect(request.languageId).toBe(1);
+            expect(request.skipCss).toBe(true);
         });
 
         it('startFix returns to scanned and records the error on a terminal error event', () => {

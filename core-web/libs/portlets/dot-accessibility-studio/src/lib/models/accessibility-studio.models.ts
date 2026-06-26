@@ -7,21 +7,31 @@
  * the portlet has one import point, and define the STUDIO-ONLY types (UI state
  * machine, picker row, live-step log, SSE event union) below.
  */
-import type { FixReport, FixRequest } from '@dotcms/agent-contracts';
+import type { FixReport } from '@dotcms/agent-contracts';
 
 // Re-export the shared contract so existing portlet imports keep working.
 export type {
     ActiveRunStatus,
     BlastRadius,
     FixReport,
-    FixRequest,
     FixResult,
     FixStatus,
     ScanCount
 } from '@dotcms/agent-contracts';
 
-/** The agent fix request (POST /a11y/fix[/stream]) — the shared contract shape. */
-export type AgentFixRequest = FixRequest;
+/**
+ * The Studio → proxy request body (POST /api/v1/a11y-agent/fix[/stream], plan §8.1).
+ * Simpler than the full FixRequest — the Java proxy resolves the page and builds
+ * the complete agent payload (FixRequest) before forwarding.
+ */
+export interface AgentFixRequest {
+    /** dotCMS content identifier of the page to fix. */
+    identifier: string;
+    /** Language id (default: 1). */
+    languageId: number;
+    /** When true the agent fixes only VTL and reports CSS contrast (plan §3). */
+    skipCss: boolean;
+}
 
 /**
  * The Studio state machine. Drives which screen + action block renders.

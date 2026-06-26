@@ -20,13 +20,14 @@ import {
  *
  * Angular's HttpClient can't read a streaming response incrementally, so this
  * uses the fetch() ReadableStream and hand-parses SSE frames, surfacing each
- * event through an Observable. In dev the request is same-origin via the dev
- * proxy (`/ai-agents/*` → :3001), which also injects the bearer token; in
- * production the dotCMS proxy does the same. The browser never holds a token.
+ * event through an Observable. Calls go same-origin to the dotCMS proxy resource
+ * at `/api/v1/a11y-agent/*` (plan §8.1); the Java proxy authenticates the session,
+ * mints a short-lived JWT, resolves the page, and streams the agent response back.
+ * The browser never holds a token — the proxy is the auth boundary (plan §8.2).
  */
 
-/** Same-origin base; the dev/prod proxy strips this and forwards to the agent. */
-const AGENT_BASE = '/ai-agents/a11y';
+/** dotCMS proxy resource (plan §8.1) — the browser's same-origin entry point. */
+const AGENT_BASE = '/api/v1/agent/a11y';
 
 const STEP_PHASES: ReadonlyArray<StudioStepPhase> = ['scan', 'locate', 'read', 'fix', 'rescan'];
 
@@ -62,7 +63,10 @@ export class DotA11yAgentService {
                 try {
                     response = await fetch(`${AGENT_BASE}/fix/stream`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'text/event-stream'
+                        },
                         body: JSON.stringify(request),
                         signal: controller.signal
                     });
@@ -76,7 +80,9 @@ export class DotA11yAgentService {
 
                 if (!response.ok || !response.body) {
                     subscriber.error(
-                        new Error(`Agent request failed (${response.status} ${response.statusText})`)
+                        new Error(
+                            `Agent request failed (${response.status} ${response.statusText})`
+                        )
                     );
 
                     return;
