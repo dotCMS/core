@@ -85,19 +85,20 @@ export const DIALOG_TYPE = {
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
 /**
- * Options shown in the upload-type selector dialog. `contentType` is the content type variable
- * fired to the upload endpoint: `dotAsset` for Assets, `FileAsset` for Files.
+ * Options shown in the upload-type selector dialog. `baseType` is the base type fired to the
+ * upload endpoint, which the backend resolves to the matching content type: `DOTASSET` for Assets,
+ * `FILEASSET` for Files.
  */
 export const UPLOAD_SELECTOR_OPTIONS = [
     {
-        contentType: 'dotAsset',
+        baseType: DotCMSBaseTypesContentTypes.DOTASSET,
         icon: 'image',
         labelKey: 'content-drive.dialog.upload-selector.asset',
         descriptionKey: 'content-drive.dialog.upload-selector.asset.description',
         recommended: true
     },
     {
-        contentType: 'FileAsset',
+        baseType: DotCMSBaseTypesContentTypes.FILEASSET,
         icon: 'code_blocks',
         labelKey: 'content-drive.dialog.upload-selector.file',
         descriptionKey: 'content-drive.dialog.upload-selector.file.description',
