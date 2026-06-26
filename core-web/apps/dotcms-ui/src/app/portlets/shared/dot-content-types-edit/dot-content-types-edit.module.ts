@@ -10,6 +10,7 @@ import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PopoverModule } from 'primeng/popover';
@@ -47,12 +48,12 @@ import { ContentTypesFieldDragabbleItemComponent } from './components/fields/con
 import { ContentTypeFieldsAddRowComponent } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.component';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/content-type-fields-drop-zone';
 import { ContentTypeFieldsPropertiesFormComponent } from './components/fields/content-type-fields-properties-form';
+import { DotEditFieldDialogComponent } from './components/fields/dot-edit-field-dialog';
 import { CategoriesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/categories-property';
 import { CheckboxPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/checkbox-property';
 import { DataTypePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/data-type-property';
 import { DefaultValuePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/default-value-property';
 import { DotRelationshipsPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships-property.component';
-import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DynamicFieldPropertyDirective } from './components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
@@ -62,10 +63,7 @@ import { ValuesPropertyComponent } from './components/fields/content-type-fields
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
 import { DotContentTypeFieldsVariablesComponent } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
-import { DotFieldVariablesService } from './components/fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
-import { FieldPropertyService } from './components/fields/service/field-properties.service';
-import { FieldService } from './components/fields/service/field.service';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
@@ -101,6 +99,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         ContentTypesFieldDragabbleItemComponent,
         ContentTypeFieldsDropZoneComponent,
         ContentTypeFieldsPropertiesFormComponent,
+        DotEditFieldDialogComponent,
         ContentTypeFieldsRowComponent,
         ContentTypeFieldsTabComponent,
         DataTypePropertyComponent,
@@ -127,6 +126,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         CommonModule,
         ContentTypeFieldsAddRowComponent,
         DialogModule,
+        DynamicDialogModule,
         DotAddToBundleComponent,
         DotApiLinkComponent,
         DotAutofocusDirective,
@@ -178,16 +178,12 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotWorkflowService,
         DragulaService,
         FieldDragDropService,
-        FieldPropertyService,
-        FieldService,
         DotAddToMenuService,
         DotMenuService,
         DotNavigationService,
         DotWorkflowsActionsService,
         DotWorkflowsActionsSelectorFieldService,
-        DotFeatureFlagResolver,
-        DotEditContentTypeCacheService,
-        DotFieldVariablesService
+        DotFeatureFlagResolver
     ],
     schemas: []
 })

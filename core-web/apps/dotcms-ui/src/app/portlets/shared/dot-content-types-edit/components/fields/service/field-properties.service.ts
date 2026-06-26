@@ -24,7 +24,7 @@ import { FieldType } from '../models';
 /**
  * Provide method to handle with the Field Types's properties
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class FieldPropertyService {
     /**
      * Map of field types keyed by their class name

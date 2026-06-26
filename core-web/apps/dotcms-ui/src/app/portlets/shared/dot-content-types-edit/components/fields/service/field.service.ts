@@ -17,7 +17,7 @@ import { FieldType } from '../models';
 /**
  * Provide method to handle with the Field Types
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class FieldService {
     private http = inject(HttpClient);
 
