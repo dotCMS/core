@@ -74,4 +74,20 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
 
     String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
+
+    /**
+     * Enables the new Angular image editor (@dotcms/image-editor) in the Edit Content v2
+     * binary field. Off by default; when disabled the binary field falls back to the
+     * legacy Dojo image editor.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR}.
+     */
+    String FEATURE_FLAG_NEW_IMAGE_EDITOR = "FEATURE_FLAG_NEW_IMAGE_EDITOR";
+
+    /**
+     * libvips image-engine toggle (off by default; the legacy Java2D engine is used
+     * otherwise). The new image editor reads this through the configuration endpoint
+     * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so
+     * {@code ConfigurationResource} can reference it as a constant like the others.
+     */
+    String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
 }

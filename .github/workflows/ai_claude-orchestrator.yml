@@ -175,10 +175,18 @@ jobs:
       # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
       model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      # Use the agentic harness on the Bedrock path (model reads the repo via tools, posts
+      # inline comments, gates on severity) instead of the single-shot diff reviewer.
+      agentic: true
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
-      # Each push gets a unique SHA → unique sticky marker → new comment instead of overwrite.
-      sticky_namespace: ${{ github.sha }}
+      # Sticky comments: one auto-updating review comment per PR (default), instead of a fresh
+      # comment per push. Driven by the AI_REVIEW_STICKY_COMMENTS repo/org variable — set it to
+      # "false" for the per-commit feedback→change history; unset (or anything else) ⇒ sticky.
+      # Must evaluate to a REAL boolean: the reusable input is type: boolean, and handing it a
+      # string (`vars.X || 'true'`) makes GitHub fail to instantiate this caller job. `!= 'false'`
+      # yields a genuine boolean — sticky by default, off only when the var is exactly "false".
+      use_sticky_comment: ${{ vars.AI_REVIEW_STICKY_COMMENTS != 'false' }}
       timeout_minutes: 20
       runner: ubuntu-latest
       enable_mention_detection: false
