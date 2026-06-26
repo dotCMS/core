@@ -2,8 +2,6 @@ import autoScroll from 'dom-autoscroller';
 import { DragulaService } from 'ng2-dragula';
 import { Subject } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
-
 import {
     Component,
     ElementRef,
@@ -16,7 +14,9 @@ import {
     output
 } from '@angular/core';
 
-import { take, takeUntil } from 'rxjs/operators';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { takeUntil } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
 import {

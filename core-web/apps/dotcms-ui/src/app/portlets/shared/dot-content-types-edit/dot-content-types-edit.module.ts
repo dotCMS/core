@@ -48,7 +48,6 @@ import { ContentTypesFieldDragabbleItemComponent } from './components/fields/con
 import { ContentTypeFieldsAddRowComponent } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.component';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/content-type-fields-drop-zone';
 import { ContentTypeFieldsPropertiesFormComponent } from './components/fields/content-type-fields-properties-form';
-import { DotEditFieldDialogComponent } from './components/fields/dot-edit-field-dialog';
 import { CategoriesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/categories-property';
 import { CheckboxPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/checkbox-property';
 import { DataTypePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/data-type-property';
@@ -63,6 +62,7 @@ import { ValuesPropertyComponent } from './components/fields/content-type-fields
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
 import { DotContentTypeFieldsVariablesComponent } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
+import { DotEditFieldDialogComponent } from './components/fields/dot-edit-field-dialog';
 import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';

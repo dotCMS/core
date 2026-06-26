@@ -1,11 +1,10 @@
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-
 import { Component, input, output, Renderer2 } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
