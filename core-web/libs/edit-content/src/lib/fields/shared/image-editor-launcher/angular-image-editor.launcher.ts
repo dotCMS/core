@@ -46,7 +46,7 @@ export class AngularImageEditorLauncher implements DotImageEditorLauncher {
         const ref = this.#dialogService.open(DotImageEditorComponent, {
             // The editor renders its own header (title + close ✕), so hide PrimeNG's
             // chrome header to avoid a duplicate. Closing is handled by the internal ✕
-            // (DotImageEditorHeaderComponent) and the Esc key (closeOnEscape).
+            // (DotImageEditorHeaderComponent) and the Esc key.
             showHeader: false,
             data: params,
             // Large landscape dialog: wider than tall. Generous caps keep it big on wide
@@ -57,7 +57,10 @@ export class AngularImageEditorLauncher implements DotImageEditorLauncher {
             draggable: false,
             resizable: false,
             closable: true,
-            closeOnEscape: true,
+            // Esc is handled inside the editor (routed through its unsaved-changes guard),
+            // not by PrimeNG — closeOnEscape would close the dialog directly and skip the
+            // discard confirmation.
+            closeOnEscape: false,
             dismissableMask: false,
             contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             styleClass: 'dot-image-editor-dialog'

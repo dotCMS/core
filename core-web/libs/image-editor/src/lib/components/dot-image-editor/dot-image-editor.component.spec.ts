@@ -183,6 +183,31 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
+        it('should close with null on Escape when there are no unsaved edits', () => {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(null);
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+
+        it('should confirm (not close) on Escape when there are unsaved edits', () => {
+            isDirty.set(true);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
+            expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('should not re-open the discard prompt on a repeated Escape', () => {
+            isDirty.set(true);
+
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+            expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
+        });
+
         describe('undo/redo shortcuts', () => {
             it('should dispatch undoRequested on Ctrl/Cmd+Z when undo is available', () => {
                 canUndo.set(true);

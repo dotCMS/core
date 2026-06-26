@@ -75,6 +75,9 @@ export class DotImageEditorComponent {
     /** Windowed inline dialog styles saved on entering full-screen, restored on exit. */
     #windowedStyle: Record<string, string> | null = null;
 
+    /** True while the discard-confirm prompt is showing, so a repeated Esc can't re-open it. */
+    #discardPromptOpen = false;
+
     constructor() {
         this.#dispatch.assetRequested(this.#config.data as ImageEditorOpenParams);
 
@@ -121,11 +124,28 @@ export class DotImageEditorComponent {
     }
 
     /**
-     * Handles the standard undo/redo shortcuts while the editor is focused:
-     * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo. Skipped when a
-     * text field has focus so its native text undo keeps working.
+     * Handles editor-wide keyboard shortcuts: Esc closes (through the unsaved-changes
+     * guard) and the standard undo/redo combos run while the editor is focused —
+     * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo. Undo/redo is skipped
+     * when a text field has focus so its native text undo keeps working.
      */
     protected onKeydown(event: KeyboardEvent): void {
+        if (event.key === 'Escape') {
+            // The dialog's own closeOnEscape is disabled so Esc routes through
+            // requestClose() and confirms unsaved edits (PrimeNG would otherwise close
+            // the dialog directly, skipping the guard). An active crop/focal overlay
+            // consumes Esc first (stopPropagation), so a bubbled Esc here means no
+            // overlay handled it. Ignore while the discard prompt is already open.
+            if (this.#discardPromptOpen) {
+                return;
+            }
+
+            event.preventDefault();
+            this.requestClose();
+
+            return;
+        }
+
         if (!(event.metaKey || event.ctrlKey) || this.#isEditableTarget(event.target)) {
             return;
         }
@@ -155,6 +175,7 @@ export class DotImageEditorComponent {
             return;
         }
 
+        this.#discardPromptOpen = true;
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get('edit.content.image-editor.discard.header'),
             message: this.#dotMessageService.get('edit.content.image-editor.discard.message'),
@@ -171,12 +192,14 @@ export class DotImageEditorComponent {
             rejectButtonStyleClass: 'p-button-outlined',
             // "Keep editing" (primary): stay in the editor, nothing to do.
             accept: () => {
-                /* keep editing */
+                this.#discardPromptOpen = false;
             },
             // PrimeNG funnels the secondary button and dismissals (X / ESC / mask
             // click) through reject(); only the explicit "Discard" click (REJECT)
             // closes, so a dismissal safely keeps the user's edits.
             reject: (type?: ConfirmEventType) => {
+                this.#discardPromptOpen = false;
+
                 if (type === ConfirmEventType.REJECT) {
                     this.#dialogRef.close(null);
                 }

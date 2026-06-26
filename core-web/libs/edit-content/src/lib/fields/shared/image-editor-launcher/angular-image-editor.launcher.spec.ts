@@ -50,7 +50,7 @@ describe('AngularImageEditorLauncher', () => {
         expect(spectator.service.isAvailable()).toBe(false);
     });
 
-    it('should open the DotImageEditorComponent with a headerless, closable, escapable dialog', () => {
+    it('should open the DotImageEditorComponent with a headerless, closable dialog that owns Esc', () => {
         spectator.service.open(params).subscribe();
 
         expect(spectator.inject(DialogService).open).toHaveBeenCalledWith(
@@ -61,7 +61,9 @@ describe('AngularImageEditorLauncher', () => {
                 // The editor renders its own header; PrimeNG's chrome header is hidden.
                 showHeader: false,
                 closable: true,
-                closeOnEscape: true
+                // Esc is handled inside the editor (through its unsaved-changes guard),
+                // so PrimeNG's direct close-on-escape is disabled.
+                closeOnEscape: false
             })
         );
     });
