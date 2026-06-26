@@ -1,168 +1,220 @@
-# Build a test Docker image for any PR labeled "PR: docker image".
+# Publish a per-PR test Docker image for PRs labeled "PR: docker image".
 #
-# Triggers a build whenever the label is applied OR a new commit is pushed to a
-# labeled PR. The image is pushed to dotcms/dotcms-test with a tag derived from
-# the PR number and a normalized branch name, e.g.:
+# The image is NOT built here — the normal PR pipeline ("-1 PR Check") already
+# builds dotcms/dotcms-test:<version> once and uploads it as the `docker-image`
+# artifact (see core-cicd/maven-job). This workflow *promotes* that artifact to
+# Docker Hub, retagged for the PR. It runs from main (trusted) so it may use the
+# registry secrets the PR pipeline is forbidden from touching.
 #
-#   branch  feat/bedrock-agentic-harness on PR #1234
-#   ->      dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness
-#           dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness_<sha>  (immutable)
+# Tag scheme — branch feat/bedrock-agentic-harness on PR #1234 ->
+#   dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness        (mutable)
+#   dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness_<sha7> (immutable)
 #
-# Reuses the standard build phase (cicd_comp_build-phase.yml) to produce the
-# docker build context, then pushes via the deploy-docker composite action with
-# a test image name. Fork PRs cannot push (no secrets) — internal branches only.
+# Triggers:
+#   workflow_run (after "-1 PR Check") — covers pushes; reuses that run's image,
+#     so there is exactly one build per commit (no double build).
+#   pull_request labeled — covers the label being applied to an existing PR;
+#     reuses the most recent docker-image artifact for the head SHA, building
+#     only if none exists.
+#
+# Internal branches only: fork PRs have no access to DOCKER_* secrets.
 
 name: 'PR Docker Test Image'
-run-name: "PR Docker [#${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.ref }}]"
+run-name: "PR Docker [${{ github.event.pull_request.number && format('#{0} {1}', github.event.pull_request.number, github.event.pull_request.head.ref) || github.event.workflow_run.head_branch }}]"
 
 on:
+  workflow_run:
+    workflows: ['-1 PR Check']
+    types: [completed]
   pull_request:
-    types: [labeled, synchronize, opened, reopened]
+    types: [labeled]
 
-# One build per PR; newer pushes cancel in-flight builds.
 concurrency:
-  group: pr-docker-image-${{ github.event.pull_request.number }}
+  group: pr-docker-image-${{ github.event.pull_request.number || github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 
-jobs:
-  prep:
-    name: Resolve Tag
-    # Only run for PRs carrying the "PR: docker image" label. For `labeled`
-    # events this includes the just-added label; for `synchronize` it checks the
-    # current label set, so pushes to an already-labeled PR rebuild.
-    if: "contains(github.event.pull_request.labels.*.name, 'PR: docker image')"
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    outputs:
-      tag: ${{ steps.tag.outputs.tag }}
-      ref: ${{ steps.tag.outputs.ref }}
-    steps:
-      - name: Compute normalized image tag
-        id: tag
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          # Lowercase, replace any char outside [a-z0-9._-] with '-', collapse and
-          # trim dashes, cap length so the result is a valid Docker tag.
-          norm=$(printf '%s' "${BRANCH}" \
-            | tr '[:upper:]' '[:lower:]' \
-            | tr -c 'a-z0-9._-' '-' \
-            | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
-            | cut -c1-100)
-          tag="pr-${PR_NUMBER}-${norm}"
-          echo "Resolved tag: ${tag}"
-          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-          echo "ref=${BRANCH}" >> "$GITHUB_OUTPUT"
+permissions:
+  contents: read
 
-  # Look for a docker-build-context artifact already produced for this exact
-  # commit by another run (e.g. the PR's normal CI). If found, we skip our own
-  # build and feed that run's artifact straight to deploy-docker.
-  discover:
-    name: Find Existing Build
-    needs: [prep]
+jobs:
+  # Normalize the two trigger shapes into a single context and decide whether to
+  # proceed. Also locates a reusable docker-image artifact for the head SHA.
+  prep:
+    name: Resolve Context
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       actions: read
+      pull-requests: read
     outputs:
-      run_id: ${{ steps.find.outputs.run_id }}
+      proceed: ${{ steps.ctx.outputs.proceed }}
+      pr: ${{ steps.ctx.outputs.pr }}
+      sha: ${{ steps.ctx.outputs.sha }}
+      tag: ${{ steps.ctx.outputs.tag }}
+      source_run_id: ${{ steps.ctx.outputs.source_run_id }}
     steps:
-      - name: Find docker-build-context for this SHA
-        id: find
+      - name: Resolve PR context
+        id: ctx
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.event.pull_request.head.sha }}
-          THIS_RUN: ${{ github.run_id }}
+          EVENT: ${{ github.event_name }}
+          # workflow_run shape
+          WR_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WR_SHA: ${{ github.event.workflow_run.head_sha }}
+          WR_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WR_RUN_ID: ${{ github.event.workflow_run.id }}
+          WR_HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+          # pull_request (labeled) shape
+          PR_LABEL: ${{ github.event.label.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
-          run_id=""
-          # Runs are returned newest-first; take the most recent one that still
-          # has a non-expired docker-build-context artifact.
-          for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=50" \
-                        --jq '.workflow_runs[].id'); do
-            [ "${rid}" = "${THIS_RUN}" ] && continue
-            has=$(gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
-                    --jq '.artifacts[] | select(.name=="docker-build-context" and .expired==false) | .id' \
-                  | head -1)
-            if [ -n "${has}" ]; then run_id="${rid}"; break; fi
-          done
-          if [ -n "${run_id}" ]; then
-            echo "Reusing docker-build-context from run ${run_id}"
-          else
-            echo "No reusable artifact for ${SHA}; will build."
-          fi
-          echo "run_id=${run_id}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          LABEL='PR: docker image'
+          proceed=false; pr=""; branch=""; sha=""; run_id=""; tag=""
 
+          if [ "${EVENT}" = "workflow_run" ]; then
+            if [ "${WR_CONCLUSION}" != "success" ]; then
+              echo "PR check concluded '${WR_CONCLUSION}', nothing to promote."
+            elif [ "${WR_HEAD_REPO}" != "${REPO}" ]; then
+              echo "Fork PR (${WR_HEAD_REPO}) — no secrets, skipping."
+            else
+              sha="${WR_SHA}"; branch="${WR_BRANCH}"
+              pr=$(gh pr list --repo "${REPO}" --head "${branch}" --state open \
+                     --json number --jq '.[0].number // empty')
+              if [ -z "${pr}" ]; then
+                echo "No open PR for branch '${branch}', skipping."
+              elif gh pr view "${pr}" --repo "${REPO}" --json labels \
+                     --jq '.labels[].name' | grep -qxF "${LABEL}"; then
+                proceed=true
+                # Prefer the artifact from the run that just finished.
+                if gh api "repos/${REPO}/actions/runs/${WR_RUN_ID}/artifacts" \
+                     --jq '.artifacts[].name' | grep -qx 'docker-image'; then
+                  run_id="${WR_RUN_ID}"
+                fi
+              else
+                echo "PR #${pr} is not labeled '${LABEL}', skipping."
+              fi
+            fi
+
+          elif [ "${EVENT}" = "pull_request" ]; then
+            if [ "${PR_LABEL}" != "${LABEL}" ]; then
+              echo "Label '${PR_LABEL}' is not '${LABEL}', skipping."
+            elif [ "${PR_HEAD_REPO}" != "${REPO}" ]; then
+              echo "Fork PR (${PR_HEAD_REPO}) — no secrets, skipping."
+            else
+              proceed=true; pr="${PR_NUMBER}"; branch="${PR_BRANCH}"; sha="${PR_SHA}"
+            fi
+          fi
+
+          # If we have no run id yet, look for the newest run with a non-expired
+          # docker-image artifact for this exact commit.
+          if [ "${proceed}" = "true" ] && [ -z "${run_id}" ]; then
+            for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${sha}&per_page=50" \
+                          --jq '.workflow_runs[].id'); do
+              [ "${rid}" = "${GITHUB_RUN_ID}" ] && continue
+              if gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
+                   --jq '.artifacts[] | select(.expired==false) | .name' \
+                 | grep -qx 'docker-image'; then
+                run_id="${rid}"; break
+              fi
+            done
+          fi
+
+          if [ "${proceed}" = "true" ]; then
+            norm=$(printf '%s' "${branch}" \
+              | tr '[:upper:]' '[:lower:]' \
+              | tr -c 'a-z0-9._-' '-' \
+              | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
+              | cut -c1-100)
+            tag="pr-${pr}-${norm}"
+            echo "PR #${pr} sha=${sha} tag=${tag} source_run_id=${run_id:-<will build>}"
+          fi
+
+          {
+            echo "proceed=${proceed}"
+            echo "pr=${pr}"
+            echo "sha=${sha}"
+            echo "tag=${tag}"
+            echo "source_run_id=${run_id}"
+          } >> "$GITHUB_OUTPUT"
+
+  # Fallback: only when no reusable docker-image artifact exists for the SHA
+  # (e.g. label applied to a PR whose build was skipped, or artifact expired).
   build:
     name: Build
-    needs: [prep, discover]
-    if: needs.discover.outputs.run_id == ''
+    needs: [prep]
+    if: needs.prep.outputs.proceed == 'true' && needs.prep.outputs.source_run_id == ''
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
       run-pr-checks: false
-      ref: ${{ needs.prep.outputs.ref }}
+      ref: ${{ needs.prep.outputs.sha }}
       generate-docker: true
     permissions:
       contents: read
       packages: write
 
-  push:
-    name: Push Test Image
-    needs: [prep, discover, build]
-    # build is skipped when we reuse an existing artifact — proceed unless it failed.
-    if: always() && needs.build.result != 'failure' && needs.build.result != 'cancelled'
+  promote:
+    name: Promote to Docker Hub
+    needs: [prep, build]
+    # build is skipped when reusing an existing artifact — proceed unless it failed.
+    if: always() && needs.prep.outputs.proceed == 'true' && needs.build.result != 'failure' && needs.build.result != 'cancelled'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
-      packages: write
-      pull-requests: write
       actions: read
+      pull-requests: write
     steps:
-      - name: Checkout core
-        uses: actions/checkout@v4
+      - name: Download prebuilt image
+        uses: actions/download-artifact@v4
         with:
-          ref: ${{ needs.prep.outputs.ref }}
+          name: docker-image
+          path: /tmp/prebuilt
+          # Reused run when found, otherwise this run's own build job.
+          run-id: ${{ needs.prep.outputs.source_run_id || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get SDKMAN Java version
-        id: sdkman
+      - name: Load, retag and push
+        id: push
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          TAG: ${{ needs.prep.outputs.tag }}
+          SHA: ${{ needs.prep.outputs.sha }}
         run: |
-          if [ -f .sdkmanrc ]; then
-            v=$(awk -F '=' '/^java=/ {print $2}' .sdkmanrc)
-            echo "SDKMAN_JAVA_VERSION=${v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "No .sdkmanrc file found"; exit 1
+          set -euo pipefail
+          DEST='dotcms/dotcms-test'
+          SHA7="${SHA:0:7}"
+
+          loaded=$(docker load -i /tmp/prebuilt/image.tar | sed -n 's/.*Loaded image: //p' | head -1)
+          if [ -z "${loaded}" ]; then
+            echo "::error::No image found in artifact"; exit 1
           fi
+          echo "Loaded ${loaded}"
 
-      - name: Build/Push Test Image
-        id: deploy
-        uses: ./.github/actions/core-cicd/deployment/deploy-docker
-        with:
-          image_name: dotcms/dotcms-test
-          docker_platforms: linux/amd64
-          # Reuse the discovered run's artifact when present, else our own build.
-          build_run_id: ${{ needs.discover.outputs.run_id || github.run_id }}
-          commit_id: ${{ github.event.pull_request.head.sha }}
-          docker-use-ref: false
-          version: ${{ needs.prep.outputs.tag }}
-          do_deploy: true
-          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pull: true
-          build_args: |
-            SDKMAN_JAVA_VERSION=${{ steps.sdkman.outputs.SDKMAN_JAVA_VERSION }}
+          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
 
-      # Upsert a single sticky comment on the PR with the latest pushed tags.
-      # Keyed on a hidden marker so each new push updates in place instead of
-      # appending a new comment.
+          pushed=""
+          for t in "${TAG}" "${TAG}_${SHA7}"; do
+            docker tag "${loaded}" "${DEST}:${t}"
+            docker push "${DEST}:${t}"
+            pushed="${pushed} ${DEST}:${t}"
+          done
+          echo "tags=$(echo ${pushed} | xargs)" >> "$GITHUB_OUTPUT"
+
+      # Upsert a single sticky comment with the latest pushed tags, keyed on a
+      # hidden marker so each new push updates it in place.
       - name: Sticky comment with image tags
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-          SHA: ${{ github.event.pull_request.head.sha }}
-          TAGS: ${{ steps.deploy.outputs.tags }}
+          PR: ${{ needs.prep.outputs.pr }}
+          SHA: ${{ needs.prep.outputs.sha }}
+          TAGS: ${{ steps.push.outputs.tags }}
         run: |
           MARKER='<!-- pr-docker-image-sticky -->'
           {
