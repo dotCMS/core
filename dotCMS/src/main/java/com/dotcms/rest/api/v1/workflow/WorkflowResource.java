@@ -625,7 +625,7 @@ public class WorkflowResource {
                     .map(String::trim)
                     .filter(UtilMethods::isSet)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (ids.isEmpty()) {
                 throw new IllegalArgumentException("contentTypeIds must not be empty");
@@ -665,7 +665,7 @@ public class WorkflowResource {
 
             if (!errors.isEmpty()) {
                 Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
-                        errors.stream().map(ErrorEntity::getFieldName).collect(Collectors.toList()));
+                        errors.stream().map(ErrorEntity::getFieldName).toList());
             }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
@@ -3029,7 +3029,7 @@ public class WorkflowResource {
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
-        validateFireActionForm(fireActionForm, actionId);
+        final Set<String> ignoredSystemFields = validateFireActionForm(fireActionForm, actionId);
 
         final PageMode pageMode = PageMode.get(request);
         final IndexPolicy indexPolicy = contentlet.getIndexPolicy()!=null
@@ -3078,29 +3078,38 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
+        final List<MessageEntity> messages = ignoredSystemFieldsMessages(ignoredSystemFields);
+        final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
-                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
+                null != messages
+                        ? new ResponseEntityView<>(entity, messages)
+                        : new ResponseEntityView<>(entity)
         ).build(); // 200
     }
 
     /**
      * Validates fields on the {@link FireActionForm} that the workflow engine would otherwise
-     * silently ignore, turning them into actionable {@link BadRequestException} responses.
+     * silently ignore.
      *
      * <ul>
      *   <li>{@code pathToMove} is meaningful only when the resolved workflow action wires a
      *       Move actionlet. Without it, the value is set on the contentlet's
-     *       {@link Contentlet#PATH_TO_MOVE} property but never read.</li>
-     *   <li>{@code host} / {@code folder} keys in the {@code contentlet} body are dropped by
-     *       {@code MapToContentletPopulator} because they are system fields, not content-type
-     *       fields. The only path that mutates a contentlet's location is the Move actionlet.</li>
+     *       {@link Contentlet#PATH_TO_MOVE} property but never read, so we reject it as a
+     *       {@link BadRequestException} to surface the misconfiguration.</li>
+     *   <li>{@code host} / {@code hostId} / {@code hostname} / {@code folder} keys in the
+     *       {@code contentlet} body are not applied by this endpoint. {@code MapToContentletPopulator}
+     *       silently ignores any key that is not a content-type field, so payloads carrying these
+     *       keys have always saved fine for content types without a matching Site-or-Folder field.
+     *       We preserve that long-standing contract by logging a warning instead of rejecting; the
+     *       only path that relocates a contentlet is a workflow action wired with the Move actionlet
+     *       (see {@code pathToMove}).</li>
      * </ul>
      */
-    private void validateFireActionForm(final FireActionForm fireActionForm,
+    private Set<String> validateFireActionForm(final FireActionForm fireActionForm,
                                         final String actionId) throws DotDataException, DotSecurityException {
 
         if (null == fireActionForm) {
-            return;
+            return Set.of();
         }
 
         if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
@@ -3129,13 +3138,44 @@ public class WorkflowResource {
 
             if (!protectedFields.isEmpty()) {
 
-                throw new BadRequestException(String.format(
-                        "System fields %s cannot be set via this endpoint. "
-                                + "To change a contentlet's location, fire a workflow action that includes "
-                                + "the Move actionlet (see 'pathToMove').",
+                // These system keys are not applied by this endpoint. Historically
+                // MapToContentletPopulator silently ignores any key that does not map to a
+                // content-type field, so payloads carrying these keys saved fine for content
+                // types without a matching Site-or-Folder field. We preserve that contract by
+                // warning instead of rejecting; the returned set is surfaced back to the caller
+                // (e.g. an MCP agent) so it learns its location intent was ignored. To actually
+                // relocate a contentlet, fire a workflow action wired with the Move actionlet
+                // (see 'pathToMove').
+                Logger.warn(this, String.format(
+                        "Fire action payload contains system field(s) %s; these are ignored by "
+                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "action that includes the Move actionlet (see 'pathToMove').",
                         protectedFields));
+
+                return protectedFields;
             }
         }
+
+        return Set.of();
+    }
+
+    /**
+     * Builds a single advisory {@link MessageEntity} explaining that the given system fields were
+     * ignored by the fire endpoint, so callers (notably MCP agents) do not silently assume the
+     * contentlet was relocated. Returns {@code null} when there is nothing to report.
+     */
+    private List<MessageEntity> ignoredSystemFieldsMessages(final Set<String> ignoredFields) {
+
+        if (null == ignoredFields || ignoredFields.isEmpty()) {
+            return null;
+        }
+
+        return List.of(new MessageEntity(String.format(
+                "System field(s) %s were ignored: this endpoint does not set a contentlet's "
+                        + "location. The content was saved at its existing/default location. To "
+                        + "place or move content, fire a workflow action that includes the Move "
+                        + "actionlet and pass 'pathToMove'.",
+                ignoredFields)));
     }
 
     private void processPermissions(final FireActionForm fireActionForm,
@@ -3939,9 +3979,10 @@ public class WorkflowResource {
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
 
-        // host/folder in the contentlet body are silently dropped by MapToContentletPopulator
-        // (they are system fields, not content-type fields). Reject up front so callers learn
-        // their request is wrong. pathToMove is validated per-contentlet downstream in fireAction.
+        // host/folder in the contentlet body are not applied by this endpoint (they are system
+        // fields, not content-type fields). We warn rather than reject so long-standing callers are
+        // not broken; this streaming merge path cannot carry a per-response message, so the warning
+        // is logged only. pathToMove misconfiguration is still rejected per-contentlet downstream.
         validateFireActionForm(fireActionForm, null);
 
         final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;

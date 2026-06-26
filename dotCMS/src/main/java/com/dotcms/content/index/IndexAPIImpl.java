@@ -130,13 +130,30 @@ public class IndexAPIImpl implements IndexAPI {
     // -------------------------------------------------------------------------
 
     @Override
-    public Map<String, IndexStats> getIndicesStats() {
-        return router.read(IndexAPI::getIndicesStats);
-    }
-
-    @Override
     public boolean optimize(final List<String> indexNames) {
-        return router.read(impl -> impl.optimize(indexNames));
+        // Tag-dispatch: each index name declares its owning provider via its vendor tag
+        // (OS names carry the .os suffix; untagged names are legacy ES). The list handed in
+        // comes from getIndices(), which in dual-write phases aggregates BOTH providers, so a
+        // mixed list (ES bare names + OS .os-tagged names) routed to a single provider via
+        // router.read() would hit index_not_found_exception on the foreign-tagged names —
+        // the exact Phase 2 optimize misrouting reported against the /optimize endpoint.
+        // Force-merge each provider only with the names it actually holds; skip a provider
+        // when its subset is empty so Phase 0 never contacts OS and Phase 3 never contacts ES.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return true;
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        boolean result = true;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            result &= router.esImpl().optimize(esNames);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            result &= router.osImpl().optimize(osNames);
+        }
+        return result;
     }
 
     @Override
@@ -190,10 +207,9 @@ public class IndexAPIImpl implements IndexAPI {
         }
     }
 
-    @Override
-    public String getNameWithClusterIDPrefix(final String name) {
-        return router.read(impl -> impl.getNameWithClusterIDPrefix(name));
-    }
+    // getNameWithClusterIDPrefix / removeClusterIdFromName / getClusterPrefix / hasClusterPrefix
+    // are inherited from IndexAPI defaults: the cluster prefix is a JVM-wide value identical for
+    // both backends, so computing it directly is equivalent to routing and needs no override here.
 
     @Override
     public boolean waitUtilIndexReady() {
@@ -237,6 +253,24 @@ public class IndexAPIImpl implements IndexAPI {
         final Set<String> combined = new HashSet<>(esImpl.listIndices());
         combined.addAll(osImpl.listIndices());
         return combined;
+    }
+
+    /**
+     * Returns the merged per-index stats map from every active write provider.
+     *
+     * <p><strong>Routing exception:</strong> same aggregation rule as {@link #listIndices()}.
+     * In Phase 1/2 ES (T0) and OS (T1) indices have distinct names, so no collisions are
+     * expected; on collision the OS entry wins, since OS is the future primary.</p>
+     */
+    @Override
+    public Map<String, IndexStats> getIndicesStats() {
+        final List<IndexAPI> providers = router.writeProviders();
+        if (providers.size() == 1) {
+            return providers.get(0).getIndicesStats();
+        }
+        final Map<String, IndexStats> merged = new HashMap<>(esImpl.getIndicesStats());
+        merged.putAll(osImpl.getIndicesStats());
+        return merged;
     }
 
     /**

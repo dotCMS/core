@@ -1,7 +1,9 @@
 import { tool } from 'ai';
 import { z } from 'zod/v4';
 
-import { createApiAdapter, createExecutor, getSpec } from '@dotcms/agentic-tools';
+import { createExecutor } from '@dotcms/ai/sandbox';
+import { createApiAdapter } from '@dotcms/ai/adapter';
+import { getSpec } from '@dotcms/ai/spec';
 
 function sandboxResult(
     result: Awaited<ReturnType<ReturnType<typeof createExecutor>['execute']>>

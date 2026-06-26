@@ -92,6 +92,34 @@ public record AggregationBucket(
                 .build();
     }
 
+    /**
+     * Creates a bucket from an Elasticsearch histogram bucket (date or numeric), including its
+     * sub-aggregations. The key is normalized to its numeric form so {@link #getKeyAsNumber()}
+     * returns the epoch-millis (date histogram) or the numeric interval (numeric histogram):
+     * a date-histogram key is a {@code java.time.ZonedDateTime} in ES 7.x, not a number, so it is
+     * converted to epoch-millis here rather than via {@code getKeyAsString()} (which yields a
+     * formatted date).
+     */
+    public static AggregationBucket fromHistogram(
+            final org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Bucket esBucket) {
+        return builder()
+                .key(histogramKey(esBucket.getKey()))
+                .docCount(esBucket.getDocCount())
+                .subAggregations(Aggregation.from(esBucket.getAggregations()))
+                .build();
+    }
+
+    /** Normalizes a histogram bucket key to a numeric String ({@link #getKeyAsNumber()}-friendly). */
+    private static String histogramKey(final Object key) {
+        if (key instanceof java.time.ZonedDateTime) {
+            return String.valueOf(((java.time.ZonedDateTime) key).toInstant().toEpochMilli());
+        }
+        if (key instanceof Number) {
+            return String.valueOf(((Number) key).longValue());
+        }
+        return String.valueOf(key);
+    }
+
     // -------------------------------------------------------------------------
     // OS factories
     // -------------------------------------------------------------------------

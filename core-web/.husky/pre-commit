@@ -5,10 +5,10 @@
 
 cd "$(git rev-parse --show-toplevel)/core-web" || exit 1
 
-if [ ! -x node_modules/.bin/lint-staged ] || ! command -v yarn >/dev/null 2>&1; then
+if [ ! -x node_modules/.bin/lint-staged ] || ! command -v pnpm >/dev/null 2>&1; then
     echo "⚠️  core-web frontend toolchain not ready — skipping pre-commit checks."
-    echo "   Run 'cd core-web && yarn install' to enable lint/format on commit."
+    echo "   Run 'cd core-web && pnpm install' to enable lint/format on commit."
     exit 0
 fi
 
-yarn lint-staged
+pnpm exec lint-staged

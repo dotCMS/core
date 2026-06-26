@@ -5,8 +5,10 @@ import {
     effect,
     inject,
     model,
+    output,
     untracked
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -16,15 +18,15 @@ import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSWorkflowAction, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarLocalesSelectorComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales-selector/dot-edit-content-sidebar-locales-selector.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
-import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
-import { DotEditContentSidebarRulesComponent } from './components/dot-edit-content-sidebar-rules/dot-edit-content-sidebar-rules.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
@@ -33,6 +35,7 @@ import {
     DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
+import { escapeHtml } from '../../utils/functions.util';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.
@@ -50,24 +53,35 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         TabsModule,
         TooltipModule,
         DotEditContentSidebarSectionComponent,
-        DotCopyButtonComponent,
         ConfirmDialogModule,
         DialogModule,
         SelectModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
+        DotEditContentSidebarLocalesSelectorComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent,
-        DotEditContentSidebarPermissionsComponent,
-        DotEditContentSidebarRulesComponent
+        DotWorkflowActionsComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[21.875rem] h-full flex-col items-start border-l border-[var(--gray-400)] [&:not([inert])]:shadow-[-4px_0_12px_rgba(0,0,0,0.08)] relative min-w-0 overflow-x-hidden'
+        class: 'flex h-full flex-col items-start border-l border-surface-200 relative min-w-0 overflow-x-hidden',
+        '[style.width.px]': 'sidebarWidth'
     }
 })
 export class DotEditContentSidebarComponent {
+    /** Fixed width of the sidebar panel, in pixels. */
+    protected readonly sidebarWidth = 360;
+
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    readonly $isLocaleSelectorV2 = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2),
+        { initialValue: true }
+    );
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;
@@ -86,13 +100,6 @@ export class DotEditContentSidebarComponent {
     readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
     readonly $pushPublishHistoryStatus = computed(
         () => this.$store.pushPublishHistoryStatus().status
-    );
-
-    /**
-     * Computed property that returns true when the current content type is an HTML Page.
-     */
-    readonly $isPage = computed(
-        () => this.$store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
     );
 
     /**
@@ -122,6 +129,12 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
+     * Emits the selected workflow action when the user fires one from the Actions tab,
+     * so the parent layout can run it against the edit-content form.
+     */
+    readonly workflowActionFired = output<DotCMSWorkflowAction>();
+
+    /**
      * Effect that loads sidebar data (reference pages and activities) when the
      * sidebar is open and the contentlet identifier is available.
      * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
@@ -140,10 +153,16 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
-     * Fires a workflow action.
-     * @param actionId - The ID of the action to fire.
+     * Fires the reset-workflow action directly against the store.
+     *
+     * This deliberately bypasses the form's workflow flow (validation, scroll-to-error,
+     * push-publish environment checks, wizard) because the reset action doesn't need them.
+     * Every OTHER workflow action must go through the `workflowActionFired` output so the form
+     * validates it — do NOT route non-reset actions here, or validation is silently skipped.
+     *
+     * @param actionId - The ID of the reset workflow action to fire.
      */
-    fireWorkflowAction(actionId: string): void {
+    fireResetWorkflowAction(actionId: string): void {
         this.$store.fireWorkflowAction({
             actionId,
             inode: this.$contentlet().inode,
@@ -154,6 +173,45 @@ export class DotEditContentSidebarComponent {
                 }
             }
         });
+    }
+
+    /**
+     * Handles a click on the lock button.
+     *
+     * - Locked by another user (current user has release permission, since the button is only
+     *   rendered when `canLock` is true): ask for confirmation before stealing the lock.
+     * - Locked by the current user: unlock directly.
+     * - Unlocked: lock it for editing.
+     */
+    onLockAction(): void {
+        if (this.$store.isLockedByAnotherUser()) {
+            const lockedBy = this.$store.lockedByName();
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get(
+                    'edit.content.release.lock.confirmation.header'
+                ),
+                message: this.#dotMessageService.get(
+                    'edit.content.release.lock.confirmation.message',
+                    // PrimeNG renders the confirm message via [innerHTML]; escape the API name.
+                    lockedBy ? ` (${escapeHtml(lockedBy)})` : ''
+                ),
+                acceptLabel: this.#dotMessageService.get('Release-Lock'),
+                rejectLabel: this.#dotMessageService.get('Cancel'),
+                acceptButtonStyleClass: 'p-button-sm',
+                rejectButtonStyleClass: 'p-button-sm p-button-outlined p-button-secondary',
+                accept: () => this.$store.unlockContent()
+            });
+
+            return;
+        }
+
+        if (this.$store.isContentLocked()) {
+            this.$store.unlockContent();
+
+            return;
+        }
+
+        this.$store.lockContent();
     }
 
     /**
@@ -227,7 +285,7 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        nav: { class: 'border-none min-h-12 max-h-[52px]' },
         navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'

@@ -496,8 +496,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         try {
             return (List<Float>) data.getJSONArray(AiKeys.EMBEDDING).stream().map(val -> {
 
-                final Double x = (Double) val;
-                return x.floatValue();
+                return ((Number) val).floatValue();
 
             }).collect(Collectors.toList());
         } catch (final JSONException e) {

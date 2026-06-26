@@ -1,0 +1,53 @@
+<form class="form">
+    <div class="flex flex-col gap-4 py-2">
+        @for (option of options; track option.baseType) {
+            <label
+                class="flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors"
+                [class]="
+                    $selectedType() === option.baseType
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-300 hover:border-primary'
+                "
+                [attr.data-testid]="'upload-selector-option-' + option.baseType">
+                <p-radiobutton
+                    name="uploadType"
+                    [value]="option.baseType"
+                    [ngModel]="$selectedType()"
+                    (ngModelChange)="$selectedType.set($event)"
+                    [inputId]="option.baseType" />
+                <span class="flex flex-col gap-1">
+                    <span class="flex items-center gap-2">
+                        <i
+                            class="material-symbols-outlined text-[1.5rem]! leading-none text-primary">
+                            {{ option.icon }}
+                        </i>
+                        <span class="text-base font-semibold text-gray-800">
+                            {{ option.labelKey | dm }}
+                        </span>
+                        @if (option.recommended) {
+                            <span
+                                class="rounded-sm bg-green-100 px-2 py-0.5 text-xs font-semibold tracking-wide text-green-700 uppercase"
+                                data-testid="upload-selector-recommended">
+                                {{ 'content-drive.dialog.upload-selector.recommended' | dm }}
+                            </span>
+                        }
+                    </span>
+                    <span class="text-sm text-gray-600">{{ option.descriptionKey | dm }}</span>
+                </span>
+            </label>
+        }
+    </div>
+</form>
+
+<div class="mt-4 flex justify-end gap-2 border-t border-gray-200 px-4 pt-4">
+    <p-button
+        [label]="'dot.common.cancel' | dm"
+        [text]="true"
+        data-testid="upload-selector-cancel"
+        (click)="onCancel()" />
+    <p-button
+        [label]="'content-drive.dialog.upload-selector.continue' | dm"
+        [disabled]="!$canContinue()"
+        data-testid="upload-selector-continue"
+        (click)="onContinue()" />
+</div>
