@@ -1,23 +1,35 @@
-/**
- * Studio-side types for the Accessibility Studio portlet.
- *
- * The agent wire contract (FixRequest/FixReport/FixResult/FixStatus/BlastRadius/
- * ScanCount/ActiveRunStatus) is the SINGLE SOURCE OF TRUTH in
- * @dotcms/agent-contracts (shared with the Node agent). We re-export it here so
- * the portlet has one import point, and define the STUDIO-ONLY types (UI state
- * machine, picker row, live-step log, SSE event union) below.
- */
-import type { FixReport } from '@dotcms/agent-contracts';
+// ── Agent wire contract (plan §5/§6) ────────────────────────────────────────
 
-// Re-export the shared contract so existing portlet imports keep working.
-export type {
-    ActiveRunStatus,
-    BlastRadius,
-    FixReport,
-    FixResult,
-    FixStatus,
-    ScanCount
-} from '@dotcms/agent-contracts';
+export type FixStatus = 'fixed-to-working' | 'reported' | 'skipped' | 'regressed' | 'failed';
+
+export type BlastRadius = 'element-scoped' | 'shared-rule' | 'token';
+
+export interface ScanCount {
+    violations: number;
+}
+
+export interface FixResult {
+    ruleId: string;
+    status: FixStatus;
+    file?: string;
+    identifier?: string;
+    diff?: string;
+    blastRadius?: BlastRadius;
+    review?: string;
+    reverted?: boolean;
+    reason?: string;
+}
+
+export interface FixReport {
+    runId: string;
+    page: { uri: string; host: string; languageId: number };
+    scan: { before: ScanCount; after: ScanCount };
+    results: FixResult[];
+    changedFiles: string[];
+    publishRequired: true;
+}
+
+export type ActiveRunStatus = 'running' | 'done' | 'error';
 
 /**
  * The Studio → proxy request body (POST /api/v1/a11y-agent/fix[/stream], plan §8.1).
