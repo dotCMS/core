@@ -165,6 +165,7 @@
                             [value]="pagedAssets()"
                             dataKey="asset"
                             [scrollable]="false"
+                            [rowHover]="true"
                             [tableStyle]="tableStyleFixed"
                             data-testid="pq-select-bundle-asset-table">
                             <ng-template pTemplate="header">
@@ -189,31 +190,22 @@
                                         <td></td>
                                     </tr>
                                 } @else {
-                                    <tr data-testid="pq-select-bundle-asset-row">
+                                    <tr
+                                        [class.cursor-pointer]="!!editUrlFor(asset)"
+                                        (click)="onSelectAssetRow(asset)"
+                                        data-testid="pq-select-bundle-asset-row">
                                         <td>
                                             <div class="flex min-w-0 items-center gap-2">
                                                 <i
                                                     [class]="typeIcon(asset.type)"
                                                     class="shrink-0"
                                                     aria-hidden="true"></i>
-                                                @if (editUrlFor(asset); as editUrl) {
-                                                    <a
-                                                        [href]="editUrl"
-                                                        target="_blank"
-                                                        rel="noopener"
-                                                        class="min-w-0 flex-1 truncate text-primary-600 hover:text-primary-700 hover:underline"
-                                                        [title]="asset.title || asset.asset"
-                                                        data-testid="pq-select-bundle-asset-name">
-                                                        {{ asset.title || asset.asset }}
-                                                    </a>
-                                                } @else {
-                                                    <span
-                                                        class="min-w-0 flex-1 truncate text-color"
-                                                        [title]="asset.title || asset.asset"
-                                                        data-testid="pq-select-bundle-asset-name">
-                                                        {{ asset.title || asset.asset }}
-                                                    </span>
-                                                }
+                                                <span
+                                                    class="min-w-0 flex-1 truncate text-color"
+                                                    [title]="asset.title || asset.asset"
+                                                    data-testid="pq-select-bundle-asset-name">
+                                                    {{ asset.title || asset.asset }}
+                                                </span>
                                             </div>
                                         </td>
                                         <td>
@@ -226,7 +218,9 @@
                                                 tooltipPosition="left"
                                                 data-testid="pq-select-bundle-asset-type" />
                                         </td>
-                                        <td class="text-right">
+                                        <td
+                                            class="pr-3 text-right"
+                                            (click)="$event.stopPropagation()">
                                             <p-button
                                                 icon="pi pi-trash"
                                                 [text]="true"

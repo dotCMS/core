@@ -655,6 +655,17 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     editUrlFor(asset: BundleAssetView): string | null {
         return this.assetEditUrls().get(asset.asset) ?? null;
     }
+
+    /** Row click handler for the asset table. Opens the asset's editor in a
+     * new tab when an edit URL is resolved (matches the prior anchor's
+     * `target="_blank"` so the dialog stays in context). No-op for assets
+     * that don't have a resolved URL (e.g. non-contentlet types). */
+    onSelectAssetRow(asset: BundleAssetView): void {
+        const url = this.editUrlFor(asset);
+        if (url) {
+            window.open(url, '_blank', 'noopener');
+        }
+    }
 }
 
 /**

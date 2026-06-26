@@ -217,6 +217,51 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
     });
 
+    describe('asset row click → opens content editor', () => {
+        let openSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => openSpy.mockRestore());
+
+        it('opens the resolved edit URL in a new tab when the row has one', () => {
+            // Prime the resolved URL map so editUrlFor() returns a non-null URL.
+            spectator.component.assetEditUrls.set(
+                new Map([['a1', '/edit/contentlet/a1']])
+            );
+            spectator.component.onSelectAssetRow({
+                asset: 'a1',
+                title: 'Spring Sale Landing',
+                type: 'contentlet'
+            });
+            expect(openSpy).toHaveBeenCalledWith('/edit/contentlet/a1', '_blank', 'noopener');
+        });
+
+        it('is a no-op when the asset has no resolved edit URL', () => {
+            spectator.component.assetEditUrls.set(new Map());
+            spectator.component.onSelectAssetRow({
+                asset: 'a1',
+                title: 'x',
+                type: 'template'
+            });
+            expect(openSpy).not.toHaveBeenCalled();
+        });
+
+        it('renders the asset name as plain text, not as an anchor', () => {
+            spectator.component.assetEditUrls.set(
+                new Map([['a1', '/edit/contentlet/a1']])
+            );
+            spectator.detectChanges();
+            const name = spectator.query(byTestId('pq-select-bundle-asset-name'));
+            // The element tag must not be <a> — the row, not the name, is the
+            // clickable surface now.
+            expect(name?.tagName.toLowerCase()).not.toBe('a');
+        });
+    });
+
     describe('remove asset', () => {
         it('confirms then calls removeAssetsFromBundle and refetches', () => {
             spectator.detectChanges();
