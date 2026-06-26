@@ -1,0 +1,49 @@
+{
+    "name": "@dotcms/ai",
+    "version": "0.1.0",
+    "description": "The dotCMS agentic runtime — run model-written or human-written code safely against a dotCMS instance, with auth and policy owned in one place.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#main",
+        "directory": "core-web/libs/sdk/ai"
+    },
+    "dependencies": {
+        "tslib": "^2.3.0",
+        "zod": "^4.1.9"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "exports": {
+        "./package.json": "./package.json",
+        "./runtime": "./src/runtime.ts",
+        "./sandbox": "./src/sandbox/index.ts",
+        "./adapter": "./src/adapter/index.ts",
+        "./spec": "./src/spec/index.ts"
+    },
+    "typesVersions": {
+        "*": {
+            "runtime": ["./src/runtime.d.ts"],
+            "sandbox": ["./src/sandbox/index.d.ts"],
+            "adapter": ["./src/adapter/index.d.ts"],
+            "spec": ["./src/spec/index.d.ts"]
+        }
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "AI",
+        "agent",
+        "agentic",
+        "runtime",
+        "sandbox",
+        "MCP",
+        "model-context-protocol"
+    ],
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/ai/README.md"
+}

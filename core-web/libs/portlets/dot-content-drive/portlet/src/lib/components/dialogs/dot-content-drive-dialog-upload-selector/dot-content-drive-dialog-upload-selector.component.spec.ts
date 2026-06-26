@@ -65,7 +65,7 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
 
     const chooseFile = () => {
         const radios = spectator.debugElement.queryAll(By.css('p-radiobutton'));
-        spectator.triggerEventHandler(radios[1], 'ngModelChange', 'FileAsset');
+        spectator.triggerEventHandler(radios[1], 'ngModelChange', 'FILEASSET');
         spectator.detectChanges();
     };
 
@@ -76,13 +76,13 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
 
     describe('rendering', () => {
         it('should render both upload options', () => {
-            expect(spectator.query(byTestId('upload-selector-option-dotAsset'))).toBeTruthy();
-            expect(spectator.query(byTestId('upload-selector-option-FileAsset'))).toBeTruthy();
+            expect(spectator.query(byTestId('upload-selector-option-DOTASSET'))).toBeTruthy();
+            expect(spectator.query(byTestId('upload-selector-option-FILEASSET'))).toBeTruthy();
         });
 
         it('should mark only the Asset option as recommended', () => {
             const recommended = spectator.queryAll(byTestId('upload-selector-recommended'));
-            const assetOption = spectator.query(byTestId('upload-selector-option-dotAsset'));
+            const assetOption = spectator.query(byTestId('upload-selector-option-DOTASSET'));
 
             expect(recommended.length).toBe(1);
             expect(
@@ -100,7 +100,7 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
     });
 
     describe('selection', () => {
-        it('should emit the dotAsset selection with the folder and files when Continue is clicked', () => {
+        it('should emit the DOTASSET selection with the folder and files when Continue is clicked', () => {
             const files = { length: 0 } as FileList;
             spectator.setInput('files', files);
             spectator.detectChanges();
@@ -112,19 +112,19 @@ describe('DotContentDriveDialogUploadSelectorComponent', () => {
 
             expect(emitted).toEqual({
                 targetFolder: TARGET_FOLDER,
-                contentType: 'dotAsset',
+                baseType: 'DOTASSET',
                 files
             });
         });
 
-        it('should emit the FileAsset selection when File is chosen', () => {
+        it('should emit the FILEASSET selection when File is chosen', () => {
             let emitted: DotContentDriveUploadSelection | undefined;
             spectator.component.selectUploadType.subscribe((selection) => (emitted = selection));
 
             chooseFile();
             clickContinue();
 
-            expect(emitted?.contentType).toBe('FileAsset');
+            expect(emitted?.baseType).toBe('FILEASSET');
             expect(emitted?.targetFolder).toEqual(TARGET_FOLDER);
         });
 

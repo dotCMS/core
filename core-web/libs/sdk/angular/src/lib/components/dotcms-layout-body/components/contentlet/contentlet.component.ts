@@ -7,14 +7,17 @@ import {
     inject,
     Input,
     OnChanges,
-    HostBinding,
     signal,
     ViewChild
 } from '@angular/core';
 
 import { DotCMSBasicContentlet, EditableContainerData } from '@dotcms/types';
 import { DotContentletAttributes } from '@dotcms/types/internal';
-import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
+import {
+    CUSTOM_NO_COMPONENT,
+    getAnalyticsContentletAttributes,
+    getDotContentletAttributes
+} from '@dotcms/uve/internal';
 
 import { DynamicComponentEntity } from '../../../../models';
 import { DotCMSStore } from '../../../../store/dotcms.store';
@@ -44,13 +47,28 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
                 [contentlet]="$contentlet() ?? contentlet" />
         }
     `,
+    // Editor-only metadata (data-dot-object, data-dot-container, etc.) is bound
+    // only in edit mode. In live mode we keep the minimal set Analytics needs
+    // via $dotAttributes (empty when Analytics is inactive).
+    host: {
+        '[attr.data-dot-object]': "$isDevMode() ? 'contentlet' : null",
+        '[attr.data-dot-identifier]': "$dotAttributes()['data-dot-identifier'] ?? null",
+        '[attr.data-dot-basetype]': "$dotAttributes()['data-dot-basetype'] ?? null",
+        '[attr.data-dot-title]': "$dotAttributes()['data-dot-title'] ?? null",
+        '[attr.data-dot-inode]': "$dotAttributes()['data-dot-inode'] ?? null",
+        '[attr.data-dot-type]': "$dotAttributes()['data-dot-type'] ?? null",
+        '[attr.data-dot-container]': '$isDevMode() ? getContainerAttribute() : null',
+        '[attr.data-dot-on-number-of-pages]':
+            "$dotAttributes()['data-dot-on-number-of-pages'] ?? null",
+        '[attr.data-dot-style-properties]': "$dotAttributes()['data-dot-style-properties'] ?? null",
+        '[style]': '$style()'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentletComponent implements OnChanges {
     @Input({ required: true }) contentlet!: DotCMSBasicContentlet;
     @Input({ required: true }) containerData!: EditableContainerData;
     @ViewChild('contentletRef') contentletRef!: ElementRef;
-    @HostBinding('attr.data-dot-object') dotObject = 'contentlet';
 
     #dotCMSStore = inject(DotCMSStore);
 
@@ -58,40 +76,37 @@ export class ContentletComponent implements OnChanges {
     $UserComponent = signal<DynamicComponentEntity | null>(null);
     $UserNoComponent = signal<DynamicComponentEntity | null>(null);
     $isDevMode = this.#dotCMSStore.$isDevMode;
+    $isAnalyticsActive = this.#dotCMSStore.$isAnalyticsActive;
     $haveContent = signal(false);
     $style = computed(() =>
         this.$isDevMode() && !this.$haveContent() ? { minHeight: '4rem' } : {}
     );
     $dotAttributes = computed<DotContentletAttributes>(() => {
         const contentlet = this.$contentlet();
-        if (!contentlet || !this.$isDevMode()) return {} as DotContentletAttributes;
+        if (!contentlet) return {} as DotContentletAttributes;
 
-        return getDotContentletAttributes(contentlet, this.containerData.identifier);
+        if (this.$isDevMode()) {
+            return getDotContentletAttributes(contentlet, this.containerData.identifier);
+        }
+
+        if (this.$isAnalyticsActive()) {
+            return getAnalyticsContentletAttributes(contentlet) as DotContentletAttributes;
+        }
+
+        return {} as DotContentletAttributes;
     });
-
-    @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
-    @HostBinding('attr.data-dot-basetype') basetype: string | null = null;
-    @HostBinding('attr.data-dot-title') title: string | null = null;
-    @HostBinding('attr.data-dot-inode') inode: string | null = null;
-    @HostBinding('attr.data-dot-type') type: string | null = null;
-    @HostBinding('attr.data-dot-container') containerAttribute: string | null = null;
-    @HostBinding('attr.data-dot-on-number-of-pages') onNumberOfPages: string | null = null;
-    @HostBinding('attr.data-dot-style-properties') styleProperties: string | null = null;
-    @HostBinding('style') styleAttribute: { [key: string]: unknown } | null = null;
 
     ngOnChanges() {
         this.$contentlet.set(this.contentlet);
         this.setupComponents();
+    }
 
-        this.identifier = this.$dotAttributes()['data-dot-identifier'];
-        this.basetype = this.$dotAttributes()['data-dot-basetype'];
-        this.title = this.$dotAttributes()['data-dot-title'];
-        this.inode = this.$dotAttributes()['data-dot-inode'];
-        this.type = this.$dotAttributes()['data-dot-type'];
-        this.containerAttribute = JSON.stringify(this.containerData);
-        this.onNumberOfPages = this.$dotAttributes()['data-dot-on-number-of-pages'];
-        this.styleProperties = this.$dotAttributes()['data-dot-style-properties'] || null;
-        this.styleAttribute = this.$style();
+    /**
+     * Serializes the container data for the `data-dot-container` editor attribute.
+     * Only consumed by the host binding while in edit mode.
+     */
+    getContainerAttribute(): string {
+        return JSON.stringify(this.containerData);
     }
 
     ngAfterViewInit() {

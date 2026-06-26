@@ -193,7 +193,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         throwException = false;
 
         try{
-        	permissionAPI.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user, false);
+        	permissionAPI.doesUserHavePermission((Permissionable) null, PermissionAPI.PERMISSION_READ, user, false);
         }catch(NullPointerException e){
         	throwException=true;
         }

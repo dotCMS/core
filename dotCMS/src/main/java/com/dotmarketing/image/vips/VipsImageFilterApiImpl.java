@@ -62,6 +62,7 @@ public class VipsImageFilterApiImpl implements ImageFilterAPI {
                     .put(PDF, VipsPdfImageFilter.class)
                     .put(PNG, VipsPngImageFilter.class)
                     .put(RESIZE, VipsResizeImageFilter.class)
+                    .put(ROTATE, VipsRotateImageFilter.class)
                     .put(SCALE, VipsScaleImageFilter.class)
                     .put(THUMBNAIL, VipsThumbnailImageFilter.class)
                     .put(THUMB, VipsThumbnailImageFilter.class)
