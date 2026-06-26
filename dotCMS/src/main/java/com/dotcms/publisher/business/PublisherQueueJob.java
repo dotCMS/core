@@ -31,6 +31,7 @@ import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
@@ -291,10 +292,13 @@ public class PublisherQueueJob implements StatefulJob {
 	private void finalizeFailedBundle(final PublishAuditStatus bundleAudit) {
 		try {
 			PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish");
-			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
-					PublishAuditStatus.Status.FAILED_TO_PUBLISH, bundleAudit.getStatusPojo());
-			pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
-		} catch (final DotPublisherException e) {
+			LocalTransaction.wrapReturn(() -> {
+				pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(),
+						PublishAuditStatus.Status.FAILED_TO_PUBLISH, bundleAudit.getStatusPojo());
+				pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+				return null;
+			});
+		} catch (final Exception e) {
 			Logger.error(this, "Unable to finalize bundle '" + bundleAudit.getBundleId() +
 					"' as FAILED_TO_PUBLISH: " + ExceptionUtil.getErrorMessage(e), e);
 		}
