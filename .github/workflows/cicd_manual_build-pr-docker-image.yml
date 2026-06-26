@@ -1,0 +1,108 @@
+# Build a test Docker image for any PR labeled "PR: docker image".
+#
+# Triggers a build whenever the label is applied OR a new commit is pushed to a
+# labeled PR. The image is pushed to dotcms/dotcms-test with a tag derived from
+# the PR number and a normalized branch name, e.g.:
+#
+#   branch  feat/bedrock-agentic-harness on PR #1234
+#   ->      dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness
+#           dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness_<sha>  (immutable)
+#
+# Reuses the standard build phase (cicd_comp_build-phase.yml) to produce the
+# docker build context, then pushes via the deploy-docker composite action with
+# a test image name. Fork PRs cannot push (no secrets) — internal branches only.
+
+name: 'PR Docker Test Image'
+run-name: "PR Docker [#${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.ref }}]"
+
+on:
+  pull_request:
+    types: [labeled, synchronize, opened, reopened]
+
+# One build per PR; newer pushes cancel in-flight builds.
+concurrency:
+  group: pr-docker-image-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  prep:
+    name: Resolve Tag
+    # Only run for PRs carrying the "PR: docker image" label. For `labeled`
+    # events this includes the just-added label; for `synchronize` it checks the
+    # current label set, so pushes to an already-labeled PR rebuild.
+    if: "contains(github.event.pull_request.labels.*.name, 'PR: docker image')"
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      ref: ${{ steps.tag.outputs.ref }}
+    steps:
+      - name: Compute normalized image tag
+        id: tag
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          # Lowercase, replace any char outside [a-z0-9._-] with '-', collapse and
+          # trim dashes, cap length so the result is a valid Docker tag.
+          norm=$(printf '%s' "${BRANCH}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr -c 'a-z0-9._-' '-' \
+            | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
+            | cut -c1-100)
+          tag="pr-${PR_NUMBER}-${norm}"
+          echo "Resolved tag: ${tag}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "ref=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: [prep]
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.prep.outputs.ref }}
+      generate-docker: true
+    permissions:
+      contents: read
+      packages: write
+
+  push:
+    name: Push Test Image
+    needs: [prep, build]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prep.outputs.ref }}
+
+      - name: Get SDKMAN Java version
+        id: sdkman
+        run: |
+          if [ -f .sdkmanrc ]; then
+            v=$(awk -F '=' '/^java=/ {print $2}' .sdkmanrc)
+            echo "SDKMAN_JAVA_VERSION=${v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "No .sdkmanrc file found"; exit 1
+          fi
+
+      - name: Build/Push Test Image
+        uses: ./.github/actions/core-cicd/deployment/deploy-docker
+        with:
+          image_name: dotcms/dotcms-test
+          docker_platforms: linux/amd64
+          build_run_id: ${{ github.run_id }}
+          commit_id: ${{ github.event.pull_request.head.sha }}
+          docker-use-ref: false
+          version: ${{ needs.prep.outputs.tag }}
+          do_deploy: true
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull: true
+          build_args: |
+            SDKMAN_JAVA_VERSION=${{ steps.sdkman.outputs.SDKMAN_JAVA_VERSION }}
