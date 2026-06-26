@@ -74,6 +74,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: write
     steps:
       - name: Checkout core
         uses: actions/checkout@v4
@@ -91,6 +92,7 @@ jobs:
           fi
 
       - name: Build/Push Test Image
+        id: deploy
         uses: ./.github/actions/core-cicd/deployment/deploy-docker
         with:
           image_name: dotcms/dotcms-test
@@ -106,3 +108,37 @@ jobs:
           pull: true
           build_args: |
             SDKMAN_JAVA_VERSION=${{ steps.sdkman.outputs.SDKMAN_JAVA_VERSION }}
+
+      # Upsert a single sticky comment on the PR with the latest pushed tags.
+      # Keyed on a hidden marker so each new push updates in place instead of
+      # appending a new comment.
+      - name: Sticky comment with image tags
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          TAGS: ${{ steps.deploy.outputs.tags }}
+        run: |
+          MARKER='<!-- pr-docker-image-sticky -->'
+          {
+            echo "${MARKER}"
+            echo "### 🐳 PR Docker test image"
+            echo ""
+            echo "Latest build for commit \`${SHA:0:7}\` pushed to \`dotcms/dotcms-test\`:"
+            echo ""
+            echo '```bash'
+            for t in ${TAGS}; do echo "docker pull ${t}"; done
+            echo '```'
+          } > body.md
+
+          id=$(gh api "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
+                --jq "map(select(.body | contains(\"${MARKER}\"))) | .[0].id // empty")
+          if [ -n "${id}" ]; then
+            gh api -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@body.md >/dev/null
+            echo "Updated sticky comment ${id}"
+          else
+            gh api -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@body.md >/dev/null
+            echo "Created sticky comment"
+          fi
