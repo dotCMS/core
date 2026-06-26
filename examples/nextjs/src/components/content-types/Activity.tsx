@@ -1,7 +1,15 @@
+import { cva } from 'class-variance-authority';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { cn, variant } from '@/lib/utils';
 import type { DotCMSImage, DotStyleProperties } from '@/types/content';
+import { BUTTON_COLORS, buttonColorVariants } from './styles';
+
+const LAYOUTS = ['left', 'right', 'center', 'overlap'] as const;
+const BACKGROUNDS = ['white', 'gray', 'light-blue', 'light-green'] as const;
+const RADII = ['none', 'small', 'medium', 'large'] as const;
+const BUTTON_SIZES = ['small', 'medium', 'large'] as const;
 
 interface ActivityProps {
     title?: string;
@@ -11,176 +19,123 @@ interface ActivityProps {
     dotStyleProperties?: DotStyleProperties;
 }
 
-function Activity({ title, description, image, urlTitle, dotStyleProperties }: ActivityProps) {
-    // Extract style properties with defaults
-    const titleSize = dotStyleProperties?.['title-size'] || 'text-xl';
-    const descriptionSize = dotStyleProperties?.['description-size'] || 'text-base';
-    const titleStyle = dotStyleProperties?.['title-style'] || {};
-    const layout = dotStyleProperties?.layout || 'left';
-    const imageHeight = dotStyleProperties?.['image-height'] || 'h-56';
-    const cardBackground = dotStyleProperties?.['card-background'] || 'white';
-    const borderRadius = dotStyleProperties?.['border-radius'] || 'small';
-    const cardEffects = dotStyleProperties?.['card-effects'] || {};
-    const buttonColor = dotStyleProperties?.['button-color'] || 'blue';
-    const buttonSize = dotStyleProperties?.['button-size'] || 'medium';
-    const buttonStyle = dotStyleProperties?.['button-style'] || {};
-
-    // Build title classes
-    const titleClasses = [
-        'mb-2',
-        titleSize,
-        titleStyle.bold ? 'font-bold' : 'font-normal',
-        titleStyle.italic ? 'italic' : '',
-        titleStyle.underline ? 'underline' : ''
-    ]
-        .filter(Boolean)
-        .join(' ');
-
-    // Get layout classes
-    const getLayoutClasses = () => {
-        switch (layout) {
-            case 'right':
-                return 'flex flex-row-reverse';
-            case 'center':
-                return 'flex flex-col items-center text-center';
-            case 'overlap':
-                return 'relative min-h-96';
-            case 'left':
-            default:
-                return 'flex flex-row';
+// Layout drives three coordinated containers (article / image / content).
+const articleVariants = cva('overflow-hidden mb-4', {
+    variants: {
+        layout: {
+            left: 'flex flex-row p-4',
+            right: 'flex flex-row-reverse p-4',
+            center: 'flex flex-col items-center text-center p-4',
+            overlap: 'relative min-h-96 p-0'
         }
-    };
+    },
+    defaultVariants: { layout: 'left' }
+});
 
-    const getImageContainerClasses = () => {
-        switch (layout) {
-            case 'overlap':
-                return 'absolute inset-0 z-0';
-            case 'center':
-                return 'relative w-full';
-            default:
-                return 'relative flex-shrink-0 w-1/2';
+const imageContainerVariants = cva('', {
+    variants: {
+        layout: {
+            left: 'relative flex-shrink-0 w-1/2',
+            right: 'relative flex-shrink-0 w-1/2',
+            center: 'relative w-full',
+            overlap: 'absolute inset-0 z-0'
         }
-    };
+    },
+    defaultVariants: { layout: 'left' }
+});
 
-    const getContentContainerClasses = () => {
-        switch (layout) {
-            case 'overlap':
-                return 'relative z-10 p-8 bg-white/90 min-h-96 flex flex-col justify-center';
-            case 'center':
-                return 'w-full px-6 py-4';
-            default:
-                return 'flex-1 p-6 flex flex-col justify-center';
+const contentContainerVariants = cva('', {
+    variants: {
+        layout: {
+            left: 'flex-1 p-6 flex flex-col justify-center',
+            right: 'flex-1 p-6 flex flex-col justify-center',
+            center: 'w-full px-6 py-4',
+            overlap: 'relative z-10 p-8 bg-white/90 min-h-96 flex flex-col justify-center'
         }
-    };
+    },
+    defaultVariants: { layout: 'left' }
+});
 
-    // Get card background classes
-    const getCardBackgroundClasses = () => {
-        const bgMap: Record<string, string> = {
+const cardBackgroundVariants = cva('', {
+    variants: {
+        background: {
             white: 'bg-white',
             gray: 'bg-gray-100',
             'light-blue': 'bg-blue-50',
             'light-green': 'bg-green-50'
-        };
-        return bgMap[cardBackground] || bgMap.white;
-    };
+        }
+    },
+    defaultVariants: { background: 'white' }
+});
 
-    // Get border radius classes
-    const getBorderRadiusClasses = () => {
-        const radiusMap: Record<string, string> = {
+const borderRadiusVariants = cva('', {
+    variants: {
+        radius: {
             none: 'rounded-none',
             small: 'rounded-sm',
             medium: 'rounded-md',
             large: 'rounded-lg'
-        };
-        return radiusMap[borderRadius] || radiusMap.small;
-    };
-
-    // Get card effect classes
-    const getCardEffectClasses = () => {
-        const classes = [];
-        if (cardEffects.shadow) {
-            classes.push('shadow-lg');
-        } else {
-            classes.push('shadow-md');
         }
-        if (cardEffects.border) {
-            classes.push('border border-gray-200');
+    },
+    defaultVariants: { radius: 'small' }
+});
+
+const buttonSizeVariants = cva('', {
+    variants: {
+        size: {
+            small: 'px-3 py-1.5 text-sm',
+            medium: 'px-4 py-2 text-base',
+            large: 'px-6 py-3 text-lg'
         }
-        return classes.join(' ');
-    };
+    },
+    defaultVariants: { size: 'medium' }
+});
 
-    // Get button color classes
-    const getButtonColorClasses = () => {
-        const colorMap: Record<string, string> = {
-            blue: 'bg-blue-500 hover:bg-blue-700',
-            green: 'bg-green-500 hover:bg-green-700',
-            red: 'bg-red-500 hover:bg-red-700',
-            purple: 'bg-purple-500 hover:bg-purple-700',
-            orange: 'bg-orange-500 hover:bg-orange-700',
-            teal: 'bg-teal-500 hover:bg-teal-700'
-        };
-        return colorMap[buttonColor] || colorMap.blue;
-    };
+function Activity({ title, description, image, urlTitle, dotStyleProperties }: ActivityProps) {
+    const titleSize = dotStyleProperties?.['title-size'] || 'text-xl';
+    const descriptionSize = dotStyleProperties?.['description-size'] || 'text-base';
+    const titleStyle = dotStyleProperties?.['title-style'] || {};
+    const layout = variant(dotStyleProperties?.layout, LAYOUTS) ?? 'left';
+    const imageHeight = dotStyleProperties?.['image-height'] || 'h-56';
+    const cardBackground = dotStyleProperties?.['card-background'];
+    const borderRadius = dotStyleProperties?.['border-radius'];
+    const cardEffects = dotStyleProperties?.['card-effects'] || {};
+    const buttonColor = dotStyleProperties?.['button-color'];
+    const buttonSize = dotStyleProperties?.['button-size'];
+    const buttonStyle = dotStyleProperties?.['button-style'] || {};
 
-    // Get button size classes
-    const getButtonSizeClasses = () => {
-        switch (buttonSize) {
-            case 'small':
-                return 'px-3 py-1.5 text-sm';
-            case 'large':
-                return 'px-6 py-3 text-lg';
-            case 'medium':
-            default:
-                return 'px-4 py-2 text-base';
-        }
-    };
+    const isOverlap = layout === 'overlap';
 
-    // Get button style classes
-    const getButtonStyleClasses = () => {
-        const classes = [];
-        if (buttonStyle.rounded) {
-            classes.push('rounded-lg');
-        } else if (buttonStyle['full-rounded']) {
-            classes.push('rounded-full');
-        } else {
-            classes.push('rounded-full');
-        }
-        if (buttonStyle.shadow) {
-            classes.push('shadow-lg');
-        }
-        return classes.join(' ');
-    };
+    const titleClasses = cn(
+        'mb-2',
+        titleSize,
+        titleStyle.bold ? 'font-bold' : 'font-normal',
+        titleStyle.italic && 'italic',
+        titleStyle.underline && 'underline'
+    );
 
-    const buttonClasses = [
-        'inline-block',
-        'font-bold',
-        'text-white',
-        'transition duration-300',
-        getButtonColorClasses(),
-        getButtonSizeClasses(),
-        getButtonStyleClasses()
-    ].join(' ');
+    const articleClasses = cn(
+        articleVariants({ layout }),
+        cardBackgroundVariants({ background: variant(cardBackground, BACKGROUNDS) }),
+        borderRadiusVariants({ radius: variant(borderRadius, RADII) }),
+        cardEffects.shadow ? 'shadow-lg' : 'shadow-md',
+        cardEffects.border && 'border border-gray-200'
+    );
 
-    const cardClasses = [
-        'overflow-hidden',
-        'mb-4',
-        getCardBackgroundClasses(),
-        getBorderRadiusClasses(),
-        getCardEffectClasses()
-    ].join(' ');
-
-    const articleClasses = [
-        layout === 'overlap' ? 'p-0' : 'p-4',
-        cardClasses,
-        getLayoutClasses()
-    ].join(' ');
+    const buttonClasses = cn(
+        'inline-block font-bold text-white transition duration-300',
+        buttonColorVariants({ color: variant(buttonColor, BUTTON_COLORS) }),
+        buttonSizeVariants({ size: variant(buttonSize, BUTTON_SIZES) }),
+        // Note: both rounded and full-rounded fall back to a pill in this layout.
+        buttonStyle.rounded ? 'rounded-lg' : 'rounded-full',
+        buttonStyle.shadow && 'shadow-lg'
+    );
 
     return (
         <article className={articleClasses}>
             {image?.identifier && (
-                <div className={getImageContainerClasses()}>
-                    <div
-                        className={`relative w-full ${layout === 'overlap' ? 'h-full' : imageHeight} overflow-hidden`}>
+                <div className={imageContainerVariants({ layout })}>
+                    <div className={cn('relative w-full overflow-hidden', isOverlap ? 'h-full' : imageHeight)}>
                         <Image
                             className="object-cover"
                             src={image.identifier}
@@ -190,9 +145,9 @@ function Activity({ title, description, image, urlTitle, dotStyleProperties }: A
                     </div>
                 </div>
             )}
-            <div className={getContentContainerClasses()}>
+            <div className={contentContainerVariants({ layout })}>
                 <p className={titleClasses}>{title}</p>
-                <p className={`${descriptionSize} line-clamp-3 mb-4`}>{description}</p>
+                <p className={cn('line-clamp-3 mb-4', descriptionSize)}>{description}</p>
                 <div className={layout === 'center' ? 'flex justify-center' : ''}>
                     <Link href={`/activities/${urlTitle || '#'}`} className={buttonClasses}>
                         Link to detail →
