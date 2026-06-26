@@ -1,4 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
+import com.dotcms.tiptap.TiptapMarkdown;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.json.JSONObject;
 import java.io.StringWriter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -123,10 +126,32 @@ public class MarkdownTool implements ViewTool {
 		}
 
 	}
-	
-	
-	
-	
+
+	/**
+	 * parse a block of json to markdown
+	 * @param parse
+	 * @return
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(String parse) throws Throwable {
+		if (parse == null || parse.isEmpty()) {
+			return "";
+		}
+		if (JsonUtil.isValidJSON(parse)) {
+			return TiptapMarkdown.toMarkdown(parse);
+		}
+		return parse;
+	}
+
+	/**
+	 * parse a block of json to markdown
+	 * @param parse
+	 * @return
+	 * @throws Throwable
+	 */
+	public String blockToMarkdown(JSONObject parse) throws Throwable {
+		return TiptapMarkdown.toMarkdown(parse);
+	}
 	
 	
 }

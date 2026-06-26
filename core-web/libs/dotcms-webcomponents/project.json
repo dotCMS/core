@@ -31,7 +31,7 @@
         "build": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "yarn stencil build --config libs/dotcms-webcomponents/stencil.config.ts --prod"
+                "command": "pnpm exec stencil build --config libs/dotcms-webcomponents/stencil.config.ts --prod"
             }
         },
         "serve": {

@@ -32,6 +32,49 @@
                 <i class="pi pi-comment"></i>
             </p-tab>
         </p-tablist>
+        <!-- Compare and historical-preview banners are mutually exclusive -->
+        @if ($store.compareContentlet()) {
+            <div
+                class="flex items-center justify-end gap-2 border-b border-surface-200 bg-surface-50 px-3 py-4"
+                data-testid="compare-version-banner">
+                <p-button
+                    icon="pi pi-times"
+                    [label]="'close' | dm"
+                    [rounded]="true"
+                    [outlined]="true"
+                    size="small"
+                    (click)="$store.exitCompareView()"
+                    data-testid="close-compare-button" />
+                <p-button
+                    icon="pi pi-history"
+                    [label]="'edit.content.sidebar.history.restore' | dm"
+                    [rounded]="true"
+                    size="small"
+                    (click)="$store.restoreCurrentHistoricalVersion()"
+                    data-testid="restore-compare-version-button" />
+            </div>
+        } @else if ($store.isViewingHistoricalVersion()) {
+            <div
+                class="flex items-center justify-end gap-2 border-b border-surface-200 bg-surface-50 px-3 py-4"
+                data-testid="historical-version-banner">
+                <p-button
+                    icon="pi pi-times"
+                    [label]="'close' | dm"
+                    [rounded]="true"
+                    [outlined]="true"
+                    size="small"
+                    (click)="$store.exitHistoricalView()"
+                    data-testid="close-historical-version-button" />
+                <p-button
+                    icon="pi pi-history"
+                    [label]="'edit.content.sidebar.history.restore' | dm"
+                    [rounded]="true"
+                    size="small"
+                    (click)="$store.restoreCurrentHistoricalVersion()"
+                    data-testid="restore-historical-version-button" />
+            </div>
+        }
+
         <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
         <p-tabpanels
             class="flex h-full min-h-0 flex-1 flex-col bg-white! p-0! [&_.p-tabpanel]:p-0!">
@@ -88,13 +131,29 @@
                     <dot-edit-content-sidebar-section
                         key="actions.locales"
                         [title]="'edit.content.sidebar.locales' | dm">
-                        <dot-edit-content-sidebar-locales
-                            [locales]="$store.locales()"
-                            [defaultLocale]="$store.systemDefaultLocale()"
-                            [currentLocale]="$store.currentLocale()"
-                            [isLoading]="$store.isLoadingLocales()"
-                            (switchLocale)="$store.switchLocale($event)"
-                            data-testId="locales" />
+                        @let defaultLocale = $store.systemDefaultLocale();
+                        @let currentLocale = $store.currentLocale();
+                        @if ($store.isLoadingLocales() || (defaultLocale && currentLocale)) {
+                            @if ($isLocaleSelectorV2()) {
+                                <dot-edit-content-sidebar-locales-selector
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    [activeTab]="$store.localeSelectorTab()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    (tabChange)="$store.setLocaleSelectorTab($event)"
+                                    data-testId="locales-selector" />
+                            } @else {
+                                <dot-edit-content-sidebar-locales
+                                    [locales]="$store.locales()"
+                                    [defaultLocale]="defaultLocale"
+                                    [currentLocale]="currentLocale"
+                                    [isLoading]="$store.isLoadingLocales()"
+                                    (switchLocale)="$store.switchLocale($event)"
+                                    data-testId="locales" />
+                            }
+                        }
                     </dot-edit-content-sidebar-section>
 
                     <!-- Workflow section -->

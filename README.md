@@ -53,3 +53,43 @@ For a complete list of requirements, see [this page](http://www.dotcms.com/docs/
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
 | Main Site       | [dotCMS.com](https://www.dotcms.com/)                                   |
+
+## Release Tracks
+
+dotCMS GA releases follow CalVer (`YY.0M.0D-NN`, e.g. `26.06.11-01`). On top of that linear
+release stream we publish three **floating Docker tags** — *release tracks* — so you can pick
+how fresh a release each environment receives:
+
+| Tag                       | Age of release    | Use for                                   |
+| ------------------------- | ----------------- | ----------------------------------------- |
+| `dotcms/dotcms:latest`    | newest GA (~days) | tracking the latest release               |
+| `dotcms/dotcms:standard`  | ~2 weeks old      | a short soak before adopting a release    |
+| `dotcms/dotcms:trailing`  | ~4 weeks old      | the most conservative posture             |
+
+Pin the track you want in your deployment manifest, e.g. `image: dotcms/dotcms:standard`, and
+you will roll forward automatically as releases age into that track. Pin an exact version
+(`dotcms/dotcms:26.06.11-01`) instead if you never want automatic movement.
+
+One engine (under [`cicd/evergreen-tracks/`](cicd/evergreen-tracks/)) re-points every track tag
+by image digest, on two triggers: the release pipeline moves `latest` on-demand the moment a GA
+ships, and a daily scheduled job ages `standard`/`trailing` forward. Two design choices are worth
+understanding:
+
+- **Age is measured from the CalVer date in the version string, not from when the image was
+  built or published.** This protects emergency backports: if we cut a patch of an *older*
+  release on short notice, it is built today but logically belongs to the older release line.
+  Using the build/publish date would make that patch look brand new and let it jump onto the
+  `standard`/`trailing` tracks ahead of releases that are genuinely older. Anchoring to the
+  embedded CalVer date keeps every release in its true place on the timeline.
+- **A track never moves backward automatically, and a release can be "tainted".** If a bad
+  release is found, it is tainted so it will not advance onto tracks it has not yet reached —
+  a known-bad build can never propagate from `latest` down to `standard`/`trailing`. A track
+  can also be **held** (frozen) at a specific version for incident response. Both controls live
+  as marker tags in the registry; there is no separate datastore.
+
+> **GitOps / Argo note:** because these tags float (the same tag is re-pointed to newer
+> digests over time), a tag reference alone will not trigger a redeploy. Use Argo CD Image
+> Updater or a periodic rollout refresh to pick up track movements.
+
+The promotion engine and its scheduled/admin workflows live under
+[`cicd/evergreen-tracks/`](cicd/evergreen-tracks/).

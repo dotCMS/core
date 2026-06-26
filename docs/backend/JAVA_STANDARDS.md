@@ -129,6 +129,12 @@ public abstract class MyEntity {
 // IMPORTANT: Run ./mvnw compile after creating @Value.Immutable classes
 ```
 
+> **REST view objects use a different style.** The example above generates `Immutable*`-prefixed
+> types. REST response views instead use the `Abstract*` interface style
+> (`@Value.Style(typeAbstract = "Abstract*")`) so the generated type drops the prefix, plus
+> `passAnnotations = Schema.class` for Swagger. See
+> [REST_API_PATTERNS.md → View Object Pattern](REST_API_PATTERNS.md#view-object-pattern-valueimmutable).
+
 ### Exception Handling (dotCMS Hierarchy)
 ```java
 try {
@@ -181,6 +187,39 @@ LocalTransaction.wrapReturn(() -> {
         .executeUpdate();
 });
 ```
+
+### Permission Checks — Batch vs Scalar
+
+**Always prefer the batch overload when filtering a collection.** The scalar `doesUserHavePermission(Permissionable, int, User, boolean)` runs one DB/cache lookup per item; on a list of N items that is N round-trips (the N+1 problem). The batch overload resolves the entire collection in a single SQL UNION query.
+
+```java
+// ❌ N+1 — one DB lookup per folder
+for (Folder folder : folders) {
+    if (permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
+        visible.add(folder);
+    }
+}
+
+// ✅ Batch — one SQL round-trip for the whole collection
+List<Folder> visible = permissionAPI.filterCollection(
+        folders, PermissionAPI.PERMISSION_READ, user, false);
+```
+
+**Signature** (`PermissionAPI`):
+```java
+// Batch overload — uses getPermittedIds() in PermissionBitFactoryImpl under the hood
+<P extends Permissionable> List<P> filterCollection(
+        Collection<P> permissionables,
+        int permissionType,
+        User user,
+        boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+```
+
+**Notes:**
+- Admin/system-user fast-path returns the full collection immediately (no SQL).
+- `respectFrontendRoles=false` excludes anonymous and front-end roles from the role set.
+- The existing `filterCollection(List, int, boolean, User)` overload is still available but does N+1 internally — prefer the batch overload for any new code that filters collections.
+- Implementation: `PermissionBitAPIImpl` + `PermissionBitFactoryImpl.getPermittedIds()`.
 
 ### CDI Patterns (For New Components)
 ```java
