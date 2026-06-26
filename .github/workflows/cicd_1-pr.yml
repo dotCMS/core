@@ -95,6 +95,10 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "PR_DOCKER_DISPATCH_TOKEN is not configured — skipping test-image dispatch."
+            exit 0
+          fi
           jq -nc \
             --arg pr "${PR}" --arg sha "${SHA}" --arg branch "${BRANCH}" --arg run "${RUN_ID}" \
             '{event_type:"pr-docker-image", client_payload:{pr:$pr,sha:$sha,branch:$branch,run_id:$run}}' \
