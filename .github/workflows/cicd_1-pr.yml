@@ -70,39 +70,30 @@ jobs:
       contents: read
       packages: write
 
-  # Trigger Test Image Publish - for PRs labeled "PR: docker image", fire a
-  # repository_dispatch as soon as the build artifact exists (in parallel with
-  # tests) so the trusted publisher (cicd_publish-pr-test-image.yml) promotes the
-  # docker-image artifact to dotcms/dotcms-test. Uses a minimal dispatch token,
-  # NOT the Docker registry secrets, which must never enter this PR-modifiable
-  # pipeline. Internal branches only (the token is absent for fork PRs).
-  trigger-test-image:
-    name: Trigger Test Image Publish
+  # Publish Test Image - for PRs labeled "PR: docker image", promote the
+  # docker-image artifact this build just produced to dotcms/dotcms-test, in
+  # parallel with the tests below. Label-gated and internal-branch only (fork PRs
+  # have no DOCKER_* secrets). Skipped automatically when build did not run.
+  publish-test-image:
+    name: Publish Test Image
     needs: [ initialize, build ]
     if: >-
       always() && needs.build.result == 'success' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'PR: docker image')
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    continue-on-error: true  # never fail the PR check over a test-image dispatch
-    steps:
-      - name: Dispatch publish event
-        env:
-          GH_TOKEN: ${{ secrets.PR_DOCKER_DISPATCH_TOKEN }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-          SHA: ${{ github.event.pull_request.head.sha }}
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "PR_DOCKER_DISPATCH_TOKEN is not configured — skipping test-image dispatch."
-            exit 0
-          fi
-          jq -nc \
-            --arg pr "${PR}" --arg sha "${SHA}" --arg branch "${BRANCH}" --arg run "${RUN_ID}" \
-            '{event_type:"pr-docker-image", client_payload:{pr:$pr,sha:$sha,branch:$branch,run_id:$run}}' \
-          | gh api "repos/${REPO}/dispatches" -X POST --input -
+    uses: ./.github/workflows/cicd_comp_publish-pr-test-image.yml
+    with:
+      pr: ${{ github.event.pull_request.number }}
+      sha: ${{ github.event.pull_request.head.sha }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      artifact_run_id: ${{ github.run_id }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
 
   # Test job - runs various tests based on initialization outputs
   test:

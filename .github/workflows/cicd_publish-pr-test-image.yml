@@ -1,210 +1,42 @@
-# Trusted publisher for per-PR test images (dotcms/dotcms-test).
+# Publish a per-PR test image when the "PR: docker image" label is applied to an
+# existing PR (no new commit). The push-on-commit path lives in cicd_1-pr.yml,
+# which publishes right after build. This entry covers the label-applied case by
+# reusing the newest docker-image artifact already built for the head SHA.
 #
-# Runs from main only — via repository_dispatch and pull_request_target — so the
-# DOCKER_* secrets it uses never enter the PR-modifiable `-1 PR Check` pipeline.
-# It does NOT build: it promotes the `docker-image` artifact that the PR build
-# already produced (core-cicd/maven-job) to Docker Hub, retagged for the PR.
-#
-# Triggers:
-#   repository_dispatch (pr-docker-image) — fired by cicd_1-pr.yml right after a
-#     labeled PR's build succeeds, while tests are still running. Payload carries
-#     {pr, sha, branch, run_id}; the artifact is pulled from that run.
-#   pull_request_target (labeled) — the label was applied to an existing PR with
-#     no new commit; reuse the newest docker-image artifact for the head SHA.
-#
-# Tag scheme — branch feat/bedrock-agentic-harness on PR #1234 ->
-#   dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness        (mutable)
-#   dotcms/dotcms-test:pr-1234-feat-bedrock-agentic-harness_<sha7> (immutable)
-#
-# Internal branches only: fork PRs have no access to DOCKER_* secrets.
+# Uses pull_request_target so it runs from main (DOCKER_* secrets never run in
+# PR-modifiable code on this path) and so the GITHUB_TOKEN can comment.
+# Internal branches only: fork PRs have no secrets.
 
 name: 'Publish PR Test Image'
-run-name: "Publish PR Docker [#${{ github.event.client_payload.pr || github.event.pull_request.number }}]"
+run-name: "Publish PR Docker [#${{ github.event.pull_request.number }} ${{ github.event.pull_request.head.ref }}]"
 
 on:
-  repository_dispatch:
-    types: [pr-docker-image]
   pull_request_target:
     types: [labeled]
 
 concurrency:
-  group: publish-pr-test-image-${{ github.event.client_payload.pr || github.event.pull_request.number }}
+  group: publish-pr-test-image-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  prep:
-    name: Resolve Context
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    permissions:
-      actions: read
-      pull-requests: read
-    outputs:
-      proceed: ${{ steps.ctx.outputs.proceed }}
-      pr: ${{ steps.ctx.outputs.pr }}
-      sha: ${{ steps.ctx.outputs.sha }}
-      tag: ${{ steps.ctx.outputs.tag }}
-      run_id: ${{ steps.ctx.outputs.run_id }}
-    steps:
-      - name: Resolve PR context
-        id: ctx
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          # repository_dispatch payload
-          CP_PR: ${{ github.event.client_payload.pr }}
-          CP_SHA: ${{ github.event.client_payload.sha }}
-          CP_BRANCH: ${{ github.event.client_payload.branch }}
-          CP_RUN_ID: ${{ github.event.client_payload.run_id }}
-          # pull_request_target (labeled) shape
-          PT_LABEL: ${{ github.event.label.name }}
-          PT_PR: ${{ github.event.pull_request.number }}
-          PT_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PT_SHA: ${{ github.event.pull_request.head.sha }}
-          PT_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-        run: |
-          set -euo pipefail
-          LABEL='PR: docker image'
-          proceed=false; pr=""; branch=""; sha=""; run_id=""; tag=""
-
-          if [ "${EVENT}" = "repository_dispatch" ]; then
-            pr="${CP_PR}"; sha="${CP_SHA}"; branch="${CP_BRANCH}"; run_id="${CP_RUN_ID}"
-            # Defense in depth: the dispatch came from the PR-modifiable pipeline,
-            # so re-validate the label and that the SHA is still the PR head.
-            read -r has_label head <<<"$(gh pr view "${pr}" --repo "${REPO}" \
-              --json labels,headRefOid \
-              --jq '"\(.labels | map(.name) | index("'"${LABEL}"'") != null) \(.headRefOid)"')"
-            if [ "${has_label}" != "true" ]; then
-              echo "PR #${pr} not labeled '${LABEL}', skipping."
-            elif [ "${head}" != "${sha}" ]; then
-              echo "PR head ${head} moved past dispatched ${sha}; a newer run will publish."
-            else
-              proceed=true
-            fi
-
-          elif [ "${EVENT}" = "pull_request_target" ]; then
-            if [ "${PT_LABEL}" != "${LABEL}" ]; then
-              echo "Label '${PT_LABEL}' is not '${LABEL}', skipping."
-            elif [ "${PT_HEAD_REPO}" != "${REPO}" ]; then
-              echo "Fork PR (${PT_HEAD_REPO}) — no secrets, skipping."
-            else
-              proceed=true; pr="${PT_PR}"; branch="${PT_BRANCH}"; sha="${PT_SHA}"
-            fi
-          fi
-
-          # Label path has no run id — find the newest run with a non-expired
-          # docker-image artifact for this commit.
-          if [ "${proceed}" = "true" ] && [ -z "${run_id}" ]; then
-            for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${sha}&per_page=50" \
-                          --jq '.workflow_runs[].id'); do
-              [ "${rid}" = "${GITHUB_RUN_ID}" ] && continue
-              if gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
-                   --jq '.artifacts[] | select(.expired==false) | .name' \
-                 | grep -qx 'docker-image'; then
-                run_id="${rid}"; break
-              fi
-            done
-            if [ -z "${run_id}" ]; then
-              echo "No docker-image artifact found for ${sha}; push a commit to build one."
-              proceed=false
-            fi
-          fi
-
-          if [ "${proceed}" = "true" ]; then
-            norm=$(printf '%s' "${branch}" \
-              | tr '[:upper:]' '[:lower:]' \
-              | tr -c 'a-z0-9._-' '-' \
-              | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
-              | cut -c1-100)
-            tag="pr-${pr}-${norm}"
-            echo "PR #${pr} sha=${sha} tag=${tag} run_id=${run_id}"
-          fi
-
-          {
-            echo "proceed=${proceed}"
-            echo "pr=${pr}"
-            echo "sha=${sha}"
-            echo "tag=${tag}"
-            echo "run_id=${run_id}"
-          } >> "$GITHUB_OUTPUT"
-
   publish:
-    name: Promote to Docker Hub
-    needs: [prep]
-    if: needs.prep.outputs.proceed == 'true'
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    name: Publish
+    if: >-
+      github.event.label.name == 'PR: docker image' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/cicd_comp_publish-pr-test-image.yml
+    with:
+      pr: ${{ github.event.pull_request.number }}
+      sha: ${{ github.event.pull_request.head.sha }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      # artifact_run_id omitted -> reusable workflow discovers it by SHA
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       actions: read
       pull-requests: write
-    steps:
-      - name: Download prebuilt image
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp/prebuilt
-          run-id: ${{ needs.prep.outputs.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Load, retag and push
-        id: push
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          TAG: ${{ needs.prep.outputs.tag }}
-          SHA: ${{ needs.prep.outputs.sha }}
-        run: |
-          set -euo pipefail
-          DEST='dotcms/dotcms-test'
-          SHA7="${SHA:0:7}"
-
-          loaded=$(docker load -i /tmp/prebuilt/image.tar | sed -n 's/.*Loaded image: //p' | head -1)
-          if [ -z "${loaded}" ]; then
-            echo "::error::No image found in artifact"; exit 1
-          fi
-          echo "Loaded ${loaded}"
-
-          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-
-          pushed=""
-          for t in "${TAG}" "${TAG}_${SHA7}"; do
-            docker tag "${loaded}" "${DEST}:${t}"
-            docker push "${DEST}:${t}"
-            pushed="${pushed} ${DEST}:${t}"
-          done
-          echo "tags=$(echo ${pushed} | xargs)" >> "$GITHUB_OUTPUT"
-
-      # Upsert a single sticky comment with the latest pushed tags.
-      - name: Sticky comment with image tags
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          PR: ${{ needs.prep.outputs.pr }}
-          SHA: ${{ needs.prep.outputs.sha }}
-          TAGS: ${{ steps.push.outputs.tags }}
-        run: |
-          MARKER='<!-- pr-docker-image-sticky -->'
-          {
-            echo "${MARKER}"
-            echo "### 🐳 PR Docker test image"
-            echo ""
-            echo "Latest build for commit \`${SHA:0:7}\` pushed to \`dotcms/dotcms-test\`:"
-            echo ""
-            echo '```bash'
-            for t in ${TAGS}; do echo "docker pull ${t}"; done
-            echo '```'
-          } > body.md
-
-          id=$(gh api "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
-                --jq "map(select(.body | contains(\"${MARKER}\"))) | .[0].id // empty")
-          if [ -n "${id}" ]; then
-            gh api -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@body.md >/dev/null
-            echo "Updated sticky comment ${id}"
-          else
-            gh api -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@body.md >/dev/null
-            echo "Created sticky comment"
-          fi
