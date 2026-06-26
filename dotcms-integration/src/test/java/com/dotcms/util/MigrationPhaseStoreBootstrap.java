@@ -247,9 +247,26 @@ public final class MigrationPhaseStoreBootstrap {
                 if (osHasDoc(docId)) {
                     return true;
                 }
-                Try.run(() -> Thread.sleep(AWAIT_SLEEP_MS));
+                if (!sleepBetweenAttempts()) {
+                    return false;
+                }
             }
             return osHasDoc(docId);
+        }
+
+        /**
+         * Sleeps {@link #AWAIT_SLEEP_MS} between poll attempts. Returns {@code true} to keep polling,
+         * or {@code false} if the thread was interrupted — in which case the interrupt flag is
+         * restored so callers up the stack can react.
+         */
+        private boolean sleepBetweenAttempts() {
+            try {
+                Thread.sleep(AWAIT_SLEEP_MS);
+                return true;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
         }
 
         /** Convenience: {@code true} when the given contentlet's version document is in the OS index. */
