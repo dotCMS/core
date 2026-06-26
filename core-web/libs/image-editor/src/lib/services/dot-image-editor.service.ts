@@ -1,5 +1,6 @@
 import { Observable, forkJoin, of } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
@@ -20,16 +21,22 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DotImageEditorService {
     readonly #http = inject(HttpClient);
+    readonly #document = inject(DOCUMENT);
 
     /**
      * Resolves the byte size of a remote asset via a HEAD request.
      * @param url - The asset URL to inspect
-     * @returns The `Content-Length` as a number, or `0` when missing or on error
+     * @returns The `Content-Length` as a number, or `null` when missing or on error
+     * (so an unknown size renders as "—" rather than a misleading "0.0 KB")
      */
-    getFileSize(url: string): Observable<number> {
+    getFileSize(url: string): Observable<number | null> {
         return this.#http.head(url, { observe: 'response', responseType: 'text' }).pipe(
-            map((res) => Number(res.headers.get('Content-Length')) || 0),
-            catchError(() => of(0))
+            map((res) => {
+                const length = Number(res.headers.get('Content-Length'));
+
+                return Number.isFinite(length) && length > 0 ? length : null;
+            }),
+            catchError(() => of(null))
         );
     }
 
@@ -94,9 +101,14 @@ export class DotImageEditorService {
                 naturalHeight: dimensions.naturalHeight,
                 originalBytes
             })),
-            catchError(() =>
-                of<AssetMeta>({ naturalWidth: 0, naturalHeight: 0, originalBytes: null })
-            )
+            catchError((error) => {
+                // Non-fatal: the editor still opens with a safe default. Log it so a
+                // metadata-load failure (which would otherwise leave a 0×0 natural
+                // size feeding the filter chain) is diagnosable rather than silent.
+                console.error('Image editor: failed to load asset metadata', error);
+
+                return of<AssetMeta>({ naturalWidth: 0, naturalHeight: 0, originalBytes: null });
+            })
         );
     }
 
@@ -106,18 +118,18 @@ export class DotImageEditorService {
      * @param fileName - The suggested file name for the download
      */
     triggerDownload(url: string, fileName: string): void {
-        const anchor = document.createElement('a');
+        const anchor = this.#document.createElement('a');
         anchor.href = url;
         anchor.download = fileName;
         anchor.rel = 'noopener';
-        document.body.appendChild(anchor);
+        this.#document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
     }
 
     #resolveNaturalDimensions(url: string): Observable<NaturalDimensions> {
         return new Observable<NaturalDimensions>((subscriber) => {
-            const image = new Image();
+            const image = this.#document.createElement('img');
 
             image.onload = () => {
                 subscriber.next({
@@ -128,6 +140,9 @@ export class DotImageEditorService {
             };
 
             image.onerror = () => {
+                // Couldn't decode the source for its intrinsic size; fall back to 0×0
+                // (the editor still opens) but log so the degenerate size is traceable.
+                console.error('Image editor: failed to resolve natural dimensions', url);
                 subscriber.next({ naturalWidth: 0, naturalHeight: 0 });
                 subscriber.complete();
             };

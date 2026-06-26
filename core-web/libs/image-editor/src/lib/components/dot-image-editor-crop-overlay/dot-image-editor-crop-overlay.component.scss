@@ -13,13 +13,13 @@
 .crop-box {
     position: absolute;
     box-sizing: border-box;
-    border: 1px solid var(--surface-0, #ffffff);
+    border: 1px solid var(--p-surface-0, #ffffff);
     cursor: move;
     pointer-events: auto;
     outline: none;
 
     &:focus-visible {
-        border-color: var(--primary-color, #426bf0);
+        border-color: var(--p-primary-color, #426bf0);
     }
 }
 
@@ -97,8 +97,8 @@
     position: absolute;
     width: 12px;
     height: 12px;
-    background-color: var(--surface-0, #ffffff);
-    border: 1px solid var(--primary-color, #426bf0);
+    background-color: var(--p-surface-0, #ffffff);
+    border: 1px solid var(--p-primary-color, #426bf0);
     border-radius: 2px;
     pointer-events: auto;
 

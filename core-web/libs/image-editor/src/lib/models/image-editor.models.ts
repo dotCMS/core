@@ -225,8 +225,10 @@ export interface ImageEditorState {
     /** Canvas zoom slice. */
     zoom: ZoomState;
     /**
-     * Normalized 0..1 focal point persisted directly as asset metadata. It is NOT
-     * a filter slice: it never enters the preview filter chain nor the edit history.
+     * Normalized 0..1 focal point held as editor state only. It is NOT a filter slice
+     * (it never enters the preview filter chain nor the edit history) and is NOT
+     * persisted on its own — it would be committed alongside the other edits during
+     * the (separate) Save flow. See {@link withFocalPoint}.
      */
     focalPoint: NormalizedPoint;
     /** Tool currently selected on the canvas. */

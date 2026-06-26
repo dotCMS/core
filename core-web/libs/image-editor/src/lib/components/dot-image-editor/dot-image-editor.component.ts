@@ -27,8 +27,8 @@ import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-im
  * Full-screen "Edit image" modal shell, opened through PrimeNG's `DialogService`.
  * Assembles the header, canvas, side panels and footer over a single
  * {@link ImageEditorStore} instance scoped to this dialog. It owns the dialog
- * lifecycle: it requests the asset on init, closes with the saved temp file when
- * a save succeeds, and guards close/cancel against unsaved edits.
+ * lifecycle: it requests the asset on init and guards close/cancel against unsaved
+ * edits (saving the edited image is deferred to a separate issue).
  */
 @Component({
     selector: 'dot-image-editor',

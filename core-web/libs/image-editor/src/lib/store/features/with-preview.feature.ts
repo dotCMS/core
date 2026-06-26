@@ -66,9 +66,17 @@ export function withPreview() {
                 // Place the crop before/after the rotate/flip transforms based on which
                 // the user applied first (the history records the order). A crop made
                 // before rotating is in the un-rotated image's coordinates and must run
-                // first; one made on an already-rotated preview runs after.
+                // first; one made on an already-rotated preview runs after. Use the LAST
+                // crop entry — it produced the crop slice the preview renders — so a
+                // crop -> rotate -> crop sequence orders against the second (current)
+                // crop, not the stale first one.
                 const history = store.history();
-                const cropIndex = history.findIndex((entry) => entry.category === 'crop');
+                // Index of the LAST crop entry (avoid Array.findLastIndex — it needs an
+                // ES2023 lib the build target doesn't include).
+                const cropIndex = history.reduce(
+                    (last, entry, index) => (entry.category === 'crop' ? index : last),
+                    -1
+                );
                 const firstTransformIndex = history.findIndex(
                     (entry) => entry.category === 'rotate' || entry.category === 'flip'
                 );

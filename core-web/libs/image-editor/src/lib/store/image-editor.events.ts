@@ -86,6 +86,6 @@ export const imageEditorLifecycleEvents = eventGroup({
             originalBytes: number | null;
         }>(),
         assetLoadFailed: type<unknown>(),
-        previewSizeResolved: type<number>()
+        previewSizeResolved: type<number | null>()
     }
 });

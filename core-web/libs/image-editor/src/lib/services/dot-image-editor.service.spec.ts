@@ -5,9 +5,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 
 import { DotImageEditorService } from './dot-image-editor.service';
 
-// jsdom has no object-URL API; the service creates one for each verified blob.
-URL.createObjectURL = jest.fn(() => 'blob:mock-object-url');
-
 describe('DotImageEditorService', () => {
     let spectator: SpectatorService<DotImageEditorService>;
     let httpMock: HttpTestingController;
@@ -17,13 +14,21 @@ describe('DotImageEditorService', () => {
         providers: [provideHttpClient(), provideHttpClientTesting()]
     });
 
+    // jsdom doesn't implement URL.createObjectURL (it's `undefined`), so it can't be
+    // spied — capture the original and restore it after each test instead, so the global
+    // isn't left patched for other spec files sharing the Jest worker.
+    const originalCreateObjectURL = URL.createObjectURL;
+
     beforeEach(() => {
+        URL.createObjectURL = jest.fn(() => 'blob:mock-object-url');
         spectator = createService();
         httpMock = spectator.inject(HttpTestingController);
     });
 
     afterEach(() => {
         httpMock.verify();
+        URL.createObjectURL = originalCreateObjectURL;
+        jest.restoreAllMocks();
     });
 
     describe('getFileSize', () => {
@@ -38,17 +43,18 @@ describe('DotImageEditorService', () => {
             expect(result).toEqual([2048]);
         });
 
-        it('should return 0 when Content-Length header is missing', () => {
-            const result: number[] = [];
+        it('should return null when Content-Length header is missing', () => {
+            const result: (number | null)[] = [];
             spectator.service.getFileSize('/dA/asset.png').subscribe((size) => result.push(size));
 
             httpMock.expectOne('/dA/asset.png').flush(null);
 
-            expect(result).toEqual([0]);
+            // null (not 0) so an unknown size renders as "—" rather than "0.0 KB".
+            expect(result).toEqual([null]);
         });
 
-        it('should return 0 on HTTP error without throwing', () => {
-            const result: number[] = [];
+        it('should return null on HTTP error without throwing', () => {
+            const result: (number | null)[] = [];
             let errored = false;
             spectator.service.getFileSize('/dA/asset.png').subscribe({
                 next: (size) => result.push(size),
@@ -59,7 +65,7 @@ describe('DotImageEditorService', () => {
                 .expectOne('/dA/asset.png')
                 .flush('boom', { status: 500, statusText: 'Server Error' });
 
-            expect(result).toEqual([0]);
+            expect(result).toEqual([null]);
             expect(errored).toBe(false);
         });
     });

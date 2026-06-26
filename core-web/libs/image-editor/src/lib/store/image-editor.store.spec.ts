@@ -421,6 +421,22 @@ describe('ImageEditorStore', () => {
             expect(url).toContain('/filter/Rotate,Crop/');
             expect(url.indexOf('rotate_a')).toBeLessThan(url.indexOf('crop_w'));
         });
+
+        it('orders Crop after Rotate when re-cropping on the rotated preview (crop, rotate, crop)', () => {
+            lifecycle.assetRequested(OPEN_PARAMS);
+
+            // First crop on the original, then rotate, then a SECOND crop drawn on the
+            // rotated preview. The latest crop (rendered by the preview) was measured in
+            // rotated-space, so it must run after the rotate — the ordering must track
+            // the second crop, not the stale first one.
+            tool.cropApplied({ x: 10, y: 20, w: 100, h: 50, active: true, aspect: null });
+            transform.rotateChanged(90);
+            tool.cropApplied({ x: 5, y: 5, w: 80, h: 60, active: true, aspect: null });
+
+            const url = store.previewUrl();
+            expect(url).toContain('/filter/Rotate,Crop/');
+            expect(url.indexOf('rotate_a')).toBeLessThan(url.indexOf('crop_w'));
+        });
     });
 
     describe('debounced size effect', () => {

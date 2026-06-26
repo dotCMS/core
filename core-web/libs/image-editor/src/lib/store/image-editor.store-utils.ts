@@ -45,6 +45,9 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
     };
 }
 
+/** Process-local monotonic sequence backing unique, collision-free history-entry ids. */
+let historyEntrySeq = 0;
+
 /**
  * Coalesces a new edit into the undo/redo history. When the current head entry
  * shares the edit's coalesce key (the control identity, e.g. `brightness`) the
@@ -61,9 +64,6 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
  * @param coalesceKey - The control identity edits merge on; defaults to `category`
  * @returns The new `history` array and `historyIndex`
  */
-/** Process-local monotonic sequence backing unique, collision-free history-entry ids. */
-let historyEntrySeq = 0;
-
 export function coalesceHistory(
     state: ImageEditorState,
     category: FilterCategory,

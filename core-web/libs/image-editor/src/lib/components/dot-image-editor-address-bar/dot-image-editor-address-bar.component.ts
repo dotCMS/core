@@ -16,7 +16,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 
 /**
  * Address sub-bar shown on the canvas, laid out as three rounded "pills" (mirroring
- * the UVE editor toolbar). Left to right: the canvas tools (move/grab + crop), the
+ * the UVE editor toolbar). Left to right: the canvas tools (move/crop/focal), the
  * cache-busted preview URL with a copy action, and the zoom + undo/redo controls.
  * Selecting a tool dispatches {@link imageEditorToolEvents} so the store owns the
  * active tool; zoom is emitted as outputs (`zoomIn`/`zoomOut`/`fit`) for the canvas

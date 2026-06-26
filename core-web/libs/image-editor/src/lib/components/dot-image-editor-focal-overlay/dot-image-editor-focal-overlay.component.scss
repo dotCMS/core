@@ -23,7 +23,7 @@
     height: 24px;
     box-sizing: border-box;
     transform: translate(-50%, -50%);
-    border: 2px solid var(--surface-0, #ffffff);
+    border: 2px solid var(--p-surface-0, #ffffff);
     border-radius: 9999px;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
     cursor: grab;
@@ -38,11 +38,11 @@
         width: 6px;
         height: 6px;
         transform: translate(-50%, -50%);
-        background-color: var(--primary-color, #426bf0);
+        background-color: var(--p-primary-color, #426bf0);
         border-radius: 9999px;
     }
 
     &:focus-visible {
-        border-color: var(--primary-color, #426bf0);
+        border-color: var(--p-primary-color, #426bf0);
     }
 }
