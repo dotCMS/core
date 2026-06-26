@@ -58,15 +58,17 @@
 
     <!-- Actions -->
     <div class="dot-file-field-preview__actions">
-        <p-button
-            (click)="toggleShowDialog()"
-            [disabled]="$disabled()"
-            [pTooltip]="'dot.common.info' | dm"
-            [attr.aria-label]="'dot.common.info' | dm"
-            tooltipPosition="left"
-            styleClass="p-button-rounded p-button-sm p-button-outlined"
-            data-testId="info-btn"
-            icon="pi pi-info" />
+        @if ($showInfoButton()) {
+            <p-button
+                (click)="toggleShowDialog()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.info' | dm"
+                [attr.aria-label]="'dot.common.info' | dm"
+                tooltipPosition="left"
+                styleClass="p-button-rounded p-button-sm p-button-outlined"
+                data-testId="info-btn"
+                icon="pi pi-info" />
+        }
 
         @if ($canEditImage()) {
             <p-button
@@ -105,14 +107,16 @@
     </div>
     <!-- Actions in small screens -->
     <div class="dot-file-field-preview__actions--responsive">
-        <p-button
-            (click)="toggleShowDialog()"
-            [disabled]="$disabled()"
-            [pTooltip]="'dot.common.info' | dm"
-            [attr.aria-label]="'dot.common.info' | dm"
-            styleClass="p-button-rounded p-button-sm p-button-tertiary"
-            data-testId="info-btn-responsive"
-            icon="pi pi-info" />
+        @if ($showInfoButton()) {
+            <p-button
+                (click)="toggleShowDialog()"
+                [disabled]="$disabled()"
+                [pTooltip]="'dot.common.info' | dm"
+                [attr.aria-label]="'dot.common.info' | dm"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
+                data-testId="info-btn-responsive"
+                icon="pi pi-info" />
+        }
         @if ($canEditImage()) {
             <p-button
                 (click)="editImage.emit()"

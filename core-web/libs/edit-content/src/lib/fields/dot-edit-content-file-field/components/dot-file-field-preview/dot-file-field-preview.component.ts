@@ -99,6 +99,8 @@ export class DotFileFieldPreviewComponent implements OnInit {
      */
     $canEditImage = input<boolean>(false, { alias: 'canEditImage' });
 
+    $showInfoButton = input<boolean>(true, { alias: 'showInfoButton' });
+
     /**
      * Remove file
      *
