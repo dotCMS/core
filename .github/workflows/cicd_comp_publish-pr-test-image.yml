@@ -153,10 +153,12 @@ jobs:
 
           id=$(gh api "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
                 --jq "map(select(.body | contains(\"${MARKER}\"))) | .[0].id // empty")
+          # gh api has no @file syntax for fields — build the JSON body with jq.
+          payload=$(jq -nc --rawfile b body.md '{body: $b}')
           if [ -n "${id}" ]; then
-            gh api -X PATCH "repos/${REPO}/issues/comments/${id}" -F body=@body.md >/dev/null
+            printf '%s' "${payload}" | gh api -X PATCH "repos/${REPO}/issues/comments/${id}" --input - >/dev/null
             echo "Updated sticky comment ${id}"
           else
-            gh api -X POST "repos/${REPO}/issues/${PR}/comments" -F body=@body.md >/dev/null
+            printf '%s' "${payload}" | gh api -X POST "repos/${REPO}/issues/${PR}/comments" --input - >/dev/null
             echo "Created sticky comment"
           fi
