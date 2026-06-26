@@ -8,6 +8,7 @@
             "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "defaultConfiguration": "production",
+            "dependsOn": [{ "target": "generate-spec", "projects": ["sdk-ai"] }],
             "options": {
                 "platform": "node",
                 "outputPath": "dist/apps/ai-evals",

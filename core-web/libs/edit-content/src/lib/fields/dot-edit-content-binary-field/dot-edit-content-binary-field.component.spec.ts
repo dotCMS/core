@@ -4,14 +4,12 @@ import {
     createComponentFactory,
     createHostFactory,
     Spectator,
-    SpectatorHost,
-    SpyObject
+    SpectatorHost
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { Component, NgZone } from '@angular/core';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import {
     ControlContainer,
     FormControl,
@@ -22,6 +20,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { MessageService } from 'primeng/api';
 import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -46,6 +45,7 @@ import { getUiMessage } from './utils/binary-field-utils';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK, fileMetaData } from './utils/mock';
 
 import { BINARY_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
+import { IMAGE_EDITOR_LAUNCHER } from '../shared/image-editor-launcher';
 
 const TEMP_FILE_MOCK: DotCMSTempFile = {
     fileName: 'image.png',
@@ -81,13 +81,15 @@ const MOCK_DOTCMS_FILE = {
     binaryFieldMetaData: fileMetaData
 };
 
+const imageEditorLauncherMock = {
+    isAvailable: jest.fn().mockReturnValue(true),
+    open: jest.fn().mockReturnValue(of(null))
+};
+
 describe('DotEditContentBinaryFieldComponent', () => {
     let spectator: Spectator<DotEditContentBinaryFieldComponent>;
     let store: DotBinaryFieldStore;
-
-    let dotBinaryFieldEditImageService: SpyObject<DotBinaryFieldEditImageService>;
     let dotAiService: DotAiService;
-    let ngZone: NgZone;
 
     const createComponent = createComponentFactory({
         component: DotEditContentBinaryFieldComponent,
@@ -95,7 +97,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
             DotBinaryFieldStore,
             DotBinaryFieldEditImageService,
             DotAiService,
-            DialogService
+            DialogService,
+            { provide: IMAGE_EDITOR_LAUNCHER, useValue: imageEditorLauncherMock }
         ],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
@@ -125,6 +128,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 provide: DotMessageService,
                 useValue: CONTENTTYPE_FIELDS_MESSAGE_MOCK
             },
+            { provide: MessageService, useValue: { add: jest.fn() } },
             FormGroupDirective
         ]
     });
@@ -134,6 +138,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
         // In large Jest runs, other suites can leave fake timers enabled in the same worker,
         // which can cause these async setups to hang/flap. Force real timers for isolation.
         jest.useRealTimers();
+
+        imageEditorLauncherMock.isAvailable.mockReturnValue(true);
+        imageEditorLauncherMock.open.mockReturnValue(of(null));
 
         spectator = createComponent({
             detectChanges: false,
@@ -145,9 +152,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             }
         });
         store = spectator.inject(DotBinaryFieldStore, true);
-        dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
         dotAiService = spectator.inject(DotAiService, true);
-        ngZone = spectator.inject(NgZone);
     });
 
     it('shouldnt show url import button if not setted in settings', () => {
@@ -301,37 +306,77 @@ describe('DotEditContentBinaryFieldComponent', () => {
         });
 
         describe('Edit Image', () => {
-            it('should open edit image dialog when click on edit image button', () => {
+            it('should launch the image editor through the launcher seam on edit image', () => {
                 spectator.detectChanges();
-                const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
                 spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
-                expect(spy).toHaveBeenCalled();
-            });
 
-            it('should emit the tempId of the edited image', () => {
-                // Needed because the openImageEditor method is using a DOM custom event
-                ngZone.run(
-                    fakeAsync(() => {
-                        const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                        const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
-                        const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
-                            By.css('dot-binary-field-preview')
-                        );
-                        dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
-                        const customEvent = new CustomEvent(
-                            `binaryField-tempfile-${BINARY_FIELD_MOCK.variable}`,
-                            {
-                                detail: { tempFile: TEMP_FILE_MOCK }
-                            }
-                        );
-                        document.dispatchEvent(customEvent);
-
-                        tick(1000);
-
-                        expect(spy).toHaveBeenCalled();
-                        expect(spyTempFile).toHaveBeenCalledWith(TEMP_FILE_MOCK);
+                expect(imageEditorLauncherMock.open).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        variable: BINARY_FIELD_MOCK.variable,
+                        fieldName: BINARY_FIELD_MOCK.name,
+                        byInode: false
                     })
                 );
+            });
+
+            it('should map asset identifiers from the contentlet when launching', () => {
+                spectator.setInput('contentlet', {
+                    ...MOCK_DOTCMS_FILE,
+                    inode: 'inode-123',
+                    fileName: 'photo.png'
+                });
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(imageEditorLauncherMock.open).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        inode: 'inode-123',
+                        variable: BINARY_FIELD_MOCK.variable,
+                        fieldName: BINARY_FIELD_MOCK.name,
+                        byInode: true,
+                        fileName: 'photo.png'
+                    })
+                );
+            });
+
+            it('should apply the edited temp file through the store', () => {
+                imageEditorLauncherMock.open.mockReturnValue(of(TEMP_FILE_MOCK));
+                const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(spyTempFile).toHaveBeenCalledWith(TEMP_FILE_MOCK);
+            });
+
+            it('should not apply a temp file when the editor is cancelled', () => {
+                imageEditorLauncherMock.open.mockReturnValue(of(null));
+                const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(spyTempFile).not.toHaveBeenCalled();
+            });
+
+            it('should fall back to the legacy Dojo editor when the new editor is disabled', () => {
+                imageEditorLauncherMock.isAvailable.mockReturnValue(false);
+                const spyLegacy = jest
+                    .spyOn(DotBinaryFieldEditImageService.prototype, 'openImageEditor')
+                    .mockImplementation();
+                spectator.setInput('contentlet', { ...MOCK_DOTCMS_FILE, inode: 'inode-123' });
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(spyLegacy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        inode: 'inode-123',
+                        variable: BINARY_FIELD_MOCK.variable
+                    })
+                );
+                expect(imageEditorLauncherMock.open).not.toHaveBeenCalled();
             });
         });
     });

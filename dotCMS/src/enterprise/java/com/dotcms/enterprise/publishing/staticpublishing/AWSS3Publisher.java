@@ -388,6 +388,11 @@ public class AWSS3Publisher extends Publisher {
                                                 endPointPublisher.pushBundleToEndpoint(bucketName, bucketRegion, bucketPrefix, filePath, file);
                                             } else {
                                                 endPointPublisher.deleteFilesFromEndpoint(bucketName, bucketPrefix, filePath);
+                                                unpublishVanityAliasesForCanonicalFileIfEnabled(new S3VanityAliasContext(
+                                                        new S3VanityAliasLookup(endpoint.getId(), host.getIdentifier(),
+                                                                language.getId(), filePath),
+                                                        bucketName, bucketRegion, bucketPrefix, host, language, file,
+                                                        endPointPublisher));
                                             }
                                         } catch(DotPublishingException e) {
                                             String error = updateStatusFailedToSend(currentStatusHistory, environment, endpoint, detail);
@@ -643,6 +648,29 @@ public class AWSS3Publisher extends Publisher {
             } catch (final DotDataException e) {
                 throw new DotPublishingException(e.getMessage(), e);
             }
+        }
+    }
+
+    /**
+     * Removes vanity aliases materialized for a canonical file removed from S3.
+     *
+     * @param context canonical file context
+     * @throws DotPublishingException when alias cleanup fails
+     */
+    private void unpublishVanityAliasesForCanonicalFileIfEnabled(final S3VanityAliasContext context)
+            throws DotPublishingException {
+        if (!isS3VanityAliasEnabled() || PublisherConfig.Operation.PUBLISH.equals(config.getOperation())) {
+            return;
+        }
+
+        if (!context.endpointPublisher.acceptsFile(context.file)) {
+            return;
+        }
+
+        try {
+            vanityAliasService.unpublishAliases(context);
+        } catch (final DotDataException e) {
+            throw new DotPublishingException(e.getMessage(), e);
         }
     }
 
