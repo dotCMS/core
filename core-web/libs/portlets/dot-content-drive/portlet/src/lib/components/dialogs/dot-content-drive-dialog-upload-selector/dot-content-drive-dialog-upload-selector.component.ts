@@ -17,17 +17,17 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { UPLOAD_SELECTOR_OPTIONS } from '../../../shared/constants';
 import {
-    DotContentDriveUploadContentType,
+    DotContentDriveUploadBaseType,
     DotContentDriveUploadSelection
 } from '../../../shared/models';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 /**
  * Content Drive upload dialog body: lets the user choose whether the upload is created as an
- * Asset (`dotAsset`) or a File (`FileAsset`) before the upload runs.
+ * Asset (`DOTASSET`) or a File (`FILEASSET`) before the upload runs.
  *
  * On confirm it emits the full {@link DotContentDriveUploadSelection} (target folder + chosen
- * content type + the files, when already known) so the shell can trigger the upload directly.
+ * base type + the files, when already known) so the shell can trigger the upload directly.
  * Carrying the folder forward also feeds the future "remember preference per folder" feature
  * (epic #35436) without reshaping this contract.
  */
@@ -46,26 +46,26 @@ export class DotContentDriveDialogUploadSelectorComponent {
     /** Files to upload — present for the drag-and-drop flow, absent for the Upload-button flow. */
     $files = input<FileList | undefined>(undefined, { alias: 'files' });
 
-    /** Emits the chosen content type plus the upload context when the user confirms. */
+    /** Emits the chosen base type plus the upload context when the user confirms. */
     selectUploadType = output<DotContentDriveUploadSelection>();
 
     protected readonly options = UPLOAD_SELECTOR_OPTIONS;
 
-    /** Currently selected content type variable. Defaults to the first (recommended) option. */
-    protected readonly $selectedType = signal<DotContentDriveUploadContentType>(
-        UPLOAD_SELECTOR_OPTIONS[0].contentType
+    /** Currently selected base type. Defaults to the first (recommended) option. */
+    protected readonly $selectedType = signal<DotContentDriveUploadBaseType>(
+        UPLOAD_SELECTOR_OPTIONS[0].baseType
     );
     protected readonly $canContinue = computed(() => !!this.$selectedType());
 
     protected onContinue(): void {
-        const contentType = this.$selectedType();
-        if (!contentType) {
+        const baseType = this.$selectedType();
+        if (!baseType) {
             return;
         }
 
         this.selectUploadType.emit({
             targetFolder: this.$targetFolder(),
-            contentType,
+            baseType,
             files: this.$files()
         });
     }
