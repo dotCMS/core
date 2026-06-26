@@ -18,7 +18,6 @@
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
-            "@dotcms/agent-contracts": ["libs/agents-contract/src/index.ts"],
             "@dotcms/analytics": ["libs/sdk/analytics/src/index.ts"],
             "@dotcms/angular": ["libs/sdk/angular/src/public_api.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
