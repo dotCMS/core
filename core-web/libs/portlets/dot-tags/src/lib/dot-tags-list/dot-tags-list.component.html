@@ -13,6 +13,18 @@
                 class="w-80" />
         </p-iconField>
 
+        <div class="flex items-center gap-2">
+            <p-checkbox
+                inputId="show-global-tags"
+                [binary]="true"
+                [ngModel]="store.showGlobal()"
+                (ngModelChange)="store.setShowGlobal($event)"
+                data-testid="tag-show-global-checkbox" />
+            <label for="show-global-tags" class="cursor-pointer text-sm">
+                {{ 'tags.show.global' | dm }}
+            </label>
+        </div>
+
         <div class="ml-auto flex gap-2">
             @if (store.selectedTags().length > 0) {
                 <p-button
@@ -22,19 +34,19 @@
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn" />
-                <p-button
-                    [label]="store.exportLabelKey() | dm"
+                <p-splitButton
+                    [label]="'tags.export' | dm"
                     icon="pi pi-download"
                     [outlined]="true"
-                    (onClick)="store.exportSelectedTags()"
-                    data-testid="tag-export-btn" />
-            } @else {
-                <p-splitButton
-                    [label]="'add' | dm"
-                    (onClick)="openCreateDialog()"
-                    [model]="addTagMenuItems"
-                    data-testid="tag-add-split-btn" />
+                    (onClick)="store.exportSelected()"
+                    [model]="$exportMenuItems()"
+                    data-testid="tag-export-split-btn" />
             }
+            <p-splitButton
+                [label]="'add' | dm"
+                (onClick)="openCreateDialog()"
+                [model]="addTagMenuItems"
+                data-testid="tag-add-split-btn" />
         </div>
     </div>
 </p-toolbar>

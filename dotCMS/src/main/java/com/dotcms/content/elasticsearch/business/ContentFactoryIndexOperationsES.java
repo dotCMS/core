@@ -35,6 +35,7 @@ import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.ShardSearchFailure;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
@@ -83,6 +84,48 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
                 exception.contains("search_phase_execution_exception");
     }
 
+    /** Cap on per-shard failures rendered in a log line; the rest are summarised as a count. */
+    private static final int MAX_SHARD_FAILURES_LOGGED = 5;
+
+    /**
+     * Builds a diagnostic message that surfaces the <em>root</em> cause of an ES search/count
+     * failure rather than the generic wrapper. For {@code search_phase_execution_exception}
+     * ("all shards failed") the actionable detail lives in the per-shard failures and the
+     * suppressed server-side exceptions — {@code getMessage()}/{@code getCause()} alone hide it,
+     * which previously made these failures undiagnosable from the logs.
+     *
+     * @param e the ES exception caught from a search or count request
+     * @return a multi-line message including the detailed message, per-shard reasons (capped),
+     *         and any suppressed causes
+     */
+    private static String describeEsFailure(final ElasticsearchException e) {
+        final StringBuilder sb = new StringBuilder(e.getDetailedMessage());
+
+        if (e instanceof SearchPhaseExecutionException) {
+            final ShardSearchFailure[] failures = ((SearchPhaseExecutionException) e).shardFailures();
+            if (failures != null && failures.length > 0) {
+                final int shown = Math.min(failures.length, MAX_SHARD_FAILURES_LOGGED);
+                for (int i = 0; i < shown; i++) {
+                    sb.append('\n')
+                      .append("  shard[").append(i).append("]: ").append(failures[i].reason());
+                }
+                if (failures.length > shown) {
+                    sb.append('\n')
+                      .append("  ... and ").append(failures.length - shown).append(" more shard failure(s)");
+                }
+            }
+        }
+
+        for (final Throwable suppressed : e.getSuppressed()) {
+            // A suppressed Throwable may carry a null message (e.g. a bare NPE); fall back to
+            // its toString() so the line never renders the literal "null".
+            final String suppressedMsg = suppressed.getMessage();
+            sb.append('\n').append("  caused by: ")
+              .append(null != suppressedMsg ? suppressedMsg : suppressed.toString());
+        }
+        return sb.toString();
+    }
+
     /**
      * if enabled SearchRequests are executed and then cached
      * @param searchRequest
@@ -105,7 +148,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             return hits;
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
-            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            final String exceptionMsg = describeEsFailure(e);
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("Elasticsearch SEARCH error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
             Logger.warn(this.getClass(), String.format("Thread: %s", Thread.currentThread().getName() ));
@@ -171,7 +214,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             return count;
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
-            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            final String exceptionMsg = describeEsFailure(e);
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (countRequest.indices()!=null) ? String.join(",", countRequest.indices()): "unknown"));
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(countRequest.source()) ));

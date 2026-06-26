@@ -5,6 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { NEVER, of, Subject } from 'rxjs';
 
@@ -24,6 +25,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotPropertiesService,
     DotSiteService,
     DotSystemConfigService,
     DotVersionableService,
@@ -39,6 +41,7 @@ import {
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
+    createFakeLanguage,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
@@ -97,6 +100,9 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(false))
+            }),
             {
                 provide: DialogService,
                 useValue: {
@@ -115,7 +121,8 @@ describe('DotEditContentSidebarComponent', () => {
                         of({
                             userId: '123',
                             userName: 'John Doe'
-                        })
+                        }),
+                    isPortletInMenu: jest.fn().mockReturnValue(of(false))
                 }
             },
             {
@@ -143,7 +150,8 @@ describe('DotEditContentSidebarComponent', () => {
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
-            isBetaMessageVisible: true
+            isBetaMessageVisible: true,
+            localeSelectorTab: 'all'
         });
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
@@ -210,7 +218,13 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(workflowComponent).toBeTruthy();
             });
 
-            it('should render DotEditContentSidebarLocalesComponent', () => {
+            it('should render DotEditContentSidebarLocalesComponent when locale data is available', () => {
+                const mockLocale = createFakeLanguage();
+                patchState(store as unknown as WritableStateSource<object>, {
+                    systemDefaultLocale: mockLocale,
+                    currentLocale: mockLocale
+                });
+                spectator.detectChanges();
                 const localesComponent = spectator.query(DotEditContentSidebarLocalesComponent);
                 expect(localesComponent).toBeTruthy();
             });
@@ -259,7 +273,13 @@ describe('DotEditContentSidebarComponent', () => {
             expect(workflowElement).toBeTruthy();
         });
 
-        it('should render locales section with data-testId when on info tab', () => {
+        it('should render locales section with data-testId when on info tab and locale data is available', () => {
+            const mockLocale = createFakeLanguage();
+            patchState(store as unknown as WritableStateSource<object>, {
+                systemDefaultLocale: mockLocale,
+                currentLocale: mockLocale
+            });
+            spectator.detectChanges();
             const localesElement = spectator.query(byTestId('locales'));
             expect(localesElement).toBeTruthy();
         });
@@ -744,6 +764,140 @@ describe('DotEditContentSidebarComponent', () => {
                 spectator.detectChanges();
                 const activitiesElement = spectator.query(byTestId('activities'));
                 expect(activitiesElement).toBeTruthy();
+            }));
+        });
+
+        describe('Historical Version Banner', () => {
+            const mockHistoricalContentlet = createFakeContentlet({
+                inode: 'historical-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Historical Version'
+            });
+
+            it('should not show the banner when not viewing a historical version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when viewing a historical version', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitHistoricalView when the Close button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const exitSpy = jest.spyOn(store, 'exitHistoricalView');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('close-historical-version-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('restore-historical-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitHistoricalView is called', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+
+                store.exitHistoricalView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+        });
+
+        describe('Compare Version Banner', () => {
+            const mockCompareContentlet = createFakeContentlet({
+                inode: 'compare-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Compare Version'
+            });
+
+            it('should not show the banner when not comparing a version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when comparing a version', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitCompareView when the Close button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const exitSpy = jest.spyOn(store, 'exitCompareView');
+                spectator.click(byTestId('close-compare-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+                spectator.click(byTestId('restore-compare-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitCompareView is called', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+
+                store.exitCompareView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
             }));
         });
     });

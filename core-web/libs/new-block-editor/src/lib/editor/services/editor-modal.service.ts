@@ -9,7 +9,7 @@ import { DotCMSContentlet, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotAIImagePromptComponent, DotBrowserSelectorComponent } from '@dotcms/ui';
 
 import { AiContentDialogComponent } from '../components/ai-content-dialog/ai-content-dialog.component';
-import { buildBrowserSelectorConfig } from '../config.utils';
+import { OVERLAY_ABOVE_FULLSCREEN_Z_INDEX, buildBrowserSelectorConfig } from '../config.utils';
 import { insertDotImageFromContentlet, insertDotVideoFromContentlet } from '../editor.utils';
 
 /**
@@ -111,6 +111,8 @@ export class EditorModalService implements OnDestroy {
         this.aiImageDialogRef = this.dialogService.open(DotAIImagePromptComponent, {
             header: this.dotMessageService.get('block-editor.extension.ai-image.dialog-title'),
             appendTo: 'body',
+            // Modal must clear the fullscreen editor shell's `z-[9998]` backdrop.
+            baseZIndex: OVERLAY_ABOVE_FULLSCREEN_Z_INDEX,
             closeOnEscape: true,
             closable: true,
             dismissableMask: true,
@@ -154,6 +156,8 @@ export class EditorModalService implements OnDestroy {
         this.aiContentDialogRef = this.dialogService.open(AiContentDialogComponent, {
             header: this.dotMessageService.get('dot.block.editor.dialog.ai-content.header'),
             appendTo: 'body',
+            // Modal must clear the fullscreen editor shell's `z-[9998]` backdrop.
+            baseZIndex: OVERLAY_ABOVE_FULLSCREEN_Z_INDEX,
             closeOnEscape: true,
             closable: true,
             // Match the original embedded behavior — clicking outside should NOT discard
