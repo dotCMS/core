@@ -1,0 +1,39 @@
+{
+  "analysis": {
+    "filter": {
+      "content_ngrams": {
+        "type": "edge_ngram",
+        "min_gram": 1,
+        "max_gram": 10
+      },
+      "content_stemmer": {
+        "type": "stemmer",
+        "name": "english"
+      }
+    },
+    "analyzer": {
+      "standard_content": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "filter": [
+          "lowercase",
+          "asciifolding",
+          "content_stemmer"
+        ]
+      },
+      "partial_content": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "filter": [
+          "lowercase",
+          "asciifolding",
+          "content_ngrams"
+        ]
+      },
+      "comma_analyzer": {
+        "type": "pattern",
+        "pattern": ","
+      }
+    }
+  }
+}
