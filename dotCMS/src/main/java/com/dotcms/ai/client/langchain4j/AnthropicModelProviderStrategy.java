@@ -36,11 +36,11 @@ class AnthropicModelProviderStrategy implements ModelProviderStrategy {
         final AnthropicChatModel.AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxTokens(config.maxTokens()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
@@ -55,10 +55,10 @@ class AnthropicModelProviderStrategy implements ModelProviderStrategy {
             Logger.warn(AnthropicModelProviderStrategy.class,
                     "maxRetries is not supported by the Anthropic streaming chat model and will be ignored");
         }
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxTokens(config.maxTokens()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
