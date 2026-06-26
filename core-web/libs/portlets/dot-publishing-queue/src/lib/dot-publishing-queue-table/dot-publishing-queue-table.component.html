@@ -41,29 +41,29 @@
                     data-testid="pq-bundles-col-items">
                     {{ 'publishing-queue.column.items' | dm }}
                 </th>
+                <!-- Sort intentionally NOT wired: the v1 endpoint
+                     `GET /api/v1/publishing` does not accept a sort param yet
+                     (BE always returns rows ordered by `status_updated DESC`
+                     — see PublishAuditAPIImpl.SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC).
+                     Re-add `pSortableColumn` + `<p-sortIcon>` here when the BE
+                     gains a `sort` query param. -->
                 <th
-                    pSortableColumn="created"
                     style="width: 11rem"
                     class="whitespace-nowrap"
                     data-testid="pq-bundles-col-created">
                     {{ 'publishing-queue.column.data-entered' | dm }}
-                    <p-sortIcon field="created" />
                 </th>
                 <th
-                    pSortableColumn="modified"
                     style="width: 11rem"
                     class="whitespace-nowrap"
                     data-testid="pq-bundles-col-modified">
                     {{ 'publishing-queue.column.last-update' | dm }}
-                    <p-sortIcon field="modified" />
                 </th>
                 <th
-                    pSortableColumn="status"
                     style="width: 9rem"
                     class="whitespace-nowrap"
                     data-testid="pq-bundles-col-status">
                     {{ 'publishing-queue.column.status' | dm }}
-                    <p-sortIcon field="status" />
                 </th>
                 <th style="width: 3rem" data-testid="pq-bundles-col-actions"></th>
             </tr>

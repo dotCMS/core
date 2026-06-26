@@ -22,11 +22,7 @@ import { TooltipModule } from 'primeng/tooltip';
 // `DotDownloadBundleDialogService` lives in apps/dotcms-ui (not yet promoted to a
 // shared lib). Tracked alongside the v1 consolidation work (#36048).
 
-import {
-    DotGlobalMessageService,
-    DotMessageService,
-    PublishingSortField
-} from '@dotcms/data-access';
+import { DotGlobalMessageService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
 import {
@@ -228,22 +224,16 @@ export class DotPublishingQueueTableComponent {
         // Persist a rows-per-page change BEFORE the page change so the next
         // fetch goes out with the new size. The store's effect debounces both
         // patches into a single `loadBundles` call.
+        //
+        // Sort handling is intentionally omitted: the `/api/v1/publishing`
+        // endpoint does not accept a `sort` query param (the BE always returns
+        // rows by `status_updated DESC`), so there are no `pSortableColumn`
+        // directives in the template — PrimeNG never emits a sortField change.
+        // Re-add the sort branch here when the BE gains the param.
         if (rows !== this.store.rowsPerPage()) {
             this.store.setRowsPerPage(rows);
         } else if (page !== this.store.bundlesPage()) {
             this.store.setBundlesPage(page);
-        }
-
-        if (event.sortField) {
-            const field = (
-                Array.isArray(event.sortField) ? event.sortField[0] : event.sortField
-            ) as PublishingSortField;
-            if (
-                field !== this.store.bundlesSort() ||
-                (event.sortOrder === 1 ? 'asc' : 'desc') !== this.store.bundlesSortDirection()
-            ) {
-                this.store.cycleBundlesSort(field);
-            }
         }
     }
 
