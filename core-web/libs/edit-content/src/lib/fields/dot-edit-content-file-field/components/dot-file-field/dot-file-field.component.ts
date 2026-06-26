@@ -383,8 +383,20 @@ export class DotFileFieldComponent
 
         const variable = this.$field().variable;
         const uploaded = this.store.uploadedFile();
-        const inode = this.$contentlet()?.inode;
         const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
+        // For an uploaded/AI-generated contentlet use its own inode; for an
+        // unsaved draft that has no uploaded file yet fall back to the parent.
+        const inode =
+            uploaded?.source === 'contentlet'
+                ? uploaded.file.inode
+                : this.$contentlet()?.inode;
+        // For a standalone contentlet (e.g. AI-generated image) the image lives in
+        // its own field (titleImage), not in the parent binary field variable.
+        // The JSP uses this as fieldName to load /contentAsset/image/{inode}/{field}/.
+        const editorVariable =
+            uploaded?.source === 'contentlet'
+                ? String(uploaded.file['titleImage'] ?? variable)
+                : variable;
 
         const launcher = this.$useLegacyDojoImageEditor()
             ? this.#legacyDojoImageEditorLauncher
@@ -392,7 +404,7 @@ export class DotFileFieldComponent
         // Future PR: replace the dialog launcher path with the native Angular image editor.
 
         launcher
-            .open({ inode, tempId, variable, fieldName: variable })
+            .open({ inode, tempId, variable: editorVariable, fieldName: editorVariable })
             .pipe(
                 filter((tempFile) => !!tempFile),
                 takeUntilDestroyed(this.#destroyRef)

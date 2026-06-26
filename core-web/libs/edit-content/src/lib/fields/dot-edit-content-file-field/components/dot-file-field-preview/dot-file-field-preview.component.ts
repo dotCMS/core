@@ -237,7 +237,12 @@ export class DotFileFieldPreviewComponent implements OnInit {
             return;
         }
 
-        window.open(link, '_self');
+        const a = document.createElement('a');
+        a.href = link;
+        a.setAttribute('download', '');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     /**
