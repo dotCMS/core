@@ -6,6 +6,7 @@ import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesImpl;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSClientProvider;
+import com.dotcms.content.index.opensearch.OSSearchAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -254,6 +255,25 @@ public final class MigrationPhaseStoreBootstrap {
         /** Convenience: {@code true} when the given contentlet's version document is in the OS index. */
         public boolean isIndexed(final Contentlet contentlet) {
             return awaitDoc(docId(contentlet));
+        }
+
+        /**
+         * {@code true} when a query for {@code identifier}, executed through the OpenSearch-specific
+         * search API ({@link OSSearchAPIImpl} — which always talks to OpenSearch, <strong>never</strong>
+         * the phase router), returns at least one hit against the working index.
+         *
+         * <p>Complements the high-level {@code ContentletAPI.search} check: that one is phase-routed
+         * (it could read ES or OS), whereas this proves the document is retrievable specifically
+         * through the OpenSearch read path.</p>
+         */
+        public boolean osSearchFindsByIdentifier(final String identifier) {
+            final String jsonQuery = "{\"query\":{\"term\":{\"identifier\":\"" + identifier + "\"}}}";
+            final OSSearchAPIImpl osSearch = CDIUtils.getBeanThrows(OSSearchAPIImpl.class);
+            refresh();
+            return Try.of(() -> osSearch
+                            .searchRaw(jsonQuery, false, APILocator.systemUser(), false)
+                            .hits().getTotalHits().value() > 0L)
+                      .getOrElse(false);
         }
 
         /** Refresh the whole cluster so freshly-written docs are searchable. */

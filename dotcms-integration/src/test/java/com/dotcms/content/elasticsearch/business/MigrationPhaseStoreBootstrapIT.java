@@ -100,12 +100,17 @@ public class MigrationPhaseStoreBootstrapIT extends IntegrationTestBase {
         assertTrue("contentlet must be present in the OS working index",
                 store.isIndexed(contentlet));
 
-        // (2) Retrievable through the high-level search path (under PHASE_3 it reads OpenSearch).
+        // (2) Retrievable through the high-level search path (phase-routed; under PHASE_3 it reads OS).
         final List<Contentlet> hits = APILocator.getContentletAPI().search(
                 "+identifier:" + contentlet.getIdentifier(), 10, 0, null,
                 APILocator.systemUser(), false);
         assertFalse("contentlet must be retrievable via a high-level query against OpenSearch",
                 hits.isEmpty());
+
+        // (3) Retrievable through the OpenSearch-specific search API (never the phase router) —
+        //     proves the read went through the OpenSearch path specifically, not via ES fallback.
+        assertTrue("contentlet must be retrievable via the OpenSearch-specific search API (OSSearchAPIImpl)",
+                store.osSearchFindsByIdentifier(contentlet.getIdentifier()));
 
         Logger.info(this, "✅ data-gen contentlet indexed into OpenSearch and retrieved via query");
     }
