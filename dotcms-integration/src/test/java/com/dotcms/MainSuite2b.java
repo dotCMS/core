@@ -38,6 +38,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.FileAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
@@ -549,6 +550,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class,
         PermissionResourceIntegrationTest.class,
+        FileAssetBaseTypeToContentTypeStrategyImplTest.class,
 })
 
 public class MainSuite2b {

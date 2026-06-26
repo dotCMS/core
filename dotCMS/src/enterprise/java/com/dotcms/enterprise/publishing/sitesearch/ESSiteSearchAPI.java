@@ -14,6 +14,9 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -64,7 +67,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
@@ -88,7 +90,11 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     public ESSiteSearchAPI() {
-       this(APILocator.getESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
+       // Use the vendor-specific ESIndexAPI directly (NOT APILocator.getESIndexAPI(), which returns
+       // the phase-aware IndexAPIImpl router). The SiteSearchAPIImpl router is the single fan-out
+       // point for the ES → OS migration; routing index ops through the neutral router here as well
+       // would dual-write a second time and create duplicate OpenSearch indices.
+       this(new ESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
     }
 
     /**
@@ -351,7 +357,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     @Override
-    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException {
+    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException {
         if(indexName==null){
             return false;
         }
@@ -379,7 +385,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             }
 
             if(i++ > 300){
-                throw new ElasticsearchException("index timed out creating");
+                throw new DotSearchException("index timed out creating");
             }
         }
 
@@ -387,8 +393,12 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             indexApi.createAlias(indexName, alias);
         }
 
-        //put mappings
-        mappingAPI.putMapping(indexName, mapping);
+        // Put mappings on the ES index only. ESMappingAPIImpl.putMapping(String, String) is
+        // phase-dispatched and would fan out to OpenSearch, but SiteSearchAPIImpl is already the
+        // single fan-out point for site search (it invokes OSSiteSearchAPI separately, which owns
+        // its own untagged OS index + mapping). Fanning out here too would re-issue the mapping to
+        // a `.os`-tagged physical name that site-search OS indices never use → HTTP 404. Pin to ES.
+        mappingAPI.putMapping(List.of(indexName), mapping, IndexTag.ES);
 
         return true;
     }
@@ -634,7 +644,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -648,10 +658,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting aggregations for query.\n" + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
+            throw new DotSearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
         }
     }
 
@@ -669,7 +679,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName ) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -683,10 +693,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting Facets for query.\n"  + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
+            throw new DotSearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
         }
     }
 
