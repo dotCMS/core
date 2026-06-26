@@ -343,11 +343,24 @@ export function onContentletHovered(callback: UVEEventHandler) {
     // for the toolbar. Killing the overlay there would yank the toolbar
     // away just as the user reaches for it. Dead-space-inside-iframe
     // is already covered by the `pointermove` null branch above.
-    document.addEventListener('pointermove', pointerMoveCallback);
+    //
+    // Bind to `document.documentElement` (the <html> node) rather than
+    // `document`. UVE renders traditional pages by reusing one iframe and
+    // rewriting it via `doc.open()/write()/close()` on each in-editor
+    // navigation. When Zone.js is loaded inside that iframe it runs in
+    // global-events mode (one native gateway listener + a JS-level task
+    // list stored on the node); `document.open()` tears down the native
+    // gateway but the task list survives on the persistent `document`
+    // node, so Zone sees "already registered" on re-init and skips
+    // re-binding the native listener — pointermove silently goes dead.
+    // `documentElement` is a fresh node after each `write()`, so it
+    // carries no stale task list and re-binds cleanly. `pointermove`
+    // bubbles to <html>, so behavior is identical on no-Zone pages.
+    document.documentElement.addEventListener('pointermove', pointerMoveCallback);
 
     return {
         unsubscribe: () => {
-            document.removeEventListener('pointermove', pointerMoveCallback);
+            document.documentElement.removeEventListener('pointermove', pointerMoveCallback);
         },
         event: UVEEventType.CONTENTLET_HOVERED
     };
@@ -433,12 +446,23 @@ export function onContentletClicked(callback: UVEEventHandler) {
 
     // Capture phase so we run BEFORE the page's own click handlers and can
     // preventDefault/stopPropagation effectively.
-    document.addEventListener('click', clickCallback, { capture: true });
+    //
+    // Bind to `document.documentElement` rather than `document` for the same
+    // reason as the hover listener above: on Zone.js-loading traditional
+    // pages the persistent `document` node keeps a stale Zone task list
+    // across `doc.open()/write()/close()` iframe rewrites, so re-binding on
+    // it is silently skipped after the first in-editor navigation. The
+    // <html> node is recreated on each rewrite and re-binds cleanly. Capture
+    // phase on <html> still runs before the page's own handlers, so
+    // preventDefault/stopPropagation behave identically.
+    document.documentElement.addEventListener('click', clickCallback, { capture: true });
     window.addEventListener('message', selectionClearedCallback);
 
     return {
         unsubscribe: () => {
-            document.removeEventListener('click', clickCallback, { capture: true });
+            document.documentElement.removeEventListener('click', clickCallback, {
+                capture: true
+            });
             window.removeEventListener('message', selectionClearedCallback);
         },
         event: UVEEventType.CONTENTLET_CLICKED
