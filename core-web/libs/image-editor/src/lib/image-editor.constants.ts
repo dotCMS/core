@@ -73,6 +73,14 @@ export const SLICE_KEYS = ['adjust', 'transform', 'crop', 'fileInfo'] as const;
 export const IMAGE_EDITOR_PANEL_STATE_KEY = 'DOT_IMAGE_EDITOR_PANEL_STATE';
 
 /**
+ * Server config key reporting whether the libvips image engine is enabled
+ * (`IMAGE_API_USE_LIBVIPS`). AVIF output is libvips-only, so the AVIF compression
+ * option is shown only when this resolves truthy. Must be whitelisted server-side
+ * (ConfigurationResource) to be readable through the configuration endpoint.
+ */
+export const LIBVIPS_CONFIG_KEY = 'IMAGE_API_USE_LIBVIPS';
+
+/**
  * Inline `.p-dialog` style props applied when the editor goes full-screen and
  * restored on exit. Overrides PrimeNG's `DynamicDialog` size (set inline via
  * `[ngStyle]`), so it must be applied as inline styles to win.

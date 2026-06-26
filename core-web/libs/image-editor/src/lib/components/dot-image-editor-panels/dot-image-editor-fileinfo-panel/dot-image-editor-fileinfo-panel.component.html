@@ -4,7 +4,7 @@
         <p-select
             appendTo="body"
             styleClass="w-full"
-            [options]="compressionOptions"
+            [options]="compressionOptions()"
             [ngModel]="store.fileInfo().compression"
             optionLabel="label"
             optionValue="value"
@@ -46,6 +46,20 @@
         <label>{{ 'edit.content.image-editor.fileinfo.originalsize' | dm }}</label>
         <span class="ie-field__value" data-testid="image-editor-originalsize-value">
             {{ originalSize() }}
+        </span>
+    </div>
+
+    <div class="ie-field ie-field--inline">
+        <label>{{ 'edit.content.image-editor.fileinfo.format' | dm }}</label>
+        <span class="ie-field__value" data-testid="image-editor-format-value">
+            {{ format() }}
+        </span>
+    </div>
+
+    <div class="ie-field ie-field--inline">
+        <label>{{ 'edit.content.image-editor.fileinfo.focalpoint' | dm }}</label>
+        <span class="ie-field__value" data-testid="image-editor-focalpoint-value">
+            {{ focalPoint() }}
         </span>
     </div>
 </div>
