@@ -103,12 +103,19 @@ export class DotUveDragDropService {
                 handlers.onDragEnter(event);
             });
 
-        // Drag end
+        // Drag end — reset editor UI state after EVERY drag gesture, not just
+        // cancelled ones. Previously this was filtered to `dropEffect === 'none'`
+        // (cancelled drops only), leaving successful drops to be reset by the
+        // async save→reload. That left a window where `editorState` stayed
+        // DRAGGING after a successful drop: the next drag then had no clean
+        // IDLE→DRAGGING transition, so `$handleIsDraggingEffect` (which flushes
+        // container bounds on that transition) never re-fired and the dropzone
+        // showed no targets. `dragend` always fires when the gesture ends and
+        // `handleDrop` has already consumed the drag item synchronously (drop
+        // fires before dragend), so resetting here is safe and guarantees a
+        // clean IDLE state for the next drag.
         fromEvent(this.window, 'dragend')
-            .pipe(
-                takeUntilDestroyed(this.destroyRef),
-                filter((event: DragEvent) => event.dataTransfer?.dropEffect === 'none')
-            )
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
                 handlers.onDragEnd();
             });
