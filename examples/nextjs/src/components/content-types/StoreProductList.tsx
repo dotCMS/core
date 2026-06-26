@@ -21,69 +21,63 @@ interface StoreProductListProps {
 export default function StoreProductList({ widgetTitle, widgetCodeJSON }: StoreProductListProps) {
     const products = widgetCodeJSON.products;
 
-    if (!products) {
-        console.warn('No products found in StoreProductList');
+    if (!products?.length) {
         return null;
     }
 
     return (
-        <div>
-            <h2 className="text-4xl font-bold mb-4">{widgetTitle}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products?.map((product) => (
+        <section className="flex flex-col gap-8">
+            {widgetTitle && (
+                <h2 className="font-display text-h2 font-semibold text-ink">{widgetTitle}</h2>
+            )}
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-6">
+                {products.map((product) => (
                     <ProductCard key={product.identifier} product={product} />
                 ))}
             </div>
-        </div>
+        </section>
     );
 }
 
 function ProductCard({ product }: { product: StoreProduct }) {
     const { image, title, retailPrice, salePrice } = product;
 
-    const hasDiscount = salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
+    const hasDiscount =
+        salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <div className="group relative" onClick={() => alert('Selected Product: ' + title)}>
+        <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-primary-deep/5">
             <EditButton contentlet={product} />
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
-                <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
+            <div className="relative h-56 border-b border-line bg-bg">
+                {image && (
                     <Image
                         src={image}
                         alt={title}
                         fill
-                        className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-contain p-6 transition-transform duration-500 ease-(--ease-out-quart) group-hover:scale-105"
                     />
-                </div>
+                )}
+                {hasDiscount && (
+                    <span className="absolute left-4 top-4 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wide text-bg">
+                        {Math.round((1 - Number(salePrice) / Number(retailPrice)) * 100)}% off
+                    </span>
+                )}
+            </div>
 
-                <div className="p-4 flex flex-col grow">
-                    <h3 className="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                        {title}
-                    </h3>
-
-                    <div className="mt-auto pt-2 flex items-center justify-between">
-                        {hasDiscount ? (
-                            <div>
-                                <span className="text-red-600 font-semibold mr-2">
-                                    ${salePrice}
-                                </span>
-                                <span className="text-gray-500 text-sm line-through">
-                                    ${retailPrice}
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-gray-900 font-semibold">${retailPrice}</span>
-                        )}
-
-                        {hasDiscount && (
-                            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                                {Math.round((1 - Number(salePrice) / Number(retailPrice)) * 100)}%
-                                OFF
-                            </span>
-                        )}
-                    </div>
+            <div className="flex grow flex-col p-5">
+                <h3 className="line-clamp-2 font-display text-base font-semibold text-ink">
+                    {title}
+                </h3>
+                <div className="mt-auto flex items-baseline gap-2 pt-3">
+                    <span className="text-lg font-semibold text-ink">
+                        ${hasDiscount ? salePrice : retailPrice}
+                    </span>
+                    {hasDiscount && (
+                        <span className="text-sm text-muted line-through">${retailPrice}</span>
+                    )}
                 </div>
             </div>
-        </div>
+        </article>
     );
 }
