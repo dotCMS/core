@@ -37,11 +37,11 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
         final GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder builder = GoogleAiGeminiChatModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxOutputTokens(config.maxTokens());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxOutputTokens(config.maxTokens()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
@@ -56,10 +56,10 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
             Logger.warn(GoogleAiGeminiModelProviderStrategy.class,
                     "maxRetries is not supported by the Google AI Gemini streaming chat model and will be ignored");
         }
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxOutputTokens(config.maxTokens());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxOutputTokens(config.maxTokens()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
@@ -69,10 +69,10 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
         final GoogleAiEmbeddingModel.GoogleAiEmbeddingModelBuilder builder = GoogleAiEmbeddingModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.dimensions() != null) builder.outputDimensionality(config.dimensions());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.dimensions() != null) { builder.outputDimensionality(config.dimensions()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
@@ -82,10 +82,10 @@ class GoogleAiGeminiModelProviderStrategy implements ModelProviderStrategy {
         final GoogleAiGeminiImageModel.GoogleAiGeminiImageModelBuilder builder = GoogleAiGeminiImageModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.size() != null) builder.imageSize(config.size());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.endpoint() != null) { builder.baseUrl(config.endpoint()); }
+        if (config.size() != null) { builder.imageSize(config.size()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
