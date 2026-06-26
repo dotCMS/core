@@ -200,6 +200,13 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * button and swaps its label so the user can't double-click. */
     readonly isDownloading = signal(false);
 
+    /** Inline warning shown in the footer's left side when the user clicks an
+     * action button (Remove / Download / Configure) without a valid selection.
+     * Cleared automatically when the selection changes — `onCheckedChange` is
+     * the only place a "valid" state can come into being from this dialog.
+     * Stored as a translated i18n key, resolved at render time. */
+    readonly validationWarningKey = signal<string | null>(null);
+
     /** Refs used to flip the Download tiered menu so it opens upward — the
      * button sits in the dialog footer, so the default downward popup would
      * either clip against the dialog body or fall off the bottom of the
@@ -343,6 +350,9 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     onCheckedChange(ids: BundleRow[]): void {
         this.checkedBundleIds.set(ids.map((b) => b.id));
+        // Any selection change is a direct response to a footer warning — clear
+        // it so the user gets immediate feedback that their click registered.
+        this.validationWarningKey.set(null);
     }
 
     typeIcon(type: string): string {
@@ -385,8 +395,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     onRemoveBundles(): void {
         const ids = this.checkedBundleIds();
         if (ids.length === 0) {
+            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
+        this.validationWarningKey.set(null);
         this.confirmationService.confirm({
             header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
             message: this.dotMessageService.get(
@@ -425,9 +437,23 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     /**
      * Captures the trigger button reference for the menu flip-up logic, then
-     * delegates to the menu's own toggle.
+     * delegates to the menu's own toggle. Before opening the menu we
+     * pre-validate selection: empty → "select at least one", multi → "single
+     * only" (the BE `_generate` endpoint accepts one bundleId per call).
      */
     onDownloadButtonClick(event: MouseEvent): void {
+        const count = this.checkedBundleIds().length;
+        if (count === 0) {
+            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
+            return;
+        }
+        if (count > 1) {
+            this.validationWarningKey.set(
+                'publishing-queue.select-bundle.download.single-only'
+            );
+            return;
+        }
+        this.validationWarningKey.set(null);
         this.downloadTrigger = (event.currentTarget as HTMLElement) ?? null;
         this.downloadMenuRef()?.toggle(event);
     }
@@ -497,8 +523,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     onOpenConfigureStep(): void {
         if (!this.hasChecked()) {
+            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
+        this.validationWarningKey.set(null);
         this.step.set('configure');
     }
 

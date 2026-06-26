@@ -297,54 +297,63 @@
             </div>
 
             <!-- Action bar -->
+            <!-- Action bar: warning on the left, buttons on the right. The
+                 buttons stay enabled at all times — clicking one without a
+                 valid selection populates `validationWarningKey` instead of
+                 doing nothing silently. The warning auto-clears on any
+                 selection change (see `onCheckedChange`). -->
             <div
-                class="flex shrink-0 items-center justify-end gap-3 border-t border-surface-200 px-4 py-3"
+                class="flex shrink-0 items-center justify-between gap-3 border-t border-surface-200 px-4 py-3"
                 data-testid="pq-select-bundle-actions">
-                <p-button
-                    [label]="'publishing-queue.select-bundle.remove' | dm"
-                    [text]="true"
-                    severity="danger"
-                    [disabled]="!hasChecked()"
-                    (onClick)="onRemoveBundles()"
-                    data-testid="pq-select-bundle-remove-btn" />
-                <p-button
-                    [label]="
-                        isDownloading()
-                            ? ('publishing-queue.select-bundle.download.in-progress' | dm)
-                            : ('publishing-queue.select-bundle.download' | dm)
-                    "
-                    icon="pi pi-chevron-down"
-                    iconPos="right"
-                    [outlined]="true"
-                    [loading]="isDownloading()"
-                    [disabled]="!hasChecked() || checkedBundleIds().length !== 1 || isDownloading()"
-                    [pTooltip]="
-                        hasChecked() && checkedBundleIds().length > 1
-                            ? ('publishing-queue.select-bundle.download.single-only' | dm)
-                            : null
-                    "
-                    tooltipPosition="top"
-                    (onClick)="onDownloadButtonClick($event)"
-                    data-testid="pq-select-bundle-download-btn" />
-                <p-tieredMenu
-                    #downloadMenu
-                    [model]="downloadMenuItems()"
-                    [popup]="true"
-                    appendTo="body"
-                    (onShow)="onDownloadMenuShow()"
-                    data-testid="pq-select-bundle-download-menu" />
-                <p-button
-                    [label]="
-                        hasChecked()
-                            ? ('publishing-queue.select-bundle.configure' | dm) +
-                              ' (' +
-                              checkedBundleIds().length +
-                              ')'
-                            : ('publishing-queue.select-bundle.configure' | dm)
-                    "
-                    [disabled]="!hasChecked()"
-                    (onClick)="onOpenConfigureStep()"
-                    data-testid="pq-select-bundle-configure-btn" />
+                <div class="flex min-w-0 items-center gap-2 text-sm">
+                    @if (validationWarningKey(); as warningKey) {
+                        <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
+                        <span
+                            class="font-medium text-red-600"
+                            data-testid="pq-select-bundle-warning">
+                            {{ warningKey | dm }}
+                        </span>
+                    }
+                </div>
+                <div class="flex items-center gap-3">
+                    <p-button
+                        [label]="'publishing-queue.select-bundle.remove' | dm"
+                        [text]="true"
+                        severity="danger"
+                        (onClick)="onRemoveBundles()"
+                        data-testid="pq-select-bundle-remove-btn" />
+                    <p-button
+                        [label]="
+                            isDownloading()
+                                ? ('publishing-queue.select-bundle.download.in-progress' | dm)
+                                : ('publishing-queue.select-bundle.download' | dm)
+                        "
+                        icon="pi pi-chevron-down"
+                        iconPos="right"
+                        [outlined]="true"
+                        [loading]="isDownloading()"
+                        [disabled]="isDownloading()"
+                        (onClick)="onDownloadButtonClick($event)"
+                        data-testid="pq-select-bundle-download-btn" />
+                    <p-tieredMenu
+                        #downloadMenu
+                        [model]="downloadMenuItems()"
+                        [popup]="true"
+                        appendTo="body"
+                        (onShow)="onDownloadMenuShow()"
+                        data-testid="pq-select-bundle-download-menu" />
+                    <p-button
+                        [label]="
+                            hasChecked()
+                                ? ('publishing-queue.select-bundle.configure' | dm) +
+                                  ' (' +
+                                  checkedBundleIds().length +
+                                  ')'
+                                : ('publishing-queue.select-bundle.configure' | dm)
+                        "
+                        (onClick)="onOpenConfigureStep()"
+                        data-testid="pq-select-bundle-configure-btn" />
+                </div>
             </div>
         }
         @case ('configure') {

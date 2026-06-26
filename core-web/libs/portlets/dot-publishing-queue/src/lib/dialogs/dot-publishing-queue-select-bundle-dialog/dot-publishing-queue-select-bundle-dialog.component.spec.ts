@@ -332,11 +332,14 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.component.activeBundleId()).toBe('bundle-2');
         });
 
-        it('is a no-op when nothing is checked', () => {
+        it('does not delete and surfaces the "select one" warning when nothing is checked', () => {
             spectator.detectChanges();
             (service.deleteBundles as jest.Mock).mockClear();
             spectator.component.onRemoveBundles();
             expect(service.deleteBundles).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
         });
     });
 
@@ -441,10 +444,72 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.component.step()).toBe('configure');
         });
 
-        it('Configure → is a no-op when nothing is checked (step stays "select")', () => {
+        it('Configure → does not transition and sets the "select one" warning when nothing is checked', () => {
             spectator.component.checkedBundleIds.set([]);
             spectator.component.onOpenConfigureStep();
             expect(spectator.component.step()).toBe('select');
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
+        });
+
+        it('clicking Download with nothing checked sets the "select one" warning and does not open the menu', () => {
+            spectator.component.checkedBundleIds.set([]);
+            const toggleSpy = jest.fn();
+            // Stub the menu's toggle so we can assert it was NOT called.
+            (
+                spectator.component as unknown as {
+                    downloadMenuRef: () => { toggle: jest.Mock };
+                }
+            ).downloadMenuRef = () => ({ toggle: toggleSpy });
+
+            spectator.component.onDownloadButtonClick({
+                currentTarget: document.createElement('button')
+            } as unknown as MouseEvent);
+
+            expect(toggleSpy).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
+        });
+
+        it('clicking Download with multiple checked sets the "single only" warning and does not open the menu', () => {
+            spectator.component.onCheckedChange([
+                { id: 'bundle-1', name: 'a' },
+                { id: 'bundle-2', name: 'b' }
+            ]);
+            const toggleSpy = jest.fn();
+            (
+                spectator.component as unknown as {
+                    downloadMenuRef: () => { toggle: jest.Mock };
+                }
+            ).downloadMenuRef = () => ({ toggle: toggleSpy });
+
+            spectator.component.onDownloadButtonClick({
+                currentTarget: document.createElement('button')
+            } as unknown as MouseEvent);
+
+            expect(toggleSpy).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.download.single-only'
+            );
+        });
+
+        it('changing the selection clears any active warning', () => {
+            spectator.component.validationWarningKey.set(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
+            spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
+            expect(spectator.component.validationWarningKey()).toBeNull();
+        });
+
+        it('renders the warning element in the footer when validationWarningKey is set', () => {
+            spectator.detectChanges();
+            spectator.component.validationWarningKey.set(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-select-bundle-warning'))).toBeTruthy();
         });
 
         it('Back to list → reverts step to "select"', () => {
