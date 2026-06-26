@@ -2,10 +2,20 @@ package com.dotcms.util;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
+import java.util.Optional;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch.core.CountRequest;
+import org.opensearch.client.opensearch.indices.RefreshRequest;
 
 /**
  * Phase-aware bootstrap for the search store(s) an integration test needs.
@@ -98,6 +108,180 @@ public final class MigrationPhaseStoreBootstrap {
                             + " but is not reachable: " + e.getMessage()
                             + ". Verify OS_ENDPOINTS and that the OpenSearch container is running.",
                     e);
+        }
+    }
+
+    /**
+     * Creates and registers a fresh OpenSearch content index set (working + live) <em>directly</em>,
+     * returning the physical working-index name. The new index set becomes the default
+     * {@link com.dotcms.content.index.VersionedIndices}, so the high-level read/write path resolves
+     * it once a phase that routes to OpenSearch is active (e.g. {@code PHASE_3_OPENSEARCH_ONLY}).
+     *
+     * <p>This deliberately does <strong>not</strong> go through
+     * {@link com.dotcms.content.elasticsearch.business.ContentletIndexAPI#checkAndInitializeIndex()}:
+     * that path runs {@code IndexStartupValidator}, whose endpoint-separation check fails by design in
+     * the single-cluster {@code opensearch-upgrade} profile (ES and OS share an endpoint). It mirrors
+     * what the router's bootstrap does for the OS provider — create the physical content index (with
+     * the content mapping) and register the names — minus the validator, so a test can bootstrap OS in
+     * a single-cluster environment.</p>
+     *
+     * <p>Index names use the physical form ({@code toPhysicalName}) exactly as the router passes them
+     * to the OS provider, so creation and registration stay symmetric (no {@code .os}-tag mismatch).</p>
+     *
+     * @return the physical (cluster-prefixed, {@code .os}-tagged) working-index name
+     * @throws DotRuntimeException if the OS index set cannot be created or registered
+     */
+    public static String bootstrapOpenSearchStoreDirect() {
+        final ContentletIndexOperationsOS opsOS =
+                CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class);
+
+        final long ts = System.currentTimeMillis();
+        final String physWorking = opsOS.toPhysicalName("working_" + ts);
+        final String physLive     = opsOS.toPhysicalName("live_" + ts);
+
+        try {
+            opsOS.createContentIndex(physWorking, 1);
+            opsOS.createContentIndex(physLive, 1);
+        } catch (final Exception e) {
+            throw new DotRuntimeException(
+                    "Failed to create the OpenSearch content index set (working=" + physWorking
+                            + ", live=" + physLive + "): " + e.getMessage(), e);
+        }
+
+        try {
+            APILocator.getVersionedIndicesAPI().saveIndices(
+                    VersionedIndicesImpl.builder().working(physWorking).live(physLive).build());
+        } catch (final Exception e) {
+            throw new DotRuntimeException(
+                    "Failed to register the OpenSearch index set: " + e.getMessage(), e);
+        }
+        APILocator.getVersionedIndicesAPI().clearCache();
+
+        Logger.info(MigrationPhaseStoreBootstrap.class,
+                "OpenSearch content index set bootstrapped directly — working: " + physWorking);
+        return physWorking;
+    }
+
+    /**
+     * Opens a self-contained OpenSearch test store under {@code phase}, in one call:
+     * <ol>
+     *   <li>asserts OpenSearch is reachable (fail-fast),</li>
+     *   <li>captures the prior migration phase and default {@link VersionedIndices} so they can be
+     *       restored,</li>
+     *   <li>bootstraps a fresh OS content index set ({@link #bootstrapOpenSearchStoreDirect()}),</li>
+     *   <li>switches the active phase to {@code phase}.</li>
+     * </ol>
+     *
+     * <p>Use it in {@code @Before} and {@link OpenSearchPhaseStore#close() close()} in {@code @After}
+     * (or with try-with-resources). The returned handle also carries the placement-verification
+     * helpers, so a test needs no per-test boilerplate or injected OpenSearch client:</p>
+     *
+     * <pre>
+     *   store = MigrationPhaseStoreBootstrap.openForPhase(MigrationPhase.PHASE_3_OPENSEARCH_ONLY);
+     *   ...
+     *   assertTrue(store.isIndexed(contentlet));
+     *   ...
+     *   store.close();   // restores phase + VersionedIndices
+     * </pre>
+     *
+     * @param phase the migration phase to run under (must involve OpenSearch, i.e. not phase 0)
+     * @return a live {@link OpenSearchPhaseStore} handle
+     * @throws DotRuntimeException if OpenSearch is unreachable or the index set can't be bootstrapped
+     */
+    public static OpenSearchPhaseStore openForPhase(final MigrationPhase phase) {
+        assertOpenSearchReachable(phase);
+
+        final String priorPhase = Config.getStringProperty(MigrationPhase.FLAG_KEY, null);
+        final Optional<VersionedIndices> priorIndices =
+                Try.of(() -> APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices())
+                   .getOrElse(Optional.empty());
+
+        final String workingIndex = bootstrapOpenSearchStoreDirect();
+
+        Config.setProperty(MigrationPhase.FLAG_KEY, String.valueOf(phase.ordinal()));
+
+        return new OpenSearchPhaseStore(workingIndex, priorPhase, priorIndices);
+    }
+
+    /**
+     * Live handle to an OpenSearch index set bootstrapped by {@link #openForPhase(MigrationPhase)}.
+     * Bundles the working-index name, the document-placement checks, and the state restore so tests
+     * stay free of bootstrap/teardown/verification boilerplate. Resolves the OpenSearch client
+     * itself (via CDI), so the test does not need to inject one.
+     */
+    public static final class OpenSearchPhaseStore implements AutoCloseable {
+
+        /** Poll budget for asynchronously-applied writes to become visible. */
+        private static final int  AWAIT_ATTEMPTS = 50;
+        private static final long AWAIT_SLEEP_MS = 100L;
+
+        private final String workingIndex;
+        private final String priorPhase;
+        private final Optional<VersionedIndices> priorIndices;
+
+        private OpenSearchPhaseStore(final String workingIndex, final String priorPhase,
+                final Optional<VersionedIndices> priorIndices) {
+            this.workingIndex = workingIndex;
+            this.priorPhase   = priorPhase;
+            this.priorIndices = priorIndices;
+        }
+
+        /** The physical (cluster-prefixed, {@code .os}-tagged) working-index name in use. */
+        public String workingIndex() {
+            return workingIndex;
+        }
+
+        /** {@code true} when the OS working index holds a document with the given {@code _id}. */
+        public boolean osHasDoc(final String docId) {
+            return Try.of(() -> client().count(CountRequest.of(
+                            r -> r.index(workingIndex).query(q -> q.ids(i -> i.values(docId)))))
+                            .count() > 0L)
+                      .getOrElse(false);
+        }
+
+        /** Refreshes the cluster, then polls until the doc is visible or the budget is exhausted. */
+        public boolean awaitDoc(final String docId) {
+            for (int i = 0; i < AWAIT_ATTEMPTS; i++) {
+                refresh();
+                if (osHasDoc(docId)) {
+                    return true;
+                }
+                Try.run(() -> Thread.sleep(AWAIT_SLEEP_MS));
+            }
+            return osHasDoc(docId);
+        }
+
+        /** Convenience: {@code true} when the given contentlet's version document is in the OS index. */
+        public boolean isIndexed(final Contentlet contentlet) {
+            return awaitDoc(docId(contentlet));
+        }
+
+        /** Refresh the whole cluster so freshly-written docs are searchable. */
+        public void refresh() {
+            Try.run(() -> client().indices().refresh(RefreshRequest.of(r -> r)))
+               .onFailure(e -> Logger.warn(OpenSearchPhaseStore.class,
+                       "refresh failed: " + e.getMessage()));
+        }
+
+        /** Restores the migration phase and default {@link VersionedIndices} captured at open time. */
+        @Override
+        public void close() {
+            Config.setProperty(MigrationPhase.FLAG_KEY, priorPhase);
+            priorIndices.ifPresent(v ->
+                    Try.run(() -> APILocator.getVersionedIndicesAPI().saveIndices(v))
+                       .onFailure(e -> Logger.warn(OpenSearchPhaseStore.class,
+                               "close: restore OS versioned indices failed: " + e.getMessage())));
+            APILocator.getVersionedIndicesAPI().clearCache();
+        }
+
+        private static OpenSearchClient client() {
+            return CDIUtils.getBeanThrows(OSClientProvider.class).getClient();
+        }
+
+        /** The ES/OS document {@code _id} dotCMS assigns to an indexed contentlet version. */
+        private static String docId(final Contentlet contentlet) {
+            return contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
+                    + "_" + contentlet.getVariantId();
         }
     }
 }
