@@ -68,21 +68,53 @@ describe('DotUploadFileService', () => {
                 expect.anything()
             );
         });
+    });
 
-        it('should fire the given content type when one is provided', () => {
-            dotWorkflowActionsFireService.newContentlet.mockReturnValueOnce(
+    describe('uploadFileByBaseType', () => {
+        it('should upload a file resolving the content type from the given base type', () => {
+            dotWorkflowActionsFireService.newContentletByBaseType.mockReturnValueOnce(
                 of({ entity: { identifier: 'test' } })
             );
 
             const file = new File([''], 'test.png', { type: 'image/png' });
 
-            spectator.service.uploadDotAsset(file, { hostFolder: '123' }, 'FileAsset').subscribe();
+            spectator.service.uploadFileByBaseType(file, 'FILEASSET').subscribe();
 
-            expect(dotWorkflowActionsFireService.newContentlet).toHaveBeenCalledWith(
-                'FileAsset',
+            expect(dotWorkflowActionsFireService.newContentletByBaseType).toHaveBeenCalledWith(
+                'FILEASSET',
                 expect.anything(),
                 expect.anything()
             );
+        });
+
+        it('should pass the base type and extra data through to the fire service', () => {
+            dotWorkflowActionsFireService.newContentletByBaseType.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+
+            spectator.service
+                .uploadFileByBaseType(file, 'DOTASSET', { hostFolder: '123' })
+                .subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentletByBaseType).toHaveBeenCalledWith(
+                'DOTASSET',
+                expect.objectContaining({ hostFolder: '123' }),
+                expect.anything()
+            );
+        });
+
+        it('should not pass a contentType to the fire service', () => {
+            dotWorkflowActionsFireService.newContentletByBaseType.mockReturnValueOnce(
+                of({ entity: { identifier: 'test' } })
+            );
+
+            const file = new File([''], 'test.png', { type: 'image/png' });
+
+            spectator.service.uploadFileByBaseType(file, 'FILEASSET').subscribe();
+
+            expect(dotWorkflowActionsFireService.newContentlet).not.toHaveBeenCalled();
         });
     });
 });
