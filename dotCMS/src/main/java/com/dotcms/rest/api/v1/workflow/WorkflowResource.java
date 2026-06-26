@@ -3153,7 +3153,8 @@ public class WorkflowResource {
                 // (see 'pathToMove').
                 Logger.warn(this, String.format(
                         "Fire action payload contains system field(s) %s; these are ignored by "
-                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "this endpoint. Did you mean 'contentHost' (host id) or 'hostFolder' "
+                                + "(folder id)? To change a contentlet's location, fire a workflow "
                                 + "action that includes the Move actionlet (see 'pathToMove').",
                         protectedFields));
 
@@ -3177,9 +3178,10 @@ public class WorkflowResource {
 
         return List.of(new MessageEntity(String.format(
                 "System field(s) %s were ignored: this endpoint does not set a contentlet's "
-                        + "location. The content was saved at its existing/default location. To "
-                        + "place or move content, fire a workflow action that includes the Move "
-                        + "actionlet and pass 'pathToMove'.",
+                        + "location. Did you mean 'contentHost' (host id) or 'hostFolder' (folder "
+                        + "id)? The content was saved at its existing/default location. To place or "
+                        + "move content, fire a workflow action that includes the Move actionlet and "
+                        + "pass 'pathToMove'.",
                 ignoredFields)));
     }
 

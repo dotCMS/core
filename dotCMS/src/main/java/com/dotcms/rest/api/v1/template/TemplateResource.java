@@ -6,6 +6,7 @@ import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
@@ -22,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -558,7 +560,22 @@ public class TemplateResource {
         template.setHeader(templateForm.getHeader());
 
         if (templateForm.isDrawed()) {
-            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, respectAnonPerms).getHostId();
+
+            // A drawn template's body is parsed by jsoup; a null body NPEs downstream.
+            if (template.getBody() == null) {
+                throw new BadRequestException("body required when drawed");
+            }
+
+            // 'theme' must resolve to a theme folder; FolderAPI.find returns null for a
+            // non-folder identifier (e.g. a host id), which would NPE on getHostId().
+            final Folder themeFolder = APILocator.getFolderAPI()
+                    .find(templateForm.getTheme(), user, respectAnonPerms);
+            if (themeFolder == null || !InodeUtils.isSet(themeFolder.getInode())) {
+                throw new BadRequestException("theme must be a folder identifier; '"
+                        + templateForm.getTheme() + "' does not resolve to a folder");
+            }
+
+            final String themeHostId = themeFolder.getHostId();
             final String themePath   = themeHostId.equals(site.getInode())?
                     Template.THEMES_PATH + template.getThemeName() + "/":
                     "//" + APILocator.getHostAPI().find(themeHostId, user, respectAnonPerms).getHostname()
