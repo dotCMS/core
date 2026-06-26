@@ -774,6 +774,7 @@ public class ContainerResource implements Serializable {
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "saveContainer",
@@ -869,6 +870,7 @@ public class ContainerResource implements Serializable {
     @PUT
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "updateContainer",

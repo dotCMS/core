@@ -5163,4 +5163,135 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getContentletRelationships(Contentlet, User)} (via checkin)
+     * Given Scenario: Reproduces the "Translate Manually" save crash (issue #35862). A contentlet is
+     *   checked in with the relationship field holding the raw comma-separated UUID String left by
+     *   {@code MapToContentletPopulator} (no {@code ContentletRelationships} passed), and one of the
+     *   related contentlets has NO version in the target (Spanish) language.
+     * ExpectedResult: Checkin succeeds — no ClassCastException (String to List) and no NullPointerException.
+     *   Both related contentlets are persisted: the one with a Spanish version and the one resolved via
+     *   the English language fallback.
+     */
+    @Test
+    public void getContentletRelationships_relationshipFieldAsString_resolvesWithLanguageFallback()
+            throws DotDataException, DotSecurityException {
+
+        final Language spanish = TestDataUtils.getSpanishLanguage();
+        final long defaultLangId = languageAPI.getDefaultLanguage().getId();
+
+        ContentType parentCT = null;
+        ContentType childCT = null;
+        try {
+            childCT = new ContentTypeDataGen().nextPersisted();
+            parentCT = new ContentTypeDataGen().nextPersisted();
+
+            final Field relField = FieldBuilder.builder(RelationshipField.class)
+                    .name("authors")
+                    .contentTypeId(parentCT.id())
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(childCT.variable())
+                    .required(false)
+                    .build();
+            final Field savedField = APILocator.getContentTypeFieldAPI().save(relField, user);
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(savedField, user);
+
+            // AuthorA: English + Spanish versions
+            final Contentlet authorAEnglish = new ContentletDataGen(childCT)
+                    .languageId(defaultLangId).setPolicy(IndexPolicy.FORCE).nextPersisted();
+            final Contentlet authorASpanish = contentletAPI.checkout(authorAEnglish.getInode(), user, false);
+            authorASpanish.setLanguageId(spanish.getId());
+            authorASpanish.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.checkin(authorASpanish, user, false);
+
+            // AuthorB: English only — intentionally NO Spanish version
+            final Contentlet authorBEnglish = new ContentletDataGen(childCT)
+                    .languageId(defaultLangId).setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            // Spanish article whose relationship field holds the raw comma-separated UUID String,
+            // exactly as MapToContentletPopulator leaves it during "Translate Manually".
+            final Contentlet article = new ContentletDataGen(parentCT).languageId(spanish.getId()).next();
+            article.setProperty(savedField.variable(),
+                    authorAEnglish.getIdentifier() + "," + authorBEnglish.getIdentifier());
+            article.setIndexPolicy(IndexPolicy.FORCE);
+
+            // Before the fix this threw ClassCastException (String cast to List<Contentlet>).
+            final Contentlet savedArticle = contentletAPI.checkin(article, user, false);
+
+            final List<Contentlet> related = relationshipAPI.dbRelatedContent(relationship, savedArticle);
+            assertNotNull(related);
+            // Relationships are identifier-level. AuthorA has two language versions (EN + ES), so
+            // assert on the set of distinct related identifiers rather than the raw row count.
+            final Set<String> relatedIds = related.stream()
+                    .map(Contentlet::getIdentifier).collect(Collectors.toSet());
+            assertEquals("Exactly two distinct contentlets should be related", 2, relatedIds.size());
+            assertTrue("AuthorA (with Spanish version) should be related",
+                    relatedIds.contains(authorAEnglish.getIdentifier()));
+            assertTrue("AuthorB (English-only fallback) should be related",
+                    relatedIds.contains(authorBEnglish.getIdentifier()));
+        } finally {
+            if (parentCT != null) {
+                contentTypeAPI.delete(parentCT);
+            }
+            if (childCT != null) {
+                contentTypeAPI.delete(childCT);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#getContentletRelationships(Contentlet, User)} (via checkin)
+     * Given Scenario: A contentlet that already has related content is re-checked in with the
+     *   relationship field set to an empty String in the contentlet map (no ContentletRelationships
+     *   passed) — the "clear all relationships" case of the issue #35862 fix.
+     * ExpectedResult: Checkin succeeds and the existing relationships are wiped out.
+     */
+    @Test
+    public void getContentletRelationships_relationshipFieldAsEmptyString_clearsRelationships()
+            throws DotDataException, DotSecurityException {
+
+        ContentType parentCT = null;
+        ContentType childCT = null;
+        try {
+            childCT = new ContentTypeDataGen().nextPersisted();
+            parentCT = new ContentTypeDataGen().nextPersisted();
+
+            final Field relField = FieldBuilder.builder(RelationshipField.class)
+                    .name("authors")
+                    .contentTypeId(parentCT.id())
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(childCT.variable())
+                    .required(false)
+                    .build();
+            final Field savedField = APILocator.getContentTypeFieldAPI().save(relField, user);
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(savedField, user);
+
+            final Contentlet author = new ContentletDataGen(childCT)
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            // Relate the author, then verify it is persisted
+            Contentlet article = new ContentletDataGen(parentCT).setPolicy(IndexPolicy.FORCE).next();
+            article = contentletAPI.checkin(article, Map.of(relationship, list(author)), user, false);
+            assertEquals(1, relationshipAPI.dbRelatedContent(relationship, article).size());
+
+            // Re-checkin with the relationship field set to an empty String in the map
+            final Contentlet cleared = contentletAPI.checkout(article.getInode(), user, false);
+            cleared.setProperty(savedField.variable(), "");
+            cleared.setIndexPolicy(IndexPolicy.FORCE);
+            final Contentlet savedCleared = contentletAPI.checkin(cleared, user, false);
+
+            assertTrue("Relationships should have been cleared",
+                    relationshipAPI.dbRelatedContent(relationship, savedCleared).isEmpty());
+        } finally {
+            if (parentCT != null) {
+                contentTypeAPI.delete(parentCT);
+            }
+            if (childCT != null) {
+                contentTypeAPI.delete(childCT);
+            }
+        }
+    }
+
 }

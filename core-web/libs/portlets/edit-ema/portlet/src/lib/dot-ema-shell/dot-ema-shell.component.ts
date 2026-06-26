@@ -26,7 +26,7 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent,
@@ -39,7 +39,8 @@ import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { PERSONA_KEY } from '../shared/consts';
+import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -354,13 +355,84 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * Handle scanner tool click from the page tools panel.
      * Opens the page scanner report dialog with the selected tool type.
      *
+     * The scanner is an external service that fetches the URL over the public
+     * internet, so the URL must point at this authoring instance
+     * (`window.location.origin`) — never the page's content-site hostname or a
+     * headless `clientHost`, which may not be publicly reachable.
+     *
+     * To re-render the exact page the user is looking at, every page-resolving
+     * param the editor is using is forwarded onto the scanned URL:
+     * - `host_id` — disambiguates the site for multisite pages sharing a path
+     *   (e.g. `/index`); dotCMS resolves it for the backend user regardless of host.
+     * - `language_id`, `personaId`, `variantName`, `mode` and `publishDate`
+     *   (time machine) — taken from the current page params so the scanner sees
+     *   the same language, persona, variant, mode and point-in-time as the editor.
+     *
      * @param {PageScannerToolType} type
      * @memberof DotEmaShellComponent
      */
     handleScannerToolClick(type: PageScannerToolType): void {
-        const { currentUrl, requestHostName } = this.$seoParams();
-        const pageUrl = `${requestHostName}${currentUrl ?? '/'}`;
-        this.pageScanner.open(type, pageUrl);
+        const { currentUrl, siteId } = this.$seoParams();
+        const url = new URL(currentUrl ?? '/', window.location.origin);
+
+        if (siteId) {
+            url.searchParams.set('host_id', siteId);
+        }
+
+        for (const [key, value] of Object.entries(this.#getScannerPageParams())) {
+            url.searchParams.set(key, value);
+        }
+
+        this.pageScanner.open(type, url.toString());
+    }
+
+    /**
+     * Build the page-resolving query params forwarded to the scanner from the
+     * params the editor is currently rendering with.
+     *
+     * Only the params that change which page dotCMS resolves are kept
+     * (`language_id`, persona, `variantName`, `mode`, `publishDate`). The page
+     * path, `clientHost` and `depth` are excluded: the path is already the URL
+     * itself, and `clientHost`/`depth` are editor-fetch concerns the public
+     * scanner must not inherit.
+     *
+     * Unlike SPA navigation, this URL is fetched and rendered by the dotCMS
+     * backend, so the persona must use the backend request param key
+     * (`com.dotmarketing.persona.id`, `WebKeys.CMS_PERSONA_PARAMETER`) — NOT the
+     * SPA-friendly `personaId`. Sending `personaId` would be silently ignored and
+     * the page would render with no persona. The default persona and default
+     * variant are dropped so the scanner falls back to the same implicit defaults
+     * as the editor.
+     *
+     * @return {Record<string, string>}
+     * @memberof DotEmaShellComponent
+     */
+    #getScannerPageParams(): Record<string, string> {
+        const params = this.uveStore.pageParams() ?? ({} as DotPageAssetParams);
+
+        const forwarded: Record<string, unknown> = {
+            [DotPageAssetKeys.LANGUAGE_ID]: params.language_id,
+            [DotPageAssetKeys.MODE]: params.mode,
+            [DotPageAssetKeys.PUBLISH_DATE]: params.publishDate
+        };
+
+        // Persona keeps the backend request param key — the scanner is a backend
+        // page render, not SPA navigation. Drop the default persona (implicit).
+        const persona = params[PERSONA_KEY];
+        if (persona && persona !== DEFAULT_PERSONA.identifier) {
+            forwarded[PERSONA_KEY] = persona;
+        }
+
+        // The default variant is implicit — omit it to keep the URL clean.
+        if (params.variantName && params.variantName !== DEFAULT_VARIANT_ID) {
+            forwarded[DotPageAssetKeys.VARIANT_NAME] = params.variantName;
+        }
+
+        return Object.fromEntries(
+            Object.entries(forwarded)
+                .filter(([, value]) => value !== undefined && value !== null && value !== '')
+                .map(([key, value]) => [key, String(value)])
+        );
     }
 
     /**

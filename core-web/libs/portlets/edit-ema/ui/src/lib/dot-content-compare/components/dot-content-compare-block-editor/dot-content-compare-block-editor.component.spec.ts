@@ -305,8 +305,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
-                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
             })
         ],
         overrideComponents: [

@@ -24,7 +24,7 @@ import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
-import com.dotcms.content.index.IndexStartupValidator;
+import com.dotcms.content.index.opensearch.IndexStartupValidator;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.VersionedIndices;
@@ -521,7 +521,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public synchronized void checkAndInitializeIndex() {
         try {
-            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+            if (isMigrationStarted()) {
                 if (!IndexStartupValidator.validateIndexingConfig()) {
                     if (isMigrationComplete()) {
                         // Phase 3: ES is decommissioned. Rolling back to Phase 0 would route
@@ -554,6 +554,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } catch (Exception e) {
             Logger.fatal(this.getClass(), "Failed to create new indexes:" + e.getMessage(),e);
 
+            // During an active OpenSearch migration a half-initialised index store is worse
+            // than a hard stop: the read provider would serve an unfinished or missing index
+            // (surfacing downstream as "all shards failed"), and a Phase 3 validation failure
+            // intentionally throws above (line ~530) only to be swallowed here. Fail loudly so
+            // the operator restores connectivity/config and restarts, rather than silently
+            // coming up broken. Legacy ES-only installs (migration not started) keep the
+            // historical best-effort behaviour and still boot.
+            if (isMigrationStarted()) {
+                throw new DotRuntimeException(
+                        "Index initialization failed during OpenSearch migration; aborting startup"
+                        + " to avoid serving an unfinished index store. Cause: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -640,22 +652,75 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     /**
-     * Create an index exclusively in one of the SE Providers
-     * @param indexName
-     * @param shards
-     * @param tag
-     * @return
-     * @throws IOException
+     * Create an index exclusively in one of the SE Providers.
+     *
+     * <p><b>Idempotent bootstrap.</b> If the physical index already exists in the target
+     * cluster it is reused instead of issuing a create. This guards against an orphaned
+     * cluster index — present in the cluster but missing from the index store — left behind
+     * when a previous bootstrap created the index but never committed its store pointer
+     * (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted startup).
+     * Without this guard the restart re-derives the same logical name, the create fails with
+     * {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts — leaving
+     * the instance half-initialised. The custom mapping is (re)applied either way
+     * ({@code putMapping} is additive/idempotent), so a previously unmapped orphan is repaired,
+     * and the caller's {@code point()} re-registers the index in the store.</p>
+     *
+     * @param indexName logical index name (no cluster prefix, no vendor tag)
+     * @param shards    number of shards to create with (ignored when the index already exists)
+     * @param tag       target provider ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @return {@code true} when the index exists (reused) or was created successfully
+     * @throws IOException on a hard creation failure
      */
     private boolean createContentIndex(final String indexName, final int shards, IndexTag tag)
             throws IOException {
-        final MappingHelper helper = MappingHelper.getInstance();
+        final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
 
-        ContentletIndexOperations ops = router.esImpl();
-        if(tag == IndexTag.OS) {
-           ops = router.osImpl();
-        }
+        final ContentletIndexOperations ops = tag == IndexTag.OS ? router.osImpl() : router.esImpl();
+        final IndexAPI providerApi = tag == IndexTag.OS ? impl.osImpl() : impl.esImpl();
+
+        return createContentIndex(indexName, shards, tag, ops, providerApi,
+                MappingHelper.getInstance());
+    }
+
+    /**
+     * Idempotent-bootstrap core of {@link #createContentIndex(String, int, IndexTag)}, with the
+     * provider collaborators injected so the orphan-reuse decision can be unit-tested without a
+     * running cluster or the {@link MappingHelper} singleton. See the public-facing overload's
+     * javadoc for the behaviour contract.
+     *
+     * @param indexName   logical index name (no cluster prefix, no vendor tag)
+     * @param shards      number of shards to create with (ignored when the index already exists)
+     * @param tag         target provider ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param ops         vendor write operations for {@code tag} (creation + physical-name mapping)
+     * @param providerApi vendor index API for {@code tag} (existence probe)
+     * @param helper      mapping helper used to (re)assert the custom mapping
+     * @return {@code true} when the index exists (reused) or was created successfully
+     * @throws IOException on a hard creation failure
+     */
+    boolean createContentIndex(final String indexName, final int shards, final IndexTag tag,
+            final ContentletIndexOperations ops, final IndexAPI providerApi,
+            final MappingHelper helper) throws IOException {
         final String physicalName = ops.toPhysicalName(indexName);
+
+        // Reuse an orphaned cluster index rather than failing the create (see method javadoc).
+        // The existence probe is best-effort: any failure is treated as "does not exist" so we
+        // fall through to the create path rather than aborting bootstrap on a transient error.
+        // The failure is logged at DEBUG so a real connectivity/config problem (which would then
+        // also surface on the create attempt) stays traceable instead of being silently swallowed.
+        final boolean alreadyExists = Try.of(() -> providerApi.indexExists(physicalName))
+                .onFailure(e -> Logger.debug(this,
+                        "Bootstrap existence probe failed for " + physicalName
+                        + " — treating as 'does not exist' and attempting create: "
+                        + e.getMessage(), e))
+                .getOrElse(false);
+        if (alreadyExists) {
+            Logger.info(this, String.format(
+                    "Bootstrap: %s index already exists, reusing and re-asserting mapping: %s",
+                    tag, physicalName));
+            helper.addCustomMapping(List.of(indexName), tag);
+            return true;
+        }
+
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
         if (contentIndex) {
             helper.addCustomMapping(List.of(indexName), tag);
@@ -873,6 +938,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
+
+        // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
+        // This is the single chokepoint for all OS index creation (fresh-install bootstrap and
+        // migration catchup), so both startup paths — populated-DB (InitServlet) and empty-DB
+        // (Task00004LoadStarter) — pass through the same phase-aware gate instead of failing
+        // late and opaquely with a transport exception deep inside createContentIndex.
+        //
+        // operationsOS.indexAPI() is the OS-specific IndexAPI, so the gate always probes OS
+        // regardless of the current read provider (in Phase 1 the read provider is ES). The
+        // phase-aware outcome lives in OSIndexAPIImpl.waitUtilIndexReady(): Phase 3 aborts the
+        // JVM with an actionable message; Phase 1/2 halts the migration (ES-only fallback) and
+        // returns false — in which case we must NOT create OS indices.
+        if (!operationsOS.indexAPI().waitUtilIndexReady()) {
+            Logger.warn(this.getClass(),
+                    "Skipping OpenSearch index bootstrap (working=" + workingName
+                    + ", live=" + liveName + "): OS was unreachable and the migration was halted"
+                    + " (now ES-only). OS indices will be created on a later restart once OS is"
+                    + " reachable and the migration phase is re-enabled.");
+            return;
+        }
+
         boolean result;
         try {
             // Targeted: executed directly against this provider only. No phase fan-out here.
@@ -1092,10 +1178,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     "Error creating reindex indices for ts=" + ts + ": " + e.getMessage(), e);
         }
         // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
-        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers
-        pointES(null, null,
-                operationsES.toPhysicalName(reindexWorkingName),
-                operationsES.toPhysicalName(reindexLiveName));
+        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers.
+        // Skipped in Phase 3: ES is decommissioned, so writing ES reindex pointers here would only
+        // create orphan NULL-version rows that the OS-only switchover never cleans up (#36077).
+        if (!isMigrationComplete()) {
+            pointES(null, null,
+                    operationsES.toPhysicalName(reindexWorkingName),
+                    operationsES.toPhysicalName(reindexLiveName));
+        }
         // ── END LEGACY ES ─────────────────────────────────────────────────────
 
         // Persist OS reindex slots, preserving existing working/live pointers.
@@ -1221,33 +1311,38 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // ── OS mirror (Phases 1 and 2, best-effort) ──────────────────────
             // The OS shadow index has its own reindex slots that must be promoted
             // in lock-step with ES. A failure here must never abort the ES result.
+            List<String> newActiveOs = List.of();
             if (isMigrationStarted()) {
                 try {
                     final Optional<VersionedIndices> osExisting =
                             versionedIndicesAPI.loadDefaultVersionedIndices();
+                    final Optional<String> osWorking =
+                            osExisting.flatMap(VersionedIndices::reindexWorking);
+                    final Optional<String> osLive =
+                            osExisting.flatMap(VersionedIndices::reindexLive);
                     final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder();
                     // Promote OS reindex slots → active; omitting reindexWorking/reindexLive
                     // from the builder clears them to Optional.empty() in the store.
-                    osExisting.flatMap(VersionedIndices::reindexWorking).ifPresent(osBuilder::working);
-                    osExisting.flatMap(VersionedIndices::reindexLive).ifPresent(osBuilder::live);
+                    osWorking.ifPresent(osBuilder::working);
+                    osLive.ifPresent(osBuilder::live);
                     versionedIndicesAPI.saveIndices(osBuilder.build());
+                    // Capture the promoted OS names (.os-tagged, from the OS store) so they can be
+                    // optimized on the OS provider directly — see optimizeNewActiveIndicesAsync.
+                    if (osWorking.isPresent() && osLive.isPresent()) {
+                        newActiveOs = List.of(osWorking.get(), osLive.get());
+                    }
                 } catch (Exception osEx) {
                     Logger.warn(this, "Could not mirror reindex switchover to OS store", osEx);
                 }
             }
 
-            // Async: merge ES index segments and expand replicas on the newly active indices.
-            // Uses newInfo (ES reindex → active names), not oldInfo (old active names).
-            final List<String> newActiveEs = List.of(newInfo.getWorking(), newInfo.getLive());
-            DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
-                try {
-                    Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    optimize(newActiveEs);
-                } catch (Exception e) {
-                    Logger.warnAndDebug(this.getClass(),
-                            "unable to expand ES replicas:" + e.getMessage(), e);
-                }
-            });
+            // Async: merge index segments and expand replicas on the newly active indices,
+            // optimizing EACH provider with the names it actually holds — ES bare names from
+            // newInfo, OS .os-tagged names from the store. Routing through the phase-aware
+            // optimize() would send the ES names to the OS read provider in Phase 2 and hit
+            // index_not_found (then fall back to ES), which is noisy and skips the OS optimize.
+            optimizeNewActiveIndicesAsync(
+                    List.of(newInfo.getWorking(), newInfo.getLive()), newActiveOs);
 
             notifyAdminsOfFailedReindex();
 
@@ -1314,22 +1409,68 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         existing.reindexLive().ifPresent(osBuilder::live);
         versionedIndicesAPI.saveIndices(osBuilder.build());
 
+        // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
+        // old live/working plus any transient reindex_live/reindex_working that predate Phase 3.
+        // ES is decommissioned, so these rows are pure orphans — without this the table would
+        // accumulate stale ES rows on every Phase-3 reindex (#36077). DB-only: never contacts the
+        // ES cluster (which may be down). Best-effort — the OS promotion above already succeeded
+        // and must not be undone by a housekeeping failure. Physical ES index deletion is left to
+        // the scheduled DeleteInactiveLiveWorkingIndicesJob.
+        try {
+            versionedIndicesAPI.removeLegacyIndices();
+        } catch (Exception cleanupEx) {
+            Logger.warn(this, "Phase 3 switchover: could not purge legacy ES indicies rows", cleanupEx);
+        }
+
         // Async: optimize the newly active OS indices (merge segments, adjust replicas).
         // reindexWorking/reindexLive presence was validated at the top of this method.
+        // ES is decommissioned in Phase 3, so only the OS provider is optimized.
         final String newWorking = existing.reindexWorking().orElseThrow();
         final String newLive    = existing.reindexLive().orElseThrow();
-        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
-            try {
-                Logger.info(this.getClass(), "Updating and optimizing OpenSearch Indexes");
-                optimize(List.of(newWorking, newLive));
-            } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "unable to optimize OS indices:" + e.getMessage(), e);
-            }
-        });
+        optimizeNewActiveIndicesAsync(List.of(), List.of(newWorking, newLive));
 
         notifyAdminsOfFailedReindex();
         return true;
+    }
+
+    /**
+     * Optimizes (force-merges) the newly-promoted indices after a reindex switchover, targeting
+     * each provider with the names it actually holds: ES with its bare names, OS with its
+     * {@code .os}-tagged names. Both calls go to the vendor implementation directly
+     * ({@code operationsES/OS.indexAPI()}) rather than the phase-aware {@code optimize()} router,
+     * because the router routes optimize through the read provider — in Phase 2 that is OS, so the
+     * ES names would be sent to OS, miss (the OS index carries the {@code .os} tag), and only
+     * succeed via the ES fallback while logging a misleading error and skipping the OS optimize.
+     *
+     * <p>Runs asynchronously and is best-effort per provider: a force-merge failure (including an
+     * OS shadow failure in dual-write phases) is logged and swallowed and never affects the
+     * completed switchover.</p>
+     *
+     * @param esNames ES physical (bare) names to optimize, or empty to skip ES (e.g. Phase 3)
+     * @param osNames OS physical ({@code .os}-tagged) names to optimize, or empty to skip OS
+     */
+    private void optimizeNewActiveIndicesAsync(final List<String> esNames,
+            final List<String> osNames) {
+        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+            if (esNames != null && !esNames.isEmpty()) {
+                try {
+                    Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
+                    operationsES.indexAPI().optimize(esNames);
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(),
+                            "unable to optimize ES indices:" + e.getMessage(), e);
+                }
+            }
+            if (osNames != null && !osNames.isEmpty()) {
+                try {
+                    Logger.info(this.getClass(), "Updating and optimizing OpenSearch Indexes");
+                    operationsOS.indexAPI().optimize(osNames);
+                } catch (Exception e) {
+                    Logger.warnAndDebug(this.getClass(),
+                            "unable to optimize OS indices:" + e.getMessage(), e);
+                }
+            }
+        });
     }
 
     /**

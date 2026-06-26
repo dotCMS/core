@@ -30,6 +30,39 @@ dotcms-integration/
 - **`DataProviderRunner`**: Test data generation
 - **`APITestCase`**: REST API testing base
 
+### Registering Tests in a MainSuite (CI gate) ⚠️
+
+CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites
+(`MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a` in
+`dotcms-integration/src/test/java/com/dotcms/`). **A new test class that is not listed in one
+of these suites compiles fine but is silently never executed in CI** — green build, zero
+coverage. This is easy to miss because the class runs locally via `-Dit.test=MyTestClass`.
+
+When you add a new integration test class, register it:
+
+1. Pick a suite — group it with sibling tests in the same package. The v1 asset tests live in
+   `MainSuite2b`, so a new v2 asset test goes there too.
+2. Add **both** the `import` (in alphabetical order) and the `Foo.class,` entry inside
+   `@SuiteClasses({ ... })`.
+
+```java
+// MainSuite2b.java
+import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest; // sorted with siblings
+...
+@SuiteClasses({
+    ...
+    WebAssetHelperIntegrationTest.class,
+    WebAssetResourceV2IntegrationTest.class,   // <-- register here or it won't run in CI
+    ...
+})
+```
+
+Verify the suite still resolves the new class:
+
+```bash
+./mvnw test-compile -pl :dotcms-integration -DskipTests
+```
+
 ## Testing Patterns
 
 ### Integration Test Structure

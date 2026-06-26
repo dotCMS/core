@@ -425,6 +425,16 @@ This mapping should be passed to the `DotCMSLayoutBody` component as shown in th
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/) - Complete reference for the React components library
 
+## Analytics & Experiments (headless)
+
+This example focuses on content types, UVE, and general dotCMS + Next.js patterns. It does **not** integrate `@dotcms/experiments` in `Page.js` by design.
+
+For a minimal, copy-paste reference of **Content Analytics** and **A/B Experiments** in Next.js App Router (with the safe `withExperiments` pattern), see:
+
+- [`examples/nextjs-analytics-experiments`](../nextjs-analytics-experiments) — canonical headless analytics + experiments example
+- [Experiments SDK README](../../core-web/libs/sdk/experiments/README.md)
+- [Analytics SDK README](../../core-web/libs/sdk/analytics/README.md)
+
 ## Conclusion
 
 This example demonstrates the powerful integration between dotCMS and Next.js, enabling fully editable and dynamic web pages. By leveraging dotCMS as a headless CMS and Next.js for front-end rendering, you can create high-performance websites that offer both developer flexibility and content editor ease-of-use.
