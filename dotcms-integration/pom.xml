@@ -634,23 +634,24 @@
         </profile>
         <profile>
             <!--
-              Runs the regular MainSuite battery under a chosen ES->OS migration phase, against a
-              single OpenSearch 3.x cluster, to measure how the existing test flow behaves on OS.
+              Runs the regular MainSuite battery under a chosen ES->OS migration phase, against TWO
+              separate clusters (a real ES on es.port and the OpenSearch 3.x upgrade container on
+              os.upgrade.port), to measure how the existing test flow behaves under migration.
 
               Activate + pick the phase with a SINGLE property (its presence activates the profile,
               its value is the phase ordinal):
                 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase=3
 
               Notes:
-                - Same single-cluster wiring as opensearch-upgrade (ES and OS point at the OS 3.x
-                  container). The phase ordinal flows into DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, which
+                - TWO clusters on purpose: ES stays on es.port (inherited DOT_ES_ENDPOINTS, default
+                  http://localhost:9207) and OS on os.upgrade.port (http://localhost:9201). Keeping
+                  the endpoints separate is what lets IndexStartupValidator's endpoint-separation
+                  check pass, so ALL phases (1/2/3) bootstrap — not just phase 3.
+                - The phase ordinal flows into DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, which
                   IntegrationTestInitService.init() reads to bootstrap the OS index set (and fail
                   fast if OS is unreachable).
-                - Single cluster => only phase 3 (OpenSearch-only) is meaningful: in phases 0/1/2 the
-                  legacy ES client writes content to the OS 3.x backend and fails (NPE in
-                  DocWriteResponse). Phases 1/2 need two separate ES and OS clusters.
                 - Includes are inherited from the base config (MainSuite*/Junit5Suite*); narrow a run
-                  with -Dit.test=<Class> as usual. This is the full battery — expect a long run.
+                  with -Dit.test=<Class> as usual. The full battery is a long run.
             -->
             <id>opensearch-phase-suite</id>
             <activation>
@@ -660,9 +661,9 @@
                 </property>
             </activation>
             <properties>
-                <!-- Bring up the OpenSearch 3.x container and route ES at it (single cluster) -->
+                <!-- Add the OpenSearch 3.x upgrade container alongside the regular ES container.
+                     ES endpoints are NOT overridden, so ES and OS stay on separate clusters. -->
                 <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
-                <test.es.endpoints>${test.os.upgrade.endpoints}</test.es.endpoints>
             </properties>
             <build>
                 <plugins>
@@ -671,7 +672,8 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <DOT_ES_ENDPOINTS>${test.os.upgrade.endpoints}</DOT_ES_ENDPOINTS>
+                                <!-- DOT_ES_ENDPOINTS is inherited from the base config (es.port,
+                                     default http://localhost:9207) — a SEPARATE cluster from OS. -->
                                 <OS_ENDPOINTS>${test.os.upgrade.endpoints}</OS_ENDPOINTS>
                                 <OS_TLS_ENABLED>false</OS_TLS_ENABLED>
                                 <!-- Drives MigrationPhase.current() for the whole forked test JVM -->
