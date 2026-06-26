@@ -175,6 +175,9 @@ jobs:
       # R1 requires the cross-region inference profile id (us.deepseek.r1-v1:0), not the bare model id.
       model_id: ${{ vars.REVIEW_MODEL_ID || 'us.deepseek.r1-v1:0' }}
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+      # Use the agentic harness on the Bedrock path (model reads the repo via tools, posts
+      # inline comments, gates on severity) instead of the single-shot diff reviewer.
+      agentic: true
       trigger_mode: automatic
       prompt: ${{ needs.load-gpt-prompt.outputs.prompt }}
       # Sticky comments: one auto-updating review comment per PR (default), instead of a fresh
