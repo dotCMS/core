@@ -107,7 +107,7 @@ describe('DotContentDriveShellComponent', () => {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotUploadFileService, {
-                uploadDotAsset: jest.fn().mockReturnValue(of({}))
+                uploadFileByBaseType: jest.fn().mockReturnValue(of({}))
             }),
             provideHttpClient(),
             mockProvider(DotMessageService, {
@@ -702,7 +702,7 @@ describe('DotContentDriveShellComponent', () => {
                 header: expect.any(String),
                 payload: { targetFolder: TARGET_FOLDER_DATA }
             });
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
         it('should open the upload selector carrying the files when the dropzone emits uploadFiles', () => {
@@ -719,7 +719,7 @@ describe('DotContentDriveShellComponent', () => {
                 header: expect.any(String),
                 payload: { targetFolder: TARGET_FOLDER_DATA, files }
             });
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
         it('should open the upload selector carrying the files when the sidebar emits uploadFiles', () => {
@@ -736,7 +736,7 @@ describe('DotContentDriveShellComponent', () => {
                 header: expect.any(String),
                 payload: { targetFolder: TARGET_FOLDER_DATA, files }
             });
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
         it('should render the upload selector dialog body when the dialog type is UPLOAD_SELECTOR', () => {
@@ -757,64 +757,79 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should upload the file as dotAsset when Asset is selected', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([file]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
-                file,
-                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
-                'dotAsset'
-            );
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
         });
 
         it('should upload the file as FileAsset when File is selected', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([file]),
-                contentType: 'FileAsset'
+                baseType: 'FILEASSET'
             });
 
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
-                file,
-                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
-                'FileAsset'
-            );
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
         });
 
-        it('should upload to the site root when no folder is selected', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+        it('should upload to the current site root when no folder is selected', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
             const file = createFile();
 
             selectUploadType({
                 targetFolder: undefined,
                 files: createFileList([file]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
-                file,
-                { hostFolder: '', indexPolicy: 'WAIT_FOR' },
-                'dotAsset'
-            );
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'DOTASSET', {
+                hostFolder: MOCK_SITES[0].identifier,
+                indexPolicy: 'WAIT_FOR'
+            });
+        });
+
+        it('should fall back to empty hostFolder when no folder and no current site', () => {
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            store.currentSite.mockReturnValue(undefined);
+            const file = createFile();
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([file]),
+                baseType: 'FILEASSET'
+            });
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: '',
+                indexPolicy: 'WAIT_FOR'
+            });
         });
 
         it('should show the info message when the upload starts', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const addSpy = jest.spyOn(messageService, 'add');
 
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile()]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -825,7 +840,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should show a success message after a successful upload', () => {
-            uploadService.uploadDotAsset.mockReturnValue(
+            uploadService.uploadFileByBaseType.mockReturnValue(
                 of({ title: 'test.jpg', contentType: 'image/jpeg' } as DotCMSContentlet)
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -833,7 +848,7 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile()]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -845,7 +860,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should show an error message on upload failure', () => {
-            uploadService.uploadDotAsset.mockReturnValue(
+            uploadService.uploadFileByBaseType.mockReturnValue(
                 throwError(() => new Error('Upload failed'))
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -853,7 +868,7 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile()]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -865,7 +880,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should show the server error message on failure with an errors payload', () => {
-            uploadService.uploadDotAsset.mockReturnValue(
+            uploadService.uploadFileByBaseType.mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
             );
             const addSpy = jest.spyOn(messageService, 'add');
@@ -873,7 +888,7 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([createFile()]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -885,7 +900,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should warn and upload only the first file when multiple files are selected', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const addSpy = jest.spyOn(messageService, 'add');
             const file1 = createFile('test1.jpg');
             const file2 = createFile('test2.jpg');
@@ -893,7 +908,7 @@ describe('DotContentDriveShellComponent', () => {
             selectUploadType({
                 targetFolder: TARGET_FOLDER_DATA,
                 files: createFileList([file1, file2]),
-                contentType: 'dotAsset'
+                baseType: 'DOTASSET'
             });
 
             expect(addSpy).toHaveBeenCalledWith({
@@ -902,12 +917,11 @@ describe('DotContentDriveShellComponent', () => {
                 detail: expect.any(String),
                 life: WARNING_MESSAGE_LIFE
             });
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
-                file1,
-                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
-                'dotAsset'
-            );
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledTimes(1);
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file1, 'DOTASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
         });
     });
 
@@ -917,17 +931,17 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should open the file picker after a type is chosen, then upload with that type', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const file = createFile();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
             const clickSpy = jest.spyOn(fileInput, 'click');
 
             // Button flow: dialog opens with NO files in the payload.
-            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, contentType: 'FileAsset' });
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
 
             expect(clickSpy).toHaveBeenCalled();
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
 
             Object.defineProperty(fileInput, 'files', {
                 value: [file],
@@ -936,17 +950,16 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(
-                file,
-                { hostFolder: TARGET_FOLDER_DATA.id, indexPolicy: 'WAIT_FOR' },
-                'FileAsset'
-            );
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
         });
 
         it('should not upload when the file picker is dismissed without files', () => {
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
 
-            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, contentType: 'dotAsset' });
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'DOTASSET' });
 
             Object.defineProperty(fileInput, 'files', {
                 value: [],
@@ -955,7 +968,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
+            expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
     });
 
