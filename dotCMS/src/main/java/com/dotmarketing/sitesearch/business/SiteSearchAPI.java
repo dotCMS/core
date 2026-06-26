@@ -5,10 +5,10 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.quartz.SchedulerException;
 
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
@@ -36,7 +36,7 @@ public interface SiteSearchAPI {
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
+	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException;
 
 	boolean setAlias(String indexName, final String alias);
 

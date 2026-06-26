@@ -10,11 +10,10 @@ import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
 
 /**
- * Content type variables the upload selector can produce, derived from the selector options so the
- * type and the rendered choices never drift apart.
+ * Base types the upload selector can produce, derived from the selector options so the type and the
+ * rendered choices never drift apart.
  */
-export type DotContentDriveUploadContentType =
-    (typeof UPLOAD_SELECTOR_OPTIONS)[number]['contentType'];
+export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
 
 /**
  * The status of the content drive.
@@ -120,7 +119,7 @@ export interface DotContentDriveUploadSelectorPayload {
  * `targetFolder` is omitted when nothing is selected (uploads to the site root).
  */
 export interface DotContentDriveUploadSelection {
-    contentType: DotContentDriveUploadContentType;
+    baseType: DotContentDriveUploadBaseType;
     targetFolder?: DotFolderTreeNodeData;
     files?: FileList;
 }

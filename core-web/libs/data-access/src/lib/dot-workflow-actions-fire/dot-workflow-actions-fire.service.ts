@@ -138,6 +138,26 @@ export class DotWorkflowActionsFireService {
     }
 
     /**
+     * Fire a "NEW" action resolving the content type from a base type instead of an explicit
+     * content type. The base type is sent in the contentlet body (no `contentType`), so the
+     * backend resolves the matching content type for that base type (e.g. `FILEASSET`, `DOTASSET`).
+     *
+     * @template T
+     * @param {string} baseType the base type to resolve the content type from
+     * @param {{ [key: string]: string }} data
+     * @param {FormData} [formData]
+     * @returns Observable<T>
+     * @memberof DotWorkflowActionsFireService
+     */
+    newContentletByBaseType<T>(
+        baseType: string,
+        data: { [key: string]: string },
+        formData?: FormData
+    ): Observable<T> {
+        return this.request<T>({ data: { baseType, ...data }, action: ActionToFire.NEW, formData });
+    }
+
+    /**
      * Fire a "PUBLISH" action over the content type received with the specified data
      *
      * @template T
