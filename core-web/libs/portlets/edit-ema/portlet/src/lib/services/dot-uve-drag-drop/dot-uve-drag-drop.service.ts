@@ -53,6 +53,19 @@ export class DotUveDragDropService {
                     return;
                 }
 
+                // Request fresh container bounds the instant the drag begins.
+                // `setEditorDragItem` is deferred to the next animation frame
+                // (so the browser can snapshot the drag image before Angular
+                // re-renders), which means the `dragenter` handler — the only
+                // other place that flushes bounds — can fire first, see no
+                // drag item yet, and bail before posting UVE_FLUSH_BOUNDS. When
+                // that race happens the dropzone is left with stale/empty
+                // `editorBounds` and renders no drop targets. Flushing here, at
+                // drag start, guarantees bounds are requested regardless of the
+                // race so they have arrived by the time `dragover` flips the
+                // editor into DRAGGING.
+                contentWindow?.postMessage({ name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS }, host);
+
                 requestAnimationFrame(() => uveStore.setEditorDragItem(data));
             });
 
