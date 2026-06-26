@@ -1,4 +1,4 @@
-@if (isActive() && imageRect()) {
+@if ($isActive() && $imageRect()) {
     <div class="focal-overlay">
         <div
             class="focal-surface"
@@ -10,8 +10,8 @@
             tabindex="0"
             role="button"
             [attr.aria-label]="'edit.content.image-editor.focal.marker.aria' | dm"
-            [style.left]="markerStyle().left"
-            [style.top]="markerStyle().top"
+            [style.left]="$markerStyle().left"
+            [style.top]="$markerStyle().top"
             (pointerdown)="onSurfacePointerDown($event)"
             (keydown)="onMarkerKeydown($event)"
             data-testid="image-editor-focal-marker"></span>

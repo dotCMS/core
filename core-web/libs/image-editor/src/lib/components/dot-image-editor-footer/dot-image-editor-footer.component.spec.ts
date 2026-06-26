@@ -49,7 +49,7 @@ describe('DotImageEditorFooterComponent', () => {
     });
 
     it('should emit cancel when Cancel is clicked', () => {
-        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+        const cancelSpy = jest.spyOn(spectator.component.$cancel, 'emit');
 
         spectator.click(nativeButton(spectator, 'image-editor-cancel-btn'));
 

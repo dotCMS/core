@@ -7,7 +7,7 @@
                 class="ie-field__value"
                 [min]="-100"
                 [max]="100"
-                [value]="brightness()"
+                [value]="$brightness()"
                 [attr.aria-label]="'edit.content.image-editor.adjust.brightness' | dm"
                 (change)="onBrightnessInput($event)"
                 data-testid="image-editor-brightness-value" />
@@ -31,7 +31,7 @@
                 class="ie-field__value"
                 [min]="-100"
                 [max]="100"
-                [value]="hue()"
+                [value]="$hue()"
                 [attr.aria-label]="'edit.content.image-editor.adjust.hue' | dm"
                 (change)="onHueInput($event)"
                 data-testid="image-editor-hue-value" />
@@ -55,7 +55,7 @@
                 class="ie-field__value"
                 [min]="-100"
                 [max]="100"
-                [value]="saturation()"
+                [value]="$saturation()"
                 [attr.aria-label]="'edit.content.image-editor.adjust.saturation' | dm"
                 (change)="onSaturationInput($event)"
                 data-testid="image-editor-saturation-value" />

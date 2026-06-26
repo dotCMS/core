@@ -65,7 +65,7 @@ describe('DotImageEditorPanelsComponent', () => {
     it('should start with every section open by default', () => {
         spectator = createComponent();
 
-        expect(spectator.component['openPanels']()).toEqual([
+        expect(spectator.component['$openPanels']()).toEqual([
             'adjust',
             'transform',
             'fileinfo',
@@ -78,7 +78,7 @@ describe('DotImageEditorPanelsComponent', () => {
 
         spectator = createComponent();
 
-        expect(spectator.component['openPanels']()).toEqual(['transform']);
+        expect(spectator.component['$openPanels']()).toEqual(['transform']);
     });
 
     it('should persist the open sections to localStorage when they change', () => {

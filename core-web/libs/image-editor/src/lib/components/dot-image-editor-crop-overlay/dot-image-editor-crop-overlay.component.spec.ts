@@ -186,7 +186,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
     it('should expose the crop box size in natural image pixels', () => {
         // The default selection covers the whole 400x300 rendered image; the asset is
         // 800x600 natural, so the box reports the full 800x600 natural size.
-        expect(spectator.component.naturalCropSize()).toEqual({ width: 800, height: 600 });
+        expect(spectator.component.$naturalCropSize()).toEqual({ width: 800, height: 600 });
     });
 
     it('should track the natural size as the box is resized on the canvas', () => {
@@ -198,7 +198,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
         window.dispatchEvent(new MouseEvent('pointerup', { clientX: 350, clientY: 150 }));
         spectator.detectChanges();
 
-        expect(spectator.component.naturalCropSize()).toEqual({ width: 700, height: 600 });
+        expect(spectator.component.$naturalCropSize()).toEqual({ width: 700, height: 600 });
     });
 
     it('should resize the box to a given natural size, centered on its current center', () => {
@@ -213,7 +213,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
         expect(box!.style.height).toEqual('150px');
         expect(box!.style.left).toEqual('100px');
         expect(box!.style.top).toEqual('75px');
-        expect(spectator.component.naturalCropSize()).toEqual({ width: 400, height: 300 });
+        expect(spectator.component.$naturalCropSize()).toEqual({ width: 400, height: 300 });
     });
 
     it('should clamp a requested natural size to the rendered image bounds', () => {

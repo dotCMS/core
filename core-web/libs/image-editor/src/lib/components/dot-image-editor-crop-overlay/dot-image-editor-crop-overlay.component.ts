@@ -45,14 +45,14 @@ import { clamp } from '../../utils/dimensions.util';
 })
 export class DotImageEditorCropOverlayComponent {
     /** Bounds of the rendered image within the canvas, in CSS px. */
-    imageRect = input<ImageRect>();
+    $imageRect = input<ImageRect>(undefined, { alias: 'imageRect' });
 
     /**
      * Initial crop selection (image-local CSS px) to seed on activation — set when
      * the user switches to crop while zoomed, so the box frames what was in view.
      * When unset the selection defaults to the full image.
      */
-    initialRect = input<ImageRect>();
+    $initialRect = input<ImageRect>(undefined, { alias: 'initialRect' });
 
     /**
      * Locked aspect ratio (width / height) for the crop box, or `null` for
@@ -60,7 +60,7 @@ export class DotImageEditorCropOverlayComponent {
      * and maximized to fit the rendered image) and subsequent handle-resizes keep
      * the ratio; `null` restores unconstrained, Shift-to-lock free-form behavior.
      */
-    aspect = input<number | null>(null);
+    $aspect = input<number | null>(null, { alias: 'aspect' });
 
     /**
      * Intrinsic pixel size of the DISPLAYED image — i.e. the source after the
@@ -69,7 +69,7 @@ export class DotImageEditorCropOverlayComponent {
      * converted into; using the original asset size here would mis-scale a crop made
      * on a rotated preview. `0×0` until the image is measured (no conversion).
      */
-    naturalSize = input<Dimensions>({ width: 0, height: 0 });
+    $naturalSize = input<Dimensions>({ width: 0, height: 0 }, { alias: 'naturalSize' });
 
     readonly #store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
@@ -79,10 +79,10 @@ export class DotImageEditorCropOverlayComponent {
     protected readonly handles = CROP_HANDLES;
 
     /** Whether the crop tool is the active canvas tool. */
-    protected readonly isActive = computed(() => this.#store.activeTool() === 'crop');
+    protected readonly $isActive = computed(() => this.#store.activeTool() === 'crop');
 
     /** Crop selection in CSS px, local to the rendered image origin. */
-    protected readonly cropRect = signal<LocalRect>({ x: 0, y: 0, width: 0, height: 0 });
+    protected readonly $cropRect = signal<LocalRect>({ x: 0, y: 0, width: 0, height: 0 });
 
     /**
      * The current crop box size in natural image pixels, derived by scaling the
@@ -91,12 +91,12 @@ export class DotImageEditorCropOverlayComponent {
      * is no rendered image to scale against. Updates live as the box is dragged
      * or resized.
      */
-    readonly naturalCropSize = computed<Dimensions>(
+    readonly $naturalCropSize = computed<Dimensions>(
         () => {
-            const rect = this.imageRect();
-            const crop = this.cropRect();
+            const rect = this.$imageRect();
+            const crop = this.$cropRect();
 
-            const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
+            const { width: naturalWidth, height: naturalHeight } = this.$naturalSize();
 
             if (!rect || rect.width === 0 || rect.height === 0 || !naturalWidth || !naturalHeight) {
                 return { width: 0, height: 0 };
@@ -115,9 +115,9 @@ export class DotImageEditorCropOverlayComponent {
     );
 
     /** Absolute CSS-px position of the crop box within the canvas. */
-    protected readonly boxStyle = computed(() => {
-        const rect = this.imageRect();
-        const crop = this.cropRect();
+    protected readonly $boxStyle = computed(() => {
+        const rect = this.$imageRect();
+        const crop = this.$cropRect();
 
         return {
             left: `${(rect?.x ?? 0) + crop.x}px`,
@@ -135,9 +135,9 @@ export class DotImageEditorCropOverlayComponent {
      * four solid fills driven by this signal are cheap. The panels stretch to the
      * overlay edges via `right:0`/`bottom:0`, so only the box edges are needed here.
      */
-    protected readonly maskBounds = computed(() => {
-        const rect = this.imageRect();
-        const crop = this.cropRect();
+    protected readonly $maskBounds = computed(() => {
+        const rect = this.$imageRect();
+        const crop = this.$cropRect();
         const left = (rect?.x ?? 0) + crop.x;
         const top = (rect?.y ?? 0) + crop.y;
 
@@ -157,18 +157,18 @@ export class DotImageEditorCropOverlayComponent {
         // Reads `aspect()` untracked so this fires only on activation/bounds
         // changes — the dedicated reshape effect below owns reacting to the ratio.
         effect(() => {
-            const rect = this.imageRect();
+            const rect = this.$imageRect();
 
-            if (this.isActive() && rect) {
-                const ratio = untracked(this.aspect);
+            if (this.$isActive() && rect) {
+                const ratio = untracked(this.$aspect);
                 if (ratio) {
-                    this.cropRect.set(this.#aspectFittedRect(ratio, rect));
+                    this.$cropRect.set(this.#aspectFittedRect(ratio, rect));
 
                     return;
                 }
 
-                const initial = this.initialRect();
-                this.cropRect.set(
+                const initial = this.$initialRect();
+                this.$cropRect.set(
                     initial ?? { x: 0, y: 0, width: rect.width, height: rect.height }
                 );
             }
@@ -178,11 +178,11 @@ export class DotImageEditorCropOverlayComponent {
         // non-null ratio fits a centered, maximized box of that ratio inside the
         // rendered image. `null` (Free) leaves the current box untouched.
         effect(() => {
-            const ratio = this.aspect();
-            const rect = untracked(this.imageRect);
+            const ratio = this.$aspect();
+            const rect = untracked(this.$imageRect);
 
-            if (untracked(this.isActive) && rect && ratio) {
-                this.cropRect.set(this.#aspectFittedRect(ratio, rect));
+            if (untracked(this.$isActive) && rect && ratio) {
+                this.$cropRect.set(this.#aspectFittedRect(ratio, rect));
             }
         });
     }
@@ -215,7 +215,7 @@ export class DotImageEditorCropOverlayComponent {
     /** Begins a box move from a pointer press, tracking until release. */
     protected onBoxPointerDown(event: PointerEvent): void {
         event.preventDefault();
-        const start = this.cropRect();
+        const start = this.$cropRect();
 
         this.#trackPointer(event, (dx, dy) => {
             this.#moveTo(start.x + dx, start.y + dy);
@@ -226,7 +226,7 @@ export class DotImageEditorCropOverlayComponent {
     protected onHandlePointerDown(event: PointerEvent, position: HandlePosition): void {
         event.preventDefault();
         event.stopPropagation();
-        const start = this.cropRect();
+        const start = this.$cropRect();
 
         this.#trackPointer(event, (dx, dy, shiftKey) => {
             this.#resize(start, position, dx, dy, shiftKey);
@@ -236,7 +236,7 @@ export class DotImageEditorCropOverlayComponent {
     /** Nudges or applies/cancels the crop in response to keyboard input. */
     protected onBoxKeydown(event: KeyboardEvent): void {
         const step = event.shiftKey ? CROP_NUDGE_STEP_LARGE : CROP_NUDGE_STEP;
-        const current = this.cropRect();
+        const current = this.$cropRect();
 
         switch (event.key) {
             case 'ArrowLeft':
@@ -270,14 +270,14 @@ export class DotImageEditorCropOverlayComponent {
      * "Apply crop" action and by the Enter key while the box is focused.
      */
     applyCrop(): void {
-        const rect = this.imageRect();
-        const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
+        const rect = this.$imageRect();
+        const { width: naturalWidth, height: naturalHeight } = this.$naturalSize();
 
         if (!rect || rect.width === 0 || rect.height === 0 || !naturalWidth || !naturalHeight) {
             return;
         }
 
-        const crop = this.cropRect();
+        const crop = this.$cropRect();
         const scaleX = naturalWidth / rect.width;
         const scaleY = naturalHeight / rect.height;
 
@@ -308,8 +308,8 @@ export class DotImageEditorCropOverlayComponent {
      * it proportionally if it would overflow. No-op without a rendered image.
      */
     setNaturalCropSize(width: number, height: number): void {
-        const rect = this.imageRect();
-        const { width: naturalWidth, height: naturalHeight } = this.naturalSize();
+        const rect = this.$imageRect();
+        const { width: naturalWidth, height: naturalHeight } = this.$naturalSize();
 
         if (
             !rect ||
@@ -333,11 +333,11 @@ export class DotImageEditorCropOverlayComponent {
 
         // Keep the box centered on its current center, then clamp the origin so it
         // stays fully inside the image.
-        const current = this.cropRect();
+        const current = this.$cropRect();
         const centerX = current.x + current.width / 2;
         const centerY = current.y + current.height / 2;
 
-        this.cropRect.set({
+        this.$cropRect.set({
             x: clamp(centerX - cssWidth / 2, 0, rect.width - cssWidth),
             y: clamp(centerY - cssHeight / 2, 0, rect.height - cssHeight),
             width: cssWidth,
@@ -350,7 +350,7 @@ export class DotImageEditorCropOverlayComponent {
      * keypress instead cancels the crop selection.
      */
     protected onEscape(event: KeyboardEvent): void {
-        if (!this.isActive()) {
+        if (!this.$isActive()) {
             return;
         }
 
@@ -360,14 +360,14 @@ export class DotImageEditorCropOverlayComponent {
 
     /** Moves the box to a new local origin, clamped within the rendered image. */
     #moveTo(x: number, y: number): void {
-        const rect = this.imageRect();
+        const rect = this.$imageRect();
 
         if (!rect) {
             return;
         }
 
-        const crop = this.cropRect();
-        this.cropRect.set({
+        const crop = this.$cropRect();
+        this.$cropRect.set({
             ...crop,
             x: clamp(x, 0, rect.width - crop.width),
             y: clamp(y, 0, rect.height - crop.height)
@@ -389,7 +389,7 @@ export class DotImageEditorCropOverlayComponent {
         dy: number,
         shiftKey = false
     ): void {
-        const rect = this.imageRect();
+        const rect = this.$imageRect();
 
         if (!rect) {
             return;
@@ -397,12 +397,12 @@ export class DotImageEditorCropOverlayComponent {
 
         // Corner handles carry both an horizontal and a vertical edge ('tl', etc.).
         const isCorner = position.length === 2;
-        const locked = this.aspect();
+        const locked = this.$aspect();
         const lockAspect = locked != null || shiftKey;
 
         if (lockAspect && isCorner && start.height > 0) {
             const ratio = locked ?? start.width / start.height;
-            this.cropRect.set(this.#resizeLockedAspect(start, position, dx, dy, rect, ratio));
+            this.$cropRect.set(this.#resizeLockedAspect(start, position, dx, dy, rect, ratio));
 
             return;
         }
@@ -429,7 +429,7 @@ export class DotImageEditorCropOverlayComponent {
             height = clamp(start.height + dy, MIN_CROP_SIZE, rect.height - start.y);
         }
 
-        this.cropRect.set({ x, y, width, height });
+        this.$cropRect.set({ x, y, width, height });
     }
 
     /**

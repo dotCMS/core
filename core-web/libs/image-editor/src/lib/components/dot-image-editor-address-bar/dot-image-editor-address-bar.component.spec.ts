@@ -155,9 +155,9 @@ describe('DotImageEditorAddressBarComponent', () => {
         const zoomInSpy = jest.fn();
         const zoomOutSpy = jest.fn();
         const fitSpy = jest.fn();
-        spectator.output('zoomIn').subscribe(zoomInSpy);
-        spectator.output('zoomOut').subscribe(zoomOutSpy);
-        spectator.output('fit').subscribe(fitSpy);
+        spectator.output('$zoomIn').subscribe(zoomInSpy);
+        spectator.output('$zoomOut').subscribe(zoomOutSpy);
+        spectator.output('$fit').subscribe(fitSpy);
 
         spectator.click(button('image-editor-zoom-in-btn'));
         spectator.click(button('image-editor-zoom-out-btn'));

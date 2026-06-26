@@ -13,7 +13,7 @@ import { ImageEditorStore } from '../../store/image-editor.store';
 /**
  * Header bar of the image editor dialog. Renders the editor title on the left and,
  * on the right, the full-screen toggle next to a close icon button (grouped as the
- * dialog's window controls). Close emits {@link DotImageEditorHeaderComponent.close};
+ * dialog's window controls). Close emits {@link DotImageEditorHeaderComponent.$close};
  * the full-screen toggle dispatches {@link imageEditorViewEvents} and the root
  * component performs the actual dialog resize, reacting to `store.isFullscreen()`.
  */
@@ -29,10 +29,10 @@ export class DotImageEditorHeaderComponent {
     readonly #viewDispatch = injectDispatch(imageEditorViewEvents);
 
     /** Emitted when the user clicks the close (✕) button. */
-    close = output<void>();
+    $close = output<void>({ alias: 'close' });
 
     /** Material Symbol ligature for the full-screen toggle, by current state. */
-    protected readonly fullscreenIcon = computed(() =>
+    protected readonly $fullscreenIcon = computed(() =>
         this.store.isFullscreen() ? 'close_fullscreen' : 'open_in_full'
     );
 

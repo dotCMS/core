@@ -37,7 +37,7 @@ import { clamp } from '../../utils/dimensions.util';
 })
 export class DotImageEditorFocalOverlayComponent {
     /** Bounds of the rendered image within the canvas, in CSS px. */
-    imageRect = input<ImageRect>();
+    $imageRect = input<ImageRect>(undefined, { alias: 'imageRect' });
 
     /**
      * Current stage zoom scale (1 = 100%). The overlay sits inside the
@@ -46,22 +46,22 @@ export class DotImageEditorFocalOverlayComponent {
      * pointer offset back to logical px so clicks land where the user pressed at
      * any zoom level.
      */
-    scale = input<number>(1);
+    $scale = input<number>(1, { alias: 'scale' });
 
     readonly #store = inject(ImageEditorStore);
     readonly #dispatch = injectDispatch(imageEditorToolEvents);
     readonly #host = inject(ElementRef<HTMLElement>);
 
     /** Whether the focal tool is the active canvas tool. */
-    protected readonly isActive = computed(() => this.#store.activeTool() === 'focal');
+    protected readonly $isActive = computed(() => this.#store.activeTool() === 'focal');
 
     /** Working focal point as normalized 0..1 coordinates. */
-    protected readonly point = signal<NormalizedPoint>({ x: 0.5, y: 0.5 });
+    protected readonly $point = signal<NormalizedPoint>({ x: 0.5, y: 0.5 });
 
     /** Absolute CSS-px position of the marker center within the canvas. */
-    protected readonly markerStyle = computed(() => {
-        const rect = this.imageRect();
-        const { x, y } = this.point();
+    protected readonly $markerStyle = computed(() => {
+        const rect = this.$imageRect();
+        const { x, y } = this.$point();
 
         return {
             left: `${(rect?.x ?? 0) + x * (rect?.width ?? 0)}px`,
@@ -73,9 +73,9 @@ export class DotImageEditorFocalOverlayComponent {
         // Seed the marker from the stored focal point whenever the tool
         // activates so it reflects the persisted position.
         effect(() => {
-            if (this.isActive()) {
+            if (this.$isActive()) {
                 const focal = this.#store.focalPoint();
-                this.point.set({ x: focal.x, y: focal.y });
+                this.$point.set({ x: focal.x, y: focal.y });
             }
         });
     }
@@ -97,7 +97,7 @@ export class DotImageEditorFocalOverlayComponent {
     /** Moves (and commits) or finishes the focal point in response to keyboard input. */
     protected onMarkerKeydown(event: KeyboardEvent): void {
         const step = event.shiftKey ? FOCAL_NUDGE_STEP_LARGE : FOCAL_NUDGE_STEP;
-        const current = this.point();
+        const current = this.$point();
 
         switch (event.key) {
             case 'ArrowLeft':
@@ -131,7 +131,7 @@ export class DotImageEditorFocalOverlayComponent {
 
     /** Commits the current marker position as the focal point (normalized 0..1). */
     setFocalPoint(): void {
-        const { x, y } = this.point();
+        const { x, y } = this.$point();
         this.#dispatch.focalPointSet({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
     }
 
@@ -145,7 +145,7 @@ export class DotImageEditorFocalOverlayComponent {
      * point; the keypress instead leaves the focal tool (the point stays set).
      */
     protected onEscape(event: KeyboardEvent): void {
-        if (!this.isActive()) {
+        if (!this.$isActive()) {
             return;
         }
 
@@ -155,7 +155,7 @@ export class DotImageEditorFocalOverlayComponent {
 
     /** Converts a client-space pointer position into a normalized focal point. */
     #setFromClient(clientX: number, clientY: number): void {
-        const rect = this.imageRect();
+        const rect = this.$imageRect();
 
         if (!rect || rect.width === 0 || rect.height === 0) {
             return;
@@ -166,7 +166,7 @@ export class DotImageEditorFocalOverlayComponent {
         // point lands under the cursor at any zoom. Pan is already folded into
         // `host.left/top`.
         const host = this.#hostRect();
-        const scale = this.scale() || 1;
+        const scale = this.$scale() || 1;
         const localX = (clientX - host.left) / scale - rect.x;
         const localY = (clientY - host.top) / scale - rect.y;
         this.#moveTo(localX / rect.width, localY / rect.height);
@@ -174,7 +174,7 @@ export class DotImageEditorFocalOverlayComponent {
 
     /** Sets the working point from normalized coordinates, clamped to 0..1. */
     #moveTo(x: number, y: number): void {
-        this.point.set({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
+        this.$point.set({ x: clamp(x, 0, 1), y: clamp(y, 0, 1) });
     }
 
     /** Tracks pointer movement until release, reporting position and a release hook. */

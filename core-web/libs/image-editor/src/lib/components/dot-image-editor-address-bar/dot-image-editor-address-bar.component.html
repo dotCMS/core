@@ -89,7 +89,7 @@
         [pTooltip]="'edit.content.image-editor.zoom.out.aria' | dm"
         tooltipPosition="bottom"
         data-testid="image-editor-zoom-out-btn"
-        (onClick)="zoomOut.emit()">
+        (onClick)="$zoomOut.emit()">
         <ng-template #icon>
             <i class="material-symbols-outlined">remove</i>
         </ng-template>
@@ -102,8 +102,8 @@
         [pTooltip]="'edit.content.image-editor.zoom.fit.aria' | dm"
         tooltipPosition="bottom"
         data-testid="image-editor-fit-btn"
-        (click)="fit.emit()">
-        {{ zoomLevel() }}%
+        (click)="$fit.emit()">
+        {{ $zoomLevel() }}%
     </button>
     <p-button
         [text]="true"
@@ -114,7 +114,7 @@
         [pTooltip]="'edit.content.image-editor.zoom.in.aria' | dm"
         tooltipPosition="bottom"
         data-testid="image-editor-zoom-in-btn"
-        (onClick)="zoomIn.emit()">
+        (onClick)="$zoomIn.emit()">
         <ng-template #icon>
             <i class="material-symbols-outlined">add</i>
         </ng-template>

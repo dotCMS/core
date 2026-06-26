@@ -8,7 +8,7 @@
                     class="ie-field__value"
                     [min]="1"
                     [max]="400"
-                    [value]="scale()"
+                    [value]="$scale()"
                     [attr.aria-label]="'edit.content.image-editor.transform.scale' | dm"
                     (change)="onScaleInput($event)"
                     data-testid="image-editor-scale-value" />
@@ -33,7 +33,7 @@
                     class="ie-field__value"
                     [min]="-180"
                     [max]="180"
-                    [value]="rotate()"
+                    [value]="$rotate()"
                     [attr.aria-label]="'edit.content.image-editor.transform.rotate' | dm"
                     (change)="onRotateInput($event)"
                     data-testid="image-editor-rotate-value" />
@@ -88,7 +88,7 @@
                     data-testid="image-editor-output-width-input"
                     (onInput)="outputWidthChanged($event.value)"
                     (onBlur)="outputWidthChanged(store.outputDimensions().width)" />
-                @if (widthError()) {
+                @if ($widthError()) {
                     <small
                         class="ie-transform__error"
                         data-testid="image-editor-output-width-error">
@@ -105,7 +105,7 @@
                     data-testid="image-editor-output-height-input"
                     (onInput)="outputHeightChanged($event.value)"
                     (onBlur)="outputHeightChanged(store.outputDimensions().height)" />
-                @if (heightError()) {
+                @if ($heightError()) {
                     <small
                         class="ie-transform__error"
                         data-testid="image-editor-output-height-error">

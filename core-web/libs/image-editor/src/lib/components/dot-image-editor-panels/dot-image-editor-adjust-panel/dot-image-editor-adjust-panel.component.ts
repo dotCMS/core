@@ -40,26 +40,26 @@ export class DotImageEditorAdjustPanelComponent {
     protected readonly dispatch = injectDispatch(imageEditorAdjustEvents);
 
     /** Optimistic brightness value shown while the slider is being dragged. */
-    protected readonly brightness = signal(0);
+    protected readonly $brightness = signal(0);
     /** Optimistic hue value shown while the slider is being dragged. */
-    protected readonly hue = signal(0);
+    protected readonly $hue = signal(0);
     /** Optimistic saturation value shown while the slider is being dragged. */
-    protected readonly saturation = signal(0);
+    protected readonly $saturation = signal(0);
 
     constructor() {
         // Keep the optimistic slider values in sync with committed store state
         // (e.g. after undo/redo, reset or removing a history entry).
         effect(() => {
             const adjust = this.store.adjust();
-            this.brightness.set(adjust.brightness);
-            this.hue.set(adjust.hue);
-            this.saturation.set(adjust.saturation);
+            this.$brightness.set(adjust.brightness);
+            this.$hue.set(adjust.hue);
+            this.$saturation.set(adjust.saturation);
         });
     }
 
     /** Updates the optimistic brightness label as the slider moves. */
     protected onBrightnessChange(event: SliderChangeEvent): void {
-        this.brightness.set(this.#singleValue(event.value));
+        this.$brightness.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final brightness value once the slider drag ends. */
@@ -69,14 +69,14 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a brightness value typed into the inline number field. */
     protected onBrightnessInput(event: Event): void {
-        const value = this.#commitTypedValue(event, this.brightness());
-        this.brightness.set(value);
+        const value = this.#commitTypedValue(event, this.$brightness());
+        this.$brightness.set(value);
         this.dispatch.brightnessChanged(value);
     }
 
     /** Updates the optimistic hue label as the slider moves. */
     protected onHueChange(event: SliderChangeEvent): void {
-        this.hue.set(this.#singleValue(event.value));
+        this.$hue.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final hue value once the slider drag ends. */
@@ -86,14 +86,14 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a hue value typed into the inline number field. */
     protected onHueInput(event: Event): void {
-        const value = this.#commitTypedValue(event, this.hue());
-        this.hue.set(value);
+        const value = this.#commitTypedValue(event, this.$hue());
+        this.$hue.set(value);
         this.dispatch.hueChanged(value);
     }
 
     /** Updates the optimistic saturation label as the slider moves. */
     protected onSaturationChange(event: SliderChangeEvent): void {
-        this.saturation.set(this.#singleValue(event.value));
+        this.$saturation.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final saturation value once the slider drag ends. */
@@ -103,8 +103,8 @@ export class DotImageEditorAdjustPanelComponent {
 
     /** Commits a saturation value typed into the inline number field. */
     protected onSaturationInput(event: Event): void {
-        const value = this.#commitTypedValue(event, this.saturation());
-        this.saturation.set(value);
+        const value = this.#commitTypedValue(event, this.$saturation());
+        this.$saturation.set(value);
         this.dispatch.saturationChanged(value);
     }
 

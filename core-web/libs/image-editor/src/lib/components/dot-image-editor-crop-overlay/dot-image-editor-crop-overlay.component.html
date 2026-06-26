@@ -1,27 +1,27 @@
-@if (isActive() && imageRect()) {
+@if ($isActive() && $imageRect()) {
     <div class="crop-overlay" @imageEditorOverlayEnterLeave>
         <!-- Dim everything outside the selection with four solid panels (cheap to
              repaint, unlike a viewport-sized box-shadow). They stretch to the
              overlay edges; only the box edges are data-bound. -->
         <div
             class="crop-mask crop-mask--top"
-            [style.height.px]="maskBounds().top"
+            [style.height.px]="$maskBounds().top"
             data-testid="image-editor-crop-mask-top"></div>
         <div
             class="crop-mask crop-mask--bottom"
-            [style.top.px]="maskBounds().bottom"
+            [style.top.px]="$maskBounds().bottom"
             data-testid="image-editor-crop-mask-bottom"></div>
         <div
             class="crop-mask crop-mask--left"
-            [style.top.px]="maskBounds().top"
-            [style.width.px]="maskBounds().left"
-            [style.height.px]="maskBounds().height"
+            [style.top.px]="$maskBounds().top"
+            [style.width.px]="$maskBounds().left"
+            [style.height.px]="$maskBounds().height"
             data-testid="image-editor-crop-mask-left"></div>
         <div
             class="crop-mask crop-mask--right"
-            [style.top.px]="maskBounds().top"
-            [style.left.px]="maskBounds().right"
-            [style.height.px]="maskBounds().height"
+            [style.top.px]="$maskBounds().top"
+            [style.left.px]="$maskBounds().right"
+            [style.height.px]="$maskBounds().height"
             data-testid="image-editor-crop-mask-right"></div>
 
         <div
@@ -29,10 +29,10 @@
             tabindex="0"
             role="group"
             [attr.aria-label]="'edit.content.image-editor.crop.box.aria' | dm"
-            [style.left]="boxStyle().left"
-            [style.top]="boxStyle().top"
-            [style.width]="boxStyle().width"
-            [style.height]="boxStyle().height"
+            [style.left]="$boxStyle().left"
+            [style.top]="$boxStyle().top"
+            [style.width]="$boxStyle().width"
+            [style.height]="$boxStyle().height"
             (pointerdown)="onBoxPointerDown($event)"
             (keydown)="onBoxKeydown($event)"
             data-testid="image-editor-crop-box">

@@ -131,7 +131,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
         it('should close with null when the header close is triggered and not dirty', () => {
             const header = spectator.query(DotImageEditorHeaderComponent)!;
-            header.close.emit();
+            header.$close.emit();
 
             expect(dialogRef.close).toHaveBeenCalledWith(null);
             expect(confirmationService.confirm).not.toHaveBeenCalled();
@@ -139,7 +139,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
         it('should close with null when the footer cancel is triggered and not dirty', () => {
             const footer = spectator.query(DotImageEditorFooterComponent)!;
-            footer.cancel.emit();
+            footer.$cancel.emit();
 
             expect(dialogRef.close).toHaveBeenCalledWith(null);
             expect(confirmationService.confirm).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         it('should confirm before closing when there are unsaved edits', () => {
             isDirty.set(true);
 
-            spectator.query(DotImageEditorHeaderComponent)!.close.emit();
+            spectator.query(DotImageEditorHeaderComponent)!.$close.emit();
 
             expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
             expect(dialogRef.close).not.toHaveBeenCalled();
@@ -157,7 +157,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         it('should close with null when the secondary "Discard" button is clicked (reject/REJECT)', () => {
             isDirty.set(true);
 
-            spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
+            spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
             const confirmation = (confirmationService.confirm as jest.Mock).mock
                 .calls[0][0] as Confirmation;
@@ -169,7 +169,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         it('should NOT close when the primary "Keep editing" button is clicked (accept)', () => {
             isDirty.set(true);
 
-            spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
+            spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
             const confirmation = (confirmationService.confirm as jest.Mock).mock
                 .calls[0][0] as Confirmation;
@@ -181,7 +181,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         it('should NOT close when the prompt is dismissed via X/ESC (reject/CANCEL)', () => {
             isDirty.set(true);
 
-            spectator.query(DotImageEditorFooterComponent)!.cancel.emit();
+            spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
             const confirmation = (confirmationService.confirm as jest.Mock).mock
                 .calls[0][0] as Confirmation;

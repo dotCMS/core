@@ -45,7 +45,7 @@ describe('DotImageEditorHeaderComponent', () => {
     });
 
     it('should emit close when the close button is clicked', () => {
-        const closeSpy = jest.spyOn(spectator.component.close, 'emit');
+        const closeSpy = jest.spyOn(spectator.component.$close, 'emit');
         const button = spectator.query(byTestId('image-editor-close-btn'))?.querySelector('button');
 
         spectator.click(button as HTMLElement);

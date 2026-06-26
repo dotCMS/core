@@ -127,9 +127,9 @@ describe('DotImageEditorCanvasComponent', () => {
     });
 
     /**
-     * Pumps change detection so the `toObservable(pendingUrl)` effect emits (the
+     * Pumps change detection so the `toObservable($pendingUrl)` effect emits (the
      * queued preview is fetched, mocked) and a second pass mounts its pending
-     * `<img>` layer. Two passes because the effect sets `pendingSrc` during the
+     * `<img>` layer. Two passes because the effect sets `$pendingSrc` during the
      * first pass, after the template was already evaluated.
      */
     const settlePending = () => {
@@ -141,7 +141,7 @@ describe('DotImageEditorCanvasComponent', () => {
         // Expose the overlay's public size read/write on the mock for this test.
         overlayCropSize.set({ width: 0, height: 0 });
         setNaturalCropSize.mockClear();
-        MockInstance(DotImageEditorCropOverlayComponent, 'naturalCropSize', overlayCropSize);
+        MockInstance(DotImageEditorCropOverlayComponent, '$naturalCropSize', overlayCropSize);
         MockInstance(DotImageEditorCropOverlayComponent, 'setNaturalCropSize', setNaturalCropSize);
 
         previewUrl.set(PREVIEW_URL);
@@ -336,14 +336,14 @@ describe('DotImageEditorCanvasComponent', () => {
             spectator.detectChanges();
 
             // Drive the preset/orientation through the DOM (dropdown + buttons). The crop
-            // overlay is mocked here, so assert the locked ratio via the cropAspect computed
+            // overlay is mocked here, so assert the locked ratio via the $cropAspect computed
             // (the value bound to the overlay's `aspect` input) and the orientation buttons'
-            // disabled state — rather than poking the internal cropPreset/cropOrientation signals.
+            // disabled state — rather than poking the internal $cropPreset/$cropOrientation signals.
             const select = spectator.query(Select)!;
             const lockedAspect = () =>
                 (
-                    spectator.component as unknown as { cropAspect: () => number | null }
-                ).cropAspect();
+                    spectator.component as unknown as { $cropAspect: () => number | null }
+                ).$cropAspect();
             const portraitBtn = () => spectator.query(byTestId('image-editor-orient-portrait'))!;
             const setPreset = (value: string) => {
                 select.onChange.emit({ originalEvent: new Event('change'), value });
@@ -380,7 +380,9 @@ describe('DotImageEditorCanvasComponent', () => {
             spectator.detectChanges();
 
             expect(
-                (spectator.component as unknown as { cropAspect: () => number | null }).cropAspect()
+                (
+                    spectator.component as unknown as { $cropAspect: () => number | null }
+                ).$cropAspect()
             ).toBeCloseTo(4 / 3, 5);
         });
 
@@ -397,9 +399,11 @@ describe('DotImageEditorCanvasComponent', () => {
             spectator.click(spectator.query(byTestId('image-editor-orient-portrait'))!);
             spectator.detectChanges();
 
-            // Portrait flips 16:9 -> 9:16 (read via the cropAspect computed bound to the overlay).
+            // Portrait flips 16:9 -> 9:16 (read via the $cropAspect computed bound to the overlay).
             expect(
-                (spectator.component as unknown as { cropAspect: () => number | null }).cropAspect()
+                (
+                    spectator.component as unknown as { $cropAspect: () => number | null }
+                ).$cropAspect()
             ).toBeCloseTo(9 / 16, 5);
             expect(spectator.query(byTestId('image-editor-orient-portrait'))).toHaveClass(
                 'canvas__orient-btn--active'

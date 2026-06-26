@@ -4,7 +4,7 @@
         <p-select
             appendTo="body"
             styleClass="w-full"
-            [options]="compressionOptions()"
+            [options]="$compressionOptions()"
             [ngModel]="store.fileInfo().compression"
             optionLabel="label"
             optionValue="value"
@@ -19,7 +19,7 @@
         </p-select>
     </div>
 
-    @if (isCompressing()) {
+    @if ($isCompressing()) {
         <div class="ie-field">
             <div class="ie-field__header">
                 <label>{{ 'edit.content.image-editor.fileinfo.quality' | dm }}</label>
@@ -38,28 +38,28 @@
     <div class="ie-field ie-field--inline">
         <label>{{ 'edit.content.image-editor.fileinfo.filesize' | dm }}</label>
         <span class="ie-field__value" data-testid="image-editor-filesize-value">
-            {{ fileSize() }}
+            {{ $fileSize() }}
         </span>
     </div>
 
     <div class="ie-field ie-field--inline">
         <label>{{ 'edit.content.image-editor.fileinfo.originalsize' | dm }}</label>
         <span class="ie-field__value" data-testid="image-editor-originalsize-value">
-            {{ originalSize() }}
+            {{ $originalSize() }}
         </span>
     </div>
 
     <div class="ie-field ie-field--inline">
         <label>{{ 'edit.content.image-editor.fileinfo.format' | dm }}</label>
         <span class="ie-field__value" data-testid="image-editor-format-value">
-            {{ format() }}
+            {{ $format() }}
         </span>
     </div>
 
     <div class="ie-field ie-field--inline">
         <label>{{ 'edit.content.image-editor.fileinfo.focalpoint' | dm }}</label>
         <span class="ie-field__value" data-testid="image-editor-focalpoint-value">
-            {{ focalPoint() }}
+            {{ $focalPoint() }}
         </span>
     </div>
 </div>

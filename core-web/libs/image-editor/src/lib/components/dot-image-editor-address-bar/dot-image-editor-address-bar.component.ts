@@ -63,14 +63,14 @@ export class DotImageEditorAddressBarComponent {
     }
 
     /** Current canvas zoom percentage to display; owned and updated by the canvas. */
-    zoomLevel = input<number>(100);
+    $zoomLevel = input<number>(100, { alias: 'zoomLevel' });
 
     /** Emitted when the user requests to zoom the canvas in. */
-    zoomIn = output<void>();
+    $zoomIn = output<void>({ alias: 'zoomIn' });
     /** Emitted when the user requests to zoom the canvas out. */
-    zoomOut = output<void>();
+    $zoomOut = output<void>({ alias: 'zoomOut' });
     /** Emitted when the user requests to fit the image to the viewport. */
-    fit = output<void>();
+    $fit = output<void>({ alias: 'fit' });
 
     /** Copies the current preview URL to the clipboard, surfacing a toast. */
     protected async copyUrl(): Promise<void> {

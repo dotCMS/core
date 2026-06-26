@@ -29,7 +29,7 @@ export class DotImageEditorFooterComponent {
     protected readonly dispatch = injectDispatch(imageEditorLifecycleEvents);
 
     /** Emitted when the user clicks Cancel; the dialog owner closes the editor. */
-    cancel = output<void>();
+    $cancel = output<void>({ alias: 'cancel' });
 
     /** Dispatches a download of the current preview. */
     protected onDownload(): void {

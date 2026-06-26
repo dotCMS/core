@@ -86,14 +86,14 @@ export class DotImageEditorCanvasComponent {
     ];
 
     /** Selected aspect preset key (the dropdown value); `free` clears the lock. */
-    protected readonly cropPreset = signal<string>('free');
+    protected readonly $cropPreset = signal<string>('free');
 
     /** Crop box orientation; flips a ratio'd preset (e.g. 16:9 -> 9:16). */
-    protected readonly cropOrientation = signal<'landscape' | 'portrait'>('landscape');
+    protected readonly $cropOrientation = signal<'landscape' | 'portrait'>('landscape');
 
     /** Base (landscape) ratio of the selected preset, or `null` for Free. */
-    readonly #presetRatio = computed(
-        () => this.aspectPresets.find((preset) => preset.key === this.cropPreset())?.aspect ?? null
+    readonly #$presetRatio = computed(
+        () => this.aspectPresets.find((preset) => preset.key === this.$cropPreset())?.aspect ?? null
     );
 
     /**
@@ -101,18 +101,18 @@ export class DotImageEditorCanvasComponent {
      * the selected preset's ratio, inverted when portrait is chosen. `null` for Free
      * (no lock).
      */
-    protected readonly cropAspect = computed(() => {
-        const ratio = this.#presetRatio();
+    protected readonly $cropAspect = computed(() => {
+        const ratio = this.#$presetRatio();
         if (ratio === null) {
             return null;
         }
 
-        return this.cropOrientation() === 'portrait' ? 1 / ratio : ratio;
+        return this.$cropOrientation() === 'portrait' ? 1 / ratio : ratio;
     });
 
     /** Orientation only changes non-square ratios; disabled for Free and 1:1. */
-    protected readonly orientationDisabled = computed(() => {
-        const ratio = this.#presetRatio();
+    protected readonly $orientationDisabled = computed(() => {
+        const ratio = this.#$presetRatio();
 
         return ratio === null || ratio === 1;
     });
@@ -123,37 +123,37 @@ export class DotImageEditorCanvasComponent {
      * width/height readout/inputs and tracks every drag, resize and ratio change.
      * `0×0` when no overlay/box is present.
      */
-    protected readonly cropSize = computed(
-        () => this.cropOverlay()?.naturalCropSize() ?? { width: 0, height: 0 }
+    protected readonly $cropSize = computed(
+        () => this.$cropOverlay()?.$naturalCropSize() ?? { width: 0, height: 0 }
     );
 
     /** The image stage, used as the origin for the rendered image rect. */
-    protected readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
+    protected readonly $stage = viewChild<ElementRef<HTMLElement>>('stage');
     /** The currently displayed image, observed to recompute its rendered rect. */
-    protected readonly displayImg = viewChild<ElementRef<HTMLImageElement>>('displayImg');
+    protected readonly $displayImg = viewChild<ElementRef<HTMLImageElement>>('displayImg');
 
     /** The crop overlay, so the footer can apply or cancel the active crop. */
-    protected readonly cropOverlay = viewChild(DotImageEditorCropOverlayComponent);
+    protected readonly $cropOverlay = viewChild(DotImageEditorCropOverlayComponent);
 
     /** Filter URL of the last successfully loaded preview (the bottom layer's identity). */
-    protected readonly displayedUrl = signal<string>('');
+    protected readonly $displayedUrl = signal<string>('');
 
     /** Object URL rendered on the bottom (displayed) layer — verified, complete bytes. */
-    protected readonly displayedSrc = signal<string>('');
+    protected readonly $displayedSrc = signal<string>('');
 
     /**
      * Filter URL queued for loading on the top layer: the store's current preview
      * when it differs from what is already displayed, otherwise empty. This is the
      * remote URL we fetch as a blob; the layer renders the resulting object URL.
      */
-    protected readonly pendingUrl = computed(() => {
+    protected readonly $pendingUrl = computed(() => {
         const next = this.store.previewUrl();
 
-        return next && next !== this.displayedUrl() ? next : '';
+        return next && next !== this.$displayedUrl() ? next : '';
     });
 
     /** Object URL of the verified pending blob, rendered on the top layer once ready. */
-    protected readonly pendingSrc = signal<string>('');
+    protected readonly $pendingSrc = signal<string>('');
 
     /** The verified-but-not-yet-promoted pending preview (filter URL + its object URL). */
     #pending: { filterUrl: string; objectUrl: string } | null = null;
@@ -162,7 +162,7 @@ export class DotImageEditorCanvasComponent {
     #displayedObjectUrl: string | null = null;
 
     /** Rendered bounds of the displayed image within the stage, in CSS px. */
-    protected readonly imageRect = signal<ImageRect | undefined>(undefined);
+    protected readonly $imageRect = signal<ImageRect | undefined>(undefined);
 
     /**
      * Intrinsic pixel size of the displayed image — its real resolution after the
@@ -170,10 +170,10 @@ export class DotImageEditorCanvasComponent {
      * overlay so a crop box is converted in the coordinate space the user actually drew
      * on, not the original asset's. `0×0` until the first image is measured.
      */
-    protected readonly displayedNaturalSize = signal<Dimensions>({ width: 0, height: 0 });
+    protected readonly $displayedNaturalSize = signal<Dimensions>({ width: 0, height: 0 });
 
     /** Internal zoom multiplier (×100) applied as a CSS transform; 100 = fit-to-stage. */
-    protected readonly zoomLevel = signal<number>(ZOOM_DEFAULT);
+    protected readonly $zoomLevel = signal<number>(ZOOM_DEFAULT);
 
     /**
      * Ratio of the rendered (fit) image to its natural pixels — `renderedWidth /
@@ -181,40 +181,42 @@ export class DotImageEditorCanvasComponent {
      * than the stage stays at 1 (it is never upscaled). Measured on load with the
      * rect; drives the natural-relative zoom readout.
      */
-    protected readonly fitRatio = signal<number>(1);
+    protected readonly $fitRatio = signal<number>(1);
 
     /** Pan offset (CSS px) applied to the stage so a zoomed-in image can be dragged. */
-    protected readonly panOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+    protected readonly $panOffset = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
     /** Whether a pan drag is in progress (suppresses the transform transition). */
-    protected readonly panning = signal(false);
+    protected readonly $panning = signal(false);
 
     /** Panning only applies when zoomed past fit with the move tool active. */
-    protected readonly canPan = computed(
-        () => this.zoomLevel() > ZOOM_DEFAULT && this.store.activeTool() === 'move'
+    protected readonly $canPan = computed(
+        () => this.$zoomLevel() > ZOOM_DEFAULT && this.store.activeTool() === 'move'
     );
 
     /** Combined pan + zoom transform applied to the stage. */
-    protected readonly stageTransform = computed(() => {
-        const { x, y } = this.panOffset();
+    protected readonly $stageTransform = computed(() => {
+        const { x, y } = this.$panOffset();
 
-        return `translate(${x}px, ${y}px) scale(${this.zoomLevel() / 100})`;
+        return `translate(${x}px, ${y}px) scale(${this.$zoomLevel() / 100})`;
     });
 
     /**
      * Zoom percentage shown to the user, relative to the image's NATURAL pixels
-     * (not the fit size): `fitRatio × zoomLevel`. A huge image shown whole reads as
-     * e.g. 30%, and 100% means 1:1 with the source pixels — while `zoomLevel` stays
+     * (not the fit size): `$fitRatio × $zoomLevel`. A huge image shown whole reads as
+     * e.g. 30%, and 100% means 1:1 with the source pixels — while `$zoomLevel` stays
      * the internal transform multiplier the +/- and fit controls operate on.
      */
-    protected readonly displayZoom = computed(() => Math.round(this.fitRatio() * this.zoomLevel()));
+    protected readonly $displayZoom = computed(() =>
+        Math.round(this.$fitRatio() * this.$zoomLevel())
+    );
 
     /**
      * The visible image region (image-local CSS px) captured when the crop tool is
      * activated while zoomed in. Seeds the crop overlay so switching to crop frames
      * exactly what the user had in view. `undefined` when not zoomed (full image).
      */
-    protected readonly capturedCropRect = signal<ImageRect | undefined>(undefined);
+    protected readonly $capturedCropRect = signal<ImageRect | undefined>(undefined);
 
     /** Observes the displayed image so overlay rects track resize and layout. */
     #resizeObserver: ResizeObserver | null = null;
@@ -234,7 +236,7 @@ export class DotImageEditorCanvasComponent {
         // rendered. `switchMap` cancels a superseded in-flight request (a newer edit
         // wins); a fetch failure — including a truncated / partially-generated
         // response — reports to the store, which owns the silent-retry policy.
-        toObservable(this.pendingUrl)
+        toObservable(this.$pendingUrl)
             .pipe(
                 switchMap((filterUrl) => {
                     // A new target supersedes any verified-but-unpromoted pending blob.
@@ -257,7 +259,7 @@ export class DotImageEditorCanvasComponent {
             )
             .subscribe(({ filterUrl, objectUrl }) => {
                 this.#pending = { filterUrl, objectUrl };
-                this.pendingSrc.set(objectUrl);
+                this.$pendingSrc.set(objectUrl);
             });
 
         // When the crop tool activates while zoomed in, capture the region the user
@@ -269,17 +271,17 @@ export class DotImageEditorCanvasComponent {
 
             untracked(() => {
                 if (tool !== 'crop') {
-                    this.capturedCropRect.set(undefined);
+                    this.$capturedCropRect.set(undefined);
                     // Leaving crop clears the locked aspect so the next crop session
                     // starts free-form (and landscape).
-                    this.cropPreset.set('free');
-                    this.cropOrientation.set('landscape');
+                    this.$cropPreset.set('free');
+                    this.$cropOrientation.set('landscape');
 
                     return;
                 }
 
                 const visible = this.#computeVisibleImageRect();
-                this.capturedCropRect.set(visible);
+                this.$capturedCropRect.set(visible);
 
                 if (visible) {
                     this.fit();
@@ -323,10 +325,10 @@ export class DotImageEditorCanvasComponent {
                 // The pending blob becomes the displayed frame; release the one it replaces.
                 this.#revoke(this.#displayedObjectUrl);
                 this.#displayedObjectUrl = pending.objectUrl;
-                this.displayedSrc.set(pending.objectUrl);
-                this.displayedUrl.set(pending.filterUrl);
+                this.$displayedSrc.set(pending.objectUrl);
+                this.$displayedUrl.set(pending.filterUrl);
                 this.#pending = null;
-                this.pendingSrc.set('');
+                this.$pendingSrc.set('');
 
                 this.#measureImageRect();
                 this.#dispatch.previewLoaded();
@@ -347,7 +349,7 @@ export class DotImageEditorCanvasComponent {
     #discardPending(): void {
         this.#revoke(this.#pending?.objectUrl ?? null);
         this.#pending = null;
-        this.pendingSrc.set('');
+        this.$pendingSrc.set('');
     }
 
     /** Releases an object URL created for a preview blob, if any. */
@@ -370,12 +372,12 @@ export class DotImageEditorCanvasComponent {
 
     /** Applies the active crop via the crop overlay from the footer action. */
     protected applyCrop(): void {
-        this.cropOverlay()?.applyCrop();
+        this.$cropOverlay()?.applyCrop();
     }
 
     /** Cancels the active crop via the crop overlay from the footer action. */
     protected cancelCrop(): void {
-        this.cropOverlay()?.cancelCrop();
+        this.$cropOverlay()?.cancelCrop();
     }
 
     /**
@@ -385,13 +387,13 @@ export class DotImageEditorCanvasComponent {
      * (clamped, centered). A cleared/invalid value is ignored.
      */
     protected onCropWidthChange(width: number | null): void {
-        const aspect = this.cropAspect();
+        const aspect = this.$cropAspect();
 
         if (aspect == null || width == null || width <= 0) {
             return;
         }
 
-        this.cropOverlay()?.setNaturalCropSize(width, Math.round(width / aspect));
+        this.$cropOverlay()?.setNaturalCropSize(width, Math.round(width / aspect));
     }
 
     /**
@@ -399,41 +401,41 @@ export class DotImageEditorCanvasComponent {
      * {@link onCropWidthChange}: the width follows from the locked ratio.
      */
     protected onCropHeightChange(height: number | null): void {
-        const aspect = this.cropAspect();
+        const aspect = this.$cropAspect();
 
         if (aspect == null || height == null || height <= 0) {
             return;
         }
 
-        this.cropOverlay()?.setNaturalCropSize(Math.round(height * aspect), height);
+        this.$cropOverlay()?.setNaturalCropSize(Math.round(height * aspect), height);
     }
 
     /** Increases the zoom by one step, clamped to the maximum. */
     protected zoomIn(): void {
-        this.zoomLevel.update((level) => Math.min(ZOOM_MAX, level + ZOOM_STEP));
-        const { x, y } = this.panOffset();
-        this.panOffset.set(this.#clampPan(x, y));
+        this.$zoomLevel.update((level) => Math.min(ZOOM_MAX, level + ZOOM_STEP));
+        const { x, y } = this.$panOffset();
+        this.$panOffset.set(this.#clampPan(x, y));
     }
 
     /** Decreases the zoom by one step, clamped to the minimum; recenters at/below fit. */
     protected zoomOut(): void {
-        const level = Math.max(ZOOM_MIN, this.zoomLevel() - ZOOM_STEP);
-        this.zoomLevel.set(level);
+        const level = Math.max(ZOOM_MIN, this.$zoomLevel() - ZOOM_STEP);
+        this.$zoomLevel.set(level);
 
         if (level <= ZOOM_DEFAULT) {
-            this.panOffset.set({ x: 0, y: 0 });
+            this.$panOffset.set({ x: 0, y: 0 });
         } else {
             // A smaller zoom shrinks the pannable range; re-clamp so the prior
             // offset can't leave empty space past an edge.
-            const { x, y } = this.panOffset();
-            this.panOffset.set(this.#clampPan(x, y));
+            const { x, y } = this.$panOffset();
+            this.$panOffset.set(this.#clampPan(x, y));
         }
     }
 
     /** Resets the zoom so the image fits the stage and recenters the pan. */
     protected fit(): void {
-        this.zoomLevel.set(ZOOM_DEFAULT);
-        this.panOffset.set({ x: 0, y: 0 });
+        this.$zoomLevel.set(ZOOM_DEFAULT);
+        this.$panOffset.set({ x: 0, y: 0 });
     }
 
     /**
@@ -442,19 +444,19 @@ export class DotImageEditorCanvasComponent {
      * outside the stage and are torn down on pointer-up (and on destroy).
      */
     protected onStagePointerDown(event: PointerEvent): void {
-        if (!this.canPan()) {
+        if (!this.$canPan()) {
             return;
         }
 
         event.preventDefault();
-        this.panning.set(true);
+        this.$panning.set(true);
 
         const startX = event.clientX;
         const startY = event.clientY;
-        const origin = this.panOffset();
+        const origin = this.$panOffset();
 
         const move = (moveEvent: PointerEvent) => {
-            this.panOffset.set(
+            this.$panOffset.set(
                 this.#clampPan(
                     origin.x + (moveEvent.clientX - startX),
                     origin.y + (moveEvent.clientY - startY)
@@ -462,7 +464,7 @@ export class DotImageEditorCanvasComponent {
             );
         };
         const up = () => {
-            this.panning.set(false);
+            this.$panning.set(false);
             this.#detachPan();
         };
 
@@ -490,9 +492,9 @@ export class DotImageEditorCanvasComponent {
      * centering offset.
      */
     #clampPan(x: number, y: number): { x: number; y: number } {
-        const rect = this.imageRect();
-        const stage = this.stage()?.nativeElement;
-        const scale = this.zoomLevel() / 100;
+        const rect = this.$imageRect();
+        const stage = this.$stage()?.nativeElement;
+        const scale = this.$zoomLevel() / 100;
 
         if (!rect || !stage || scale <= 1) {
             return { x: 0, y: 0 };
@@ -515,7 +517,7 @@ export class DotImageEditorCanvasComponent {
 
     /** Lazily attaches a single ResizeObserver to the displayed image element. */
     #observeDisplayImg(): void {
-        const img = this.displayImg()?.nativeElement;
+        const img = this.$displayImg()?.nativeElement;
 
         if (!img || this.#resizeObserver) {
             return;
@@ -530,7 +532,7 @@ export class DotImageEditorCanvasComponent {
      * can position itself over the rendered pixels.
      */
     #measureImageRect(): void {
-        const img = this.displayImg()?.nativeElement;
+        const img = this.$displayImg()?.nativeElement;
 
         if (!img) {
             return;
@@ -546,7 +548,7 @@ export class DotImageEditorCanvasComponent {
         // px — the exact space the crop overlay positions itself in — so the box
         // always matches the image at any zoom. (Its `offsetParent` is the
         // position:relative stage.)
-        this.imageRect.set({
+        this.$imageRect.set({
             x: img.offsetLeft,
             y: img.offsetTop,
             width: img.offsetWidth,
@@ -555,17 +557,17 @@ export class DotImageEditorCanvasComponent {
 
         // The <img> intrinsic size is the current preview's real pixels; its layout
         // width is the fit size. Their ratio is the true on-screen scale at
-        // zoomLevel 100, used to report zoom relative to natural pixels. Require both
+        // $zoomLevel 100, used to report zoom relative to natural pixels. Require both
         // to be measured (a not-yet-laid-out image reports 0) so we never store a
         // bogus 0 ratio — the next measure (load / ResizeObserver) sets the real one.
-        this.fitRatio.set(
+        this.$fitRatio.set(
             img.naturalWidth && img.offsetWidth ? img.offsetWidth / img.naturalWidth : 1
         );
 
         // The displayed image's real resolution (post rotate/flip/resize), so the crop
         // overlay scales boxes against the pixels the user is actually looking at.
         if (img.naturalWidth && img.naturalHeight) {
-            this.displayedNaturalSize.set({
+            this.$displayedNaturalSize.set({
                 width: img.naturalWidth,
                 height: img.naturalHeight
             });
@@ -580,15 +582,15 @@ export class DotImageEditorCanvasComponent {
      * window that maps onto the visible stage box, then clamps it to the image.
      */
     #computeVisibleImageRect(): ImageRect | undefined {
-        const rect = this.imageRect();
-        const stage = this.stage()?.nativeElement;
-        const scale = this.zoomLevel() / 100;
+        const rect = this.$imageRect();
+        const stage = this.$stage()?.nativeElement;
+        const scale = this.$zoomLevel() / 100;
 
         if (!rect || !stage || scale <= 1) {
             return undefined;
         }
 
-        const { x: panX, y: panY } = this.panOffset();
+        const { x: panX, y: panY } = this.$panOffset();
         const stageWidth = stage.clientWidth;
         const stageHeight = stage.clientHeight;
         const centerX = stageWidth / 2;

@@ -37,28 +37,28 @@ export class DotImageEditorTransformPanelComponent {
     protected readonly dispatch = injectDispatch(imageEditorTransformEvents);
 
     /** Optimistic scale (%) shown in the field while the slider is dragged. */
-    protected readonly scale = signal(100);
+    protected readonly $scale = signal(100);
     /** Optimistic rotation (°) shown in the field while the slider is dragged. */
-    protected readonly rotate = signal(0);
+    protected readonly $rotate = signal(0);
 
     /** Whether the last edited width is below the allowed minimum, for the inline error. */
-    protected readonly widthError = signal(false);
+    protected readonly $widthError = signal(false);
     /** Whether the last edited height is below the allowed minimum, for the inline error. */
-    protected readonly heightError = signal(false);
+    protected readonly $heightError = signal(false);
 
     constructor() {
         // Keep the optimistic field values in sync with committed store state
         // (e.g. after undo/redo, reset or removing a history entry).
         effect(() => {
             const transform = this.store.transform();
-            this.scale.set(transform.scale);
-            this.rotate.set(transform.rotateDeg);
+            this.$scale.set(transform.scale);
+            this.$rotate.set(transform.rotateDeg);
         });
     }
 
     /** Updates the optimistic scale field as the slider moves. */
     protected onScaleChange(event: SliderChangeEvent): void {
-        this.scale.set(this.#singleValue(event.value));
+        this.$scale.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final scale value once the slider drag ends. */
@@ -70,17 +70,17 @@ export class DotImageEditorTransformPanelComponent {
     protected onScaleInput(event: Event): void {
         const value = this.#commitTypedValue(
             event,
-            this.scale(),
+            this.$scale(),
             RANGES.scale.min,
             RANGES.scale.max
         );
-        this.scale.set(value);
+        this.$scale.set(value);
         this.dispatch.scaleChanged(value);
     }
 
     /** Updates the optimistic rotation field as the slider moves. */
     protected onRotateChange(event: SliderChangeEvent): void {
-        this.rotate.set(this.#singleValue(event.value));
+        this.$rotate.set(this.#singleValue(event.value));
     }
 
     /** Dispatches the final rotation value once the slider drag ends. */
@@ -92,11 +92,11 @@ export class DotImageEditorTransformPanelComponent {
     protected onRotateInput(event: Event): void {
         const value = this.#commitTypedValue(
             event,
-            this.rotate(),
+            this.$rotate(),
             RANGES.rotate.min,
             RANGES.rotate.max
         );
-        this.rotate.set(value);
+        this.$rotate.set(value);
         this.dispatch.rotateChanged(value);
     }
 
@@ -112,7 +112,7 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Dispatches a change to the explicit output width, guarding the minimum. */
     protected outputWidthChanged(value: number | null): void {
-        this.widthError.set(this.#isBelowMinimum(value));
+        this.$widthError.set(this.#isBelowMinimum(value));
         // Pair the new width with the currently-DISPLAYED height (the computed
         // `outputDimensions`, which falls back to the natural size), not the raw —
         // possibly null — stored value, so what is persisted matches what the field shows.
@@ -124,7 +124,7 @@ export class DotImageEditorTransformPanelComponent {
 
     /** Dispatches a change to the explicit output height, guarding the minimum. */
     protected outputHeightChanged(value: number | null): void {
-        this.heightError.set(this.#isBelowMinimum(value));
+        this.$heightError.set(this.#isBelowMinimum(value));
         this.dispatch.outputDimsChanged({
             width: this.store.outputDimensions().width,
             height: this.#toDimension(value)

@@ -45,7 +45,7 @@ export class DotImageEditorFileInfoPanelComponent {
      * output format (the legacy engine can't render it), so the AVIF option is hidden
      * unless this is on. Off until the server replies.
      */
-    readonly #libvipsEnabled = toSignal(
+    readonly #$libvipsEnabled = toSignal(
         this.#propertiesService
             .getKey(LIBVIPS_CONFIG_KEY)
             .pipe(map((value) => value === true || value === 'true')),
@@ -62,20 +62,22 @@ export class DotImageEditorFileInfoPanelComponent {
     ];
 
     /** Selectable compression strategies (AVIF shown only when libvips is enabled). */
-    protected readonly compressionOptions = computed<CompressionOption[]>(() =>
-        this.#libvipsEnabled()
+    protected readonly $compressionOptions = computed<CompressionOption[]>(() =>
+        this.#$libvipsEnabled()
             ? this.#allCompressionOptions
             : this.#allCompressionOptions.filter((option) => option.value !== 'avif')
     );
 
     /** Whether a compression strategy is active (so quality applies). */
-    protected readonly isCompressing = computed(() => this.store.fileInfo().compression !== 'none');
+    protected readonly $isCompressing = computed(
+        () => this.store.fileInfo().compression !== 'none'
+    );
 
     /** Human-readable current preview size, or an em dash when unknown. */
-    protected readonly fileSize = computed(() => formatBytes(this.store.fileInfo().currentBytes));
+    protected readonly $fileSize = computed(() => formatBytes(this.store.fileInfo().currentBytes));
 
     /** Original (source) image dimensions, or an em dash before the asset loads. */
-    protected readonly originalSize = computed(() => {
+    protected readonly $originalSize = computed(() => {
         const { naturalWidth, naturalHeight } = this.store.assetContext();
 
         return naturalWidth && naturalHeight ? `${naturalWidth} × ${naturalHeight} px` : '—';
@@ -85,7 +87,7 @@ export class DotImageEditorFileInfoPanelComponent {
      * The effective output format of the saved image: the chosen compression format,
      * or the source format when compression doesn't change it (none/auto).
      */
-    protected readonly format = computed(() => {
+    protected readonly $format = computed(() => {
         switch (this.store.fileInfo().compression) {
             case 'jpeg':
                 return 'JPEG';
@@ -102,7 +104,7 @@ export class DotImageEditorFileInfoPanelComponent {
      * Current focal point as normalized `x, y` (0..1). Not yet read back from the
      * asset, so it shows the store value — defaulting to the centre (0.50, 0.50).
      */
-    protected readonly focalPoint = computed(() => {
+    protected readonly $focalPoint = computed(() => {
         const { x, y } = this.store.focalPoint();
 
         return `${x.toFixed(2)}, ${y.toFixed(2)}`;

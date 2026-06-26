@@ -39,16 +39,16 @@ import { getStoredPanelState, savePanelState } from '../../utils/panel-state.sto
 })
 export class DotImageEditorPanelsComponent {
     /** Values of the currently open accordion sections; seeded from storage. */
-    protected readonly openPanels = signal<string[]>(getStoredPanelState());
+    protected readonly $openPanels = signal<string[]>(getStoredPanelState());
 
     constructor() {
         // Persist the open sections whenever they change, mirroring the Edit
         // Content sidebar's save-on-change effect.
-        effect(() => savePanelState(this.openPanels()));
+        effect(() => savePanelState(this.$openPanels()));
     }
 
     /** Updates the open-section set from the accordion (also triggers the save effect). */
     protected onOpenPanelsChange(value: string[]): void {
-        this.openPanels.set(value ?? []);
+        this.$openPanels.set(value ?? []);
     }
 }

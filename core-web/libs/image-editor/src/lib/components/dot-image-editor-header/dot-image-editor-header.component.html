@@ -21,7 +21,7 @@
             (onClick)="toggleFullscreen()"
             data-testid="image-editor-fullscreen-btn">
             <ng-template #icon>
-                <i class="material-symbols-outlined text-[1.125rem]!">{{ fullscreenIcon() }}</i>
+                <i class="material-symbols-outlined text-[1.125rem]!">{{ $fullscreenIcon() }}</i>
             </ng-template>
         </p-button>
 
@@ -29,7 +29,7 @@
             [text]="true"
             [rounded]="true"
             [attr.aria-label]="'edit.content.image-editor.close.aria' | dm"
-            (onClick)="close.emit()"
+            (onClick)="$close.emit()"
             data-testid="image-editor-close-btn">
             <ng-template #icon>
                 <i class="material-symbols-outlined text-[1.125rem]!">close</i>

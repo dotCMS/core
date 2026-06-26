@@ -178,7 +178,7 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
 
     describe('AVIF option (libvips-gated)', () => {
         it('hides AVIF when libvips is disabled', () => {
-            const values = spectator.component['compressionOptions']().map(
+            const values = spectator.component['$compressionOptions']().map(
                 (option) => option.value
             );
 
@@ -190,7 +190,7 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
             spectator.detectChanges();
 
             expect(
-                spectator.component['compressionOptions']().map((option) => option.value)
+                spectator.component['$compressionOptions']().map((option) => option.value)
             ).toContain('avif');
         });
 
@@ -199,7 +199,7 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
             spectator.detectChanges();
 
             expect(
-                spectator.component['compressionOptions']().map((option) => option.value)
+                spectator.component['$compressionOptions']().map((option) => option.value)
             ).toContain('avif');
         });
     });

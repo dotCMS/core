@@ -1,7 +1,7 @@
 <div class="canvas" data-testid="image-editor-canvas">
     <dot-image-editor-address-bar
         class="canvas__address-bar"
-        [zoomLevel]="displayZoom()"
+        [zoomLevel]="$displayZoom()"
         (zoomIn)="zoomIn()"
         (zoomOut)="zoomOut()"
         (fit)="fit()" />
@@ -10,11 +10,11 @@
         <div
             #stage
             class="canvas__stage"
-            [class.canvas__stage--pannable]="canPan()"
-            [class.canvas__stage--panning]="panning()"
-            [style.transform]="stageTransform()"
+            [class.canvas__stage--pannable]="$canPan()"
+            [class.canvas__stage--panning]="$panning()"
+            [style.transform]="$stageTransform()"
             (pointerdown)="onStagePointerDown($event)">
-            @if (store.previewStatus() === 'idle' && !displayedUrl()) {
+            @if (store.previewStatus() === 'idle' && !$displayedUrl()) {
                 <p-skeleton
                     class="canvas__skeleton"
                     width="60%"
@@ -27,14 +27,14 @@
                 #displayImg
                 class="canvas__img canvas__img--displayed"
                 [class.canvas__img--loading]="store.previewStatus() === 'loading'"
-                [src]="displayedSrc()"
-                [hidden]="!displayedSrc()"
+                [src]="$displayedSrc()"
+                [hidden]="!$displayedSrc()"
                 alt=""
                 (load)="onDisplayLoaded()"
                 data-testid="image-editor-display-img" />
 
             <!-- Layer B: queued preview (a verified, fully-fetched blob), crossfaded in once it loads. -->
-            @if (pendingSrc(); as pending) {
+            @if ($pendingSrc(); as pending) {
                 <img
                     class="canvas__img canvas__img--pending"
                     [src]="pending"
@@ -46,12 +46,14 @@
             }
 
             <dot-image-editor-crop-overlay
-                [imageRect]="imageRect()"
-                [initialRect]="capturedCropRect()"
-                [naturalSize]="displayedNaturalSize()"
-                [aspect]="cropAspect()" />
+                [imageRect]="$imageRect()"
+                [initialRect]="$capturedCropRect()"
+                [naturalSize]="$displayedNaturalSize()"
+                [aspect]="$cropAspect()" />
 
-            <dot-image-editor-focal-overlay [imageRect]="imageRect()" [scale]="zoomLevel() / 100" />
+            <dot-image-editor-focal-overlay
+                [imageRect]="$imageRect()"
+                [scale]="$zoomLevel() / 100" />
         </div>
 
         @if (store.previewStatus() === 'loading') {
@@ -90,12 +92,12 @@
                     appendTo="body"
                     styleClass="canvas__aspect-select"
                     [options]="aspectPresets"
-                    [ngModel]="cropPreset()"
+                    [ngModel]="$cropPreset()"
                     optionLabel="label"
                     optionValue="key"
                     [attr.aria-label]="'edit.content.image-editor.crop.aspects' | dm"
                     data-testid="image-editor-aspect-select"
-                    (onChange)="cropPreset.set($event.value)" />
+                    (onChange)="$cropPreset.set($event.value)" />
 
                 <span class="canvas__separator" aria-hidden="true"></span>
 
@@ -108,26 +110,26 @@
                     <button
                         type="button"
                         class="canvas__orient-btn"
-                        [class.canvas__orient-btn--active]="cropOrientation() === 'landscape'"
-                        [disabled]="orientationDisabled()"
-                        [attr.aria-pressed]="cropOrientation() === 'landscape'"
+                        [class.canvas__orient-btn--active]="$cropOrientation() === 'landscape'"
+                        [disabled]="$orientationDisabled()"
+                        [attr.aria-pressed]="$cropOrientation() === 'landscape'"
                         [attr.aria-label]="'edit.content.image-editor.crop.landscape' | dm"
                         [pTooltip]="'edit.content.image-editor.crop.landscape' | dm"
                         tooltipPosition="top"
-                        (click)="cropOrientation.set('landscape')"
+                        (click)="$cropOrientation.set('landscape')"
                         data-testid="image-editor-orient-landscape">
                         <i class="material-symbols-outlined">crop_landscape</i>
                     </button>
                     <button
                         type="button"
                         class="canvas__orient-btn"
-                        [class.canvas__orient-btn--active]="cropOrientation() === 'portrait'"
-                        [disabled]="orientationDisabled()"
-                        [attr.aria-pressed]="cropOrientation() === 'portrait'"
+                        [class.canvas__orient-btn--active]="$cropOrientation() === 'portrait'"
+                        [disabled]="$orientationDisabled()"
+                        [attr.aria-pressed]="$cropOrientation() === 'portrait'"
                         [attr.aria-label]="'edit.content.image-editor.crop.portrait' | dm"
                         [pTooltip]="'edit.content.image-editor.crop.portrait' | dm"
                         tooltipPosition="top"
-                        (click)="cropOrientation.set('portrait')"
+                        (click)="$cropOrientation.set('portrait')"
                         data-testid="image-editor-orient-portrait">
                         <i class="material-symbols-outlined">crop_portrait</i>
                     </button>
@@ -140,24 +142,24 @@
                 <div class="canvas__size">
                     <p-inputNumber
                         styleClass="canvas__size-input"
-                        [ngModel]="cropSize().width"
+                        [ngModel]="$cropSize().width"
                         [min]="1"
                         [useGrouping]="false"
-                        [disabled]="cropAspect() === null"
+                        [disabled]="$cropAspect() === null"
                         [attr.aria-label]="'edit.content.image-editor.crop.width' | dm"
                         (onInput)="onCropWidthChange($event.value)"
-                        (onBlur)="onCropWidthChange(cropSize().width)"
+                        (onBlur)="onCropWidthChange($cropSize().width)"
                         data-testid="image-editor-crop-width-input" />
                     <span class="canvas__size-glyph" aria-hidden="true">×</span>
                     <p-inputNumber
                         styleClass="canvas__size-input"
-                        [ngModel]="cropSize().height"
+                        [ngModel]="$cropSize().height"
                         [min]="1"
                         [useGrouping]="false"
-                        [disabled]="cropAspect() === null"
+                        [disabled]="$cropAspect() === null"
                         [attr.aria-label]="'edit.content.image-editor.crop.height' | dm"
                         (onInput)="onCropHeightChange($event.value)"
-                        (onBlur)="onCropHeightChange(cropSize().height)"
+                        (onBlur)="onCropHeightChange($cropSize().height)"
                         data-testid="image-editor-crop-height-input" />
                     <span class="canvas__size-unit">px</span>
                 </div>
