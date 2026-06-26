@@ -82,11 +82,11 @@ describe('DotImageEditorCropOverlayComponent', () => {
         spectator.detectChanges();
 
         ['top', 'bottom', 'left', 'right'].forEach((side) => {
-            expect(spectator.query(`.crop-mask--${side}`)).toExist();
+            expect(spectator.query(byTestId(`image-editor-crop-mask-${side}`))).toExist();
         });
 
         // Box now spans x:0..300, so the right dim panel begins at x=300.
-        const right = spectator.query<HTMLElement>('.crop-mask--right');
+        const right = spectator.query<HTMLElement>(byTestId('image-editor-crop-mask-right'));
         expect(right!.style.left).toBe('300px');
     });
 

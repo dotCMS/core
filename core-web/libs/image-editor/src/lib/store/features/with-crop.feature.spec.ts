@@ -24,34 +24,53 @@ const CropStoreActive = signalStore(
 );
 
 describe('withCrop', () => {
-    it('applies a crop, clears resize, returns to move and adds a crop entry', () => {
-        TestBed.configureTestingModule({ providers: [CropStore, Dispatcher] });
-        const injector = TestBed.inject(Injector);
-        const store = TestBed.inject(CropStore);
-        let tool!: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
-        runInInjectionContext(injector, () => (tool = injectDispatch(imageEditorToolEvents)));
+    describe('cropApplied', () => {
+        let store: InstanceType<typeof CropStore>;
+        let tool: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
 
-        tool.cropApplied({ x: 10, y: 10, w: 200, h: 150, active: false, aspect: null });
+        beforeEach(() => {
+            TestBed.configureTestingModule({ providers: [CropStore, Dispatcher] });
+            const injector = TestBed.inject(Injector);
+            store = TestBed.inject(CropStore);
+            runInInjectionContext(injector, () => (tool = injectDispatch(imageEditorToolEvents)));
+        });
 
-        expect(store.crop()).toEqual({ x: 10, y: 10, w: 200, h: 150, active: true, aspect: null });
-        expect(store.transform().scale).toBe(100);
-        expect(store.transform().outputWidth).toBeNull();
-        expect(store.activeTool()).toBe('move');
-        expect(store.history().at(-1)?.category).toBe('crop');
-        expect(store.previewStatus()).toBe('loading');
-        expect(store.cacheBust()).toBe(1);
+        it('applies a crop, clears resize, returns to move and adds a crop entry', () => {
+            tool.cropApplied({ x: 10, y: 10, w: 200, h: 150, active: false, aspect: null });
+
+            expect(store.crop()).toEqual({
+                x: 10,
+                y: 10,
+                w: 200,
+                h: 150,
+                active: true,
+                aspect: null
+            });
+            expect(store.transform().scale).toBe(100);
+            expect(store.transform().outputWidth).toBeNull();
+            expect(store.activeTool()).toBe('move');
+            expect(store.history().at(-1)?.category).toBe('crop');
+            expect(store.previewStatus()).toBe('loading');
+            expect(store.cacheBust()).toBe(1);
+        });
     });
 
-    it('cancels a crop back to inactive and the move tool', () => {
-        TestBed.configureTestingModule({ providers: [CropStoreActive, Dispatcher] });
-        const injector = TestBed.inject(Injector);
-        const store = TestBed.inject(CropStoreActive);
-        let tool!: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
-        runInInjectionContext(injector, () => (tool = injectDispatch(imageEditorToolEvents)));
+    describe('cropCancelled', () => {
+        let store: InstanceType<typeof CropStoreActive>;
+        let tool: ReturnType<typeof injectDispatch<typeof imageEditorToolEvents>>;
 
-        tool.cropCancelled();
+        beforeEach(() => {
+            TestBed.configureTestingModule({ providers: [CropStoreActive, Dispatcher] });
+            const injector = TestBed.inject(Injector);
+            store = TestBed.inject(CropStoreActive);
+            runInInjectionContext(injector, () => (tool = injectDispatch(imageEditorToolEvents)));
+        });
 
-        expect(store.crop().active).toBe(false);
-        expect(store.activeTool()).toBe('move');
+        it('cancels a crop back to inactive and the move tool', () => {
+            tool.cropCancelled();
+
+            expect(store.crop().active).toBe(false);
+            expect(store.activeTool()).toBe('move');
+        });
     });
 });

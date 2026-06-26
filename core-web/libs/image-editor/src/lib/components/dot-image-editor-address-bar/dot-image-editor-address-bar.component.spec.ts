@@ -82,10 +82,30 @@ describe('DotImageEditorAddressBarComponent', () => {
         expect(spectator.query(byTestId('image-editor-fit-btn'))).toHaveText('125%');
     });
 
-    it('should copy the full (absolute) preview URL to the clipboard when the copy button is clicked', () => {
+    it('should copy the full (absolute) preview URL to the clipboard and toast success', async () => {
+        const messageService = spectator.inject(MessageService, true);
         spectator.click(button('image-editor-copy-url-btn'));
 
         expect(writeText).toHaveBeenCalledWith(document.location.origin + PREVIEW_URL);
+
+        // copyUrl() is async: wait for the clipboard promise to settle before asserting
+        // the success toast.
+        await spectator.fixture.whenStable();
+        expect(messageService.add).toHaveBeenCalledWith(
+            expect.objectContaining({ severity: 'success' })
+        );
+    });
+
+    it('should toast an error when copying to the clipboard fails', async () => {
+        writeText.mockRejectedValueOnce(new Error('clipboard denied'));
+        const messageService = spectator.inject(MessageService, true);
+
+        spectator.click(button('image-editor-copy-url-btn'));
+        await spectator.fixture.whenStable();
+
+        expect(messageService.add).toHaveBeenCalledWith(
+            expect.objectContaining({ severity: 'error' })
+        );
     });
 
     it('should open the absolute preview URL in a new tab when the preview button is clicked', () => {
@@ -122,6 +142,13 @@ describe('DotImageEditorAddressBarComponent', () => {
         spectator.detectChanges();
 
         expect(button('image-editor-undo-btn')).toBeDisabled();
+    });
+
+    it('should disable redo when there is nothing to redo', () => {
+        canRedo.set(false);
+        spectator.detectChanges();
+
+        expect(button('image-editor-redo-btn')).toBeDisabled();
     });
 
     it('should emit zoomIn, zoomOut and fit from the zoom controls', () => {

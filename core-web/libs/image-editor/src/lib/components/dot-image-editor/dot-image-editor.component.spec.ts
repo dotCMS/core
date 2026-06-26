@@ -107,6 +107,13 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             jest.spyOn(confirmationService, 'confirm');
         });
 
+        afterEach(() => {
+            // Restore the `Dispatcher.prototype.dispatch` and `confirm` spies (clearAllMocks
+            // only resets call records, not the spied methods) so a prototype-level spy
+            // never leaks across these suites.
+            jest.restoreAllMocks();
+        });
+
         it('should render the root and the four child components', () => {
             expect(spectator.query(byTestId('image-editor-root'))).toExist();
             expect(spectator.query('dot-image-editor-header')).toExist();

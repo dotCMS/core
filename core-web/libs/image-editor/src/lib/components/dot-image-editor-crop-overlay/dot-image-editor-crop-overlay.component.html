@@ -3,18 +3,26 @@
         <!-- Dim everything outside the selection with four solid panels (cheap to
              repaint, unlike a viewport-sized box-shadow). They stretch to the
              overlay edges; only the box edges are data-bound. -->
-        <div class="crop-mask crop-mask--top" [style.height.px]="maskBounds().top"></div>
-        <div class="crop-mask crop-mask--bottom" [style.top.px]="maskBounds().bottom"></div>
+        <div
+            class="crop-mask crop-mask--top"
+            [style.height.px]="maskBounds().top"
+            data-testid="image-editor-crop-mask-top"></div>
+        <div
+            class="crop-mask crop-mask--bottom"
+            [style.top.px]="maskBounds().bottom"
+            data-testid="image-editor-crop-mask-bottom"></div>
         <div
             class="crop-mask crop-mask--left"
             [style.top.px]="maskBounds().top"
             [style.width.px]="maskBounds().left"
-            [style.height.px]="maskBounds().height"></div>
+            [style.height.px]="maskBounds().height"
+            data-testid="image-editor-crop-mask-left"></div>
         <div
             class="crop-mask crop-mask--right"
             [style.top.px]="maskBounds().top"
             [style.left.px]="maskBounds().right"
-            [style.height.px]="maskBounds().height"></div>
+            [style.height.px]="maskBounds().height"
+            data-testid="image-editor-crop-mask-right"></div>
 
         <div
             class="crop-box"

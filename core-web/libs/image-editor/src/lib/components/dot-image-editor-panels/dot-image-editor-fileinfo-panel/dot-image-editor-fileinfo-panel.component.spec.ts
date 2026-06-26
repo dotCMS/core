@@ -6,6 +6,7 @@ import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { Select } from 'primeng/select';
+import { Slider } from 'primeng/slider';
 
 import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 
@@ -83,6 +84,15 @@ describe('DotImageEditorFileInfoPanelComponent', () => {
 
         it('should show the quality slider', () => {
             expect(spectator.query(byTestId('image-editor-quality-slider'))).toExist();
+        });
+
+        it('should dispatch qualityChanged on the quality slider slide end', () => {
+            const slider = spectator.query(Slider);
+            slider!.onSlideEnd.emit({ originalEvent: new Event('mouseup'), value: 70 });
+
+            const event = dispatchedEvent(imageEditorFileInfoEvents.qualityChanged.type);
+            expect(event).toBeDefined();
+            expect(event!.payload).toBe(70);
         });
     });
 
