@@ -156,11 +156,18 @@ export interface AppliedEditEntry {
 
 /**
  * Snapshot of the editable state at a point in history, used to power
- * undo/redo and coalescing of rapid consecutive edits in the same category.
+ * undo/redo and coalescing of rapid consecutive edits to the same control.
  */
 export interface ImageEditorHistoryEntry {
     id: string;
     category: FilterCategory;
+    /**
+     * Identity of the control that produced this entry (e.g. `brightness`, `hue`,
+     * `flipH`). Consecutive edits sharing this key coalesce into one step — so
+     * dragging a single slider is one entry, but switching to a different control
+     * in the same {@link FilterCategory} starts a new one. Finer than `category`.
+     */
+    coalesceKey: string;
     label: string;
     /** State slices captured when this entry was created. */
     snapshot: {

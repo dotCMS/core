@@ -104,15 +104,19 @@ describe('ImageEditorStore', () => {
             expect(store.previewStatus()).toBe('loading');
         });
 
-        it('should coalesce rapid same-category edits into a single entry', () => {
+        it('should coalesce rapid edits to one control but split distinct controls', () => {
             adjust.brightnessChanged(10);
             adjust.brightnessChanged(20);
             adjust.saturationChanged(30);
 
             expect(store.adjust().brightness).toBe(20);
             expect(store.adjust().saturation).toBe(30);
-            expect(store.history()).toHaveLength(1);
-            expect(store.history()[0].label).toBe('Saturation 30');
+            // Repeated brightness edits coalesce into a single step; switching to
+            // saturation (a distinct control in the same category) starts a new step.
+            expect(store.history().map((entry) => entry.label)).toEqual([
+                'Brightness 20',
+                'Saturation 30'
+            ]);
         });
 
         it('should append a new entry when the category changes', () => {

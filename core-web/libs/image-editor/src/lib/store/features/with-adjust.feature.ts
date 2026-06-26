@@ -20,19 +20,21 @@ export function withAdjust() {
                 const value = clamp(payload, RANGES.brightness.min, RANGES.brightness.max);
                 const adjust: AdjustState = { ...state.adjust, brightness: value };
 
-                return adjustPatch(state, adjust, 'adjust', `Brightness ${value}`);
+                // Distinct coalesce keys keep brightness/hue/saturation as separate
+                // history steps even though they share the `adjust` category.
+                return adjustPatch(state, adjust, 'adjust', `Brightness ${value}`, 'brightness');
             }),
             on(imageEditorAdjustEvents.hueChanged, ({ payload }, state) => {
                 const value = clamp(payload, RANGES.hue.min, RANGES.hue.max);
                 const adjust: AdjustState = { ...state.adjust, hue: value };
 
-                return adjustPatch(state, adjust, 'adjust', `Hue ${value}`);
+                return adjustPatch(state, adjust, 'adjust', `Hue ${value}`, 'hue');
             }),
             on(imageEditorAdjustEvents.saturationChanged, ({ payload }, state) => {
                 const value = clamp(payload, RANGES.saturation.min, RANGES.saturation.max);
                 const adjust: AdjustState = { ...state.adjust, saturation: value };
 
-                return adjustPatch(state, adjust, 'adjust', `Saturation ${value}`);
+                return adjustPatch(state, adjust, 'adjust', `Saturation ${value}`, 'saturation');
             }),
             on(imageEditorAdjustEvents.grayscaleToggled, ({ payload }, state) => {
                 const adjust: AdjustState = { ...state.adjust, grayscale: payload };

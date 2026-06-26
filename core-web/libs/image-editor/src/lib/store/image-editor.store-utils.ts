@@ -47,14 +47,18 @@ export function editableSlicesOf(state: ImageEditorState): EditableSlices {
 
 /**
  * Coalesces a new edit into the undo/redo history. When the current head entry
- * shares the edit's category the entry is updated in place (so dragging a slider
- * produces a single history step) and any redo tail is discarded; otherwise a new
- * entry is appended — also discarding any redo tail. Either way a new value
- * invalidates forward history that was built against the old one.
+ * shares the edit's coalesce key (the control identity, e.g. `brightness`) the
+ * entry is updated in place (so dragging a single slider produces one history
+ * step) and any redo tail is discarded; otherwise a new entry is appended — also
+ * discarding any redo tail. Switching to a different control in the same
+ * {@link FilterCategory} therefore starts a new entry rather than overwriting the
+ * previous one. Either way a new value invalidates forward history built against
+ * the old one.
  * @param state - The current editor state
- * @param category - The category the edit belongs to
+ * @param category - The category the edit belongs to (used for grouping/labels)
  * @param label - The human-readable label for the entry
  * @param snapshot - The editable slices to capture
+ * @param coalesceKey - The control identity edits merge on; defaults to `category`
  * @returns The new `history` array and `historyIndex`
  */
 /** Process-local monotonic sequence backing unique, collision-free history-entry ids. */
@@ -64,13 +68,14 @@ export function coalesceHistory(
     state: ImageEditorState,
     category: FilterCategory,
     label: string,
-    snapshot: EditableSlices
+    snapshot: EditableSlices,
+    coalesceKey: string = category
 ): Pick<ImageEditorState, 'history' | 'historyIndex'> {
     const head = state.history[state.historyIndex];
 
-    if (head && head.category === category) {
-        // Update the head in place AND drop any redo tail: a new value in the same
-        // category invalidates forward history built against the old value (matching
+    if (head && head.coalesceKey === coalesceKey) {
+        // Update the head in place AND drop any redo tail: a new value for the same
+        // control invalidates forward history built against the old value (matching
         // the redo-tail truncation the new-entry branch below performs).
         const history = [
             ...state.history.slice(0, state.historyIndex),
@@ -85,6 +90,7 @@ export function coalesceHistory(
         // in the same millisecond (Date.now() could collide, e.g. under fake timers).
         id: `${category}-${++historyEntrySeq}`,
         category,
+        coalesceKey,
         label,
         snapshot
     };
@@ -209,7 +215,8 @@ export function adjustPatch(
     state: ImageEditorState,
     adjust: AdjustState,
     category: FilterCategory,
-    label: string
+    label: string,
+    coalesceKey: string = category
 ): ImageEditorState {
     const next: ImageEditorState = {
         ...state,
@@ -218,7 +225,10 @@ export function adjustPatch(
         cacheBust: state.cacheBust + 1
     };
 
-    return { ...next, ...coalesceHistory(next, category, label, editableSlicesOf(next)) };
+    return {
+        ...next,
+        ...coalesceHistory(next, category, label, editableSlicesOf(next), coalesceKey)
+    };
 }
 
 /** Applies a transform-slice edit, bumps the cache and coalesces history. */
@@ -227,7 +237,8 @@ export function transformPatch(
     transform: TransformState,
     crop: CropState,
     category: FilterCategory,
-    label: string
+    label: string,
+    coalesceKey: string = category
 ): ImageEditorState {
     const next: ImageEditorState = {
         ...state,
@@ -237,7 +248,10 @@ export function transformPatch(
         cacheBust: state.cacheBust + 1
     };
 
-    return { ...next, ...coalesceHistory(next, category, label, editableSlicesOf(next)) };
+    return {
+        ...next,
+        ...coalesceHistory(next, category, label, editableSlicesOf(next), coalesceKey)
+    };
 }
 
 /** Applies a fileInfo-slice edit, bumps the cache and coalesces history. */
@@ -245,7 +259,8 @@ export function fileInfoPatch(
     state: ImageEditorState,
     fileInfo: FileInfoState,
     category: FilterCategory,
-    label: string
+    label: string,
+    coalesceKey: string = category
 ): ImageEditorState {
     const next: ImageEditorState = {
         ...state,
@@ -254,7 +269,10 @@ export function fileInfoPatch(
         cacheBust: state.cacheBust + 1
     };
 
-    return { ...next, ...coalesceHistory(next, category, label, editableSlicesOf(next)) };
+    return {
+        ...next,
+        ...coalesceHistory(next, category, label, editableSlicesOf(next), coalesceKey)
+    };
 }
 
 /** Extracts a readable message from an unknown error payload. */

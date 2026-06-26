@@ -26,7 +26,9 @@ export function withTransform() {
                 const transform: TransformState = { ...state.transform, scale: value };
                 const crop = value !== 100 ? initialCropState : state.crop;
 
-                return transformPatch(state, transform, crop, 'resize', `Scale ${value}%`);
+                // `scale` and `outputDims` share the `resize` category but are distinct
+                // controls, so they coalesce on their own keys (one step each).
+                return transformPatch(state, transform, crop, 'resize', `Scale ${value}%`, 'scale');
             }),
             on(imageEditorTransformEvents.rotateChanged, ({ payload }, state) => {
                 const value = clamp(payload, RANGES.rotate.min, RANGES.rotate.max);
@@ -40,7 +42,14 @@ export function withTransform() {
                     flipH: !state.transform.flipH
                 };
 
-                return transformPatch(state, transform, state.crop, 'flip', 'Flip horizontal');
+                return transformPatch(
+                    state,
+                    transform,
+                    state.crop,
+                    'flip',
+                    'Flip horizontal',
+                    'flipH'
+                );
             }),
             on(imageEditorTransformEvents.flipVToggled, (_event, state) => {
                 const transform: TransformState = {
@@ -48,7 +57,14 @@ export function withTransform() {
                     flipV: !state.transform.flipV
                 };
 
-                return transformPatch(state, transform, state.crop, 'flip', 'Flip vertical');
+                return transformPatch(
+                    state,
+                    transform,
+                    state.crop,
+                    'flip',
+                    'Flip vertical',
+                    'flipV'
+                );
             }),
             on(imageEditorTransformEvents.outputDimsChanged, ({ payload }, state) => {
                 const transform: TransformState = {
@@ -59,7 +75,7 @@ export function withTransform() {
                 const isResizing = payload.width != null || payload.height != null;
                 const crop = isResizing ? initialCropState : state.crop;
 
-                return transformPatch(state, transform, crop, 'resize', 'Resize');
+                return transformPatch(state, transform, crop, 'resize', 'Resize', 'outputDims');
             })
         ),
         withComputed((store) => ({

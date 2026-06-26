@@ -68,4 +68,22 @@ describe('withAdjust', () => {
         expect(store.adjust().grayscale).toBe(false);
         expect(store.history()[0].label).toBe('Grayscale off');
     });
+
+    it('keeps brightness and hue as separate history entries', () => {
+        // Regression: brightness and hue share the `adjust` category but are distinct
+        // controls, so editing one then the other must not coalesce into one step.
+        adjust.brightnessChanged(30);
+        adjust.hueChanged(40);
+
+        expect(store.history().map((e) => e.label)).toEqual(['Brightness 30', 'Hue 40']);
+        expect(store.historyIndex()).toBe(1);
+    });
+
+    it('coalesces repeated edits to the same control into a single entry', () => {
+        adjust.brightnessChanged(30);
+        adjust.brightnessChanged(60);
+
+        expect(store.history()).toHaveLength(1);
+        expect(store.history()[0].label).toBe('Brightness 60');
+    });
 });

@@ -28,6 +28,7 @@ function entry(
     return {
         id,
         category,
+        coalesceKey: category,
         label: id,
         snapshot: { ...initialEditableSlices, ...patch }
     };
@@ -151,6 +152,52 @@ describe('image-editor.store-utils', () => {
 
             expect(result.history.map((e) => e.category)).toEqual(['adjust', 'flip']);
             expect(result.historyIndex).toBe(1);
+        });
+
+        it('appends a new entry when the coalesce key differs within the same category', () => {
+            // Brightness then hue: same `adjust` category, distinct controls → two steps.
+            const afterBrightness = coalesceHistory(
+                initialImageEditorState,
+                'adjust',
+                'Brightness 10',
+                editableSlicesOf(initialImageEditorState),
+                'brightness'
+            );
+            const state = stateWith(afterBrightness.history, afterBrightness.historyIndex);
+
+            const result = coalesceHistory(
+                state,
+                'adjust',
+                'Hue 20',
+                editableSlicesOf(state),
+                'hue'
+            );
+
+            expect(result.history).toHaveLength(2);
+            expect(result.history.map((e) => e.label)).toEqual(['Brightness 10', 'Hue 20']);
+        });
+
+        it('updates in place when the coalesce key matches across changing labels', () => {
+            // Dragging one slider: same key, changing value → a single coalesced step.
+            const first = coalesceHistory(
+                initialImageEditorState,
+                'adjust',
+                'Brightness 10',
+                editableSlicesOf(initialImageEditorState),
+                'brightness'
+            );
+            const state = stateWith(first.history, first.historyIndex);
+
+            const result = coalesceHistory(
+                state,
+                'adjust',
+                'Brightness 40',
+                editableSlicesOf(state),
+                'brightness'
+            );
+
+            expect(result.history).toHaveLength(1);
+            expect(result.history[0].label).toBe('Brightness 40');
         });
     });
 

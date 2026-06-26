@@ -30,7 +30,9 @@ export function withFileInfo() {
                 const value = clamp(payload, RANGES.quality.min, RANGES.quality.max);
                 const fileInfo: FileInfoState = { ...state.fileInfo, quality: value };
 
-                return fileInfoPatch(state, fileInfo, 'compression', `Quality ${value}`);
+                // Quality coalesces separately from the compression-mode selector so the
+                // two stay distinct history steps despite sharing the `compression` category.
+                return fileInfoPatch(state, fileInfo, 'compression', `Quality ${value}`, 'quality');
             })
         )
     );

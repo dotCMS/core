@@ -16,7 +16,13 @@ function entry(
     category: ImageEditorHistoryEntry['category'],
     patch: Partial<EditableSlices>
 ): ImageEditorHistoryEntry {
-    return { id, category, label: id, snapshot: { ...initialEditableSlices, ...patch } };
+    return {
+        id,
+        category,
+        coalesceKey: category,
+        label: id,
+        snapshot: { ...initialEditableSlices, ...patch }
+    };
 }
 
 const brightness20 = { ...initialEditableSlices.adjust, brightness: 20 };

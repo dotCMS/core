@@ -70,13 +70,17 @@ describe('withTransform', () => {
         expect(store.transform().rotateDeg).toBe(-180);
     });
 
-    it('toggles horizontal and vertical flip under the flip category', () => {
+    it('toggles horizontal and vertical flip as separate flip-category entries', () => {
         const { store, transform } = setup(TransformStore);
         transform.flipHToggled();
         transform.flipVToggled();
         expect(store.transform().flipH).toBe(true);
         expect(store.transform().flipV).toBe(true);
-        expect(store.history().some((entry) => entry.category === 'flip')).toBe(true);
+        // Both are the `flip` category but distinct controls, so they must not coalesce.
+        expect(store.history().map((entry) => entry.label)).toEqual([
+            'Flip horizontal',
+            'Flip vertical'
+        ]);
     });
 
     it('clears an active crop when explicit output dimensions are set', () => {
