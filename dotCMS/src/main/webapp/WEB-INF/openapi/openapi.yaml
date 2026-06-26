@@ -7824,13 +7824,14 @@ paths:
           - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
           - `description` *(string)*
           - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
-          - `fields` *(array of field objects)* — see field schema below
+          - `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)
           - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
           - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
 
           **Field object schema** (each item in `fields[]`):
           - `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, `ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, `ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*
           - `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), `required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*
+          - ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — `ImmutableImageField`, `ImmutableFileField`, `ImmutableBinaryField` — use `dataType: TEXT` (they store a reference in a text column), **never** `SYSTEM`. Reserve `SYSTEM` for true layout/tab/relationship system fields (rows, columns, dividers, permission/relationship tabs).
           - `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\r\nFalse|false'` — there is no dedicated Boolean field class.
 
           **Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. `ImmutableRowField` begins a new row; `ImmutableColumnField` begins a new column inside that row; following content fields belong to the most-recent column until the next marker.
@@ -8703,8 +8704,8 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-        description: Field JSON data
+              $ref: "#/components/schemas/ContentTypeFieldView"
+        description: A single field object to create on the content type.
         required: true
       responses:
         "200":
@@ -8747,8 +8748,10 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-        description: Fields JSON data
+              type: array
+              items:
+                $ref: "#/components/schemas/ContentTypeFieldView"
+        description: Array of field objects to save on the content type.
         required: true
       responses:
         "200":
@@ -25536,6 +25539,105 @@ components:
         path:
           type: string
           description: Host-qualified path to the VTL file (FILE containers only)
+    ContentTypeFieldView:
+      type: object
+      description: "A single field within a content type's 'fields[]' array. The 'clazz'\
+        \ property is the discriminator that selects the concrete field type; the\
+        \ remaining properties apply across field types."
+      properties:
+        clazz:
+          type: string
+          description: Fully-qualified class name of the field implementation (the
+            'Immutable' generated type). Determines the kind of field.
+          enum:
+          - com.dotcms.contenttype.model.field.ImmutableTextField
+          - com.dotcms.contenttype.model.field.ImmutableTextAreaField
+          - com.dotcms.contenttype.model.field.ImmutableStoryBlockField
+          - com.dotcms.contenttype.model.field.ImmutableWysiwygField
+          - com.dotcms.contenttype.model.field.ImmutableConstantField
+          - com.dotcms.contenttype.model.field.ImmutableHiddenField
+          - com.dotcms.contenttype.model.field.ImmutableCustomField
+          - com.dotcms.contenttype.model.field.ImmutableJSONField
+          - com.dotcms.contenttype.model.field.ImmutableBinaryField
+          - com.dotcms.contenttype.model.field.ImmutableImageField
+          - com.dotcms.contenttype.model.field.ImmutableFileField
+          - com.dotcms.contenttype.model.field.ImmutableTagField
+          - com.dotcms.contenttype.model.field.ImmutableCategoryField
+          - com.dotcms.contenttype.model.field.ImmutableCheckboxField
+          - com.dotcms.contenttype.model.field.ImmutableRadioField
+          - com.dotcms.contenttype.model.field.ImmutableSelectField
+          - com.dotcms.contenttype.model.field.ImmutableMultiSelectField
+          - com.dotcms.contenttype.model.field.ImmutableDateField
+          - com.dotcms.contenttype.model.field.ImmutableTimeField
+          - com.dotcms.contenttype.model.field.ImmutableDateTimeField
+          - com.dotcms.contenttype.model.field.ImmutableKeyValueField
+          - com.dotcms.contenttype.model.field.ImmutableHostFolderField
+          - com.dotcms.contenttype.model.field.ImmutableRelationshipField
+          - com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField
+          - com.dotcms.contenttype.model.field.ImmutablePermissionTabField
+          - com.dotcms.contenttype.model.field.ImmutableLineDividerField
+          - com.dotcms.contenttype.model.field.ImmutableTabDividerField
+          - com.dotcms.contenttype.model.field.ImmutableRowField
+          - com.dotcms.contenttype.model.field.ImmutableColumnField
+        dataType:
+          type: string
+          description: "Storage/column data type backing the field. This is the **storage**\
+            \ type, which often differs from the field's UI class. In particular,\
+            \ fields that store their payload elsewhere — such as 'ImmutableImageField',\
+            \ 'ImmutableFileField', and 'ImmutableBinaryField' — use dataType 'TEXT'\
+            \ (they keep an asset reference in a text column), **not** 'SYSTEM'. Reserve\
+            \ 'SYSTEM' for true layout/tab/relationship system fields. Use 'LONG_TEXT'\
+            \ for text-area/story-block/WYSIWYG content."
+          enum:
+          - TEXT
+          - LONG_TEXT
+          - SYSTEM
+          - BOOL
+          - INTEGER
+          - FLOAT
+          - DATE
+        defaultValue:
+          type: string
+          description: Default value applied when content is created.
+        hint:
+          type: string
+          description: Help text shown beneath the field in the editor.
+        indexed:
+          type: boolean
+          description: Whether the field is added to the search index.
+        listed:
+          type: boolean
+          description: Whether the field appears in content list/table views.
+        name:
+          type: string
+          description: Display name of the field.
+        regexCheck:
+          type: string
+          description: Regular expression used to validate the field value.
+        required:
+          type: boolean
+          description: Whether a value is required to save content.
+        sortOrder:
+          type: integer
+          format: int32
+          description: "Position of the field within the 'fields[]' array (also drives\
+            \ row/column layout order)."
+        unique:
+          type: boolean
+          description: Whether the field is unique across content of this type.
+        values:
+          type: string
+          description: "Options for Radio/Select/Checkbox/Multi-Select fields: newline-separated\
+            \ 'Display|value' pairs. For a boolean choice use ImmutableRadioField\
+            \ + dataType 'BOOL' + values 'True|true\\r\\nFalse|false' (there is no\
+            \ dedicated boolean field class)."
+        variable:
+          type: string
+          description: Velocity variable name of the field (unique within the content
+            type; auto-generated from 'name' if omitted).
+      required:
+      - clazz
+      - name
     ContentTypeForm:
       type: object
       properties:
@@ -27089,79 +27191,244 @@ components:
           type: string
         assign:
           type: string
+          description: User or role ID to assign the task to (used by actions that
+            reassign).
         comments:
           type: string
+          description: Optional comment recorded on the workflow task history.
         contentlet:
           type: object
           additionalProperties:
             type: object
+            description: |-
+              The contentlet to create or edit, as a flat map of field-variable names to values. Polymorphic: the allowed fields depend on the content type.
+
+              **System fields (all content):**
+              - `contentType` *(string)* — the content type's variable name (e.g. 'webPageContent'). Required when creating.
+              - `languageId` *(number)* — language ID; defaults to the system default language when omitted.
+              - `contentHost` *(string)* — host (site) **identifier** the content belongs to, **or** `hostFolder` *(string)* — a folder **identifier**. Supply one of these.
+              - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
+
+              ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+              **Pages (`contentType: 'htmlpageasset'`)** additionally use:
+              - `title` *(string)* — the page title.
+              - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
+              - `template` *(string)* — identifier of the template to render the page.
+              - `cachettl` *(number)* — page cache time-to-live in seconds.
+              - `sortOrder` *(number)* — sort order within the folder.
+
+              Note: there is no dedicated page-create endpoint — pages are created by firing an action with an `htmlpageasset` contentlet.
+            example:
+              cachettl: 15
+              contentType: htmlpageasset
+              hostFolder: 48190c8c-42c4-46af-8d1a-0cd5db894797
+              languageId: 1
+              sortOrder: 0
+              template: 8e63a9c0-...
+              title: My Page
+              url: my-page
+          description: |-
+            The contentlet to create or edit, as a flat map of field-variable names to values. Polymorphic: the allowed fields depend on the content type.
+
+            **System fields (all content):**
+            - `contentType` *(string)* — the content type's variable name (e.g. 'webPageContent'). Required when creating.
+            - `languageId` *(number)* — language ID; defaults to the system default language when omitted.
+            - `contentHost` *(string)* — host (site) **identifier** the content belongs to, **or** `hostFolder` *(string)* — a folder **identifier**. Supply one of these.
+            - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
+
+            ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+            **Pages (`contentType: 'htmlpageasset'`)** additionally use:
+            - `title` *(string)* — the page title.
+            - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
+            - `template` *(string)* — identifier of the template to render the page.
+            - `cachettl` *(number)* — page cache time-to-live in seconds.
+            - `sortOrder` *(number)* — sort order within the folder.
+
+            Note: there is no dedicated page-create endpoint — pages are created by firing an action with an `htmlpageasset` contentlet.
+          example:
+            cachettl: 15
+            contentType: htmlpageasset
+            hostFolder: 48190c8c-42c4-46af-8d1a-0cd5db894797
+            languageId: 1
+            sortOrder: 0
+            template: 8e63a9c0-...
+            title: My Page
+            url: my-page
         expireDate:
           type: string
+          description: "Expiration date, in the content type's configured date format."
         expireTime:
           type: string
+          description: "Expiration time, in the content type's configured time format."
         filterKey:
           type: string
+          description: Push-publishing filter key for a 'Push Publish' action.
         individualPermissions:
           type: object
           additionalProperties:
             type: array
+            description: "Per-content individual permissions to apply, keyed by permission\
+              \ type (READ, WRITE, PUBLISH, etc.) to a list of user/role IDs."
             items:
               type: string
+              description: "Per-content individual permissions to apply, keyed by\
+                \ permission type (READ, WRITE, PUBLISH, etc.) to a list of user/role\
+                \ IDs."
+          description: "Per-content individual permissions to apply, keyed by permission\
+            \ type (READ, WRITE, PUBLISH, etc.) to a list of user/role IDs."
         iwantTo:
           type: string
         neverExpire:
           type: string
+          description: Set to 'true' to mark the content as never expiring.
         pathToMove:
           type: string
+          description: Target folder path for a 'Move' action.
         publishDate:
           type: string
+          description: "Publish date for the 'Publish' step, in the content type's\
+            \ configured date format."
         publishTime:
           type: string
+          description: "Publish time for the 'Publish' step, in the content type's\
+            \ configured time format."
         query:
           type: string
+          description: "Lucene query selecting the content to act on, as an alternative\
+            \ to 'contentlet'."
         timezoneId:
           type: string
+          description: Timezone ID (e.g. 'America/New_York') used to interpret the
+            publish/expire date-times.
         whereToSend:
           type: string
+          description: Push-publishing target environment(s) for a 'Push Publish'
+            action.
     FireActionForm:
       type: object
+      description: Form used to fire a workflow action. The content being acted on
+        is supplied in the 'contentlet' map; the remaining fields are workflow/publishing
+        options applied by the action.
       properties:
         assign:
           type: string
+          description: User or role ID to assign the task to (used by actions that
+            reassign).
         comments:
           type: string
+          description: Optional comment recorded on the workflow task history.
         contentlet:
           type: object
           additionalProperties:
             type: object
+            description: |-
+              The contentlet to create or edit, as a flat map of field-variable names to values. Polymorphic: the allowed fields depend on the content type.
+
+              **System fields (all content):**
+              - `contentType` *(string)* — the content type's variable name (e.g. 'webPageContent'). Required when creating.
+              - `languageId` *(number)* — language ID; defaults to the system default language when omitted.
+              - `contentHost` *(string)* — host (site) **identifier** the content belongs to, **or** `hostFolder` *(string)* — a folder **identifier**. Supply one of these.
+              - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
+
+              ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+              **Pages (`contentType: 'htmlpageasset'`)** additionally use:
+              - `title` *(string)* — the page title.
+              - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
+              - `template` *(string)* — identifier of the template to render the page.
+              - `cachettl` *(number)* — page cache time-to-live in seconds.
+              - `sortOrder` *(number)* — sort order within the folder.
+
+              Note: there is no dedicated page-create endpoint — pages are created by firing an action with an `htmlpageasset` contentlet.
+            example:
+              cachettl: 15
+              contentType: htmlpageasset
+              hostFolder: 48190c8c-42c4-46af-8d1a-0cd5db894797
+              languageId: 1
+              sortOrder: 0
+              template: 8e63a9c0-...
+              title: My Page
+              url: my-page
+          description: |-
+            The contentlet to create or edit, as a flat map of field-variable names to values. Polymorphic: the allowed fields depend on the content type.
+
+            **System fields (all content):**
+            - `contentType` *(string)* — the content type's variable name (e.g. 'webPageContent'). Required when creating.
+            - `languageId` *(number)* — language ID; defaults to the system default language when omitted.
+            - `contentHost` *(string)* — host (site) **identifier** the content belongs to, **or** `hostFolder` *(string)* — a folder **identifier**. Supply one of these.
+            - `inode` / `identifier` *(string)* — include the existing identifier (and optionally inode) to edit existing content; omit both to create new.
+
+            ⚠️ Do **not** set `host` — use `contentHost` (host id) or `hostFolder` (folder id) instead.
+
+            **Pages (`contentType: 'htmlpageasset'`)** additionally use:
+            - `title` *(string)* — the page title.
+            - `url` *(string)* — the page name (the last URL segment) within `hostFolder`.
+            - `template` *(string)* — identifier of the template to render the page.
+            - `cachettl` *(number)* — page cache time-to-live in seconds.
+            - `sortOrder` *(number)* — sort order within the folder.
+
+            Note: there is no dedicated page-create endpoint — pages are created by firing an action with an `htmlpageasset` contentlet.
+          example:
+            cachettl: 15
+            contentType: htmlpageasset
+            hostFolder: 48190c8c-42c4-46af-8d1a-0cd5db894797
+            languageId: 1
+            sortOrder: 0
+            template: 8e63a9c0-...
+            title: My Page
+            url: my-page
         expireDate:
           type: string
+          description: "Expiration date, in the content type's configured date format."
         expireTime:
           type: string
+          description: "Expiration time, in the content type's configured time format."
         filterKey:
           type: string
+          description: Push-publishing filter key for a 'Push Publish' action.
         individualPermissions:
           type: object
           additionalProperties:
             type: array
+            description: "Per-content individual permissions to apply, keyed by permission\
+              \ type (READ, WRITE, PUBLISH, etc.) to a list of user/role IDs."
             items:
               type: string
+              description: "Per-content individual permissions to apply, keyed by\
+                \ permission type (READ, WRITE, PUBLISH, etc.) to a list of user/role\
+                \ IDs."
+          description: "Per-content individual permissions to apply, keyed by permission\
+            \ type (READ, WRITE, PUBLISH, etc.) to a list of user/role IDs."
         iwantTo:
           type: string
         neverExpire:
           type: string
+          description: Set to 'true' to mark the content as never expiring.
         pathToMove:
           type: string
+          description: Target folder path for a 'Move' action.
         publishDate:
           type: string
+          description: "Publish date for the 'Publish' step, in the content type's\
+            \ configured date format."
         publishTime:
           type: string
+          description: "Publish time for the 'Publish' step, in the content type's\
+            \ configured time format."
         query:
           type: string
+          description: "Lucene query selecting the content to act on, as an alternative\
+            \ to 'contentlet'."
         timezoneId:
           type: string
+          description: Timezone ID (e.g. 'America/New_York') used to interpret the
+            publish/expire date-times.
         whereToSend:
           type: string
+          description: Push-publishing target environment(s) for a 'Push Publish'
+            action.
     FireBulkActionsForm:
       type: object
       description: "Request body for PUT /api/v1/workflow/contentlet/actions/bulk/fire.\
@@ -29744,6 +30011,10 @@ components:
             type: boolean
     PageForm:
       type: object
+      description: Layout payload used to create or update the anonymous Template
+        backing a page. Wrap this object under a top-level 'PageForm' property in
+        the request body. 'layout' is required; omitting 'title' creates an anonymous
+        (page-scoped) template.
       properties:
         anonymousLayout:
           type: boolean
@@ -29751,10 +30022,19 @@ components:
           $ref: "#/components/schemas/TemplateLayout"
         siteId:
           type: string
+          description: Identifier of the site (host) the template belongs to. Sent
+            as the JSON property 'hostId'. Defaults to the site resolved from the
+            current HTTP request context when omitted.
         themeId:
           type: string
+          description: "Theme folder identifier (not a path) supplying the template's\
+            \ CSS/JS and VTL fragments. Resolve from a path via GET /api/v1/folder/sitename/{site}/uri/{uri}."
         title:
           type: string
+          description: "Title for the resulting template. Omit to create an anonymous,\
+            \ page-scoped template (a generated name is assigned automatically)."
+      required:
+      - layout
     PageLivePreviewVersionBean:
       type: object
       properties:
@@ -35677,6 +35957,8 @@ components:
             type: boolean
     SimpleSiteVariableForm:
       type: object
+      description: Optional list of site variables (key/value pairs) to create alongside
+        the site.
       properties:
         id:
           type: string
@@ -35688,46 +35970,75 @@ components:
           type: string
     SiteForm:
       type: object
+      description: Form used to create a Site (Host) in dotCMS. 'siteName' (the hostname)
+        is the only required field; the new site is created unpublished and must be
+        published separately.
       properties:
         addThis:
           type: string
+          description: AddThis sharing-widget account ID for this site.
         aliases:
           type: string
+          description: Comma- or newline-separated list of host aliases (alternate
+            hostnames) for this site.
         default:
           type: boolean
         description:
           type: string
+          description: Default meta description applied to pages on this site.
         embeddedDashboard:
           type: string
+          description: Embedded dashboard markup for this site.
         forceExecution:
           type: boolean
+          description: Whether to force creation even when validation would otherwise
+            warn (e.g. a duplicate alias).
         googleAnalytics:
           type: string
+          description: Google Analytics tracking ID for this site.
         googleMap:
           type: string
+          description: Google Maps API key for this site.
         identifier:
           type: string
+          description: Identifier of the site. Ignored on creation; server-generated.
         inode:
           type: string
+          description: Inode (version identifier) of the site. Ignored on creation;
+            server-generated.
         keywords:
           type: string
+          description: Default meta keywords applied to pages on this site.
         languageId:
           type: integer
           format: int64
+          description: Default language ID for this site. Defaults to the system default
+            language when 0/omitted.
         proxyUrlForEditMode:
           type: string
+          description: Proxy URL used to render the site in edit mode.
         runDashboard:
           type: boolean
+          description: Whether the analytics dashboard runs for this site.
         siteName:
           type: string
+          description: "The hostname of the site, e.g. 'www.example.com'. This is\
+            \ the site's primary name."
         siteThumbnail:
           type: string
+          description: Identifier of the image asset used as the site thumbnail.
         tagStorage:
           type: string
+          description: Identifier of the site whose tag storage this site shares.
+            Defaults to this site itself when omitted.
         variables:
           type: array
+          description: Optional list of site variables (key/value pairs) to create
+            alongside the site.
           items:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
+      required:
+      - siteName
     SiteVariableForm:
       type: object
       properties:
@@ -36143,56 +36454,98 @@ components:
           type: boolean
     TemplateForm:
       type: object
+      description: Form used to create or update a Template in dotCMS. A Template
+        can be either drawn with the layout builder (set 'drawed:true' and provide
+        'layout') or authored as raw Velocity markup (provide 'body').
       properties:
         body:
           type: string
+          description: Raw Velocity markup that renders the template. Required even
+            when 'drawed:true' — send an empty string ('') when using the layout builder
+            ('layout') instead of hand-written body.
         countAddContainer:
           type: integer
           format: int32
+          description: Count of 'add container' placeholders in the layout. Server-managed;
+            typically omitted.
         countContainers:
           type: integer
           format: int32
+          description: Count of containers in the layout. Server-managed; typically
+            omitted.
         drawed:
           type: boolean
+          description: "Whether this template was built with the visual layout builder.\
+            \ When true, provide 'layout' (the row/column/container structure); when\
+            \ false, provide 'body'."
         drawedBody:
           type: string
+          description: Velocity body generated by the layout builder for a drawn template.
+            Server-managed.
         footer:
           type: string
+          description: Velocity/HTML footer fragment for pages using this template.
         footerCheck:
           type: boolean
+          description: Whether the footer fragment is enabled for this template.
         friendlyName:
           type: string
+          description: Friendly (human-readable) name of the template.
         headCode:
           type: string
+          description: Velocity/HTML injected into the page <head> for pages using
+            this template.
         header:
           type: string
+          description: Velocity/HTML header fragment for pages using this template.
         headerCheck:
           type: boolean
+          description: Whether the header fragment is enabled for this template.
         identifier:
           type: string
+          description: "Identifier of the template. Required for updates, ignored\
+            \ on creation."
         image:
           type: string
+          description: Identifier of the image asset used as the template thumbnail.
         inode:
           type: string
+          description: Inode (version identifier) of the template. Server-managed;
+            typically omitted on input.
         layout:
           $ref: "#/components/schemas/TemplateLayoutView"
         name:
           type: string
+          description: Internal/asset name of the template.
         selectedimage:
           type: string
+          description: Identifier of the image asset currently selected as the template
+            thumbnail in the UI.
         showOnMenu:
           type: boolean
+          description: Whether this template should appear in navigation menus.
         siteId:
           type: string
+          description: "Identifier of the site (host) where this template will be\
+            \ created. This is a site identifier UUID, not 'hostId'. If not provided,\
+            \ the template is assigned to the site resolved from the current HTTP\
+            \ request context."
         sortOrder:
           type: integer
           format: int32
+          description: Sort order for display purposes.
         theme:
           type: string
+          description: "Theme folder identifier (not a path) that supplies the template's\
+            \ CSS/JS and VTL fragments. Resolve the folder identifier from a path\
+            \ via GET /api/v1/folder/sitename/{site}/uri/{uri}."
         themeName:
           type: string
+          description: Display name of the theme. Informational; 'theme' (the folder
+            identifier) is authoritative.
         title:
           type: string
+          description: Title of the template (displayed in the UI).
       required:
       - title
     TemplateImageForm:
@@ -36202,6 +36555,9 @@ components:
           type: string
     TemplateLayout:
       type: object
+      description: "Required. The row/column/container structure of the layout: a\
+        \ 'body' of rows, each row holding columns, each column holding containers\
+        \ referenced by identifier + uuid, plus optional 'header', 'footer', and 'sidebar'."
       properties:
         body:
           $ref: "#/components/schemas/Body"
@@ -36297,6 +36653,10 @@ components:
           type: string
     TemplateLayoutView:
       type: object
+      description: "Layout produced by the visual builder: a 'body' of rows, each\
+        \ row holding columns, and each column holding containers (referenced by identifier\
+        \ + uuid), plus optional 'header', 'footer', 'sidebar', and 'title'. Provide\
+        \ this when 'drawed:true'."
       properties:
         body:
           $ref: "#/components/schemas/BodyView"
