@@ -26,6 +26,7 @@ import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
+    DotCMSTempFile,
     DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
@@ -565,19 +566,51 @@ export class DotFileFieldComponent
         this.#dialogRef.onClose
             .pipe(
                 filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
-                map((selectedImage) => {
-                    const previewFile: UploadedFile = {
-                        source: 'contentlet',
-                        file: selectedImage.response.contentlet
-                    };
-
-                    return previewFile;
-                }),
+                map((selectedImage) => this.#mapAIImageToUploadedFile(selectedImage)),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
             });
+    }
+
+    /**
+     * Maps a generated AI image to the {@link UploadedFile} expected by the store,
+     * matching the value contract of the underlying upload type.
+     *
+     * Binary fields store a temp-file id inline on the contentlet (`uploadType: 'temp'`),
+     * so the AI image must be represented as a temp file — mirroring the choose-file/
+     * drag-drop upload path. Using the published dotAsset contentlet identifier instead
+     * would set a value the binary field backend cannot resolve, so the image is lost
+     * on save. File/Image fields reference the dotAsset directly, so the contentlet is
+     * used as-is.
+     *
+     * @param selectedImage the AI image returned by the prompt dialog
+     * @returns the uploaded file to preview and persist
+     */
+    #mapAIImageToUploadedFile(selectedImage: DotGeneratedAIImage): UploadedFile {
+        const { response } = selectedImage;
+        const contentlet = response.contentlet;
+
+        if (this.store.uploadType() !== 'temp') {
+            return { source: 'contentlet', file: contentlet };
+        }
+
+        const metadata = (contentlet['assetMetaData'] ?? {}) as DotFileMetadata;
+
+        const tempFile: DotCMSTempFile = {
+            id: response.response,
+            fileName: response.tempFileName,
+            folder: contentlet.folder,
+            image: true,
+            length: metadata.length,
+            mimeType: metadata.contentType,
+            referenceUrl: contentlet.asset,
+            thumbnailUrl: contentlet.asset,
+            metadata
+        };
+
+        return { source: 'temp', file: tempFile };
     }
 
     /**
