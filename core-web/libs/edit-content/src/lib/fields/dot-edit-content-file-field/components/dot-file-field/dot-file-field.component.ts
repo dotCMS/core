@@ -1,17 +1,17 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    computed,
+    DestroyRef,
+    forwardRef,
     inject,
     input,
-    output,
-    OnInit,
     OnDestroy,
-    AfterViewInit,
-    DestroyRef,
-    computed,
-    forwardRef
+    OnInit,
+    output
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -30,13 +30,13 @@ import {
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
+    DotAIImagePromptComponent,
+    DotBrowserSelectorComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotAIImagePromptComponent,
     DotSpinnerComponent,
     DropZoneFileEvent,
-    DropZoneFileValidity,
-    DotBrowserSelectorComponent
+    DropZoneFileValidity
 } from '@dotcms/ui';
 import { getFileMetadata } from '@dotcms/utils';
 
@@ -602,7 +602,9 @@ export class DotFileFieldComponent
             style: { 'max-width': '1040px' },
             data: {
                 uploadedFile: this.store.uploadedFile(),
-                allowFileNameEdit: true
+                allowFileNameEdit: true,
+                uploadType: this.store.uploadType(),
+                acceptedFiles: this.store.acceptedFiles()
             }
         });
 

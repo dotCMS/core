@@ -148,7 +148,8 @@
 <p-confirmpopup />
 
 <p-dialog
-    [(visible)]="$showDialog"
+    [visible]="$showDialog()"
+    (visibleChange)="$showDialog.set($event)"
     [closeOnEscape]="true"
     [dismissableMask]="true"
     [modal]="true"

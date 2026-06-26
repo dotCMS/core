@@ -41,9 +41,13 @@ export function getInfoByLang(extension: string) {
         };
     }
 
-    const language = monaco.languages
-        .getLanguages()
-        .find((language) => language.extensions?.includes(`.${extension}`));
+    // Monaco is loaded lazily; guard against it not being available yet.
+    const language =
+        typeof monaco !== 'undefined'
+            ? monaco.languages
+                  .getLanguages()
+                  .find((lang) => lang.extensions?.includes(`.${extension}`))
+            : undefined;
 
     return {
         lang: language?.id || 'text',

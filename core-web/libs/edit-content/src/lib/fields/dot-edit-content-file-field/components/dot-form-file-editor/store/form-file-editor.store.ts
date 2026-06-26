@@ -180,8 +180,17 @@ export const FormFileEditorStore = signalStore(
                             .pipe(
                                 tapResponse({
                                     next: (uploadedFile) => {
+                                        // Inject the editor content into the temp file so the
+                                        // preview renders immediately without a re-fetch.
+                                        const withContent =
+                                            uploadedFile.source === 'temp'
+                                                ? {
+                                                      source: 'temp' as const,
+                                                      file: { ...uploadedFile.file, content }
+                                                  }
+                                                : uploadedFile;
                                         patchState(store, {
-                                            uploadedFile,
+                                            uploadedFile: withContent,
                                             status: ComponentStatus.LOADED
                                         });
                                     },
