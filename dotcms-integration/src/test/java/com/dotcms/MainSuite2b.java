@@ -516,7 +516,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05210CreateDefaultDotAssetTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        FileAssetBaseTypeToContentTypeStrategyImplTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
@@ -551,6 +550,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class,
         PermissionResourceIntegrationTest.class,
+        FileAssetBaseTypeToContentTypeStrategyImplTest.class,
 })
 
 public class MainSuite2b {
