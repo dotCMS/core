@@ -22,13 +22,13 @@ function Product({ image, title, salePrice, retailPrice, urlTitle }: ProductProp
 
     return (
         <article className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-bg shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-primary-deep/5">
-            <div className="relative flex h-56 items-center justify-center border-b border-line bg-bg p-6">
+            <div className="relative h-56 border-b border-line bg-bg">
                 {image?.idPath && (
                     <Image
-                        className="max-h-full w-auto object-contain transition-transform duration-500 ease-(--ease-out-quart) group-hover:scale-105"
+                        className="object-contain p-6 transition-transform duration-500 ease-(--ease-out-quart) group-hover:scale-105"
                         src={image.idPath}
-                        width={240}
-                        height={240}
+                        fill
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                         alt={title || 'Product'}
                     />
                 )}
