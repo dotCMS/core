@@ -16,14 +16,24 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
-interface StatusOption {
-    value: PublishAuditStatus;
-    label: string;
-}
-
-/** Ordered: active/scheduled first, success, warnings, failures. Keeps the
- * checkbox list in a sensible grouping when the popover opens. */
-const STATUS_VALUES: readonly PublishAuditStatus[] = [
+/**
+ * Display order for the status filter options.
+ *
+ * - Drives the visual ordering inside the listbox (lifecycle-first:
+ *   scheduled → queued → in-flight → terminal success → failures).
+ * - Acts as the single source of truth for which enum values appear in the
+ *   filter. The unit test `covers every value of PublishAuditStatus` asserts
+ *   that this array contains every member of the enum, so any future enum
+ *   addition forces an explicit placement decision here instead of silently
+ *   disappearing from the dropdown — which is exactly how `SCHEDULED` was
+ *   missing before.
+ *
+ * Several enum values share a translated label (e.g. SUCCESS and
+ * BUNDLE_SENT_SUCCESSFULLY both render as "Sent"). They are grouped into a
+ * single dropdown option at render time — see `$options` below.
+ */
+const STATUS_ORDER: readonly PublishAuditStatus[] = [
+    PublishAuditStatus.SCHEDULED,
     PublishAuditStatus.BUNDLE_REQUESTED,
     PublishAuditStatus.WAITING_FOR_PUBLISHING,
     PublishAuditStatus.BUNDLING,
@@ -31,9 +41,9 @@ const STATUS_VALUES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.PUBLISHING_BUNDLE,
     PublishAuditStatus.RECEIVED_BUNDLE,
     PublishAuditStatus.SUCCESS,
-    PublishAuditStatus.SUCCESS_WITH_WARNINGS,
     PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
     PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY,
+    PublishAuditStatus.SUCCESS_WITH_WARNINGS,
     PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
     PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS,
     PublishAuditStatus.FAILED_TO_BUNDLE,
@@ -43,6 +53,17 @@ const STATUS_VALUES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.INVALID_TOKEN,
     PublishAuditStatus.LICENSE_REQUIRED
 ];
+
+interface StatusOption {
+    /** The translated label — also doubles as the listbox `value` so picking
+     * "Sent" emits the string "Sent", which we expand back to its codes on
+     * change. */
+    value: string;
+    label: string;
+    /** Every enum value that maps to this label. Picking the option in the UI
+     * sets the store filter to the union of these codes. */
+    codes: readonly PublishAuditStatus[];
+}
 
 @Component({
     selector: 'dot-publishing-queue-status-filter',
@@ -66,24 +87,57 @@ export class DotPublishingQueueStatusFilterComponent {
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = '320px';
 
-    protected readonly $options: StatusOption[] = STATUS_VALUES.map((value) => ({
-        value,
-        label: this.dotMessageService.get(`publishing-queue.status.${value}`)
-    }));
+    /** Listbox options, deduplicated by translated label. Order follows
+     * `STATUS_ORDER` (first occurrence wins). */
+    protected readonly $options: StatusOption[] = this.buildOptions();
 
-    protected readonly $selected = linkedSignal(() => this.store.statusFilter());
-
-    protected readonly $selectedLabels = computed(() => {
-        const lookup = new Map(this.$options.map((o) => [o.value, o.label]));
-        return this.$selected().map((s) => lookup.get(s) ?? s);
+    /** Selected labels, reactively derived from the store. An option is
+     * considered selected when **all** of its codes are present in the store
+     * filter — picking "Sent" only counts when SUCCESS *and*
+     * BUNDLE_SENT_SUCCESSFULLY are both in the filter. */
+    protected readonly $selected = linkedSignal<string[]>(() => {
+        const filter = new Set(this.store.statusFilter());
+        return this.$options
+            .filter((opt) => opt.codes.every((c) => filter.has(c)))
+            .map((opt) => opt.value);
     });
 
+    protected readonly $selectedLabels = computed(() => this.$selected());
+
+    /** Exposed for the unit test that pins the source-of-truth invariant. */
+    static readonly STATUS_ORDER = STATUS_ORDER;
+
     protected onChange(): void {
-        this.store.setStatusFilter(this.$selected());
+        const selectedLabels = new Set(this.$selected());
+        const codes = this.$options
+            .filter((opt) => selectedLabels.has(opt.value))
+            .flatMap((opt) => [...opt.codes]);
+        this.store.setStatusFilter(codes);
     }
 
     protected onRemoveAll(): void {
         this.$selected.set([]);
         this.onChange();
+    }
+
+    private buildOptions(): StatusOption[] {
+        // Group consecutive-or-not enum values by their translated label, in
+        // STATUS_ORDER. First occurrence determines display position; later
+        // occurrences just append to the same option's `codes`.
+        const byLabel = new Map<string, { label: string; codes: PublishAuditStatus[] }>();
+        for (const value of STATUS_ORDER) {
+            const label = this.dotMessageService.get(`publishing-queue.status.${value}`);
+            const existing = byLabel.get(label);
+            if (existing) {
+                existing.codes.push(value);
+            } else {
+                byLabel.set(label, { label, codes: [value] });
+            }
+        }
+        return Array.from(byLabel.values()).map((g) => ({
+            value: g.label,
+            label: g.label,
+            codes: g.codes
+        }));
     }
 }
