@@ -40,10 +40,10 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
                 .apiKey(config.apiKey())
                 .modelName(config.model())
                 .baseUrl(baseUrl(config));
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
-        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxTokens(config.maxTokens()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
@@ -58,9 +58,9 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
             Logger.warn(OpenRouterModelProviderStrategy.class,
                     "maxRetries is not supported by the OpenRouter streaming chat model and will be ignored");
         }
-        if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) { builder.temperature(config.temperature()); }
+        if (config.maxTokens() != null) { builder.maxTokens(config.maxTokens()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
         return builder.build();
     }
 
