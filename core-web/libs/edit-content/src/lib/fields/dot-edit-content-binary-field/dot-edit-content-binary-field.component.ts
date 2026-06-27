@@ -23,6 +23,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -38,6 +39,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSTempFile,
+    DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
 import {
@@ -58,10 +60,11 @@ import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-import { getUiMessage } from './utils/binary-field-utils';
+import { getFileMetadata, getUiMessage } from './utils/binary-field-utils';
 
 import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
+import { IMAGE_EDITOR_LAUNCHER } from '../shared/image-editor-launcher';
 
 export const DEFAULT_BINARY_FIELD_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     ...DEFAULT_MONACO_CONFIG,
@@ -112,12 +115,19 @@ export class DotEditContentBinaryFieldComponent
 {
     readonly #dotBinaryFieldStore = inject(DotBinaryFieldStore);
     readonly #dotMessageService = inject(DotMessageService);
+    // Optional: the field renders in several contexts; a toast is best-effort feedback
+    // and must never make the field fail to construct where no global toast is provided.
+    readonly #messageService = inject(MessageService, { optional: true });
     readonly #dotBinaryFieldEditImageService = inject(DotBinaryFieldEditImageService);
     readonly #dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
     readonly #cd = inject(ChangeDetectorRef);
     readonly #dotAiService = inject(DotAiService);
     readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
+    // Optional: the launcher is provided by the Angular edit-content shell, so the new
+    // image editor only activates there. When absent (e.g. a non-Angular host), or when
+    // isAvailable() is false, `onEditImage()` safely no-ops.
+    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
 
     $isAIPluginInstalled = toSignal(this.#dotAiService.checkPluginInstallation(), {
         initialValue: false
@@ -389,14 +399,73 @@ export class DotEditContentBinaryFieldComponent
     /**
      * Open Image Editor
      *
+     * Launches the editor through the {@link IMAGE_EDITOR_LAUNCHER} seam and applies
+     * the edited image back to the field via the binary field store.
+     *
      * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
-        this.#dotBinaryFieldEditImageService.openImageEditor({
-            inode: this.contentlet?.inode,
-            tempId: this.tempId,
-            variable: this.variable
-        });
+        const launcher = this.#imageEditorLauncher;
+
+        // The new Angular editor is gated by FEATURE_FLAG_NEW_IMAGE_EDITOR (via the
+        // launcher's `isAvailable()`). When it's off — or no launcher is provided in
+        // this context — fall back to the legacy Dojo image editor.
+        if (!launcher?.isAvailable()) {
+            this.#dotBinaryFieldEditImageService.openImageEditor({
+                inode: this.contentlet?.inode,
+                tempId: this.tempId,
+                variable: this.variable
+            });
+
+            return;
+        }
+
+        const inode = this.contentlet?.inode;
+        const metadata = this.contentlet
+            ? (getFileMetadata(this.contentlet) as Partial<DotFileMetadata>)
+            : null;
+        const fieldName = this.$field()?.name;
+        const variable = this.variable;
+
+        // The launcher contract requires a resolved field/variable; the image-editor lib
+        // treats them as guaranteed strings. Bail (rather than leak `undefined`) if the
+        // field input hasn't resolved yet.
+        if (!fieldName || !variable) {
+            console.error('Image editor: cannot open, the binary field is not resolved');
+
+            return;
+        }
+
+        launcher
+            .open({
+                inode,
+                tempId: this.tempId,
+                variable,
+                fieldName,
+                byInode: !!inode,
+                fileName: this.contentlet?.fileName ?? metadata?.name,
+                mimeType: metadata?.contentType
+            })
+            .pipe(
+                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe({
+                next: (tempFile) => this.#dotBinaryFieldStore.setFileFromTemp(tempFile),
+                // The dialog stream isn't expected to error, but guard it so an
+                // unexpected failure both logs and tells the user, instead of being
+                // swallowed with the edited image silently never applied.
+                error: (error) => {
+                    console.error('Image editor failed to apply the edited image', error);
+                    this.#messageService?.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('dot.common.message.error'),
+                        detail: this.#dotMessageService.get(
+                            'dot.binary.field.image.editor.apply.error'
+                        )
+                    });
+                }
+            });
     }
 
     /**

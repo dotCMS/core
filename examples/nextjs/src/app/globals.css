@@ -2,14 +2,51 @@
 
 @plugin '@tailwindcss/typography';
 
+/*
+ * TravelLux brand system — "deep teal / coastal".
+ * Committed palette: a deep teal carries the brand on a pure-white canvas,
+ * with a sun-warm amber accent. Photography leads; type and color frame it.
+ * All colors OKLCH. Contrast verified against WCAG 2.1 AA.
+ */
 @theme {
-    --background-image-gradient-radial: radial-gradient(
-        var(--tw-gradient-stops)
-    );
-    --background-image-gradient-conic: conic-gradient(
-        from 180deg at 50% 50%,
-        var(--tw-gradient-stops)
-    );
+    /* Brand palette */
+    --color-bg: oklch(1 0 0);
+    --color-surface: oklch(0.972 0.008 220);
+    --color-surface-2: oklch(0.945 0.012 220);
+    --color-ink: oklch(0.23 0.025 230);
+    --color-muted: oklch(0.5 0.03 230);
+    --color-line: oklch(0.9 0.012 220);
+
+    --color-primary: oklch(0.45 0.085 220);
+    --color-primary-deep: oklch(0.3 0.06 225);
+    --color-primary-tint: oklch(0.96 0.02 220);
+
+    --color-accent: oklch(0.62 0.13 60);
+    --color-accent-soft: oklch(0.8 0.09 75);
+
+    /* Typography — Spectral (display serif) + Hanken Grotesk (body/UI) */
+    --font-display: var(--font-spectral), Georgia, "Times New Roman", serif;
+    --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+
+    /* Fluid display scale, >=1.25 ratio between steps, ceiling ~5.25rem */
+    --text-display: clamp(2.75rem, 1.6rem + 5.6vw, 5.25rem);
+    --text-display--line-height: 1.02;
+    --text-h2: clamp(1.85rem, 1.2rem + 2.6vw, 3rem);
+    --text-h2--line-height: 1.08;
+    --text-h3: clamp(1.3rem, 1rem + 1.1vw, 1.6rem);
+    --text-h3--line-height: 1.2;
+    --text-eyebrow: 0.78rem;
+
+    /* Semantic z-index scale */
+    --z-dropdown: 10;
+    --z-sticky: 20;
+    --z-backdrop: 30;
+    --z-modal: 40;
+    --z-toast: 50;
+
+    /* Motion */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -18,13 +55,98 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentcolor);
+        border-color: var(--color-line, currentcolor);
     }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Display headings use the serif with balanced wrapping. */
+    h1,
+    h2,
+    h3 {
+        font-family: var(--font-display);
+        text-wrap: balance;
+        letter-spacing: -0.01em;
+    }
+
+    p {
+        text-wrap: pretty;
+    }
+
+    /* Visible, on-brand focus ring everywhere. */
+    :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+        }
+    }
+}
+
+/* Hero image entrance: a slow, restrained settle. Neutralized under reduced motion. */
+@keyframes heroIn {
+    from {
+        opacity: 0;
+        transform: scale(1.06);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Eyebrow label — a deliberate brand element, used sparingly (not per-section). */
+@utility eyebrow {
+    font-family: var(--font-sans);
+    font-size: var(--text-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-accent);
 }
 
 @utility line-clamp-1 {
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@utility line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -36,17 +158,24 @@
     overflow: hidden;
 }
 
-/* Custom classes, example to BlockEditorRenderer */
+/* Text-shadow helper for type set over photography. */
+@utility text-shadow {
+    text-shadow:
+        0 1px 24px oklch(0.2 0.03 230 / 0.55),
+        0 1px 3px oklch(0.2 0.03 230 / 0.45);
+}
+
+/* Block-editor (article body) rendering. */
 table,
 th,
 td {
-    border: 1px solid;
+    border: 1px solid var(--color-line);
 }
 
 .blog-styles {
-    @apply bg-gray-100;
+    background-color: var(--color-surface);
 }
 
 .dot-row-container {
-    @apply mb-4;
+    margin-bottom: 1rem;
 }

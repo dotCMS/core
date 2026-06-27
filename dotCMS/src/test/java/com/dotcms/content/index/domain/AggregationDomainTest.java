@@ -5,12 +5,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.junit.Test;
 
 /**
@@ -131,5 +139,158 @@ public class AggregationDomainTest {
 
         assertNotNull(bucket.getAggregations().get("top_content"));
         assertEquals("top_hits", bucket.getAggregations().get("top_content").getType());
+    }
+
+    // =========================================================================
+    // Elasticsearch factory conversion (Aggregation.from / AggregationBucket.from*)
+    // =========================================================================
+    //
+    // These exercise the vendor-specific ES → neutral conversion deterministically (no search
+    // engine, no container): the mocked ES aggregation objects mirror exactly what the live ES
+    // client hands the factories, so the conversion is locked down here and not only end-to-end.
+
+    /**
+     * A {@code date_histogram} bucket key is a {@link ZonedDateTime} in Elasticsearch 7.x — NOT a
+     * number. {@link AggregationBucket#fromHistogram} must normalize it to epoch-millis so that
+     * {@code getKeyAsNumber()} (and the legacy {@code InternalWrapperCountDateHistogramFacet} that
+     * reads it) returns a real timestamp rather than null/0. This is the trickiest branch of the
+     * neutral conversion and the one with no obvious end-to-end equivalent, so it is pinned here.
+     */
+    @Test
+    public void esFactory_dateHistogram_normalizesZonedDateTimeKeyToEpochMillis() {
+        final ZonedDateTime day = ZonedDateTime.of(2024, 1, 15, 0, 0, 0, 0, ZoneOffset.UTC);
+        final long expectedEpochMillis = day.toInstant().toEpochMilli();
+
+        final Aggregations emptySubAggs = emptyEsAggregations();
+        final Histogram.Bucket bucket = mock(Histogram.Bucket.class);
+        when(bucket.getKey()).thenReturn(day);            // ES 7.x date-histogram key type
+        when(bucket.getDocCount()).thenReturn(4L);
+        when(bucket.getAggregations()).thenReturn(emptySubAggs);
+
+        final Histogram histogram = mock(Histogram.class);
+        when(histogram.getName()).thenReturn("by_day");
+        when(histogram.getType()).thenReturn("date_histogram");
+        doReturn(List.of(bucket)).when(histogram).getBuckets();
+
+        final Aggregations esAggs = mock(Aggregations.class);
+        when(esAggs.asList()).thenReturn(List.of(histogram));
+
+        final Aggregation byDay = Aggregation.from(esAggs).get("by_day");
+        assertNotNull("date_histogram aggregation must be mapped", byDay);
+        assertEquals("date_histogram", byDay.getType());
+        assertEquals("one bucket expected", 1, byDay.getBuckets().size());
+
+        final AggregationBucket b = byDay.getBuckets().get(0);
+        assertEquals("doc count must round-trip", 4L, b.getDocCount());
+        assertEquals("a ZonedDateTime key must become epoch-millis, not a formatted date",
+                expectedEpochMillis, b.getKeyAsNumber().longValue());
+        assertEquals("getKeyAsString must expose the same epoch-millis",
+                String.valueOf(expectedEpochMillis), b.getKeyAsString());
+    }
+
+    /**
+     * A numeric {@code histogram} bucket key is a {@link Number} (a {@code Double} in ES); the
+     * conversion must take the {@code longValue()} branch of {@code histogramKey} and yield that
+     * number as the key.
+     */
+    @Test
+    public void esFactory_numericHistogram_normalizesNumberKeyToLong() {
+        final Aggregations emptySubAggs = emptyEsAggregations();
+        final Histogram.Bucket bucket = mock(Histogram.Bucket.class);
+        when(bucket.getKey()).thenReturn(Double.valueOf(50.0));   // ES numeric-histogram key type
+        when(bucket.getDocCount()).thenReturn(2L);
+        when(bucket.getAggregations()).thenReturn(emptySubAggs);
+
+        final Histogram histogram = mock(Histogram.class);
+        when(histogram.getName()).thenReturn("by_len");
+        when(histogram.getType()).thenReturn("histogram");
+        doReturn(List.of(bucket)).when(histogram).getBuckets();
+
+        final Aggregations esAggs = mock(Aggregations.class);
+        when(esAggs.asList()).thenReturn(List.of(histogram));
+
+        final AggregationBucket b = Aggregation.from(esAggs).get("by_len").getBuckets().get(0);
+        assertEquals("a numeric key must be preserved as a long", 50L, b.getKeyAsNumber().longValue());
+        assertEquals("50", b.getKeyAsString());
+    }
+
+    /**
+     * A {@code terms} aggregation maps every bucket through {@link AggregationBucket#from}: the
+     * String key round-trips on {@code getKey()}/{@code getKeyAsString()}, a non-numeric key yields
+     * a null number, doc counts survive, and a metric-less terms aggregation carries no top-hits.
+     */
+    @Test
+    public void esFactory_terms_mapsBucketsAndIsHitsFree() {
+        final Aggregations emptySubAggs = emptyEsAggregations();
+        final Terms.Bucket esBucket = mock(Terms.Bucket.class);
+        when(esBucket.getKeyAsString()).thenReturn("text/html");
+        when(esBucket.getDocCount()).thenReturn(3L);
+        when(esBucket.getAggregations()).thenReturn(emptySubAggs);
+
+        final Terms terms = mock(Terms.class);
+        when(terms.getName()).thenReturn("by_mime");
+        when(terms.getType()).thenReturn("sterms");
+        doReturn(List.of(esBucket)).when(terms).getBuckets();
+
+        final Aggregations esAggs = mock(Aggregations.class);
+        when(esAggs.asList()).thenReturn(List.of(terms));
+
+        final Aggregation byMime = Aggregation.from(esAggs).get("by_mime");
+        assertNotNull(byMime);
+        assertEquals("sterms", byMime.getType());
+        assertNull("a terms aggregation carries no top-hits", byMime.getHits());
+        assertEquals(1, byMime.getBuckets().size());
+
+        final AggregationBucket b = byMime.getBuckets().get(0);
+        assertEquals("text/html", b.getKey());
+        assertEquals("text/html", b.getKeyAsString());
+        assertNull("a non-numeric key must yield a null number", b.getKeyAsNumber());
+        assertEquals(3L, b.getDocCount());
+        assertTrue("no nested sub-aggregations here", b.getAggregations().isEmpty());
+    }
+
+    /** A null Elasticsearch aggregation set maps to an empty tree rather than throwing. */
+    @Test
+    public void esFactory_nullAggregations_yieldEmptyMap() {
+        assertTrue("null ES aggregations must map to an empty tree",
+                Aggregation.from((Aggregations) null).isEmpty());
+    }
+
+    /**
+     * The {@code meta} object set on an aggregation in the query is preserved on the neutral type
+     * via {@code getMetadata()} — closing the last equivalence gap with the ES {@code Aggregation}
+     * interface ({@code getName}/{@code getType}/{@code getMetadata}). This accessor is rollback-safe
+     * because the ES type exposes the same method, so a template adopting {@code $agg.metadata}
+     * resolves on both N (neutral) and N-1 (ES).
+     */
+    @Test
+    public void esFactory_metadata_isPreserved() {
+        final Map<String, Object> meta = Map.of("unit", "days", "version", 2);
+        final Terms terms = mock(Terms.class);
+        when(terms.getName()).thenReturn("by_day");
+        when(terms.getType()).thenReturn("sterms");
+        when(terms.getMetadata()).thenReturn(meta);
+        doReturn(List.of()).when(terms).getBuckets();
+
+        final Aggregations esAggs = mock(Aggregations.class);
+        when(esAggs.asList()).thenReturn(List.of(terms));
+
+        assertEquals("the aggregation meta map must round-trip from ES",
+                meta, Aggregation.from(esAggs).get("by_day").getMetadata());
+    }
+
+    /** {@code getMetadata()} is never null — it defaults to an empty map when no meta was set. */
+    @Test
+    public void aggregation_metadata_defaultsToEmptyWhenUnset() {
+        final Aggregation agg = Aggregation.builder().name("x").type("sterms").build();
+        assertNotNull("metadata must never be null", agg.getMetadata());
+        assertTrue("metadata defaults to empty when unset", agg.getMetadata().isEmpty());
+    }
+
+    /** An empty (but non-null) Elasticsearch aggregation set whose buckets carry no sub-aggs. */
+    private static Aggregations emptyEsAggregations() {
+        final Aggregations aggs = mock(Aggregations.class);
+        when(aggs.asList()).thenReturn(List.of());
+        return aggs;
     }
 }

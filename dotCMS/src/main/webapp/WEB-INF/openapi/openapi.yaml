@@ -5393,7 +5393,7 @@ paths:
       operationId: saveContainer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ContainerForm"
         description: "Container configuration data including title, code, content\
@@ -5423,7 +5423,7 @@ paths:
       operationId: updateContainer
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ContainerForm"
         description: Updated container configuration data including identifier and
@@ -15234,9 +15234,11 @@ paths:
       operationId: createSite
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SiteForm"
+        description: Site properties to create. 'siteName' (the hostname) is required.
+        required: true
       responses:
         "200":
           content:
@@ -15270,9 +15272,11 @@ paths:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SiteForm"
+        description: Updated site properties. 'siteName' (the hostname) is required.
+        required: true
       responses:
         "200":
           content:
@@ -17136,7 +17140,7 @@ paths:
       operationId: createTemplate
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/TemplateForm"
         description: Template data to create
@@ -17167,7 +17171,7 @@ paths:
       operationId: updateTemplate
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/TemplateForm"
         description: Template data to update. Must include the template identifier.
