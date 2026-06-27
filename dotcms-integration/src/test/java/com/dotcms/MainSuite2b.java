@@ -38,12 +38,13 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.FileAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
-import com.dotcms.csspreproc.CSSPreProcessServletTest;
+import com.dotcms.csspreproc.CSSPreProcessServletIT;
 import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
@@ -368,7 +369,7 @@ import org.junit.runners.Suite.SuiteClasses;
         MenuResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
-        CSSPreProcessServletTest.class,
+        CSSPreProcessServletIT.class,
         VariantFactoryTest.class,
         VariantAPITest.class,
         PaginatedContentletsIntegrationTest.class,
@@ -549,6 +550,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CustomAttributeAPIImplTest.class,
         CustomAttributeFactoryTest.class,
         PermissionResourceIntegrationTest.class,
+        FileAssetBaseTypeToContentTypeStrategyImplTest.class,
 })
 
 public class MainSuite2b {
