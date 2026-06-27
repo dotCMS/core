@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
@@ -109,7 +110,8 @@ public class DotSamlResource implements Serializable {
 	 */
 	@Operation(
 		summary = "Initiate SAML login",
-		description = "Initiates a SAML authentication request by redirecting the user to the Identity Provider (IDP) login screen. Requires IDP metadata to determine the SSO login endpoint."
+		description = "Initiates a SAML authentication request by redirecting the user to the Identity Provider (IDP) login screen. Requires IDP metadata to determine the SSO login endpoint.",
+		security = {}
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -177,8 +179,9 @@ public class DotSamlResource implements Serializable {
 	@Operation(
 		summary = "Process SAML login callback",
 		description = "Handles the callback from the Identity Provider after successful authentication. Extracts user information from the SAML assertion and creates/logs in the user to dotCMS.",
+		security = {},
 		requestBody = @RequestBody(description = "SAML assertion data from Identity Provider", required = true,
-					content = {@Content(mediaType = "application/xml"), 
+					content = {@Content(mediaType = "application/xml"),
 							  @Content(mediaType = "application/x-www-form-urlencoded")})
 	)
 	@ApiResponses(value = {
@@ -333,7 +336,8 @@ public class DotSamlResource implements Serializable {
 	 */
 	@Operation(
 		summary = "Get SAML metadata",
-		description = "Renders the XML metadata for the SAML Service Provider configuration. This endpoint is only accessible by administrators and provides the metadata required for IDP configuration."
+		description = "Renders the XML metadata for the SAML Service Provider configuration. This endpoint is only accessible by administrators and provides the metadata required for IDP configuration.",
+		security = {}
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -395,7 +399,8 @@ public class DotSamlResource implements Serializable {
 
 	@Operation(
 		summary = "Process SAML logout (POST)",
-		description = "Processes a SAML logout request via POST method. Handles logout callbacks from the Identity Provider and redirects to the configured logout endpoint."
+		description = "Processes a SAML logout request via POST method. Handles logout callbacks from the Identity Provider and redirects to the configured logout endpoint.",
+		security = {}
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -447,7 +452,8 @@ public class DotSamlResource implements Serializable {
 
 	@Operation(
 		summary = "Process SAML logout (GET)",
-		description = "Processes a SAML logout request via GET method. Initiates logout flow and redirects to the configured logout endpoint or builds a logout URL based on the request."
+		description = "Processes a SAML logout request via GET method. Initiates logout flow and redirects to the configured logout endpoint or builds a logout URL based on the request.",
+		security = {}
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 

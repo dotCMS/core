@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.enterprise.context.RequestScoped;
@@ -102,6 +103,7 @@ public class HealthResource {
             description = "Returns comprehensive health status including all registered health checks. " +
                     "Authentication requirements are controlled by the health.detailed.authentication.required configuration property.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -155,6 +157,7 @@ public class HealthResource {
                     "This endpoint provides detailed JSON information about critical system components " +
                     "required for the application to be considered alive.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -206,6 +209,7 @@ public class HealthResource {
                     "This endpoint provides detailed JSON information about system components " +
                     "required for the application to be considered ready to serve requests.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -255,6 +259,7 @@ public class HealthResource {
             description = "Returns the result of a specific health check identified by name. " +
                     "Useful for monitoring individual components or debugging specific health issues.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -317,6 +322,7 @@ public class HealthResource {
             description = "Returns a list of all registered health check names. " +
                     "Useful for discovering available health checks and building monitoring interfaces.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -369,6 +375,7 @@ public class HealthResource {
             description = "Returns a simple boolean summary of system health status with alive and ready flags. " +
                     "Provides a quick overview of system health without detailed check information.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -425,6 +432,7 @@ public class HealthResource {
                     "bypassing any caching mechanisms. Useful for getting up-to-date health status " +
                     "after configuration changes or system maintenance.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -480,6 +488,7 @@ public class HealthResource {
                     "bypassing any caching mechanisms. Useful for testing individual components " +
                     "or getting up-to-date status after targeted maintenance.",
             tags = {"Health"},
+            security = {},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
