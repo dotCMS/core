@@ -1,6 +1,8 @@
 package com.dotmarketing.sitesearch.viewtool;
 
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -13,16 +15,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.bucket.histogram.InternalDateHistogram;
-import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
-import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
-import org.joda.time.DateTime;
 
 public class SiteSearchWebAPI implements ViewTool {
 
@@ -173,15 +170,16 @@ public class SiteSearchWebAPI implements ViewTool {
         for (String key : aggregations.keySet()) {
 
             final Aggregation aggregation = aggregations.get(key);
+            final String type = aggregation.getType();
 
-            if (aggregation instanceof InternalDateHistogram) {
+            if (isHistogram(type)) {
                 internalFacet = new InternalWrapperCountDateHistogramFacet(aggregation.getName(),
-                        aggregation.getType(), ((InternalDateHistogram) aggregation).getBuckets());
-            } else if (aggregation instanceof StringTerms) {
+                        type, aggregation.getBuckets());
+            } else if (!aggregation.getBuckets().isEmpty()) {
                 internalFacet = new InternalWrapperStringTermsFacet(aggregation.getName(),
-                        aggregation.getType(), ((StringTerms) aggregation).getBuckets());
+                        type, aggregation.getBuckets());
             } else {
-                internalFacet = new Facet(aggregation.getName(), aggregation.getType());
+                internalFacet = new Facet(aggregation.getName(), type);
             }
             internalFacets.put(key, internalFacet);
         }
@@ -190,22 +188,31 @@ public class SiteSearchWebAPI implements ViewTool {
     }
 
     /**
+     * A histogram aggregation (date or numeric) reports a vendor type containing
+     * {@code "histogram"} (e.g. {@code date_histogram}); its buckets carry numeric keys.
+     */
+    private static boolean isHistogram(final String type) {
+        return type != null && type.contains("histogram");
+    }
+
+    /**
      * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
      * Search.
      *
-     * @deprecated use ES Aggregations instead
+     * @deprecated use the vendor-neutral {@link #getAggregations(String, String)} instead
      */
     public class InternalWrapperCountDateHistogramFacet extends Facet {
 
         private final List<CountEntry> entries;
 
         public InternalWrapperCountDateHistogramFacet(final String name, final String type,
-                List<InternalDateHistogram.Bucket> entries) {
+                List<AggregationBucket> entries) {
             super(name, type);
             this.entries = new ArrayList<>();
-            for (final InternalDateHistogram.Bucket entry : entries) {
-                this.entries.add(new CountEntry(((DateTime) entry.getKey()).getMillis(),
-                        entry.getDocCount()));
+            for (final AggregationBucket entry : entries) {
+                final Number key = entry.getKeyAsNumber();
+                final long time = key != null ? key.longValue() : 0L;
+                this.entries.add(new CountEntry(time, entry.getDocCount()));
             }
         }
 
@@ -237,20 +244,20 @@ public class SiteSearchWebAPI implements ViewTool {
      * Internal wrapper class for backwards compatibility with the new Elastic Search in Site
      * Search.
      *
-     * @deprecated use ES Aggregations instead
+     * @deprecated use the vendor-neutral {@link #getAggregations(String, String)} instead
      */
     public class InternalWrapperStringTermsFacet extends Facet {
 
         private List<InternalTermEntry> entries;
 
-        public InternalWrapperStringTermsFacet(final String name, final String type, final List<Bucket> entries) {
+        public InternalWrapperStringTermsFacet(final String name, final String type, final List<AggregationBucket> entries) {
 
             super(name, type);
 
             this.entries = new ArrayList<>();
-            for (final Bucket entry : entries) {
+            for (final AggregationBucket entry : entries) {
                 this.entries
-                        .add(new InternalTermEntry(entry.getKey().toString(), entry.getDocCount()));
+                        .add(new InternalTermEntry(entry.getKey(), entry.getDocCount()));
             }
         }
 
@@ -279,7 +286,7 @@ public class SiteSearchWebAPI implements ViewTool {
     }
 
     /**
-     * @deprecated use ES Aggregations instead
+     * @deprecated use the vendor-neutral {@link #getAggregations(String, String)} instead
      */
     public class Facet {
 

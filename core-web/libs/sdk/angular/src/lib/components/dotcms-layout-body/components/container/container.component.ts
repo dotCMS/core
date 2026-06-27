@@ -2,7 +2,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    HostBinding,
     inject,
     Input,
     OnChanges,
@@ -45,6 +44,15 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
             }
         }
     `,
+    // Container metadata is editor-only — bound only in edit mode so it never
+    // leaks into live output. $dotAttributes is empty outside edit mode.
+    host: {
+        '[attr.data-dot-object]': "$isDevMode() ? 'container' : null",
+        '[attr.data-dot-accept-types]': "$dotAttributes()['data-dot-accept-types'] ?? null",
+        '[attr.data-dot-identifier]': "$dotAttributes()['data-dot-identifier'] ?? null",
+        '[attr.data-max-contentlets]': "$dotAttributes()['data-max-contentlets'] ?? null",
+        '[attr.data-dot-uuid]': "$dotAttributes()['data-dot-uuid'] ?? null"
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContainerComponent implements OnChanges {
@@ -58,21 +66,16 @@ export class ContainerComponent implements OnChanges {
     $containerData = signal<EditableContainerData | null>(null);
     $contentlets = signal<DotCMSBasicContentlet[]>([]);
     $isEmpty = computed(() => this.$contentlets().length === 0);
+    $isDevMode = this.#dotCMSStore.$isDevMode;
     $dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.$containerData();
 
-        if (!containerData || !this.#dotCMSStore.$isDevMode()) {
+        if (!containerData || !this.$isDevMode()) {
             return {} as DotContainerAttributes;
         }
 
         return getDotContainerAttributes(containerData);
     });
-
-    @HostBinding('attr.data-dot-object') dotObject = 'container';
-    @HostBinding('attr.data-dot-accept-types') acceptTypes: string | null = null;
-    @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
-    @HostBinding('attr.data-max-contentlets') maxContentlets: string | null = null;
-    @HostBinding('attr.data-dot-uuid') uuid: string | null = null;
 
     ngOnChanges() {
         const { page } = this.#dotCMSStore.store ?? {};
@@ -83,10 +86,5 @@ export class ContainerComponent implements OnChanges {
 
         this.$containerData.set(getContainersData(page, this.container));
         this.$contentlets.set(getContentletsInContainer(page, this.container));
-
-        this.acceptTypes = this.$dotAttributes()['data-dot-accept-types'];
-        this.identifier = this.$dotAttributes()['data-dot-identifier'];
-        this.maxContentlets = this.$dotAttributes()['data-max-contentlets'];
-        this.uuid = this.$dotAttributes()['data-dot-uuid'];
     }
 }
