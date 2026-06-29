@@ -337,6 +337,28 @@ describe('DotEditFieldDialogComponent', () => {
             expect(comp.saveBtn.disabled).toBe(true);
         });
 
+        it('should restore the Overview save action after a Settings tab swaps it', () => {
+            // The Overview form has unsaved changes.
+            comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+            comp.setDialogOkButtonState(true);
+
+            // The Settings tab swaps the Save button (and its action) with its own control.
+            const settingsAction = jest.fn();
+            comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
+            comp.changesDialogActions({
+                accept: { label: 'Settings Save', action: settingsAction, disabled: false },
+                cancel: { label: 'Cancel' }
+            });
+
+            // Returning to Overview must restore the Overview action, not keep the Settings one.
+            comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+            comp.saveBtn.action();
+
+            expect(settingsAction).not.toHaveBeenCalled();
+            expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
+            expect(comp.saveBtn.disabled).toBe(false);
+        });
+
         it('should hide the buttons when switching to the variables tab', () => {
             comp.handleTabChange(comp.variablesTabIndex);
             expect(comp.hideButtons).toBe(true);

@@ -75,17 +75,28 @@ export class DotEditFieldDialogComponent {
 
     activeTab = 0;
     hideButtons = false;
-    saveBtn: DialogButton = {
-        label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-        action: () => this.$propertiesForm().saveFieldProperties(),
-        disabled: true
-    };
+    saveBtn: DialogButton = this.buildOverviewSaveBtn();
     cancelBtn: DialogButton = {
         label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
         action: () => this.ref.close()
     };
 
     private overviewFormChanged = false;
+
+    /**
+     * Build the canonical Overview Save button, whose action persists the
+     * field-properties form. Used to (re)create the button so its action is never
+     * left pointing at a Settings-tab action after a Settings → Overview round-trip.
+     *
+     * @param disabled - Initial disabled state (defaults to true)
+     */
+    private buildOverviewSaveBtn(disabled = true): DialogButton {
+        return {
+            label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
+            action: () => this.$propertiesForm().saveFieldProperties(),
+            disabled
+        };
+    }
 
     /**
      * Whether the currently selected field type has a dedicated Settings tab
@@ -117,7 +128,9 @@ export class DotEditFieldDialogComponent {
      */
     handleTabChange(index: number): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
-            this.saveBtn = { ...this.saveBtn, disabled: !this.overviewFormChanged };
+            // Rebuild from the canonical Overview button so its action is restored —
+            // a Settings tab may have swapped saveBtn (and its action) via changesDialogActions().
+            this.saveBtn = this.buildOverviewSaveBtn(!this.overviewFormChanged);
         }
 
         this.hideButtons =
