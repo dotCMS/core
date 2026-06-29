@@ -123,7 +123,7 @@
                     [canEditImage]="$canEditImage()"
                     [disabled]="$isDisabled()"
                     [previewFile]="uploadedFile"
-                    [showInfoButton]="false"
+                    [showInfoButton]="store.inputType() !== 'Binary'"
                     data-testId="preview" />
             }
         }
