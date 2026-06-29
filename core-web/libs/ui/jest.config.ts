@@ -19,6 +19,9 @@ export default {
         'jest-preset-angular/build/serializers/ng-snapshot',
         'jest-preset-angular/build/serializers/html-comment'
     ],
+    moduleNameMapper: {
+        '^@primeuix/motion$': '<rootDir>/src/__mocks__/primeuix-motion.ts'
+    },
     testEnvironment: '@happy-dom/jest-environment',
     testEnvironmentOptions: {
         errorOnUnknownElements: true,
