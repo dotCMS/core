@@ -6,6 +6,7 @@ import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -18,7 +19,29 @@ import java.util.regex.Pattern;
 
 public class XMLUtils {
 
-    private static final DocumentBuilderFactory factory  = DocumentBuilderFactory.newInstance();
+    private static final DocumentBuilderFactory factory  = newSecureDocumentBuilderFactory();
+
+    /**
+     * Builds a {@link DocumentBuilderFactory} hardened against XML External Entity (XXE)
+     * attacks (CWE-611). The primary defense disables DOCTYPE declarations entirely; the
+     * remaining features are defense-in-depth in case a future caller re-enables DOCTYPEs.
+     */
+    private static DocumentBuilderFactory newSecureDocumentBuilderFactory() {
+        final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            // Primary defense: completely disable DOCTYPE declarations.
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            // Defense-in-depth: do not resolve external entities or external DTDs.
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+        } catch (final ParserConfigurationException e) {
+            throw new DotRuntimeException("Unable to configure a secure XML parser", e);
+        }
+        return dbf;
+    }
 
 	/**
 	 * This will take the three pre-defined entities in XML 1.0 (used
