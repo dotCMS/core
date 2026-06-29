@@ -109,9 +109,11 @@ public class TiptapMarkdownDocDetectionTest extends UnitTestBase {
     }
 
     @Test
-    public void representable_true_for_null_and_non_json() {
+    public void representable_true_for_null_empty_and_non_json() {
         // Nothing structured to protect.
         assertTrue(TiptapMarkdown.isMarkdownRepresentable(null));
+        assertTrue(TiptapMarkdown.isMarkdownRepresentable(""));
+        assertTrue(TiptapMarkdown.isMarkdownRepresentable("   "));
         assertTrue(TiptapMarkdown.isMarkdownRepresentable("just some legacy text"));
     }
 }

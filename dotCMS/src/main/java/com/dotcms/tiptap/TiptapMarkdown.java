@@ -122,15 +122,16 @@ public final class TiptapMarkdown {
      * Cheap discriminator: is this string already a Tiptap/ProseMirror document
      * ({@code {"type":"doc","content":[...]}})? Used on the save path to leave
      * editor-authored JSON untouched rather than re-parsing it as Markdown. The
-     * first non-whitespace character is peeked before any parse, so the common
-     * non-JSON (Markdown) case costs nothing.
+     * first and last non-whitespace characters are peeked before any parse, so the
+     * common non-JSON (Markdown) case costs nothing.
      */
     public static boolean isTiptapDoc(final String value) {
         if (value == null) {
             return false;
         }
-        final String trimmed = value.stripLeading();
-        if (trimmed.isEmpty() || trimmed.charAt(0) != '{') {
+        final String trimmed = value.strip();
+        if (trimmed.isEmpty() || trimmed.charAt(0) != '{'
+                || trimmed.charAt(trimmed.length() - 1) != '}') {
             return false;
         }
         try {
@@ -161,12 +162,17 @@ public final class TiptapMarkdown {
      * non-JSON value carries no rich blocks to protect, so returns {@code true}.
      */
     public static boolean isMarkdownRepresentable(final String tiptapJson) {
-        if (tiptapJson == null) {
+        if (tiptapJson == null || tiptapJson.isBlank()) {
             return true;
         }
         try {
             return isMarkdownRepresentable(MAPPER.readTree(tiptapJson));
         } catch (final java.io.IOException e) {
+            // Not parseable JSON carries no rich blocks to protect; stay permissive, but leave a
+            // trace in case a caller passes a value it expected to be a valid document.
+            Logger.debug(TiptapMarkdown.class,
+                    () -> "isMarkdownRepresentable: value is not valid JSON, treating as representable: "
+                            + e.getMessage());
             return true;
         }
     }
