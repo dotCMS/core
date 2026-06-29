@@ -88,7 +88,7 @@ check_sdk_client_affected() {
         printf "%s does not exist\n" "$dir_to_remove"
     fi
 
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
+    if ! git -C "${root_dir}" add -- "dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
         print_color "$RED" "Failed to stage computed sdk-client.js"
         exit 1
     fi
@@ -132,7 +132,7 @@ perform_frontend_fixes() {
         return 1
     else
         printf "Completed yarn install adding yarn.lock if it was modified\n"
-        git add "${root_dir}/core-web/yarn.lock"
+        git -C "${root_dir}" add -- "core-web/yarn.lock"
     fi
 
     if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
@@ -151,7 +151,7 @@ perform_frontend_fixes() {
 
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
-                if ! git add -- "${root_dir}/${file}"; then
+                if ! git -C "${root_dir}" add -- "${file}"; then
                     has_errors=true
                 fi
             else
@@ -165,7 +165,7 @@ perform_frontend_fixes() {
             printf "\n"
             for file in "${unmatched_files[@]}"; do
                 printf "    %s\n" "${file}"
-                git restore "${file}"
+                git -C "${root_dir}" restore -- "${file}"
             done
             printf "\n"
             print_color "$YELLOW" "You can fix these files by running the following commands:"
@@ -282,7 +282,7 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
             cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
             printf "Backing up %s to %s\n" "${file}" "${temp_dir}/${file}"
             # Restore the original file state in the repo, removing unstaged changes
-            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+            git -C "${root_dir}" restore -- "${file}"  # use -C to keep git rooted at repo root in worktrees
         fi
     done
 
@@ -291,7 +291,7 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
 
     for file in $untracked_files; do
             if echo "${staged_files}" | grep -q "^${file}$"; then
-                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+                git -C "${root_dir}" restore -- "${file}"  # use -C to keep git rooted at repo root in worktrees
             fi
     done
 
