@@ -399,5 +399,12 @@ describe('image-filter-url.builder', () => {
             const url = buildSaveUrl(baseContext, [], center, center, 'myImage');
             expect(url).toContain('binaryFieldId=myImage');
         });
+
+        it('URL-encodes the binaryFieldId so special characters cannot inject query params', () => {
+            const url = buildSaveUrl(baseContext, [], center, center, 'a&b=c');
+            // The raw `&`/`=` must be percent-encoded, not leak into the query string.
+            expect(url).toContain('binaryFieldId=a%26b%3Dc');
+            expect(url).not.toContain('binaryFieldId=a&b=c');
+        });
     });
 });

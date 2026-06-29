@@ -241,7 +241,10 @@ export function buildSaveUrl(
 
     url = cleanUrl(url);
     url += url.includes('?') ? '&' : '?';
-    url += `binaryFieldId=${binaryFieldId}&_imageToolSaveFile=true`;
+    // Encode the field variable defensively: dotCMS field variables are constrained to
+    // identifier-safe characters today, but encoding guarantees a stray `&`/`=`/`?` could
+    // never break out of the value and inject extra query parameters.
+    url += `binaryFieldId=${encodeURIComponent(binaryFieldId)}&_imageToolSaveFile=true`;
 
     if (focalApplied) {
         url += '&overwrite=true';
