@@ -872,13 +872,10 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
-            // then: the saveFields method has to be called in FileService ...
-            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith(
-                '1234567890',
-                fieldToRemove
-            );
+            // then: the saveFields method has to be called in FileService with the field ids ...
+            expect<any>(fieldService.deleteFields).toHaveBeenCalledWith('1234567890', ['3']);
             // ...and the comp.data.fields has to be set to the fields return by the service
             expect(comp.layout).toEqual(layout);
         });
@@ -900,7 +897,7 @@ describe('DotContentTypesEditComponent', () => {
             };
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
-            contentTypeFieldsDropZone.componentInstance.removeFields.emit(fieldToRemove);
+            contentTypeFieldsDropZone.componentInstance.removeFields.emit([fieldToRemove]);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
         });

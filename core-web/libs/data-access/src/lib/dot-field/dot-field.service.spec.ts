@@ -138,30 +138,21 @@ describe('DotFieldService', () => {
     });
 
     describe('deleteFields', () => {
-        it('should delete fields', () => {
-            const mockData: DotCMSContentTypeField[] = [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-                    name: 'Hello World',
-                    id: '1'
-                } as DotCMSContentTypeField,
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
-                    id: '2'
-                } as DotCMSContentTypeField
-            ];
+        it('should delete fields by id', () => {
+            const fieldIds = ['1', '2'];
             const contentTypeId = '1';
+            const mockFields: DotCMSContentTypeLayoutRow[] = [];
 
-            spectator.service.deleteFields(contentTypeId, mockData).subscribe((res) => {
-                expect(res).toEqual({ deletedIds: ['1', '2'], fields: mockData });
+            spectator.service.deleteFields(contentTypeId, fieldIds).subscribe((res) => {
+                expect(res).toEqual({ deletedIds: fieldIds, fields: mockFields });
             });
 
             const req = spectator.expectOne(
                 `/api/v3/contenttype/${contentTypeId}/fields`,
                 HttpMethod.DELETE
             );
-            expect(req.request.body).toEqual({ fieldsID: ['1', '2'] });
-            req.flush({ entity: { deletedIds: ['1', '2'], fields: mockData } });
+            expect(req.request.body).toEqual({ fieldsID: fieldIds });
+            req.flush({ entity: { deletedIds: fieldIds, fields: mockFields } });
         });
     });
 

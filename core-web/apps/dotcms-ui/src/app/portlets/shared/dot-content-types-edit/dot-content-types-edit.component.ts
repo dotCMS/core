@@ -221,17 +221,18 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
+        const fieldIds = fieldsToDelete.map((field) => field.id);
         this.fieldService
-            .deleteFields(this.data.id, fieldsToDelete)
+            .deleteFields(this.data.id, fieldIds)
             .pipe(
                 map((x) => x?.fields),
                 take(1)
             )
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
+            .subscribe({
+                next: (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
                 },
-                (err) => {
+                error: (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -239,7 +240,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                             //
                         });
                 }
-            );
+            });
     }
 
     /**
@@ -252,12 +253,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.fieldService
             .saveFields(this.data.id, layout)
             .pipe(take(1))
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
+            .subscribe({
+                next: (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
                     this.loadingFields.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -266,7 +267,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                             this.loadingFields.set(false);
                         });
                 }
-            );
+            });
     }
 
     /**
@@ -280,12 +281,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.fieldService
             .updateField(this.data.id, fieldsToEdit)
             .pipe(take(1))
-            .subscribe(
-                (fields: DotCMSContentTypeLayoutRow[]) => {
+            .subscribe({
+                next: (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
                     this.loadingFields.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.dotHttpErrorManagerService
                         .handle(err)
                         .pipe(take(1))
@@ -294,7 +295,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                             this.loadingFields.set(false);
                         });
                 }
-            );
+            });
     }
 
     /**
@@ -338,8 +339,8 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 mergeMap((contentTypes: DotCMSContentType[]) => contentTypes),
                 take(1)
             )
-            .subscribe(
-                (contentType: DotCMSContentType) => {
+            .subscribe({
+                next: (contentType: DotCMSContentType) => {
                     this.savingContentType.set(false);
                     this.data = contentType;
                     this.layout = this.data.layout;
@@ -349,11 +350,11 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     );
                     this.show.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
-            );
+            });
     }
 
     private handleHttpError(err: HttpErrorResponse) {
@@ -370,17 +371,17 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         this.crudService
             .putData<DotCMSContentType>(`v1/contenttype/id/${this.data.id}`, updatedContentType)
             .pipe(take(1))
-            .subscribe(
-                (contentType: DotCMSContentType) => {
+            .subscribe({
+                next: (contentType: DotCMSContentType) => {
                     this.savingContentType.set(false);
                     this.data = contentType;
                     this.show.set(false);
                 },
-                (err) => {
+                error: (err) => {
                     this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
-            );
+            });
     }
 
     // The Content Types endpoint returns workflows (plural) but receive workflow (singular)

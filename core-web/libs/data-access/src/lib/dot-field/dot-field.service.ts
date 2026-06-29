@@ -75,22 +75,21 @@ export class DotFieldService {
      * Delete fields
      *
      * @param {string} contentTypeId content types's id that contains the fields
-     * @param {DotCMSContentTypeField[]} fields Fields to delete
+     * @param {string[]} fieldIds ids of the fields to delete
      * @returns {Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>}
      * @memberof DotFieldService
      */
     deleteFields(
         contentTypeId: string,
-        fields: DotCMSContentTypeField[]
+        fieldIds: string[]
     ): Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }> {
         return this.#http
-            .request<
-                DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>
-            >('DELETE', `/api/v3/contenttype/${contentTypeId}/fields`, {
-                body: {
-                    fieldsID: fields.map((field: DotCMSContentTypeField) => field.id)
+            .delete<DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>>(
+                `/api/v3/contenttype/${contentTypeId}/fields`,
+                {
+                    body: { fieldsID: fieldIds }
                 }
-            })
+            )
             .pipe(map((response) => response.entity));
     }
 
