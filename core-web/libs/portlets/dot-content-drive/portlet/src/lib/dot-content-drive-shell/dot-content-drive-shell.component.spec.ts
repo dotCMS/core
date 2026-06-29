@@ -956,6 +956,39 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
+        it('should consume the file before resetting the input (live FileList)', () => {
+            // Regression: `input.files` is a LIVE FileList, so clearing `input.value` empties it.
+            // The component must consume the files BEFORE resetting the input; resetting first
+            // drops the selection and the upload silently no-ops (the real Chrome bug).
+            // jsdom doesn't model this, so we mock it faithfully: `.files` is one stable object
+            // that is emptied when `.value` is cleared.
+            uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            const liveFiles: File[] = [file];
+            Object.defineProperty(fileInput, 'files', {
+                get: () => liveFiles as unknown as FileList,
+                configurable: true
+            });
+            Object.defineProperty(fileInput, 'value', {
+                get: () => (liveFiles.length ? 'C:\\fakepath\\test.png' : ''),
+                set: () => {
+                    liveFiles.length = 0; // clearing the input empties the live FileList
+                },
+                configurable: true
+            });
+
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFileByBaseType).toHaveBeenCalledWith(file, 'FILEASSET', {
+                hostFolder: TARGET_FOLDER_DATA.id,
+                indexPolicy: 'WAIT_FOR'
+            });
+            expect(fileInput.value).toBe(''); // still reset afterwards
+        });
+
         it('should not upload when the file picker is dismissed without files', () => {
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
 
