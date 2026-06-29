@@ -398,7 +398,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 expect(spyTempFile).not.toHaveBeenCalled();
             });
 
-            it('should fall back to the legacy Dojo editor when the new editor is disabled', () => {
+            it('should fall back to the legacy Dojo editor when no launcher is available', () => {
                 imageEditorLauncherMock.isAvailable.mockReturnValue(false);
                 const spyLegacy = jest
                     .spyOn(DotBinaryFieldEditImageService.prototype, 'openImageEditor')
