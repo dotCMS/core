@@ -171,9 +171,21 @@
     };
     var usersStore = new dojo.data.ItemFileReadStore({data: usersData});
 
+    // HTML-escape user-controlled grid values so a name/email containing markup
+    // renders as text instead of executing (stored XSS). See dotCMS/private-issues#651.
+    var escapeGridHtml = function (value) {
+        if (value === null || value === undefined) { return ""; }
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    };
+
     var usersGridLayout = [[
-        { name: nameColumn, field: 'name', width:'50%' },
-        { name: emailColumn, field: 'email', width:'50%' },
+        { name: nameColumn, field: 'name', width:'50%', formatter: escapeGridHtml },
+        { name: emailColumn, field: 'email', width:'50%', formatter: escapeGridHtml },
     ]];
 
     //Initialization kicking the loading of users
@@ -418,7 +430,7 @@
 			dijit.byId('userId').attr('value', user.id);
 			dijit.byId('userId').setDisabled(true);
 		} else {
-			dojo.byId('userIdValue').innerHTML = user.id;
+			dojo.byId('userIdValue').textContent = user.id;
 			dojo.byId('userId').value = user.id;
 		}
 
@@ -457,7 +469,9 @@
 
 		dijit.byId('password').attr('value', '********');
 		dijit.byId('passwordCheck').attr('value', '********');
-		dojo.query(".fullUserName").forEach(function (elem) { elem.innerHTML = user.name; });
+		// Render the user's name as text, never as HTML, to prevent stored XSS
+		// (first/last name are user-controlled). See dotCMS/private-issues#651.
+		dojo.query(".fullUserName").forEach(function (elem) { elem.textContent = user.name; });
 
 		userChanged = false;
 		newUser = false;
