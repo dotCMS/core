@@ -101,7 +101,10 @@ export class ContentTypeBuilderPage {
                 ['POST', 'PUT'].includes(response.request().method())
         );
         await acceptButton.click();
-        await responsePromise;
+        // Fail fast if persistence errored — otherwise a 4xx/5xx would still resolve
+        // the wait and the test could pass without the field being saved.
+        const response = await responsePromise;
+        expect(response.ok()).toBeTruthy();
 
         await expect(dialog).toBeHidden();
     }
