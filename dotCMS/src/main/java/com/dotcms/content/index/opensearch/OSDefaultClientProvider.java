@@ -2,6 +2,7 @@ package com.dotcms.content.index.opensearch;
 
 import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import org.opensearch.client.opensearch.OpenSearchClient;
@@ -51,6 +52,7 @@ public class OSDefaultClientProvider implements OSClientProvider {
      * Constructor for direct (non-CDI) test use with an explicit {@link OSClientConfig}.
      * Builds eagerly to preserve the existing fail-fast contract for explicitly-configured clients.
      */
+    @VisibleForTesting
     public OSDefaultClientProvider(OSClientConfig config) {
         this.provider = new ConfigurableOpenSearchProvider(config);
         Logger.info(this.getClass(), "OpenSearchClients initialized with custom configuration: " + config.endpoints());
@@ -103,6 +105,7 @@ public class OSDefaultClientProvider implements OSClientProvider {
      * Create a default test configuration for local OpenSearch
      * This is a convenience method for tests
      */
+    @VisibleForTesting
     public static OSClientConfig createLocalTestConfig() {
         return OSClientConfig.builder()
             .addEndpoints("http://localhost:9201")  // Local OpenSearch port
@@ -119,6 +122,7 @@ public class OSDefaultClientProvider implements OSClientProvider {
      * Create a default production-like configuration
      * This is a convenience method for different test scenarios
      */
+    @VisibleForTesting
     public static OSClientConfig createProductionTestConfig() {
         return OSClientConfig.builder()
             .addEndpoints("https://opensearch.prod.com:9200")
@@ -137,6 +141,7 @@ public class OSDefaultClientProvider implements OSClientProvider {
      * Create a cluster configuration for testing
      * This is a convenience method for cluster test scenarios
      */
+    @VisibleForTesting
     public static OSClientConfig createClusterTestConfig(String... endpoints) {
         Builder builder = OSClientConfig.builder()
             .tlsEnabled(false)
