@@ -1,2 +1,2 @@
 .env
-./libs/agentic-tools/src/generated
+/libs/agentic-tools/src/generated

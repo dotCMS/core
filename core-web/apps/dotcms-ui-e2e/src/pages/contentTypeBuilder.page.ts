@@ -83,7 +83,8 @@ export class ContentTypeBuilderPage {
      * fields persistence request to complete before returning.
      */
     private async fillFieldDialogAndSave(name: string) {
-        const dialog = this.page.locator('p-dynamicdialog .p-dialog, .p-dialog');
+        // Scope to the field-edit DynamicDialog so we never match an unrelated `.p-dialog`.
+        const dialog = this.page.locator('p-dynamicdialog:has(dot-edit-field-dialog) .p-dialog');
         await dialog.first().waitFor({ state: 'visible' });
 
         const nameInput = this.page.locator('input#name');
@@ -102,6 +103,6 @@ export class ContentTypeBuilderPage {
         await acceptButton.click();
         await responsePromise;
 
-        await expect(this.page.locator('.p-dialog')).toBeHidden();
+        await expect(dialog).toBeHidden();
     }
 }
