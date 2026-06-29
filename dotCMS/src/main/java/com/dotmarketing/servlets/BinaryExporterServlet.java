@@ -412,10 +412,17 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
+        DotTempFile temp = tempFileAPI.createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
         //Temp files time-mark must be updated so they can be recognized by the tempFileAPI
         temp.file.setLastModified(System.currentTimeMillis());
+        // createEmptyTempFile derives metadata from the still-empty file, so the rendered
+        // image would otherwise come back as metadata:null/image:false/mimeType:unknown.
+        // Re-wrap to regenerate metadata from the now-populated file (mirrors
+        // TempFileAPI.createTempFile) so consumers get a usable image preview.
+        if (temp.metadata == null && temp.file.exists()) {
+          temp = new DotTempFile(temp.id, temp.file);
+        }
 		copyMetadata(uuid, fieldVarName, temp);
 		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
