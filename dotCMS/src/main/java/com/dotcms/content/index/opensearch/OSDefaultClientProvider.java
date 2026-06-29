@@ -26,20 +26,30 @@ import java.io.IOException;
 public class OSDefaultClientProvider implements OSClientProvider {
 
     /**
-     * Immutable internal provider - configured once at startup
+     * Internal provider. Built lazily from properties on first {@link #getClient()} when this bean
+     * is CDI-constructed (no-arg), or eagerly when an explicit {@link OSClientConfig} is supplied.
+     *
+     * <p><strong>Why lazy (issue #35636):</strong> the delegate's construction parses the configured
+     * {@code OS_ENDPOINTS} URLs and can throw on a malformed value. Weld's client-proxy constructor
+     * invokes this bean's no-arg constructor, so building eagerly here made a malformed
+     * {@code OS_ENDPOINTS} crash dotCMS startup before the phase-aware {@code IndexStartupValidator}
+     * could run. Deferring the build to {@code getClient()} moves that failure into the validator's
+     * (and {@code OSIndexAPIImpl.waitUtilIndexReady()}'s) existing try/catch, so phases 1/2 fall back
+     * to ES-only and phase 3 aborts — instead of an uncaught startup crash.</p>
      */
-    private final ConfigurableOpenSearchProvider provider;
+    private volatile ConfigurableOpenSearchProvider provider;
 
     /**
-     * CDI constructor — reads configuration from dotCMS properties.
+     * CDI constructor — does NOT build the client. The delegate is created from dotCMS properties
+     * lazily on the first {@link #getClient()} call (see {@link #provider}).
      */
     public OSDefaultClientProvider() {
-        this.provider = new ConfigurableOpenSearchProvider();
-        Logger.info(this.getClass(), "OpenSearchClients initialized with default configuration");
+        // Intentionally empty: defer client construction to first getClient() (issue #35636).
     }
 
     /**
      * Constructor for direct (non-CDI) test use with an explicit {@link OSClientConfig}.
+     * Builds eagerly to preserve the existing fail-fast contract for explicitly-configured clients.
      */
     public OSDefaultClientProvider(OSClientConfig config) {
         this.provider = new ConfigurableOpenSearchProvider(config);
@@ -47,20 +57,43 @@ public class OSDefaultClientProvider implements OSClientProvider {
     }
 
     /**
-     * Get the OpenSearch client using default configuration from properties
-     * Thread-safe access to immutable provider
+     * Returns the underlying provider, building it from properties on first use.
+     * Thread-safe via double-checked locking on the {@code volatile} field.
      */
-    public OpenSearchClient getClient() {
-        return provider.getClient();
+    private ConfigurableOpenSearchProvider provider() {
+        ConfigurableOpenSearchProvider local = provider;
+        if (local == null) {
+            synchronized (this) {
+                local = provider;
+                if (local == null) {
+                    local = new ConfigurableOpenSearchProvider();
+                    provider = local;
+                    Logger.info(this.getClass(), "OpenSearchClients initialized with default configuration");
+                }
+            }
+        }
+        return local;
     }
 
     /**
-     * Close resources when shutting down
+     * Get the OpenSearch client using default configuration from properties.
+     * The client is built lazily on the first call (issue #35636).
+     */
+    public OpenSearchClient getClient() {
+        return provider().getClient();
+    }
+
+    /**
+     * Close resources when shutting down. No-op if the client was never built.
      */
     public void shutdown() {
+        final ConfigurableOpenSearchProvider local = provider;
+        if (local == null) {
+            return;
+        }
         Logger.info(this.getClass(), "Shutting down OpenSearch clients");
         try {
-            provider.close();
+            local.close();
         } catch (IOException e) {
             Logger.warn(this.getClass(), "Error closing OpenSearch provider: " + e.getMessage(), e);
         }

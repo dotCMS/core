@@ -200,12 +200,18 @@ class ConfigurableOpenSearchProvider {
      */
     private HttpHost[] createHttpHosts(List<String> endpoints) {
         return endpoints.stream().map(endpoint -> {
+            // Catch IllegalArgumentException too: URI.create() rejects some malformed strings, and
+            // toURL() throws "URI is not absolute" for scheme-less values like "invalid-url-format"
+            // (issue #35636). Without this, the unclear raw exception surfaced instead of a
+            // pointed, actionable message naming the offending OS_ENDPOINTS value.
             try {
                 URL url = URI.create(endpoint).toURL();
                 return new HttpHost(url.getProtocol(), url.getHost(), url.getPort());
-            } catch (MalformedURLException e) {
-                Logger.error(this.getClass(), "Invalid endpoint URL: " + endpoint, e);
-                throw new DotRuntimeException("Invalid endpoint URL: " + endpoint, e);
+            } catch (MalformedURLException | IllegalArgumentException e) {
+                Logger.error(this.getClass(), "Invalid OS_ENDPOINTS URL: " + endpoint, e);
+                throw new DotRuntimeException("Invalid OS_ENDPOINTS URL: '" + endpoint
+                        + "'. It must be an absolute URL such as https://host:9200. Cause: "
+                        + e.getMessage(), e);
             }
         }).toArray(HttpHost[]::new);
     }
