@@ -12,13 +12,14 @@ describe('binary-field-utils', () => {
             expect(parseFocalPoint('')).toBeUndefined();
         });
 
-        it('treats the backend "no focal point" sentinels (0,0) as undefined', () => {
-            // The backend uses "0.0"/"0,0"/(0,0) to mean "no focal point" -> editor opens centred.
+        it('treats the (0,0) "no focal point" sentinel as undefined', () => {
+            // The backend uses (0,0) to mean "no focal point" -> editor opens centred.
             expect(parseFocalPoint('0,0')).toBeUndefined();
-            expect(parseFocalPoint('0.0')).toBeUndefined();
         });
 
-        it('returns undefined for a malformed value', () => {
+        it('returns undefined for a malformed or single-value string', () => {
+            // "0.0" has no comma -> one token -> the y axis parses to NaN.
+            expect(parseFocalPoint('0.0')).toBeUndefined();
             expect(parseFocalPoint('not-a-point')).toBeUndefined();
             expect(parseFocalPoint('abc,xyz')).toBeUndefined();
         });

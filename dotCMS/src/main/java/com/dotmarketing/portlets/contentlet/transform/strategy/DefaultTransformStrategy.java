@@ -270,7 +270,10 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     // it explicitly so the image editor can re-seed its marker when reopened.
                     final String focalPoint = Try.of(() ->
                             metadata.getCustomMeta().getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString()
-                    ).getOrElse("0.0");
+                    ).onFailure(e -> Logger.debug(this,
+                            "Unable to read focal point for field '" + velocityVarName + "': "
+                                    + e.getMessage()))
+                            .getOrElse("0.0");
                     metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
                     map.put(velocityVarName + "MetaData", metaMap);
                     putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);

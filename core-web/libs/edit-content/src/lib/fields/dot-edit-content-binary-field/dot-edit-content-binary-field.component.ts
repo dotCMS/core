@@ -436,6 +436,9 @@ export class DotEditContentBinaryFieldComponent
         // Seed the editor with the asset's stored focal point (exposed on the binary
         // field metadata as a `"x,y"` string) so reopening restores the marker instead
         // of resetting it to centre.
+        // `focalPoint` is exposed on the binary metadata at runtime (DefaultTransformStrategy)
+        // but not declared on DotFileMetadata; read it through a narrow cast rather than
+        // extending the shared model (which would pull the lib into affected-lint).
         const focalPoint = parseFocalPoint(
             (metadata as { focalPoint?: string } | null)?.focalPoint
         );
