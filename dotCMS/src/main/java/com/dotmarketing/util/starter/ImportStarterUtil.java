@@ -6,7 +6,13 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.experiments.business.ExperimentsFactory;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publishing.BundlerUtil;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantFactory;
+import com.dotcms.variant.model.Variant;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
 import com.dotmarketing.beans.Identifier;
@@ -468,6 +474,8 @@ public class ImportStarterUtil {
         boolean counter = false;
         boolean image = false;
         boolean portlet = false;
+        boolean variant = false;
+        boolean experiment = false;
 
 
         Pattern classNamePattern = Pattern.compile("_[0-9]{8}");
@@ -486,6 +494,10 @@ public class ImportStarterUtil {
             image = true;
         } else if (_className.equals("Portlet")) {
             portlet = true;
+        } else if (_className.equals("Variant")) {
+            variant = true;
+        } else if (_className.equals("Experiment")) {
+            experiment = true;
         } else {
             try {
                 _importClass = Class.forName(_className);
@@ -503,6 +515,12 @@ public class ImportStarterUtil {
 
         if (Contentlet.class.equals(_importClass)){
             l = getContentletList(file);
+        } else if (variant || experiment) {
+            // Parse with the configured dotCMS mapper (JavaTime + Jdk8 + Guava modules) so it
+            // matches how these immutables were serialized on export. The bare ObjectMapper used by
+            // BundlerUtil#jsonToObject cannot deserialize their Instant / Optional fields.
+            l = (List) DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                    .readValue(file, (TypeReference) type);
         } else{
             if (type instanceof TypeReference){
                 all = (List) BundlerUtil.jsonToObject(file, (TypeReference)type);
@@ -578,6 +596,26 @@ public class ImportStarterUtil {
                 dc.addParam(dcResults.get("roles"));
                 dc.loadResults();
 
+            }
+        } else if (variant) {
+            // Use the factory (not VariantAPI) so archived experiment variants can be restored --
+            // VariantAPI#save rejects archived variants. The factory binds the archived flag.
+            final VariantFactory variantFactory = FactoryLocator.getVariantFactory();
+            for (int j = 0; j < l.size(); j++) {
+                final Variant v = (Variant) l.get(j);
+                // The variant table is not cleared by deleteDotCMS(); the DEFAULT variant always
+                // exists (created at startup), so skip it and any variant already present.
+                if (VariantAPI.DEFAULT_VARIANT.name().equals(v.name())
+                        || variantFactory.get(v.name()).isPresent()) {
+                    continue;
+                }
+                variantFactory.save(v);
+            }
+        } else if (experiment) {
+            final ExperimentsFactory experimentsFactory = FactoryLocator.getExperimentsFactory();
+            for (int j = 0; j < l.size(); j++) {
+                // save() upserts by id and binds the JSONB columns via addJSONParam.
+                experimentsFactory.save((Experiment) l.get(j));
             }
         } else if (_importClass.equals(User.class)) {
             for (int j = 0; j < l.size(); j++) {
