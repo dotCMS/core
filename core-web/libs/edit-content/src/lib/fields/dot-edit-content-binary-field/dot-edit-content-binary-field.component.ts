@@ -421,8 +421,15 @@ export class DotEditContentBinaryFieldComponent
         }
 
         const inode = this.contentlet?.inode;
+        // `getFileMetadata` resolves `{fieldVariable}MetaData` off the contentlet, but the raw
+        // @Input contentlet has no `fieldVariable` — the field var lives in `this.variable`. Pass
+        // it explicitly (as the preview does via setFileFromContentlet) so the field's metadata
+        // (and its `focalPoint`) is actually found instead of falling back to {}.
         const metadata = this.contentlet
-            ? (getFileMetadata(this.contentlet) as Partial<DotFileMetadata>)
+            ? (getFileMetadata({
+                  ...this.contentlet,
+                  fieldVariable: this.variable
+              }) as Partial<DotFileMetadata>)
             : null;
         const fieldName = this.$field()?.name;
         const variable = this.variable;

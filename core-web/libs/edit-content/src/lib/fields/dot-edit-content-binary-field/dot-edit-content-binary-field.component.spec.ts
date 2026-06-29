@@ -340,6 +340,44 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 );
             });
 
+            it('should seed the editor with the stored focal point from the field metadata', () => {
+                spectator.setInput('contentlet', {
+                    ...MOCK_DOTCMS_FILE,
+                    inode: 'inode-123',
+                    metaData: undefined,
+                    [`${BINARY_FIELD_MOCK.variable}MetaData`]: {
+                        ...fileMetaData,
+                        focalPoint: '0.2,0.7'
+                    }
+                });
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(imageEditorLauncherMock.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ focalPoint: { x: 0.2, y: 0.7 } })
+                );
+            });
+
+            it('should not seed a focal point when the field metadata has none', () => {
+                spectator.setInput('contentlet', {
+                    ...MOCK_DOTCMS_FILE,
+                    inode: 'inode-123',
+                    metaData: undefined,
+                    [`${BINARY_FIELD_MOCK.variable}MetaData`]: {
+                        ...fileMetaData,
+                        focalPoint: '0.0'
+                    }
+                });
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+
+                expect(imageEditorLauncherMock.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ focalPoint: undefined })
+                );
+            });
+
             it('should apply the edited temp file through the store', () => {
                 imageEditorLauncherMock.open.mockReturnValue(of(TEMP_FILE_MOCK));
                 const spyTempFile = jest.spyOn(store, 'setFileFromTemp');
