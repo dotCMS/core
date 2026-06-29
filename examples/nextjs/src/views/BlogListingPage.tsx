@@ -1,0 +1,129 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+import { useEditableDotCMSPage } from '@dotcms/react';
+
+import { dotCMSClient } from '@/lib/dotCMSClient';
+import { useDebounce } from '@/hooks/useDebounce';
+import Header from '@/components/header/Header';
+import BlogCard from '@/components/BlogCard';
+import type { Blog, PageExtraContent } from '@/types/content';
+
+interface SearchBarProps {
+    searchQuery: string;
+    setSearchQuery: (value: string) => void;
+}
+
+export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCMSPage>[0]) {
+    const { content = {} } = useEditableDotCMSPage(pageResponse);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Blog[] | null>(null);
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
+    const pageContentData = content as PageExtraContent;
+    const navigation = pageContentData.navigation;
+    const allBlogs = pageContentData.blogs ?? [];
+
+    useEffect(() => {
+        if (!debouncedSearchQuery.length) {
+            // Clear fetched results so the page-provided blogs show again.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSearchResults(null);
+            return;
+        }
+
+        let active = true;
+        dotCMSClient.content
+            .getCollection<Blog>('Blog')
+            .limit(3)
+            .query((qb) => qb.field('title').equals(`${debouncedSearchQuery}*`))
+            .sortBy([
+                {
+                    field: 'Blog.postingDate',
+                    order: 'desc'
+                }
+            ])
+            .then(({ contentlets }) => {
+                if (active) {
+                    setSearchResults(contentlets);
+                }
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [debouncedSearchQuery]);
+
+    // When there is no active search, show the blogs that came with the page.
+    const filteredBlogs = searchResults ?? allBlogs;
+
+    return (
+        <div className="flex flex-col gap-6 bg-slate-50">
+            <Header navItems={navigation?.children} />
+            <main className="container mx-auto px-4 py-8">
+                <div className="flex flex-col gap-4 mb-8">
+                    <h1 className="text-4xl font-bold text-center">Travel Blog</h1>
+                    <p className="text-gray-600 text-center">
+                        Get inspired to experience the world. Our writers will give you their
+                        first-hand stories and recommendations that will inspire, excite you, and
+                        help you make the best decisions for planning your next adventure.
+                    </p>
+                </div>
+
+                <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredBlogs.map((blog) => (
+                        <BlogCard key={blog.identifier} blog={blog} />
+                    ))}
+                </div>
+
+                {filteredBlogs.length === 0 && (
+                    <div className="text-center py-8">
+                        <p className="text-gray-500">
+                            No blogs found matching your search criteria.
+                        </p>
+                    </div>
+                )}
+            </main>
+            <footer className="bg-slate-50 text-slate-900 py-4">
+                <div className="container mx-auto px-4">
+                    <p className="text-center">
+                        &copy; {new Date().getFullYear()} TravelLux. All rights reserved.
+                    </p>
+                </div>
+            </footer>
+        </div>
+    );
+}
+
+const SearchBar = ({ searchQuery, setSearchQuery }: SearchBarProps) => {
+    return (
+        <div className="mb-8">
+            <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg
+                        className="w-4 h-4 text-gray-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                </div>
+                <input
+                    type="search"
+                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                    placeholder="Search blogs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+        </div>
+    );
+};

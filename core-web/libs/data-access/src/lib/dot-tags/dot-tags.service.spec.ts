@@ -144,6 +144,44 @@ describe('DotTagsService', () => {
         req.flush(mockResponse);
     });
 
+    it('should send global=true when global flag is set', () => {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
+            entity: [],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
+            pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+        };
+
+        spectator.service.getTagsPaginated({ global: true }).subscribe((res) => {
+            expect(res).toEqual(mockResponse);
+        });
+
+        const req = spectator.expectOne('/api/v2/tags?global=true', HttpMethod.GET);
+        expect(req.request.params.get('global')).toBe('true');
+        req.flush(mockResponse);
+    });
+
+    it('should omit global param when false or not provided', () => {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
+            entity: [],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
+            pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+        };
+
+        spectator.service.getTagsPaginated({ global: false }).subscribe((res) => {
+            expect(res).toEqual(mockResponse);
+        });
+
+        const req = spectator.expectOne('/api/v2/tags', HttpMethod.GET);
+        expect(req.request.params.has('global')).toBe(false);
+        req.flush(mockResponse);
+    });
+
     it('should get paginated tags with partial params', () => {
         const mockTag1 = createFakeTag({ label: 'tag1' });
         const mockResponse: DotCMSAPIResponse<DotTag[]> = {
