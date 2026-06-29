@@ -671,7 +671,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       {@code putMapping}-only re-assert against a bare orphan fails with {@code HTTP 400}
      *       (analyzer not found) and leaves the index half-mapped (issue #36237, QA TC-003). An
      *       empty index has no data and no reindex progress, so recreating it costs nothing
-     *       operationally and yields a clean index with full settings + base mapping.</li>
+     *       operationally and yields a clean index with full settings + base mapping. If the
+     *       delete cannot be confirmed and the index is still present, bootstrap fails loudly
+     *       rather than register a half-mapped index.</li>
      *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, untouched.
      *       A populated orphan was created by dotCMS itself, so it already carries the full
      *       settings + base mapping + custom mapping; nothing needs to be (re)applied. The index is
@@ -768,13 +770,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                             + ": " + e.getMessage(), e))
                     .getOrElse(false);
             if (!deleted) {
-                // The delete was not acknowledged, so the index may still exist. Recreating it
-                // would throw resource_already_exists and abort bootstrap — the very failure this
-                // guard prevents. Reuse it in place instead: it is empty, so nothing is lost, and a
-                // later clean restart recreates it properly once the cluster is healthy.
-                Logger.warn(this, "Empty orphaned index " + physicalName
-                        + " could not be deleted; reusing in place to avoid aborting bootstrap.");
-                return true;
+                // Delete not acknowledged. Re-probe: it may have taken effect without an ack, in
+                // which case we can still recreate cleanly. If the index is genuinely still there
+                // we must NOT proceed — recreating would throw resource_already_exists, and reusing
+                // it would register a bare orphan whose mapping cannot be repaired (the custom
+                // analyzer is a create-time-only setting). Fail loud instead of leaving a
+                // half-mapped index in the store. This is an abnormal cluster state, not the
+                // orphan-name collision this method otherwise resolves.
+                final boolean stillExists = Try.of(() -> providerApi.indexExists(physicalName))
+                        .getOrElse(true);
+                if (stillExists) {
+                    throw new IOException("Empty orphaned " + tag + " index " + physicalName
+                            + " could not be deleted and still exists; aborting bootstrap to avoid"
+                            + " registering a half-mapped index. Check the search cluster health"
+                            + " and restart.");
+                }
+                Logger.warn(this, "Empty orphaned index " + physicalName + " delete was not"
+                        + " acknowledged, but the index is gone; proceeding to recreate.");
             }
         }
 

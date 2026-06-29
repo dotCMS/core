@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -40,8 +41,10 @@ import org.junit.Test;
  *   <li>a failed create does not apply a mapping;</li>
  *   <li>a failing existence probe is treated as "does not exist", so bootstrap falls through to
  *       the create path instead of aborting;</li>
- *   <li>a failed delete of an empty orphan does not abort bootstrap — the orphan is reused in
- *       place rather than attempting a create that would throw {@code resource_already_exists}.</li>
+ *   <li>an empty orphan whose delete is unacknowledged but is actually gone recreates cleanly;</li>
+ *   <li>an empty orphan whose delete fails while the index is still present fails loudly, rather
+ *       than recreating (would throw {@code resource_already_exists}) or registering a bare,
+ *       un-repairable index.</li>
  * </ul>
  */
 public class ContentletIndexAPIImplBootstrapTest {
@@ -146,29 +149,58 @@ public class ContentletIndexAPIImplBootstrapTest {
     }
 
     /**
-     * Given : an EMPTY orphan exists but its delete is not acknowledged (e.g. transient error),
-     *         so the index may still be present in the cluster.
+     * Given : an EMPTY orphan whose delete is not acknowledged, but a re-probe shows the index is
+     *         actually gone (the delete took effect without an ack).
      * When  : createContentIndex() runs during bootstrap.
-     * Then  : bootstrap is NOT aborted — rather than attempt a create that would throw
-     *         {@code resource_already_exists}, the orphan is reused in place. No create is issued
-     *         and no mapping is applied; the method returns true.
+     * Then  : it recreates cleanly — the create is issued and the mapping applied.
      */
     @Test
-    public void test_emptyOrphanDeleteFails_reusedInPlace_notRecreated() throws IOException {
+    public void test_emptyOrphanDeleteUnacked_butIndexGone_recreates() throws IOException {
         final ContentletIndexOperations ops = mock(ContentletIndexOperations.class);
         final IndexAPI providerApi = mock(IndexAPI.class);
         final MappingHelper helper = mock(MappingHelper.class);
 
         when(ops.toPhysicalName(LOGICAL_NAME)).thenReturn(PHYSICAL_NAME);
-        when(providerApi.indexExists(PHYSICAL_NAME)).thenReturn(true);
+        // exists at first (orphan probe) → gone after the unacked delete (re-probe)
+        when(providerApi.indexExists(PHYSICAL_NAME)).thenReturn(true, false);
         when(ops.getIndexDocumentCount(PHYSICAL_NAME)).thenReturn(0L);
-        when(providerApi.delete(PHYSICAL_NAME))
-                .thenThrow(new RuntimeException("delete not acknowledged"));
+        when(providerApi.delete(PHYSICAL_NAME)).thenReturn(false);
+        when(ops.createContentIndex(PHYSICAL_NAME, SHARDS)).thenReturn(true);
 
         final boolean result = newApi()
                 .createContentIndex(LOGICAL_NAME, SHARDS, IndexTag.ES, ops, providerApi, helper);
 
-        assertTrue("A failed delete must not abort bootstrap — reuse in place instead", result);
+        assertTrue("Unacked delete with the index gone must recreate cleanly", result);
+        verify(ops).createContentIndex(PHYSICAL_NAME, SHARDS);
+        verify(helper).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
+    }
+
+    /**
+     * Given : an EMPTY orphan whose delete fails AND a re-probe shows the index is still present.
+     * When  : createContentIndex() runs during bootstrap.
+     * Then  : it fails loudly (throws) rather than recreating (which would throw
+     *         {@code resource_already_exists}) or reusing a bare, un-repairable index. No create is
+     *         issued and no mapping is applied.
+     */
+    @Test
+    public void test_emptyOrphanDeleteFails_indexStillExists_failsLoud() throws IOException {
+        final ContentletIndexOperations ops = mock(ContentletIndexOperations.class);
+        final IndexAPI providerApi = mock(IndexAPI.class);
+        final MappingHelper helper = mock(MappingHelper.class);
+
+        when(ops.toPhysicalName(LOGICAL_NAME)).thenReturn(PHYSICAL_NAME);
+        when(providerApi.indexExists(PHYSICAL_NAME)).thenReturn(true); // still there on re-probe
+        when(ops.getIndexDocumentCount(PHYSICAL_NAME)).thenReturn(0L);
+        when(providerApi.delete(PHYSICAL_NAME))
+                .thenThrow(new RuntimeException("delete not acknowledged"));
+
+        try {
+            newApi().createContentIndex(LOGICAL_NAME, SHARDS, IndexTag.ES, ops, providerApi, helper);
+            fail("A stuck empty orphan (delete fails, index remains) must fail loudly");
+        } catch (final IOException expected) {
+            // expected — bootstrap must not silently register a half-mapped index
+        }
+
         verify(ops, never()).createContentIndex(anyString(), anyInt());
         verify(helper, never()).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
     }
