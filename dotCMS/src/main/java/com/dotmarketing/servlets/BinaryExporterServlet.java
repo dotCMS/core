@@ -51,6 +51,7 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -108,6 +109,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+	private final FocalPointAPI focalPointAPI = APILocator.getFocalPointAPI();
 	private final WebResource webResource = new WebResource();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
@@ -424,6 +426,16 @@ public class BinaryExporterServlet extends HttpServlet {
           temp = new DotTempFile(temp.id, temp.file);
         }
 		copyMetadata(uuid, fieldVarName, temp);
+        // The focal point is authoritative in the request URL. Write it straight onto the saved
+        // temp AFTER copyMetadata, so it persists even when the image exporter served the rendition
+        // from cache and never ran FocalPointImageFilter (the side effect that otherwise persists
+        // the focal). No-op when the request carries no fp (plain saves / non-focal images);
+        // putCustomMetadataAttributes merges, so only the focalPoint key is set and the metadata
+        // copied above is preserved.
+        final String savedTempId = temp.id;
+        final String focalFieldVar = fieldVarName;
+        focalPointAPI.parseFocalPointFromParams(params)
+                .ifPresent(focalPoint -> focalPointAPI.writeFocalPoint(savedTempId, focalFieldVar, focalPoint));
 		resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
         resp.flushBuffer();
