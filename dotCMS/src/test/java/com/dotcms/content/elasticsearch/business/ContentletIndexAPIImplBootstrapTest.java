@@ -40,7 +40,8 @@ import org.junit.Test;
  *   <li>a failed create does not apply a mapping;</li>
  *   <li>a failing existence probe is treated as "does not exist", so bootstrap falls through to
  *       the create path instead of aborting;</li>
- *   <li>a failed delete of an empty orphan does not abort bootstrap — the create is still attempted.</li>
+ *   <li>a failed delete of an empty orphan does not abort bootstrap — the orphan is reused in
+ *       place rather than attempting a create that would throw {@code resource_already_exists}.</li>
  * </ul>
  */
 public class ContentletIndexAPIImplBootstrapTest {
@@ -145,13 +146,15 @@ public class ContentletIndexAPIImplBootstrapTest {
     }
 
     /**
-     * Given : an EMPTY orphan exists but its delete is not acknowledged (e.g. transient error).
+     * Given : an EMPTY orphan exists but its delete is not acknowledged (e.g. transient error),
+     *         so the index may still be present in the cluster.
      * When  : createContentIndex() runs during bootstrap.
-     * Then  : the failure does not abort bootstrap — the create is still attempted and, on
-     *         success here, the mapping is applied.
+     * Then  : bootstrap is NOT aborted — rather than attempt a create that would throw
+     *         {@code resource_already_exists}, the orphan is reused in place. No create is issued
+     *         and no mapping is applied; the method returns true.
      */
     @Test
-    public void test_emptyOrphanDeleteFails_stillAttemptsCreate() throws IOException {
+    public void test_emptyOrphanDeleteFails_reusedInPlace_notRecreated() throws IOException {
         final ContentletIndexOperations ops = mock(ContentletIndexOperations.class);
         final IndexAPI providerApi = mock(IndexAPI.class);
         final MappingHelper helper = mock(MappingHelper.class);
@@ -161,14 +164,13 @@ public class ContentletIndexAPIImplBootstrapTest {
         when(ops.getIndexDocumentCount(PHYSICAL_NAME)).thenReturn(0L);
         when(providerApi.delete(PHYSICAL_NAME))
                 .thenThrow(new RuntimeException("delete not acknowledged"));
-        when(ops.createContentIndex(PHYSICAL_NAME, SHARDS)).thenReturn(true);
 
         final boolean result = newApi()
                 .createContentIndex(LOGICAL_NAME, SHARDS, IndexTag.ES, ops, providerApi, helper);
 
-        assertTrue("A failed orphan delete must fall through to a (successful) create", result);
-        verify(ops).createContentIndex(PHYSICAL_NAME, SHARDS);
-        verify(helper).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
+        assertTrue("A failed delete must not abort bootstrap — reuse in place instead", result);
+        verify(ops, never()).createContentIndex(anyString(), anyInt());
+        verify(helper, never()).addCustomMapping(List.of(LOGICAL_NAME), IndexTag.ES);
     }
 
     /**

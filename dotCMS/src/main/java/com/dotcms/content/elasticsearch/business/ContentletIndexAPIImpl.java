@@ -765,11 +765,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final boolean deleted = Try.of(() -> providerApi.delete(physicalName))
                     .onFailure(e -> Logger.warn(this,
                             "Failed to delete empty orphaned index " + physicalName
-                            + " before recreate; attempting create anyway: " + e.getMessage(), e))
+                            + ": " + e.getMessage(), e))
                     .getOrElse(false);
             if (!deleted) {
+                // The delete was not acknowledged, so the index may still exist. Recreating it
+                // would throw resource_already_exists and abort bootstrap — the very failure this
+                // guard prevents. Reuse it in place instead: it is empty, so nothing is lost, and a
+                // later clean restart recreates it properly once the cluster is healthy.
                 Logger.warn(this, "Empty orphaned index " + physicalName
-                        + " was not acknowledged as deleted; the create below may fail.");
+                        + " could not be deleted; reusing in place to avoid aborting bootstrap.");
+                return true;
             }
         }
 
