@@ -5,7 +5,9 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.SystemProperties;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.*;
 import com.liferay.portal.ejb.UserUtil;
@@ -184,6 +186,30 @@ public class UserHelper {
                 throw new UserPasswordException(
                         UserPasswordException.PASSWORD_INVALID);
             }
+        }
+    }
+
+    /**
+     * Validates that user-supplied names do not contain HTML/control metacharacters
+     * (e.g. {@code <}, {@code >}, CR/LF). This mirrors the legacy
+     * {@code UserLocalManagerImpl} check but is enforced here so it also covers the
+     * modern REST/API save path (e.g. {@code PUT /api/v1/users/current}), which would
+     * otherwise persist names verbatim and enable stored XSS in the admin UI.
+     *
+     * The allowed character set is driven by the configurable
+     * {@code UserName.regexp.pattern} system property; validation is skipped only when
+     * that property is not configured.
+     */
+    public static void validateName(final String firstName, final String lastName) throws DotDataException {
+        final String pattern = GetterUtil.getString(SystemProperties.get("UserName.regexp.pattern"));
+        if (!UtilMethods.isSet(pattern)) {
+            return;
+        }
+        if (UtilMethods.isSet(firstName) && !RegEX.contains(firstName, pattern)) {
+            throw new DotDataException("First Name contains invalid characters");
+        }
+        if (UtilMethods.isSet(lastName) && !RegEX.contains(lastName, pattern)) {
+            throw new DotDataException("Last Name contains invalid characters");
         }
     }
 
