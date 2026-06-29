@@ -55,8 +55,12 @@ public class ToolGroupResourceTest extends IntegrationTestBase {
     @AfterClass
     public static void cleanUp() throws Exception {
         if (testLayout != null) {
-            APILocator.getRoleAPI().removeLayoutFromRole(
-                    testLayout, adminUser.getUserRole());
+            try {
+                APILocator.getRoleAPI().removeLayoutFromRole(
+                        testLayout, adminUser.getUserRole());
+            } catch (Exception e) {
+                // layout may not have been associated if the admin test did not run
+            }
             APILocator.getLayoutAPI().removeLayout(testLayout);
         }
         if (backendUser != null) {
