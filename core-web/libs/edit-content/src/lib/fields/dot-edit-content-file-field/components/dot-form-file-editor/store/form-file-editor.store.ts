@@ -98,6 +98,31 @@ export const FormFileEditorStore = signalStore(
                 });
             },
             /**
+             * Re-detects the language metadata from the current file name.
+             *
+             * Monaco resolves languages from its registry, which only exists once the
+             * editor has loaded (it is lazy). `initLoad` runs in `ngOnInit` — before
+             * Monaco is available — so {@link getInfoByLang} falls back to `'text'` and
+             * the editor renders without syntax highlighting. The component calls this
+             * from `onEditorInit` (Monaco now ready) to recover the real language (and
+             * the upload mime type).
+             */
+            refreshLanguage() {
+                const file = store.file();
+
+                const extension = extractFileExtension(file.name);
+                const info = getInfoByLang(extension);
+
+                patchState(store, {
+                    file: {
+                        ...file,
+                        mimeType: info.mimeType,
+                        extension: info.extension,
+                        language: info.lang
+                    }
+                });
+            },
+            /**
              * Initializes the file editor state with the provided options.
              *
              * @param params - The parameters for initializing the file editor.

@@ -114,13 +114,42 @@
     display: flex;
     position: absolute;
     right: 0.5rem;
-    bottom: 0.5rem;
+    top: 0.5rem;
     z-index: 100;
     flex-direction: column;
     gap: 0.5rem;
 
     @container preview (min-width: 500px) {
         display: none;
+    }
+}
+
+// Remove action stays anchored to the bottom-right corner across all sizes,
+// kept separate from the info/edit/download cluster in the top-right.
+.dot-file-field-preview__remove {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    z-index: 101;
+
+    // Match the rest of the actions: filled (tertiary) on narrow containers,
+    // outlined on wide ones. Toggle the matching variant via the same breakpoint.
+    .dot-file-field-preview__remove-wide {
+        display: none;
+    }
+
+    .dot-file-field-preview__remove-narrow {
+        display: inline-flex;
+    }
+
+    @container preview (min-width: 500px) {
+        .dot-file-field-preview__remove-wide {
+            display: inline-flex;
+        }
+
+        .dot-file-field-preview__remove-narrow {
+            display: none;
+        }
     }
 }
 

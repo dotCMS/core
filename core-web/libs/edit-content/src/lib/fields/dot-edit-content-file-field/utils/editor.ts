@@ -24,24 +24,28 @@ export function extractFileExtension(fileName: string): string {
  * ```typescript
  * const info = getInfoByLang('vtl');
  * console.log(info);
- * // Output: { lang: 'html', mimeType: 'text/x-velocity', extension: '.vtl' }
+ * // Output: { lang: 'velocity', mimeType: 'text/x-velocity', extension: '.vtl' }
  * ```
  *
  * @remarks
- * If the extension is 'vtl', it returns a predefined set of values.
+ * If the extension is 'vtl', it returns a predefined set of values. The `velocity`
+ * language is a custom Monaco language (Monarch tokens) registered by the editor
+ * component when Monaco loads; the default `vs` theme colours its tokens.
  * Otherwise, it searches through the Monaco Editor languages to find a match.
  * If no match is found, it defaults to 'text' for the language id, 'text/plain' for the MIME type, and '.txt' for the extension.
  */
 export function getInfoByLang(extension: string) {
     if (extension === 'vtl') {
         return {
-            lang: 'html',
+            lang: 'velocity',
             mimeType: 'text/x-velocity',
             extension: '.vtl'
         };
     }
 
-    // Monaco is loaded lazily; guard against it not being available yet.
+    // Monaco is loaded lazily; guard against it not being available yet (this runs
+    // from initLoad during ngOnInit, before Monaco has loaded). When it is missing
+    // the language falls back to 'text'; onEditorInit re-detects it once Monaco is up.
     const language =
         typeof monaco !== 'undefined'
             ? monaco.languages

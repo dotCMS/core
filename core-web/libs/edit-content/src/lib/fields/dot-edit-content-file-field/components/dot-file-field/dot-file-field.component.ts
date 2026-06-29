@@ -682,9 +682,11 @@ export class DotFileFieldComponent
         const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
 
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
-            header,
+            // The editor renders its own header (title + full-screen toggle + close ✕),
+            // so hide PrimeNG's chrome header to avoid a duplicate and to host the
+            // full-screen control next to the close button.
+            showHeader: false,
             appendTo: 'body',
-            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -692,8 +694,12 @@ export class DotFileFieldComponent
             resizable: false,
             modal: true,
             width: '90%',
-            style: { 'max-width': '1040px' },
+            height: '90%',
+            // The editor owns its header/footer bars (with their own padding and
+            // dividers), so strip the dialog content padding and let it fill the height.
+            contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             data: {
+                header,
                 uploadedFile: this.store.uploadedFile(),
                 allowFileNameEdit: true,
                 uploadType: this.store.uploadType(),

@@ -93,17 +93,6 @@
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
-
-        <p-button
-            (click)="confirmRemove($event)"
-            [disabled]="$disabled()"
-            [pTooltip]="'dot.common.remove' | dm"
-            [attr.aria-label]="'dot.common.remove' | dm"
-            tooltipPosition="left"
-            severity="danger"
-            styleClass="p-button-rounded p-button-sm p-button-outlined"
-            data-testId="remove-button"
-            icon="pi pi-trash" />
     </div>
     <!-- Actions in small screens -->
     <div class="dot-file-field-preview__actions--responsive">
@@ -137,6 +126,21 @@
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
+    </div>
+    <!-- Remove action: always anchored bottom-right. Two style variants like the
+         other actions — outlined on wide containers, tertiary (filled) on narrow ones. -->
+    <div class="dot-file-field-preview__remove">
+        <p-button
+            (click)="confirmRemove($event)"
+            [disabled]="$disabled()"
+            [pTooltip]="'dot.common.remove' | dm"
+            [attr.aria-label]="'dot.common.remove' | dm"
+            tooltipPosition="left"
+            severity="danger"
+            styleClass="p-button-rounded p-button-sm p-button-outlined"
+            class="dot-file-field-preview__remove-wide"
+            data-testId="remove-button"
+            icon="pi pi-trash" />
         <p-button
             (click)="confirmRemove($event)"
             [disabled]="$disabled()"
@@ -144,6 +148,7 @@
             [attr.aria-label]="'dot.common.remove' | dm"
             severity="danger"
             styleClass="p-button-rounded p-button-sm p-button-tertiary"
+            class="dot-file-field-preview__remove-narrow"
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>

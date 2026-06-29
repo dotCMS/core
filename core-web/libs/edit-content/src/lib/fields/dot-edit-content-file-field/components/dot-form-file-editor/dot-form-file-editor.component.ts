@@ -1,19 +1,24 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
+import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     inject,
     OnInit,
+    signal,
     untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
@@ -21,15 +26,34 @@ import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
+import { dotVelocityLanguageDefinition } from '../../../../custom-languages/velocity-monaco-language';
+import { AvailableLanguageMonaco } from '../../../../models/dot-edit-content-field.constant';
 import { UPLOAD_TYPE, UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
+    header?: string;
     allowFileNameEdit: boolean;
     userMonacoOptions: Partial<MonacoEditorConstructionOptions>;
     uploadedFile: UploadedFile | null;
     uploadType?: UPLOAD_TYPE;
     acceptedFiles?: string[];
 };
+
+/**
+ * Inline `.p-dialog` style props applied when the editor goes full-screen and
+ * restored on exit. Overrides PrimeNG's `DynamicDialog` size (set inline via
+ * `[ngStyle]`), so it must be applied as inline styles to win.
+ */
+const FULLSCREEN_DIALOG_STYLE: Record<string, string> = {
+    width: '100vw',
+    height: '100vh',
+    maxWidth: '100vw',
+    maxHeight: '100vh',
+    borderRadius: '0'
+};
+
+/** Eased transition so the dialog grows/shrinks smoothly instead of snapping. */
+const DIALOG_SIZE_TRANSITION = 'width 250ms ease, height 250ms ease, border-radius 250ms ease';
 
 @Component({
     selector: 'dot-form-file-editor',
@@ -39,7 +63,8 @@ type DialogProps = {
         DotFieldValidationMessageComponent,
         ButtonModule,
         InputTextModule,
-        MonacoEditorModule
+        MonacoEditorModule,
+        TooltipModule
     ],
     templateUrl: './dot-form-file-editor.component.html',
     styleUrl: './dot-form-file-editor.component.scss',
@@ -70,6 +95,27 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogProps>);
 
+    readonly #document = inject(DOCUMENT);
+
+    // The PrimeNG dialog hosting this editor: injectable because the dialog content
+    // is declared inside `<p-dialog>` in DynamicDialog's template, so we sit in the
+    // Dialog's element injector. Its `container()` signal is the `.p-dialog` element.
+    readonly #dialog = inject(Dialog, { optional: true });
+
+    /** Windowed inline dialog styles saved on entering full-screen, restored on exit. */
+    #windowedStyle: Record<string, string> | null = null;
+
+    /** Dialog title, shown in the editor's own header (PrimeNG chrome header is hidden). */
+    readonly $header = signal('');
+
+    /** Whether the dialog is expanded to fill the viewport. */
+    readonly $isFullscreen = signal(false);
+
+    /** Material Symbol ligature for the full-screen toggle, by current state. */
+    readonly $fullscreenIcon = computed(() =>
+        this.$isFullscreen() ? 'close_fullscreen' : 'open_in_full'
+    );
+
     /**
      * Form group for the file editor component.
      *
@@ -93,6 +139,10 @@ export class DotFormFileEditorComponent implements OnInit {
     #editorRef: monaco.editor.IStandaloneCodeEditor | null = null;
 
     constructor() {
+        // The editor owns its dialog, so it owns full-screen too: resize the host
+        // `.p-dialog` to fill the viewport whenever `$isFullscreen` flips.
+        effect(() => this.#applyFullscreen(this.$isFullscreen()));
+
         effect(() => {
             const isUploading = this.store.isUploading();
 
@@ -149,8 +199,16 @@ export class DotFormFileEditorComponent implements OnInit {
             return;
         }
 
-        const { uploadedFile, userMonacoOptions, allowFileNameEdit, uploadType, acceptedFiles } =
-            data;
+        const {
+            header,
+            uploadedFile,
+            userMonacoOptions,
+            allowFileNameEdit,
+            uploadType,
+            acceptedFiles
+        } = data;
+
+        this.$header.set(header ?? '');
 
         if (uploadedFile) {
             this.#initValuesForm(uploadedFile);
@@ -266,7 +324,97 @@ export class DotFormFileEditorComponent implements OnInit {
         this.#dialogRef.close();
     }
 
+    /** Toggles the editor dialog between its windowed size and full-screen. */
+    toggleFullscreen(): void {
+        this.$isFullscreen.update((on) => !on);
+    }
+
+    /**
+     * Expands the host dialog to the viewport (or restores it). `DialogService`
+     * sets the dialog width/height as inline styles, so we override those inline
+     * styles directly — a stylesheet rule can't win against inline without
+     * `!important` — and restore the saved values on exit.
+     */
+    #applyFullscreen(on: boolean): void {
+        const dialog = this.#dialog?.container() as HTMLElement | undefined;
+
+        if (!dialog) {
+            return;
+        }
+
+        // Set the size transition (idempotent) before any toggle, honouring
+        // reduced-motion. It lands on the first (windowed) effect run, so the
+        // first real toggle already animates.
+        dialog.style.transition = this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION;
+
+        if (on) {
+            this.#windowedStyle ??= Object.fromEntries(
+                Object.keys(FULLSCREEN_DIALOG_STYLE).map((prop) => [prop, dialog.style[prop]])
+            );
+            Object.assign(dialog.style, FULLSCREEN_DIALOG_STYLE);
+        } else if (this.#windowedStyle) {
+            Object.assign(dialog.style, this.#windowedStyle);
+            this.#windowedStyle = null;
+        }
+    }
+
+    /** Whether the user has requested reduced motion (skips the resize animation). */
+    #prefersReducedMotion(): boolean {
+        return (
+            this.#document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ??
+            false
+        );
+    }
+
     onEditorInit(editor: monaco.editor.IStandaloneCodeEditor) {
         this.#editorRef = editor;
+
+        // Monaco is now loaded. Register the custom Velocity language so .vtl files get
+        // proper highlighting (its Monarch tokens — keyword.velocity, variable.velocity,
+        // … — are coloured by the default `vs` theme).
+        this.#registerVelocityLanguage();
+
+        // initLoad ran in ngOnInit before Monaco's language registry existed, so the
+        // detected language fell back to 'text'. Re-detect it (also fixes the upload
+        // mime type)...
+        this.store.refreshLanguage();
+
+        // ...and apply it straight to the model so syntax highlighting kicks in.
+        // Setting it directly is more reliable than waiting for the [options] binding
+        // to flow the change through ngx-monaco-editor's ngOnChanges.
+        const model = editor.getModel();
+
+        if (model && typeof monaco !== 'undefined') {
+            monaco.editor.setModelLanguage(model, this.store.file().language);
+        }
+    }
+
+    /**
+     * Registers the custom Velocity Monarch language with Monaco, once. Mirrors
+     * `DotEditContentMonacoEditorControlComponent` so .vtl files highlight the same
+     * way here. Idempotent: skips registration when another editor already added it.
+     */
+    #registerVelocityLanguage(): void {
+        if (typeof monaco === 'undefined') {
+            return;
+        }
+
+        const alreadyRegistered = monaco.languages
+            .getLanguages()
+            .some((lang) => lang.id === AvailableLanguageMonaco.Velocity);
+
+        if (alreadyRegistered) {
+            return;
+        }
+
+        monaco.languages.register({
+            id: AvailableLanguageMonaco.Velocity,
+            extensions: ['.vtl'],
+            mimetypes: ['text/x-velocity']
+        });
+        monaco.languages.setMonarchTokensProvider(
+            AvailableLanguageMonaco.Velocity,
+            dotVelocityLanguageDefinition
+        );
     }
 }
