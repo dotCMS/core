@@ -430,15 +430,16 @@ export class DotContentDriveShellComponent implements OnInit {
         const files = input.files;
         const selection = this.$activeSelection();
 
-        // Always reset so a cancelled/re-opened picker can't reuse a stale selection.
-        this.$activeSelection.set(undefined);
-        input.value = '';
-
-        if (!files || files.length === 0 || !selection) {
-            return;
+        // Consume the files BEFORE resetting the input: `input.files` is a live FileList, so
+        // `input.value = ''` empties it. Resetting first would drop the selection and the upload
+        // would never fire (the file is captured synchronously into FormData by resolveFilesUpload).
+        if (files && files.length > 0 && selection) {
+            this.resolveFilesUpload({ ...selection, files });
         }
 
-        this.resolveFilesUpload({ ...selection, files });
+        // Reset so a cancelled/re-opened picker can't reuse a stale selection.
+        this.$activeSelection.set(undefined);
+        input.value = '';
     }
 
     /**
