@@ -21,6 +21,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotFieldService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -50,7 +51,6 @@ import { DotActionButtonComponent } from '../../../../../../view/components/_com
 import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
 import { DotEditFieldDialogResult } from '../dot-edit-field-dialog';
 import { FieldPropertyService } from '../service/field-properties.service';
-import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
@@ -209,7 +209,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 },
                 LoginService,
                 DotFormatDateService,
-                FieldService,
+                DotFieldService,
                 FieldPropertyService,
                 DragulaService,
                 DotEventsService,
@@ -542,7 +542,7 @@ describe('Load fields and drag and drop', () => {
                 DragulaService,
                 FieldPropertyService,
                 {
-                    provide: FieldService,
+                    provide: DotFieldService,
                     useValue: {
                         loadFieldTypes() {
                             return of([

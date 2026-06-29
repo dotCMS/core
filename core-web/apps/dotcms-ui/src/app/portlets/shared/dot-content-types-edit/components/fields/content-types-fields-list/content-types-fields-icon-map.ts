@@ -32,3 +32,11 @@ export const FIELD_ICONS = {
     'com.dotcms.contenttype.model.field.ImmutableJSONField': 'data_object',
     [COLUMN_BREAK.clazz]: 'view_column'
 };
+
+/**
+ * Get the field icon by the field's class.
+ *
+ * @param {string} fieldClazz
+ * @returns {string}
+ */
+export const getFieldIcon = (fieldClazz: string): string => FIELD_ICONS[fieldClazz];

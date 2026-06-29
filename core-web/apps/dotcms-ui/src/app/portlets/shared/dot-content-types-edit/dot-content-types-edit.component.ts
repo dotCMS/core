@@ -13,6 +13,7 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotFieldService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotRouterService
@@ -26,9 +27,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
-import { FieldService } from './components/fields/service';
 import { ContentTypesFormComponent } from './components/form';
 
 /**
@@ -49,11 +48,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private dotEventsService = inject(DotEventsService);
     private dotRouterService = inject(DotRouterService);
-    private fieldService = inject(FieldService);
+    private fieldService = inject(DotFieldService);
     private route = inject(ActivatedRoute);
     private dotMessageService = inject(DotMessageService);
     router = inject(Router);
-    private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
     readonly #globalStore = inject(GlobalStore);
 
     readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
@@ -85,7 +83,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             .subscribe((contentType: DotCMSContentType) => {
                 const isFirstLoad = !this.data;
                 this.data = contentType;
-                this.dotEditContentTypeCacheService.set(contentType);
                 this.layout = contentType.layout;
                 if (isFirstLoad) {
                     this.checkAndOpenFormDialog();

@@ -21,6 +21,7 @@ import {
     DotContentTypesInfoService,
     DotCrudService,
     DotEventsService,
+    DotFieldService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
@@ -49,7 +50,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
@@ -187,7 +187,7 @@ describe('DotContentTypesEditComponent', () => {
                 DotHttpErrorManagerService,
                 DotMenuService,
                 DotEventsService,
-                FieldService,
+                DotFieldService,
                 Location,
                 { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
@@ -498,7 +498,7 @@ describe('DotContentTypesEditComponent', () => {
     };
 
     describe('edit mode', () => {
-        let fieldService: FieldService;
+        let fieldService: DotFieldService;
         let queryParams: Subject<any>;
 
         beforeEach(waitForAsync(() => {
@@ -532,7 +532,7 @@ describe('DotContentTypesEditComponent', () => {
                     DotHttpErrorManagerService,
                     DotMenuService,
                     DotEventsService,
-                    FieldService,
+                    DotFieldService,
                     Location
                 ]
             });
@@ -541,7 +541,7 @@ describe('DotContentTypesEditComponent', () => {
             comp = fixture.componentInstance;
             de = fixture.debugElement;
 
-            fieldService = de.injector.get(FieldService);
+            fieldService = de.injector.get(DotFieldService);
             crudService = fixture.debugElement.injector.get(DotCrudService);
             location = fixture.debugElement.injector.get(Location);
             dotRouterService = fixture.debugElement.injector.get(DotRouterService);
@@ -565,12 +565,9 @@ describe('DotContentTypesEditComponent', () => {
             expect(dropZone.componentInstance.contentType.name).toBe('name');
         });
 
-        it('should set data, fields and  cache', () => {
+        it('should set data and fields', () => {
             expect(comp.data).toBe(fakeContentType);
             expect(comp.layout).toBe(fakeContentType.layout);
-
-            const dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-            expect(dotEditContentTypeCacheService.get()).toEqual(fakeContentType);
         });
 
         it('should have dot-content-type-layout', () => {

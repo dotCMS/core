@@ -4,7 +4,7 @@ import { ValidationErrors } from '@angular/forms';
 
 import { map } from 'rxjs/operators';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotFieldService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
@@ -17,7 +17,6 @@ import {
 
 import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { PROPERTY_INFO } from './field-property-info';
-import { FieldService } from './field.service';
 
 import { FieldType } from '../models';
 
@@ -53,11 +52,11 @@ export class FieldPropertyService {
     );
 
     /**
-     * Initializes the service by loading field types from FieldService
+     * Initializes the service by loading field types from DotFieldService
      * and populating the fieldTypes map with enhanced properties for custom fields
      */
     constructor() {
-        const fieldService = inject(FieldService);
+        const fieldService = inject(DotFieldService);
 
         fieldService.loadFieldTypes().subscribe((fieldTypes) => {
             fieldTypes

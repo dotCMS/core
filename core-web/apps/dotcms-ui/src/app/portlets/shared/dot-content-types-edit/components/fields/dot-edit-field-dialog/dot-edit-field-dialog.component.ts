@@ -12,6 +12,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
+import { DotEditContentTypeCacheService } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { FieldType } from '../models';
 
 /** Data passed to the dialog when it is opened via `DialogService.open`. */
@@ -38,7 +39,10 @@ export type DotEditFieldDialogResult =
 @Component({
     selector: 'dot-edit-field-dialog',
     templateUrl: './dot-edit-field-dialog.component.html',
-    standalone: false
+    standalone: false,
+    // Scope the cache to this dialog instance so the nested relationships editor reads
+    // the content type being edited here, instead of sharing an app-wide singleton.
+    providers: [DotEditContentTypeCacheService]
 })
 export class DotEditFieldDialogComponent {
     private readonly config =
@@ -46,6 +50,7 @@ export class DotEditFieldDialogComponent {
     private readonly ref = inject(DynamicDialogRef);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly rendered = inject(Renderer2);
+    private readonly contentTypeCache = inject(DotEditContentTypeCacheService);
 
     /** Tab index for the Overview (field properties) tab. */
     readonly OVERVIEW_TAB_INDEX = 0;
@@ -61,6 +66,12 @@ export class DotEditFieldDialogComponent {
     readonly currentField = this.data.currentField;
     readonly currentFieldType = this.data.currentFieldType;
     readonly contentType = this.data.contentType;
+
+    constructor() {
+        // Seed the dialog-scoped cache so the nested relationships editor can read the
+        // content type id without relying on an app-wide singleton.
+        this.contentTypeCache.set(this.contentType);
+    }
 
     activeTab = 0;
     hideButtons = false;

@@ -1,6 +1,7 @@
 import { Component, input, output, Renderer2 } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -244,8 +245,9 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should disable the variables tab when there is no field id', () => {
-            const variablesTabDisabled = !comp.currentField?.id;
-            expect(variablesTabDisabled).toBe(true);
+            const tabs = fixture.debugElement.queryAll(By.css('p-tab'));
+            const variablesTab = tabs[tabs.length - 1].nativeElement;
+            expect(variablesTab.getAttribute('aria-disabled')).toBe('true');
         });
 
         it('should call ref.close with saved result onPropertiesSaved', () => {
@@ -293,8 +295,9 @@ describe('DotEditFieldDialogComponent', () => {
         });
 
         it('should NOT disable the variables tab when there is a field id', () => {
-            const variablesTabDisabled = !comp.currentField?.id;
-            expect(variablesTabDisabled).toBe(false);
+            const tabs = fixture.debugElement.queryAll(By.css('p-tab'));
+            const variablesTab = tabs[tabs.length - 1].nativeElement;
+            expect(variablesTab.getAttribute('aria-disabled')).toBe('false');
         });
 
         it('should report isFieldWithSettings true and variablesTabIndex 2 for block editor with id', () => {
