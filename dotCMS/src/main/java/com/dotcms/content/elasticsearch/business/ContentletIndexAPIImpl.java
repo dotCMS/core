@@ -655,15 +655,33 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Create an index exclusively in one of the SE Providers.
      *
      * <p><b>Idempotent bootstrap.</b> If the physical index already exists in the target
-     * cluster it is reused instead of issuing a create. This guards against an orphaned
-     * cluster index — present in the cluster but missing from the index store — left behind
-     * when a previous bootstrap created the index but never committed its store pointer
-     * (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted startup).
-     * Without this guard the restart re-derives the same logical name, the create fails with
-     * {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts — leaving
-     * the instance half-initialised. The custom mapping is (re)applied either way
-     * ({@code putMapping} is additive/idempotent), so a previously unmapped orphan is repaired,
-     * and the caller's {@code point()} re-registers the index in the store.</p>
+     * cluster it is an <em>orphan</em> — present in the cluster but missing from the index
+     * store — left behind when a previous bootstrap created the index but never committed its
+     * store pointer (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted
+     * startup). Without handling this, the restart re-derives the same logical name, the create
+     * fails with {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts —
+     * leaving the instance half-initialised.</p>
+     *
+     * <p>The orphan is handled by document count, so a populated index is never discarded:</p>
+     * <ul>
+     *   <li><b>Empty orphan (0 docs)</b> — deleted and recreated from scratch. In-place reuse
+     *       cannot fully repair a bare orphan: the content mapping references a custom analyzer
+     *       ({@code my_analyzer}) defined in the provider settings file, and analyzers are
+     *       <em>static</em> index settings that can only be applied at creation time — so a
+     *       {@code putMapping}-only re-assert against a bare orphan fails with {@code HTTP 400}
+     *       (analyzer not found) and leaves the index half-mapped (issue #36237, QA TC-003). An
+     *       empty index has no data and no reindex progress, so recreating it costs nothing
+     *       operationally and yields a clean index with full settings + base mapping.</li>
+     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, untouched.
+     *       A populated orphan was created by dotCMS itself, so it already carries the full
+     *       settings + base mapping + custom mapping; nothing needs to be (re)applied. The index is
+     *       never deleted here: discarding it would throw away its contents (including partial
+     *       reindex progress) and force a full reindex, which can run for hours and degrade search
+     *       consistency — not justified to clean up an orphan. On any uncertainty (the count probe
+     *       fails) we err toward reuse for the same reason.</li>
+     * </ul>
+     *
+     * <p>The caller's {@code point()} then registers the index in the store.</p>
      *
      * @param indexName logical index name (no cluster prefix, no vendor tag)
      * @param shards    number of shards to create with (ignored when the index already exists)
@@ -714,11 +732,45 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         + e.getMessage(), e))
                 .getOrElse(false);
         if (alreadyExists) {
+            // Orphan: exists in cluster, missing from store (see method javadoc). Decide by doc
+            // count so a populated index — including partial reindex progress — is never discarded.
+            // The count probe is best-effort: any failure is treated as "has data" (-1) so we err
+            // toward reuse and never delete on uncertainty.
+            final long docCount = Try.of(() -> ops.getIndexDocumentCount(physicalName))
+                    .onFailure(e -> Logger.warn(this,
+                            "Orphan doc-count probe failed for " + physicalName
+                            + " — treating as populated and reusing in place: "
+                            + e.getMessage(), e))
+                    .getOrElse(-1L);
+
+            if (docCount != 0L) {
+                // Populated (or unknown): reuse in place, untouched. A dotCMS-created index already
+                // carries the full settings + base mapping + custom mapping, so nothing needs to be
+                // (re)applied. Deleting it would force a full reindex (hours, degraded search) —
+                // not justified to clean up an orphan.
+                Logger.info(this, String.format(
+                        "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
+                        + " (not deleting, not remapping): %s",
+                        tag, docCount < 0 ? "an unknown number of" : docCount, physicalName));
+                return true;
+            }
+
+            // Empty orphan: delete so the create below rebuilds a clean index with full settings +
+            // base mapping. An empty index has no data and no reindex progress, so this is safe and
+            // costs nothing operationally (issue #36237 — repairs a bare orphan that reuse cannot).
             Logger.info(this, String.format(
-                    "Bootstrap: %s index already exists, reusing and re-asserting mapping: %s",
+                    "Bootstrap: empty orphaned %s index found (in cluster, missing from store);"
+                    + " deleting and recreating with full settings + mapping: %s",
                     tag, physicalName));
-            helper.addCustomMapping(List.of(indexName), tag);
-            return true;
+            final boolean deleted = Try.of(() -> providerApi.delete(physicalName))
+                    .onFailure(e -> Logger.warn(this,
+                            "Failed to delete empty orphaned index " + physicalName
+                            + " before recreate; attempting create anyway: " + e.getMessage(), e))
+                    .getOrElse(false);
+            if (!deleted) {
+                Logger.warn(this, "Empty orphaned index " + physicalName
+                        + " was not acknowledged as deleted; the create below may fail.");
+            }
         }
 
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
