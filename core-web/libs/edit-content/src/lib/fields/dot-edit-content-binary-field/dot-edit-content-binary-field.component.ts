@@ -60,7 +60,7 @@ import { BinaryFieldMode, BinaryFieldStatus } from './interfaces';
 import { DotBinaryFieldEditImageService } from './service/dot-binary-field-edit-image/dot-binary-field-edit-image.service';
 import { DotBinaryFieldValidatorService } from './service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { DotBinaryFieldStore } from './store/binary-field.store';
-import { getFileMetadata, getUiMessage } from './utils/binary-field-utils';
+import { getFileMetadata, getUiMessage, parseFocalPoint } from './utils/binary-field-utils';
 
 import { DEFAULT_MONACO_CONFIG } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
@@ -426,6 +426,12 @@ export class DotEditContentBinaryFieldComponent
             : null;
         const fieldName = this.$field()?.name;
         const variable = this.variable;
+        // Seed the editor with the asset's stored focal point (exposed on the binary
+        // field metadata as a `"x,y"` string) so reopening restores the marker instead
+        // of resetting it to centre.
+        const focalPoint = parseFocalPoint(
+            (metadata as { focalPoint?: string } | null)?.focalPoint
+        );
 
         // The launcher contract requires a resolved field/variable; the image-editor lib
         // treats them as guaranteed strings. Bail (rather than leak `undefined`) if the
@@ -444,7 +450,8 @@ export class DotEditContentBinaryFieldComponent
                 fieldName,
                 byInode: !!inode,
                 fileName: this.contentlet?.fileName ?? metadata?.name,
-                mimeType: metadata?.contentType
+                mimeType: metadata?.contentType,
+                focalPoint
             })
             .pipe(
                 filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),

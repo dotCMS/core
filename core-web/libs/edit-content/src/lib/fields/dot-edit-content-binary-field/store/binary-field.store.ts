@@ -212,7 +212,10 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     private handleTempFile(tempFile: DotCMSTempFile): Observable<DotCMSTempFile> {
         const { referenceUrl, metadata } = tempFile;
-        const { editableAsText = false } = metadata;
+        // Temp files minted by the image editor save (`_imageToolSaveFile`) come back with
+        // `metadata: null` (the servlet builds the metadata from the empty temp before copying
+        // the filtered bytes), so guard the destructure — `= false` only defaults `undefined`.
+        const { editableAsText = false } = metadata ?? {};
 
         const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
 

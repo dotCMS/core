@@ -270,6 +270,26 @@ describe('DotBinaryFieldStore', () => {
                     done();
                 });
             });
+
+            it('should handle a temp file with null metadata (image-editor save) without throwing', (done) => {
+                // Temp files minted by the image-editor save (`_imageToolSaveFile`) come back
+                // with `metadata: null`; the store must stage them instead of crashing.
+                store.setFileFromTemp({
+                    ...TEMP_FILE_MOCK,
+                    metadata: null
+                });
+
+                store.state$.subscribe((state) => {
+                    httpMock.expectNone(TEMP_FILE_MOCK.referenceUrl, HttpMethod.GET);
+                    expect(state.status).toBe(BinaryFieldStatus.PREVIEW);
+                    expect(state.tempFile).toEqual({
+                        ...TEMP_FILE_MOCK,
+                        metadata: null,
+                        content: ''
+                    });
+                    done();
+                });
+            });
         });
     });
 });
