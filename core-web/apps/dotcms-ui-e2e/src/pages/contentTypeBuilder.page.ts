@@ -1,4 +1,5 @@
 import { expect, Locator, Page } from '@playwright/test';
+import { DotCMSClazzes } from '@utils/dot-clazzes';
 
 import { FieldsTypes, SiteorHostField, TextField } from '@models/newContentType.model';
 
@@ -11,12 +12,6 @@ import { FieldsTypes, SiteorHostField, TextField } from '@models/newContentType.
  * verification used to guard the `DotFieldService` (`saveFields`/`updateField`) flow.
  */
 export class ContentTypeBuilderPage {
-    private static readonly FIELD_CLAZZ = {
-        text: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        siteOrFolder: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
-        relationship: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField'
-    } as const;
-
     constructor(private page: Page) {}
 
     /** A placed field card inside the drop zone, located by its display name. */
@@ -31,10 +26,7 @@ export class ContentTypeBuilderPage {
     async goToBuilder(contentTypeId: string) {
         await this.page.goto(`/dotAdmin/#/content-types-angular/edit/${contentTypeId}`);
         await this.page.getByTestId('fields-bag-0').first().waitFor({ state: 'visible' });
-        await this.page
-            .getByTestId(ContentTypeBuilderPage.FIELD_CLAZZ.text)
-            .first()
-            .waitFor({ state: 'visible' });
+        await this.page.getByTestId(DotCMSClazzes.TEXT).first().waitFor({ state: 'visible' });
     }
 
     /** Add a field through the builder UI (drag from the palette, then fill the dialog). */
@@ -52,12 +44,12 @@ export class ContentTypeBuilderPage {
     }
 
     async addTextField(field: TextField) {
-        await this.dragFieldToZone(ContentTypeBuilderPage.FIELD_CLAZZ.text);
+        await this.dragFieldToZone(DotCMSClazzes.TEXT);
         await this.fillFieldDialogAndSave(field.title);
     }
 
     async addSiteOrFolderField(field: SiteorHostField) {
-        await this.dragFieldToZone(ContentTypeBuilderPage.FIELD_CLAZZ.siteOrFolder);
+        await this.dragFieldToZone(DotCMSClazzes.HOST_FOLDER);
         await this.fillFieldDialogAndSave(field.title);
     }
 
