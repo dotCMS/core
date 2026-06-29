@@ -18757,7 +18757,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -18895,7 +18895,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -18987,7 +18987,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -19086,7 +19086,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -19519,7 +19519,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -19625,7 +19625,7 @@ paths:
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
 
-        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Example: `"body": "## Intro\n\nHello **world**."`.
+        **Block Editor (Story Block) fields:** send the value as a **Markdown** string — you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads back as structured content with no editor round-trip required. A value that is already a valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended for plain content: if the field already holds rich blocks that Markdown cannot represent (embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. Example: `"body": "## Intro\n\nHello **world**."`.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-

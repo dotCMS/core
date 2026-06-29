@@ -295,16 +295,19 @@ public class MapToContentletPopulator  {
             return value;
         }
 
-        // Markdown cannot represent rich blocks (embedded contentlets, video, layout grids).
-        // Refuse to overwrite a stored document that contains any of them rather than silently
-        // dropping content; such updates must send a full Tiptap JSON document.
+        // Markdown cannot represent rich blocks (embedded contentlets, video, layout grids). Per the
+        // documented contract (see the fire endpoints' Block Editor note), Markdown is for plain
+        // content only and must not be used to modify a field that already holds such blocks. If that
+        // is attempted, keep the existing document untouched and log a warning — neither destroying
+        // the rich content nor failing the save. (Markdown -> rich merge is planned as a follow-up.)
         final String existing = contentlet.getStringProperty(field.getVelocityVarName());
         if (TiptapMarkdown.isTiptapDoc(existing) && !TiptapMarkdown.isMarkdownRepresentable(existing)) {
-            throw new IllegalArgumentException(String.format(
-                    "Story Block field [%s] contains rich content (e.g. embedded contentlets, "
-                            + "video or layout blocks) that Markdown cannot represent. Send a full "
-                            + "Tiptap/ProseMirror JSON document to update this field.",
+            Logger.warn(this, String.format(
+                    "Story Block field [%s] holds rich content that Markdown cannot represent; "
+                            + "ignoring the Markdown value and keeping the existing document. Send a "
+                            + "full Tiptap/ProseMirror JSON document to modify this field.",
                     field.getVelocityVarName()));
+            return existing;
         }
 
         try {

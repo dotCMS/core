@@ -3,7 +3,6 @@ package com.dotcms.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
@@ -154,23 +153,23 @@ public class StoryBlockMarkdownPopulatorTest extends IntegrationTestBase {
         assertFalse("Old content replaced", stored.contains("old"));
     }
 
-    /** Markdown must NOT clobber a document containing rich blocks; the existing doc is preserved. */
+    /**
+     * Markdown must NOT clobber a document containing rich blocks. Per the documented contract,
+     * Markdown is for plain content only; an attempt to overwrite rich content with Markdown is
+     * ignored (the existing document is preserved) and the save is not interrupted.
+     */
     @Test
-    public void markdown_overwrite_of_rich_content_is_rejected() {
+    public void markdown_overwrite_of_rich_content_is_ignored() {
         final String richDoc = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotContent\","
                 + "\"attrs\":{\"data\":{\"title\":\"Embedded\"}}}]}";
         final Contentlet contentlet = newContentlet();
         contentlet.setProperty(STORY_BLOCK_VAR, richDoc);
 
-        try {
-            new MapToContentletPopulator().populate(contentlet, propsWith("# Trying to overwrite"));
-            fail("Expected an IllegalArgumentException rejecting the Markdown overwrite");
-        } catch (final IllegalArgumentException e) {
-            assertTrue("Message should explain the rejection: " + e.getMessage(),
-                    e.getMessage() != null && e.getMessage().contains("rich content"));
-        }
+        final Contentlet result = new MapToContentletPopulator()
+                .populate(contentlet, propsWith("# Trying to overwrite"));
 
-        assertEquals("Existing rich document must be untouched", richDoc,
-                contentlet.getStringProperty(STORY_BLOCK_VAR));
+        final String stored = result.getStringProperty(STORY_BLOCK_VAR);
+        assertEquals("Existing rich document must be preserved untouched", richDoc, stored);
+        assertFalse("Markdown overwrite must be ignored", stored.contains("Trying to overwrite"));
     }
 }
