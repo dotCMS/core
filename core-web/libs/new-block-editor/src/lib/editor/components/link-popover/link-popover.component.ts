@@ -150,6 +150,17 @@ export class LinkPopoverComponent {
     );
 
     /**
+     * True when there's an existing link to remove — drives the trash (Remove link) button.
+     * For images: the node already has an `href`. For text: the popover was opened on a real
+     * anchor (`linkEl` set), not while creating a new link over plain selected text.
+     */
+    protected readonly canRemoveLink = computed(() => {
+        const payload = this.manager.linkPayload();
+        if (!payload) return false;
+        return payload.isImageLink ? !!payload.initialValues?.href : !!payload.linkEl;
+    });
+
+    /**
      * Tracks whether the Advanced (Title / Aria Label / Rel) section is visible.
      * Auto-expands when an existing link's payload carries any of those values, so the
      * user immediately sees what they've set without an extra click.
@@ -429,12 +440,40 @@ export class LinkPopoverComponent {
         this.manager.close();
     }
 
-    /** Clears the link on the selected image node (image-link edit mode only). */
-    protected onRemoveImageLink(): void {
-        this.editor()
+    /**
+     * Removes the existing link. For an image, clears the node's `href`/`target`; for text,
+     * unsets the `link` mark over its full range (anchored at the captured edit position).
+     */
+    protected onRemoveLink(): void {
+        const payload = this.manager.linkPayload();
+        const editor = this.editor();
+
+        if (payload?.isImageLink) {
+            editor
+                .chain()
+                .focus()
+                .updateAttributes(DOT_IMAGE_NODE_NAME, { href: null, target: null })
+                .run();
+            this.manager.close();
+            return;
+        }
+
+        const linkEl = payload?.linkEl;
+        const anchorPos =
+            payload?.anchorPos ??
+            (() => {
+                try {
+                    return linkEl ? editor.view.posAtDOM(linkEl, 0) : editor.state.selection.from;
+                } catch {
+                    return editor.state.selection.from;
+                }
+            })();
+        editor
             .chain()
             .focus()
-            .updateAttributes(DOT_IMAGE_NODE_NAME, { href: null, target: null })
+            .setTextSelection(anchorPos)
+            .extendMarkRange('link')
+            .unsetMark('link')
             .run();
         this.manager.close();
     }

@@ -178,14 +178,14 @@
             }
 
             <div class="flex justify-end gap-2 pt-1">
-                @if (isImageLink() && isEditing()) {
+                @if (canRemoveLink()) {
                     <button
                         type="button"
                         data-testid="link-remove"
                         [attr.aria-label]="'dot.block.editor.dialog.link.remove' | dm"
                         [attr.title]="'dot.block.editor.dialog.link.remove' | dm"
                         (mousedown)="$event.preventDefault()"
-                        (click)="onRemoveImageLink()"
+                        (click)="onRemoveLink()"
                         class="mr-auto flex cursor-pointer items-center rounded-sm p-1.5 text-red-600 hover:bg-red-50 focus:ring-2 focus:ring-red-300 focus:outline-none">
                         <span aria-hidden="true" class="material-symbols-outlined text-xl">
                             delete
