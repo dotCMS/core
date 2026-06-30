@@ -106,6 +106,14 @@ export class DotRelationshipFieldComponent
     #dialogRef: DynamicDialogRef | null = null;
 
     /**
+     * Tracks whether the initial value synchronization has already happened.
+     * Used to avoid marking the control as touched on the first (programmatic)
+     * value sync so a required, empty field does not show its validation error
+     * before the user interacts with it.
+     */
+    #hasSyncedInitialValue = false;
+
+    /**
      * A signal that holds the menu items for the relationship field.
      * These items control the visibility of the existing content dialog and the creation of new content.
      */
@@ -369,7 +377,11 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Updates the value of the field.
+     * Syncs the formatted relationship value to the form control.
+     *
+     * The control is only marked as touched on user-driven changes (second and
+     * subsequent emissions), never on the initial programmatic sync, so a
+     * required, empty field does not display its validation error on first render.
      *
      * @param value - The value to update.
      */
@@ -379,7 +391,15 @@ export class DotRelationshipFieldComponent
         }
 
         this.onChange(value);
-        this.onTouched();
+
+        // Only mark the control as touched on genuine user-driven changes, not on the
+        // initial value sync — otherwise a required, empty field shows its validation
+        // error as soon as the form renders.
+        if (this.#hasSyncedInitialValue) {
+            this.onTouched();
+        } else {
+            this.#hasSyncedInitialValue = true;
+        }
     });
 
     /**

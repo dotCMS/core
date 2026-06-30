@@ -31,12 +31,12 @@
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" class="min-w-32">
+                        <th scope="col" class="w-32 max-w-32 min-w-32">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 max-w-32 min-w-32 text-left!">
+                        <th scope="col" class="w-32 max-w-32 min-w-32 text-right!">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
@@ -133,7 +133,7 @@
                         </td>
                     }
                     @case ('language') {
-                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-32 max-w-32 min-w-32" [class.cursor-not-allowed]="isDisabled">
                             @if (item.language | language; as localeLabel) {
                                 <p-tag
                                     class="whitespace-nowrap"
@@ -145,7 +145,7 @@
                     }
                     @case ('status') {
                         <td
-                            class="w-32 max-w-32 min-w-32 text-left!"
+                            class="w-32 max-w-32 min-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled">
                             <dot-contentlet-status-badge [state]="item" />
                         </td>

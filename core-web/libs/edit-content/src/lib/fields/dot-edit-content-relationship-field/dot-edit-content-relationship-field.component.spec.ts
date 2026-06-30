@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -668,6 +668,47 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 `[data-testid="hint-${HINTED_FIELD_MOCK.variable}"]`
             );
             expect(hintInsideTable).toBeFalsy();
+        });
+    });
+
+    describe('Required-empty field touched state', () => {
+        // Regression: a required, empty relationship field must not mark its control
+        // touched on first render, otherwise the "mandatory" error shows before the
+        // user interacts with the field.
+        it('should not mark the control as touched on init', () => {
+            const requiredField = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'requiredRelationshipField',
+                required: true
+            });
+
+            const control = new FormControl(null, Validators.required);
+            const requiredSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [requiredField.variable]: control
+                        }),
+                        field: requiredField,
+                        contentlet: createFakeContentlet({ [requiredField.variable]: [] })
+                    }
+                }
+            );
+
+            requiredSpectator.detectChanges();
+            requiredSpectator.flushEffects();
+
+            // The control is invalid (required + empty) but must remain untouched,
+            // so BaseWrapperField.$hasError (invalid && touched) stays false on init.
+            expect(control.invalid).toBe(true);
+            expect(control.touched).toBe(false);
         });
     });
 });

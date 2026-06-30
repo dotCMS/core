@@ -138,13 +138,13 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Status column header alignment', () => {
         beforeEach(() => setup());
 
-        it('should left-align the status header so it lines up with the chips', () => {
+        it('should right-align the status header so it lines up with the chips', () => {
             const statusHeader = spectator
                 .queryAll('th')
                 .find((h) => h.textContent.includes('dot.file.relationship.field.table.status'));
             expect(statusHeader).toBeTruthy();
-            expect(statusHeader.className).toContain('text-left!');
-            expect(statusHeader.className).not.toContain('text-right');
+            expect(statusHeader.className).toContain('text-right!');
+            expect(statusHeader.className).not.toContain('text-left');
         });
     });
 
@@ -231,6 +231,38 @@ describe('DotRelationshipFieldComponent', () => {
             expect(spectator.component.registerOnChange).toBeDefined();
             expect(spectator.component.registerOnTouched).toBeDefined();
             expect(spectator.component.setDisabledState).toBeDefined();
+        });
+    });
+
+    describe('Touched state on value sync', () => {
+        // The component constructor performs the initial programmatic value sync
+        // (which must NOT mark the control touched). These tests assert that any
+        // value sync AFTER that initial one — i.e. a genuine user-driven change such
+        // as relating/removing content — does mark the control touched.
+        let onChangeSpy: jest.Mock;
+        let onTouchedSpy: jest.Mock;
+
+        beforeEach(() => {
+            // Empty data so formattedRelationship resolves to '' (the required-empty case).
+            setup({
+                data: jest.fn().mockReturnValue([]),
+                paginatedData: jest.fn().mockReturnValue([]),
+                totalPages: jest.fn().mockReturnValue(0),
+                formattedRelationship: jest.fn().mockReturnValue('')
+            });
+
+            onChangeSpy = jest.fn();
+            onTouchedSpy = jest.fn();
+            spectator.component.registerOnChange(onChangeSpy);
+            spectator.component.registerOnTouched(onTouchedSpy);
+        });
+
+        it('should mark the control touched on a user-driven change after init', () => {
+            spectator.component.updateValueField('id-1');
+            spectator.flushEffects();
+
+            expect(onChangeSpy).toHaveBeenLastCalledWith('id-1');
+            expect(onTouchedSpy).toHaveBeenCalled();
         });
     });
 });
