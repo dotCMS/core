@@ -585,4 +585,89 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             expect(fieldComponent.store.data()).toBeDefined();
         });
     });
+
+    describe('Footer hint rendering', () => {
+        // Uses a dedicated host that does NOT mock the card-field components so
+        // their <ng-content> projects, allowing the footer hint to render for real.
+        const HINTED_FIELD_MOCK = createFakeRelationshipField({
+            relationships: {
+                cardinality: 0,
+                isParentField: true,
+                velocityVar: 'AllTypes'
+            },
+            variable: 'relationshipField',
+            hint: 'This is the relationship hint'
+        });
+
+        const createFooterHost = createHostFactory({
+            component: DotEditContentRelationshipFieldComponent,
+            host: MockFormComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            componentMocks: [PaginationComponent],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                mockProvider(DotMessageService, {
+                    get: jest.fn().mockReturnValue('Mock Message')
+                }),
+                mockProvider(DotContentTypeService, {
+                    getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                }),
+                mockProvider(DotHttpErrorManagerService, {
+                    handle: jest.fn()
+                }),
+                mockProvider(DotCurrentUserService),
+                mockProvider(DotEditContentStore, {
+                    contentType: jest.fn().mockReturnValue(null),
+                    currentLocale: jest.fn().mockReturnValue(null),
+                    isCopyingLocale: jest.fn().mockReturnValue(false)
+                }),
+                mockProvider(DotEditContentService, {
+                    getContentById: jest.fn().mockReturnValue(of({}))
+                }),
+                DialogService
+            ]
+        });
+
+        let footerSpectator: SpectatorHost<
+            DotEditContentRelationshipFieldComponent,
+            MockFormComponent
+        >;
+
+        beforeEach(() => {
+            footerSpectator = createFooterHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [HINTED_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: HINTED_FIELD_MOCK,
+                        contentlet: mockContentlet
+                    }
+                }
+            );
+            footerSpectator.detectChanges();
+            footerSpectator.flushEffects();
+        });
+
+        it('should render the hint inside the card field footer, outside the table', () => {
+            const hintElement = footerSpectator.query(
+                byTestId(`hint-${HINTED_FIELD_MOCK.variable}`)
+            );
+            expect(hintElement).toBeTruthy();
+            expect(hintElement.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
+        });
+
+        it('should not render the hint inside the relationship table', () => {
+            const table = footerSpectator.query(byTestId('relationship-field-table'));
+            const hintInsideTable = table?.querySelector(
+                `[data-testid="hint-${HINTED_FIELD_MOCK.variable}"]`
+            );
+            expect(hintInsideTable).toBeFalsy();
+        });
+    });
 });

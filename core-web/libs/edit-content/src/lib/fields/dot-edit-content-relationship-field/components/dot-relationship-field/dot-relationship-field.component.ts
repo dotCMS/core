@@ -19,6 +19,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule, TableRowReorderEvent } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { filter } from 'rxjs/operators';
 
@@ -41,6 +42,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     selector: 'dot-relationship-field',
     imports: [
         TableModule,
+        TagModule,
         ButtonModule,
         MenuModule,
         DotMessagePipe,
