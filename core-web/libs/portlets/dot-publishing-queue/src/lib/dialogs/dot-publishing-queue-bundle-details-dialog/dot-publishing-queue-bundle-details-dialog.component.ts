@@ -6,7 +6,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
-import { EndpointDetailView } from '@dotcms/dotcms-models';
+import { EndpointDetailView, PublishAuditStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingStatusChipComponent } from '../../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
@@ -26,6 +26,7 @@ export interface EndpointTableRow {
 type MetaKey =
     | 'title'
     | 'status'
+    | 'scheduledFor'
     | 'bundleId'
     | 'bundleStart'
     | 'bundleEnd'
@@ -59,35 +60,51 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
     private readonly publishingService = inject(DotPublishingQueueService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    /** Static list of rows shown in the meta key/value table — the order here
-     * is the order rendered in the dialog. The body template switches on `key`
-     * to pick the right value cell. */
-    readonly metaRows: readonly MetaRow[] = [
-        { key: 'title', label: this.dotMessageService.get('publishing-queue.detail.title') },
-        { key: 'status', label: this.dotMessageService.get('publishing-queue.detail.status') },
-        { key: 'bundleId', label: this.dotMessageService.get('publishing-queue.detail.bundle-id') },
-        {
-            key: 'bundleStart',
-            label: this.dotMessageService.get('publishing-queue.detail.bundle-start')
-        },
-        {
-            key: 'bundleEnd',
-            label: this.dotMessageService.get('publishing-queue.detail.bundle-end')
-        },
-        {
-            key: 'publishStart',
-            label: this.dotMessageService.get('publishing-queue.detail.publish-start')
-        },
-        {
-            key: 'publishEnd',
-            label: this.dotMessageService.get('publishing-queue.detail.publish-end')
-        },
-        { key: 'filter', label: this.dotMessageService.get('publishing-queue.detail.filter') },
-        {
-            key: 'assets',
-            label: this.dotMessageService.get('publishing-queue.detail.total-assets')
-        }
-    ];
+    /** Rows shown in the meta key/value table — the order here is the order
+     * rendered. The body template switches on `key` to pick the right value
+     * cell. Computed because the `scheduledFor` row is only included when the
+     * bundle is in SCHEDULED status (the BE leaves `scheduledPublishDate` null
+     * for every other status, so the row would be a permanent "—" otherwise). */
+    readonly metaRows = computed<readonly MetaRow[]>(() => {
+        const isScheduled = this.store.detail()?.status === PublishAuditStatus.SCHEDULED;
+        return [
+            { key: 'title', label: this.dotMessageService.get('publishing-queue.detail.title') },
+            { key: 'status', label: this.dotMessageService.get('publishing-queue.detail.status') },
+            ...(isScheduled
+                ? [
+                      {
+                          key: 'scheduledFor' as const,
+                          label: this.dotMessageService.get('publishing-queue.detail.scheduled-for')
+                      }
+                  ]
+                : []),
+            {
+                key: 'bundleId',
+                label: this.dotMessageService.get('publishing-queue.detail.bundle-id')
+            },
+            {
+                key: 'bundleStart',
+                label: this.dotMessageService.get('publishing-queue.detail.bundle-start')
+            },
+            {
+                key: 'bundleEnd',
+                label: this.dotMessageService.get('publishing-queue.detail.bundle-end')
+            },
+            {
+                key: 'publishStart',
+                label: this.dotMessageService.get('publishing-queue.detail.publish-start')
+            },
+            {
+                key: 'publishEnd',
+                label: this.dotMessageService.get('publishing-queue.detail.publish-end')
+            },
+            { key: 'filter', label: this.dotMessageService.get('publishing-queue.detail.filter') },
+            {
+                key: 'assets',
+                label: this.dotMessageService.get('publishing-queue.detail.total-assets')
+            }
+        ];
+    });
 
     /** Both download buttons are driven by HEAD probes the store fires on
      * `openDetail` — `true` only after the probe confirms the artifact is

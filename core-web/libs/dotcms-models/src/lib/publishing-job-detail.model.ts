@@ -52,6 +52,8 @@ export interface PublishingJobDetailView {
     environments: EnvironmentDetailView[];
     timestamps: TimestampsView;
     numTries: number;
+    /** Future `publishDate` the bundle was pushed with — set only when status is SCHEDULED. */
+    scheduledPublishDate: string | null;
 }
 
 /** Per-asset result of `DELETE /v1/bundles/{bundleId}/assets`. */

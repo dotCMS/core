@@ -56,7 +56,8 @@ const MOCK_DETAIL: PublishingJobDetailView = {
         createDate: '2026-06-08T10:00:00Z',
         statusUpdated: null
     },
-    numTries: 1
+    numTries: 1,
+    scheduledPublishDate: null
 };
 
 describe('DotPublishingQueueStore', () => {

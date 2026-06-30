@@ -50,6 +50,7 @@ const detailFixture = (
         statusUpdated: '2026-06-08T10:02:00Z'
     },
     numTries: 1,
+    scheduledPublishDate: null,
     ...overrides
 });
 
@@ -267,6 +268,38 @@ describe('DotPublishingQueueBundleDetailsDialogComponent', () => {
             expect(spectator.component.endpointAddress(makeEndpoint({ address: '10.0.0.1' }))).toBe(
                 '10.0.0.1'
             );
+        });
+    });
+
+    describe('scheduledFor meta row', () => {
+        it('renders the row only when the bundle is in SCHEDULED status', () => {
+            detail.set(
+                detailFixture({
+                    status: PublishAuditStatus.SCHEDULED,
+                    scheduledPublishDate: '2026-09-15T14:30:00Z'
+                })
+            );
+            detailStatus.set('loaded');
+            spectator.detectChanges();
+
+            const row = spectator.query('[data-key="scheduledFor"]');
+            expect(row).toBeTruthy();
+            // DatePipe 'medium' format includes year — assert the year survived
+            // rather than the exact locale-formatted output, which depends on TZ.
+            expect(row?.textContent).toContain('2026');
+        });
+
+        it('omits the row for non-SCHEDULED statuses even when scheduledPublishDate is set', () => {
+            detail.set(
+                detailFixture({
+                    status: PublishAuditStatus.SUCCESS,
+                    scheduledPublishDate: '2026-09-15T14:30:00Z'
+                })
+            );
+            detailStatus.set('loaded');
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-key="scheduledFor"]')).toBeFalsy();
         });
     });
 

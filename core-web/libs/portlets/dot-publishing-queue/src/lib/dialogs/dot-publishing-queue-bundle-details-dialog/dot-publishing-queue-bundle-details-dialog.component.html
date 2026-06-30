@@ -5,7 +5,7 @@
         <p-skeleton height="6rem" width="100%" />
     } @else if (store.detail(); as detail) {
         <p-table
-            [value]="metaRows"
+            [value]="metaRows()"
             dataKey="key"
             styleClass="rounded-md border border-surface-200 overflow-hidden text-sm"
             data-testid="pq-detail-meta">
@@ -28,6 +28,9 @@
                             }
                             @case ('status') {
                                 <dot-publishing-status-chip [status]="detail.status" />
+                            }
+                            @case ('scheduledFor') {
+                                {{ (detail.scheduledPublishDate | date: 'medium') || '—' }}
                             }
                             @case ('bundleId') {
                                 <span class="font-mono text-xs break-all">
