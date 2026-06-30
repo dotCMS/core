@@ -155,7 +155,7 @@ public final class TiptapMarkdown {
 
     /**
      * True when every block in the document is Markdown-representable (see
-     * {@link #MARKDOWN_NODE_TYPES}). Used to refuse a Markdown overwrite that would
+     * {@link #MARKDOWN_NODE_TYPES}). Used to detect a Markdown overwrite that would
      * silently destroy rich blocks Markdown cannot express — embedded contentlets
      * ({@code dotContent}), video, layout grids, etc. Marks are intentionally not
      * inspected: an unsupported mark loses styling, not content. A {@code null} or
