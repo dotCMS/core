@@ -442,6 +442,61 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
     });
 
+    describe('Picker presentation (issue #36156)', () => {
+        const buildHost = (fieldType: FIELD_TYPES) => {
+            const field = { ...DATE_FIELD_MOCK, fieldType };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [field.variable]: new FormControl()
+                        }),
+                        field,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+        };
+
+        const FIELD_TYPES_UNDER_TEST = [
+            ['Date', FIELD_TYPES.DATE],
+            ['Date/Time', FIELD_TYPES.DATE_AND_TIME],
+            ['Time', FIELD_TYPES.TIME]
+        ] as const;
+
+        it.each(FIELD_TYPES_UNDER_TEST)(
+            'should keep the %s picker open on selection (closes only on click-outside)',
+            (_label, fieldType) => {
+                buildHost(fieldType);
+
+                const calendar = spectator.query(DatePicker);
+                expect(calendar.hideOnDateTimeSelect).toBe(false);
+            }
+        );
+
+        it.each(FIELD_TYPES_UNDER_TEST)(
+            'should render the %s picker at PrimeNG default width, not full width',
+            (_label, fieldType) => {
+                buildHost(fieldType);
+
+                // No full-width override is applied; PrimeNG default sizing is used.
+                const calendar = spectator.query(DatePicker);
+                expect(calendar.inputStyleClass).toBeFalsy();
+
+                const datepickerEl = spectator.query('p-datepicker');
+                expect(datepickerEl?.classList.contains('w-full')).toBe(false);
+            }
+        );
+    });
+
     describe('Default value handling', () => {
         beforeEach(() => {
             // Mock utility functions
