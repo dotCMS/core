@@ -225,6 +225,22 @@
     display: inline-block;
     max-width: 100%;
     height: auto;
+    /* Align to the top of the line box so the inline-block image carries no baseline
+       descender gap. Without this, wrapping the image in an inline <a> (when a link is
+       added) introduces extra space below it and the layout visibly jumps (#36361). */
+    vertical-align: top;
+    /* Tailwind Typography's `.prose :where(img)` adds `margin: 2em 0`, normally cancelled by
+       its `figure > *` reset. Once the image is wrapped in <a> (linked), it's no longer a direct
+       figure child so that reset stops applying and the 2em margin returns. Zero it explicitly —
+       this selector out-specifies prose's zero-specificity `:where()` rules (#36361). */
+    margin: 0;
+}
+
+/* A linked image is rendered as <figure><a href><img></a></figure>. Keep the anchor a
+   zero-line-height inline-block so it hugs the image and linking doesn't shift layout. */
+:host ::ng-deep .ProseMirror figure a {
+    display: inline-block;
+    line-height: 0;
 }
 
 /* ─── Selected node ring ────────────────────────────────── */

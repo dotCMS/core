@@ -33,6 +33,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../config.utils';
+import { DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
 import { LINK_SELECTION_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
@@ -137,6 +138,15 @@ export class LinkPopoverComponent {
 
     protected readonly isEditing = computed(
         () => this.manager.linkPayload()?.initialValues != null
+    );
+
+    /**
+     * True when the popover targets a selected `dotImage` node. Hides the text-only fields (Text,
+     * Advanced) and routes {@link onInsert} to update the image node's `href`/`target` attributes
+     * instead of inserting a text node with a link mark.
+     */
+    protected readonly isImageLink = computed(
+        () => this.manager.linkPayload()?.isImageLink === true
     );
 
     /**
@@ -274,6 +284,8 @@ export class LinkPopoverComponent {
         effect((onCleanup) => {
             if (!this.manager.isOpen('link')) return;
             if (this.manager.linkPayload()?.linkEl) return;
+            // Image-link mode is a NodeSelection — there is no text range to paint.
+            if (this.manager.linkPayload()?.isImageLink) return;
             const view = this.editor().view;
             view.dispatch(view.state.tr.setMeta(LINK_SELECTION_KEY, { active: true }));
             onCleanup(() =>
@@ -364,6 +376,21 @@ export class LinkPopoverComponent {
             rel: (rel ?? '').trim() || null
         };
 
+        if (payload?.isImageLink) {
+            // Image-link mode — set the link on the selected image node's attributes. The node's
+            // renderHTML/nodeView wrap the <img> in <a href target>, so the image is preserved.
+            editor
+                .chain()
+                .focus()
+                .updateAttributes(DOT_IMAGE_NODE_NAME, {
+                    href,
+                    target: openInNewTab ? '_blank' : null
+                })
+                .run();
+            this.manager.close();
+            return;
+        }
+
         if (payload?.linkEl) {
             // Edit mode — update the link in place using the pre-computed anchor position.
             const linkEl = payload.linkEl;
@@ -399,6 +426,16 @@ export class LinkPopoverComponent {
                 .run();
         }
 
+        this.manager.close();
+    }
+
+    /** Clears the link on the selected image node (image-link edit mode only). */
+    protected onRemoveImageLink(): void {
+        this.editor()
+            .chain()
+            .focus()
+            .updateAttributes(DOT_IMAGE_NODE_NAME, { href: null, target: null })
+            .run();
         this.manager.close();
     }
 }

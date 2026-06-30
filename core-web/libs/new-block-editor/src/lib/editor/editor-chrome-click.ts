@@ -14,6 +14,15 @@ export function handleEditorProseMirrorClick(
     const anchor = (event.target as HTMLElement).closest('a[href]');
     if (!anchor) return;
 
+    // A linked image renders as <a href><img></a>. Clicking it must NOT open the link editor —
+    // the click selects the `dotImage` node (surfacing the image toolbar group), and the link is
+    // edited from the toolbar Link button. Just stop the anchor from navigating. Opening the
+    // text-link editor here would show the wrong fields and, on save, replace the image (#36361).
+    if (anchor.querySelector('img')) {
+        event.preventDefault();
+        return;
+    }
+
     const href = anchor.getAttribute('href') ?? '';
     const displayText = anchor.textContent?.trim() ?? '';
     const target = anchor.getAttribute('target');
