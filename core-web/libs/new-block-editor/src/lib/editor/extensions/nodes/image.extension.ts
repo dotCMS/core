@@ -140,7 +140,9 @@ export const DotImage = Image.extend({
         else if (textAlign) figAttrs['class'] = `image-align-${textAlign}`;
 
         const img = ['img', mergeAttributes(this.options.HTMLAttributes, imgAttrs)];
-        const anchorAttrs: Record<string, string> = { href };
+        // Build conditionally so a null/absent href never serializes as href="null".
+        const anchorAttrs: Record<string, string> = {};
+        if (href) anchorAttrs['href'] = href;
         if (target) anchorAttrs['target'] = target;
         const inner = href ? ['a', anchorAttrs, img] : img;
 
@@ -148,7 +150,7 @@ export const DotImage = Image.extend({
     },
 
     addNodeView() {
-        return ({ node }) => {
+        return ({ node, getPos, editor }) => {
             const figure = document.createElement('figure');
             const img = document.createElement('img');
 
@@ -175,6 +177,17 @@ export const DotImage = Image.extend({
                 if (target) a.setAttribute('target', String(target));
                 a.appendChild(img);
                 figure.appendChild(a);
+
+                // The wrapping <a> makes the browser treat clicks as link interactions, so
+                // ProseMirror won't cleanly node-select the image (it took several clicks to
+                // activate the image + its toolbar options). Select the node ourselves on the
+                // first mousedown and suppress the anchor's default behaviour (#36361).
+                figure.addEventListener('mousedown', (event) => {
+                    event.preventDefault();
+                    if (typeof getPos === 'function') {
+                        editor.commands.setNodeSelection(getPos());
+                    }
+                });
             } else {
                 figure.appendChild(img);
             }
