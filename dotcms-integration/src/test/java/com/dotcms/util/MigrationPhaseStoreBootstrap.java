@@ -102,7 +102,7 @@ public final class MigrationPhaseStoreBootstrap {
             final OSClientProvider provider = CDIUtils.getBeanThrows(OSClientProvider.class);
             final String version = provider.getClient().info().version().number();
             Logger.debug(MigrationPhaseStoreBootstrap.class,
-                    "OpenSearch reachable for migration phase " + phase + " — version " + version);
+                    " OpenSearch reachable for migration phase " + phase + " — version " + version);
         } catch (final Exception e) {
             throw new DotRuntimeException(
                     "OpenSearch service is required for migration phase " + phase

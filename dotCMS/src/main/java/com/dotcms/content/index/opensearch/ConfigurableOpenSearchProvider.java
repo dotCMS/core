@@ -210,7 +210,7 @@ class ConfigurableOpenSearchProvider {
             } catch (MalformedURLException | IllegalArgumentException e) {
                 Logger.error(this.getClass(), "Invalid OS_ENDPOINTS URL: " + endpoint, e);
                 throw new DotRuntimeException("Invalid OS_ENDPOINTS URL: '" + endpoint
-                        + "'. It must be an absolute URL such as https://host:9200. Cause: "
+                        + "'. It must be an absolute URL such as https://hostname:9200. Cause: "
                         + e.getMessage(), e);
             }
         }).toArray(HttpHost[]::new);
