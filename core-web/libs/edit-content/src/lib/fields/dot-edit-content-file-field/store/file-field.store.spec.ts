@@ -96,6 +96,16 @@ describe('FileFieldStore', () => {
         });
     });
 
+    describe('Method: setValue', () => {
+        it('should update the store value without altering preview state', () => {
+            store.setValue('saved-file-id');
+
+            expect(store.value()).toBe('saved-file-id');
+            expect(store.uploadedFile()).toBeNull();
+            expect(store.fileStatus()).toBe('init');
+        });
+    });
+
     describe('Method: removeFile', () => {
         it('should set the state properly when removeFile is called', fakeAsync(() => {
             const mockContentlet = NEW_FILE_MOCK.entity;

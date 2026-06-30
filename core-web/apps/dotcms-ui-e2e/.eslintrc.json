@@ -2,7 +2,12 @@
     "extends": ["plugin:playwright/recommended", "../../.eslintrc.base.json"],
     "ignorePatterns": ["!**/*", "playwright-report/**", "test-results/**", "target/**"],
     "rules": {
-        "playwright/expect-expect": "off"
+        "playwright/expect-expect": "off",
+        "playwright/no-wait-for-timeout": "error",
+        "playwright/no-force-option": "error",
+        "playwright/no-skipped-test": "error",
+        "playwright/no-conditional-in-test": "error",
+        "playwright/prefer-locator": "error"
     },
     "overrides": [
         {

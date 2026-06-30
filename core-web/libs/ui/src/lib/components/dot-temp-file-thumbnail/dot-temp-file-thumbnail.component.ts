@@ -1,5 +1,12 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    Input,
+    OnChanges,
+    OnInit,
+    SimpleChanges
+} from '@angular/core';
 
 import { DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 
@@ -38,7 +45,7 @@ export interface DotThumbnailOptions {
     },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotTempFileThumbnailComponent implements OnInit {
+export class DotTempFileThumbnailComponent implements OnInit, OnChanges {
     @Input() tempFile: DotCMSTempFile;
     @Input() iconSize = '1rem';
 
@@ -66,9 +73,13 @@ export class DotTempFileThumbnailComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
-        this.type = this.getThumbnailType();
-        this.src = this.tempFile.thumbnailUrl || this.tempFile.referenceUrl;
+        this.#updateFromTempFile();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['tempFile']) {
+            this.#updateFromTempFile();
+        }
     }
 
     /**
@@ -79,6 +90,12 @@ export class DotTempFileThumbnailComponent implements OnInit {
      */
     handleError() {
         this.type = this.CONTENT_THUMBNAIL_TYPE.icon;
+    }
+
+    #updateFromTempFile(): void {
+        this.icon = ICON_MAP[this.extension] || this.DEFAULT_ICON;
+        this.type = this.getThumbnailType();
+        this.src = this.tempFile.thumbnailUrl || this.tempFile.referenceUrl;
     }
 
     private getThumbnailType() {
