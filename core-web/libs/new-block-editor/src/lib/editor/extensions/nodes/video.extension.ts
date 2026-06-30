@@ -20,6 +20,31 @@ export const Video = Node.create({
         return {
             src: { default: null },
             title: { default: null },
+            // mimeType / width / height / orientation are preserved for round-trip parity with the
+            // legacy block-editor's `dotVideo` node. Existing stored content carries these keys, and
+            // server-side rendering may read them to size the <video>; without declaring them here
+            // TipTap would silently drop them when an old document is re-saved in the new editor.
+            // Rendered conditionally so a null value never serializes as e.g. width="null".
+            mimeType: {
+                default: null,
+                parseHTML: (el) => el.getAttribute('mimeType'),
+                renderHTML: (attrs) => (attrs.mimeType ? { mimeType: attrs.mimeType } : {})
+            },
+            width: {
+                default: null,
+                parseHTML: (el) => el.getAttribute('width'),
+                renderHTML: (attrs) => (attrs.width ? { width: attrs.width } : {})
+            },
+            height: {
+                default: null,
+                parseHTML: (el) => el.getAttribute('height'),
+                renderHTML: (attrs) => (attrs.height ? { height: attrs.height } : {})
+            },
+            orientation: {
+                default: null,
+                parseHTML: (el) => el.getAttribute('orientation'),
+                renderHTML: (attrs) => (attrs.orientation ? { orientation: attrs.orientation } : {})
+            },
             data: {
                 default: null,
                 parseHTML: (el) => {
