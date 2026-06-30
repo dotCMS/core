@@ -28,8 +28,8 @@ import org.mockito.Mockito;
 /**
  * Integration tests for the #36002 Story Block save path: the shared ingestion seam
  * ({@link MapToContentletPopulator#populate}) converts a Markdown Story Block value to
- * Tiptap/ProseMirror JSON, leaves already-JSON and (deferred) HTML untouched, and refuses a
- * Markdown overwrite that would destroy rich content.
+ * Tiptap/ProseMirror JSON, leaves already-JSON and (deferred) HTML untouched, and ignores a
+ * Markdown overwrite of rich content (preserving the existing document rather than destroying it).
  *
  * @author hassandotcms
  */
