@@ -228,10 +228,15 @@ public class WorkflowResource {
             "leave the default.";
 
     private static final String BLOCK_EDITOR_FIELD_NOTE =
-            "\n\n**Block Editor (Story Block) fields:** send the value as an HTML or Markdown string — " +
-            "do not hand-author the underlying ProseMirror/JSON document. The value is stored as-is and " +
-            "converted to the Block Editor structure when the contentlet is opened in the editor. " +
-            "Example: `\"body\": \"<h2>Intro</h2><p>Hello <strong>world</strong>.</p>\"`.";
+            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown** string — " +
+            "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
+            "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
+            "back as structured content with no editor round-trip required. A value that is already a " +
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended " +
+            "for plain content: if the field already holds rich blocks that Markdown cannot represent " +
+            "(embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing " +
+            "document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
