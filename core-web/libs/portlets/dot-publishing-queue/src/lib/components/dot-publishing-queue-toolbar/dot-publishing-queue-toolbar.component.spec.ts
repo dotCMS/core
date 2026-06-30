@@ -50,7 +50,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
                     'publishing-queue.refresh': 'Refresh',
                     'publishing-queue.upload-bundle': 'Upload Bundle',
                     'publishing-queue.retry-send': 'Retry Send',
-                    'publishing-queue.delete-bundles': 'Delete Bundles',
+                    'publishing-queue.delete-bundles': 'Remove',
                     'publishing-queue.selected': 'selected'
                 })
             }
@@ -145,19 +145,25 @@ describe('DotPublishingQueueToolbarComponent', () => {
         });
     });
 
-    describe('Retry Send (selection-gated)', () => {
-        it('is hidden when nothing is selected', () => {
+    describe('Retry Send (selection-gated, swaps with Add Bundle)', () => {
+        it('is hidden when nothing is selected — Add Bundle is the primary', () => {
             bundlesSelectedIds.set([]);
             spectator.detectChanges();
             expect(spectator.query(byTestId('pq-bulk-retry'))).toBeFalsy();
-            expect(spectator.query(byTestId('pq-bulk-count'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeTruthy();
         });
 
-        it('shows the retry button + selected-count when there is a selection', () => {
+        it('replaces Add Bundle as the primary when there is a selection', () => {
             bundlesSelectedIds.set(['b1', 'b2']);
             spectator.detectChanges();
             expect(spectator.query(byTestId('pq-bulk-retry'))).toBeTruthy();
-            expect(spectator.query(byTestId('pq-bulk-count'))?.textContent).toContain('2');
+            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeFalsy();
+        });
+
+        it('does not show a separate selected-count label', () => {
+            bundlesSelectedIds.set(['b1', 'b2']);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-bulk-count'))).toBeFalsy();
         });
 
         it('clicking retry calls retryBundles with the selected ids', () => {
