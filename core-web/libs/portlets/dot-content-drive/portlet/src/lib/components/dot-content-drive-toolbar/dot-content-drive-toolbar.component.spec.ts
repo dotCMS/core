@@ -298,6 +298,10 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(emitSpy).toHaveBeenCalledTimes(1);
         });
 
+        // Hiding is synchronous: the selection effect sets `addNewButton: false` immediately, so
+        // a single detectChanges() removes the button. We deliberately assert before the delayed
+        // workflow-actions transition fires — mounting that child pulls in providers (MessageService)
+        // outside this toolbar unit test's scope.
         it('should hide the upload button when a single item is selected', async () => {
             await settleToolbarAnimation(spectator);
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
