@@ -49,13 +49,21 @@ export function withSave() {
                 // than cancelling the in-flight request. The Save button is already disabled
                 // while saving, so this is defense-in-depth for non-UI triggers.
                 save$: events.on(imageEditorLifecycleEvents.saveRequested).pipe(
-                    exhaustMap(() =>
-                        service
+                    exhaustMap(() => {
+                        // Capture the focal point at save time and fold it into the returned
+                        // temp's metadata. The servlet writes the focal to the temp's metadata
+                        // STORAGE, but the serialized DotCMSTempFile.metadata is basic (no
+                        // focalPoint), so an in-session reopen would read the temp metadata and
+                        // seed the marker at centre. Injecting it here mirrors the contentlet
+                        // read-back used after a page refresh, keeping both paths consistent.
+                        const focalPoint = store.focalPoint();
+
+                        return service
                             .saveEditedImage(
                                 buildSaveUrl(
                                     store.assetContext(),
                                     store.appliedFilters(),
-                                    store.focalPoint(),
+                                    focalPoint,
                                     store.seededFocalPoint(),
                                     store.assetContext().variable
                                 )
@@ -64,15 +72,23 @@ export function withSave() {
                                 tapResponse({
                                     next: (tempFile) =>
                                         dispatcher.dispatch(
-                                            imageEditorLifecycleEvents.saveSucceeded(tempFile)
+                                            imageEditorLifecycleEvents.saveSucceeded({
+                                                ...tempFile,
+                                                metadata: tempFile.metadata
+                                                    ? {
+                                                          ...tempFile.metadata,
+                                                          focalPoint: `${focalPoint.x},${focalPoint.y}`
+                                                      }
+                                                    : tempFile.metadata
+                                            })
                                         ),
                                     error: (error) =>
                                         dispatcher.dispatch(
                                             imageEditorLifecycleEvents.saveFailed(error)
                                         )
                                 })
-                            )
-                    )
+                            );
+                    })
                 )
             };
         })

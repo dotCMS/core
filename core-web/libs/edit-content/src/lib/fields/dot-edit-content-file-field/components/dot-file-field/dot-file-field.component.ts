@@ -416,13 +416,9 @@ export class DotFileFieldComponent
         if (newLauncher?.isAvailable()) {
             const metadata = this.#currentMetadata();
             // Seed the editor with the asset's stored focal point (exposed on the binary
-            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening
-            // restores the marker instead of resetting it to centre. `focalPoint` is
-            // present at runtime but not declared on DotFileMetadata, so read it through
-            // a narrow cast rather than widening the shared model.
-            const focalPoint = parseFocalPoint(
-                (metadata as { focalPoint?: string } | null)?.focalPoint
-            );
+            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening restores
+            // the marker instead of resetting it to centre.
+            const focalPoint = parseFocalPoint(metadata?.focalPoint);
 
             this.#applyEditedImage(
                 newLauncher.open({

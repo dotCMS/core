@@ -106,6 +106,33 @@ describe('withSave', () => {
         expect(store.saveError()).toBeNull();
     });
 
+    it('folds the current focal point into the returned temp metadata', () => {
+        // The servlet returns a temp whose serialized metadata is basic (no focalPoint),
+        // so the feature injects the focal so an in-session reopen can re-seed the marker.
+        const metadata = {
+            contentType: 'image/png',
+            fileSize: 1024,
+            isImage: true,
+            length: 1024,
+            modDate: 0,
+            name: 'edited.png',
+            sha256: 'abc',
+            title: 'edited.png',
+            version: 1
+        };
+        service.saveEditedImage.mockReturnValue(of({ ...TEMP_FILE, metadata }));
+        const dispatchSpy = setup();
+
+        lifecycle.saveRequested();
+
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            imageEditorLifecycleEvents.saveSucceeded({
+                ...TEMP_FILE,
+                metadata: { ...metadata, focalPoint: '0.25,0.75' }
+            })
+        );
+    });
+
     it('builds the Save URL from the asset context, filter chain and focal point', () => {
         setup();
 
