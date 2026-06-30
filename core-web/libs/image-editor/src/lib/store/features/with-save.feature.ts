@@ -4,7 +4,7 @@ import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/si
 
 import { inject, Signal } from '@angular/core';
 
-import { switchMap } from 'rxjs/operators';
+import { exhaustMap } from 'rxjs/operators';
 
 import { AppliedFilter, ImageEditorState } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
@@ -44,9 +44,12 @@ export function withSave() {
             const service = inject(DotImageEditorService);
 
             return {
-                // Save the edited image whenever the user requests it.
+                // Save the edited image whenever the user requests it. `exhaustMap` (not
+                // switchMap) so a re-triggered save is ignored while one is in flight, rather
+                // than cancelling the in-flight request. The Save button is already disabled
+                // while saving, so this is defense-in-depth for non-UI triggers.
                 save$: events.on(imageEditorLifecycleEvents.saveRequested).pipe(
-                    switchMap(() =>
+                    exhaustMap(() =>
                         service
                             .saveEditedImage(
                                 buildSaveUrl(
