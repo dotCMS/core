@@ -237,10 +237,14 @@
 }
 
 /* A linked image is rendered as <figure><a href><img></a></figure>. Keep the anchor a
-   zero-line-height inline-block so it hugs the image and linking doesn't shift layout. */
+   zero-line-height inline-block so it hugs the image and linking doesn't shift layout.
+   `vertical-align: top` is essential: once the anchor wraps the image, the *anchor* (not the
+   img) is the inline-level box in the figure's formatting context, so it must align to the top
+   or the browser reserves font-descender space below it and the layout jumps (#36361). */
 :host ::ng-deep .ProseMirror figure a {
     display: inline-block;
     line-height: 0;
+    vertical-align: top;
 }
 
 /* ─── Selected node ring ────────────────────────────────── */
