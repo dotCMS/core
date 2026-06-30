@@ -140,7 +140,9 @@ export const DotImage = Image.extend({
         else if (textAlign) figAttrs['class'] = `image-align-${textAlign}`;
 
         const img = ['img', mergeAttributes(this.options.HTMLAttributes, imgAttrs)];
-        const anchorAttrs: Record<string, string> = { href };
+        // Build conditionally so a null/absent href never serializes as href="null".
+        const anchorAttrs: Record<string, string> = {};
+        if (href) anchorAttrs['href'] = href;
         if (target) anchorAttrs['target'] = target;
         const inner = href ? ['a', anchorAttrs, img] : img;
 
