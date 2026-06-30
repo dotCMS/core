@@ -1,5 +1,8 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { getFileMetadata } from '@dotcms/utils';
+
 /** TipTap node name for embedded dotCMS videos (slash menu → video). */
 export const DOT_VIDEO_NODE_NAME = 'dotVideo' as const;
 
@@ -9,6 +12,35 @@ export interface DotVideoData {
     languageId: number;
     title: string;
     asset: string;
+}
+
+/** The `dotVideo` metadata/layout attributes derived from a contentlet. */
+export interface DotVideoMetaAttrs {
+    mimeType: string | null;
+    width: number | null;
+    height: number | null;
+    orientation: 'vertical' | 'horizontal' | null;
+}
+
+/**
+ * Derives the `dotVideo` `mimeType` / `width` / `height` / `orientation` attributes from a
+ * contentlet, for parity with the legacy block-editor's `getVideoAttrs`. Resolves file metadata
+ * via the canonical {@link getFileMetadata} (handles both `metaData` and `assetMetaData` shapes) —
+ * the legacy code read `assetMetaData` only, missing FileAsset / per-field shapes. Each value is
+ * null when unavailable so it never serializes a bogus attribute.
+ */
+export function videoMetaAttrsFromContentlet(contentlet: DotCMSContentlet): DotVideoMetaAttrs {
+    const meta = getFileMetadata(contentlet);
+    const width = meta.width ?? null;
+    const height = meta.height ?? null;
+
+    return {
+        mimeType: contentlet.mimeType ?? meta.contentType ?? null,
+        width,
+        height,
+        orientation:
+            width != null && height != null ? (height > width ? 'vertical' : 'horizontal') : null
+    };
 }
 
 export const Video = Node.create({
