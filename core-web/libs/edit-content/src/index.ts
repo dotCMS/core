@@ -1,6 +1,6 @@
 export * from './lib/edit-content.routes';
 export * from './lib/components/dot-create-content-dialog/dot-create-content-dialog.component';
-export * from './lib/fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
+export * from './lib/fields/dot-edit-content-file-field/components/dot-binary-field-ce-bridge/dot-binary-field-ce-bridge.component';
 export * from './lib/fields/dot-edit-content-file-field/components/dot-file-field/dot-file-field.component';
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
 export * from './lib/models/dot-edit-content-dialog.interface';

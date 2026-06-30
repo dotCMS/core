@@ -88,6 +88,11 @@ export const castSingleSelectableValue = (
  * Note: If the input contains line breaks, it will be treated as a single option,
  * preserving the line breaks as part of the option text.
  *
+ * Pipe detection is applied per option, so a single option (`label|value`),
+ * multi-line options (`label|value` per line) and comma-separated options
+ * (`label|value,label|value`) are all parsed correctly. Options without a pipe
+ * use the whole string as both label and value.
+ *
  * @param options - The string containing the options to parse
  * @param dataType - The data type of the field
  * @returns Array of parsed options with label and value
@@ -99,23 +104,18 @@ export const getSingleSelectableFieldOptions = (
     if (!options?.trim()) return [];
 
     const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
-    const PIPE_REGEX = /\|/;
     const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
-    const hasPipes = PIPE_REGEX.test(options);
 
     let items: string[] = [];
-    let isPipeFormat = false;
 
-    if (hasPipes && hasLineBreaks) {
-        // Multi-line pipe format (standard dotCMS format)
+    if (hasLineBreaks) {
+        // Multi-line format (standard dotCMS format)
         items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-        isPipeFormat = true;
-    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
+    } else if (options.trim().startsWith('|')) {
         // Special case: "|true" (checkbox without label)
         items = [options.trim()];
-        isPipeFormat = true;
     } else {
-        // Simple comma format or single-line with pipes treated as comma format
+        // Comma-separated format
         items = options
             .split(',')
             .map((v) => v.trim())
@@ -132,16 +132,16 @@ export const getSingleSelectableFieldOptions = (
             let label: string;
             let value: string;
 
-            if (isPipeFormat) {
+            if (item.includes('|')) {
                 const parts = item.split('|');
-                // Si hay pipe, el label es la primera parte y el value es la segunda
-                // Si no hay segunda parte, el value es igual al label
+                // If a pipe is present, label is the first part and value the second;
+                // if there's no second part, value equals label
                 label = (parts[0] || '').trim();
                 value = parts[1]?.trim() || label;
             } else {
-                // Si no hay pipe, tanto label como value son el mismo valor
-                label = item;
-                value = item;
+                // No pipe: label and value are the same
+                label = item.trim();
+                value = label;
             }
 
             if (!value) return null;

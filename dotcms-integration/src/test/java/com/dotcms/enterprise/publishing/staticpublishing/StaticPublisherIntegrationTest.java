@@ -62,6 +62,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageInOneLangAndWorkingInAnother;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLang;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPageInDefaultLangConfiguredForFallbackLang;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWithDifferentLangIncludingJustOne;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithCSS;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getPageWithImage;
@@ -157,7 +158,8 @@ public class StaticPublisherIntegrationTest {
 
        final TestCase[] testCasesWitLangFilter = {
                getLivePageWithDifferentLangIncludingJustOne(),
-                getLiveFileAssetDifferentLangIncludingJustOneg()
+                getLiveFileAssetDifferentLangIncludingJustOneg(),
+                getWorkingPageInDefaultLangConfiguredForFallbackLang()
         };
 
        final List<TestCase> testCaseWithEmptyLang = Arrays.stream(testCasesWithoutLangFilter)

@@ -655,15 +655,35 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Create an index exclusively in one of the SE Providers.
      *
      * <p><b>Idempotent bootstrap.</b> If the physical index already exists in the target
-     * cluster it is reused instead of issuing a create. This guards against an orphaned
-     * cluster index — present in the cluster but missing from the index store — left behind
-     * when a previous bootstrap created the index but never committed its store pointer
-     * (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted startup).
-     * Without this guard the restart re-derives the same logical name, the create fails with
-     * {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts — leaving
-     * the instance half-initialised. The custom mapping is (re)applied either way
-     * ({@code putMapping} is additive/idempotent), so a previously unmapped orphan is repaired,
-     * and the caller's {@code point()} re-registers the index in the store.</p>
+     * cluster it is an <em>orphan</em> — present in the cluster but missing from the index
+     * store — left behind when a previous bootstrap created the index but never committed its
+     * store pointer (e.g. the OS {@code VersionedIndices} row, or after a partial/interrupted
+     * startup). Without handling this, the restart re-derives the same logical name, the create
+     * fails with {@code resource_already_exists}, and {@code checkAndInitializeIndex()} aborts —
+     * leaving the instance half-initialised.</p>
+     *
+     * <p>The orphan is handled by document count, so a populated index is never discarded:</p>
+     * <ul>
+     *   <li><b>Empty orphan (0 docs)</b> — deleted and recreated from scratch. In-place reuse
+     *       cannot fully repair a bare orphan: the content mapping references a custom analyzer
+     *       ({@code my_analyzer}) defined in the provider settings file, and analyzers are
+     *       <em>static</em> index settings that can only be applied at creation time — so a
+     *       {@code putMapping}-only re-assert against a bare orphan fails with {@code HTTP 400}
+     *       (analyzer not found) and leaves the index half-mapped (issue #36237, QA TC-003). An
+     *       empty index has no data and no reindex progress, so recreating it costs nothing
+     *       operationally and yields a clean index with full settings + base mapping. If the
+     *       delete cannot be confirmed and the index is still present, bootstrap fails loudly
+     *       rather than register a half-mapped index.</li>
+     *   <li><b>Populated orphan (&gt; 0 docs), or count unknown</b> — reused in place, untouched.
+     *       A populated orphan was created by dotCMS itself, so it already carries the full
+     *       settings + base mapping + custom mapping; nothing needs to be (re)applied. The index is
+     *       never deleted here: discarding it would throw away its contents (including partial
+     *       reindex progress) and force a full reindex, which can run for hours and degrade search
+     *       consistency — not justified to clean up an orphan. On any uncertainty (the count probe
+     *       fails) we err toward reuse for the same reason.</li>
+     * </ul>
+     *
+     * <p>The caller's {@code point()} then registers the index in the store.</p>
      *
      * @param indexName logical index name (no cluster prefix, no vendor tag)
      * @param shards    number of shards to create with (ignored when the index already exists)
@@ -714,11 +734,60 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         + e.getMessage(), e))
                 .getOrElse(false);
         if (alreadyExists) {
+            // Orphan: exists in cluster, missing from store (see method javadoc). Decide by doc
+            // count so a populated index — including partial reindex progress — is never discarded.
+            // The count probe is best-effort: any failure is treated as "has data" (-1) so we err
+            // toward reuse and never delete on uncertainty.
+            final long docCount = Try.of(() -> ops.getIndexDocumentCount(physicalName))
+                    .onFailure(e -> Logger.warn(this,
+                            "Orphan doc-count probe failed for " + physicalName
+                            + " — treating as populated and reusing in place: "
+                            + e.getMessage(), e))
+                    .getOrElse(-1L);
+
+            if (docCount != 0L) {
+                // Populated (or unknown): reuse in place, untouched. A dotCMS-created index already
+                // carries the full settings + base mapping + custom mapping, so nothing needs to be
+                // (re)applied. Deleting it would force a full reindex (hours, degraded search) —
+                // not justified to clean up an orphan.
+                Logger.info(this, String.format(
+                        "Bootstrap: orphaned %s index found with %s document(s); reusing in place"
+                        + " (not deleting, not remapping): %s",
+                        tag, docCount < 0 ? "an unknown number of" : docCount, physicalName));
+                return true;
+            }
+
+            // Empty orphan: delete so the create below rebuilds a clean index with full settings +
+            // base mapping. An empty index has no data and no reindex progress, so this is safe and
+            // costs nothing operationally (issue #36237 — repairs a bare orphan that reuse cannot).
             Logger.info(this, String.format(
-                    "Bootstrap: %s index already exists, reusing and re-asserting mapping: %s",
+                    "Bootstrap: empty orphaned %s index found (in cluster, missing from store);"
+                    + " deleting and recreating with full settings + mapping: %s",
                     tag, physicalName));
-            helper.addCustomMapping(List.of(indexName), tag);
-            return true;
+            final boolean deleted = Try.of(() -> providerApi.delete(physicalName))
+                    .onFailure(e -> Logger.warn(this,
+                            "Failed to delete empty orphaned index " + physicalName
+                            + ": " + e.getMessage(), e))
+                    .getOrElse(false);
+            if (!deleted) {
+                // Delete not acknowledged. Re-probe: it may have taken effect without an ack, in
+                // which case we can still recreate cleanly. If the index is genuinely still there
+                // we must NOT proceed — recreating would throw resource_already_exists, and reusing
+                // it would register a bare orphan whose mapping cannot be repaired (the custom
+                // analyzer is a create-time-only setting). Fail loud instead of leaving a
+                // half-mapped index in the store. This is an abnormal cluster state, not the
+                // orphan-name collision this method otherwise resolves.
+                final boolean stillExists = Try.of(() -> providerApi.indexExists(physicalName))
+                        .getOrElse(true);
+                if (stillExists) {
+                    throw new IOException("Empty orphaned " + tag + " index " + physicalName
+                            + " could not be deleted and still exists; aborting bootstrap to avoid"
+                            + " registering a half-mapped index. Check the search cluster health"
+                            + " and restart.");
+                }
+                Logger.warn(this, "Empty orphaned index " + physicalName + " delete was not"
+                        + " acknowledged, but the index is gone; proceeding to recreate.");
+            }
         }
 
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
@@ -938,6 +1007,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
+
+        // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
+        // This is the single chokepoint for all OS index creation (fresh-install bootstrap and
+        // migration catchup), so both startup paths — populated-DB (InitServlet) and empty-DB
+        // (Task00004LoadStarter) — pass through the same phase-aware gate instead of failing
+        // late and opaquely with a transport exception deep inside createContentIndex.
+        //
+        // operationsOS.indexAPI() is the OS-specific IndexAPI, so the gate always probes OS
+        // regardless of the current read provider (in Phase 1 the read provider is ES). The
+        // phase-aware outcome lives in OSIndexAPIImpl.waitUtilIndexReady(): Phase 3 aborts the
+        // JVM with an actionable message; Phase 1/2 halts the migration (ES-only fallback) and
+        // returns false — in which case we must NOT create OS indices.
+        if (!operationsOS.indexAPI().waitUtilIndexReady()) {
+            Logger.warn(this.getClass(),
+                    "Skipping OpenSearch index bootstrap (working=" + workingName
+                    + ", live=" + liveName + "): OS was unreachable and the migration was halted"
+                    + " (now ES-only). OS indices will be created on a later restart once OS is"
+                    + " reachable and the migration phase is re-enabled.");
+            return;
+        }
+
         boolean result;
         try {
             // Targeted: executed directly against this provider only. No phase fan-out here.

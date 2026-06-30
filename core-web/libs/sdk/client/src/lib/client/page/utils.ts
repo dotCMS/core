@@ -266,6 +266,20 @@ export function mapContentResponse(
 }
 
 /**
+ * Returns a shallow copy of the object with every key whose value is `undefined` removed.
+ *
+ * `undefined` is not valid JSON, so keeping such keys breaks consumers that serialize the value
+ * (e.g. Next.js Pages Router `getServerSideProps`/`getStaticProps`). `null` and other falsy values
+ * are preserved since they serialize fine.
+ *
+ * @param {Record<string, unknown>} object - Source object to clean
+ * @returns {Record<string, unknown>} New object without `undefined` values
+ */
+export function removeUndefinedValues(object: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
+}
+
+/**
  * Executes a GraphQL query against the DotCMS API.
  *
  * @param {Object} options - Options for the fetch request

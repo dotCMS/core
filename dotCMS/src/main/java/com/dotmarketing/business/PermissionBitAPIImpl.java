@@ -1410,6 +1410,56 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionFactory.filterCollectionByDBPermissionReference(permissionables, requiredTypePermission, respectFrontendRoles, user);
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public <P extends Permissionable> List<P> filterCollection(
+			final Collection<P> permissionables,
+			final int permissionType,
+			final User userIn,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		if (permissionables == null || permissionables.isEmpty()) {
+			return List.of();
+		}
+
+		final User user = (userIn == null || userIn.getUserId() == null)
+				? APILocator.getUserAPI().getAnonymousUser() : userIn;
+
+		// CMS Admin and system user bypass all permission checks — consistent with
+		// filterCollection(List, int, boolean, User) and filterCollectionByDBPermissionReference.
+		// Intentionally avoids user.isAdmin() (Liferay-level) so that only the dotCMS
+		// CMS Admin role grants this bypass, regardless of respectFrontendRoles.
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
+		if (user.getUserId().equals(APILocator.systemUser().getUserId())
+				|| roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
+			return new ArrayList<>(permissionables);
+		}
+
+		// Resolve user roles once
+		final List<String> roleIds = new ArrayList<>();
+		if (respectFrontendRoles) {
+			roleIds.add(anonRole.get().getId());
+			roleIds.add(APILocator.getRoleAPI().loadLoggedinSiteRole().getId());
+		}
+		APILocator.getRoleAPI().loadRolesForUser(user.getUserId())
+				.stream().map(Role::getId).forEach(roleIds::add);
+
+		if (roleIds.isEmpty()) {
+			return List.of();
+		}
+
+		final List<String> permissionIds = permissionables.stream()
+				.map(Permissionable::getPermissionId)
+				.filter(UtilMethods::isSet)
+				.toList();
+
+		final Set<String> permitted = permissionFactory.getPermittedIds(permissionIds, permissionType, roleIds);
+
+		return permissionables.stream()
+				.filter(p -> permitted.contains(p.getPermissionId()))
+				.collect(Collectors.toList());
+	}
+
 	@WrapInTransaction
 	@Override
 	public void removePermissionsByRole(String roleId) {

@@ -49,10 +49,10 @@ on:
         type: boolean
         default: true
         required: false
-      update_latest:
-        description: 'Update the "latest" Docker tag (disable for back-patches of older release lines)'
-        type: boolean
-        default: true
+      skip_latest:
+        description: 'Leave BLANK to update the "latest" Docker tag (default). To skip moving latest, type exactly: DO NOT UPDATE LATEST. Any other value fails the run.'
+        type: string
+        default: ''
         required: false
       notify_slack:
         description: 'Notify Slack'
@@ -87,6 +87,18 @@ jobs:
         run: |
           echo "::error::The Release workflow must be run from the 'main' branch. Selected: ${{ github.ref_name }}"
           exit 1
+      # Reject typos in skip_latest. Only blank (update latest) or the exact
+      # phrase (skip latest) are valid — anything else fails the release so the
+      # operator must re-run with a deliberate value, rather than silently
+      # falling through to "update latest" on a near-miss like "do not update latest".
+      - name: Validate skip_latest input
+        env:
+          SKIP_LATEST: ${{ github.event.inputs.skip_latest }}
+        run: |
+          if [ -n "${SKIP_LATEST}" ] && [ "${SKIP_LATEST}" != "DO NOT UPDATE LATEST" ]; then
+            echo "::error::skip_latest must be blank (update the latest tag) or exactly 'DO NOT UPDATE LATEST' (skip it). Got: '${SKIP_LATEST}'. Re-run with a valid value."
+            exit 1
+          fi
 
   # Initialize - standard initialization phase (always first)
   initialize:
@@ -139,7 +151,10 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' && github.event.inputs.update_latest == 'true' }}
+      # `latest` is no longer moved here. evergreen-tracks is the single controller
+      # of the floating latest/standard/trailing tags; the promote-latest job below
+      # repoints `latest` on-demand once the release images are published.
+      latest: false
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
@@ -153,6 +168,57 @@ jobs:
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Promote latest - move the floating `latest` Docker tag to this GA release.
+  #
+  # evergreen-tracks (cicd/evergreen-tracks) is the single controller of the
+  # latest/standard/trailing tags. Its daily cron ages standard/trailing, but
+  # `latest` must move the instant a GA ships — so the release pipeline invokes
+  # the same engine on-demand, scoped to the latest track only (--tracks latest).
+  # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
+  #
+  # Runs for every GA release from main on dotcms/core by default — moving latest
+  # is not optional via an easy-to-miss checkbox. To intentionally skip it, the
+  # operator must type the exact phrase "DO NOT UPDATE LATEST" in the skip_latest
+  # input; blank moves latest, and any other value is rejected up front by the
+  # verify-branch "Validate skip_latest input" step (no silent fall-through).
+  # Back-patches of older lines need no opt-out: the engine is forward-only, so
+  # promoting latest on an older release is a no-op. For a runtime freeze, use the
+  # admin workflow's `hold latest` action.
+  promote-latest:
+    name: Promote latest tag
+    # Default success() gate: only runs when release-prepare AND deployment both
+    # succeeded, so the release images are guaranteed to exist before we repoint.
+    needs: [ release-prepare, deployment ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.ref_name == 'main'
+      && github.repository == 'dotcms/core'
+      && github.event.inputs.skip_latest != 'DO NOT UPDATE LATEST'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    # Share the registry-mutation lock with the promote/admin workflows so this
+    # on-demand promote can never race the daily cron or an admin run.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
+        working-directory: cicd/evergreen-tracks
+        run: |
+          for repo in dotcms/dotcms dotcms/dotcms-dev; do
+            echo "--- promoting latest on ${repo} ---"
+            uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
+          done
 
   # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
   # Waits for deployment to complete to safely update labels only if both succeed

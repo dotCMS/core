@@ -30,7 +30,7 @@
     }
 </div>
 
-<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
+<dot-content-drive-toolbar (upload)="onUpload()" data-testid="toolbar" />
 
 <div
     class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
@@ -38,13 +38,13 @@
     data-testid="tree-selector">
     <dot-content-drive-sidebar
         data-testid="sidebar"
-        (uploadFiles)="resolveFilesUpload($event)"
+        (uploadFiles)="onRequestUpload($event)"
         (moveItems)="onMoveItems($event)" />
 </div>
 
 <dot-content-drive-dropzone
     data-testid="dropzone"
-    (uploadFiles)="resolveFilesUpload($event)"
+    (uploadFiles)="onRequestUpload($event)"
     class="col-start-2 row-start-3 overflow-auto">
     <dot-folder-list-view
         [items]="$items()"
@@ -112,6 +112,15 @@
                 <dot-content-drive-dialog-content-type-selector
                     data-testId="dialog-content-type-selector"
                     [listType]="listType" />
+            }
+        }
+        @case (DIALOG_TYPE.UPLOAD_SELECTOR) {
+            @if ($uploadSelectorPayload(); as payload) {
+                <dot-content-drive-dialog-upload-selector
+                    data-testId="dialog-upload-selector"
+                    [targetFolder]="payload.targetFolder"
+                    [files]="payload.files"
+                    (selectUploadType)="onUploadTypeSelected($event)" />
             }
         }
     }

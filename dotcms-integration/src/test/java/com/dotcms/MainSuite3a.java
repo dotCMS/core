@@ -7,6 +7,7 @@ import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.business.PublisherQueueJobTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
@@ -86,6 +87,7 @@ import org.junit.runners.Suite;
         Task260407AddBaseTypeColumnToIdentifierTest.class,
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
+        PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
 })
 
