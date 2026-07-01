@@ -7,11 +7,10 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { DotFieldService } from '@dotcms/data-access';
 import { DotIconComponent } from '@dotcms/ui';
 
 import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
-
-import { FieldService } from '../service';
 
 const itemsData = [
     {
@@ -62,12 +61,11 @@ describe('ContentTypesFieldsListComponent', () => {
             providers: [
                 DragulaService,
                 {
-                    provide: FieldService,
+                    provide: DotFieldService,
                     useValue: {
                         loadFieldTypes() {
                             return of(itemsData);
-                        },
-                        getIcon() {}
+                        }
                     }
                 }
             ]
