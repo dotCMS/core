@@ -22,7 +22,6 @@
                 ],
                 "rollupConfig": "@nx/react/plugins/bundle-rollup",
                 "compiler": "babel",
-                "useLegacyTypescriptPlugin": true,
                 "assets": [
                     {
                         "glob": "libs/sdk/experiments/README.md",
