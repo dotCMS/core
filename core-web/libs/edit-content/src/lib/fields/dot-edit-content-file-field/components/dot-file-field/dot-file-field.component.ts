@@ -48,6 +48,7 @@ import {
 } from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
+import { parseFocalPoint } from './../../utils/focal-point.util';
 import { getUiMessage } from './../../utils/messages';
 import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
@@ -104,10 +105,10 @@ export class DotFileFieldComponent
     readonly #legacyDojoImageEditorLauncher = inject(LegacyDojoImageEditorLauncher);
     /**
      * New Angular image editor launcher. Provided by the Angular edit-content shell
-     * ({@link EditContentShellComponent}) and gated behind the
-     * `FEATURE_FLAG_NEW_IMAGE_EDITOR` flag via its `isAvailable()`. Injected as
-     * `{ optional: true }`: when absent (e.g. the legacy web-component host) or its
-     * flag is off, `onEditImage()` falls back to the legacy launchers.
+     * ({@link EditContentShellComponent}); its `isAvailable()` is always true now that
+     * the new editor is GA in the new Edit Content. Injected as `{ optional: true }`:
+     * when absent (e.g. the legacy web-component host), `onEditImage()` falls back to
+     * the legacy launchers.
      */
     readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
     /**
@@ -408,13 +409,16 @@ export class DotFileFieldComponent
                 : variable;
 
         // Prefer the new Angular image editor when its launcher is provided (Angular
-        // edit-content shell) and its feature flag is on. Otherwise fall back to the
-        // legacy editor: Dojo DOM events for the web-component bridge, dialog iframe
-        // elsewhere.
+        // edit-content shell). Otherwise fall back to the legacy editor: Dojo DOM events
+        // for the web-component bridge, dialog iframe elsewhere.
         const newLauncher = this.#imageEditorLauncher;
 
         if (newLauncher?.isAvailable()) {
             const metadata = this.#currentMetadata();
+            // Seed the editor with the asset's stored focal point (exposed on the binary
+            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening restores
+            // the marker instead of resetting it to centre.
+            const focalPoint = parseFocalPoint(metadata?.focalPoint);
 
             this.#applyEditedImage(
                 newLauncher.open({
@@ -424,7 +428,8 @@ export class DotFileFieldComponent
                     fieldName: editorVariable,
                     byInode: !!inode,
                     fileName: this.$currentFileName() || undefined,
-                    mimeType: metadata?.contentType
+                    mimeType: metadata?.contentType,
+                    focalPoint
                 })
             );
 
