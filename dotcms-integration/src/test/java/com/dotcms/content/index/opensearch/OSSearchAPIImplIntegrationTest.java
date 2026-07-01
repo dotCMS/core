@@ -3,6 +3,7 @@ package com.dotcms.content.index.opensearch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.DataProviderWeldRunner;
@@ -18,6 +19,7 @@ import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -360,6 +362,43 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
         assertNotNull("search with respectFrontendRoles=true must return non-null results", results);
         Logger.info(this,
                 "✅ test_search_respectFrontendRoles_nullUser_shouldNotThrow passed");
+    }
+
+    /**
+     * TC-031 (L-6) — {@link ContentSearchResults} exposes the correct index-level total and a
+     * null scroll id for a standard (non-scroll) search.
+     *
+     * <p>Given scenario: One known document is indexed into the working index; a match-all query
+     * is run through {@link OSSearchAPIImpl#search}.</p>
+     *
+     * <p>Expected:</p>
+     * <ul>
+     *   <li>{@code getTotalResults()} reports {@code 1} — the index-level hit count from
+     *       {@code response.hits().getTotalHits().value()}, independent of DB hydration.</li>
+     *   <li>{@code getScrollId()} is {@code null} — the query was not initiated with scroll
+     *       parameters.</li>
+     *   <li>The result type is {@code ContentSearchResults<Contentlet>}, iterated without an
+     *       unchecked cast (compile-time guarantee of the generic {@code List<T>} contract).</li>
+     * </ul>
+     */
+    @Test
+    public void test_search_indexedDocument_totalResultsIsOne_scrollIdIsNull() throws Exception {
+
+        indexTestDocument(physicalWorking);
+
+        final String matchAll = "{\"query\":{\"match_all\":{}}}";
+
+        final ContentSearchResults<Contentlet> results =
+                osSearchAPI.search(matchAll, false, systemUser, false);
+
+        assertNotNull("search must return non-null ContentSearchResults", results);
+        assertEquals("getTotalResults() must report the index-level hit count",
+                1L, results.getTotalResults());
+        assertNull("getScrollId() must be null for a standard non-scroll query",
+                results.getScrollId());
+
+        Logger.info(this,
+                "✅ test_search_indexedDocument_totalResultsIsOne_scrollIdIsNull passed");
     }
 
     // =======================================================================
