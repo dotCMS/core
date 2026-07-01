@@ -62,5 +62,5 @@ export default [
             '@angular-eslint/template/table-scope': 'off',
             '@angular-eslint/template/valid-aria': 'off'
         }
-    },
+    }
 ];
