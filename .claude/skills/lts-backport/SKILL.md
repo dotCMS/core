@@ -117,9 +117,9 @@ The commit and push for each issue happen **only after that issue's backport is 
 
 ### 5a. Check if already backported
 
-Before doing anything else, check whether this issue is already present in `$HOTFIX_FILE`:
+Before doing anything else, check whether this issue is already committed in `$HOTFIX_FILE`. Always check the **committed** version of the file (not the working copy), to avoid false positives from abandoned partial runs that left an uncommitted entry:
 ```bash
-grep -q "#ISSUE_NUMBER" "$HOTFIX_FILE" && echo "ALREADY_BACKPORTED" || echo "NEW"
+git show HEAD:"$HOTFIX_FILE" | grep -q "#ISSUE_NUMBER" && echo "ALREADY_BACKPORTED" || echo "NEW"
 ```
 
 If the issue number is found, mark the issue as **already backported** in the tracking list (separate from `completed` and `skipped`), print a one-line notice — "Issue #NUMBER already backported, skipping." — and continue to the next issue. Do not modify `$HOTFIX_FILE` or apply any patches.
@@ -273,7 +273,8 @@ git apply --check /tmp/backport_patch_ISSUE_NUMBER_PR_NUMBER.patch 2>&1
 
     4. **Wait** for the user to confirm they have manually applied the changes before proceeding.
     5. When the user confirms (e.g., "done", "continue", "I've applied it"), resume processing the remaining files/PRs for this issue.
-    6. **Do NOT remove the hotfix_tracking.md entry** — the issue is still being backported, just with manual assistance.
+       If the user instead says to skip or abandon this issue (e.g., "skip", "abandon", "skip this one"), remove the line added in 5c from `$HOTFIX_FILE` using the Edit tool, then continue to the next issue without committing.
+    6. **Do NOT remove the hotfix_tracking.md entry** unless the user explicitly abandons the issue — the issue is still being backported, just with manual assistance.
 
 - **Failure — other reason (context mismatch, whitespace, etc.)**: Try with 3-way merge:
   ```bash
@@ -340,7 +341,7 @@ git add {file}
 ```
 
 **Commit with the exact format:**
-Add --no-verify clause to the commit:
+Use `--no-verify` to skip pre-commit hooks (linters and test runners that are irrelevant for cherry-picked LTS backport commits):
 ```bash
 git commit -m "#ISSUE_NUMBER include in LTS_NUMBER LTS" --no-verify
 ```
@@ -396,7 +397,8 @@ The following issues were skipped and need manual attention:
 | `git apply --3way` leaves conflict markers (`UU`) | Stop, report conflicted file(s) to user, wait for manual confirmation, then continue |
 | `git apply --3way` fails entirely | Split into per-file patches; for each failed file, stop and wait for manual confirmation |
 | No PRs linked to issue | Skip issue, remove hotfix_tracking.md entry |
+| User says "skip" / "abandon" when blocked | Remove hotfix_tracking.md entry for this issue, continue to next issue — never commit partial work |
 | Push fails | Stop all processing, report error with instructions |
 | `hotfix_tracking.md` not found | Stop and tell user the file doesn't exist in this branch |
-| Issue number found in `hotfix_tracking.md` | Mark as already backported, skip silently |
+| Issue number found in committed `hotfix_tracking.md` | Mark as already backported, skip silently |
 | Patch failure of any kind | **Never commit partial work** — always wait for 100% completion of the issue before committing |
