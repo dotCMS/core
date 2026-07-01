@@ -7,7 +7,10 @@
     "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
     "targets": {
         "test": {
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}", "target/core-web-reports"],
+            "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
                 "passWithNoTests": true
             },
