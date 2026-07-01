@@ -186,7 +186,9 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
         for(String providerClazz: providersToIgnore) {
             ImageReaderSpi  provider= lookupProviderByName(registry, providerClazz);
-            registry.deregisterServiceProvider(provider);
+            if(provider != null) {
+                registry.deregisterServiceProvider(provider);
+            }
         }
 
     }
