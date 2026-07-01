@@ -853,7 +853,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != cachedContentlet.getContentType() && cachedContentlet.getContentType().hasStoryBlockFields()) {
+        final ContentType contentType = cachedContentlet.getContentType();
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != contentType && contentType.hasStoryBlockFields()) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {

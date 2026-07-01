@@ -33,6 +33,7 @@ build-no-cache:
     rm -rf ./core-web/.nx/
     rm -rf ./core-web/.angular/
     rm -rf ./core-web/node_modules/
+    rm -rf ./installs/node
     ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
 
 # Builds the project without running tests, skip using docker or creating image
@@ -169,6 +170,11 @@ test-integration:
 # Runs only the open-search integration tests
 test-integration-open-search:
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
+
+# Runs integration tests under an ES->OS migration phase (two separate clusters: ES + OS 3.x).
+# Usage: just test-integration-phase [PHASE] [TEST]   e.g. `just test-integration-phase 3 ContentletIndexAPIImplTest`
+test-integration-phase phase='3' test='':
+   ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.phase={{phase}} {{ if test == '' { '' } else { '-Dit.test=' + test } }}
 
 # Suspends execution for debugging integration tests
 test-integration-debug-suspend:

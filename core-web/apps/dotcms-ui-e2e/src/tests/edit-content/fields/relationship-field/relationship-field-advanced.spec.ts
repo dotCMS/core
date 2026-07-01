@@ -248,17 +248,7 @@ test.describe('Custom Columns (showFields)', () => {
         await relationshipField.expectRowCount(2);
 
         // With showFields="title,bio", headers should include Title and Bio
-        const table = relationshipField.table;
-        const headers = table.locator('thead th');
-
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        const headerTexts = await relationshipField.getHeaderTexts();
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('bio'))).toBe(true);
@@ -289,17 +279,8 @@ test.describe('Custom Columns (showFields)', () => {
         await formPage.goToContent(blog.inode);
 
         // Default columns: Title, Language, Status
-        const table = adminPage.getByTestId('relationship-field-table');
-        const headers = table.locator('thead th');
-
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        const relationshipField = new RelationshipField(adminPage);
+        const headerTexts = await relationshipField.getHeaderTexts();
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('language'))).toBe(true);

@@ -26,7 +26,8 @@
                     "libs/dotcms-scss/angular/dotcms-theme/_misc.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/components/form/_inputtext.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/utils/_validation.scss",
-                    "libs/dotcms-scss/angular/_prime-icons.scss"
+                    "libs/dotcms-scss/angular/_prime-icons.scss",
+                    "libs/dotcms-scss/shared/_material-symbols-outlined.scss"
                 ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
