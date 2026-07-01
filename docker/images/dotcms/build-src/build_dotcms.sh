@@ -11,8 +11,12 @@ build_target_dir=/build/cms
 mkdir -p "${build_target_dir}"
 
 mkdir -p /tmp/nodetmp
-curl --output /tmp/nodetmp/testing.tar.gz https://nodejs.org/dist/v7.9.0/node-v7.9.0-linux-x64.tar.gz && tar -zxvf /tmp/nodetmp/testing.tar.gz -C /tmp/nodetmp/
-export PATH=$PATH:/tmp/nodetmp/node-v7.9.0-linux-x64:/tmp/nodetmp/node-v7.9.0-linux-x64/bin
+# Pick the Node.js build matching the target architecture so the multi-arch
+# (linux/amd64,linux/arm64) docker build works. Hardcoding linux-x64 breaks the
+# arm64 leg (npm exits 127 - cannot exec an x64 binary).
+NODE_ARCH=x64; [ "$(uname -m)" = "aarch64" ] && NODE_ARCH=arm64
+curl --output /tmp/nodetmp/testing.tar.gz https://nodejs.org/dist/v7.9.0/node-v7.9.0-linux-${NODE_ARCH}.tar.gz && tar -zxvf /tmp/nodetmp/testing.tar.gz -C /tmp/nodetmp/
+export PATH=$PATH:/tmp/nodetmp/node-v7.9.0-linux-${NODE_ARCH}:/tmp/nodetmp/node-v7.9.0-linux-${NODE_ARCH}/bin
 
 get_by_url() {
     build_download_dir=/build/download
