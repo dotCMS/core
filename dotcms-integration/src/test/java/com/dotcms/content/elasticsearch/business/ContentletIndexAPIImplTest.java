@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -62,6 +63,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -426,6 +429,53 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         // restore old active index
         indexAPI.activateIndex(oldActiveWorking);
         indexAPI.activateIndex(oldActiveLive);
+    }
+
+    /**
+     * Guard for issue #35640 (TC-018): {@link ContentletIndexAPI#delete(String)} must refuse
+     * to delete the currently active index (the maintenance UI hides Delete for active indices,
+     * but a direct REST/AJAX call previously bypassed that and could wipe the only index). The
+     * refusal is enforced via a {@link DotStateException} and can be overridden with the
+     * {@code FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE} feature flag.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_activeIndex_isRejected_unlessFeatureFlagOverrides() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        try {
+            // The active index is reported by getCurrentIndex(): delete must be rejected and
+            // the index must survive.
+            assertThrows(DotStateException.class, () -> indexAPI.delete(workingIndex));
+            assertTrue("Active index must survive a rejected delete",
+                    indexAPI.listDotCMSIndices().contains(workingIndex));
+
+            // Feature-flag bypass: the same delete now goes through.
+            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+            try {
+                assertTrue(indexAPI.delete(workingIndex));
+                assertFalse(indexAPI.listDotCMSIndices().contains(workingIndex));
+            } finally {
+                Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            }
+        } finally {
+            // Restore the prior active working pointer (best effort).
+            try {
+                if (oldActiveWorking != null) {
+                    indexAPI.activateIndex(oldActiveWorking);
+                }
+            } catch (final Exception e) {
+                Logger.warn(this, "Unable to restore active working index after test", e);
+            }
+        }
     }
 
     /**
