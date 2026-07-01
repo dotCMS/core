@@ -117,85 +117,40 @@ describe('DotPublishingQueueShellComponent', () => {
         });
     });
 
-    describe('delete bundles dialog', () => {
-        function openAndCloseWith(scope: 'selected' | 'all' | 'success' | 'failed' | undefined) {
-            spectator.component.openDeleteBundles();
-            expect(dialogService.open).toHaveBeenCalled();
-            onCloseSubject.next(scope);
-        }
-
-        it('opens the delete dialog when openDeleteBundles is called', () => {
-            spectator.component.openDeleteBundles();
-            expect(dialogService.open).toHaveBeenCalled();
-        });
-
-        it('does nothing when the dialog closes with no scope (X / ESC / overlay)', () => {
+    describe('confirmDeleteBundles', () => {
+        it('does nothing when there is no selection (defensive guard)', () => {
             jest.spyOn(store, 'deleteBundlesBulk');
-            jest.spyOn(store, 'purgeBundles');
-            openAndCloseWith(undefined);
-            expect(store.deleteBundlesBulk).not.toHaveBeenCalled();
-            expect(store.purgeBundles).not.toHaveBeenCalled();
+            spectator.component.confirmDeleteBundles();
             expect(confirmationService.confirm).not.toHaveBeenCalled();
+            expect(store.deleteBundlesBulk).not.toHaveBeenCalled();
         });
 
-        it('SELECTED → store.deleteBundlesBulk with current selected ids', () => {
+        it('opens a ConfirmDialog when there is a selection', () => {
+            store.setBundlesSelection(['b1', 'b2']);
+            spectator.component.confirmDeleteBundles();
+            expect(confirmationService.confirm).toHaveBeenCalled();
+        });
+
+        it('calls store.deleteBundlesBulk with the selected ids on accept', () => {
             store.setBundlesSelection(['b1', 'b2']);
             const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
-            openAndCloseWith('selected');
-            expect(spy).toHaveBeenCalledWith(['b1', 'b2']);
-        });
-
-        it('SUCCESS → store.purgeBundles with the SUCCESS status list', () => {
-            const spy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
-            openAndCloseWith('success');
-            expect(spy).toHaveBeenCalled();
-            const statuses = spy.mock.calls[0][0] as readonly string[];
-            expect(statuses).toEqual(expect.arrayContaining(['SUCCESS', 'SUCCESS_WITH_WARNINGS']));
-        });
-
-        it('FAILED → store.purgeBundles with the legacy 5-status FAILED list', () => {
-            const spy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
-            openAndCloseWith('failed');
-            expect(spy).toHaveBeenCalled();
-            const statuses = spy.mock.calls[0][0] as readonly string[];
-            expect(statuses).toEqual(
-                expect.arrayContaining([
-                    'FAILED_TO_SEND_TO_ALL_GROUPS',
-                    'FAILED_TO_SEND_TO_SOME_GROUPS',
-                    'FAILED_TO_BUNDLE',
-                    'FAILED_TO_SENT',
-                    'FAILED_TO_PUBLISH'
-                ])
-            );
-            // Must NOT include the 3 newer statuses (per legacy /api/bundle/all/fail)
-            expect(statuses).toEqual(
-                expect.not.arrayContaining([
-                    'FAILED_INTEGRITY_CHECK',
-                    'INVALID_TOKEN',
-                    'LICENSE_REQUIRED'
-                ])
-            );
-        });
-
-        it('ALL → confirmation dialog; purgeBundles() with no statuses on accept', () => {
-            const purgeSpy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
             confirmationService.confirm.mockImplementation((cfg) => {
                 cfg.accept?.();
                 return confirmationService;
             });
-            openAndCloseWith('all');
-            expect(confirmationService.confirm).toHaveBeenCalled();
-            expect(purgeSpy).toHaveBeenCalledWith();
+            spectator.component.confirmDeleteBundles();
+            expect(spy).toHaveBeenCalledWith(['b1', 'b2']);
         });
 
-        it('ALL → no purge if the user rejects the confirmation', () => {
-            const purgeSpy = jest.spyOn(store, 'purgeBundles').mockReturnValue(undefined);
+        it('does NOT delete on reject', () => {
+            store.setBundlesSelection(['b1']);
+            const spy = jest.spyOn(store, 'deleteBundlesBulk').mockReturnValue(undefined);
             confirmationService.confirm.mockImplementation((cfg) => {
                 cfg.reject?.();
                 return confirmationService;
             });
-            openAndCloseWith('all');
-            expect(purgeSpy).not.toHaveBeenCalled();
+            spectator.component.confirmDeleteBundles();
+            expect(spy).not.toHaveBeenCalled();
         });
     });
 });

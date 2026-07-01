@@ -13,18 +13,10 @@ import { DotPublishingQueueToolbarComponent } from '../components/dot-publishing
 import { DotPublishingQueueAssetListDialogHeaderComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog-header.component';
 import { DotPublishingQueueAssetListDialogComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog.component';
 import { DotPublishingQueueBundleDetailsDialogComponent } from '../dialogs/dot-publishing-queue-bundle-details-dialog/dot-publishing-queue-bundle-details-dialog.component';
-import {
-    DeleteBundlesScope,
-    DotPublishingQueueDeleteDialogComponent
-} from '../dialogs/dot-publishing-queue-delete-dialog/dot-publishing-queue-delete-dialog.component';
 import { DotPublishingQueueSelectBundleDialogComponent } from '../dialogs/dot-publishing-queue-select-bundle-dialog/dot-publishing-queue-select-bundle-dialog.component';
 import { DotPublishingQueueUploadDialogComponent } from '../dialogs/dot-publishing-queue-upload-dialog/dot-publishing-queue-upload-dialog.component';
 import { DotPublishingQueueTableComponent } from '../dot-publishing-queue-table/dot-publishing-queue-table.component';
-import {
-    DotPublishingQueueStore,
-    PURGE_FAILED_STATUSES,
-    PURGE_SUCCESS_STATUSES
-} from '../store/dot-publishing-queue.store';
+import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 /** Statuses for which the bundle hasn't yet been packed — assets can still be
  * edited from the asset list dialog. Anything else is read-only (already in
@@ -58,7 +50,6 @@ export class DotPublishingQueueShellComponent {
     private detailRef: DynamicDialogRef | null = null;
     private uploadRef: DynamicDialogRef | null = null;
     private assetListRef: DynamicDialogRef | null = null;
-    private deleteRef: DynamicDialogRef | null = null;
     private selectBundleRef: DynamicDialogRef | null = null;
 
     constructor() {
@@ -115,57 +106,30 @@ export class DotPublishingQueueShellComponent {
         });
     }
 
-    /** Opens the "Select Bundles to Delete" dialog; on close, dispatches the
-     * chosen scope to the store. The ALL scope is gated by a destructive-confirm
-     * step to match the legacy JSP's pre-call `confirm("This cannot be undone")`. */
-    openDeleteBundles(): void {
-        if (this.deleteRef) {
+    /** Confirms bulk removal of the currently-selected bundles. The toolbar only
+     * surfaces the trigger when there's a selection, so we never reach here with
+     * an empty list under normal use — but we still guard, since signals can
+     * change between the click and the accept callback. */
+    confirmDeleteBundles(): void {
+        const bundleIds = this.store.bundlesSelectedIds();
+        if (bundleIds.length === 0) {
             return;
         }
-        this.deleteRef = this.dialogService.open(DotPublishingQueueDeleteDialogComponent, {
-            header: this.dotMessageService.get('bundle.delete.title'),
-            width: '500px',
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get('publishing-queue.bulk-remove.header'),
+            message: this.dotMessageService.get(
+                'publishing-queue.bulk-remove.message',
+                `${bundleIds.length}`
+            ),
+            acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
+            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptButtonStyleClass: 'p-button-primary',
+            rejectButtonStyleClass: 'p-button-text',
+            defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
-            draggable: false,
-            position: 'center'
+            accept: () => this.store.deleteBundlesBulk(this.store.bundlesSelectedIds())
         });
-        this.deleteRef.onClose.pipe(take(1)).subscribe((scope: DeleteBundlesScope | undefined) => {
-            this.deleteRef = null;
-            if (scope) {
-                this.dispatchDelete(scope);
-            }
-        });
-    }
-
-    private dispatchDelete(scope: DeleteBundlesScope): void {
-        switch (scope) {
-            case 'selected':
-                this.store.deleteBundlesBulk(this.store.bundlesSelectedIds());
-                break;
-            case 'all':
-                this.confirmationService.confirm({
-                    header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
-                    message: this.dotMessageService.get('bundle.delete.all.confirmation'),
-                    acceptLabel: this.dotMessageService.get(
-                        'publishing-queue.history.kebab.delete'
-                    ),
-                    rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
-                    acceptButtonStyleClass: 'p-button-primary',
-                    rejectButtonStyleClass: 'p-button-text',
-                    defaultFocus: 'reject',
-                    closable: true,
-                    closeOnEscape: true,
-                    accept: () => this.store.purgeBundles()
-                });
-                break;
-            case 'success':
-                this.store.purgeBundles(PURGE_SUCCESS_STATUSES);
-                break;
-            case 'failed':
-                this.store.purgeBundles(PURGE_FAILED_STATUSES);
-                break;
-        }
     }
 
     private syncAssetList(bundleId: string | null): void {
