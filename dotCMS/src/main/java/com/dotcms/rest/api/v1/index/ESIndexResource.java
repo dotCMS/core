@@ -560,29 +560,34 @@ public class ESIndexResource {
         final InitDataObject init = auth(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
 
-        if(indexDoesNotExist(indexName) ){
+        // Same normalization as deleteIndex: accept both the short name and the full physical
+        // name (with cluster prefix) so this endpoint stays consistent and does not 404 on the
+        // latter (issue #35640, TC-016).
+        final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
+
+        if(indexDoesNotExist(resolvedName) ){
             return Response.status(404).build();
         }
-        
-        
+
+
         switch(indexAction){
             case DEACTIVATE:
-                APILocator.getContentletIndexAPI().deactivateIndex(indexName);
+                APILocator.getContentletIndexAPI().deactivateIndex(resolvedName);
                 break;
             case CLEAR:
-                APILocator.getESIndexAPI().clearIndex(indexName);
+                APILocator.getESIndexAPI().clearIndex(resolvedName);
                 break;
             case OPEN:
-                APILocator.getESIndexAPI().openIndex(indexName);
+                APILocator.getESIndexAPI().openIndex(resolvedName);
                 break;
             case CLOSE:
-                APILocator.getESIndexAPI().closeIndex(indexName);
+                APILocator.getESIndexAPI().closeIndex(resolvedName);
                 break;
             default:
-                APILocator.getContentletIndexAPI().activateIndex(indexName);
-            
+                APILocator.getContentletIndexAPI().activateIndex(resolvedName);
+
         }
-        String message = indexAction.name().toLowerCase() + " " + indexName;
+        String message = indexAction.name().toLowerCase() + " " + resolvedName;
         
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
