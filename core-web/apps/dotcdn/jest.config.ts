@@ -1,4 +1,4 @@
-/* eslint-disable */
+ 
 export default {
     displayName: 'dotcdn',
     preset: '../../jest.preset.js',

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Subject } from 'rxjs';
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
