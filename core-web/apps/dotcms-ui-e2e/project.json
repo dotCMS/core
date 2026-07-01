@@ -8,47 +8,18 @@
         "e2e": {
             "outputs": ["{workspaceRoot}/dist/.playwright/apps/dotcms-ui-e2e"],
             "configurations": {
-                "ci": {
-                    "headed": false,
-                    "ui": false
-                },
-                "dev": {
-                    "headed": false,
-                    "ui": false
-                },
-                "local": {
-                    "headed": false,
-                    "ui": false
-                },
-                "headless": {
-                    "headed": false
-                },
+                "ci": {},
+                "dev": {},
+                "local": {},
+                "headless": {},
                 "ui": {
-                    "ui": true
+                    "args": "--ui"
                 }
             }
         },
         "lint": {
             "options": {
                 "args": ["src/**/*.ts", "playwright.config.ts"]
-            }
-        },
-        "e2e:ci": {
-            "options": {
-                "headed": false,
-                "ui": false
-            }
-        },
-        "e2e:dev": {
-            "options": {
-                "headed": false,
-                "ui": false
-            }
-        },
-        "e2e:dev:headless": {
-            "options": {
-                "headed": false,
-                "ui": false
             }
         },
         "e2e:dev:full": {
