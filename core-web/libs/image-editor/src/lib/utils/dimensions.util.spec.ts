@@ -92,7 +92,7 @@ describe('dimensions.util', () => {
             });
         });
 
-        it('uses the crop size when an active crop is present and not resizing', () => {
+        it('uses the crop size when an active crop is present', () => {
             expect(
                 computeOutputDimensions(
                     ctx(1000, 800),
@@ -102,14 +102,16 @@ describe('dimensions.util', () => {
             ).toEqual({ width: 200, height: 151 });
         });
 
-        it('ignores the crop when resizing (resize supersedes crop)', () => {
+        it('uses the crop size even when resizing (crop runs after resize)', () => {
+            // Legacy parity: the crop was drawn on the scaled preview, so its w/h are
+            // already in the resized space and dictate the final size.
             expect(
                 computeOutputDimensions(
                     ctx(1000, 800),
                     transform({ scale: 50 }),
                     crop({ active: true, w: 200, h: 150 })
                 )
-            ).toEqual({ width: 500, height: 400 });
+            ).toEqual({ width: 200, height: 150 });
         });
 
         it('uses explicit output width and height when both are set', () => {

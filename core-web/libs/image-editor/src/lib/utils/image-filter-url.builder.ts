@@ -44,10 +44,12 @@ function compressionFilter(mode: CompressionMode, quality: number): AppliedFilte
 
 /**
  * Builds the ordered list of server filters from the current edit state,
- * mirroring the legacy ImageEditor rules: resizing removes crop, vertical flip
- * is expressed as a 180deg rotation plus flip-token cancellation, and the
- * compression filter is always applied last and exclusively. Crop is placed
- * relative to the rotate/flip transforms by {@link FilterChainInput.cropBeforeTransforms}:
+ * mirroring the legacy ImageEditor rules: resize and crop coexist (the legacy
+ * rule is asymmetric — adding a resize clears any crop, but a crop drawn on the
+ * scaled preview keeps the resize and runs after it, so the crop pixels stay in
+ * the scaled image's space), vertical flip is expressed as a 180deg rotation plus
+ * flip-token cancellation, and the compression filter is always applied last and
+ * exclusively. Crop is placed relative to the rotate/flip transforms by {@link FilterChainInput.cropBeforeTransforms}:
  * a crop drawn before rotating must run first (on the un-rotated image it was drawn
  * against), while a crop drawn on an already-rotated preview runs after — so the
  * server applies it in the same coordinate space the user saw.
@@ -74,9 +76,13 @@ export function buildFilterChain(input: FilterChainInput): AppliedFilter[] {
         filters.push({ name: 'Resize', args });
     }
 
-    // Resize and crop stay mutually exclusive: resize wins.
+    // Resize and crop coexist: the crop box was drawn on the already-scaled
+    // preview, so its pixels are in the resized image's space. Emitting the Crop
+    // after the Resize (below) makes the server crop the scaled image — the region
+    // the user actually selected. (The reverse guard — a resize clearing an
+    // existing crop — lives in withTransform, mirroring the legacy editor.)
     const cropFilter =
-        !hasResize && crop.active && crop.w > 0 && crop.h > 0
+        crop.active && crop.w > 0 && crop.h > 0
             ? {
                   name: 'Crop' as const,
                   args:

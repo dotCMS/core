@@ -188,22 +188,24 @@ describe('image-filter-url.builder', () => {
         });
     });
 
-    describe('buildFilterChain - resize removes crop', () => {
-        it('drops the Crop filter when resizing', () => {
+    describe('buildFilterChain - resize and crop coexist (legacy parity)', () => {
+        it('keeps the Crop after the Resize when explicit output dimensions are set', () => {
             const result = chain({
                 transform: { outputWidth: 600 },
                 crop: { active: true, x: 0, y: 0, w: 100, h: 100 }
             });
-            expect(result).toEqual([{ name: 'Resize', args: '/resize_w/600' }]);
-            expect(result.some((f) => f.name === 'Crop')).toBe(false);
+            // Crop is drawn on the scaled preview, so it runs after the resize.
+            expect(result.map((f) => f.name)).toEqual(['Resize', 'Crop']);
         });
 
-        it('treats a non-100 scale as resizing and drops crop', () => {
+        it('keeps the Crop after a non-100 scale resize', () => {
             const result = chain({
                 transform: { scale: 50 },
                 crop: { active: true, x: 0, y: 0, w: 100, h: 100 }
             });
-            expect(result.some((f) => f.name === 'Crop')).toBe(false);
+            expect(result.map((f) => f.name)).toEqual(['Resize', 'Crop']);
+            // The crop coords stay in the scaled space (they are emitted verbatim).
+            expect(result[1].args).toBe('/crop_w/100/crop_h/100/crop_x/0/crop_y/0');
         });
 
         it('builds a Resize filter from scale% × the natural size', () => {
