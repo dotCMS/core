@@ -17,15 +17,15 @@
         },
         "publish": {
             "executor": "nx:run-commands",
-            "options": {
-                "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
-            },
             "dependsOn": [
                 {
                     "projects": "self",
                     "target": "build"
                 }
-            ]
+            ],
+            "options": {
+                "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
+            }
         },
         "lint": {
             "executor": "@nx/eslint:lint",

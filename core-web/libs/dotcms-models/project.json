@@ -3,11 +3,11 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms-models/src",
     "projectType": "library",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

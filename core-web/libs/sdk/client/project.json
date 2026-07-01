@@ -43,10 +43,10 @@
         },
         "publish": {
             "executor": "nx:run-commands",
+            "dependsOn": ["build"],
             "options": {
                 "command": "node tools/scripts/publish.mjs sdk-client {args.ver} {args.tag}"
-            },
-            "dependsOn": ["build"]
+            }
         },
         "nx-release-publish": {
             "options": {

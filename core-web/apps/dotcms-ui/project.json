@@ -4,10 +4,14 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-ui/src",
     "prefix": "dot",
+    "tags": [],
+    "implicitDependencies": ["dotcms-webcomponents"],
     "targets": {
         "build": {
             "executor": "@angular/build:application",
             "outputs": ["{options.outputPath.base}"],
+            "defaultConfiguration": "production",
+            "dependsOn": ["^build"],
             "options": {
                 "baseHref": "./",
                 "outputPath": {
@@ -118,15 +122,13 @@
                     "outputHashing": "none",
                     "budgets": []
                 }
-            },
-            "defaultConfiguration": "production",
-            "dependsOn": ["^build"]
+            }
         },
         "serve": {
             "continuous": true,
             "executor": "@angular/build:dev-server",
             "dependsOn": [],
-
+            "defaultConfiguration": "development",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
@@ -141,8 +143,7 @@
                 "development": {
                     "buildTarget": "dotcms-ui:build:development"
                 }
-            },
-            "defaultConfiguration": "development"
+            }
         },
         "extract-i18n": {
             "executor": "@angular/build:extract-i18n",
@@ -189,7 +190,5 @@
                 }
             }
         }
-    },
-    "tags": [],
-    "implicitDependencies": ["dotcms-webcomponents"]
+    }
 }

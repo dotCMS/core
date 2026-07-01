@@ -9,6 +9,7 @@
         "build": {
             "executor": "@angular-devkit/build-angular:browser-esbuild",
             "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
             "options": {
                 "outputPath": "dist/apps/dotcms-binary-field-builder",
                 "index": "apps/dotcms-binary-field-builder/src/index.html",
@@ -70,11 +71,12 @@
                     "optimization": false,
                     "watch": true
                 }
-            },
-            "defaultConfiguration": "production"
+            }
         },
         "serve": {
             "executor": "@angular/build:dev-server",
+            "defaultConfiguration": "production",
+            "continuous": true,
             "configurations": {
                 "production": {
                     "buildTarget": "dotcms-binary-field-builder:build:production"
@@ -82,9 +84,7 @@
                 "development": {
                     "buildTarget": "dotcms-binary-field-builder:build:development"
                 }
-            },
-            "defaultConfiguration": "production",
-            "continuous": true
+            }
         },
         "extract-i18n": {
             "executor": "@angular/build:extract-i18n",

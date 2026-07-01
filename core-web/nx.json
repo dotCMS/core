@@ -112,7 +112,7 @@
             "inputs": ["default", "^production"]
         },
         "lint": {
-            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
+            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
         },
         "build-storybook": {
             "inputs": [
@@ -137,7 +137,7 @@
             }
         },
         "@nx/eslint:lint": {
-            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"],
+            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
             "cache": true
         },
         "@nx/rollup:rollup": {
@@ -189,7 +189,7 @@
             "!{projectRoot}/karma.conf.js",
             "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
             "!{projectRoot}/jest.config.[jt]s",
-            "!{projectRoot}/.eslintrc.json",
+            "!{projectRoot}/eslint.config.mjs",
             "!{projectRoot}/.storybook/**/*",
             "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
             "!{projectRoot}/tsconfig.storybook.json",

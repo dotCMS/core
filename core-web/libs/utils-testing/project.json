@@ -4,10 +4,10 @@
     "projectType": "library",
     "sourceRoot": "libs/utils-testing/src",
     "prefix": "dotcms",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint"
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }
