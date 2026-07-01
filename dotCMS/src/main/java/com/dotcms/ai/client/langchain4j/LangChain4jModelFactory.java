@@ -24,6 +24,7 @@ public class LangChain4jModelFactory {
             new AzureOpenAiModelProviderStrategy(),
             new BedrockModelProviderStrategy(),
             new VertexAiModelProviderStrategy(),
+            new OpenRouterModelProviderStrategy(),
             new GoogleAiGeminiModelProviderStrategy()
     );
 
