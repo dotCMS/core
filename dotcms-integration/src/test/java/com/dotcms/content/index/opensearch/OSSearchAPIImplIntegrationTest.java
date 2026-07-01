@@ -16,6 +16,7 @@ import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -399,6 +400,62 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
         Logger.info(this,
                 "✅ test_search_indexedDocument_totalResultsIsOne_scrollIdIsNull passed");
+    }
+
+    // =======================================================================
+    // Tests – permission injection (non-admin filtering)
+    // =======================================================================
+
+    /**
+     * #35669 (point 3) — {@code searchRaw} permission injection filters results for non-admin users.
+     *
+     * <p>Given scenario: One document whose {@code permissions} field carries a token for a role
+     * that no test user holds is indexed into the working index (with {@code live:true}, so the only
+     * possible reason for exclusion is the permission clause). Two searches are then run against the
+     * same index:</p>
+     * <ul>
+     *   <li><b>As the system user (admin)</b> — {@code executeSearch} detects the CMS Admin role and
+     *       injects <i>no</i> permission filter, so the document is visible.</li>
+     *   <li><b>As a freshly-created non-admin user</b> — {@code addPermissionsToQuery} injects a
+     *       required permission clause built from that user's roles. The document matches none of
+     *       them (owner clause fails, permission token belongs to an unrelated role), so it is
+     *       filtered out.</li>
+     * </ul>
+     *
+     * <p>Expected: admin sees {@code 1} hit; the non-admin user sees {@code 0}. This proves the
+     * permission filter is injected for non-admins and skipped for admins on the OS read path.</p>
+     */
+    @Test
+    public void test_searchRaw_nonAdminUser_isFilteredByInjectedPermissions() throws Exception {
+
+        // A role id no test user holds → the injected permission token never matches.
+        final String unheldRoleId = "unheld-role-" + RUN_ID;
+        final String docId = "perm-hidden-" + RUN_ID + "_1_default";
+        final String docJson =
+                "{\"identifier\":\"perm-hidden-" + RUN_ID + "\","
+                + "\"inode\":\"perm-hidden-inode-" + RUN_ID + "\","
+                + "\"live\":true,"
+                + "\"contenttype\":\"testtype\","
+                + "\"permissions\":\"P" + unheldRoleId + ".1P \"}";
+        indexDocument(physicalWorking, docId, docJson);
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final String matchAll = "{\"query\":{\"match_all\":{}}}";
+
+        // Admin: no permission filter injected → document is visible.
+        final ContentSearchResponse adminResp =
+                osSearchAPI.searchRaw(matchAll, false, systemUser, false);
+        assertEquals("Admin (no permission filter) must see the document",
+                1L, adminResp.hits().getTotalHits().value());
+
+        // Non-admin: permission filter injected → document is filtered out.
+        final ContentSearchResponse limitedResp =
+                osSearchAPI.searchRaw(matchAll, false, limitedUser, false);
+        assertEquals("Non-admin user must NOT see a document they lack read permission on",
+                0L, limitedResp.hits().getTotalHits().value());
+
+        Logger.info(this,
+                "✅ test_searchRaw_nonAdminUser_isFilteredByInjectedPermissions passed");
     }
 
     // =======================================================================
