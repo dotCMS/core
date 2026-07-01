@@ -20,11 +20,14 @@ import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 /** Statuses for which the bundle hasn't yet been packed — assets can still be
  * edited from the asset list dialog. Anything else is read-only (already in
- * `publish_audit`). */
+ * `publish_audit`). SCHEDULED bundles are queued for a future publish date but
+ * haven't been picked up by the cron yet, so removing an asset is still safe —
+ * the BE only rejects removal for `in progress` bundles. */
 const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
     null,
     PublishAuditStatus.BUNDLE_REQUESTED,
-    PublishAuditStatus.WAITING_FOR_PUBLISHING
+    PublishAuditStatus.WAITING_FOR_PUBLISHING,
+    PublishAuditStatus.SCHEDULED
 ]);
 
 @Component({

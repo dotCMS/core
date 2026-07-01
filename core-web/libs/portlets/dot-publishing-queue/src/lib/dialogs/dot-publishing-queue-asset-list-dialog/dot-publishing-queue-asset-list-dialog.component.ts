@@ -16,7 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -25,10 +25,10 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { BundleAssetView } from '@dotcms/dotcms-models';
+import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
+import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
@@ -62,8 +62,10 @@ export class DotPublishingQueueAssetListDialogComponent {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
+    private readonly editUrlService = inject(DotContentletEditUrlService);
     /** Optional — present only when opened via DialogService. */
     private readonly dialogConfig = inject(DynamicDialogConfig, { optional: true });
+    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
 
     /** When opened from the History tab the bundle is already in `publish_audit`
      * and assets can no longer be removed — the dialog renders as read-only.
@@ -76,6 +78,12 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     readonly assetSearch = signal('');
     private readonly searchSubject = new Subject<string>();
+
+    /** Per-asset edit URL, resolved by `DotContentletEditUrlService` after each
+     * asset list load. Non-contentlet assets (templates, languages, containers,
+     * etc.) are never resolved and stay plain text — same rule as the Select
+     * Bundle dialog. */
+    readonly assetEditUrls = signal<Map<string, string>>(new Map());
 
     /** Search input only shows when the loaded asset list has more than ASSET_SEARCH_THRESHOLD items. */
     readonly showAssetSearch = computed(
@@ -108,15 +116,76 @@ export class DotPublishingQueueAssetListDialogComponent {
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
             .subscribe((value) => this.assetSearch.set(value));
 
-        // Reset the input every time the dialog is reused for a different bundle.
+        // Reset input + resolved URLs every time the dialog is reused for a
+        // different bundle. The bundleId signal changes before assets stream in,
+        // so this only cleans up — resolution kicks off in the assets effect below.
         effect(() => {
             this.store.selectedBundleId();
-            untracked(() => this.assetSearch.set(''));
+            untracked(() => {
+                this.assetSearch.set('');
+                this.assetEditUrls.set(new Map());
+            });
+        });
+
+        // Resolve contentlet edit URLs once the store finishes loading. The
+        // service caches by content type, so many contentlets of the same type
+        // trigger a single metadata fetch.
+        effect(() => {
+            const status = this.store.assetListStatus();
+            const assets = this.store.selectedAssets();
+            if (status !== 'loaded') {
+                return;
+            }
+            untracked(() => this.resolveAssetEditUrls(assets));
         });
     }
 
     onSearch(value: string): void {
         this.searchSubject.next(value);
+    }
+
+    /** Opens the resolved contentlet editor URL in a new tab. No-op for assets
+     * without a resolved URL (non-contentlet types or still-loading). Mirrors the
+     * behavior of the Select Bundle dialog. */
+    onAssetRowClick(asset: BundleAssetView): void {
+        const url = this.editUrlFor(asset);
+        if (url) {
+            window.open(url, '_blank', 'noopener');
+        }
+    }
+
+    /** Template helper — used to bind `cursor-pointer` on linkable rows and to
+     * short-circuit `onAssetRowClick` when the asset isn't linkable. */
+    editUrlFor(asset: BundleAssetView): string | null {
+        return this.assetEditUrls().get(asset.asset) ?? null;
+    }
+
+    /** Closes the dialog. Called from the footer Close button. */
+    closeDialog(): void {
+        this.dialogRef?.close();
+    }
+
+    private resolveAssetEditUrls(assets: BundleAssetView[]): void {
+        const urls = new Map<string, string>();
+
+        for (const asset of assets) {
+            if (asset.type !== 'contentlet' || !asset.inode) {
+                continue;
+            }
+            const partial = {
+                inode: asset.inode,
+                contentType: asset.content_type_name ?? ''
+            } as DotCMSContentlet;
+
+            this.editUrlService
+                .resolveEditUrl(partial)
+                .pipe(take(1))
+                .subscribe((url) => {
+                    urls.set(asset.asset, url);
+                    // Re-emit to notify signal consumers — Map mutation alone won't.
+                    this.assetEditUrls.set(new Map(urls));
+                });
+        }
     }
 
     onRemoveAsset(asset: BundleAssetView): void {

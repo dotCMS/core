@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-2" data-testid="pq-asset-list-dialog">
+<div class="flex flex-col gap-4" data-testid="pq-asset-list-dialog">
     @if (showAssetSearch()) {
         <!-- mt-1 reserves room for the focus ring; without it the ring clips
              against the dialog header when the input gets keyboard focus. -->
@@ -20,11 +20,12 @@
     }
 
     <div
-        class="h-96 overflow-auto rounded-md border border-surface-200"
+        class="flex h-96 flex-col overflow-hidden rounded-md border border-surface-200"
         data-testid="pq-asset-list-shell">
         <p-table
             [value]="filteredAssets()"
             [loading]="store.assetListStatus() === 'loading'"
+            [rowHover]="true"
             [scrollable]="true"
             scrollHeight="flex"
             data-testid="pq-asset-list-table">
@@ -51,20 +52,24 @@
             </ng-template>
 
             <ng-template pTemplate="body" let-asset>
-                <tr class="group" data-testid="pq-asset-list-row">
+                <tr
+                    class="group"
+                    [class.cursor-pointer]="!!editUrlFor(asset)"
+                    (click)="onAssetRowClick(asset)"
+                    data-testid="pq-asset-list-row">
                     <td data-testid="pq-asset-name">{{ asset.title }}</td>
                     <td data-testid="pq-asset-type">
                         <p-tag severity="secondary" [rounded]="false" [value]="asset.type" />
                     </td>
                     @if (allowRemove) {
-                        <td class="text-right">
+                        <td class="text-right" (click)="$event.stopPropagation()">
                             <p-button
                                 icon="pi pi-trash"
                                 severity="danger"
                                 [text]="true"
                                 [rounded]="true"
                                 size="small"
-                                styleClass="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                                 [pTooltip]="'publishing-queue.asset-list.remove' | dm"
                                 tooltipPosition="left"
                                 [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
@@ -93,6 +98,14 @@
                 </tr>
             </ng-template>
         </p-table>
+    </div>
+
+    <div class="flex justify-end">
+        <p-button
+            [label]="'publishing-queue.close' | dm"
+            [text]="true"
+            (onClick)="closeDialog()"
+            data-testid="pq-asset-list-close-btn" />
     </div>
 </div>
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
