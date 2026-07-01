@@ -143,7 +143,10 @@
 			return;
 		}
 
-		dojo.style('loadingPermissionsAccordion', { display: '' });
+		if(dojo.byId("loadingPermissionsAccordion")){
+		    dojo.style('loadingPermissionsAccordion', { display: '' });
+		}
+		
 		dojo.style('assetPermissionsWrapper', { display: 'none' });
 
 		if(dijit.byId('permissionsAccordionContainer')) {

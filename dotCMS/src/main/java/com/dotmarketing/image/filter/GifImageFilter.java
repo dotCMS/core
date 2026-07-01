@@ -15,8 +15,9 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class GifImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
@@ -27,7 +28,7 @@ public class GifImageFilter extends ImageFilter {
 	}
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 
-		File resultFile = getResultsFile(file, parameters, "gif");
+		File resultFile = getResultsFile(file, parameters);
 
 		if(!overwrite(resultFile,parameters)){
 			return resultFile;
@@ -45,15 +46,17 @@ public class GifImageFilter extends ImageFilter {
 			Graphics2D graphics = dst.createGraphics();  
 
 			graphics.setPaint ( new Color ( 255, 255, 255 ) );
+            final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
 
 			graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
+			ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile);
 			writer.setOutput(ios);
 			writer.write(null,new IIOImage(dst,null,null),iwp);
 			ios.flush();
 			writer.dispose();
 			ios.close();
+			tempResultFile.renameTo(resultFile);
 			//writer.setOutput(output);
 
 		//	IIOImage image = new IIOImage(src, null, null);
@@ -74,5 +77,10 @@ public class GifImageFilter extends ImageFilter {
 		return resultFile;
 	}
 	
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters, "gif");
+    }
+
 
 }
