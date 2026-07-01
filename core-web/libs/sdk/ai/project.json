@@ -50,19 +50,20 @@
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/sdk/ai/src/**/*.ts", "libs/sdk/ai/scripts/**/*.ts"]
+                "args": ["src/**/*.ts", "scripts/**/*.ts"]
             }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "dependsOn": ["generate-spec"],
             "options": {
-                "jestConfig": "libs/sdk/ai/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
     }

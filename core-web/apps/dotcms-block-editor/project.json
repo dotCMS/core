@@ -112,10 +112,6 @@
                 "buildTarget": "dotcms-block-editor:build"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
             "executor": "@angular/build:karma",
             "options": {

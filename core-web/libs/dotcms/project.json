@@ -27,15 +27,19 @@
                 "command": "node tools/scripts/publish.mjs dotcms {args.ver} {args.tag}"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/libs/dotcms"],
+            "outputs": [
+                "{workspaceRoot}/coverage/libs/dotcms",
+                "{workspaceRoot}/target/core-web-reports"
+            ],
             "options": {
-                "jestConfig": "libs/dotcms/jest.config.ts"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
     }

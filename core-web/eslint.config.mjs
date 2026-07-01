@@ -267,7 +267,13 @@ export default [
             '**/*.md',
             '/**/node_modules/*',
             '**/*vite.config*.timestamp*',
-            '**/*vitest.config*.timestamp*'
+            '**/*vitest.config*.timestamp*',
+            // Generated / build output — never linted (mirrors .gitignore)
+            '**/.xmcp/**',
+            '**/src/generated/**',
+            '**/dist/**',
+            // Storybook tooling config (not app source; imports projects by path)
+            '**/.storybook/**'
         ]
     }
 ];

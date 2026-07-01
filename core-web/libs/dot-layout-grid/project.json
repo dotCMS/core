@@ -6,10 +6,6 @@
     "prefix": "",
     "tags": ["skip:test", "skip:lint"],
     "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
             "executor": "@angular/build:karma",
             "outputs": ["{workspaceRoot}/coverage/libs/dot-layout-grid"],

@@ -7,15 +7,15 @@
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:velocity-playground"],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/portlets/dot-velocity-playground/jest.config.ts",
-                "tsConfig": "libs/portlets/dot-velocity-playground/tsconfig.spec.json"
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint"
         }
     }
 }

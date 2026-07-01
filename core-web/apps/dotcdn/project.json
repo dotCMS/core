@@ -81,15 +81,10 @@
                 "buildTarget": "dotcdn:build"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/apps/dotcdn"],
             "options": {
-                "jestConfig": "apps/dotcdn/jest.config.ts",
+                "passWithNoTests": true,
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
@@ -99,8 +94,13 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "scripts": ["node_modules/chart.js/dist/Chart.js"],
-                "tsConfig": "apps/dotcdn/tsconfig.spec.json"
+                "scripts": ["node_modules/chart.js/dist/Chart.js"]
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
     }

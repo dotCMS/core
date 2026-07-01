@@ -6,11 +6,7 @@
     "implicitDependencies": ["dotcms-ui"],
     "targets": {
         "e2e": {
-            "executor": "@nx/playwright:playwright",
             "outputs": ["{workspaceRoot}/dist/.playwright/apps/dotcms-ui-e2e"],
-            "options": {
-                "config": "apps/dotcms-ui-e2e/playwright.config.ts"
-            },
             "configurations": {
                 "ci": {
                     "headed": false,
@@ -33,35 +29,24 @@
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": [
-                    "apps/dotcms-ui-e2e/src/**/*.ts",
-                    "apps/dotcms-ui-e2e/playwright.config.ts"
-                ]
+                "args": ["src/**/*.ts", "playwright.config.ts"]
             }
         },
         "e2e:ci": {
-            "executor": "@nx/playwright:playwright",
             "options": {
-                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
                 "headed": false,
                 "ui": false
             }
         },
         "e2e:dev": {
-            "executor": "@nx/playwright:playwright",
             "options": {
-                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
                 "headed": false,
                 "ui": false
             }
         },
         "e2e:dev:headless": {
-            "executor": "@nx/playwright:playwright",
             "options": {
-                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
                 "headed": false,
                 "ui": false
             }

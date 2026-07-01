@@ -229,6 +229,63 @@
             "options": {
                 "testTargetName": "test"
             }
+        },
+        {
+            "plugin": "@nx/jest/plugin",
+            "options": {
+                "targetName": "test"
+            },
+            "include": [
+                "apps/dotcdn/**/*",
+                "apps/dotcms-binary-field-builder/**/*",
+                "apps/dotcms-ui/**/*",
+                "apps/mcp-server/**/*",
+                "libs/block-editor/**/*",
+                "libs/data-access/**/*",
+                "libs/dot-rules/**/*",
+                "libs/dotcms/**/*",
+                "libs/edit-content/**/*",
+                "libs/edit-content-bridge/**/*",
+                "libs/global-store/**/*",
+                "libs/image-editor/**/*",
+                "libs/new-block-editor/**/*",
+                "libs/portlets/dot-analytics/data-access/**/*",
+                "libs/portlets/dot-analytics/portlet/**/*",
+                "libs/portlets/dot-categories/**/*",
+                "libs/portlets/dot-content-drive/portlet/**/*",
+                "libs/portlets/dot-content-drive/ui/**/*",
+                "libs/portlets/dot-es-search/**/*",
+                "libs/portlets/dot-experiments/data-access/**/*",
+                "libs/portlets/dot-experiments/portlet/**/*",
+                "libs/portlets/dot-locales/data-access/**/*",
+                "libs/portlets/dot-locales/portlet/**/*",
+                "libs/portlets/dot-plugins/**/*",
+                "libs/portlets/dot-query-tool/**/*",
+                "libs/portlets/dot-tags/**/*",
+                "libs/portlets/dot-usage/**/*",
+                "libs/portlets/dot-velocity-playground/**/*",
+                "libs/portlets/edit-ema/portlet/**/*",
+                "libs/portlets/edit-ema/ui/**/*",
+                "libs/sdk/ai/**/*",
+                "libs/sdk/analytics/**/*",
+                "libs/sdk/angular/**/*",
+                "libs/sdk/client/**/*",
+                "libs/sdk/create-app/**/*",
+                "libs/sdk/experiments/**/*",
+                "libs/sdk/react/**/*",
+                "libs/sdk/types/**/*",
+                "libs/sdk/uve/**/*",
+                "libs/template-builder/**/*",
+                "libs/ui/**/*",
+                "libs/utils/**/*"
+            ]
+        },
+        {
+            "plugin": "@nx/playwright/plugin",
+            "options": {
+                "targetName": "e2e:dev:headless",
+                "ciTargetName": "e2e-ci"
+            }
         }
     ],
     "defaultBase": "main",

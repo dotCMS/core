@@ -7,17 +7,16 @@
     "tags": [],
     "targets": {
         "test": {
-            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/template-builder/jest.config.ts",
-                "passWithNoTests": false,
-                "tsConfig": "libs/template-builder/tsconfig.spec.json"
+                "passWithNoTests": false
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
-        },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
         },
         "storybook": {
             "executor": "@storybook/angular:start-storybook",
