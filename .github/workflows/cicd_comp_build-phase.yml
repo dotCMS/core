@@ -58,6 +58,16 @@ on:
         required: false
         type: string
         default: ''
+    secrets:
+      # Optional. When provided, a missing dotcms/java-base:${version} image is built multi-arch
+      # and PUSHED to Docker Hub (publishing it for all builds). When omitted (e.g. fork PRs), the
+      # base is still self-healed but built LOCALLY for this build only. See the ensure-java-base
+      # action. The dotCMS image build itself pulls the public base anonymously, so these are not
+      # required for a normal build.
+      DOCKER_USERNAME:
+        required: false
+      DOCKER_TOKEN:
+        required: false
 
 jobs:
   # Initial JDK Build
@@ -119,6 +129,9 @@ jobs:
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
+          # Enables ensure-java-base to publish a missing base; empty on fork PRs -> built locally.
+          docker-io-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-io-token: ${{ secrets.DOCKER_TOKEN }}
 
       # Check for unauthorized changes to the working directory (only for PR checks)
       - name: Check for changes to source during build

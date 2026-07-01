@@ -1,0 +1,197 @@
+# Ensure Java Base Image Action
+#
+# Guarantees that the SDKMAN-based JDK base image `dotcms/java-base:${version}` exists before a
+# dotCMS image build that does `FROM dotcms/java-base:${SDKMAN_JAVA_VERSION}` (see
+# dotCMS/src/main/docker/original/Dockerfile). It makes `.sdkmanrc` (or an explicit override) the
+# single knob for the Java version: bump it and the matching base image is produced automatically,
+# instead of failing the build or requiring a manual base-image build first.
+#
+# Behaviour (self-heal with graceful degradation):
+# - Base tag already on Docker Hub  -> no-op (one anonymous `docker manifest inspect`).
+# - Missing, Docker Hub creds given  -> build MULTI-ARCH and PUSH (publishes it for everyone).
+# - Missing, no creds (PR / fork)    -> build LOCALLY (--load, host arch only) so the immediately
+#                                       following dotCMS image build resolves the base locally.
+#                                       The build never fails just because the base was absent.
+#
+# This is the single place the base image is built; the manual build-java-base workflow reuses it
+# (with force=true) so there is no drift between the manual and self-heal paths.
+
+name: 'Ensure Java Base Image'
+description: 'Ensure dotcms/java-base:${version} exists; build (and push when creds are available) if missing'
+
+inputs:
+  sdkman-java-version:
+    description: 'SDKMAN Java version string (e.g. 25.0.2-ms). Forms the base image tag dotcms/java-base:${version}.'
+    required: true
+  image-suffix:
+    description: 'Optional suffix appended to the image tag (can be empty)'
+    required: false
+    default: ''
+  docker-io-username:
+    description: 'Docker Hub username. When provided (with token), a missing base is built multi-arch and pushed; otherwise it is built locally only.'
+    required: false
+    default: ''
+  docker-io-token:
+    description: 'Docker Hub token. See docker-io-username.'
+    required: false
+    default: ''
+  multi-arch:
+    description: 'Build linux/amd64,linux/arm64 (true) or linux/amd64 only (false). The local --load path is always single-arch regardless (--load cannot emit multiple platforms).'
+    required: false
+    default: 'true'
+  push:
+    description: >-
+      Push control. "auto" (default): push when Docker Hub creds are present, otherwise build
+      locally (--load) so the current build can use it. "true": always push (requires creds).
+      "false": build only, never push and never load (validation build, e.g. manual test runs).
+    required: false
+    default: 'auto'
+  force:
+    description: 'Skip the existence check and always (re)build. Used by the manual build-java-base workflow.'
+    required: false
+    default: 'false'
+
+outputs:
+  built:
+    description: 'true if the base image was built this run, false if it already existed'
+    value: ${{ steps.plan.outputs.built }}
+
+runs:
+  using: 'composite'
+  steps:
+    # Decide whether to build, and how (push multi-arch vs local single-arch). Centralising the
+    # logic here keeps the conditional build steps below trivial.
+    - id: plan
+      name: Plan Java Base Image Build
+      shell: bash
+      env:
+        SDKMAN_JAVA_VERSION: ${{ inputs.sdkman-java-version }}
+        IMAGE_SUFFIX: ${{ inputs.image-suffix }}
+        DOCKER_USERNAME: ${{ inputs.docker-io-username }}
+        DOCKER_TOKEN: ${{ inputs.docker-io-token }}
+        MULTI_ARCH: ${{ inputs.multi-arch }}
+        PUSH_MODE: ${{ inputs.push }}
+        FORCE: ${{ inputs.force }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "${SDKMAN_JAVA_VERSION}" ]]; then
+          echo "Error: sdkman-java-version is required."
+          exit 1
+        fi
+
+        image="dotcms/java-base:${SDKMAN_JAVA_VERSION}${IMAGE_SUFFIX}"
+        echo "Target base image: ${image}"
+
+        # Existence check (anonymous; dotcms/java-base is public). Skipped on force.
+        # `buildx imagetools inspect` is always available (buildx is preinstalled) and, unlike
+        # `docker manifest inspect`, does not depend on the experimental CLI being enabled.
+        need_build=true
+        if [[ "${FORCE}" == "true" ]]; then
+          echo "force=true -> (re)building regardless of existence."
+        elif docker buildx imagetools inspect "${image}" > /dev/null 2>&1; then
+          echo "Base image ${image} already exists on Docker Hub -> nothing to do."
+          need_build=false
+        else
+          echo "Base image ${image} not found on Docker Hub -> it will be built."
+        fi
+
+        creds=false
+        if [[ -n "${DOCKER_USERNAME}" && -n "${DOCKER_TOKEN}" ]]; then
+          creds=true
+        fi
+
+        # Resolve push/load from the push mode:
+        #   auto  -> push when creds exist, else --load locally so this build can use the image
+        #   true  -> always push (requires creds)
+        #   false -> build only (no push, no load) — a validation build
+        push=false
+        load=false
+        case "${PUSH_MODE}" in
+          auto)
+            if [[ "${creds}" == "true" ]]; then push=true; else load=true; fi
+            ;;
+          true)
+            if [[ "${creds}" != "true" ]]; then
+              echo "Error: push=true but Docker Hub credentials were not provided."
+              exit 1
+            fi
+            push=true
+            ;;
+          false) ;;
+          *)
+            echo "Error: push must be one of auto|true|false (got '${PUSH_MODE}')."
+            exit 1
+            ;;
+        esac
+
+        # --load cannot emit multiple platforms, so the local-load path is single-arch.
+        if [[ "${load}" == "true" || "${MULTI_ARCH}" != "true" ]]; then
+          platforms="linux/amd64"
+        else
+          platforms="linux/amd64,linux/arm64"
+        fi
+
+        if [[ "${need_build}" == "true" ]]; then
+          if [[ "${push}" == "true" ]]; then
+            echo "Plan: build ${platforms} and PUSH ${image}."
+          elif [[ "${load}" == "true" ]]; then
+            echo "Plan: build ${platforms} and LOAD ${image} locally (no push)."
+          else
+            echo "Plan: build ${platforms} for validation only (no push, no load)."
+          fi
+        fi
+
+        {
+          echo "image=${image}"
+          echo "need_build=${need_build}"
+          echo "push=${push}"
+          echo "load=${load}"
+          echo "platforms=${platforms}"
+          # We build iff need_build, so the action's `built` output mirrors it.
+          echo "built=${need_build}"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Set up QEMU
+      if: ${{ steps.plan.outputs.need_build == 'true' && contains(steps.plan.outputs.platforms, 'arm64') }}
+      uses: docker/setup-qemu-action@v3.6.0
+      with:
+        platforms: amd64,arm64
+
+    - id: buildx
+      name: Docker Setup Buildx
+      if: ${{ steps.plan.outputs.need_build == 'true' }}
+      uses: docker/setup-buildx-action@v3.10.0
+      with:
+        version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases
+        platforms: ${{ steps.plan.outputs.platforms }}
+
+    - name: Docker Hub login
+      if: ${{ steps.plan.outputs.need_build == 'true' && steps.plan.outputs.push == 'true' }}
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ inputs.docker-io-username }}
+        password: ${{ inputs.docker-io-token }}
+
+    - name: Build Java Base Image
+      if: ${{ steps.plan.outputs.need_build == 'true' }}
+      uses: docker/build-push-action@v6.15.0
+      with:
+        context: ./docker/java-base
+        push: ${{ steps.plan.outputs.push }}
+        # On the auto path without creds, load into the local Docker so the subsequent dotCMS
+        # image build (FROM dotcms/java-base:${version}) resolves it without a registry round-trip.
+        load: ${{ steps.plan.outputs.load }}
+        tags: ${{ steps.plan.outputs.image }}
+        platforms: ${{ steps.plan.outputs.platforms }}
+        build-args: |
+          SDKMAN_JAVA_VERSION=${{ inputs.sdkman-java-version }}
+
+    # setup-buildx switches the active builder to a docker-container driver. Restore the built-in
+    # `default` (docker driver) builder so any later plain `docker build` / `docker save` in the
+    # SAME job (e.g. maven-job's dotCMS image build) behaves exactly as it did before this step.
+    # A load-path image stays in the local image store, so the FROM reference still resolves.
+    - name: Restore default Docker builder
+      if: ${{ always() && steps.buildx.outcome == 'success' }}
+      shell: bash
+      run: docker buildx use default || true

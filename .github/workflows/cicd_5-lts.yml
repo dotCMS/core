@@ -74,6 +74,10 @@ jobs:
       core-build: true
       run-pr-checks: false
       version: ${{ needs.setup.outputs.version }}
+    secrets:
+      # Lets ensure-java-base publish a missing java-base image (multi-arch) for the LTS build.
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     permissions:
       contents: read
       packages: write

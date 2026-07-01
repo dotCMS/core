@@ -47,4 +47,32 @@ https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cach
             </excludes>
         </global>
     </input>
+    <executionControl>
+        <!-- These validate-phase executions must run even on a cache hit:
+             properties-maven-plugin loads .sdkmanrc/environment properties (ext.*) that later
+             plugin configuration interpolates lazily, build-helper derives sdkmanrc.java.major
+             from them, and the enforcer consumes both (including the .sdkmanrc/compiler-release
+             drift guard, which must fire regardless of cache state). Skipping the property loads
+             while running anything that interpolates them fails the build with unresolved
+             plugin parameters. -->
+        <runAlways>
+            <goalsLists>
+                <goalsList artifactId="properties-maven-plugin">
+                    <goals>
+                        <goal>read-project-properties</goal>
+                    </goals>
+                </goalsList>
+                <goalsList artifactId="build-helper-maven-plugin">
+                    <goals>
+                        <goal>regex-property</goal>
+                    </goals>
+                </goalsList>
+                <goalsList artifactId="maven-enforcer-plugin">
+                    <goals>
+                        <goal>enforce</goal>
+                    </goals>
+                </goalsList>
+            </goalsLists>
+        </runAlways>
+    </executionControl>
 </cache>
