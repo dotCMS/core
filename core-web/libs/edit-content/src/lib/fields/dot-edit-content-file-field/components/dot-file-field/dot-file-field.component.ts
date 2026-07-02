@@ -231,15 +231,16 @@ export class DotFileFieldComponent
             return false;
         }
 
-        if (!isImageFile(this.#currentMetadata())) {
-            return false;
+        // Binary keeps its original, strict gate: the authoritative isImage flag
+        // only. It works in any host via the legacy fallback.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
+            return !!this.#currentMetadata()?.isImage;
         }
 
-        if (this.store.inputType() !== INPUT_TYPES.Binary) {
-            return !!this.#imageEditorLauncher;
-        }
-
-        return true;
+        // Image/File resolve a separate dotAsset/FileAsset and are only supported
+        // in the new Angular Edit Content, where the image-editor launcher is
+        // provided — never in the legacy Dojo host.
+        return isImageFile(this.#currentMetadata()) && !!this.#imageEditorLauncher;
     });
 
     /**

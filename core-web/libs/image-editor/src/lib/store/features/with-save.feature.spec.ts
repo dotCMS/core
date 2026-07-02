@@ -135,14 +135,25 @@ describe('withSave', () => {
 
         lifecycle.saveRequested();
 
-        const event = dispatchSpy.mock.calls
-            .map(([arg]) => arg)
-            .find((arg) => arg?.type === imageEditorLifecycleEvents.saveSucceeded.type);
-        // Payload shape is normalized to tolerate nested (`{ type, payload }`) or spread.
-        const payload = event.payload ?? event;
-        expect(payload.image).toBe(true);
-        expect(payload.metadata.isImage).toBe(true);
-        expect(payload.metadata.focalPoint).toBe('0.25,0.75');
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            imageEditorLifecycleEvents.saveSucceeded({
+                ...TEMP_FILE,
+                image: true,
+                mimeType: 'unknown',
+                metadata: {
+                    contentType: 'unknown',
+                    fileSize: 1024,
+                    length: 1024,
+                    modDate: 0,
+                    name: 'edited.png',
+                    sha256: '',
+                    title: 'edited.png',
+                    version: 0,
+                    isImage: true,
+                    focalPoint: '0.25,0.75'
+                }
+            })
+        );
     });
 
     it('folds the current focal point into the returned temp metadata', () => {

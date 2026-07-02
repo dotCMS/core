@@ -49,6 +49,20 @@ describe('DotAssetImageEditSaveStrategy', () => {
         );
     });
 
+    it('targets the fileAsset field when the reference is a legacy FileAsset', () => {
+        (store.uploadedFile as jest.Mock).mockReturnValue({
+            source: 'contentlet',
+            file: { ...DOTASSET, titleImage: 'fileAsset' }
+        });
+
+        spectator.service.apply(TEMP_FILE);
+
+        expect(fire.publishContentletByIdentifier).toHaveBeenCalledWith(
+            { identifier: 'ref-id', fileAsset: 'temp_1' },
+            1
+        );
+    });
+
     it('refreshes the preview from the new version without changing the field value', () => {
         spectator.service.apply(TEMP_FILE);
 
@@ -66,7 +80,7 @@ describe('DotAssetImageEditSaveStrategy', () => {
         expect(store.getAssetData).not.toHaveBeenCalled();
     });
 
-    it('does nothing when there is no referenced asset in preview', () => {
+    it('surfaces a message and does not publish when there is no referenced asset', () => {
         (store.uploadedFile as jest.Mock).mockReturnValue({
             source: 'temp',
             file: TEMP_FILE
@@ -75,5 +89,6 @@ describe('DotAssetImageEditSaveStrategy', () => {
         spectator.service.apply(TEMP_FILE);
 
         expect(fire.publishContentletByIdentifier).not.toHaveBeenCalled();
+        expect(store.setUIMessage).toHaveBeenCalled();
     });
 });

@@ -38,17 +38,26 @@ export class DotAssetImageEditSaveStrategy implements ImageEditSaveStrategy {
     apply(tempFile: DotCMSTempFile): void {
         const uploaded = this.#store.uploadedFile();
 
-        // Only reference-backed previews (the resolved dotAsset) can be versioned;
-        // guard defensively even though the editor entry point already ensures this.
+        // Only reference-backed previews (the resolved dotAsset/FileAsset) can be
+        // versioned. The editor entry point already ensures this, so reaching here
+        // without one is an unexpected state — surface it instead of silently
+        // discarding the user's edit.
         if (uploaded?.source !== 'contentlet') {
+            this.#store.setUIMessage(getUiMessage('SERVER_ERROR'));
+
             return;
         }
 
         const { identifier, languageId } = uploaded.file;
+        // The binary field variable differs by referenced type: `asset` for a
+        // dotAsset, `fileAsset` for a legacy FileAsset. `titleImage` carries the
+        // server-computed field name (the same signal onEditImage uses to open the
+        // editor); default to `asset`.
+        const fieldVariable = (uploaded.file['titleImage'] as string) || 'asset';
 
         this.#workflowActionsFire
             .publishContentletByIdentifier<DotCMSContentlet>(
-                { identifier, asset: tempFile.id },
+                { identifier, [fieldVariable]: tempFile.id },
                 languageId
             )
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
