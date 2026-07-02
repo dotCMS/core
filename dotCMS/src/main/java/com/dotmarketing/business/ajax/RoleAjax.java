@@ -570,11 +570,11 @@ public class RoleAjax {
 
 		//Validate if this logged in user has the required permissions to access the roles portlet
 		validateRolesPortletPermissions(getLoggedInUser());
+		getAdminUser();
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
-		User user = getAdminUser();
 		List<Layout> layouts = layoutAPI.loadLayoutsForRole(role);
 
 		//Looking for removed layouts
@@ -803,6 +803,7 @@ public class RoleAjax {
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
 		//Validate if this logged in user has the required permissions to access the roles portlet
 		validateRolesPortletPermissions(getLoggedInUser());
+		getAdminUser();
 
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 
