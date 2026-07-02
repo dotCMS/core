@@ -38,6 +38,16 @@ function logVerboseError(
 }
 
 /**
+ * Removes undefined values so returned GraphQL metadata stays JSON-serializable
+ * for consumers such as Next.js Pages Router.
+ */
+function omitUndefinedValues(variables: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(variables).filter(([, value]) => value !== undefined)
+    );
+}
+
+/**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
  */
@@ -164,6 +174,7 @@ export class PageClient extends BaseApiClient {
 
         const requestHeaders = this.requestOptions.headers;
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
+        const responseVariables = omitUndefinedValues(requestVariables);
 
         try {
             const response = await fetchGraphQL({
@@ -204,7 +215,7 @@ export class PageClient extends BaseApiClient {
                         message: firstError?.message ?? 'GraphQL query failed',
                         data: response.errors
                     }),
-                    { query: completeQuery, variables: requestVariables }
+                    { query: completeQuery, variables: responseVariables }
                 );
             }
 
@@ -240,7 +251,7 @@ export class PageClient extends BaseApiClient {
 
                     throw new DotErrorPage(message, status, code, undefined, {
                         query: completeQuery,
-                        variables: requestVariables
+                        variables: responseVariables
                     });
                 }
             }
@@ -263,7 +274,7 @@ export class PageClient extends BaseApiClient {
                         message: `Page '${newURL}' was not found`,
                         data: response.errors
                     }),
-                    { query: completeQuery, variables: requestVariables }
+                    { query: completeQuery, variables: responseVariables }
                 );
             }
 
@@ -275,7 +286,7 @@ export class PageClient extends BaseApiClient {
                 content: contentResponse,
                 graphql: {
                     query: completeQuery,
-                    variables: requestVariables
+                    variables: responseVariables
                 },
                 errors: response.errors?.length ? response.errors : undefined,
                 ...(styleEditorSchemas?.length && { styleEditorSchemas })
@@ -291,7 +302,7 @@ export class PageClient extends BaseApiClient {
                     error.status,
                     'UNKNOWN',
                     error,
-                    { query: completeQuery, variables: requestVariables }
+                    { query: completeQuery, variables: responseVariables }
                 );
             }
 
@@ -300,7 +311,7 @@ export class PageClient extends BaseApiClient {
                 500,
                 'UNKNOWN',
                 undefined,
-                { query: completeQuery, variables: requestVariables }
+                { query: completeQuery, variables: responseVariables }
             );
         }
     }
