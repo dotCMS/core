@@ -13,9 +13,14 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
+import com.dotcms.content.index.opensearch.MappingOperationsOS;
+import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch.indices.GetIndexResponse;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -113,6 +118,13 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     // ── Used to resolve the OS physical name for indices created through the phase router ──
     @Inject
     private ContentletIndexOperationsOS opsOS;
+
+    // ── Used by the orphan-repair regression test to read back mapping + analysis settings ──
+    @Inject
+    private MappingOperationsOS mappingOps;
+
+    @Inject
+    private OSClientProvider clientProvider;
 
     /**
      * Physical (cluster-prefixed, tag-suffixed) form of {@link #DUAL_WORKING}; resolved once
@@ -433,8 +445,51 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
     }
 
     // =========================================================================
-    // activateIndex — pointer-store writes verified against real DB
+    // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
+
+    /**
+     * Given Scenario: Phase 1. A <b>bare</b> OS index physically exists in the cluster (default
+     *                 settings, empty mapping — no custom {@code my_analyzer}, no dotCMS dynamic
+     *                 templates) but is absent from the index store. This is the orphan left by a
+     *                 prior bootstrap that created the index but never committed its store pointer,
+     *                 reproduced bare exactly as QA did for #36237 TC-003.
+     * When : the bootstrap seam {@code createContentIndex(name, shards, OS, ...)} runs.
+     * Then : the orphan is deleted and recreated from scratch, so the index now carries the FULL
+     *        settings (custom {@code my_analyzer}) and base mapping (dotCMS dynamic templates).
+     *        This is the regression guard for TC-003 — reusing the bare orphan in place left it
+     *        half-mapped and triggered {@code putMapping HTTP 400} (analyzer not found).
+     */
+    @Test
+    public void test_bootstrap_bareOrphan_phase1_isRecreatedWithFullSettingsAndMapping()
+            throws Exception {
+        setPhase(1);
+
+        // Pre: create a BARE orphan — default settings, no mapping (QA recreated it as PUT {}).
+        osIndexAPI.createIndex(physicalDualWorking, 0);
+        assertTrue("Pre: bare orphan must exist in OS",
+                osIndexAPI.indexExists(physicalDualWorking));
+        assertFalse("Pre: bare orphan must NOT yet carry the dotCMS dynamic templates",
+                mappingOps.getMapping(DUAL_WORKING).contains("template_1"));
+        assertFalse("Pre: bare orphan must NOT yet define the custom my_analyzer",
+                analyzers().containsKey("my_analyzer"));
+
+        // When: run the orphan-aware bootstrap seam against the real OS collaborators.
+        final boolean result = ((ContentletIndexAPIImpl) contentletIndexAPI())
+                .createContentIndex(DUAL_WORKING, 1, IndexTag.OS,
+                        opsOS, osIndexAPI, MappingHelper.getInstance());
+
+        // Then: the orphan was repaired — full settings + base mapping are present.
+        assertTrue("Bootstrap must report the recreated index as available", result);
+        assertTrue("Recreated index must exist in OS",
+                osIndexAPI.indexExists(physicalDualWorking));
+        assertTrue("Recreated index must carry the dotCMS dynamic templates (base mapping restored)",
+                mappingOps.getMapping(DUAL_WORKING).contains("template_1"));
+        assertTrue("Recreated index must define the custom my_analyzer (settings restored)",
+                analyzers().containsKey("my_analyzer"));
+
+        Logger.info(this, "✅ bootstrap bare-orphan Phase 1 — recreated with full settings + mapping");
+    }
 
     /**
      * Given Scenario: Phase 0. ES store is currently pointing at the pre-existing app index.
@@ -913,6 +968,22 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
 
     private static void setPhase(final int ordinal) {
         Config.setProperty(FLAG_KEY, String.valueOf(ordinal));
+    }
+
+    /**
+     * Reads back the analyzer map configured on the {@link #physicalDualWorking} OS index.
+     * Returns an empty map when the index has no analysis settings (e.g. a bare orphan).
+     */
+    private Map<String, ?> analyzers() throws IOException {
+        final OpenSearchClient client = clientProvider.getClient();
+        final GetIndexResponse response = client.indices().get(b -> b.index(physicalDualWorking));
+        final var indexState = response.result().get(physicalDualWorking);
+        if (indexState == null || indexState.settings() == null
+                || indexState.settings().index() == null
+                || indexState.settings().index().analysis() == null) {
+            return Map.of();
+        }
+        return indexState.settings().index().analysis().analyzer();
     }
 
     private static ContentletIndexAPI contentletIndexAPI() {

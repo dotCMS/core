@@ -320,7 +320,6 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
                     const parsedConfig = JSON.parse(jsonStr);
                     advancedConfig = sanitizeAdvancedConfig(parsedConfig);
                 } catch (e) {
-                    // eslint-disable-next-line no-console
                     console.error('Failed to parse data-analytics-config JSON:', e);
                 }
             }
@@ -356,7 +355,7 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
     }
 
     // No script found, return defaults with current domain as server
-    // eslint-disable-next-line no-console
+
     console.warn('[DotCMS Analytics] Script wrapper not found - verify installation');
     return {
         server: window.location.origin,

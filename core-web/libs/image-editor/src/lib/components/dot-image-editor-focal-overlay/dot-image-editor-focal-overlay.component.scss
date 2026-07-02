@@ -38,11 +38,13 @@
         width: 6px;
         height: 6px;
         transform: translate(-50%, -50%);
-        background-color: var(--p-primary-color, #426bf0);
+        // Red target dot: high-contrast against arbitrary image content and the
+        // conventional colour for a focal-point marker (distinct from the UI primary).
+        background-color: var(--p-red-500, #ef4444);
         border-radius: 9999px;
     }
 
     &:focus-visible {
-        border-color: var(--p-primary-color, #426bf0);
+        border-color: var(--p-red-500, #ef4444);
     }
 }

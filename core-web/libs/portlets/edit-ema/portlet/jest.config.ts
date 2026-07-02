@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlets-edit-ema-portlet',
     preset: '../../../../jest.preset.js',

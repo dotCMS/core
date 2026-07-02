@@ -128,6 +128,7 @@ node_modules/
 /core-web/connect.lock
 /core-web/coverage
 /core-web/libpeerconnection.log
+/core-web/libs/agentic-tools/src/generated
 npm-debug.log
 yarn-error.log
 testem.log

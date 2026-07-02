@@ -1,0 +1,41 @@
+// STYLE EXCEPTION — dot-edit-content-file-field
+// Project standard: prefer Tailwind utilities in templates.
+// This feature is the documented exception: it ships as a legacy web component
+// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
+// here so styles are always embedded with the component in both Angular and Dojo.
+
+:host {
+    display: block;
+    width: 32rem;
+}
+
+.dot-form-import-url__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.dot-form-import-url__field {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.dot-form-import-url__error-slot {
+    min-height: 1.5rem;
+}
+
+.dot-form-import-url__actions {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.dot-form-import-url__import-btn-wrap {
+    width: 7rem;
+}
