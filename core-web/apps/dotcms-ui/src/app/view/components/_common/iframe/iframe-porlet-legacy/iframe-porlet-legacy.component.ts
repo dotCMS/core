@@ -5,7 +5,15 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { distinctUntilChanged, filter, map, mergeMap, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
+import {
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    skip,
+    takeUntil,
+    withLatestFrom
+} from 'rxjs/operators';
 
 import {
     DotContentTypeService,
