@@ -9,6 +9,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import java.time.ZoneOffset;
@@ -139,6 +141,61 @@ public class AggregationDomainTest {
 
         assertNotNull(bucket.getAggregations().get("top_content"));
         assertEquals("top_hits", bucket.getAggregations().get("top_content").getType());
+    }
+
+    /**
+     * Serialization contract for {@code POST /api/es/raw}. After
+     * <a href="https://github.com/dotCMS/core/issues/36396">#36396</a> the endpoint
+     * ({@code ESContentResourcePortlet.searchRaw()}) no longer emits the Elasticsearch
+     * {@code SearchResponse.toString()} wire format; it serializes the vendor-neutral
+     * {@link ContentSearchResponse} with the dotCMS default {@link ObjectMapper}. This test pins the
+     * resulting JSON shape using that exact mapper so a change to the DTO (or the mapper config) that
+     * would break existing {@code /api/es/raw} clients is caught here rather than in production.
+     *
+     * <p>Key guarantees: the top-level object carries {@code hits}, {@code tookMillis} and
+     * {@code aggregationTree}; {@code hits} is a nested object with a {@code hits} array and
+     * {@code totalHits} — NOT a bare array (a real risk because {@link SearchHits} implements
+     * {@link Iterable}); and each hit exposes {@code id} and {@code sourceAsMap}.</p>
+     */
+    @Test
+    public void contentSearchResponse_jacksonSerializesNeutralShapeForEsRawEndpoint() throws Exception {
+        // The exact mapper ESContentResourcePortlet.searchRaw() uses to serialize the response.
+        final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+
+        final SearchHit hit = SearchHit.builder()
+                .id("abc123").index("live_idx")
+                .sourceAsMap(Map.of("title", "hello"))
+                .score(1.5f).build();
+        final SearchHits hits = SearchHits.builder()
+                .addHits(hit)
+                .totalHits(TotalHits.builder().value(1L).build())
+                .build();
+        final Aggregation terms = Aggregation.builder()
+                .name("content_types").type("sterms")
+                .buckets(List.of(AggregationBucket.builder().key("Blog").docCount(7).build()))
+                .build();
+        final ContentSearchResponse response = ContentSearchResponse.builder()
+                .hits(hits).tookMillis(42L)
+                .aggregationTree(Map.of("content_types", terms))
+                .build();
+
+        final JsonNode root = mapper.readTree(mapper.writeValueAsString(response));
+
+        assertEquals("tookMillis must round-trip", 42L, root.get("tookMillis").asLong());
+        assertTrue("aggregationTree must be present", root.has("aggregationTree"));
+        assertTrue("declared aggregation must survive serialization",
+                root.path("aggregationTree").has("content_types"));
+
+        // hits must be a nested object, not a bare array (SearchHits implements Iterable).
+        final JsonNode hitsNode = root.get("hits");
+        assertNotNull("hits object must be present", hitsNode);
+        assertTrue("hits must serialize as an object, not an array", hitsNode.isObject());
+        assertTrue("hits.hits array must be present", hitsNode.path("hits").isArray());
+        assertTrue("totalHits must be present", hitsNode.has("totalHits"));
+        assertEquals("the single hit id must be preserved",
+                "abc123", hitsNode.path("hits").get(0).path("id").asText());
+        assertEquals("the hit source document must be preserved",
+                "hello", hitsNode.path("hits").get(0).path("sourceAsMap").path("title").asText());
     }
 
     // =========================================================================

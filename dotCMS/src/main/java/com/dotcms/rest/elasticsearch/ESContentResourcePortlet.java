@@ -1,11 +1,13 @@
 package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.rest.BaseRestPortlet;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -226,18 +228,22 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "rawSearchContentByESPost",
-			summary = "Execute raw Elasticsearch query (POST)",
-			description = "Executes a raw Elasticsearch query and returns the unprocessed Elasticsearch response " +
-					"in a portlet context. The request body accepts an Elasticsearch JSON query. " +
-					"Unlike the /search endpoint, results are returned directly from Elasticsearch without " +
-					"additional contentlet processing."
+			summary = "Execute raw search query (POST)",
+			description = "Executes a raw JSON search query and returns the unprocessed search response " +
+					"in a portlet context. The request body accepts an Elasticsearch/OpenSearch JSON query. " +
+					"Unlike the /search endpoint, results are returned directly from the search engine without " +
+					"additional contentlet processing. The query is routed through the phase-aware search API, " +
+					"so it targets whichever engine the active OpenSearch migration phase selects (Elasticsearch " +
+					"in phases 0-1, OpenSearch in phases 2-3). Note: the response is the vendor-neutral " +
+					"ContentSearchResponse serialized as JSON (fields: hits, scrollId, tookMillis, aggregationTree), " +
+					"not the raw Elasticsearch SearchResponse wire format previously returned by this endpoint."
 	)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
-					description = "Raw Elasticsearch response returned successfully",
+					description = "Search response returned successfully",
 					content = @Content(mediaType = "application/json",
 							schema = @Schema(type = "object",
-									description = "Raw Elasticsearch response including hits, aggregations, and metadata"))),
+									description = "Vendor-neutral ContentSearchResponse including hits, scrollId, tookMillis, and the aggregation tree"))),
 			@ApiResponse(responseCode = "400",
 					description = "Invalid Elasticsearch query",
 					content = @Content(mediaType = "application/json")),
@@ -259,9 +265,16 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
 
-			// FIXME(OS-cutover): esSearchRaw returns ES JSON wire format via SearchResponse.toString().
-			// Migrate to searchRaw() + Jackson serialization when Phase 3 OS cutover makes ES unavailable.
-			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
+			// Route through the phase-aware ContentletAPI.searchRaw() (delegates to SearchAPI) so the
+			// endpoint observes the engine selected by the current OpenSearch migration phase (ES in
+			// phases 0-1, OS in phases 2-3) instead of always hitting Elasticsearch. The neutral
+			// ContentSearchResponse is serialized with Jackson rather than emitting the ES wire format
+			// via SearchResponse.toString(), so the endpoint keeps working once ES is decommissioned.
+			final ContentSearchResponse searchResponse =
+					esapi.searchRaw(esQuery, mode.showLive, user, mode.showLive);
+			return responseResource.response(
+					DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+							.writeValueAsString(searchResponse));
 
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error processing :" + e.getMessage(), e);
