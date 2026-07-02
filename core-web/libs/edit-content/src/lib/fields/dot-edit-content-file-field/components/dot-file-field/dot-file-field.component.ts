@@ -31,6 +31,7 @@ import {
     DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
+import { isImageFile } from '@dotcms/image-editor';
 import {
     DotAIImagePromptComponent,
     DotBrowserSelectorComponent,
@@ -40,7 +41,7 @@ import {
     DropZoneFileEvent,
     DropZoneFileValidity
 } from '@dotcms/ui';
-import { getFileMetadata, isImageFile } from '@dotcms/utils';
+import { getFileMetadata } from '@dotcms/utils';
 
 import {
     LegacyDialogImageEditorLauncher,
