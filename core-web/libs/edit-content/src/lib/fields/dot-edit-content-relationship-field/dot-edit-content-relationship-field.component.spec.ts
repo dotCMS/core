@@ -671,6 +671,84 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
     });
 
+    describe('Footer error rendering', () => {
+        // Dedicated host (own factory) so the required-error branch of the footer can be
+        // exercised: with a required field whose control is invalid AND touched, the
+        // @if(fieldHasError) branch wins and the mutually-exclusive hint branch is skipped.
+        const REQUIRED_HINTED_FIELD_MOCK = createFakeRelationshipField({
+            relationships: {
+                cardinality: 0,
+                isParentField: true,
+                velocityVar: 'AllTypes'
+            },
+            variable: 'requiredHintedField',
+            hint: 'This is the relationship hint',
+            required: true
+        });
+
+        const createErrorHost = createHostFactory({
+            component: DotEditContentRelationshipFieldComponent,
+            host: MockFormComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            componentMocks: [PaginationComponent],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                mockProvider(DotMessageService, {
+                    get: jest.fn().mockReturnValue('Mock Message')
+                }),
+                mockProvider(DotContentTypeService, {
+                    getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                }),
+                mockProvider(DotHttpErrorManagerService, {
+                    handle: jest.fn()
+                }),
+                mockProvider(DotCurrentUserService),
+                mockProvider(DotEditContentStore, {
+                    contentType: jest.fn().mockReturnValue(null),
+                    currentLocale: jest.fn().mockReturnValue(null),
+                    isCopyingLocale: jest.fn().mockReturnValue(false)
+                }),
+                mockProvider(DotEditContentService, {
+                    getContentById: jest.fn().mockReturnValue(of({}))
+                }),
+                DialogService
+            ]
+        });
+
+        it('should render the required error and hide the hint when invalid and touched', () => {
+            const control = new FormControl(null, Validators.required);
+            const errorSpectator = createErrorHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [REQUIRED_HINTED_FIELD_MOCK.variable]: control
+                        }),
+                        field: REQUIRED_HINTED_FIELD_MOCK,
+                        contentlet: mockContentlet
+                    }
+                }
+            );
+
+            control.markAsTouched();
+            control.updateValueAndValidity();
+            errorSpectator.detectChanges();
+            errorSpectator.flushEffects();
+            errorSpectator.detectChanges();
+
+            // Error branch is rendered...
+            expect(errorSpectator.query('.error-message')).toBeTruthy();
+            // ...and the mutually-exclusive hint branch is not.
+            expect(
+                errorSpectator.query(byTestId(`hint-${REQUIRED_HINTED_FIELD_MOCK.variable}`))
+            ).toBeNull();
+        });
+    });
+
     describe('Required-empty field touched state', () => {
         // Regression: a required, empty relationship field must not mark its control
         // touched on first render, otherwise the "mandatory" error shows before the

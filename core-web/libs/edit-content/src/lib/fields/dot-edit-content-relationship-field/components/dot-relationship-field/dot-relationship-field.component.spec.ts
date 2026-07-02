@@ -6,8 +6,12 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
-import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    createFakeContentlet,
+    createFakeLanguage,
+    createFakeRelationshipField
+} from '@dotcms/utils-testing';
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
@@ -15,14 +19,13 @@ import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
 import { RelationshipFieldStore } from '../../store/relationship-field.store';
 
-const ENGLISH_LANGUAGE: DotLanguage = {
+// Renders as "English (en)" via LanguagePipe, matching the chip-text assertions.
+const ENGLISH_LANGUAGE = createFakeLanguage({
     id: 1,
     language: 'English',
     languageCode: 'en',
-    countryCode: 'US',
-    country: 'United States',
     isoCode: 'en-us'
-};
+});
 
 const LANGUAGE_COLUMN: TableColumn = {
     nameField: 'language',
@@ -123,9 +126,11 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => setup());
 
         it('should render the Locales header using the table language key', () => {
-            const headers = spectator.queryAll('th');
-            const headerTexts = headers.map((h) => h.textContent.trim());
-            expect(headerTexts).toContain('dot.file.relationship.field.table.language');
+            const localeHeader = spectator.query(byTestId('relationship-locale-header'));
+            expect(localeHeader).toBeTruthy();
+            expect(localeHeader.textContent.trim()).toContain(
+                'dot.file.relationship.field.table.language'
+            );
         });
 
         it('should render the locale value as a p-tag, not plain text', () => {
@@ -139,12 +144,10 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => setup());
 
         it('should right-align the status header so it lines up with the chips', () => {
-            const statusHeader = spectator
-                .queryAll('th')
-                .find((h) => h.textContent.includes('dot.file.relationship.field.table.status'));
+            const statusHeader = spectator.query(byTestId('relationship-status-header'));
             expect(statusHeader).toBeTruthy();
-            expect(statusHeader.className).toContain('text-right!');
-            expect(statusHeader.className).not.toContain('text-left');
+            expect(statusHeader).toHaveClass('text-right!');
+            expect(statusHeader).not.toHaveClass('text-left');
         });
     });
 
@@ -226,11 +229,22 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Form control contract', () => {
         beforeEach(() => setup());
 
-        it('should keep the ControlValueAccessor methods intact', () => {
-            expect(spectator.component.writeValue).toBeDefined();
-            expect(spectator.component.registerOnChange).toBeDefined();
-            expect(spectator.component.registerOnTouched).toBeDefined();
-            expect(spectator.component.setDisabledState).toBeDefined();
+        it('should register the onChange/onTouched callbacks without throwing', () => {
+            const onChangeSpy = jest.fn();
+            const onTouchedSpy = jest.fn();
+
+            expect(() => {
+                spectator.component.registerOnChange(onChangeSpy);
+                spectator.component.registerOnTouched(onTouchedSpy);
+            }).not.toThrow();
+        });
+
+        it('should toggle the disabled signal via setDisabledState', () => {
+            spectator.component.setDisabledState(true);
+            expect(spectator.component.$isDisabled()).toBe(true);
+
+            spectator.component.setDisabledState(false);
+            expect(spectator.component.$isDisabled()).toBe(false);
         });
     });
 

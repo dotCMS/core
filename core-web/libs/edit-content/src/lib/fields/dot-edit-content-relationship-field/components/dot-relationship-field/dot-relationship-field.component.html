@@ -31,12 +31,18 @@
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" class="w-32 max-w-32 min-w-32">
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32"
+                            data-testid="relationship-locale-header">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 max-w-32 min-w-32 text-right!">
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32 text-right!"
+                            data-testid="relationship-status-header">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
@@ -77,7 +83,7 @@
                         @if (!isDisabled) {
                             <button
                                 type="button"
-                                class="cursor-pointer border-0 bg-transparent p-0 text-blue-600 underline hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none"
+                                class="cursor-pointer border-0 bg-transparent p-0 text-blue-600 underline hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-hidden"
                                 (click)="showExistingContentDialog()"
                                 data-testid="relationship-empty-relate-link">
                                 {{ 'dot.file.relationship.field.empty.relate.link' | dm }}
@@ -188,8 +194,8 @@
         </tr>
     </ng-template>
 
-    @if (showPagination) {
-        <ng-template pTemplate="summary">
+    <ng-template pTemplate="summary">
+        @if (showPagination) {
             <div class="flex items-center justify-center pt-2">
                 <dot-pagination
                     data-testid="relationship-table-pagination"
@@ -199,6 +205,6 @@
                     [totalPages]="store.totalPages()"
                     [currentPage]="pagination.currentPage" />
             </div>
-        </ng-template>
-    }
+        }
+    </ng-template>
 </p-table>
