@@ -49,7 +49,7 @@ jobs:
       - name: Rename label
         if: success()
         id: validate-inputs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           retries: 3
@@ -94,7 +94,7 @@ jobs:
             
       - name: Re-Create New Label
         if: success()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           retries: 3

@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -212,7 +212,7 @@ jobs:
     if: always() && github.event.inputs.dry-run == 'false'
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Compose Message
         id: compose-message

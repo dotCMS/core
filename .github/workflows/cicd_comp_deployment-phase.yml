@@ -146,7 +146,7 @@ jobs:
       formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 

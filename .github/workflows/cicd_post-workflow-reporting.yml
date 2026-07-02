@@ -55,7 +55,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
 
       # Checkout the repository
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Download workflow data from previous run
       - name: Download Workflow Data

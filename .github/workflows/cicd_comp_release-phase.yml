@@ -89,7 +89,7 @@ jobs:
       JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.release_tag }}
 
@@ -239,7 +239,7 @@ jobs:
     if: inputs.java-version == ''
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ./.github/actions/legacy-release/sbom-generator
         id: sbom-generator

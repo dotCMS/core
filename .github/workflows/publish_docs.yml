@@ -10,11 +10,11 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
       - name: Configuring Node.js
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v5
         with:
           node-version: "16.13.2"
       - name: Installing dependencies

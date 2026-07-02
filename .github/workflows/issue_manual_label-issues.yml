@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Fetch issues
         id: fetch-next-release-issues

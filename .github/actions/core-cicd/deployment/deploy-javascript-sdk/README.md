@@ -35,10 +35,10 @@ This GitHub Action is designed to automate the process of publishing dotCMS SDK 
 ## Detailed Steps
 
 1. **Checkout**  
-   The action uses `actions/checkout@v4` to check out the specified branch, allowing the workflow to access the repository's contents.
+   The action uses `actions/checkout@v5` to check out the specified branch, allowing the workflow to access the repository's contents.
 
 2. **Set Up Node.js**  
-   `actions/setup-node@v4` sets up the Node.js environment, crucial for running scripts and managing dependencies.
+   `actions/setup-node@v5` sets up the Node.js environment, crucial for running scripts and managing dependencies.
 
 3. **Get Next Version**  
    This step retrieves the next version of the SDK by reading the `package.json` file from the specified directory.

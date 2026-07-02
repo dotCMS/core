@@ -128,7 +128,7 @@ jobs:
       # JSON array of filter names that matched (from dorny/paths-filter)
       changes: ${{ steps.filter.outputs.changes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ inputs.change-detection == 'enabled' }}
 
       # Execute the paths-filter step to determine changes
