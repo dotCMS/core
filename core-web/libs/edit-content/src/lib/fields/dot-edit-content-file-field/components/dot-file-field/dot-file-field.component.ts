@@ -40,12 +40,17 @@ import {
     DropZoneFileEvent,
     DropZoneFileValidity
 } from '@dotcms/ui';
-import { getFileMetadata } from '@dotcms/utils';
+import { getFileMetadata, isImageFile } from '@dotcms/utils';
 
 import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
 } from './../../services/image-editor';
+import {
+    BinaryImageEditSaveStrategy,
+    DotAssetImageEditSaveStrategy,
+    ImageEditSaveStrategyResolver
+} from './../../services/save-strategy';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
 import { parseFocalPoint } from './../../utils/focal-point.util';
@@ -80,6 +85,9 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         DialogService,
         LegacyDialogImageEditorLauncher,
         LegacyDojoImageEditorLauncher,
+        BinaryImageEditSaveStrategy,
+        DotAssetImageEditSaveStrategy,
+        ImageEditSaveStrategyResolver,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -111,6 +119,11 @@ export class DotFileFieldComponent
      * the legacy launchers.
      */
     readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
+    /**
+     * Resolves how an edited image is persisted based on the field's input type:
+     * Binary applies the edit inline, Image/File version the referenced dotAsset.
+     */
+    readonly #imageEditSaveStrategyResolver = inject(ImageEditSaveStrategyResolver);
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -201,20 +214,26 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * Only Binary fields expose the image editor when enabled, and only when
-     * the previewed file is actually an image. File/Image fields never show it.
+     * Shown when image editing is enabled and the previewed file is an image
+     * (see {@link isImageFile}). Binary fields keep the binary inline and have a
+     * legacy fallback, so they work in any host. Image/File fields reference a
+     * separate dotAsset and are only supported in the new Angular Edit Content —
+     * where the image-editor launcher is provided — never in the legacy Dojo host.
      */
     $canEditImage = computed<boolean>(() => {
         if (!this.$enableImageEditor()) {
             return false;
         }
 
-        // Image editing is only supported for Binary fields, not File or Image fields.
-        if (this.store.inputType() !== INPUT_TYPES.Binary) {
+        if (!isImageFile(this.#currentMetadata())) {
             return false;
         }
 
-        return !!this.#currentMetadata()?.isImage;
+        if (this.store.inputType() !== INPUT_TYPES.Binary) {
+            return !!this.#imageEditorLauncher;
+        }
+
+        return true;
     });
 
     /**
@@ -451,9 +470,11 @@ export class DotFileFieldComponent
     }
 
     /**
-     * Applies the edited image emitted by an image-editor launcher to the preview,
-     * shared by the new Angular editor and the legacy launchers. Ignores a closed
-     * editor (no temp file) and surfaces a server error if the stream fails.
+     * Applies the edited image emitted by an image-editor launcher, delegating to
+     * the {@link ImageEditSaveStrategy} resolved for the field's input type (Binary
+     * applies inline; Image/File version the referenced dotAsset). Shared by the
+     * new Angular editor and the legacy launchers. Ignores a closed editor (no temp
+     * file) and surfaces a server error if the stream fails.
      *
      * @param result$ the launcher's close stream, emitting the edited temp file or null
      */
@@ -465,7 +486,9 @@ export class DotFileFieldComponent
             )
             .subscribe({
                 next: (tempFile) => {
-                    this.store.applyTempFile(tempFile);
+                    this.#imageEditSaveStrategyResolver
+                        .resolve(this.store.inputType())
+                        .apply(tempFile);
                 },
                 error: () => {
                     this.store.setUIMessage(getUiMessage('SERVER_ERROR'));

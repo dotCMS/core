@@ -1,6 +1,12 @@
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { getFileMetadata, getFileVersion, cleanMimeTypes, checkMimeType } from './contentlet.utils';
+import {
+    getFileMetadata,
+    getFileVersion,
+    cleanMimeTypes,
+    checkMimeType,
+    isImageFile
+} from './contentlet.utils';
 
 const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
     entity: {
@@ -188,6 +194,54 @@ describe('utils', () => {
             };
             const acceptedFiles = ['image/*', 'application/pdf'];
             expect(checkMimeType(file, acceptedFiles)).toBe(true);
+        });
+    });
+
+    describe('isImageFile', () => {
+        it('returns false for null or undefined metadata', () => {
+            expect(isImageFile(null)).toBe(false);
+            expect(isImageFile(undefined)).toBe(false);
+        });
+
+        it('returns false for empty metadata', () => {
+            expect(isImageFile({})).toBe(false);
+        });
+
+        it('trusts the authoritative isImage flag', () => {
+            expect(isImageFile({ isImage: true })).toBe(true);
+            expect(
+                isImageFile({ isImage: false, contentType: 'application/pdf', name: 'a.pdf' })
+            ).toBe(false);
+        });
+
+        it('falls back to an image/* content type when isImage is absent', () => {
+            expect(isImageFile({ contentType: 'image/png' })).toBe(true);
+            expect(isImageFile({ contentType: 'IMAGE/PNG' })).toBe(true);
+            expect(isImageFile({ contentType: 'application/pdf' })).toBe(false);
+        });
+
+        it('falls back to a known image extension as a last resort', () => {
+            expect(isImageFile({ name: 'photo.PNG' })).toBe(true);
+            expect(isImageFile({ name: 'archive.tar.gz' })).toBe(false);
+            expect(isImageFile({ name: 'noextension' })).toBe(false);
+        });
+
+        it.each(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'avif', 'heic'])(
+            'detects "%s" as an image extension',
+            (ext) => {
+                expect(isImageFile({ name: `file.${ext}` })).toBe(true);
+            }
+        );
+
+        it.each(['pdf', 'docx', 'txt', 'mp4', 'zip', 'json'])(
+            'does not detect "%s" as an image extension',
+            (ext) => {
+                expect(isImageFile({ name: `file.${ext}` })).toBe(false);
+            }
+        );
+
+        it('detects a referenced dotAsset via its assetMetaData', () => {
+            expect(isImageFile(getFileMetadata(NEW_FILE_MOCK.entity))).toBe(true);
         });
     });
 });
