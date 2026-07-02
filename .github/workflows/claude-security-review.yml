@@ -1,0 +1,337 @@
+name: Claude Security Review
+
+# Runs an AI-assisted security review on every PR. Behavior:
+#   - If Semgrep has already reviewed this PR (any check run, PR comment,
+#     review, or review-comment authored by a Semgrep app/bot), the Claude
+#     review is SKIPPED and the check passes — we trust Semgrep's coverage.
+#   - On the very first push (opened) or a manual dispatch, Claude always runs
+#     unconditionally — Semgrep cannot have reviewed a brand-new PR yet.
+#   - Otherwise, Claude runs. On findings:
+#       - Posts an INTENTIONALLY ABSTRACT comment on the (public) PR
+#       - Notifies the PR author privately on Slack with full details
+#       - Fails the check so the PR is blocked from merge
+#         (only enforced when this job is added to branch-protection required checks)
+#
+# Required configuration (Settings → Secrets and variables → Actions):
+#   secrets:
+#     ANTHROPIC_API_KEY    - Anthropic API key for Claude
+#     SLACK_BOT_TOKEN      - Slack bot token with chat:write scope, invited to the channel
+#     SLACK_USER_MAP       - JSON: {"github-login": "Uxxxxxxxx", ...}
+#   variables:
+#     SLACK_SECURITY_CHANNEL - Slack channel ID (e.g. C0XXXXXXX) for private security comms
+#
+# To make this block merges:
+#   Settings → Branches → main → Branch protection rule →
+#   "Require status checks to pass" → add "Claude Security Review / security-review"
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+
+concurrency:
+  group: claude-security-review-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  security-review:
+    name: security-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+
+    steps:
+      - name: Resolve PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let pr;
+            if (context.eventName === 'workflow_dispatch') {
+              const prNumber = parseInt('${{ inputs.pr_number }}');
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              pr = data;
+              core.info(`Resolved PR #${pr.number} via workflow_dispatch`);
+            } else {
+              pr = context.payload.pull_request;
+            }
+            core.setOutput('number',   String(pr.number));
+            core.setOutput('base_sha', pr.base.sha);
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('title',    pr.title);
+            core.setOutput('html_url', pr.html_url);
+            core.setOutput('author',   pr.user.login);
+            core.setOutput('is_draft', pr.draft ? 'true' : 'false');
+            core.setOutput('action',   context.payload.action || 'workflow_dispatch');
+
+      - name: Skip if draft (manual dispatch)
+        if: steps.pr.outputs.is_draft == 'true'
+        run: |
+          echo "PR #${{ steps.pr.outputs.number }} is a draft — skipping security review."
+          exit 0
+
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Save prompt template (before checkout overwrites it)
+        run: |
+          # The checkout above replaces the working tree with the target PR's code,
+          # which does not contain this workflow's prompt file. Copy it to /tmp first
+          # so the envsubst step can find it regardless of what branch is checked out.
+          git show origin/security/add-claude-security-review-workflow:.github/claude-security-review-prompt.md \
+            > /tmp/claude-security-review-prompt.md
+
+      - name: Check for prior Semgrep review (skip Claude if present)
+        id: semgrep
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // On the very first push of a new PR (opened) or a manual dispatch,
+            // always run Claude — Semgrep cannot have reviewed it yet.
+            const action = '${{ steps.pr.outputs.action }}';
+            if (action === 'opened' || action === 'workflow_dispatch') {
+              core.info(`Event '${action}' — bypassing Semgrep check, running Claude unconditionally.`);
+              core.setOutput('found', 'false');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt('${{ steps.pr.outputs.number }}');
+            const headSha  = '${{ steps.pr.outputs.head_sha }}';
+            const isSemgrep = (s) => /semgrep/i.test(s || '');
+
+            // 1) Any Semgrep check run on the current head SHA
+            const checks = await github.paginate(github.rest.checks.listForRef, {
+              owner, repo, ref: headSha, per_page: 100
+            });
+            const hasCheck = checks.some(c => isSemgrep(c.name) || isSemgrep(c.app && c.app.slug));
+
+            // 2) Any issue comment authored by a Semgrep bot / user
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number: prNumber, per_page: 100
+            });
+            const hasComment = comments.some(c => isSemgrep(c.user && c.user.login));
+
+            // 3) Any PR review from Semgrep
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner, repo, pull_number: prNumber, per_page: 100
+            });
+            const hasReview = reviews.some(r => isSemgrep(r.user && r.user.login));
+
+            // 4) Any inline review comment from Semgrep
+            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, {
+              owner, repo, pull_number: prNumber, per_page: 100
+            });
+            const hasReviewComment = reviewComments.some(c => isSemgrep(c.user && c.user.login));
+
+            const found = hasCheck || hasComment || hasReview || hasReviewComment;
+            core.info(`Semgrep signals — check:${hasCheck} comment:${hasComment} review:${hasReview} review-comment:${hasReviewComment}`);
+            core.setOutput('found', found ? 'true' : 'false');
+
+      - name: Post skip comment (Semgrep already covered this PR)
+        if: steps.semgrep.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = [
+              '## Security Review',
+              '',
+              'Semgrep coverage detected on this PR — skipping the Claude security review to avoid duplicate work.',
+              '',
+              '_If Semgrep coverage is removed, re-running this check will perform the Claude review._'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{ steps.pr.outputs.number }}'),
+              body
+            });
+
+      - name: Prepare prompt (substitute runtime values)
+        if: steps.semgrep.outputs.found != 'true'
+        env:
+          BASE_SHA:  ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA:  ${{ steps.pr.outputs.head_sha }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: envsubst < /tmp/claude-security-review-prompt.md > /tmp/claude-prompt.md
+
+      - name: Install Claude Code CLI
+        if: steps.semgrep.outputs.found != 'true'
+        run: npm install -g @anthropic-ai/claude-code@latest --quiet
+
+      - name: Run Claude security review
+        if: steps.semgrep.outputs.found != 'true'
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Run Claude headlessly. The prompt instructs Claude to write
+          # security-findings.json to the workspace.
+          claude \
+            --dangerously-skip-permissions \
+            --allowedTools "Bash,Read,Grep,Glob,Agent" \
+            --model claude-opus-4-7 \
+            -p "$(cat /tmp/claude-prompt.md)"
+
+      - name: Parse findings
+        if: steps.semgrep.outputs.found != 'true'
+        id: parse
+        run: |
+          set -euo pipefail
+          if [[ ! -f security-findings.json ]]; then
+            echo "Claude did not produce security-findings.json; failing safe (no findings)."
+            echo "findings_count=0" >> "$GITHUB_OUTPUT"
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          count=$(jq -r '.findings_count // 0' security-findings.json)
+          high=$(jq -r '.high_count // 0' security-findings.json)
+          medium=$(jq -r '.medium_count // 0' security-findings.json)
+          echo "findings_count=$count" >> "$GITHUB_OUTPUT"
+          echo "high_count=$high" >> "$GITHUB_OUTPUT"
+          echo "medium_count=$medium" >> "$GITHUB_OUTPUT"
+          if [[ "$count" -gt 0 ]]; then
+            echo "has_findings=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post abstract PR comment (findings)
+        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const n = '${{ steps.parse.outputs.findings_count }}';
+            const body = [
+              '## Security Review',
+              '',
+              `Automated security review flagged **${n} issue(s)** that require attention before this PR can merge.`,
+              '',
+              'For security reasons, details are not posted here. The PR author has been notified privately on Slack with the full report and remediation guidance.',
+              '',
+              'If you did not receive a Slack notification, contact the security team.',
+              '',
+              '_This check will remain red until the findings are resolved and a new commit is pushed._'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{ steps.pr.outputs.number }}'),
+              body
+            });
+
+      - name: Post clean PR comment (no findings)
+        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'false'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const body = [
+              '## Security Review',
+              '',
+              'No high-confidence security findings on the changes in this PR.'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{ steps.pr.outputs.number }}'),
+              body
+            });
+
+      - name: Notify author privately on Slack
+        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_USER_MAP:  ${{ secrets.SLACK_USER_MAP }}
+          SLACK_CHANNEL:   ${{ vars.SLACK_SECURITY_CHANNEL }}
+          PR_AUTHOR:       ${{ steps.pr.outputs.author }}
+          PR_URL:          ${{ steps.pr.outputs.html_url }}
+          PR_TITLE:        ${{ steps.pr.outputs.title }}
+          PR_NUMBER:       ${{ steps.pr.outputs.number }}
+          FINDINGS_COUNT:  ${{ steps.parse.outputs.findings_count }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, sys, urllib.request
+
+          with open("security-findings.json") as f:
+              data = json.load(f)
+          report = data.get("report_markdown", "") or "(no report content)"
+
+          token   = os.environ["SLACK_BOT_TOKEN"]
+          channel = os.environ["SLACK_CHANNEL"]
+          author  = os.environ["PR_AUTHOR"]
+          pr_url  = os.environ["PR_URL"]
+          pr_t    = os.environ["PR_TITLE"]
+          pr_n    = os.environ["PR_NUMBER"]
+          count   = os.environ["FINDINGS_COUNT"]
+
+          user_map = json.loads(os.environ.get("SLACK_USER_MAP") or "{}")
+          slack_uid = user_map.get(author)
+          mention = f"<@{slack_uid}>" if slack_uid else f"`{author}` _(no Slack mapping — add to SLACK_USER_MAP)_"
+
+          # Slack section text blocks are limited to ~3000 chars; chunk the report.
+          MAX = 2800
+          chunks = [report[i:i+MAX] for i in range(0, len(report), MAX)] or [""]
+          report_blocks = [
+              {"type": "section", "text": {"type": "mrkdwn", "text": "```\n" + c + "\n```"}}
+              for c in chunks[:8]  # cap at 8 blocks to stay under Slack's 50-block limit
+          ]
+
+          payload = {
+              "channel": channel,
+              "text": f"Security findings on PR #{pr_n}",
+              "blocks": [
+                  {"type": "header", "text": {"type": "plain_text", "text": "Security Review — Action Required"}},
+                  {"type": "section", "text": {"type": "mrkdwn",
+                      "text": f"{mention}\n*PR:* <{pr_url}|{pr_t} (#{pr_n})>\n*Findings:* {count}"}},
+                  {"type": "divider"},
+                  *report_blocks,
+                  {"type": "context", "elements": [{"type": "mrkdwn",
+                      "text": "This PR is *blocked* from merging until the findings are resolved. Push a new commit to re-run the review. Reply in thread for help."}]}
+              ],
+          }
+
+          req = urllib.request.Request(
+              "https://slack.com/api/chat.postMessage",
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json; charset=utf-8",
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(req) as resp:
+              body = json.loads(resp.read())
+          if not body.get("ok"):
+              print("Slack post failed:", body, file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Fail check to block merge
+        if: steps.semgrep.outputs.found != 'true' && steps.parse.outputs.has_findings == 'true'
+        run: |
+          echo "::error::Security review found ${{ steps.parse.outputs.findings_count }} issue(s). See Slack for details."
+          exit 1
