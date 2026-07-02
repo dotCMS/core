@@ -144,7 +144,7 @@ jobs:
           java-version: ${{ inputs.java-version }}
 
       - name: Restore Maven Repository
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: maven-repo${{ steps.java-suffix.outputs.suffix }}
           path: ~/.m2/repository
@@ -248,7 +248,7 @@ jobs:
           github_token: ${{ secrets.CI_MACHINE_TOKEN }}
 
       - name: Download SBOM Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: ${{ steps.sbom-generator.outputs.sbom-artifact }}

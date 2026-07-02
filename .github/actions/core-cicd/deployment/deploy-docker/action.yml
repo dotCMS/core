@@ -86,7 +86,7 @@ runs:
   using: "composite"
   steps:
     - name: Download Docker Build Context
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       if: inputs.build_run_id # Only download the artifact if a build run id is provided
       with:
         name: docker-build-context${{ inputs.artifact_suffix }}

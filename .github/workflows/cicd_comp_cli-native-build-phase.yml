@@ -107,7 +107,7 @@ jobs:
       # Upload the built distribution as an artifact
       - name: 'Upload built distribution'
         id: upload-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cli-artifacts-${{ matrix.platform }}
           path: |

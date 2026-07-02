@@ -165,7 +165,7 @@ jobs:
           echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
 
       - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
@@ -207,7 +207,7 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
