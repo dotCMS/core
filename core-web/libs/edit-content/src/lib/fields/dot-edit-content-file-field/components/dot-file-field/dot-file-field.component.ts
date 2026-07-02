@@ -23,7 +23,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -89,6 +93,7 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         BinaryImageEditSaveStrategy,
         DotAssetImageEditSaveStrategy,
         ImageEditSaveStrategyResolver,
+        DotWorkflowActionsFireService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,

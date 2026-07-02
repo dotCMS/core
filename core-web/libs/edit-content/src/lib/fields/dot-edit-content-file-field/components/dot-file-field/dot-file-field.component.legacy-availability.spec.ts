@@ -7,7 +7,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -56,6 +60,7 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
             BinaryImageEditSaveStrategy,
             DotAssetImageEditSaveStrategy,
             ImageEditSaveStrategyResolver,
+            mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('Test Message') }),
             mockProvider(DotAiService, {
                 checkPluginInstallation: jest.fn().mockReturnValue(of(false))

@@ -1,5 +1,7 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+
 import { BinaryImageEditSaveStrategy } from './binary-image-edit-save.strategy';
 import { DotAssetImageEditSaveStrategy } from './dotasset-image-edit-save.strategy';
 import { ImageEditSaveStrategyResolver } from './image-edit-save-strategy.resolver';
@@ -15,7 +17,8 @@ describe('ImageEditSaveStrategyResolver', () => {
         providers: [
             BinaryImageEditSaveStrategy,
             DotAssetImageEditSaveStrategy,
-            mockProvider(FileFieldStore, { applyTempFile: jest.fn() })
+            mockProvider(FileFieldStore, { applyTempFile: jest.fn() }),
+            mockProvider(DotWorkflowActionsFireService)
         ]
     });
 

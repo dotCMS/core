@@ -7,7 +7,11 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -53,6 +57,7 @@ describe('DotFileFieldComponent', () => {
             BinaryImageEditSaveStrategy,
             DotAssetImageEditSaveStrategy,
             ImageEditSaveStrategyResolver,
+            mockProvider(DotWorkflowActionsFireService),
             { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Test Message')
