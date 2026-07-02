@@ -6,5 +6,6 @@ export { withFileInfo } from './with-file-info.feature';
 export { withFocalPoint } from './with-focal-point.feature';
 export { withHistory } from './with-history.feature';
 export { withPreview } from './with-preview.feature';
+export { withSave } from './with-save.feature';
 export { withTransform } from './with-transform.feature';
 export { withView } from './with-view.feature';
