@@ -83,6 +83,21 @@ describe('withTransform', () => {
         ]);
     });
 
+    it('records each flip of the same axis as its own history step (discrete toggle)', () => {
+        const { store, transform } = setup(TransformStore);
+        transform.flipHToggled();
+        transform.flipHToggled();
+        // Two clicks net back to the un-flipped state...
+        expect(store.transform().flipH).toBe(false);
+        // ...but each click is a distinct undoable step — it must NOT coalesce into
+        // one silently-updated entry (the QA bug: applied twice, shown once).
+        expect(store.history().map((entry) => entry.label)).toEqual([
+            'Flip horizontal',
+            'Flip horizontal'
+        ]);
+        expect(store.historyIndex()).toBe(1);
+    });
+
     it('clears an active crop when explicit output dimensions are set', () => {
         const { store, transform } = setup(TransformStoreCropped);
         transform.outputDimsChanged({ width: 500, height: null });

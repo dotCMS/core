@@ -96,20 +96,17 @@ export class BinaryField extends FileField {
     }
 
     /**
-     * New editor: the legacy image editor JSP is embedded in a PrimeNG dialog
-     * iframe (`dot-legacy-image-editor-dialog`), not the Dojo `#dotImageDialog`.
+     * New editor: clicking "Edit image" opens the Angular image editor
+     * ({@link DotImageEditorComponent}, `data-testid="image-editor-root"`) inside a
+     * PrimeNG dialog. The flag that used to gate it (FEATURE_FLAG_NEW_IMAGE_EDITOR) was
+     * removed, so the new editor is always used in the new Edit Content — there is no
+     * legacy Dojo iframe here.
      */
     async expectImageEditorOpen() {
         const dialog = this.page.getByRole('dialog');
         await expect(dialog).toBeVisible({ timeout: 15000 });
 
-        const iframe = dialog.getByTestId('legacy-image-editor-iframe');
-        await expect(iframe).toBeVisible({ timeout: 30000 });
-
-        const editorFrame = this.page.frameLocator('[data-testid="legacy-image-editor-iframe"]');
-        await expect(editorFrame.locator('#dotImageDialog, #imageToolIframe').first()).toBeVisible({
-            timeout: 30000
-        });
+        await expect(dialog.getByTestId('image-editor-root')).toBeVisible({ timeout: 30000 });
     }
 
     async openImageEditorInNewEditor() {

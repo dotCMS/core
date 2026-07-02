@@ -54,8 +54,6 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 
-// eslint-disable-next-line max-len
-
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     template: '',
