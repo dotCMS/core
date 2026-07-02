@@ -185,7 +185,9 @@ describe('DotFileFieldComponent', () => {
             mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
             setupBinaryWithImage();
 
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
@@ -197,7 +199,7 @@ describe('DotFileFieldComponent', () => {
                     mimeType: 'image/png'
                 })
             );
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
         });
 
         it('should fall back to the legacy editor when the new launcher is unavailable', () => {
@@ -210,13 +212,15 @@ describe('DotFileFieldComponent', () => {
             const legacyOpenSpy = jest
                 .spyOn(legacy, 'open')
                 .mockReturnValue(of(EDITED_TEMP_FILE) as never);
-            const applySpy = jest.spyOn(spectator.component.store, 'applyTempFile');
+            const applySpy = jest
+                .spyOn(spectator.component.store, 'applyEditedImage')
+                .mockImplementation();
 
             spectator.component.onEditImage();
 
             expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
             expect(legacyOpenSpy).toHaveBeenCalled();
-            expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
+            expect(applySpy).toHaveBeenCalled();
         });
     });
 

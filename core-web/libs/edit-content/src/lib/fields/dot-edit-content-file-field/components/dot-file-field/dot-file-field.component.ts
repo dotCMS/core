@@ -1,5 +1,4 @@
 import { signalMethod } from '@ngrx/signals';
-import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -433,7 +432,7 @@ export class DotFileFieldComponent
             // the marker instead of resetting it to centre.
             const focalPoint = parseFocalPoint(metadata?.focalPoint);
 
-            this.#applyEditedImage(
+            this.store.applyEditedImage(
                 newLauncher.open({
                     inode,
                     tempId,
@@ -453,7 +452,7 @@ export class DotFileFieldComponent
             ? this.#legacyDojoImageEditorLauncher
             : this.#legacyDialogImageEditorLauncher;
 
-        this.#applyEditedImage(
+        this.store.applyEditedImage(
             legacyLauncher.open({
                 inode,
                 tempId,
@@ -461,36 +460,6 @@ export class DotFileFieldComponent
                 fieldName: editorVariable
             })
         );
-    }
-
-    /**
-     * Applies the edited image emitted by an image-editor launcher. Binary applies
-     * the edit inline; Image/File version the referenced dotAsset/FileAsset. Shared
-     * by the new Angular editor and the legacy launchers. Ignores a closed editor
-     * (no temp file) and surfaces a server error if the stream fails.
-     *
-     * @param result$ the launcher's close stream, emitting the edited temp file or null
-     */
-    #applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
-        result$
-            .pipe(
-                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe({
-                next: (tempFile) => {
-                    // Binary keeps the binary inline; Image/File reference a separate
-                    // dotAsset/FileAsset that must be versioned via a check-in + publish.
-                    if (this.store.inputType() === INPUT_TYPES.Binary) {
-                        this.store.applyTempFile(tempFile);
-                    } else {
-                        this.store.publishEditedAsset(tempFile);
-                    }
-                },
-                error: () => {
-                    this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
-                }
-            });
     }
 
     /**

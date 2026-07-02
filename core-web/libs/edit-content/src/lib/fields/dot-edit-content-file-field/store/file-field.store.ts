@@ -4,7 +4,8 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, Observable, of, pipe } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 
@@ -487,6 +488,42 @@ export const FileFieldStore = signalStore(
                     })
                 )
             )
+        };
+    }),
+    withMethods((store) => {
+        const destroyRef = inject(DestroyRef);
+
+        return {
+            /**
+             * Consumes an image-editor launcher's close stream and persists the edit.
+             *
+             * Owns the whole apply flow so callers just hand over the launcher stream:
+             * ignores a closed editor (null), routes by input type (Binary applies the
+             * edit inline; Image/File version the referenced dotAsset/FileAsset), and
+             * surfaces a server error if the stream fails. The subscription is torn
+             * down with the store.
+             *
+             * @param result$ the launcher close stream emitting the edited temp file or null
+             */
+            applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
+                result$
+                    .pipe(
+                        filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe({
+                        next: (tempFile) => {
+                            if (store.inputType() === INPUT_TYPES.Binary) {
+                                store.applyTempFile(tempFile);
+                            } else {
+                                store.publishEditedAsset(tempFile);
+                            }
+                        },
+                        error: () => {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+                        }
+                    });
+            }
         };
     })
 );
