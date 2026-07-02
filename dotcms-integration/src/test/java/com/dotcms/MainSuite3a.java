@@ -87,7 +87,7 @@ import org.junit.runners.Suite;
         Task260407AddBaseTypeColumnToIdentifierTest.class,
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
-        TreeFactoryTest.class
+        TreeFactoryTest.class,
         PublisherQueueJobTest.class,
 })
 
