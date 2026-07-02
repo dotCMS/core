@@ -46,6 +46,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -1668,16 +1669,92 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     }
 
+    /**
+     * When {@code true}, bypasses the guard that blocks deletion of an active
+     * (working/live) or building (reindex) index. Off by default: deleting an in-use
+     * index leaves the site with nothing to serve reads from or reindex into. Intended
+     * only for emergency/scripted maintenance.
+     */
+    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
+
+    /**
+     * Controls whether {@link #delete(String)} cascades to the index's twin in the other
+     * engine. On by default.
+     * <ul>
+     *   <li><strong>true (default)</strong> — a logical index and its counterpart in the other
+     *       engine are deleted together (phase-dispatched broadcast to every write provider),
+     *       so the {@code .os} twin is never left orphaned.</li>
+     *   <li><strong>false</strong> — only the engine that owns the given name is touched
+     *       (tag-dispatched: a name ending in {@code .os} → OpenSearch, otherwise
+     *       Elasticsearch), leaving the twin intact (issue #35640, TC-016 documented behavior).</li>
+     * </ul>
+     */
+    public static final String FF_INDEX_DELETE_CASCADE = "FEATURE_FLAG_INDEX_DELETE_CASCADE";
+
+    /**
+     * Rejects deletion of an index that is currently active (working/live) or being
+     * rebuilt (a reindex slot). The protected set is resolved phase-aware via
+     * {@link #getCurrentIndex()} and {@link #getNewIndex()} — the same sources the
+     * maintenance UI uses to flag an index <em>active</em>/<em>building</em> — so this
+     * server-side guard mirrors exactly what the UI already hides. The UI hid the Delete
+     * option for these indices; a direct REST/AJAX call previously bypassed that and could
+     * wipe the only index (see issue #35640, TC-018).
+     *
+     * <p>Bypass with the {@value #FF_ALLOW_ACTIVE_INDEX_DELETE} feature flag.</p>
+     *
+     * @throws DotStateException if the index is active/building (bypass off), or if the
+     *                           active set cannot be resolved (fail closed — a destructive
+     *                           op must not proceed on an unknown state).
+     */
+    private void assertIndexIsDeletable(final String indexName) {
+        if (Config.getBooleanProperty(FF_ALLOW_ACTIVE_INDEX_DELETE, false)) {
+            return;
+        }
+        final String requested = indexAPI.removeClusterIdFromName(indexName);
+        final Set<String> protectedIndices = new HashSet<>();
+        try {
+            protectedIndices.addAll(getCurrentIndex()); // active working + live
+            protectedIndices.addAll(getNewIndex());     // building reindex slots
+        } catch (final DotDataException e) {
+            throw new DotStateException("Unable to verify whether index '" + indexName
+                    + "' is active before deletion; refusing to delete.", e);
+        }
+        if (protectedIndices.contains(requested)) {
+            throw new DotStateException("Index '" + indexName
+                    + "' is active or being rebuilt and cannot be deleted. Deactivate it first"
+                    + " (or set " + FF_ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
+        }
+    }
+
     public boolean delete(String indexName) {
-        // Mirror createContentIndex: resolve the per-provider physical name (ES → bare,
-        // OS → .os tag) via ops.toPhysicalName so a router-driven delete targets the REAL
-        // OS index. Routing the bare logical name straight to OSIndexAPIImpl.delete would
-        // hit an untagged name that does not exist and orphan the actual .os index.
-        // Track the primary provider's result; shadow failures in dual-write phases are
-        // fire-and-forget (the primary ES delete must not be undone by an OS shadow miss).
-        final ContentletIndexOperations primary = router.readProvider();
+        // Guard first: never delete an active/building index (issue #35640, TC-018).
+        assertIndexIsDeletable(indexName);
+
+        // Cascade (default) deletes the index and its twin in the other engine together;
+        // when disabled, only the engine that owns the given name is touched. See
+        // FF_INDEX_DELETE_CASCADE (issue #35640, TC-016).
+        final boolean cascade = Config.getBooleanProperty(FF_INDEX_DELETE_CASCADE, true);
+        final ContentletIndexOperations primary;
+        final List<ContentletIndexOperations> targets;
+        if (cascade) {
+            // Phase-dispatched broadcast: fan out to every write provider so the .os twin
+            // is not orphaned. Track the read provider's result as the primary; shadow
+            // failures in dual-write phases are fire-and-forget.
+            primary = router.readProvider();
+            targets = router.writeProviders();
+        } else {
+            // Tag-dispatched: the vendor tag on the name decides the single target
+            // (.os → OS, otherwise ES). The twin in the other engine is left intact.
+            primary = IndexTag.OS.isTagged(indexName) ? router.osImpl() : router.esImpl();
+            targets = List.of(primary);
+        }
+
         boolean primaryResult = false;
-        for (final ContentletIndexOperations ops : router.writeProviders()) {
+        for (final ContentletIndexOperations ops : targets) {
+            // Resolve the per-provider physical name (ES → bare, OS → .os tag) via
+            // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
+            // logical name straight to OSIndexAPIImpl.delete would hit an untagged name
+            // that does not exist and orphan the actual .os index.
             final String physicalName = ops.toPhysicalName(indexName);
             try {
                 final boolean r = ops.indexAPI().delete(physicalName);
