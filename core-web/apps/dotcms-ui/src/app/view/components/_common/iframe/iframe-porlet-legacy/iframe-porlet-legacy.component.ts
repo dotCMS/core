@@ -2,9 +2,10 @@ import { BehaviorSubject, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, takeUntil, withLatestFrom } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, mergeMap, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -37,6 +38,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
     readonly #globalStore = inject(GlobalStore);
+    readonly #siteChange$ = toObservable(this.#globalStore.siteDetails);
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
@@ -52,9 +54,13 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 this.reloadIframePortlet(portletId);
             }
         });
-        this.#globalStore
-            .switchSiteEvent$()
-            .pipe(takeUntil(this.destroy$))
+        this.#siteChange$
+            .pipe(
+                skip(1),
+                filter(Boolean),
+                distinctUntilChanged((a, b) => a.identifier === b.identifier),
+                takeUntil(this.destroy$)
+            )
             .subscribe(() => {
                 if (this.url.getValue() !== '') {
                     this.reloadIframePortlet();
