@@ -10,7 +10,7 @@ import { MessageModule } from 'primeng/message';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotPublishingQueueService } from '@dotcms/data-access';
+import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
@@ -38,6 +38,7 @@ export class DotPublishingQueueUploadDialogComponent {
     readonly dialogRef = inject(DynamicDialogRef);
     private readonly service = inject(DotPublishingQueueService);
     private readonly store = inject(DotPublishingQueueStore);
+    private readonly dotMessageService = inject(DotMessageService);
 
     readonly selectedFile = signal<File | null>(null);
     readonly uploading = signal(false);
@@ -56,7 +57,14 @@ export class DotPublishingQueueUploadDialogComponent {
 
     onSubmit(): void {
         const file = this.selectedFile();
+        // Upload stays clickable at all times — clicking without a file surfaces
+        // the file-required warning inline via `errorMessage` instead of doing
+        // nothing silently. Auto-clears when the user picks a valid file
+        // (see `onFileSelect`).
         if (!file) {
+            this.errorMessage.set(
+                this.dotMessageService.get('publishing-queue.upload.warning.file-required')
+            );
             return;
         }
 

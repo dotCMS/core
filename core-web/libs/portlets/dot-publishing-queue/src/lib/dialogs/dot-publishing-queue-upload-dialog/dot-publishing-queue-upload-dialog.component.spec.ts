@@ -77,9 +77,23 @@ describe('DotPublishingQueueUploadDialogComponent', () => {
     });
 
     describe('submit', () => {
-        it('is a no-op when nothing is selected', () => {
+        it('does not call the service when nothing is selected; surfaces a warning instead', () => {
             spectator.component.onSubmit();
             expect(service.uploadBundle).not.toHaveBeenCalled();
+            // The button is no longer disabled — clicking without a file must
+            // surface the file-required message inline so the user knows why.
+            expect(spectator.component.errorMessage()).toBe(
+                'publishing-queue.upload.warning.file-required'
+            );
+        });
+
+        it('clears the file-required warning once a valid bundle is selected', () => {
+            spectator.component.onSubmit();
+            expect(spectator.component.errorMessage()).toBe(
+                'publishing-queue.upload.warning.file-required'
+            );
+            spectator.component.onFileSelect({ files: [bundleFile()] } as never);
+            expect(spectator.component.errorMessage()).toBeNull();
         });
 
         it('calls service.uploadBundle, refreshes the store, and closes with uploaded:true', () => {

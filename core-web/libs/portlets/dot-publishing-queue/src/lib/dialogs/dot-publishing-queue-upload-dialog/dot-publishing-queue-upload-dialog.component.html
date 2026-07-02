@@ -73,7 +73,7 @@
             data-testid="pq-upload-cancel" />
         <p-button
             [label]="'publishing-queue.upload.submit' | dm"
-            [disabled]="!selectedFile()"
+            [disabled]="uploading()"
             [loading]="uploading()"
             (onClick)="onSubmit()"
             data-testid="pq-upload-submit" />
