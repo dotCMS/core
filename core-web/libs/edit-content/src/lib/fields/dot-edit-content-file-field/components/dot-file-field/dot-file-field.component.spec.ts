@@ -23,11 +23,6 @@ import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
 } from '../../services/image-editor';
-import {
-    BinaryImageEditSaveStrategy,
-    DotAssetImageEditSaveStrategy,
-    ImageEditSaveStrategyResolver
-} from '../../services/save-strategy';
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 import { FileFieldStore } from '../../store/file-field.store';
 import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file-field-preview.component';
@@ -54,9 +49,6 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
-            BinaryImageEditSaveStrategy,
-            DotAssetImageEditSaveStrategy,
-            ImageEditSaveStrategyResolver,
             mockProvider(DotWorkflowActionsFireService),
             { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {

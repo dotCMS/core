@@ -1,13 +1,14 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { Observable, of, pipe } from 'rxjs';
+import { EMPTY, Observable, of, pipe } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 
 import {
@@ -114,6 +115,7 @@ export const FileFieldStore = signalStore(
     })),
     withMethods((store) => {
         const uploadService = inject(DotFileFieldUploadService);
+        const workflowActionsFire = inject(DotWorkflowActionsFireService);
         const http = inject(HttpClient);
 
         /**
@@ -331,6 +333,68 @@ export const FileFieldStore = signalStore(
                             })
                         )
                     )
+                )
+            ),
+            /**
+             * publishEditedAsset versions the referenced asset (Image/File fields).
+             *
+             * Image/File fields store only an `identifier` referencing a separate
+             * `dotAsset`/`FileAsset` contentlet (the binary lives in its `asset` /
+             * `fileAsset` field). Saving an edit checks in and publishes a NEW version
+             * of that referenced contentlet in its own language, then re-hydrates the
+             * preview. The field value (the identifier) is unchanged, so the reference
+             * is preserved and other content sharing the asset sees the update.
+             *
+             * `switchMap` serializes concurrent saves: a re-triggered edit cancels an
+             * in-flight publish+refresh instead of racing it.
+             * @param tempFile edited image staged as a temp file by the image editor
+             */
+            publishEditedAsset: rxMethod<DotCMSTempFile>(
+                pipe(
+                    switchMap((tempFile) => {
+                        const uploaded = store.uploadedFile();
+
+                        // Only a resolved dotAsset/FileAsset reference can be versioned;
+                        // reaching here without one is unexpected — surface it instead of
+                        // silently discarding the edit.
+                        if (uploaded?.source !== 'contentlet') {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+
+                            return EMPTY;
+                        }
+
+                        const { identifier, languageId } = uploaded.file;
+                        // The binary field variable differs by referenced type: `asset`
+                        // for a dotAsset, `fileAsset` for a legacy FileAsset. titleImage
+                        // carries the server-computed field name; default to `asset`.
+                        const fieldVariable = (uploaded.file['titleImage'] as string) || 'asset';
+
+                        patchState(store, { fileStatus: 'uploading' });
+
+                        return workflowActionsFire
+                            .publishContentletByIdentifier<DotCMSContentlet>(
+                                { identifier, [fieldVariable]: tempFile.id },
+                                languageId
+                            )
+                            .pipe(
+                                switchMap(() => uploadService.getContentById(identifier)),
+                                tapResponse({
+                                    next: (file) => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            value: file.identifier,
+                                            uploadedFile: { source: 'contentlet', file }
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            uiMessage: getUiMessage('SERVER_ERROR')
+                                        });
+                                    }
+                                })
+                            );
+                    })
                 )
             ),
             /**

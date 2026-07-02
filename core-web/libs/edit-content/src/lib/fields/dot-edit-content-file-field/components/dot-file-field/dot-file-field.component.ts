@@ -51,11 +51,6 @@ import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
 } from './../../services/image-editor';
-import {
-    BinaryImageEditSaveStrategy,
-    DotAssetImageEditSaveStrategy,
-    ImageEditSaveStrategyResolver
-} from './../../services/save-strategy';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
 import { parseFocalPoint } from './../../utils/focal-point.util';
@@ -90,9 +85,6 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         DialogService,
         LegacyDialogImageEditorLauncher,
         LegacyDojoImageEditorLauncher,
-        BinaryImageEditSaveStrategy,
-        DotAssetImageEditSaveStrategy,
-        ImageEditSaveStrategyResolver,
         DotWorkflowActionsFireService,
         {
             multi: true,
@@ -125,11 +117,6 @@ export class DotFileFieldComponent
      * the legacy launchers.
      */
     readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
-    /**
-     * Resolves how an edited image is persisted based on the field's input type:
-     * Binary applies the edit inline, Image/File version the referenced dotAsset.
-     */
-    readonly #imageEditSaveStrategyResolver = inject(ImageEditSaveStrategyResolver);
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -477,11 +464,10 @@ export class DotFileFieldComponent
     }
 
     /**
-     * Applies the edited image emitted by an image-editor launcher, delegating to
-     * the {@link ImageEditSaveStrategy} resolved for the field's input type (Binary
-     * applies inline; Image/File version the referenced dotAsset). Shared by the
-     * new Angular editor and the legacy launchers. Ignores a closed editor (no temp
-     * file) and surfaces a server error if the stream fails.
+     * Applies the edited image emitted by an image-editor launcher. Binary applies
+     * the edit inline; Image/File version the referenced dotAsset/FileAsset. Shared
+     * by the new Angular editor and the legacy launchers. Ignores a closed editor
+     * (no temp file) and surfaces a server error if the stream fails.
      *
      * @param result$ the launcher's close stream, emitting the edited temp file or null
      */
@@ -493,9 +479,13 @@ export class DotFileFieldComponent
             )
             .subscribe({
                 next: (tempFile) => {
-                    this.#imageEditSaveStrategyResolver
-                        .resolve(this.store.inputType())
-                        .apply(tempFile);
+                    // Binary keeps the binary inline; Image/File reference a separate
+                    // dotAsset/FileAsset that must be versioned via a check-in + publish.
+                    if (this.store.inputType() === INPUT_TYPES.Binary) {
+                        this.store.applyTempFile(tempFile);
+                    } else {
+                        this.store.publishEditedAsset(tempFile);
+                    }
                 },
                 error: () => {
                     this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
