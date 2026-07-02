@@ -4,6 +4,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.templates.model.Template.SYSTEM_TEMPLATE;
 
 import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -602,7 +603,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * @param contentlet The {@link Contentlet} whose Story Block fields will be analyzed.
      */
     private void processStoryBockDependencies(final Contentlet contentlet) {
-        if (contentlet.getContentType().hasStoryBlockFields()) {
+        final ContentType contentType = contentlet.getContentType();
+        if (null != contentType && contentType.hasStoryBlockFields()) {
             this.storyBlockAPI.get().getDependencies(contentlet).forEach(dependency -> {
                 Contentlet contentInStoryBlock = new Contentlet();
                 try {

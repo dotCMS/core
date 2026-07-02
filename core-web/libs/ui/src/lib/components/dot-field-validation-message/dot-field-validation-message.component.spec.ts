@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';

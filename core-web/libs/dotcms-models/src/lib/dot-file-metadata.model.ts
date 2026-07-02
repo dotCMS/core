@@ -11,4 +11,9 @@ export interface DotFileMetadata {
     height?: number;
     width?: number;
     editableAsText?: boolean;
+    /**
+     * Focal point as an `"x,y"` string (normalized 0..1), exposed by the backend on image
+     * binary metadata and used to re-seed the image editor's focal marker on reopen.
+     */
+    focalPoint?: string;
 }
