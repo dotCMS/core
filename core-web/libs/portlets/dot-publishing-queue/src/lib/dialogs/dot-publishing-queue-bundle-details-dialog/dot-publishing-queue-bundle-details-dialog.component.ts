@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
@@ -59,6 +60,7 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
 
     private readonly publishingService = inject(DotPublishingQueueService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
 
     /** Rows shown in the meta key/value table — the order here is the order
      * rendered. The body template switches on `key` to pick the right value
@@ -155,5 +157,9 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
 
     manifestHref(bundleId: string): string {
         return this.publishingService.getBundleManifestUrl(bundleId);
+    }
+
+    closeDialog(): void {
+        this.dialogRef?.close();
     }
 }

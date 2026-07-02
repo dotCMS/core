@@ -30,7 +30,7 @@
                                 <dot-publishing-status-chip [status]="detail.status" />
                             }
                             @case ('scheduledFor') {
-                                {{ (detail.scheduledPublishDate | date: 'medium') || '—' }}
+                                {{ (detail.scheduledPublishDate | date: 'MMM d, y - h:mm:ss a') || '—' }}
                             }
                             @case ('bundleId') {
                                 <span class="font-mono text-xs break-all">
@@ -38,16 +38,16 @@
                                 </span>
                             }
                             @case ('bundleStart') {
-                                {{ (detail.timestamps.bundleStart | date: 'medium') || '—' }}
+                                {{ (detail.timestamps.bundleStart | date: 'MMM d, y - h:mm:ss a') || '—' }}
                             }
                             @case ('bundleEnd') {
-                                {{ (detail.timestamps.bundleEnd | date: 'medium') || '—' }}
+                                {{ (detail.timestamps.bundleEnd | date: 'MMM d, y - h:mm:ss a') || '—' }}
                             }
                             @case ('publishStart') {
-                                {{ (detail.timestamps.publishStart | date: 'medium') || '—' }}
+                                {{ (detail.timestamps.publishStart | date: 'MMM d, y - h:mm:ss a') || '—' }}
                             }
                             @case ('publishEnd') {
-                                {{ (detail.timestamps.publishEnd | date: 'medium') || '—' }}
+                                {{ (detail.timestamps.publishEnd | date: 'MMM d, y - h:mm:ss a') || '—' }}
                             }
                             @case ('filter') {
                                 {{ detail.filterName || detail.filterKey || '—' }}
@@ -113,30 +113,32 @@
             }
         </section>
 
-        @if (canDownloadBundle() || canDownloadManifest()) {
-            <div class="flex justify-end gap-2 pt-2">
-                @if (canDownloadManifest()) {
-                    <a
-                        [href]="manifestHref(detail.bundleId)"
-                        [download]="'manifest_' + detail.bundleId + '.csv'"
-                        class="p-button p-button-outlined"
-                        data-testid="pq-detail-download-manifest-btn">
-                        <i class="pi pi-file mr-2"></i>
-                        {{ 'publishing-queue.detail.download-manifest' | dm }}
-                    </a>
-                }
-                @if (canDownloadBundle()) {
-                    <a
-                        [href]="downloadHref(detail.bundleId)"
-                        [download]="detail.bundleName || detail.bundleId"
-                        class="p-button p-button-outlined"
-                        data-testid="pq-detail-download-btn">
-                        <i class="pi pi-download mr-2"></i>
-                        {{ 'publishing-queue.detail.download' | dm }}
-                    </a>
-                }
-            </div>
-        }
+        <div class="flex justify-end gap-2 pt-2">
+            @if (canDownloadManifest()) {
+                <a
+                    [href]="manifestHref(detail.bundleId)"
+                    [download]="'manifest_' + detail.bundleId + '.csv'"
+                    class="p-button p-button-outlined"
+                    data-testid="pq-detail-download-manifest-btn">
+                    <i class="pi pi-file mr-2"></i>
+                    {{ 'publishing-queue.detail.download-manifest' | dm }}
+                </a>
+            }
+            @if (canDownloadBundle()) {
+                <a
+                    [href]="downloadHref(detail.bundleId)"
+                    [download]="detail.bundleName || detail.bundleId"
+                    class="p-button p-button-outlined"
+                    data-testid="pq-detail-download-btn">
+                    <i class="pi pi-download mr-2"></i>
+                    {{ 'publishing-queue.detail.download' | dm }}
+                </a>
+            }
+            <p-button
+                [label]="'publishing-queue.close' | dm"
+                (onClick)="closeDialog()"
+                data-testid="pq-detail-close-btn" />
+        </div>
     } @else if (store.detailStatus() === 'error') {
         <div class="text-color-secondary p-4 text-center" data-testid="pq-detail-error">
             {{ 'publishing-queue.detail.load-error' | dm }}
