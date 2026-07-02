@@ -58,7 +58,8 @@ test.describe('Status & Locale Chips', () => {
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
         await dialog.waitForContentLoaded();
-        await dialog.selectSingleItem(0);
+        // ONE_TO_MANY renders checkboxes (multi-select), not radio buttons.
+        await dialog.selectItem(0);
         await dialog.clickApply();
         await dialog.expectClosed();
 
