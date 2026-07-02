@@ -559,12 +559,37 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator.component.onConfigureFormValid(true);
         }
 
-        it('Send is disabled until the embedded form reports valid', () => {
+        it('Send stays enabled while the form is invalid; clicking surfaces a warning', () => {
             spectator.detectChanges();
             spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
             spectator.component.onOpenConfigureStep();
-            // form has not emitted (value=null, valid=false) → canSend = false
-            expect(spectator.component.canSend()).toBe(false);
+            spectator.detectChanges();
+
+            // Button is not disabled — only `isSending` disables it now.
+            const sendBtn = spectator
+                .query(byTestId('pq-select-bundle-send-btn'))
+                ?.querySelector('button');
+            expect(sendBtn?.hasAttribute('disabled')).toBe(false);
+
+            // Form has not emitted (value=null, valid=false) → clicking surfaces
+            // the form-invalid warning inline in the footer instead of firing.
+            spectator.component.onSend();
+            expect(service.pushBundle).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.form-invalid'
+            );
+        });
+
+        it('clears the form-invalid warning once the form reports valid', () => {
+            spectator.detectChanges();
+            spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
+            spectator.component.onOpenConfigureStep();
+            spectator.component.onSend(); // triggers warning
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.form-invalid'
+            );
+            spectator.component.onConfigureFormValid(true);
+            expect(spectator.component.validationWarningKey()).toBeNull();
         });
 
         it('fans out one pushBundle call per checked bundle and closes the dialog on success', () => {
@@ -606,17 +631,27 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
-        it('is a no-op when nothing is checked OR the form is invalid', () => {
+        it('does not fire pushBundle when nothing checked OR form invalid; sets a warning', () => {
             spectator.detectChanges();
+
+            // Valid form, but no bundle checked → select-one warning.
             spectator.component.checkedBundleIds.set([]);
+            spectator.component.onConfigureFormValue({} as never);
             spectator.component.onConfigureFormValid(true);
             spectator.component.onSend();
             expect(service.pushBundle).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.select-one'
+            );
 
+            // Bundle checked, but form invalid → form-invalid warning takes precedence.
             spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
             spectator.component.onConfigureFormValid(false);
             spectator.component.onSend();
             expect(service.pushBundle).not.toHaveBeenCalled();
+            expect(spectator.component.validationWarningKey()).toBe(
+                'publishing-queue.select-bundle.warning.form-invalid'
+            );
         });
 
         it('toggles isSending around the network calls', () => {
@@ -653,14 +688,17 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.queryAll(byTestId('pq-select-bundle-row')).length).toBe(2);
         });
 
-        it('renders the configure header, body, and footer in the configure step', () => {
+        it('renders the configure title (in the dialog header), body, and footer in the configure step', () => {
             spectator.detectChanges();
             spectator.component.onCheckedChange([
                 { id: 'bundle-1', name: 'Spring campaign refresh' }
             ]);
             spectator.component.onOpenConfigureStep();
             spectator.detectChanges();
-            expect(spectator.query(byTestId('pq-select-bundle-configure-header'))).toBeTruthy();
+            // The step title lives in the dialog's custom header now, not in a
+            // separate configure-header bar.
+            expect(spectator.query(byTestId('pq-select-bundle-configure-title'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-select-bundle-back-btn'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-select-bundle-configure-body'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-select-bundle-configure-footer'))).toBeTruthy();
             // Select-step content is no longer in the DOM.

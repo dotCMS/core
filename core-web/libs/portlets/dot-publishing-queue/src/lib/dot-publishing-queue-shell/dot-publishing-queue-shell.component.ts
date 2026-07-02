@@ -74,7 +74,10 @@ export class DotPublishingQueueShellComponent {
         this.selectBundleRef = this.dialogService.open(
             DotPublishingQueueSelectBundleDialogComponent,
             {
-                header: this.dotMessageService.get('publishing-queue.select-bundle.title'),
+                // Header is rendered inside the dialog body so its title can
+                // swap between "Select Bundle" and "Configure & Send" as the
+                // user moves through the wizard steps.
+                showHeader: false,
                 width: 'min(95vw, 1100px)',
                 contentStyle: { height: '70vh', padding: '0' },
                 closable: true,

@@ -1,4 +1,53 @@
 <div class="flex h-full min-h-0 flex-col overflow-hidden" data-testid="pq-select-bundle-dialog">
+    <!-- Custom header: replaces PrimeNG's built-in title so it can switch
+         between "Select Bundle" and "Configure & Send" as the user moves
+         through the wizard. Shell opens this dialog with `showHeader: false`. -->
+    <div
+        class="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4"
+        data-testid="pq-select-bundle-header">
+        @if (step() === 'select') {
+            <h2 class="m-0 text-xl font-bold text-color" data-testid="pq-select-bundle-title">
+                {{ 'publishing-queue.select-bundle.title' | dm }}
+            </h2>
+        } @else {
+            <div class="flex min-w-0 items-center gap-3">
+                <p-button
+                    icon="pi pi-arrow-left"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="secondary"
+                    [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
+                    (onClick)="onBackToList()"
+                    data-testid="pq-select-bundle-back-btn" />
+                <h2
+                    class="m-0 text-xl font-bold text-color"
+                    data-testid="pq-select-bundle-configure-title">
+                    {{ 'publishing-queue.select-bundle.configure-and-send' | dm }}
+                </h2>
+                <p-tag
+                    severity="secondary"
+                    [rounded]="true"
+                    [value]="
+                        checkedBundleIds().length === 1
+                            ? ('publishing-queue.select-bundle.bundle-count.singular'
+                              | dm: checkedBundleIds().length.toString())
+                            : ('publishing-queue.select-bundle.bundle-count.plural'
+                              | dm: checkedBundleIds().length.toString())
+                    "
+                    styleClass="text-xs font-medium px-2 py-0.5"
+                    data-testid="pq-select-bundle-configure-count" />
+            </div>
+        }
+        <p-button
+            icon="pi pi-times"
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            [attr.aria-label]="'publishing-queue.close' | dm"
+            (onClick)="closeDialog()"
+            data-testid="pq-select-bundle-close-btn" />
+    </div>
+
     @switch (step()) {
         @case ('select') {
             <div class="flex min-h-0 flex-1 overflow-hidden">
@@ -151,7 +200,7 @@
                             [rounded]="true"
                             size="small"
                             severity="secondary"
-                            [disabled]="bundlesPage() * bundlesPerPage >= bundlesTotal()"
+                            [disabled]="!bundlesHasMore()"
                             (onClick)="onBundlesPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
                             data-testid="pq-select-bundle-next" />
@@ -360,36 +409,6 @@
         }
         @case ('configure') {
             <div
-                class="flex shrink-0 items-center gap-3 border-b border-surface-200 px-4 py-3"
-                data-testid="pq-select-bundle-configure-header">
-                <p-button
-                    icon="pi pi-arrow-left"
-                    [text]="true"
-                    [rounded]="true"
-                    severity="secondary"
-                    [attr.aria-label]="'publishing-queue.select-bundle.back-to-list' | dm"
-                    (onClick)="onBackToList()"
-                    data-testid="pq-select-bundle-back-btn" />
-                <h2
-                    class="m-0 text-lg font-semibold"
-                    data-testid="pq-select-bundle-configure-title">
-                    {{ 'publishing-queue.select-bundle.configure-and-send' | dm }}
-                </h2>
-                <p-tag
-                    severity="secondary"
-                    [rounded]="true"
-                    [value]="
-                        checkedBundleIds().length === 1
-                            ? ('publishing-queue.select-bundle.bundle-count.singular'
-                              | dm: checkedBundleIds().length.toString())
-                            : ('publishing-queue.select-bundle.bundle-count.plural'
-                              | dm: checkedBundleIds().length.toString())
-                    "
-                    styleClass="text-xs font-medium px-2 py-0.5"
-                    data-testid="pq-select-bundle-configure-count" />
-            </div>
-
-            <div
                 class="min-h-0 flex-1 overflow-y-auto p-4"
                 data-testid="pq-select-bundle-configure-body">
                 <dot-push-publish-form
@@ -399,20 +418,39 @@
             </div>
 
             <div
-                class="flex shrink-0 items-center justify-end gap-3 border-t border-surface-200 px-4 py-3"
+                class="text-color-secondary flex shrink-0 items-center gap-2 px-4 py-3 text-sm"
+                data-testid="pq-select-bundle-configure-hint">
+                <i class="pi pi-replay" aria-hidden="true"></i>
+                <span>{{ 'publishing-queue.select-bundle.hint.auto-retry' | dm }}</span>
+            </div>
+
+            <div
+                class="flex shrink-0 items-center justify-between gap-3 border-t border-surface-200 px-4 py-3"
                 data-testid="pq-select-bundle-configure-footer">
-                <p-button
-                    [label]="'publishing-queue.select-bundle.back-to-list' | dm"
-                    [text]="true"
-                    [disabled]="isSending()"
-                    (onClick)="onBackToList()"
-                    data-testid="pq-select-bundle-back-to-list-btn" />
-                <p-button
-                    [label]="'publishing-queue.select-bundle.send' | dm"
-                    [loading]="isSending()"
-                    [disabled]="!canSend()"
-                    (onClick)="onSend()"
-                    data-testid="pq-select-bundle-send-btn" />
+                <div class="flex min-w-0 items-center gap-2 text-sm">
+                    @if (validationWarningKey(); as warningKey) {
+                        <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
+                        <span
+                            class="font-medium text-red-600"
+                            data-testid="pq-select-bundle-configure-warning">
+                            {{ warningKey | dm }}
+                        </span>
+                    }
+                </div>
+                <div class="flex items-center gap-3">
+                    <p-button
+                        [label]="'publishing-queue.select-bundle.back-to-list' | dm"
+                        [text]="true"
+                        [disabled]="isSending()"
+                        (onClick)="onBackToList()"
+                        data-testid="pq-select-bundle-back-to-list-btn" />
+                    <p-button
+                        [label]="'publishing-queue.select-bundle.send' | dm"
+                        [loading]="isSending()"
+                        [disabled]="isSending()"
+                        (onClick)="onSend()"
+                        data-testid="pq-select-bundle-send-btn" />
+                </div>
             </div>
         }
     }

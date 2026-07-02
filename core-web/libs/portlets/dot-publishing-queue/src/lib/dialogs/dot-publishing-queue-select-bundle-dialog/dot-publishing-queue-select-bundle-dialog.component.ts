@@ -83,7 +83,7 @@ const TYPE_ICONS: Record<string, string> = {
     variant: 'pi pi-clone'
 };
 
-const BUNDLES_PER_PAGE = 10;
+const BUNDLES_PER_PAGE = 6;
 const ASSETS_PER_PAGE = 10;
 
 /**
@@ -138,7 +138,13 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     private userId: string | null = null;
 
     readonly bundles = signal<BundleRow[]>([]);
-    readonly bundlesTotal = signal(0);
+    /** Cursor-style "there is a next page" flag. The BE's `numRows` returns the
+     * size of the current page, not the total across all pages, so we can't
+     * compute a maxPage. Instead, `bundlesHasMore` is true when the current
+     * response returned a full page (=== BUNDLES_PER_PAGE items) — as soon as
+     * a partial page comes back, we're on the last page. Follow-up: extend the
+     * BE to include a real total count so we can go back to numeric pagination. */
+    readonly bundlesHasMore = signal(false);
     readonly bundlesStatus = signal<LoadStatus>('init');
     readonly bundlesPage = signal(1);
     readonly bundleSearch = signal('');
@@ -156,7 +162,6 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * content type, cached app-wide by the service). */
     readonly assetEditUrls = signal<Map<string, string>>(new Map());
 
-    readonly bundlesPerPage = BUNDLES_PER_PAGE;
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
     readonly bundlesSkeleton = Array.from({ length: 6 });
@@ -319,8 +324,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onBundlesPageNext(): void {
-        const maxPage = Math.max(1, Math.ceil(this.bundlesTotal() / BUNDLES_PER_PAGE));
-        if (this.bundlesPage() < maxPage) {
+        if (this.bundlesHasMore()) {
             this.bundlesPage.update((p) => p + 1);
             this.loadBundles();
         }
@@ -448,9 +452,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             return;
         }
         if (count > 1) {
-            this.validationWarningKey.set(
-                'publishing-queue.select-bundle.download.single-only'
-            );
+            this.validationWarningKey.set('publishing-queue.select-bundle.download.single-only');
             return;
         }
         this.validationWarningKey.set(null);
@@ -532,6 +534,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     onBackToList(): void {
         this.step.set('select');
+        this.validationWarningKey.set(null);
     }
 
     onConfigureFormValue(value: DotPushPublishData): void {
@@ -540,6 +543,16 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     onConfigureFormValid(valid: boolean): void {
         this.configureFormValid.set(valid);
+        // As soon as the form becomes valid, drop the "please complete required
+        // fields" warning that a prior Send click may have surfaced.
+        if (valid) {
+            this.validationWarningKey.set(null);
+        }
+    }
+
+    /** Closes the dialog via the custom header's X button. */
+    closeDialog(): void {
+        this.dialogRef?.close();
     }
 
     /**
@@ -550,7 +563,15 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     onSend(): void {
         const ids = this.checkedBundleIds();
         const value = this.configureFormValue();
-        if (!value || ids.length === 0 || !this.configureFormValid()) {
+        // Send stays clickable even when the form is incomplete — clicking with
+        // an invalid form surfaces an inline warning instead of doing nothing
+        // silently, so the user gets clear feedback about what to fix.
+        if (!value || !this.configureFormValid()) {
+            this.validationWarningKey.set('publishing-queue.select-bundle.warning.form-invalid');
+            return;
+        }
+        if (ids.length === 0) {
+            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
 
@@ -559,9 +580,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         this.isSending.set(true);
         forkJoin(
             ids.map((id) =>
-                this.publishingService
-                    .pushBundle(id, form)
-                    .pipe(catchError(() => of(null)))
+                this.publishingService.pushBundle(id, form).pipe(catchError(() => of(null)))
             )
         )
             .pipe(
@@ -606,8 +625,22 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 })
             )
             .subscribe((response) => {
+                // Cursor-style pagination can't tell "full last page" apart from
+                // "full non-last page" without asking the next one. If the user
+                // clicked Next past the end (total was an exact multiple of
+                // BUNDLES_PER_PAGE), the response comes back empty — roll back to
+                // the previous page and disable Next, so the empty "No bundles
+                // found" screen never renders. Only apply when past page 1;
+                // page 1 empty is a legitimate empty-state.
+                if (response.items.length === 0 && this.bundlesPage() > 1) {
+                    this.bundlesPage.update((p) => p - 1);
+                    this.bundlesHasMore.set(false);
+                    this.bundlesStatus.set('loaded');
+                    return;
+                }
                 this.bundles.set(response.items.map((item) => ({ id: item.id, name: item.name })));
-                this.bundlesTotal.set(response.numRows ?? response.items.length);
+                // Cursor-style: a full page means "possibly more"; a partial page is the last.
+                this.bundlesHasMore.set(response.items.length === BUNDLES_PER_PAGE);
                 this.bundlesStatus.set('loaded');
                 // Auto-select the first bundle on initial load so the right pane
                 // isn't empty by default (matches the design's "first row active").
@@ -721,19 +754,13 @@ function toPushBundleForm(value: DotPushPublishData): PushBundleForm {
 
     if (operation === 'publish' || operation === 'publishexpire') {
         if (value.publishDate) {
-            form.publishDate = toIso8601WithOffset(
-                new Date(value.publishDate),
-                value.timezoneId
-            );
+            form.publishDate = toIso8601WithOffset(new Date(value.publishDate), value.timezoneId);
         }
     }
 
     if (operation === 'expire' || operation === 'publishexpire') {
         if (value.expireDate) {
-            form.expireDate = toIso8601WithOffset(
-                new Date(value.expireDate),
-                value.timezoneId
-            );
+            form.expireDate = toIso8601WithOffset(new Date(value.expireDate), value.timezoneId);
         }
     }
 
