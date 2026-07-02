@@ -38,6 +38,7 @@ public class CircuitBreakerUrlBuilder {
     boolean throwWhenError = true;
     Function<Integer, Exception> overrideException;
     boolean raiseFailsafe = false;
+    int maxResponseBytes = -1;
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
@@ -81,6 +82,11 @@ public class CircuitBreakerUrlBuilder {
 
     public CircuitBreakerUrlBuilder setRaiseFailsafe(final boolean raiseFailsafe) {
         this.raiseFailsafe = raiseFailsafe;
+        return this;
+    }
+
+    public CircuitBreakerUrlBuilder setMaxResponseBytes(final int maxResponseBytes) {
+        this.maxResponseBytes = maxResponseBytes;
         return this;
     }
     
@@ -166,7 +172,8 @@ public class CircuitBreakerUrlBuilder {
             this.allowRedirects,
             this.throwWhenError,
             this.overrideException,
-            this.raiseFailsafe);
+            this.raiseFailsafe,
+            this.maxResponseBytes);
     }
 
     /**
@@ -178,4 +185,3 @@ public class CircuitBreakerUrlBuilder {
         return this;
     }
 }
-

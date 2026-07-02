@@ -71,6 +71,7 @@
             "@dotcms/portlets/dot-locales/portlet/data-access": [
                 "libs/portlets/dot-locales/data-access/src/index.ts"
             ],
+            "@dotcms/portlets/dot-auth/portlet": ["libs/portlets/dot-auth/src/index.ts"],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
             "@dotcms/portlets/dot-query-tool/portlet": [

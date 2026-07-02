@@ -1058,6 +1058,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
@@ -1969,6 +1974,7 @@
                 <configuration>
                     <imagesMap>
                         <dotcms>
+                            <name>${dotcms.image.name}</name>
                             <build>
                                 <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
                                 <buildx>
@@ -2147,6 +2153,7 @@
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
                         <package>com.dotcms.health</package>
+                        <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>
                 </configuration>
                 <executions>

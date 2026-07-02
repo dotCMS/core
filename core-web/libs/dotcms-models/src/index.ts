@@ -7,6 +7,7 @@ export * from './lib/dot-ajax-action-response';
 export * from './lib/dot-alert-confirm.model';
 export * from './lib/dot-analytics-tracker.model';
 export * from './lib/dot-apps.model';
+export * from './lib/dot-auth.model';
 export * from './lib/dot-asset-create-options.model';
 export * from './lib/dot-block-editor.model';
 export * from './lib/dot-bundle';

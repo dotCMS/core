@@ -1242,6 +1242,14 @@
                 <version>0.9.1</version>
             </dependency>
 
+            <!-- Nimbus JOSE+JWT: id_token JWKS signature verification for the OIDC flow. -->
+            <!-- jjwt 0.9.x only handles HMAC; nimbus adds RS256/ES256 + RemoteJWKSet. -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>9.37.4</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk18on</artifactId>
