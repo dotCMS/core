@@ -298,10 +298,10 @@ export class DotUveToolbarComponent {
         const languageHasTranslation = currentLanguage.translated;
 
         if (!languageHasTranslation) {
-            // Show confirmation dialog to create a new translation
+            // Emit to the shell, which creates the language version and reloads.
             const page = this.#store.pageAsset()?.page;
             if (page) {
-                this.createNewTranslation(currentLanguage, page);
+                this.translatePage.emit({ page, newLanguage: currentLanguage.id });
             }
 
             return;
@@ -392,39 +392,6 @@ export class DotUveToolbarComponent {
                             });
                         }
                     }); // This does a take 1 under the hood
-            }
-        });
-    }
-
-    /*
-     * Asks the user for confirmation to create a new translation for a given language.
-     *
-     * @param {DotLanguage} language - The language to create a new translation for.
-     * @private
-     *
-     * @return {void}
-     */
-    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
-        this.#confirmationService.confirm({
-            header: this.#dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.header'
-            ),
-            message: this.#dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.message',
-                language.language
-            ),
-            rejectIcon: 'hidden',
-            acceptIcon: 'hidden',
-            key: 'shell-confirm-dialog',
-            accept: () => {
-                this.translatePage.emit({
-                    page: page,
-                    newLanguage: language.id
-                });
-            },
-            reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.$languageSelector()?.value.set(this.#store.pageLanguage());
             }
         });
     }
