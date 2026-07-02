@@ -191,6 +191,7 @@
                                     </tr>
                                 } @else {
                                     <tr
+                                        class="group"
                                         [class.cursor-pointer]="!!editUrlFor(asset)"
                                         (click)="onSelectAssetRow(asset)"
                                         data-testid="pq-select-bundle-asset-row">
@@ -227,6 +228,7 @@
                                                 [rounded]="true"
                                                 size="small"
                                                 severity="danger"
+                                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                                                 [pTooltip]="
                                                     'publishing-queue.select-bundle.delete-tooltip'
                                                         | dm
