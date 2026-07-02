@@ -14,8 +14,8 @@ import java.util.List;
  * To add a new provider, create a class that implements {@link ModelProviderStrategy}
  * and add an instance to {@link #STRATEGIES}. No other class needs to change.
  *
- * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code openrouter}, {@code google_ai}
- * <p>Note: {@code vertex_ai} and {@code openrouter} support chat only; embeddings and image are not available for those providers via LangChain4J.
+ * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}, {@code openrouter}, {@code google_ai}
+ * <p>Note: {@code vertex_ai}, {@code anthropic}, and {@code openrouter} support chat only; embeddings and image are not available for those providers via LangChain4J.
  */
 public class LangChain4jModelFactory {
 
@@ -24,6 +24,7 @@ public class LangChain4jModelFactory {
             new AzureOpenAiModelProviderStrategy(),
             new BedrockModelProviderStrategy(),
             new VertexAiModelProviderStrategy(),
+            new AnthropicModelProviderStrategy(),
             new OpenRouterModelProviderStrategy()
     );
 

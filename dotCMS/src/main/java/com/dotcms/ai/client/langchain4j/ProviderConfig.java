@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code openrouter}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}, {@code openrouter}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -52,6 +52,13 @@ import java.util.List;
  * {@code apac.}) for models offered only via cross-region inference profiles
  * (e.g. {@code us.deepseek.r1-v1:0}); use the bare ID for on-demand models
  * (e.g. {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}).
+ *
+ * <p>Anthropic (chat only — Anthropic has no embeddings or image APIs):
+ * <ul>
+ *   <li>{@code apiKey} – Anthropic API key</li>
+ *   <li>{@code model} – e.g. {@code claude-sonnet-4-6}, {@code claude-haiku-4-5}</li>
+ *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
+ * </ul>
  *
  * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
  * <ul>
