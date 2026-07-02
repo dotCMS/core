@@ -455,3 +455,45 @@ export function readContentletDataset(element: HTMLElement) {
         })
     };
 }
+
+/**
+ * Returns Zone.js's *unpatched* native `addEventListener` / `removeEventListener`
+ * bound to `target`, falling back to the standard methods when Zone.js is absent.
+ *
+ * UVE reuses a single iframe and rewrites it with `document.open()/write()/close()`
+ * on every in-editor navigation. When Zone.js is loaded inside that iframe it runs
+ * in global-events mode: one native "gateway" listener per (target, eventType)
+ * plus a JS-level task list stored on the target node. `document.open()` tears down
+ * the native gateway on the persistent `window`/`document` nodes, but the task list
+ * survives on them, so Zone sees "already registered" on re-init and skips
+ * re-installing the native gateway — the listener silently goes dead after the
+ * first navigation.
+ *
+ * Hover/click dodge this by binding to `document.documentElement`, a node that
+ * `write()` recreates fresh. `scroll`/`message` (on `window`) and
+ * `DOMContentLoaded` (on `document`) can't: none of them fire on `<html>`, so
+ * there is no fresh node to rebind to. Going through Zone's native (untracked)
+ * methods sidesteps the dedup entirely, so the listener rebinds cleanly after
+ * every rewrite.
+ */
+export function getNativeEventBinder<T extends Window | Document>(
+    target: T
+): Pick<T, 'addEventListener' | 'removeEventListener'> {
+    const zone = (globalThis as { Zone?: { __symbol__?: (name: string) => string } }).Zone;
+    const symbolFor = (name: string): string =>
+        typeof zone?.__symbol__ === 'function' ? zone.__symbol__(name) : `__zone_symbol__${name}`;
+
+    const source = target as unknown as Record<string, unknown>;
+    const base = target as EventTarget;
+    const nativeAdd = source[symbolFor('addEventListener')] as
+        | EventTarget['addEventListener']
+        | undefined;
+    const nativeRemove = source[symbolFor('removeEventListener')] as
+        | EventTarget['removeEventListener']
+        | undefined;
+
+    return {
+        addEventListener: (nativeAdd ?? base.addEventListener).bind(base),
+        removeEventListener: (nativeRemove ?? base.removeEventListener).bind(base)
+    } as Pick<T, 'addEventListener' | 'removeEventListener'>;
+}
