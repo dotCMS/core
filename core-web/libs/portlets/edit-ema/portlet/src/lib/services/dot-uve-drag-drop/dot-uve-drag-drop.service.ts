@@ -5,13 +5,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter } from 'rxjs/operators';
 
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
 
 import { IFRAME_SCROLL_ZONE } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { TEMPORAL_DRAG_ITEM, getDragItemData } from '../../utils';
+import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
 
 export interface DragDropHandlers {
     onDrop: (event: DragEvent) => void;
@@ -26,13 +26,12 @@ export interface DragDropHandlers {
 export class DotUveDragDropService {
     private readonly window = inject(WINDOW);
     private readonly destroyRef = inject(DestroyRef);
+    private readonly iframeMessenger = inject(UveIframeMessengerService);
 
     setupDragEvents(
         uveStore: InstanceType<typeof UVEStore>,
         iframe: ElementRef<HTMLIFrameElement>,
         customDragImage: ElementRef<HTMLDivElement>,
-        contentWindow: Window | null,
-        host: string,
         handlers: DragDropHandlers
     ): void {
         // Drag start
@@ -53,19 +52,12 @@ export class DotUveDragDropService {
                     return;
                 }
 
-                // Request fresh container bounds the instant the drag begins.
-                // `setEditorDragItem` is deferred to the next animation frame
-                // (so the browser can snapshot the drag image before Angular
-                // re-renders), which means the `dragenter` handler — the only
-                // other place that flushes bounds — can fire first, see no
-                // drag item yet, and bail before posting UVE_FLUSH_BOUNDS. When
-                // that race happens the dropzone is left with stale/empty
-                // `editorBounds` and renders no drop targets. Flushing here, at
-                // drag start, guarantees bounds are requested regardless of the
-                // race so they have arrived by the time `dragover` flips the
-                // editor into DRAGGING.
-                contentWindow?.postMessage({ name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS }, host);
-
+                // Flush bounds at drag start. `setEditorDragItem` is deferred to
+                // the next frame (to snapshot the drag image first), so the
+                // `dragenter` handler can fire before it and bail without
+                // flushing — leaving the dropzone with empty bounds and no
+                // targets. Flushing here guarantees bounds regardless of that race.
+                this.iframeMessenger.flushBounds();
                 requestAnimationFrame(() => uveStore.setEditorDragItem(data));
             });
 
@@ -88,12 +80,7 @@ export class DotUveDragDropService {
                 uveStore.setEditorState(EDITOR_STATE.DRAGGING);
                 // Drag enter: dropzone needs current bounds before any
                 // pixel of movement, so flush past the auto-bounds debounce.
-                contentWindow?.postMessage(
-                    {
-                        name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
-                    },
-                    host
-                );
+                this.iframeMessenger.flushBounds();
 
                 if (dragItem) {
                     return;
@@ -103,17 +90,7 @@ export class DotUveDragDropService {
                 handlers.onDragEnter(event);
             });
 
-        // Drag end — reset editor UI state after EVERY drag gesture, not just
-        // cancelled ones. Previously this was filtered to `dropEffect === 'none'`
-        // (cancelled drops only), leaving successful drops to be reset by the
-        // async save→reload. That left a window where `editorState` stayed
-        // DRAGGING after a successful drop: the next drag then had no clean
-        // IDLE→DRAGGING transition, so `$handleIsDraggingEffect` (which flushes
-        // container bounds on that transition) never re-fired and the dropzone
-        // showed no targets. `dragend` always fires when the gesture ends and
-        // `handleDrop` has already consumed the drag item synchronously (drop
-        // fires before dragend), so resetting here is safe and guarantees a
-        // clean IDLE state for the next drag.
+        // Drag end
         fromEvent(this.window, 'dragend')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
@@ -165,10 +142,7 @@ export class DotUveDragDropService {
 
                 uveStore.updateEditorScrollDragState();
 
-                contentWindow?.postMessage(
-                    { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
-                    host
-                );
+                this.iframeMessenger.scrollInsideIframe(direction);
 
                 handlers.onDragOver(event);
             });

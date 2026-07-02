@@ -32,11 +32,9 @@ export function scrollHandler() {
         });
     };
 
-    // Bind through Zone.js's native (untracked) listeners so scroll survives the
-    // iframe's document.open()/write()/close() rewrites. Zone kills listeners
-    // rebound on the persistent `window` node after the first navigation, and
-    // viewport scroll can't be moved to a fresh `documentElement` the way
-    // hover/click were. See getNativeEventBinder for the full rationale.
+    // Native binder: scroll survives the iframe rewrite under Zone.js. It can't
+    // move to a fresh `documentElement` like hover/click (viewport scroll only
+    // fires on `window`). See getNativeEventBinder.
     const { addEventListener, removeEventListener } = getNativeEventBinder(window);
 
     addEventListener('scroll', scrollCallback);
@@ -192,13 +190,8 @@ export function listenBlockEditorInlineEvent() {
         };
     }
 
-    // If the page is not fully loaded, listen for the DOMContentLoaded event.
-    // Bind through Zone's native listener so it survives the iframe's
-    // document.open()/write()/close() rewrites — without it, inline block-editor
-    // editing stops wiring up after the first in-editor navigation on a Zone.js
-    // page. `DOMContentLoaded` fires on `document`, not `<html>`, so the
-    // documentElement trick used for hover/click doesn't apply here. See
-    // getNativeEventBinder.
+    // Native binder: `DOMContentLoaded` fires on `document` (not `<html>`), so
+    // it survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const handleDOMContentLoaded = () => {
         listenBlockEditorClick();
     };

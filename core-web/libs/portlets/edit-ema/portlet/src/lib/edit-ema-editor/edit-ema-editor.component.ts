@@ -618,8 +618,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             this.uveStore,
             this.iframe,
             this.customDragImage,
-            this.contentWindow,
-            this.host,
             {
                 onDrop: (event) => this.handleDrop(event),
                 onDragEnter: () => {

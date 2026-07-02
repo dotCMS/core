@@ -29,8 +29,7 @@ export function onContentChanges(callback: UVEEventHandler) {
         }
     };
 
-    // Native binder so this parent→iframe receiver survives the iframe's
-    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     nativeWindow.addEventListener('message', messageCallback);
 
@@ -58,8 +57,7 @@ export function onPageReload(callback: UVEEventHandler) {
         }
     };
 
-    // Native binder so this parent→iframe receiver survives the iframe's
-    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     nativeWindow.addEventListener('message', messageCallback);
 
@@ -169,15 +167,10 @@ export function onAutoBounds(callback: UVEEventHandler) {
         subtree: true
     });
 
-    // Scrolling inside the iframe doesn't change layout, so ResizeObserver
-    // doesn't fire, but every contentlet's viewport-relative position
-    // (getBoundingClientRect) does change. Re-emit bounds after each
-    // scroll burst settles so the editor's pinned selected overlay
-    // re-anchors to the on-screen position.
-    // Bind through Zone.js's native (untracked) listener so this scroll-driven
-    // re-anchor survives the iframe's document.open()/write()/close() rewrites.
-    // Without it, controls hide on scroll but the SET_BOUNDS that brings them
-    // back never fires under Zone.js. See getNativeEventBinder for the rationale.
+    // Scrolling doesn't change layout (ResizeObserver won't fire) but moves
+    // every contentlet, so re-emit bounds after the scroll settles to re-anchor
+    // the selected overlay. Native binder so it survives the iframe rewrite
+    // under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     const onScroll = () => scheduleEmit();
     nativeWindow.addEventListener('scroll', onScroll, { passive: true });
@@ -194,9 +187,7 @@ export function onAutoBounds(callback: UVEEventHandler) {
         }
         emit();
     };
-    // Reuse the native binder (declared above for `scroll`) so this
-    // parent→iframe flush receiver survives the iframe rewrites too — this is
-    // the channel that supplies the dropzone's bounds during drag-and-drop.
+    // Native binder (reused from `scroll` above): survives the iframe rewrite too.
     nativeWindow.addEventListener('message', onFlush);
 
     return {
@@ -233,9 +224,7 @@ export function onIframeScroll(callback: UVEEventHandler) {
         }
     };
 
-    // Native binder so this parent→iframe receiver survives the iframe's
-    // document.open()/write()/close() rewrites under Zone.js — this drives the
-    // edge auto-scroll while dragging near the iframe top/bottom.
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     nativeWindow.addEventListener('message', messageCallback);
 
@@ -274,8 +263,7 @@ export function onScrollToSection(callback: UVEEventHandler) {
         callback({ sectionIndex, offsetTop: el.offsetTop });
     };
 
-    // Native binder so this parent→iframe receiver survives the iframe's
-    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     nativeWindow.addEventListener('message', messageCallback);
 
@@ -359,25 +347,14 @@ export function onContentletHovered(callback: UVEEventHandler) {
         callback(contentletHoveredPayload);
     };
 
-    // We intentionally do not fire null on document `pointerleave`: the
-    // editor's hover toolbar lives in the parent window (outside the
-    // iframe), so leaving the iframe usually means the user is heading
-    // for the toolbar. Killing the overlay there would yank the toolbar
-    // away just as the user reaches for it. Dead-space-inside-iframe
-    // is already covered by the `pointermove` null branch above.
+    // We intentionally do not fire null on `pointerleave`: the editor's hover
+    // toolbar lives in the parent window, so leaving the iframe usually means
+    // the user is reaching for it — killing the overlay would yank it away.
     //
-    // Bind to `document.documentElement` (the <html> node) rather than
-    // `document`. UVE renders traditional pages by reusing one iframe and
-    // rewriting it via `doc.open()/write()/close()` on each in-editor
-    // navigation. When Zone.js is loaded inside that iframe it runs in
-    // global-events mode (one native gateway listener + a JS-level task
-    // list stored on the node); `document.open()` tears down the native
-    // gateway but the task list survives on the persistent `document`
-    // node, so Zone sees "already registered" on re-init and skips
-    // re-binding the native listener — pointermove silently goes dead.
-    // `documentElement` is a fresh node after each `write()`, so it
-    // carries no stale task list and re-binds cleanly. `pointermove`
-    // bubbles to <html>, so behavior is identical on no-Zone pages.
+    // Bind to `document.documentElement` (a fresh node on each iframe rewrite)
+    // rather than `document`, which goes dead under Zone.js after a rewrite.
+    // `pointermove` bubbles to <html>, so no-Zone behavior is identical. See
+    // getNativeEventBinder for the full rationale.
     document.documentElement.addEventListener('pointermove', pointerMoveCallback);
 
     return {
@@ -466,20 +443,12 @@ export function onContentletClicked(callback: UVEEventHandler) {
         }
     };
 
-    // Capture phase so we run BEFORE the page's own click handlers and can
-    // preventDefault/stopPropagation effectively.
-    //
-    // Bind to `document.documentElement` rather than `document` for the same
-    // reason as the hover listener above: on Zone.js-loading traditional
-    // pages the persistent `document` node keeps a stale Zone task list
-    // across `doc.open()/write()/close()` iframe rewrites, so re-binding on
-    // it is silently skipped after the first in-editor navigation. The
-    // <html> node is recreated on each rewrite and re-binds cleanly. Capture
-    // phase on <html> still runs before the page's own handlers, so
-    // preventDefault/stopPropagation behave identically.
+    // Capture phase so we run BEFORE the page's own click handlers. Bound to
+    // `document.documentElement` (a fresh node on each iframe rewrite) rather
+    // than `document`, which goes dead under Zone.js after a rewrite; capture on
+    // <html> still runs first. See getNativeEventBinder for the full rationale.
     document.documentElement.addEventListener('click', clickCallback, { capture: true });
-    // Native binder so this parent→iframe receiver survives the iframe's
-    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const nativeWindow = getNativeEventBinder(window);
     nativeWindow.addEventListener('message', selectionClearedCallback);
 
