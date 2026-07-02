@@ -432,6 +432,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
+        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -439,6 +440,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
 
         if (pageType === PageType.TRADITIONAL || !isClientReady) {
+            return;
+        }
+
+        // Headless pages are driven entirely by the client's own GraphQL
+        // query. Never push a REST-sourced pageAsset into the iframe — it
+        // never carries the relationships that query defines, and the
+        // client already has its own correct render. Skip until a
+        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
+        // is available; this effect re-fires once that happens.
+        if (pageType === PageType.HEADLESS && !hasClientQuery) {
             return;
         }
 
