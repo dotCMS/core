@@ -2,7 +2,7 @@
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
-import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
+import { computeScrollIsInBottom, getNativeEventBinder } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 
@@ -32,13 +32,20 @@ export function scrollHandler() {
         });
     };
 
-    window.addEventListener('scroll', scrollCallback);
-    window.addEventListener('scrollend', scrollEndCallback);
+    // Bind through Zone.js's native (untracked) listeners so scroll survives the
+    // iframe's document.open()/write()/close() rewrites. Zone kills listeners
+    // rebound on the persistent `window` node after the first navigation, and
+    // viewport scroll can't be moved to a fresh `documentElement` the way
+    // hover/click were. See getNativeEventBinder for the full rationale.
+    const { addEventListener, removeEventListener } = getNativeEventBinder(window);
+
+    addEventListener('scroll', scrollCallback);
+    addEventListener('scrollend', scrollEndCallback);
 
     return {
         destroyScrollHandler: () => {
-            window.removeEventListener('scroll', scrollCallback);
-            window.removeEventListener('scrollend', scrollEndCallback);
+            removeEventListener('scroll', scrollCallback);
+            removeEventListener('scrollend', scrollEndCallback);
         }
     };
 }
@@ -185,16 +192,23 @@ export function listenBlockEditorInlineEvent() {
         };
     }
 
-    // If the page is not fully loaded, listen for the DOMContentLoaded event
+    // If the page is not fully loaded, listen for the DOMContentLoaded event.
+    // Bind through Zone's native listener so it survives the iframe's
+    // document.open()/write()/close() rewrites — without it, inline block-editor
+    // editing stops wiring up after the first in-editor navigation on a Zone.js
+    // page. `DOMContentLoaded` fires on `document`, not `<html>`, so the
+    // documentElement trick used for hover/click doesn't apply here. See
+    // getNativeEventBinder.
     const handleDOMContentLoaded = () => {
         listenBlockEditorClick();
     };
 
-    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
+    const { addEventListener, removeEventListener } = getNativeEventBinder(document);
+    addEventListener('DOMContentLoaded', handleDOMContentLoaded);
 
     return {
         destroyListenBlockEditorInlineEvent: () => {
-            document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
+            removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
 }

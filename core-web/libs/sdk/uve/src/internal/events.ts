@@ -9,6 +9,7 @@ import {
     findDotCMSVTLData,
     getClosestDotCMSContainerData,
     getDotCMSPageBounds,
+    getNativeEventBinder,
     readContentletDataset
 } from '../lib/dom/dom.utils';
 
@@ -28,11 +29,14 @@ export function onContentChanges(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder so this parent→iframe receiver survives the iframe's
+    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.CONTENT_CHANGES
     };
@@ -54,11 +58,14 @@ export function onPageReload(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder so this parent→iframe receiver survives the iframe's
+    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.PAGE_RELOAD
     };
@@ -167,8 +174,13 @@ export function onAutoBounds(callback: UVEEventHandler) {
     // (getBoundingClientRect) does change. Re-emit bounds after each
     // scroll burst settles so the editor's pinned selected overlay
     // re-anchors to the on-screen position.
+    // Bind through Zone.js's native (untracked) listener so this scroll-driven
+    // re-anchor survives the iframe's document.open()/write()/close() rewrites.
+    // Without it, controls hide on scroll but the SET_BOUNDS that brings them
+    // back never fires under Zone.js. See getNativeEventBinder for the rationale.
+    const nativeWindow = getNativeEventBinder(window);
     const onScroll = () => scheduleEmit();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    nativeWindow.addEventListener('scroll', onScroll, { passive: true });
 
     // Flush channel: the editor occasionally needs an immediate snapshot
     // of bounds (drag enter, where the dropzone has to know container
@@ -182,7 +194,10 @@ export function onAutoBounds(callback: UVEEventHandler) {
         }
         emit();
     };
-    window.addEventListener('message', onFlush);
+    // Reuse the native binder (declared above for `scroll`) so this
+    // parent→iframe flush receiver survives the iframe rewrites too — this is
+    // the channel that supplies the dropzone's bounds during drag-and-drop.
+    nativeWindow.addEventListener('message', onFlush);
 
     return {
         unsubscribe: () => {
@@ -192,8 +207,8 @@ export function onAutoBounds(callback: UVEEventHandler) {
             }
             resizeObserver.disconnect();
             mutationObserver.disconnect();
-            window.removeEventListener('scroll', onScroll);
-            window.removeEventListener('message', onFlush);
+            nativeWindow.removeEventListener('scroll', onScroll);
+            nativeWindow.removeEventListener('message', onFlush);
             observed = [];
         },
         event: UVEEventType.AUTO_BOUNDS
@@ -218,11 +233,15 @@ export function onIframeScroll(callback: UVEEventHandler) {
         }
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder so this parent→iframe receiver survives the iframe's
+    // document.open()/write()/close() rewrites under Zone.js — this drives the
+    // edge auto-scroll while dragging near the iframe top/bottom.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.IFRAME_SCROLL
     };
@@ -255,11 +274,14 @@ export function onScrollToSection(callback: UVEEventHandler) {
         callback({ sectionIndex, offsetTop: el.offsetTop });
     };
 
-    window.addEventListener('message', messageCallback);
+    // Native binder so this parent→iframe receiver survives the iframe's
+    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
 
     return {
         unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
+            nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.SCROLL_TO_SECTION
     };
@@ -456,14 +478,17 @@ export function onContentletClicked(callback: UVEEventHandler) {
     // phase on <html> still runs before the page's own handlers, so
     // preventDefault/stopPropagation behave identically.
     document.documentElement.addEventListener('click', clickCallback, { capture: true });
-    window.addEventListener('message', selectionClearedCallback);
+    // Native binder so this parent→iframe receiver survives the iframe's
+    // document.open()/write()/close() rewrites under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', selectionClearedCallback);
 
     return {
         unsubscribe: () => {
             document.documentElement.removeEventListener('click', clickCallback, {
                 capture: true
             });
-            window.removeEventListener('message', selectionClearedCallback);
+            nativeWindow.removeEventListener('message', selectionClearedCallback);
         },
         event: UVEEventType.CONTENTLET_CLICKED
     };
