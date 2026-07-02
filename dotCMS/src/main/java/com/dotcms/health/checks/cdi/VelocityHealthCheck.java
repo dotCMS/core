@@ -78,6 +78,14 @@ public class VelocityHealthCheck extends HealthCheckBase {
                     "Velocity health check skipped during shutdown");
         }
 
+        // VelocityUtil.getEngine() triggers a lazy init that touches the DB/company context.
+        // On a fresh install this fires before Task00001LoadSchema runs, throwing "No Company!".
+        // Defer until InitServlet has set dotcms.started.up=true.
+        if (!"true".equals(System.getProperty("dotcms.started.up"))) {
+            return new CheckResult(false, 0L,
+                    "Velocity probe deferred: dotCMS startup not yet complete");
+        }
+
         return measureExecution(() -> {
             final VelocityEngine engine = VelocityUtil.getEngine();
             final StringWriter writer = new StringWriter();
