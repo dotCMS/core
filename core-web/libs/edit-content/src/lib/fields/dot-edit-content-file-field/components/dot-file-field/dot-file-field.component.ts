@@ -1,5 +1,4 @@
 import { signalMethod } from '@ngrx/signals';
-import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -23,7 +22,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -31,6 +34,7 @@ import {
     DotFileMetadata,
     DotGeneratedAIImage
 } from '@dotcms/dotcms-models';
+import { isImageFile } from '@dotcms/image-editor';
 import {
     DotAIImagePromptComponent,
     DotBrowserSelectorComponent,
@@ -80,6 +84,7 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
         DialogService,
         LegacyDialogImageEditorLauncher,
         LegacyDojoImageEditorLauncher,
+        DotWorkflowActionsFireService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -201,20 +206,27 @@ export class DotFileFieldComponent
     /**
      * Whether the "Edit image" action is available for the current file.
      *
-     * Only Binary fields expose the image editor when enabled, and only when
-     * the previewed file is actually an image. File/Image fields never show it.
+     * Shown when image editing is enabled and the previewed file is an image
+     * (see {@link isImageFile}). Binary fields keep the binary inline and have a
+     * legacy fallback, so they work in any host. Image/File fields reference a
+     * separate dotAsset and are only supported in the new Angular Edit Content —
+     * where the image-editor launcher is provided — never in the legacy Dojo host.
      */
     $canEditImage = computed<boolean>(() => {
         if (!this.$enableImageEditor()) {
             return false;
         }
 
-        // Image editing is only supported for Binary fields, not File or Image fields.
-        if (this.store.inputType() !== INPUT_TYPES.Binary) {
-            return false;
+        // Binary keeps its original, strict gate: the authoritative isImage flag
+        // only. It works in any host via the legacy fallback.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
+            return !!this.#currentMetadata()?.isImage;
         }
 
-        return !!this.#currentMetadata()?.isImage;
+        // Image/File resolve a separate dotAsset/FileAsset and are only supported
+        // in the new Angular Edit Content, where the image-editor launcher is
+        // provided — never in the legacy Dojo host.
+        return isImageFile(this.#currentMetadata()) && !!this.#imageEditorLauncher;
     });
 
     /**
@@ -420,7 +432,7 @@ export class DotFileFieldComponent
             // the marker instead of resetting it to centre.
             const focalPoint = parseFocalPoint(metadata?.focalPoint);
 
-            this.#applyEditedImage(
+            this.store.applyEditedImage(
                 newLauncher.open({
                     inode,
                     tempId,
@@ -440,7 +452,7 @@ export class DotFileFieldComponent
             ? this.#legacyDojoImageEditorLauncher
             : this.#legacyDialogImageEditorLauncher;
 
-        this.#applyEditedImage(
+        this.store.applyEditedImage(
             legacyLauncher.open({
                 inode,
                 tempId,
@@ -448,29 +460,6 @@ export class DotFileFieldComponent
                 fieldName: editorVariable
             })
         );
-    }
-
-    /**
-     * Applies the edited image emitted by an image-editor launcher to the preview,
-     * shared by the new Angular editor and the legacy launchers. Ignores a closed
-     * editor (no temp file) and surfaces a server error if the stream fails.
-     *
-     * @param result$ the launcher's close stream, emitting the edited temp file or null
-     */
-    #applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
-        result$
-            .pipe(
-                filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe({
-                next: (tempFile) => {
-                    this.store.applyTempFile(tempFile);
-                },
-                error: () => {
-                    this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
-                }
-            });
     }
 
     /**
