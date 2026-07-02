@@ -2,6 +2,7 @@
     "cli": {
         "packageManager": "pnpm"
     },
+    "parallel": 3,
     "defaultProject": "dotcms-ui",
     "generators": {
         "@nx/angular:application": {
