@@ -76,7 +76,6 @@ class DotDropZoneValueAccessorTestComponent implements OnInit {
         });
 
         this.myForm.valueChanges.subscribe((value) => {
-            // eslint-disable-next-line no-console
             this.formChanged.emit(value);
 
             if (this.myForm.invalid) {

@@ -1,8 +1,8 @@
 import { tool } from 'ai';
 import { z } from 'zod/v4';
 
-import { createExecutor } from '@dotcms/ai/sandbox';
 import { createApiAdapter } from '@dotcms/ai/adapter';
+import { createExecutor } from '@dotcms/ai/sandbox';
 import { getSpec } from '@dotcms/ai/spec';
 
 function sandboxResult(

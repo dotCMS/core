@@ -439,7 +439,6 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         it('should bind the name as the tooltip when content type is not disabled', () => {
             componentSpectator = createComponent({
                 props: {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     contentType: spectator.hostComponent.contentType,
                     view: 'grid'
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -470,7 +469,6 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             componentSpectator = createComponent({
                 props: {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     contentType: disabledContentType,
                     view: 'grid'
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any

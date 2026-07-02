@@ -102,7 +102,7 @@ const url = sanitizeURL(params?.url);
 const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
 const pageAssetResponse = MOCK_RESPONSE_HEADLESS;
-const shouldShowInfoDisplay = false || pageAssetResponse?.page.locked;
+const shouldShowInfoDisplay = pageAssetResponse?.page.locked;
 const bookmarksUrl = createFavoritePagesURL({
     languageId: Number(params?.language_id),
     pageURI: url,

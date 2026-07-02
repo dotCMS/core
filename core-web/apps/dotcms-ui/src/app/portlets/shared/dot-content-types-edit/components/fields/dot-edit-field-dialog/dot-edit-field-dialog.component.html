@@ -1,0 +1,100 @@
+<p-tabs (valueChange)="handleTabChange($event)" [(value)]="activeTab" [tabindex]="-1" class="-mx-6">
+    <p-tablist>
+        <p-tab [value]="0">
+            {{ 'contenttypes.dropzone.tab.overview' | dm }}
+        </p-tab>
+        @if (!!currentField?.id && isFieldWithSettings) {
+            <p-tab [value]="1" [disabled]="!currentField?.id">
+                {{ 'contenttypes.dropzone.tab.settings' | dm }}
+            </p-tab>
+        }
+        <p-tab [value]="variablesTabIndex" [disabled]="!currentField?.id">
+            {{ 'contenttypes.dropzone.tab.variables' | dm }}
+        </p-tab>
+    </p-tablist>
+    <p-tabpanels>
+        <p-tabpanel [value]="0">
+            @if (
+                currentFieldType?.clazz ===
+                'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+            ) {
+                <dot-convert-to-block-info
+                    ($action)="scrollTo($event)"
+                    [currentFieldType]="currentFieldType"
+                    [currentField]="currentField" />
+            }
+            <dot-content-type-fields-properties-form
+                (saveField)="onPropertiesSaved($event)"
+                (valid)="setDialogOkButtonState($event)"
+                [formFieldData]="currentField"
+                [contentType]="contentType"
+                #fieldPropertiesForm />
+            @if (
+                !!currentField?.id &&
+                currentFieldType?.clazz ===
+                    'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+            ) {
+                <dot-convert-wysiwyg-to-block
+                    ($convert)="onConvertToBlock($event)"
+                    [currentFieldType]="currentFieldType" />
+            }
+        </p-tabpanel>
+        @if (!!currentField?.id && isFieldWithSettings) {
+            <p-tabpanel [value]="1">
+                @switch (this.currentFieldType?.clazz) {
+                    @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
+                        <dot-block-editor-settings
+                            ($changeControls)="changesDialogActions($event)"
+                            ($save)="onSettingsSaved()"
+                            ($valid)="setDialogOkButtonState($event)"
+                            [field]="currentField"
+                            [isVisible]="activeTab === 1" />
+                    }
+                    @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
+                        <dot-binary-settings
+                            ($changeControls)="changesDialogActions($event)"
+                            ($save)="onSettingsSaved()"
+                            ($valid)="setDialogOkButtonState($event)"
+                            [field]="currentField"
+                            [isVisible]="activeTab === 1" />
+                    }
+                    @case ('com.dotcms.contenttype.model.field.ImmutableCustomField') {
+                        <dot-custom-field-settings
+                            ($changeControls)="changesDialogActions($event)"
+                            ($save)="onSettingsSaved()"
+                            ($valid)="setDialogOkButtonState($event)"
+                            [field]="currentField"
+                            [isVisible]="activeTab === 1"
+                            [renderMode]="
+                                fieldPropertiesForm.form?.get('newRenderMode')?.value
+                            "></dot-custom-field-settings>
+                    }
+                }
+            </p-tabpanel>
+        }
+        <p-tabpanel [value]="variablesTabIndex">
+            <dot-content-type-fields-variables
+                [showTable]="activeTab === variablesTabIndex"
+                [field]="currentField" />
+        </p-tabpanel>
+    </p-tabpanels>
+</p-tabs>
+@if ((saveBtn || cancelBtn) && !hideButtons) {
+    <div class="flex justify-end gap-2">
+        @if (cancelBtn) {
+            <p-button
+                [label]="cancelBtn.label"
+                [disabled]="cancelBtn.disabled"
+                severity="secondary"
+                (click)="cancelBtn.action()"
+                data-testId="dotDialogCancelAction" />
+        }
+        @if (saveBtn) {
+            <p-button
+                [label]="saveBtn.label"
+                [disabled]="saveBtn.disabled"
+                (click)="saveBtn.action()"
+                data-testId="dotDialogAcceptAction" />
+        }
+    </div>
+}

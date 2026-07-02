@@ -124,6 +124,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
         // noop
     };
 
+    // eslint-disable-next-line no-unused-private-class-members -- ControlValueAccessor callback stored via registerOnTouched
     #onTouched = (): void => {
         // noop
     };
