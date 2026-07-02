@@ -23,7 +23,7 @@
         data-testid="pq-bundles-table">
         <ng-template pTemplate="header">
             <tr>
-                <th style="width: 3rem">
+                <th style="width: 3rem" pFrozenColumn>
                     <p-tableHeaderCheckbox />
                 </th>
                 <th style="width: 14rem" data-testid="pq-bundles-col-bundle-name">
@@ -65,7 +65,11 @@
                     data-testid="pq-bundles-col-status">
                     {{ 'publishing-queue.column.status' | dm }}
                 </th>
-                <th style="width: 3rem" data-testid="pq-bundles-col-actions"></th>
+                <th
+                    style="width: 3rem"
+                    pFrozenColumn
+                    alignFrozen="right"
+                    data-testid="pq-bundles-col-actions"></th>
             </tr>
         </ng-template>
 
@@ -74,7 +78,7 @@
                 <tr
                     data-testid="pq-bundles-skeleton"
                     class="h-17 cursor-default hover:bg-transparent!">
-                    <td [style.width]="'3rem'" class="pl-4">
+                    <td [style.width]="'3rem'" class="pl-4" pFrozenColumn>
                         <span class="flex h-full items-center justify-center">
                             <p-skeleton height="1.5rem" width="2rem" />
                         </span>
@@ -114,7 +118,7 @@
                             <p-skeleton height="1.5rem" width="40%" />
                         </span>
                     </td>
-                    <td>
+                    <td pFrozenColumn alignFrozen="right">
                         <span class="flex h-full items-center justify-center">
                             <p-skeleton height="1.5rem" width="1rem" />
                         </span>
@@ -126,7 +130,7 @@
                     (click)="onRowClick(row)"
                     (contextmenu)="onRowContextMenu($event, row)"
                     data-testid="pq-bundles-row">
-                    <td (click)="$event.stopPropagation()">
+                    <td pFrozenColumn (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="row" />
                     </td>
                     <td data-testid="pq-bundles-bundle-name">
@@ -141,7 +145,6 @@
                              floating at the far edge of the column. -->
                         <div class="inline-flex items-center gap-1">
                             <span
-                                class="text-xs"
                                 [class.text-red-700]="isFailedRow(row)"
                                 [class.font-medium]="isFailedRow(row)"
                                 [title]="row.bundleId">
@@ -171,22 +174,26 @@
                             [value]="(row.assetCount ?? 0).toString()" />
                     </td>
                     <td
-                        class="text-color-secondary text-xs whitespace-nowrap"
+                        class="text-color-secondary whitespace-nowrap"
                         data-testid="pq-bundles-created">
-                        {{ (row.createDate | date: 'MM/dd/yyyy hh:mma') || '—' }}
+                        {{ (row.createDate | date: 'MMM d, y - h:mm:ss a') || '—' }}
                     </td>
                     <td
-                        class="text-color-secondary text-xs whitespace-nowrap"
+                        class="text-color-secondary whitespace-nowrap"
                         data-testid="pq-bundles-modified">
                         {{
                             (row.statusUpdated || row.createDate
-                                | dotRelativeDate: 'MM/dd/yyyy hh:mma') || '—'
+                                | dotRelativeDate: 'MMM d, y - h:mm:ss a') || '—'
                         }}
                     </td>
                     <td class="whitespace-nowrap" data-testid="pq-bundles-status">
                         <dot-publishing-status-chip [status]="row.status" />
                     </td>
-                    <td class="text-right" (click)="$event.stopPropagation()">
+                    <td
+                        class="text-right"
+                        pFrozenColumn
+                        alignFrozen="right"
+                        (click)="$event.stopPropagation()">
                         <p-menu
                             #kebab
                             [model]="kebabFor(row)"
