@@ -9,7 +9,7 @@ import { switchMap } from 'rxjs/operators';
 import { ImageEditorState } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import { imageEditorLifecycleEvents } from '../image-editor.events';
-import { initialImageEditorState } from '../image-editor.state';
+import { initialFocalPointState, initialImageEditorState } from '../image-editor.state';
 import { contextFromParams, errorMessage } from '../image-editor.store-utils';
 
 /**
@@ -24,6 +24,10 @@ export function withAsset() {
             on(imageEditorLifecycleEvents.assetRequested, ({ payload }, _state) => ({
                 ...initialImageEditorState,
                 assetContext: contextFromParams(payload),
+                // Seed the focal point from the asset so an existing focal point is
+                // preserved on Save; the baseline lets a move-and-back read as pristine.
+                focalPoint: payload.focalPoint ?? initialFocalPointState,
+                seededFocalPoint: payload.focalPoint ?? initialFocalPointState,
                 previewStatus: 'loading' as const
             })),
             on(imageEditorLifecycleEvents.assetLoaded, ({ payload }, state) => ({

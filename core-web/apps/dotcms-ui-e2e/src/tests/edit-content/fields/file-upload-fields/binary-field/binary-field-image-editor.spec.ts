@@ -56,9 +56,11 @@ test.describe('Binary field image editor — new editor', () => {
         }
     });
 
-    // The unified Binary field shows "Edit image" for image files. The new
-    // editor opens the legacy image editor JSP inside a PrimeNG dialog iframe.
-    test('import image and Edit opens legacy image editor dialog @critical', async ({ page }) => {
+    // The unified Binary field shows "Edit image" for image files. In the new
+    // Edit Content the new Angular image editor opens (the FEATURE_FLAG_NEW_IMAGE_EDITOR
+    // gate was removed, so it is always used here; the legacy Dojo editor only runs in
+    // the legacy Edit Content — see the describe block below).
+    test('import image and Edit opens the new Angular image editor @critical', async ({ page }) => {
         const formPage = new NewEditContentFormPage(page);
         await formPage.goToNew(contentTypeVariable);
 

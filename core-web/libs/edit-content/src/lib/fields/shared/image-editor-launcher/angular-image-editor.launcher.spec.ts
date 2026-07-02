@@ -1,11 +1,10 @@
 import { expect } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotPropertiesService } from '@dotcms/data-access';
-import { DotCMSTempFile, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotImageEditorComponent, ImageEditorOpenParams } from '@dotcms/image-editor';
 
 import { AngularImageEditorLauncher } from './angular-image-editor.launcher';
@@ -13,10 +12,6 @@ import { AngularImageEditorLauncher } from './angular-image-editor.launcher';
 describe('AngularImageEditorLauncher', () => {
     let spectator: SpectatorService<AngularImageEditorLauncher>;
     let onClose: Subject<DotCMSTempFile | undefined>;
-    // Drives the new-image-editor flag; `next()` flows through `toSignal` so the same
-    // service instance reflects on/off without re-creating it.
-    const featureFlag$ = new BehaviorSubject<boolean>(true);
-    const getFeatureFlag = jest.fn(() => featureFlag$);
 
     const params: ImageEditorOpenParams = {
         inode: 'inode-1',
@@ -26,28 +21,17 @@ describe('AngularImageEditorLauncher', () => {
 
     const createService = createServiceFactory({
         service: AngularImageEditorLauncher,
-        providers: [mockProvider(DotPropertiesService, { getFeatureFlag })],
         mocks: [DialogService]
     });
 
     beforeEach(() => {
-        // Default the flag ON so the open() tests below run the Angular path; the
-        // gating itself is covered by the dedicated tests.
-        featureFlag$.next(true);
         onClose = new Subject<DotCMSTempFile | undefined>();
         spectator = createService();
         spectator.inject(DialogService).open.mockReturnValue({ onClose });
     });
 
-    it('should be available when FEATURE_FLAG_NEW_IMAGE_EDITOR is on', () => {
+    it('should always be available (the new editor is the editor for the new Edit Content)', () => {
         expect(spectator.service.isAvailable()).toBe(true);
-        expect(getFeatureFlag).toHaveBeenCalledWith(FeaturedFlags.FEATURE_FLAG_NEW_IMAGE_EDITOR);
-    });
-
-    it('should NOT be available when the feature flag is off', () => {
-        featureFlag$.next(false);
-
-        expect(spectator.service.isAvailable()).toBe(false);
     });
 
     it('should open the DotImageEditorComponent with a headerless, closable dialog that owns Esc', () => {
