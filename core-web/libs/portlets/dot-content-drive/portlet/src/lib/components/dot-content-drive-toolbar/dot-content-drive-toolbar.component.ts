@@ -138,7 +138,7 @@ export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $addNewDotAsset = output<void>({ alias: 'addNewDotAsset' });
+    $upload = output<void>({ alias: 'upload' });
 
     readonly $items = signal<MenuItem[]>([
         {
@@ -195,7 +195,12 @@ export class DotContentDriveToolbarComponent {
     });
 
     /**
-     * Convenience computed signals for template readability
+     * Convenience computed signals for template readability.
+     *
+     * `$displayButton` gates the creation actions (Upload + "Add New"): both are hidden while a
+     * selection is active so they don't compete with the workflow/bulk actions. This keeps the
+     * Upload button from offering an upload in a selection context, where the target folder would
+     * be ambiguous.
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);

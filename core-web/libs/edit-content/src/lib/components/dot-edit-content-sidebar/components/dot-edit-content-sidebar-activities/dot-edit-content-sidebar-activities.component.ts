@@ -127,6 +127,7 @@ export class DotEditContentSidebarActivitiesComponent {
      * because the effect first fires while the tab panel is still hidden
      * (display:none) and any scroll on a 0-height element is a no-op.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #scrollEffect = effect(() => {
         const items = this.activityItems();
         const isActive = this.$isActive();

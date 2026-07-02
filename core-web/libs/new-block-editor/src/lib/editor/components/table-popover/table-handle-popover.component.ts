@@ -19,6 +19,7 @@ import { Editor } from '@tiptap/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FULLSCREEN_AWARE_OVERLAY_OPTIONS } from '../../config.utils';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
 
@@ -93,6 +94,7 @@ interface ActionEntry {
                         <p-select
                             inputId="tbl-col-scope"
                             appendTo="body"
+                            [overlayOptions]="overlayOptions"
                             styleClass="popover-field__select"
                             [size]="'small'"
                             [options]="scopeOptions"
@@ -124,6 +126,13 @@ export class TableHandlePopoverComponent implements OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
 
     protected readonly POPOVER_IDS = ['table-column', 'table-row', 'table-selection'] as const;
+
+    /**
+     * Overlay options for the header-scope `<p-select>` panel, which appends to `document.body`.
+     * Lifts it above the fullscreen editor shell's `z-[9998]` backdrop so the dropdown stays
+     * clickable in fullscreen. See {@link FULLSCREEN_AWARE_OVERLAY_OPTIONS}.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
 
     // ── Action lists ─────────────────────────────────────────────────────────
     // Plain lists of action keys per variant. The actual config lives in `ACTIONS` below.

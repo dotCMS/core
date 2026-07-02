@@ -46,7 +46,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -95,7 +95,7 @@ interface TemplateListState {
         TableModule,
         SkeletonModule,
         InputTextModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         ContextMenu
     ],
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]

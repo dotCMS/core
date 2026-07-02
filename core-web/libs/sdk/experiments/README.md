@@ -22,12 +22,16 @@ The `@dotcms/experiments` SDK is the official dotCMS JavaScript library that hel
 -   [Overview](#overview)
 -   [Installation](#installation)
 -   [Getting Started](#getting-started)
+    -   [Public API](#public-api)
     -   [withExperiments HOC](#withexperiments-higher-order-component)
     -   [Configuration Object](#configuration-object)
 -   [Usage](#usage)
-    -   [With @dotcms/react](#with-dotcmsreact-recommended)
+    -   [With @dotcms/react (Recommended)](#with-dotcmsreact-recommended)
+    -   [Next.js App Router](#nextjs-app-router)
     -   [Configuration Best Practices](#configuration-best-practices)
+    -   [Anti-patterns](#anti-patterns)
     -   [How It Works](#how-it-works)
+-   [Troubleshooting](#troubleshooting)
 -   [Support](#support)
 -   [Contributing](#contributing)
 -   [Licensing](#licensing)
@@ -46,11 +50,23 @@ Or using Yarn:
 yarn add @dotcms/experiments
 ```
 
+Align `@dotcms/experiments` with the same version line as your other `@dotcms/*` packages (for example `^1.5.6`).
+
 ## Getting Started
+
+### Public API
+
+The package exports **one** public symbol:
+
+| Export | Description |
+| --- | --- |
+| `withExperiments` | HOC that wraps a layout component (typically `DotCMSLayoutBody`) with experiment handling |
+
+`DotExperimentsProvider` and other internals are **not** part of the public API. Do not import them — `withExperiments` wires the provider internally.
 
 ### `withExperiments` Higher-Order Component
 
-The SDK exports a single HOC (Higher-Order Component) called `withExperiments` that wraps your page component with experiment functionality. This component handles:
+`withExperiments` wraps your page component with experiment functionality:
 
 -   User assignment to experiment variants
 -   Automatic redirection to the correct variant
@@ -58,67 +74,133 @@ The SDK exports a single HOC (Higher-Order Component) called `withExperiments` t
 -   Automatic page view tracking to dotCMS Analytics
 -   Click event handling to maintain variant consistency across navigation
 
+> **Important:** `withExperiments` uses React hooks internally. It must be called **unconditionally** on every render of the component that uses it. See [Anti-patterns](#anti-patterns).
+
 ### Configuration Object
 
 The `config` object passed to `withExperiments` accepts the following properties:
 
--   **apiKey** (required): Your API key from the DotCMS Analytics app
--   **server** (required): The URL of your dotCMS instance (e.g., `https://your-dotcms-instance.com`)
--   **redirectFn** (optional): Custom redirect function for SPA navigation (default: `window.location.replace`)
--   **trackPageView** (optional): Enable/disable automatic page view tracking (default: `true`)
--   **debug** (optional): Enable debug logging in the browser console (default: `false`)
+| Property | Required | Default | Description |
+| --- | --- | --- | --- |
+| `apiKey` | Yes | — | jsKey from the dotCMS Analytics / Experiments app (frontend key, not m2m) |
+| `server` | Yes | — | dotCMS **origin** URL (e.g. `https://your-dotcms-instance.com`) — not a CDN |
+| `redirectFn` | No | `window.location.replace` | SPA redirect function (e.g. `router.replace` in Next.js) |
+| `trackPageView` | No | `true` | Enable/disable automatic page view tracking |
+| `debug` | No | `false` | Verbose logging in the browser console |
 
 ## Usage
 
 ### With @dotcms/react (Recommended)
 
-The recommended approach is to wrap the `DotCMSLayoutBody` component with `withExperiments`. The pattern supports **conditional wrapping** - experiments are only enabled when an API key is configured:
+Use **separate views or routes** for pages with and without experiments. This avoids calling `withExperiments` conditionally in the same component.
 
-```javascript
+```tsx
+// views/StandardPage.tsx — no experiments
 "use client";
 
-import { withExperiments } from "@dotcms/experiments";
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
-import { useRouter } from 'next/navigation';
 
-// Experiment configuration - only applied if apiKey is present
-const experimentConfig = {
-    apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY,
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    debug: true
-};
+import { pageComponents } from "@/components/content-types";
 
-export function Page({ pageContent }) {
+export function StandardPage({ pageContent }) {
     const { pageAsset } = useEditableDotCMSPage(pageContent);
-    const { replace } = useRouter();
-
-    // Conditionally wrap with experiments if apiKey is configured
-    const DotCMSLayoutBodyComponent = experimentConfig.apiKey
-        ? withExperiments(DotCMSLayoutBody, {
-              ...experimentConfig,
-              redirectFn: replace
-          })
-        : DotCMSLayoutBody;
 
     return (
         <main>
-            <DotCMSLayoutBodyComponent
-                page={pageAsset}
-                components={pageComponents}
-            />
+            <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
         </main>
     );
 }
 ```
 
-> 📚 **Learn more about `DotCMSLayoutBody`**: See the [@dotcms/react SDK documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md#dotcmslayoutbody) for complete details on configuring the layout renderer, component mapping, and available props.
+```tsx
+// views/ExperimentsPage.tsx — experiments always enabled on this view
+"use client";
+
+import { withExperiments } from "@dotcms/experiments";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
+import { useRouter } from "next/navigation";
+
+import { pageComponents } from "@/components/content-types";
+
+export function ExperimentsPage({ pageContent }) {
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
+    const { replace } = useRouter();
+
+    const LayoutBody = withExperiments(DotCMSLayoutBody, {
+        apiKey: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_KEY!,
+        server: process.env.NEXT_PUBLIC_DOTCMS_HOST!,
+        redirectFn: replace,
+        debug: process.env.NEXT_PUBLIC_DOTCMS_DEBUG === "true",
+    });
+
+    return (
+        <main>
+            <LayoutBody page={pageAsset} components={pageComponents} />
+        </main>
+    );
+}
+```
+
+Wire each view to its own route in the App Router (for example `/blog` for experiments, catch-all for standard pages).
+
+> **Learn more about `DotCMSLayoutBody`**: See the [@dotcms/react SDK documentation](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md#dotcmslayoutbody).
+
+### Next.js App Router
+
+Canonical working example: [`examples/nextjs-analytics-experiments`](../../../../examples/nextjs-analytics-experiments)
+
+That project demonstrates:
+
+-   Analytics on all routes via `@dotcms/analytics` in `layout.tsx`
+-   Experiments isolated to `/blog` via `withExperiments` in a dedicated view
+-   Safe separation that avoids rules-of-hooks violations in UVE
+
+**Environment variables** (see the example's `.env.local.example`):
+
+```bash
+NEXT_PUBLIC_DOTCMS_HOST=http://localhost:8080      # dotCMS origin — NOT a CDN
+NEXT_PUBLIC_DOTCMS_ANALYTICS_KEY=                  # jsKey (frontend key)
+NEXT_PUBLIC_DOTCMS_DEBUG=true
+```
+
+**Verification** (DevTools → Network):
+
+1. On experiment routes: `POST {HOST}/api/v1/experiments/isUserIncluded`
+2. With `debug: true`: `[dotCMS ...]` logs in the console
+3. Open the page in UVE — no "client-side exception" overlay
 
 ### Configuration Best Practices
 
--   **Use Environment Variables**: Store your API key and server URL in environment variables
--   **Conditional Wrapping**: Only enable experiments when an API key is configured using a ternary operator
--   **Framework Router**: Pass your framework's router function (e.g., `router.replace` for Next.js) to maintain SPA navigation
--   **Debug Mode**: Enable debug logging during development to troubleshoot experiment assignment issues
+-   **Use environment variables** for `apiKey` and `server`
+-   **Dedicated routes/views** for experiment pages — do not toggle `withExperiments` with a ternary on `apiKey` in the same component
+-   **Framework router**: pass `router.replace` (Next.js) or equivalent to `redirectFn` for SPA navigation
+-   **Origin URL**: `server` must point to the dotCMS instance origin. Do not use Azure Front Door, CloudFront, or other CDNs — experiment API responses are session-specific and must not be cached at the edge
+-   **Aligned SDK versions**: keep `@dotcms/client`, `@dotcms/react`, `@dotcms/uve`, `@dotcms/types`, and `@dotcms/experiments` on the same version line
+-   **Debug mode**: enable during development to troubleshoot assignment issues
+
+### Anti-patterns
+
+Do **not** use these patterns — they can crash Next.js App Router pages and the UVE editor:
+
+```tsx
+// ❌ Conditional withExperiments — violates rules of hooks
+const Layout = experimentConfig.apiKey
+    ? withExperiments(DotCMSLayoutBody, config)
+    : DotCMSLayoutBody;
+
+// ❌ Early return before withExperiments in the same component
+if (!apiKey) return <DotCMSLayoutBody {...props} />;
+const Layout = withExperiments(DotCMSLayoutBody, config);
+
+// ❌ Importing internal provider
+import { DotExperimentsProvider } from "@dotcms/experiments";
+
+// ❌ CDN as server
+server: "https://cdn.example.com"
+```
+
+Use separate components/routes instead (see [With @dotcms/react](#with-dotcmsreact-recommended)).
 
 ### How It Works
 
@@ -130,35 +212,33 @@ Once you wrap your component with `withExperiments`, the SDK automatically handl
 4. **Navigation Handling**: Maintains variant consistency when users click links
 5. **Analytics Tracking**: Sends pageview events to DotCMS Analytics automatically
 
-All of this happens behind the scenes - you just need to wrap your component and provide the configuration.
+**Learn More**: [DotCMS A/B Testing Experiments](https://www.dotcms.com/product/ab-testing-experiments)
 
-**Learn More**: For detailed information on creating and managing experiments in dotCMS, visit the [DotCMS A/B Testing Experiments](https://www.dotcms.com/product/ab-testing-experiments) page.
+## Troubleshooting
+
+| Symptom | Likely cause | What to do |
+| --- | --- | --- |
+| UVE crash: "A client-side exception has occurred" | `withExperiments` called conditionally, or experiments initializing before UVE state is ready | Use a dedicated experiments view; never use `apiKey ? withExperiments(...) : DotCMSLayoutBody` |
+| `GET /api/v1/experiments/DEFAULT` 404 | Known backoffice issue — variant name `"DEFAULT"` passed as experiment ID | Harmless in headless apps; backoffice fix tracked separately |
+| "No experiments assigned to the client" | Experiment not in `Running` status, or no analytics session yet | Confirm experiment status in dotCMS; verify `apiKey` and `server` |
+| No `isUserIncluded` request | Missing `apiKey`, wrong route, or experiments view not mounted | Check env vars; confirm the page uses the experiments view |
+| Events go to wrong host | `server` points to CDN instead of dotCMS origin | Set `server` to the dotCMS instance URL |
 
 ## Support
 
-We offer multiple channels to get help with the dotCMS Experiments SDK:
+-   **GitHub Issues**: [open an issue](https://github.com/dotCMS/core/issues/new/choose)
+-   **Community Forum**: [community.dotcms.com](https://community.dotcms.com/)
+-   **Stack Overflow**: tag `dotcms-experiments`
+-   **Enterprise Support**: [dotCMS Support](https://www.dotcms.com/support)
 
--   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
--   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
--   **Stack Overflow**: Use the tag `dotcms-experiments` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
-
-When reporting issues, please include:
-
--   SDK version you're using
--   Framework/library version (if applicable)
--   Minimal reproduction steps
--   Expected vs. actual behavior
+When reporting issues, include SDK version, framework version, minimal reproduction steps, and expected vs. actual behavior.
 
 ## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Experiments SDK! If you'd like to contribute, please follow these steps:
-
-1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork [dotCMS/core](https://github.com/dotCMS/core)
+2. Create a feature branch
+3. Commit your changes
+4. Open a Pull Request
 
 Please ensure your code follows the existing style and includes appropriate tests.
 

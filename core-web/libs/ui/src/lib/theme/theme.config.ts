@@ -24,6 +24,45 @@ export const CustomLaraPreset = definePreset(Lara, {
         primary: DotUiColorsService.getDefaultPrimeNGPalette()
     },
     components: {
+        accordion: {
+            // Flat accordion app-wide: Lara renders each panel as a rounded,
+            // bordered, surface-filled card. We drop the card chrome — the header
+            // fill, the L/R/B borders, the first/last corner radii — so sections
+            // read as flush bands separated only by their own dividers (and the
+            // focus ring becomes square along with the header). Per-feature spacing
+            // and dividers stay in the consuming component.
+            panel: {
+                borderWidth: '0'
+            },
+            header: {
+                borderWidth: '0',
+                borderRadius: '0',
+                first: {
+                    topBorderRadius: '0',
+                    borderWidth: '0'
+                },
+                last: {
+                    bottomBorderRadius: '0',
+                    activeBottomBorderRadius: '0'
+                }
+            },
+            content: {
+                borderWidth: '0'
+            },
+            colorScheme: {
+                light: {
+                    header: {
+                        // Opaque surface (not transparent) so a header pinned via
+                        // position: sticky never shows scrolling content through it.
+                        // On a white panel this still reads as a flat, fill-less band.
+                        background: '{surface.0}',
+                        hoverBackground: '{surface.50}',
+                        activeBackground: '{surface.0}',
+                        activeHoverBackground: '{surface.50}'
+                    }
+                }
+            }
+        },
         treeselect: {
             tree: {
                 padding: '0.5rem'
@@ -45,9 +84,10 @@ export const CustomLaraPreset = definePreset(Lara, {
         chip: {
             // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
             // tall, vertically centered, with a small label. Applied to the base
-            // `.p-chip` so every chip (Content Status, locale, relationship, etc.)
-            // gets the size without per-template classes. PrimeNG has no chip size
-            // token, so this is expressed as CSS — same mechanism as card/confirmpopup.
+            // `.p-chip` so every chip (locale, relationship, etc.) gets the size
+            // without per-template classes. PrimeNG has no chip size token, so this
+            // is expressed as CSS — same mechanism as card/confirmpopup. Content
+            // status badges use `p-tag` (see the `tag` block below), not chips.
             css: `
                 .p-chip {
                     height: calc(var(--spacing) * 7); /* 1.75rem */
@@ -74,8 +114,8 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             `,
             // All severities use the soft "tinted background + dark text" pill (palette {x.100}/
-            // {x.700}) instead of Lara's solid fills, so status tags read consistently and match
-            // the version-history chips (which use bg-{color}-100 / text-{color}-700) 1:1.
+            // {x.700}) instead of Lara's solid fills, so status tags read consistently across the
+            // app (status badges, version-history states, locale labels) per the design reference.
             // `secondary` is omitted — Lara already maps it to surface.100/surface.600 (soft gray).
             colorScheme: {
                 light: {

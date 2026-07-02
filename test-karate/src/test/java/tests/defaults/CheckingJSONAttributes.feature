@@ -57,7 +57,6 @@ Feature: Checking JSON Attributes
         "contentType": "webPageContent",
         "title": "Test Generic Content",
         "hostName": "default",
-        "body": "This is my Test Generic Content",
         "creationDate": "#notnull",
         "owner": "#notnull",
         "ownerUserName": "#notnull",
@@ -69,6 +68,10 @@ Feature: Checking JSON Attributes
         "publishUserName": "#notnull"
       }
       """
+    # Story Block fields are normalized to a Tiptap/ProseMirror doc on save (#36002): a plain
+    # string body is stored and read back as structured JSON, not the raw string.
+    And match response.entity.body.type == 'doc'
+    And match response.entity.body.content[0].content[0].text == 'This is my Test Generic Content'
 
   Scenario Outline: Testing Content Creation Validation
     Given url baseUrl + '/api/v1/workflow/actions/default/fire/PUBLISH'

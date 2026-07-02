@@ -60,6 +60,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPagi
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -85,7 +86,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
@@ -186,6 +190,131 @@ public class PageResource {
         this.htmlPageAssetRenderedAPI = htmlPageAssetRenderedAPI;
         this.esapi = esapi;
         this.hostWebAPI = hostWebAPI;
+    }
+
+    /**
+     * Returns the source-file references for all assets involved in rendering the specified page.
+     * No file content, rendered HTML, or container code is included — only identifiers and paths.
+     *
+     * <p>The URI is a path segment, mirroring {@code /render/{uri}}: plain URIs such as
+     * {@code index} or {@code about/team} are accepted. To address a specific site, use the
+     * {@code host_id} query parameter — the host-qualified {@code //hostname/path} form is not
+     * supported because dotCMS's NormalizationFilter rejects URIs that contain {@code //}.
+     *
+     * <p>To retrieve individual asset content, use the following endpoints:
+     * <ul>
+     *   <li>Theme folder file listing: {@code GET /api/v1/folder/sitename/{site}/uri/{uri}}</li>
+     *   <li>DB container code: {@code GET /api/v1/containers/working?containerId=<id>&includeContentType=true}</li>
+     *   <li>FILE container VTL content: {@code GET /api/v2/assets}</li>
+     * </ul>
+     *
+     * @param request     The {@link HttpServletRequest} object.
+     * @param response    The {@link HttpServletResponse} object.
+     * @param uri         Required. Page URI path segment (e.g. {@code index} or {@code about/team}).
+     *                    Must be a plain path without an embedded host.
+     * @param hostId      Optional. Explicit host identifier; defaults to the default site.
+     * @param languageId  Optional. Language identifier; defaults to the default language.
+     * @param personaId   Optional. Persona contentlet identifier for personalization lookup.
+     * @param variantName Optional. Variant name; defaults to {@code DEFAULT}.
+     * @param modeParam   Optional. {@link PageMode} string; defaults to {@code PREVIEW_MODE}.
+     * @return A {@link ResponseEntityPageRenderSourcesView} with render-source references.
+     * @throws DotDataException     An error occurred when accessing information in the database.
+     * @throws DotSecurityException The user does not have READ permission on the page.
+     */
+    @Operation(
+            operationId = "getPageRenderSources",
+            summary = "Get render sources for a page",
+            description = "Returns references only (path + identifier, no file content, no container code) "
+                    + "mapping a rendered page to its source files. The page is identified by a URI "
+                    + "path segment, exactly like `GET /api/v1/page/render/{uri}`.\n\n"
+                    + "The URI must be a plain path (e.g. `index`, `about/team`). To address a "
+                    + "specific site, use the `host_id` query parameter.\n\n"
+                    + "Includes the page reference, theme VTL files, all containers referenced by the "
+                    + "template (only content types actually placed under the applied persona/variant "
+                    + "are included), and widget contentlets placed on the page.\n\n"
+                    + "**Widget source field:**\n"
+                    + "Each widget entry includes a `source` field:\n"
+                    + "- `FILE` — the widget's Velocity lives in a file asset; `path` and `identifier` "
+                    + "are populated. Retrieve the VTL content via `GET /api/v2/assets`.\n"
+                    + "- `CODE` — the widget's Velocity is inline (in the content type's `widgetCode` "
+                    + "field and/or the contentlet's own fields). No `path`/`identifier` are returned. "
+                    + "Retrieve the content type definition via "
+                    + "`GET /api/v1/contenttype/id/{contentTypeVar}` and the placed contentlet via "
+                    + "`GET /api/v1/content/id/{contentletId}`.\n\n"
+                    + "**Other source lookups:**\n"
+                    + "- Theme folder files: `GET /api/v1/folder/sitename/{site}/uri/{uri}`\n"
+                    + "- DB container code: "
+                    + "`GET /api/v1/containers/working?containerId=<id>&includeContentType=true`\n"
+                    + "- FILE container VTL content: `GET /api/v2/assets`",
+            tags = {"Page"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Render sources retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageRenderSourcesView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameter (e.g. an unknown mode value)"),
+            @ApiResponse(responseCode = "403", description = "User does not have READ permission on the page"),
+            @ApiResponse(responseCode = "404", description = "Page not found, wrong language, or unknown host")
+    })
+    @NoCache
+    @GET
+    @Path("/_render-sources/{uri: .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getRenderSources(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Page URI path (e.g. 'index' or 'about/team'). "
+                    + "Must be a plain path without an embedded host; use host_id to target a specific site.",
+                    required = true)
+            @PathParam("uri") final String uri,
+            @Parameter(description = "Explicit host identifier; if omitted the default site is used")
+            @QueryParam("host_id") final String hostId,
+            @Parameter(description = "Language identifier; defaults to the default language")
+            @QueryParam("language_id") final String languageId,
+            @Parameter(description = "Persona contentlet identifier for personalization lookup")
+            @QueryParam("persona_id") final String personaId,
+            @Parameter(description = "Variant name; defaults to DEFAULT")
+            @QueryParam(VariantAPI.VARIANT_KEY) final String variantName,
+            @Parameter(description = "Page mode: EDIT_MODE, PREVIEW_MODE, LIVE; defaults to PREVIEW_MODE")
+            @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam)
+            throws DotDataException, DotSecurityException {
+
+        // Normalize the @PathParam value: JAX-RS strips the leading slash when binding
+        // {uri: .*}, so "index" arrives as "index" but the helper needs "/index".
+        // Host resolution is via host_id query param or the default host — the //host/uri
+        // form is not supported because dotCMS's NormalizationFilter rejects URIs that
+        // contain "//" before they reach this resource.
+        final String path = !UtilMethods.isSet(uri)
+                ? "/"
+                : (uri.startsWith("/") ? uri : "/" + uri);
+
+        // Reject an unknown mode explicitly: PageMode.get() silently falls back to PREVIEW_MODE,
+        // which would serve a page in a mode the caller never asked for with no indication.
+        if (UtilMethods.isSet(modeParam)
+                && Arrays.stream(PageMode.values()).noneMatch(m -> m.name().equalsIgnoreCase(modeParam))) {
+            throw new BadRequestException("Invalid mode '" + modeParam
+                    + "'. Valid values: EDIT_MODE, PREVIEW_MODE, LIVE");
+        }
+
+        Logger.debug(this, () -> String.format(
+                "getRenderSources: uri=%s path=%s host_id=%s language_id=%s persona=%s variant=%s mode=%s",
+                uri, path, hostId, languageId, personaId, variantName, modeParam));
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initData.getUser();
+
+        try {
+            final PageRenderSourcesView view = pageResourceHelper.getRenderSources(
+                    path, hostId, languageId, personaId, variantName, modeParam, user,
+                    htmlPageAssetRenderedAPI);
+            return Response.ok(new ResponseEntityPageRenderSourcesView(view)).build();
+        } catch (final com.dotmarketing.exception.DoesNotExistException e) {
+            // Covers HTMLPageAssetNotFoundException (subclass) and host-not-found cases
+            throw new NotFoundException(e.getMessage());
+        }
     }
 
     /**
@@ -907,24 +1036,69 @@ public class PageResource {
         for (final ContainerEntry containerEntry : containerEntries) {
 
             final String containerId = containerEntry.getContainerId();
+
+            if (!UtilMethods.isSet(containerId)) {
+                throw new BadRequestException("A container identifier is required");
+            }
+
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
             final List<String> contentletIdList = containerEntry.getContentIds();
             for (final String contentletId : contentletIdList) {
+
+                if (!UtilMethods.isSet(contentletId)) {
+                    throw new BadRequestException("A contentlet identifier is required for the container");
+                }
+
                 final Contentlet contentlet;
                 try {
+                    // This lookup excludes deleted (archived) versions. It wraps everything it
+                    // catches in a DotContentletStateException, so we must inspect the cause:
+                    // a NotFoundInDbException means the content is archived or does not exist --
+                    // both are skipped silently (treated identically to avoid leaking whether an
+                    // identifier exists, and so a page still referencing archived content stays
+                    // saveable). Any other cause is a genuine failure and must be surfaced rather
+                    // than silently dropping the contentlet. See issue #35993.
                     contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
-                    if (null == contentlet) {
-
-                        throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
+                } catch (final DotContentletStateException e) {
+                    if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                        // Expected/benign case (archived or non-existent). Checks the full cause
+                        // chain (not just the direct cause) so an added intermediate wrapper does
+                        // not silently turn this into a client error. Logged without the exception
+                        // so we don't emit a stack trace -- or the wrapped lookup message -- on
+                        // every page save that references archived content.
+                        Logger.warn(this, "Skipping contentlet '" + contentletId
+                                + "' on page content save: archived or not found");
+                        continue;
                     }
+                    // Genuine lookup/DB failure wrapped as DotContentletStateException: log full
+                    // detail server-side and return a generic message so internal identifiers /
+                    // SQL fragments are not leaked in the response.
+                    Logger.error(this, "Error validating contentlet '" + contentletId
+                            + "' on page content save", e);
+                    throw new BadRequestException("Error validating one or more contentlets for the page");
+                } catch (final DotDataException e) {
+                    // findContentletByIdentifierAnyLanguageAnyVariant declares this checked
+                    // exception (in practice it wraps failures in DotContentletStateException,
+                    // handled above). Handle it the same way so this method throws only unchecked
+                    // exceptions and never forwards a raw message to the client.
+                    Logger.error(this, "Error validating contentlet '" + contentletId
+                            + "' on page content save", e);
+                    throw new BadRequestException("Error validating one or more contentlets for the page");
+                }
 
-                    if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT) && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+                if (null == contentlet) {
+                    Logger.warn(this, "Skipping contentlet '" + contentletId
+                            + "' on page content save: working version not found");
+                    continue;
+                }
 
-                        throw new BadRequestException("The content type: " + contentlet.getContentType().variable() + " is not valid for the container");
-                    }
-                } catch (DotDataException e) {
-
-                    throw new BadRequestException(e, e.getMessage());
+                if (contentlet.getBaseType().get().equals(BaseContentType.CONTENT)
+                        && !contentTypeSet.contains(contentlet.getContentType().variable())) {
+                    // The content-type variable is public schema metadata (already exposed via the
+                    // Content Types API), so it is safe to include and helps the caller identify the
+                    // offending content.
+                    throw new BadRequestException("Content type '" + contentlet.getContentType().variable()
+                            + "' is not allowed in this container");
                 }
             }
         }
@@ -937,9 +1111,22 @@ public class PageResource {
                     .orElseThrow(() -> new DoesNotExistException("Container with ID :" + containerId + " not found"));
             final List<ContentType> contentTypes = APILocator.getContainerAPI().getContentTypesInContainer(container);
             return null != contentTypes? contentTypes.stream().map(ContentType::variable).collect(Collectors.toSet()) : Collections.emptySet();
-        } catch (DotDataException | DotSecurityException e) {
-
-            throw new BadRequestException(e, e.getMessage());
+        } catch (final DotSecurityException e) {
+            // The system user lacking read permission on the container is a server-side
+            // misconfiguration, not a client bad request -- surface it as 403 (generic message;
+            // full detail logged server-side) rather than 400.
+            Logger.error(this, "No permission to read container '" + containerId + "'", e);
+            throw new ForbiddenException(e, "Not allowed to read the container");
+        } catch (final DotDataException e) {
+            // Log full detail server-side; return a generic message so internal identifiers /
+            // SQL fragments are not leaked in the response.
+            //
+            // DoesNotExistException is intentionally NOT caught here: a missing container must
+            // surface as a 404 carrying its message. The id in that message is the caller's own
+            // input (not sensitive), and the 404 + message is an established API contract verified
+            // by the Define_Contentlets_StyleProperties postman test.
+            Logger.error(this, "Error retrieving content types for container '" + containerId + "'", e);
+            throw new BadRequestException("Error retrieving content types for the container");
         }
     }
 

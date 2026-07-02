@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { action } from '@storybook/addon-actions';
 import { Meta, moduleMetadata, StoryObj, argsToTemplate } from '@storybook/angular';
 

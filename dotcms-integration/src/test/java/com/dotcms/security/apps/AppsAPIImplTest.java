@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
@@ -132,6 +134,7 @@ public class AppsAPIImplTest {
         final Optional<AppSecrets> optionalBean = api
                 .getSecrets(appKey, host, admin);
 
+                
         assertTrue(optionalBean.isPresent());
 
         final AppSecrets recoveredBean = optionalBean.get();
@@ -1747,6 +1750,117 @@ public class AppsAPIImplTest {
         assertTrue(result.getSecrets().get("secret1").getHidden());
         assertTrue(result.getSecrets().get("secret2").getHidden());
         assertTrue(result.getSecrets().get("secret3").getHidden());
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)}.
+     * <p>Given Scenario: An app has a stored secret for param {@code p1} which is then masked by a
+     * host-specific env-var override (introduced in #35859). The whole app config is exported and
+     * re-imported.
+     * <p>Expected Result: The export succeeds (env-overridden secrets used to break it) and never
+     * carries the env value: the round-trip restores the <i>stored</i> value of {@code p1}, not the
+     * env override, and no restored secret is flagged {@code fromEnv}.
+     */
+    @Test
+    public void Test_Export_Excludes_Env_Overridden_Secret() throws Exception {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .stringParam("p2", false, true)
+                .withName("env-export-app-example")
+                .withDescription("env-export-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        final String appKey = dataGen.getKey();
+        final String envVarName = AppsUtil.envVarName(appKey, site.getHostname(), "p1");
+        try {
+            api.createAppDescriptor(file, admin);
+
+            //Persist real stored values for both params.
+            api.saveSecrets(new AppSecrets.Builder().withKey(appKey)
+                    .withHiddenSecret("p1", "stored-1")
+                    .withHiddenSecret("p2", "stored-2")
+                    .build(), site, admin);
+
+            //An env-var override masks p1 (tier-1 locked: value lives in envVarValue, fromEnv=true).
+            Config.setProperty(envVarName, "env-override-1");
+
+            //Sanity: p1 now resolves from the environment.
+            final Secret resolvedP1 = api.getSecrets(appKey, site, admin).get().getSecrets().get("p1");
+            assertTrue(resolvedP1.isFromEnv());
+
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+            final Map<String, Set<String>> appKeysBySite = ImmutableMap
+                    .of(site.getIdentifier(), ImmutableSet.of(appKey));
+
+            //Export must succeed even with the env override present.
+            final Path exportFile = api.exportSecrets(securityKey, false, appKeysBySite, admin);
+            assertTrue(exportFile.toFile().exists());
+
+            //Drop the stored secrets and the env override so the import reflects only the file's content.
+            api.deleteSecrets(appKey, site, admin);
+            Config.setProperty(envVarName, null);
+
+            api.importSecretsAndSave(exportFile, securityKey, admin);
+
+            final AppSecrets restored = api.getSecrets(appKey, site, admin).get();
+            //p1 carried its STORED value, not the env override; p2 carried its stored value.
+            assertEquals("stored-1", restored.getSecrets().get("p1").getString());
+            assertEquals("stored-2", restored.getSecrets().get("p2").getString());
+            //Nothing in the export was env-sourced.
+            restored.getSecrets().values().forEach(secret -> assertFalse(secret.isFromEnv()));
+        } finally {
+            Config.setProperty(envVarName, null);
+            file.delete();
+        }
+    }
+
+    /**
+     * Method to test {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)}.
+     * <p>Given Scenario (failure path): An app is provisioned purely from a host-specific env-var
+     * override (introduced in #35859) with no stored secret ever saved, then it is selected for
+     * export.
+     * <p>Expected Result: Because env values must never be written to an export file and nothing is
+     * persisted for the app, the export collects nothing and raises an {@link IllegalArgumentException}
+     * instead of leaking the env value.
+     */
+    @Test
+    public void Test_Export_Env_Only_App_Has_Nothing_To_Export() throws Exception {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("env-only-app-example")
+                .withDescription("env-only-app")
+                .withExtraParameters(false);
+        final File file = dataGen.nextPersistedDescriptor();
+        final String appKey = dataGen.getKey();
+        final String envVarName = AppsUtil.envVarName(appKey, site.getHostname(), "p1");
+        try {
+            api.createAppDescriptor(file, admin);
+
+            //Provision p1 ONLY from the environment — never call saveSecrets, so no stored blob exists.
+            Config.setProperty(envVarName, "env-override-1");
+
+            //p1 resolves (from env) ...
+            assertTrue(api.getSecrets(appKey, site, admin).get().getSecrets().get("p1").isFromEnv());
+
+            final String password = RandomStringUtils.randomAlphanumeric(32);
+            final Key securityKey = AppsUtil.generateKey(password);
+            final Map<String, Set<String>> appKeysBySite = ImmutableMap
+                    .of(site.getIdentifier(), ImmutableSet.of(appKey));
+
+            //... but there is nothing persisted to export, so the export fails rather than leaking env.
+            assertThrows(IllegalArgumentException.class,
+                    () -> api.exportSecrets(securityKey, false, appKeysBySite, admin));
+        } finally {
+            Config.setProperty(envVarName, null);
+            file.delete();
+        }
     }
 
 

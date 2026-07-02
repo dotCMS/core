@@ -1233,7 +1233,12 @@ export interface DotCMSPageResponse {
      * @deprecated Use `errors` instead. Will be removed in August 2026. Kept for backward compatibility — represents the first GraphQL error when present.
      */
     error?: DotCMSGraphQLError;
-    errors?: DotCMSGraphQLError[];
+    /**
+     * GraphQL errors surfaced by the request. Always an array — empty when there are none — so the
+     * response stays JSON-serializable (Next.js Pages Router rejects `undefined` props). Check
+     * `errors.length`, not `errors != null`.
+     */
+    errors: DotCMSGraphQLError[];
     graphql: {
         query: string;
         variables: Record<string, unknown>;

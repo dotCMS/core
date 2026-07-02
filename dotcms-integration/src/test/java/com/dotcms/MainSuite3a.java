@@ -6,6 +6,7 @@ import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.business.PublisherQueueJobTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -37,6 +38,7 @@ import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifierTest;
 import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenuTest;
+import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLengthTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -83,8 +85,10 @@ import org.junit.runners.Suite;
         Task260320AddPluginsPortletToMenuTest.class,
         Task260505AddPluginsPortletToMenuTest.class,
         Task260407AddBaseTypeColumnToIdentifierTest.class,
+        Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class
+        PublisherQueueJobTest.class,
 })
 
 public class MainSuite3a {

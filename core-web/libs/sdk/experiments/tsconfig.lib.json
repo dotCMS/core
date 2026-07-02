@@ -3,7 +3,21 @@
     "compilerOptions": {
         "outDir": "../../../dist/out-tsc",
         "declaration": true,
-        "types": ["node", "vite/client"]
+        "types": ["node", "vite/client"],
+        // Resolve external @dotcms SDK peers to their built dist (.d.ts) instead of
+        // source, so Nx 23's @rollup/plugin-typescript treats them as external
+        // declarations rather than pulling cross-project source into the program
+        // (which triggers TS6059). Requires ^build so deps are built first.
+        "paths": {
+            "@dotcms/client": ["dist/libs/sdk/client"],
+            "@dotcms/client/*": ["dist/libs/sdk/client/*"],
+            "@dotcms/react": ["dist/libs/sdk/react"],
+            "@dotcms/react/*": ["dist/libs/sdk/react/*"],
+            "@dotcms/uve": ["dist/libs/sdk/uve"],
+            "@dotcms/uve/*": ["dist/libs/sdk/uve/*"],
+            "@dotcms/types": ["dist/libs/sdk/types"],
+            "@dotcms/types/*": ["dist/libs/sdk/types/*"]
+        }
     },
     "exclude": [
         "jest.config.ts",

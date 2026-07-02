@@ -71,7 +71,7 @@ describe('DotToolbarUserComponent', () => {
                     provide: DotPropertiesService,
                     useValue: {
                         getKey: jest.fn(() => of('true')),
-                        getFeatureFlagWithDefault: jest.fn(() => of(true))
+                        getFeatureFlag: jest.fn(() => of(true))
                     }
                 },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
@@ -288,7 +288,7 @@ describe('DotToolbarUserComponent', () => {
 
     it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
         const dotPropertiesService = TestBed.inject(DotPropertiesService);
-        (dotPropertiesService.getFeatureFlagWithDefault as jest.Mock).mockReturnValue(of(false));
+        (dotPropertiesService.getFeatureFlag as jest.Mock).mockReturnValue(of(false));
 
         // Rebuild the component so the new mock value is what vm$ sees.
         fixture = TestBed.createComponent(DotToolbarUserComponent);

@@ -24,6 +24,9 @@ export class EditorToolbarStore {
     readonly canIndent = signal(false);
     readonly canOutdent = signal(false);
     readonly isImageSelected = signal(false);
+    /** True when the selected `dotImage` node carries a link (`href`) — drives the toolbar
+     *  Link button's active state for linked images, mirroring `isLink` for text links. */
+    readonly isImageLinked = signal(false);
     readonly imageTextWrap = signal<string | null>(null);
     readonly imageTextAlign = signal<string | null>(null);
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
@@ -47,6 +50,9 @@ export class EditorToolbarStore {
                 this.isCodeBlock.set(editor.isActive('codeBlock'));
                 this.isLink.set(editor.isActive('link'));
                 this.isImageSelected.set(editor.isActive('dotImage'));
+                this.isImageLinked.set(
+                    editor.isActive('dotImage') && !!editor.getAttributes('dotImage').href
+                );
                 this.imageTextWrap.set(
                     editor.isActive('dotImage')
                         ? (editor.getAttributes('dotImage').textWrap ?? null)
