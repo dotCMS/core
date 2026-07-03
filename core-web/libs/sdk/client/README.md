@@ -747,7 +747,7 @@ export function Page({ pageContent }) {
 
 #### Working example
 
-See the page-editing flow end to end in the official Next.js example — [`examples/nextjs`](https://github.com/dotCMS/core/tree/main/examples/nextjs). In particular, [`src/views/Page.js`](https://github.com/dotCMS/core/blob/main/examples/nextjs/src/views/Page.js) uses `useEditableDotCMSPage` and `DotCMSLayoutBody` exactly as shown above.
+See the page-editing flow end to end in the official Next.js example — [`examples/nextjs`](https://github.com/dotCMS/core/tree/main/examples/nextjs). In particular, [`src/views/Page.tsx`](https://github.com/dotCMS/core/blob/main/examples/nextjs/src/views/Page.tsx) uses `useEditableDotCMSPage` and `DotCMSLayoutBody` exactly as shown above.
 
 ## API Reference
 

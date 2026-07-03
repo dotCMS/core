@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'dotcms-binary-field-builder',
     preset: '../../jest.preset.js',

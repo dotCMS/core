@@ -152,6 +152,53 @@ export class RelationshipField {
     }
 
     /**
+     * Returns normalized header labels from the relationship table.
+     */
+    async getHeaderTexts(): Promise<string[]> {
+        const headers = this.table.locator('thead th');
+        const headerCount = await headers.count();
+        const headerTexts: string[] = [];
+
+        for (let i = 0; i < headerCount; i++) {
+            const text = await headers.nth(i).textContent();
+            const trimmed = text?.trim();
+            if (trimmed) {
+                headerTexts.push(trimmed.toLowerCase());
+            }
+        }
+
+        return headerTexts;
+    }
+
+    /**
+     * Drags a row from sourceIndex to targetIndex using drag handles.
+     */
+    async dragRowToPosition(sourceIndex: number, targetIndex: number): Promise<void> {
+        const handles = this.getDragHandles();
+        const sourceHandle = handles.nth(sourceIndex);
+        const targetHandle = handles.nth(targetIndex);
+
+        const sourceBounds = await sourceHandle.boundingBox();
+        const targetBounds = await targetHandle.boundingBox();
+
+        if (!sourceBounds || !targetBounds) {
+            throw new Error('Could not get bounding boxes for drag handles');
+        }
+
+        await this.page.mouse.move(
+            sourceBounds.x + sourceBounds.width / 2,
+            sourceBounds.y + sourceBounds.height / 2
+        );
+        await this.page.mouse.down();
+        await this.page.mouse.move(
+            targetBounds.x + targetBounds.width / 2,
+            targetBounds.y + targetBounds.height / 2,
+            { steps: 10 }
+        );
+        await this.page.mouse.up();
+    }
+
+    /**
      * Clicks the delete button on a specific row.
      */
     async deleteRow(rowIndex: number): Promise<void> {

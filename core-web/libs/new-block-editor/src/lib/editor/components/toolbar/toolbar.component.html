@@ -369,7 +369,7 @@
             [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
             [showDelay]="TOOLTIP_SHOW_DELAY"
-            [class]="btnClass(state.isLink() || popovers.isOpen('link'))"
+            [class]="btnClass(state.isLink() || state.isImageLinked() || popovers.isOpen('link'))"
             (mousedown)="openLinkDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">link</span>
         </button>

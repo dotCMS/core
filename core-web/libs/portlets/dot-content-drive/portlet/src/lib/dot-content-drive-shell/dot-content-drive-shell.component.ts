@@ -430,15 +430,16 @@ export class DotContentDriveShellComponent implements OnInit {
         const files = input.files;
         const selection = this.$activeSelection();
 
-        // Always reset so a cancelled/re-opened picker can't reuse a stale selection.
-        this.$activeSelection.set(undefined);
-        input.value = '';
-
-        if (!files || files.length === 0 || !selection) {
-            return;
+        // Consume the files BEFORE resetting the input: `input.files` is a live FileList, so
+        // `input.value = ''` empties it. Resetting first would drop the selection and the upload
+        // would never fire (the file is captured synchronously into FormData by resolveFilesUpload).
+        if (files && files.length > 0 && selection) {
+            this.resolveFilesUpload({ ...selection, files });
         }
 
-        this.resolveFilesUpload({ ...selection, files });
+        // Reset so a cancelled/re-opened picker can't reuse a stale selection.
+        this.$activeSelection.set(undefined);
+        input.value = '';
     }
 
     /**
@@ -463,19 +464,19 @@ export class DotContentDriveShellComponent implements OnInit {
     protected resolveFilesUpload({
         files,
         targetFolder,
-        contentType
+        baseType
     }: DotContentDriveUploadSelection) {
         if (!files?.length) {
             return;
         }
 
         if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder, contentType });
+            this.uploadFiles({ files, targetFolder, baseType });
 
             return;
         }
 
-        this.uploadFile({ files, targetFolder, contentType });
+        this.uploadFile({ files, targetFolder, baseType });
     }
 
     /**
@@ -485,7 +486,7 @@ export class DotContentDriveShellComponent implements OnInit {
      * @param {DotContentDriveUploadSelection} selection
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, targetFolder, contentType }: DotContentDriveUploadSelection) {
+    protected uploadFiles({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -493,14 +494,14 @@ export class DotContentDriveShellComponent implements OnInit {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, targetFolder, contentType });
+        this.uploadFile({ files, targetFolder, baseType });
     }
 
     /**
      * Uploads a file to the content drive
      * @param selection The chosen content type, target folder and files to upload
      */
-    protected uploadFile({ files, targetFolder, contentType }: DotContentDriveUploadSelection) {
+    protected uploadFile({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
         if (!files?.length) {
             return;
         }
@@ -511,31 +512,30 @@ export class DotContentDriveShellComponent implements OnInit {
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        this.uploadDotAsset(files[0], targetFolder, contentType);
+        this.uploadByBaseType(files[0], baseType, targetFolder);
     }
 
     /**
-     * Uploads a file to the content drive as the given content type (`dotAsset` or `FileAsset`).
+     * Uploads a file to the content drive resolving the content type from the given base type
+     * (`DOTASSET` for Assets, `FILEASSET` for Files).
      *
      * @protected
      * @param {File} file
+     * @param {string} baseType
      * @param {DotFolderTreeNodeData} [hostFolder]
-     * @param {string} [contentType]
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadDotAsset(file: File, hostFolder?: DotFolderTreeNodeData, contentType?: string) {
+    protected uploadByBaseType(file: File, baseType: string, hostFolder?: DotFolderTreeNodeData) {
         this.#fileService
-            .uploadDotAsset(
-                file,
-                {
-                    hostFolder: hostFolder?.id ?? '',
-                    indexPolicy: 'WAIT_FOR'
-                },
-                contentType
-            )
+            .uploadFileByBaseType(file, baseType, {
+                // A folder id carries its site; at the site root (no folder) fall back to the
+                // current site identifier so the upload lands on the site being browsed, not the
+                // backend default host.
+                hostFolder: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? '',
+                indexPolicy: 'WAIT_FOR'
+            })
             .subscribe({
-                // `contentType` here is the created contentlet's resolved type (from the response),
-                // distinct from the requested `contentType` parameter above.
+                // `contentType` here is the created contentlet's resolved type (from the response).
                 next: ({ title, contentType: uploadedContentType }) => {
                     this.#messageService.add({
                         severity: 'success',

@@ -118,6 +118,84 @@ public final class TiptapMarkdown {
         return toMarkdown(tiptap.toString());
     }
 
+    /**
+     * Cheap discriminator: is this string already a Tiptap/ProseMirror document
+     * ({@code {"type":"doc","content":[...]}})? Used on the save path to leave
+     * editor-authored JSON untouched rather than re-parsing it as Markdown. The
+     * first and last non-whitespace characters are peeked before any parse, so the
+     * common non-JSON (Markdown) case costs nothing.
+     */
+    public static boolean isTiptapDoc(final String value) {
+        if (value == null) {
+            return false;
+        }
+        final String trimmed = value.strip();
+        if (trimmed.isEmpty() || trimmed.charAt(0) != '{'
+                || trimmed.charAt(trimmed.length() - 1) != '}') {
+            return false;
+        }
+        try {
+            final JsonNode node = MAPPER.readTree(value);
+            return node != null
+                    && "doc".equals(node.path("type").asText())
+                    && node.path("content").isArray();
+        } catch (final java.io.IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * The ProseMirror node types {@link #toTiptap(String)} can produce from Markdown.
+     * A document built only from these can be expressed as Markdown without losing blocks.
+     */
+    private static final Set<String> MARKDOWN_NODE_TYPES = Set.of(
+            "doc", "paragraph", "heading", "blockquote", "bulletList", "orderedList", "listItem",
+            "codeBlock", "horizontalRule", "hardBreak", "text",
+            "table", "tableRow", "tableHeader", "tableCell", "dotImage");
+
+    /**
+     * True when every block in the document is Markdown-representable (see
+     * {@link #MARKDOWN_NODE_TYPES}). Used to detect a Markdown overwrite that would
+     * silently destroy rich blocks Markdown cannot express — embedded contentlets
+     * ({@code dotContent}), video, layout grids, etc. Marks are intentionally not
+     * inspected: an unsupported mark loses styling, not content. A {@code null} or
+     * non-JSON value carries no rich blocks to protect, so returns {@code true}.
+     */
+    public static boolean isMarkdownRepresentable(final String tiptapJson) {
+        if (tiptapJson == null || tiptapJson.isBlank()) {
+            return true;
+        }
+        try {
+            return isMarkdownRepresentable(MAPPER.readTree(tiptapJson));
+        } catch (final java.io.IOException e) {
+            // Not parseable JSON carries no rich blocks to protect; stay permissive, but leave a
+            // trace in case a caller passes a value it expected to be a valid document.
+            Logger.debug(TiptapMarkdown.class,
+                    () -> "isMarkdownRepresentable: value is not valid JSON, treating as representable: "
+                            + e.getMessage());
+            return true;
+        }
+    }
+
+    private static boolean isMarkdownRepresentable(final JsonNode node) {
+        if (node == null) {
+            return true;
+        }
+        final String type = node.path("type").asText("");
+        if (!type.isEmpty() && !MARKDOWN_NODE_TYPES.contains(type)) {
+            return false;
+        }
+        final JsonNode content = node.path("content");
+        if (content.isArray()) {
+            for (final JsonNode child : content) {
+                if (!isMarkdownRepresentable(child)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     // =====================================================================
     // Markdown -> Tiptap JSON (commonmark Visitor)
     // =====================================================================

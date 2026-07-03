@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.tiptap.TiptapMarkdown;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
@@ -255,6 +256,10 @@ public class MapToContentletPopulator  {
                         && null != value && value instanceof Map) {
 
                     this.processPlainValueForBinaryField(map, field, value, contentlet);
+                } else if (FieldType.STORY_BLOCK_FIELD.toString().equals(field.getFieldType())
+                        && value instanceof String) {
+
+                    this.processStoryBlockField(contentlet, field, (String) value);
                 } else {
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
@@ -263,6 +268,59 @@ public class MapToContentletPopulator  {
         }
 
     } // fillFields.
+
+    /**
+     * Story Block fields store a Tiptap/ProseMirror JSON document. Non-interactive clients
+     * (AI agents, headless imports) may instead send Markdown. We convert it to ProseMirror
+     * JSON here, on the shared save path, so the field reads back as structured content with
+     * no human editor round-trip. Values that are already JSON (the dominant editor traffic)
+     * or HTML are stored unchanged — Markdown is the only thing converted, and a conversion
+     * failure never blocks the save.
+     */
+    private void processStoryBlockField(final Contentlet contentlet, final Field field,
+                                        final String value) {
+
+        final String storyBlockJson = this.toStoryBlockJson(contentlet, field, value);
+        APILocator.getContentletAPI().setContentletProperty(contentlet, field, storyBlockJson);
+    }
+
+    private String toStoryBlockJson(final Contentlet contentlet, final Field field,
+                                    final String value) {
+
+        // Editor-authored JSON and (for now) HTML are stored as-is; Markdown is plain text and
+        // begins with neither '{' nor '<'. This mirrors the Block Editor's own client-side
+        // routing and avoids re-parsing an existing document as Markdown.
+        final String trimmed = value.stripLeading();
+        if (trimmed.isEmpty() || trimmed.charAt(0) == '{' || trimmed.charAt(0) == '<') {
+            return value;
+        }
+
+        // Markdown cannot represent rich blocks (embedded contentlets, video, layout grids). Per the
+        // documented contract (see the fire endpoints' Block Editor note), Markdown is for plain
+        // content only and must not be used to modify a field that already holds such blocks. If that
+        // is attempted, keep the existing document untouched and log a warning — neither destroying
+        // the rich content nor failing the save. (Markdown -> rich merge is planned as a follow-up.)
+        final String existing = contentlet.getStringProperty(field.getVelocityVarName());
+        if (TiptapMarkdown.isTiptapDoc(existing) && !TiptapMarkdown.isMarkdownRepresentable(existing)) {
+            Logger.warn(this, String.format(
+                    "Story Block field [%s] holds rich content that Markdown cannot represent; "
+                            + "ignoring the Markdown value and keeping the existing document. Send a "
+                            + "full Tiptap/ProseMirror JSON document to modify this field.",
+                    field.getVelocityVarName()));
+            return existing;
+        }
+
+        try {
+            return TiptapMarkdown.toTiptap(value).toString();
+        } catch (final Exception e) {
+            // Graceful degradation (consistent with the converter's #35728 contract): a parse
+            // failure must never block the save — store the original value and move on.
+            Logger.warn(this, String.format(
+                    "Story Block field [%s]: Markdown conversion failed, storing value unchanged. %s",
+                    field.getVelocityVarName(), e.getMessage()));
+            return value;
+        }
+    }
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,
                                                         final Field field,
