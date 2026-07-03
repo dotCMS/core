@@ -76,13 +76,13 @@ public class ToolGroupResource implements Serializable {
                 .init()
                 .getUser();
 
-        if (null != userid){
-            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
-        }
-
         if (!loggedInUser.isAdmin()) {
             throw new DotSecurityException(
                     "User does not have permission to remove layouts from users");
+        }
+
+        if (null != userid){
+            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
         }
 
         Layout layoutToRemove = getLayout(layoutId);
@@ -121,13 +121,13 @@ public class ToolGroupResource implements Serializable {
                 .init()
                 .getUser();
 
-        if (null != userid){
-            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
-        }
-
         if (!layoutId.equalsIgnoreCase("gettingstarted") && !loggedInUser.isAdmin()) {
             throw new DotSecurityException(
                     "User does not have permission to assign layouts");
+        }
+
+        if (null != userid){
+            user = APILocator.getUserAPI().loadUserById(userid, loggedInUser, true);
         }
 
         final Layout layoutToAdd = getLayout(layoutId);
