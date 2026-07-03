@@ -86,6 +86,15 @@ When editing ANY code, improve incrementally:
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
 
+## Spec-Driven Development (Spec-Kit)
+
+This repo uses [GitHub Spec-Kit](https://github.com/github/spec-kit) for spec-driven work,
+customized for dotCMS. Full details + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
+
+- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`.
+- **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.
+- **ADRs**: live only in the private repo `dotCMS/platform-adrs`. `/speckit-plan` **always consults** relevant ADRs (auto `before_plan` hook → `/speckit-adr-context`, read-only via `gh`). Spec-Kit **never creates ADRs** — it only *proposes* them; ADRs are authored in `platform-adrs` via its `new-adr.sh`.
+
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
