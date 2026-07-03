@@ -541,6 +541,11 @@
             <artifactId>langchain4j-anthropic</artifactId>
         </dependency>
         <dependency>
+            <!-- LangChain4J Google AI Gemini provider: Chat, Embedding models via Google AI Studio (API key auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+        </dependency>
+        <dependency>
             <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-vertex-ai-gemini</artifactId>

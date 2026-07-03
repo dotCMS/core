@@ -15,7 +15,7 @@ import java.util.List;
  * and add an instance to {@link #STRATEGIES}. No other class needs to change.
  *
  * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}, {@code openrouter}, {@code google_ai}
- * <p>Note: {@code vertex_ai}, {@code anthropic}, and {@code openrouter} support chat only; embeddings and image are not available for those providers via LangChain4J.
+ * <p>Note: {@code vertex_ai}, {@code anthropic}, and {@code openrouter} support chat only; {@code google_ai} supports chat, embeddings and image.
  */
 public class LangChain4jModelFactory {
 
@@ -25,7 +25,8 @@ public class LangChain4jModelFactory {
             new BedrockModelProviderStrategy(),
             new VertexAiModelProviderStrategy(),
             new AnthropicModelProviderStrategy(),
-            new OpenRouterModelProviderStrategy()
+            new OpenRouterModelProviderStrategy(),
+            new GoogleAiGeminiModelProviderStrategy()
     );
 
     private LangChain4jModelFactory() {}

@@ -749,6 +749,146 @@ public class LangChain4jModelFactoryTest {
                 () -> LangChain4jModelFactory.buildImageModel(openRouterConfig("openai/dall-e-3")));
     }
 
+    // ── Google AI (Gemini API / AI Studio) ────────────────────────────────────
+
+    /**
+     * Given a valid Google AI config,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(googleAiConfig("gemini-2.0-flash"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a valid Google AI config with optional parameters,
+     * When buildChatModel is called,
+     * Then a ChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.0-flash")
+                .apiKey("test-key")
+                .temperature(0.7)
+                .maxTokens(2048)
+                .maxRetries(2)
+                .timeout(60)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildStreamingChatModel is called,
+     * Then a StreamingChatModel is returned successfully.
+     */
+    @Test
+    public void test_buildStreamingChatModel_googleAi_returnsModel() {
+        assertNotNull(LangChain4jModelFactory.buildStreamingChatModel(googleAiConfig("gemini-2.0-flash")));
+    }
+
+    /**
+     * Given a Google AI config without an apiKey,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.0-flash")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a Google AI config without a model,
+     * When buildChatModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildChatModel_googleAi_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildEmbeddingModel is called,
+     * Then an EmbeddingModel is returned successfully.
+     */
+    @Test
+    public void test_buildEmbeddingModel_googleAi_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(googleAiConfig("gemini-embedding-001"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a Google AI config with a dimensions parameter,
+     * When buildEmbeddingModel is called,
+     * Then an EmbeddingModel is returned successfully with the configured output dimensionality.
+     */
+    @Test
+    public void test_buildEmbeddingModel_googleAi_withDimensions_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-embedding-001")
+                .apiKey("test-key")
+                .dimensions(768)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    /**
+     * Given a valid Google AI config,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_returnsModel() {
+        final ImageModel model = LangChain4jModelFactory.buildImageModel(googleAiConfig("gemini-2.5-flash-image"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given a Google AI config with optional image parameters,
+     * When buildImageModel is called,
+     * Then an ImageModel is returned successfully.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_withOptionalParams_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .apiKey("test-key")
+                .size("1K")
+                .timeout(60)
+                .maxRetries(2)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildImageModel(config));
+    }
+
+    /**
+     * Given a Google AI config without an apiKey,
+     * When buildImageModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildImageModel_googleAi_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("google_ai")
+                .model("gemini-2.5-flash-image")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static ProviderConfig anthropicConfig(final String model) {
@@ -762,6 +902,14 @@ public class LangChain4jModelFactoryTest {
     private static ProviderConfig openRouterConfig(final String model) {
         return ImmutableProviderConfig.builder()
                 .provider("openrouter")
+                .model(model)
+                .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig googleAiConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("google_ai")
                 .model(model)
                 .apiKey("test-key")
                 .build();
