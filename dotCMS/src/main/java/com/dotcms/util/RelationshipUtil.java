@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,6 +37,8 @@ public class RelationshipUtil {
     private static final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
     private static final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 
     /**
@@ -109,9 +112,22 @@ public class RelationshipUtil {
                                     .findContentletByIdentifierAnyLanguage(identifier.getId());
                         }
                         if (relatedContentlet != null) {
-                            relatedContentlets.put(relatedContentlet.getIdentifier(),
-                                    isCheckout ? contentletAPI.checkout(relatedContentlet.getInode(),
-                                            user, respectFrontendRoles) : relatedContentlet);
+                            // findContentletForLanguage resolves via systemUser, so enforce READ
+                            // for the acting user here. The checkout branch already enforces
+                            // permissions (READ via find + EDIT via canLock), so only guard the
+                            // no-checkout branch to avoid relating content the user cannot see (#35222).
+                            if (!isCheckout && !permissionAPI.doesUserHavePermission(
+                                    relatedContentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+                                Logger.warn(RelationshipUtil.class, "User '"
+                                        + (user != null ? user.getUserId() : "unknown")
+                                        + "' lacks READ permission on related contentlet '"
+                                        + relatedContentlet.getIdentifier()
+                                        + "'; skipping from relationship filter.");
+                            } else {
+                                relatedContentlets.put(relatedContentlet.getIdentifier(),
+                                        isCheckout ? contentletAPI.checkout(relatedContentlet.getInode(),
+                                                user, respectFrontendRoles) : relatedContentlet);
+                            }
                         } else {
                             Logger.warn(RelationshipUtil.class, "No contentlet found for identifier '"
                                     + identifier.getId() + "' in language " + language

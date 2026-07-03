@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -15,10 +16,14 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -216,6 +221,61 @@ public class RelationshipUtilTest {
             if (englishOnly.getInode() != null) {
                 ContentletDataGen.remove(englishOnly);
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link RelationshipUtil#filterContentlet(long, String, User, boolean)}
+     * Given Scenario: A related contentlet is resolved by identifier (the branch CSV import uses)
+     *   on behalf of a user that does NOT have READ permission on it. The identifier branch resolves
+     *   the contentlet internally via the system user, so without an explicit permission check it
+     *   would leak content the caller cannot see once isCheckout=false (#35222).
+     * ExpectedResult: The contentlet the user cannot READ is filtered out (empty result), while the
+     *   system user still resolves it.
+     */
+    @Test
+    public void test_filterContentlet_byIdentifier_filtersOutContentUserCannotRead()
+            throws DotSecurityException, DotDataException {
+
+        final ContentType contentType = createContentType("NoReadPerm" + System.currentTimeMillis());
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLang).nextPersisted();
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Role otherRole = new RoleDataGen().nextPersisted();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        try {
+            // Break inheritance by granting access only to an unrelated role, so the limited user
+            // (who does not hold that role) ends up with no READ permission on the content.
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(contentType.getPermissionId(), otherRole.getId(),
+                    readEdit, true), contentType, user, false);
+            permissionAPI.save(new Permission(Contentlet.class.getCanonicalName(),
+                    contentType.getPermissionId(), otherRole.getId(), readEdit, true),
+                    contentType, user, false);
+
+            // Precondition: the limited user truly cannot read the contentlet
+            assertFalse(permissionAPI.doesUserHavePermission(contentlet,
+                    PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Limited user: the unreadable contentlet must be filtered out
+            final List<Contentlet> limitedResults = RelationshipUtil
+                    .filterContentlet(defaultLang, contentlet.getIdentifier(), limitedUser, false);
+            assertNotNull(limitedResults);
+            assertTrue("Content the user cannot READ must not be resolved",
+                    limitedResults.isEmpty());
+
+            // System user still resolves the contentlet (the filter only excludes on missing READ)
+            final List<Contentlet> adminResults = RelationshipUtil
+                    .filterContentlet(defaultLang, contentlet.getIdentifier(), user, false);
+            assertEquals(1, adminResults.size());
+            assertEquals(contentlet.getIdentifier(), adminResults.get(0).getIdentifier());
+        } finally {
+            if (contentlet.getInode() != null) {
+                ContentletDataGen.remove(contentlet);
+            }
+            UserDataGen.remove(limitedUser);
+            RoleDataGen.remove(otherRole);
         }
     }
 
