@@ -195,6 +195,43 @@ describe('DotFileFieldComponent', () => {
             expect(applySpy).toHaveBeenCalledWith(EDITED_TEMP_FILE);
         });
 
+        it('should use the injected fieldVariable when the Binary preview is hydrated from the parent contentlet', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
+            spectator = createComponent({
+                props: {
+                    field: BINARY_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            });
+            spectator.detectChanges();
+
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: {
+                    ...createFakeContentlet({}),
+                    inode: 'parent-inode',
+                    // The parent's titleImage points at a reference field with no binary;
+                    // the editor must use the field variable injected by the store instead
+                    titleImage: 'image',
+                    fieldVariable: BINARY_FIELD_MOCK.variable,
+                    metaData: { isImage: true, contentType: 'image/png', name: 'img.png' }
+                }
+            } as never);
+            spectator.detectChanges();
+
+            spectator.component.onEditImage();
+
+            expect(mockImageEditorLauncher.open).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    inode: 'parent-inode',
+                    variable: BINARY_FIELD_MOCK.variable,
+                    fieldName: BINARY_FIELD_MOCK.variable
+                })
+            );
+        });
+
         it('should fall back to the legacy editor when the new launcher is unavailable', () => {
             mockImageEditorLauncher.isAvailable.mockReturnValue(false);
             setupBinaryWithImage();

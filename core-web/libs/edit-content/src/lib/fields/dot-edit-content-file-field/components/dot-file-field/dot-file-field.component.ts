@@ -400,12 +400,15 @@ export class DotFileFieldComponent
         // unsaved draft that has no uploaded file yet fall back to the parent.
         const inode =
             uploaded?.source === 'contentlet' ? uploaded.file.inode : this.$contentlet()?.inode;
-        // For a standalone contentlet (e.g. AI-generated image) the image lives in
-        // its own field (titleImage), not in the parent binary field variable.
-        // The JSP uses this as fieldName to load /contentAsset/image/{inode}/{field}/.
+        // Resolve the field that actually holds the binary for /contentAsset/image/{inode}/{field}/:
+        // - Binary hydrated from the parent contentlet (setFileFromContentlet) injects
+        //   `fieldVariable` — the parent's titleImage would point at an unrelated
+        //   reference field with no binary (404).
+        // - Standalone assets (dotAsset via getAssetData, AI-generated) carry no
+        //   fieldVariable; their image lives in their own titleImage field.
         const editorVariable =
             uploaded?.source === 'contentlet'
-                ? String(uploaded.file['titleImage'] ?? variable)
+                ? String(uploaded.file['fieldVariable'] ?? uploaded.file['titleImage'] ?? variable)
                 : variable;
 
         // Prefer the new Angular image editor when its launcher is provided (Angular
