@@ -37,6 +37,10 @@
     overflow: hidden;
     user-select: none;
     cursor: pointer;
+    // Narrow layout (container height: auto): cap the card like the media
+    // thumbnails instead of growing with the whole text content. Ignored on
+    // the wide layout, where both axes are definite.
+    aspect-ratio: 16 / 9;
 }
 
 .dot-file-field-preview__code-content {
