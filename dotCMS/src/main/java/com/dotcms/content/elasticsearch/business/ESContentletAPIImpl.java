@@ -6952,6 +6952,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)) {
             return;
         }
+        // Template propagation is irrelevant for archived pages. Returning early here also guards
+        // against a DotDataException when an already-archived page version is checked in directly.
+        if (contentlet.isArchived()) {
+            return;
+        }
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
 
             final Optional<com.dotcms.contenttype.model.field.Field> templateField = contentlet
@@ -6977,9 +6982,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 "Contentlet with ID '%s' has not been found: ",
                                 contentlet.getIdentifier()));
                     } else if (contentletByIdentifierAnyLanguageArchived.isArchived()) {
-                        throw new DotDataException(String.format(
-                                "Contentlet is currently marked as 'Archived'.",
-                                contentlet.getIdentifier()));
+                        Logger.warn(ESContentletAPIImpl.class, String.format(
+                                "Skipping template propagation: all existing versions of Contentlet"
+                                        + " '%s' are archived.", contentlet.getIdentifier()));
+                        return;
                     } else {
                         return;
                     }
