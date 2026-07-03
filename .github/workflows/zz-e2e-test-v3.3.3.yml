@@ -1,0 +1,47 @@
+---
+# THROWAWAY e2e test for dotCMS/ai-workflows v3.3.3 (PR #61 + pricing commit).
+# Delete this file once the test PR is closed — it is not part of core-workflow-test's
+# normal CI surface. Only runs on a PR whose title contains the marker below.
+
+name: E2E test — ai-workflows v3.3.3
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # Positive case: Sonnet 5 now has an accepted Bedrock agreement, so this should produce
+  # a real review comment (not the placeholder, not a failure comment).
+  sonnet5-positive:
+    if: contains(github.event.pull_request.title, '[e2e-v3.3.3]')
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.3.3
+    with:
+      trigger_mode: automatic
+      enable_mention_detection: false
+      prompt: Say "sonnet5-positive-ok" and nothing else.
+      model_id: global.anthropic.claude-sonnet-5
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
+
+  # Negative case: bogus model id routes to the same anthropic-bedrock executor (regex match
+  # is on the `anthropic.` prefix, not on the id being real) but fails at invocation time.
+  # Before PR #61 this failed silently (is_error swallowed); v3.3.3 should post an explicit
+  # failure comment instead of leaving the placeholder.
+  bad-model-negative:
+    if: contains(github.event.pull_request.title, '[e2e-v3.3.3]')
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3.3.3
+    with:
+      trigger_mode: automatic
+      enable_mention_detection: false
+      prompt: Say "should-never-see-this" and nothing else.
+      model_id: global.anthropic.claude-does-not-exist-999
+      bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
