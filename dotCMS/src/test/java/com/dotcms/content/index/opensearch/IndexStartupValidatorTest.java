@@ -1,0 +1,81 @@
+package com.dotcms.content.index.opensearch;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import org.junit.After;
+import org.junit.Test;
+
+/**
+ * Unit tests for {@link IndexStartupValidator} endpoint-separation logic.
+ *
+ * <p>Covers the config-only separation gate ({@link IndexStartupValidator#endpointsAreSeparate()})
+ * used at the OS index-creation chokepoint (issue #36419): OS must point to a cluster separate
+ * from ES, otherwise the {@code .os} shadow indices must not be created.</p>
+ */
+public class IndexStartupValidatorTest {
+
+    @After
+    public void clearEndpoints() {
+        Config.setProperty("ES_ENDPOINTS", null);
+        Config.setProperty("OS_ENDPOINTS", null);
+    }
+
+    /**
+     * Given Scenario: ES and OS are configured with the same address.
+     * Expected Result: endpointsAreSeparate() returns false — OS bootstrap must be skipped.
+     */
+    @Test
+    public void test_endpointsAreSeparate_sameAddress_returnsFalse() {
+        Config.setProperty("ES_ENDPOINTS", new String[]{"https://localhost:9201"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{"https://localhost:9201"});
+
+        assertFalse(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
+     * Given Scenario: ES and OS point at different ports on the same host.
+     * Expected Result: endpointsAreSeparate() returns true — safe to create OS indices.
+     */
+    @Test
+    public void test_endpointsAreSeparate_differentAddress_returnsTrue() {
+        Config.setProperty("ES_ENDPOINTS", new String[]{"https://localhost:9200"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{"https://localhost:9201"});
+
+        assertTrue(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
+     * Given Scenario: same address, but written with different scheme/formatting.
+     * Expected Result: overlap is still detected (normalized to host:port) — returns false.
+     */
+    @Test
+    public void test_endpointsAreSeparate_sameHostPortDifferentScheme_returnsFalse() {
+        Config.setProperty("ES_ENDPOINTS", new String[]{"http://localhost:9201"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{"https://localhost:9201"});
+
+        assertFalse(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
+     * Given Scenario: ES and OS share the same host:port.
+     * Expected Result: assertEndpointsSeparate throws DotRuntimeException naming the overlap.
+     */
+    @Test
+    public void test_assertEndpointsSeparate_overlap_throws() {
+        Config.setProperty("ES_ENDPOINTS", new String[]{"https://localhost:9201"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{"https://localhost:9201"});
+
+        try {
+            IndexStartupValidator.assertEndpointsSeparate(
+                    ConfigurableOpenSearchProvider.configFromProperties());
+            fail("Expected DotRuntimeException for overlapping ES/OS endpoints");
+        } catch (final DotRuntimeException e) {
+            assertTrue("message should name the overlap",
+                    e.getMessage().contains("point to the same endpoint(s)"));
+        }
+    }
+}

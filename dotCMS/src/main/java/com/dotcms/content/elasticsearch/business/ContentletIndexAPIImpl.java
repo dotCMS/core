@@ -1008,6 +1008,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
 
+        // Separation gate (issue #36419): OS must be a SEPARATE cluster from ES. Config-only,
+        // no network I/O, so it runs before the connection gate. Placing it at this single
+        // chokepoint closes the window where the empty-DB starter-load path created .os indices
+        // before InitServlet's later validateIndexingConfig() caught the ES==OS overlap. On
+        // overlap we halt the migration (ES-only) and skip OS bootstrap entirely.
+        if (!IndexStartupValidator.endpointsAreSeparate()) {
+            Logger.warn(this.getClass(),
+                    "Skipping OpenSearch index bootstrap (working=" + workingName
+                    + ", live=" + liveName + "): OS endpoints overlap ES (same cluster)."
+                    + " Migration halted (now ES-only). Set OS_ENDPOINTS to a separate"
+                    + " OpenSearch instance and restart.");
+            haltMigration();
+            return;
+        }
+
         // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
         // This is the single chokepoint for all OS index creation (fresh-install bootstrap and
         // migration catchup), so both startup paths — populated-DB (InitServlet) and empty-DB

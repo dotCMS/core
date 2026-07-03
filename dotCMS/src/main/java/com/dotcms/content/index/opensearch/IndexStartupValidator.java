@@ -217,6 +217,18 @@ public class IndexStartupValidator {
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
     private void validateEndpointSeparation(final OSClientConfig config) {
+        assertEndpointsSeparate(config);
+        Logger.info(this, "Endpoint separation check passed.");
+    }
+
+    /**
+     * Asserts that the ES and OS clients do not share any {@code host:port}. Shared by the
+     * startup validator ({@link #validate()}) and the config-only OS index-creation gate
+     * ({@link #endpointsAreSeparate()}) so both enforce separation with identical logic.
+     *
+     * @throws DotRuntimeException if at least one endpoint is common to both clients
+     */
+    static void assertEndpointsSeparate(final OSClientConfig config) {
         final Set<String> esEndpoints = resolveESEndpoints();
         final Set<String> osEndpoints = config.endpoints().stream()
                 .map(IndexStartupValidator::normalizeEndpoint)
@@ -232,8 +244,28 @@ public class IndexStartupValidator {
                     + " — OS endpoints: " + osEndpoints
                     + ". Set OS_ENDPOINTS to a separate OpenSearch instance.");
         }
-        Logger.info(this, "Endpoint separation check passed."
-                + " ES: " + esEndpoints + " — OS: " + osEndpoints);
+    }
+
+    /**
+     * Config-only endpoint-separation gate for the OS index-creation chokepoint
+     * ({@code ContentletIndexAPIImpl.bootstrapAndPointOS}, issue #36419). Unlike
+     * {@link #validate()} this performs no network I/O — it only compares the resolved ES and OS
+     * endpoints — so it is cheap enough to run before every OS bootstrap on any startup path
+     * (empty-DB starter-load or populated-DB InitServlet), closing the window where the
+     * starter-load path created {@code .os} indices before the late startup validation ran.
+     *
+     * @return {@code true} when ES and OS point to distinct clusters (safe to create OS indices);
+     *         {@code false} when they overlap (caller must skip the OS bootstrap and halt the migration)
+     */
+    public static boolean endpointsAreSeparate() {
+        try {
+            assertEndpointsSeparate(ConfigurableOpenSearchProvider.configFromProperties());
+            return true;
+        } catch (Exception e) {
+            Logger.error(IndexStartupValidator.class,
+                    "OpenSearch endpoint-separation check failed: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
