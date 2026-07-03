@@ -63,6 +63,12 @@ public class RelationshipUtil {
             // Resolve related content as read-only references only. This path just needs the
             // related contentlets to write the parent's relationship (Tree) records
             relatedContentlets = filterContentlet(language, query, user, false);
+            // filterContentlet resolves identifiers via the system user internally, so enforce READ
+            // for the acting user here — on the import path only — to avoid relating content the
+            // user cannot see (#35222). Batch-filter in a single round-trip (JAVA_STANDARDS:
+            // permission checks batch vs scalar).
+            relatedContentlets = permissionAPI.filterCollection(
+                    relatedContentlets, PermissionAPI.PERMISSION_READ, false, user);
             validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 
@@ -112,22 +118,9 @@ public class RelationshipUtil {
                                     .findContentletByIdentifierAnyLanguage(identifier.getId());
                         }
                         if (relatedContentlet != null) {
-                            // findContentletForLanguage resolves via systemUser, so enforce READ
-                            // for the acting user here. The checkout branch already enforces
-                            // permissions (READ via find + EDIT via canLock), so only guard the
-                            // no-checkout branch to avoid relating content the user cannot see (#35222).
-                            if (!isCheckout && !permissionAPI.doesUserHavePermission(
-                                    relatedContentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-                                Logger.warn(RelationshipUtil.class, "User '"
-                                        + (user != null ? user.getUserId() : "unknown")
-                                        + "' lacks READ permission on related contentlet '"
-                                        + relatedContentlet.getIdentifier()
-                                        + "'; skipping from relationship filter.");
-                            } else {
-                                relatedContentlets.put(relatedContentlet.getIdentifier(),
-                                        isCheckout ? contentletAPI.checkout(relatedContentlet.getInode(),
-                                                user, respectFrontendRoles) : relatedContentlet);
-                            }
+                            relatedContentlets.put(relatedContentlet.getIdentifier(),
+                                    isCheckout ? contentletAPI.checkout(relatedContentlet.getInode(),
+                                            user, respectFrontendRoles) : relatedContentlet);
                         } else {
                             Logger.warn(RelationshipUtil.class, "No contentlet found for identifier '"
                                     + identifier.getId() + "' in language " + language
