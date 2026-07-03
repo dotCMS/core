@@ -198,6 +198,34 @@ public class AggregationDomainTest {
                 "hello", hitsNode.path("hits").get(0).path("sourceAsMap").path("title").asText());
     }
 
+    /**
+     * Anti-regression for the {@code value()} / {@code getValue()} pair on {@link TotalHits}. The
+     * record component accessor ({@code value()}, annotated {@code @JsonProperty("value")}) and the
+     * Velocity back-compat getter ({@code getValue()}) both map to the logical property {@code value},
+     * so Jackson must merge them into a <b>single</b> {@code value} field — it must not emit a
+     * duplicate nor throw a conflicting-getter/duplicate-property error. Serializes with the exact
+     * default mapper the {@code /api/es} endpoints use, guarding against the (invalid) "duplicate
+     * field" concern for good.
+     */
+    @Test
+    public void totalHits_serializesValueOnce_despiteBackCompatGetter() throws Exception {
+        final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+        final TotalHits total = TotalHits.builder().value(7L).build();
+
+        // Must not throw: value() + getValue() do not create a conflicting/duplicate property.
+        final String json = mapper.writeValueAsString(total);
+
+        // Exactly one "value" key — the back-compat getter must not double-emit it.
+        final int valueKeyOccurrences = json.split("\"value\"", -1).length - 1;
+        assertEquals("TotalHits must serialize 'value' exactly once (no duplicate from getValue())",
+                1, valueKeyOccurrences);
+
+        final JsonNode node = mapper.readTree(json);
+        assertEquals("serialized 'value' must carry the correct number", 7L, node.get("value").asLong());
+        assertEquals("value() and getValue() must return the same number",
+                total.value(), total.getValue());
+    }
+
     // =========================================================================
     // Elasticsearch factory conversion (Aggregation.from / AggregationBucket.from*)
     // =========================================================================
