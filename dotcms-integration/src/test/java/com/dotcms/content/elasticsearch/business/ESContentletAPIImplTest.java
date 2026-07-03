@@ -721,27 +721,24 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
-     * Given Scenario: Try to check-in a version of an archived page with {@link Contentlet#DONT_VALIDATE_ME} flag on
-     * ExpectedResult: The method should not throw a {@link NullPointerException}, but a {@link DotDataException} because
-     * we are trying to check-in a version of an archived content
+     * Given Scenario: Check-in a new version of an archived page with {@link Contentlet#DONT_VALIDATE_ME} flag on.
+     * ExpectedResult: The check-in should succeed without throwing. Template propagation is skipped for
+     * archived pages (an archived page is not served, so its template does not need to be synced across
+     * language versions). This previously threw a {@link DotDataException}, which aborted push-publishing
+     * bundles containing archived multi-language HTML pages - see #36051. It must also not throw a
+     * {@link NullPointerException}.
      */
     @Test
-    public void testCheckInArchivedPageShouldThrowDotDataException() {
+    public void testCheckInArchivedPageSkipsTemplatePropagation() {
         final Contentlet contentlet = TestDataUtils
                 .getPageContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
         ContentletDataGen.archive(contentlet);
 
         final Contentlet newVersion = ContentletDataGen.checkout(contentlet);
         newVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
-        try {
-            ContentletDataGen.checkin(newVersion);
-            fail();
-        } catch (Exception e){
-            if (!(e.getCause() instanceof DotDataException)){
-                fail();
-            }
-        }
 
+        final Contentlet result = ContentletDataGen.checkin(newVersion);
+        assertNotNull(result);
     }
 
     /**
