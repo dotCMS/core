@@ -76,7 +76,11 @@
 
                     <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                         <p-table
-                            [value]="bundles()"
+                            [value]="
+                                bundlesStatus() === 'loading' || bundlesStatus() === 'init'
+                                    ? bundlesSkeleton
+                                    : bundles()
+                            "
                             [selection]="checkedBundles()"
                             (selectionChange)="onCheckedChange($event)"
                             dataKey="id"
@@ -211,7 +215,7 @@
                 <div class="flex min-h-0 w-3/5 flex-col" data-testid="pq-select-bundle-right">
                     <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                         <p-table
-                            [value]="pagedAssets()"
+                            [value]="assetsStatus() === 'loading' ? assetsSkeleton : pagedAssets()"
                             dataKey="asset"
                             [scrollable]="false"
                             [rowHover]="true"
