@@ -155,16 +155,16 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					}
 
 				} catch (Exception e) {
-					Logger.warn(this.getClass(), " unable JSON contentlet " + c.getIdentifier());
-					Logger.debug(this.getClass(), "unable to find contentlet", e);
+					Logger.warn(this.getClass(), "Unable to convert Contentlet to JSON. Identifier: " + c.getIdentifier());
+					Logger.debug(this.getClass(), "Unable to convert Contentlet to JSON. Identifier: " + c.getIdentifier(), e);
 				}
 			}
 
 			try {
 				json.put("contentlets", jsonCons);
 			} catch (JSONException e) {
-				Logger.warn(this.getClass(), "unable to create JSONObject");
-				Logger.debug(this.getClass(), "unable to create JSONObject", e);
+				Logger.warn(this.getClass(), "Unable to add the contentlets array to the response JSON. Contentlets: " + jsonCons.size());
+				Logger.debug(this.getClass(), "Unable to add the contentlets array to the response JSON. Contentlets: " + jsonCons.size(), e);
 			}
 
 			// Emit the legacy Elasticsearch-wire shape for "esresponse" (took, hits.total,

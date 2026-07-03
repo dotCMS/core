@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
@@ -246,37 +247,43 @@ public record ContentSearchResponse(
         return result;
     }
 
-    /** Maps one OpenSearch {@code Suggest} union (term/phrase/completion) to the neutral entry shape. */
+    /**
+     * Maps one OpenSearch {@code Suggest} union (term/phrase/completion) to the neutral entry shape.
+     * The three variants share the {@code text}/{@code offset}/{@code length} metadata (all inherited
+     * from {@code SuggestBase}) and differ only in their option element type, so the common shaping is
+     * factored into {@link #suggestEntry(org.opensearch.client.opensearch.core.search.SuggestBase,
+     * List, Function)}.
+     */
     private static Map<String, Object> osSuggestEntry(
             final org.opensearch.client.opensearch.core.search.Suggest<?> suggest) {
-        final Map<String, Object> entryMap = new LinkedHashMap<>();
-        final List<Map<String, Object>> options = new ArrayList<>();
         if (suggest.isTerm()) {
             final org.opensearch.client.opensearch.core.search.TermSuggest s = suggest.term();
-            entryMap.put("text", s.text());
-            entryMap.put("offset", s.offset());
-            entryMap.put("length", s.length());
-            for (final org.opensearch.client.opensearch.core.search.TermSuggestOption o : s.options()) {
-                options.add(suggestOption(o.text(), o.score()));
-            }
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
         } else if (suggest.isPhrase()) {
             final org.opensearch.client.opensearch.core.search.PhraseSuggest s = suggest.phrase();
-            entryMap.put("text", s.text());
-            entryMap.put("offset", s.offset());
-            entryMap.put("length", s.length());
-            for (final org.opensearch.client.opensearch.core.search.PhraseSuggestOption o : s.options()) {
-                options.add(suggestOption(o.text(), o.score()));
-            }
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
         } else if (suggest.isCompletion()) {
             final org.opensearch.client.opensearch.core.search.CompletionSuggest<?> s = suggest.completion();
-            entryMap.put("text", s.text());
-            entryMap.put("offset", s.offset());
-            entryMap.put("length", s.length());
-            for (final org.opensearch.client.opensearch.core.search.CompletionSuggestOption<?> o : s.options()) {
-                options.add(suggestOption(o.text(), o.score()));
-            }
-        } else {
-            return null;
+            return suggestEntry(s, s.options(), o -> suggestOption(o.text(), o.score()));
+        }
+        return null;
+    }
+
+    /**
+     * Builds a neutral suggest entry from the shared {@code SuggestBase} metadata plus the variant's
+     * options, mapped to the neutral {@code {text, score}} shape by {@code optionMapper}.
+     */
+    private static <O> Map<String, Object> suggestEntry(
+            final org.opensearch.client.opensearch.core.search.SuggestBase base,
+            final List<O> opts,
+            final Function<O, Map<String, Object>> optionMapper) {
+        final Map<String, Object> entryMap = new LinkedHashMap<>();
+        entryMap.put("text", base.text());
+        entryMap.put("offset", base.offset());
+        entryMap.put("length", base.length());
+        final List<Map<String, Object>> options = new ArrayList<>();
+        for (final O o : opts) {
+            options.add(optionMapper.apply(o));
         }
         entryMap.put("options", options);
         return entryMap;
