@@ -117,7 +117,7 @@ describe('DotContentThumbnailComponent', () => {
             expect(img).toBeTruthy();
             expect(img.getAttribute('src')).toBe(IMAGE_THUMBNAIL.src);
             expect(img.getAttribute('alt')).toBe(IMAGE_THUMBNAIL.alt);
-            expect(img.classList).toContain('object-cover');
+            expect(img.classList).not.toContain('thumbnail-image--contain');
         });
 
         it('renders an image with object-contain for type svg', () => {
@@ -126,8 +126,7 @@ describe('DotContentThumbnailComponent', () => {
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
 
             expect(img.getAttribute('src')).toBe(SVG_THUMBNAIL.src);
-            expect(img.classList).toContain('object-contain');
-            expect(img.classList).not.toContain('object-cover');
+            expect(img.classList).toContain('thumbnail-image--contain');
         });
 
         it('renders an image with object-cover for type pdf', () => {
@@ -136,7 +135,7 @@ describe('DotContentThumbnailComponent', () => {
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
 
             expect(img.getAttribute('src')).toBe(PDF_THUMBNAIL.src);
-            expect(img.classList).toContain('object-cover');
+            expect(img.classList).not.toContain('thumbnail-image--contain');
         });
 
         it('renders a video with controls when playable', () => {
@@ -208,8 +207,10 @@ describe('DotContentThumbnailComponent', () => {
             const loading = spectator.query(byTestId('dot-content-thumbnail-loading'));
 
             expect(loading).toBeTruthy();
-            expect(loading.classList).not.toContain('opacity-0');
-            expect(spectator.query('dot-content-thumbnail-image').classList).toContain('opacity-0');
+            expect(loading.classList).not.toContain('thumbnail-loading--hidden');
+            expect(spectator.query('dot-content-thumbnail-image').classList).toContain(
+                'thumbnail-media--hidden'
+            );
         });
 
         it('starts as loaded for icon type (no pulse)', () => {
@@ -225,10 +226,10 @@ describe('DotContentThumbnailComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
-                'opacity-0'
+                'thumbnail-loading--hidden'
             );
             expect(spectator.query('dot-content-thumbnail-image').classList).not.toContain(
-                'opacity-0'
+                'thumbnail-media--hidden'
             );
         });
 
@@ -260,7 +261,7 @@ describe('DotContentThumbnailComponent', () => {
 
             expect(spectator.query(byTestId('dot-content-thumbnail-loading'))).toBeFalsy();
             expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
-                'opacity-0'
+                'thumbnail-media--hidden'
             );
         });
 
@@ -270,8 +271,10 @@ describe('DotContentThumbnailComponent', () => {
             const loading = spectator.query(byTestId('dot-content-thumbnail-loading'));
 
             expect(loading).toBeTruthy();
-            expect(loading.classList).not.toContain('opacity-0');
-            expect(spectator.query('dot-content-thumbnail-video').classList).toContain('opacity-0');
+            expect(loading.classList).not.toContain('thumbnail-loading--hidden');
+            expect(spectator.query('dot-content-thumbnail-video').classList).toContain(
+                'thumbnail-media--hidden'
+            );
 
             spectator.dispatchFakeEvent(
                 byTestId('dot-content-thumbnail-video-frame'),
@@ -280,10 +283,10 @@ describe('DotContentThumbnailComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
-                'opacity-0'
+                'thumbnail-loading--hidden'
             );
             expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
-                'opacity-0'
+                'thumbnail-media--hidden'
             );
         });
 

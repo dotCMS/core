@@ -5,6 +5,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
  * types). Purely presentational — visibility during load is orchestrated by
  * the viewer, which hides this renderer until it emits `loaded`. Kept private
  * to the `dot-content-thumbnail` folder — consumers use the viewer.
+ *
+ * Styles are self-contained (no Tailwind): the component also ships inside
+ * bundles without the Tailwind utilities (e.g. dotcms-binary-field-builder).
  */
 @Component({
     selector: 'dot-content-thumbnail-image',
@@ -15,12 +18,27 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
             [src]="$src()"
             [alt]="$alt()"
             [title]="$alt()"
-            [class.object-cover]="$fit() === 'cover'"
-            [class.object-contain]="$fit() === 'contain'"
-            class="size-full"
+            [class.thumbnail-image--contain]="$fit() === 'contain'"
+            class="thumbnail-image"
             data-testId="dot-content-thumbnail-image" />
     `,
-    host: { class: 'block h-full w-full' },
+    styles: `
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        .thumbnail-image {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail-image--contain {
+            object-fit: contain;
+        }
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentThumbnailImageComponent {

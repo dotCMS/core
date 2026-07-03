@@ -5,6 +5,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
  * controls; non-playable ones show a static first frame — the `src` carries a
  * `#t=0.1` media fragment (set by the mapper) so the browser seeks and paints
  * that frame without playback (replaces the legacy Stencil canvas approach).
+ *
+ * Styles are self-contained (no Tailwind): the component also ships inside
+ * bundles without the Tailwind utilities (e.g. dotcms-binary-field-builder).
  */
 @Component({
     selector: 'dot-content-thumbnail-video',
@@ -17,7 +20,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
                 (error)="failed.emit()"
                 [src]="$src()"
                 [attr.aria-label]="$alt()"
-                class="size-full"
+                class="thumbnail-video"
                 controls
                 data-testId="dot-content-thumbnail-video"></video>
         } @else {
@@ -26,7 +29,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
                 (error)="failed.emit()"
                 [src]="$src()"
                 [attr.aria-label]="$alt()"
-                class="pointer-events-none size-full object-cover"
+                class="thumbnail-video thumbnail-video--frame"
                 preload="metadata"
                 muted
                 playsinline
@@ -35,7 +38,23 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
                 data-testId="dot-content-thumbnail-video-frame"></video>
         }
     `,
-    host: { class: 'block h-full w-full' },
+    styles: `
+        :host {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        .thumbnail-video {
+            height: 100%;
+            width: 100%;
+        }
+
+        .thumbnail-video--frame {
+            object-fit: cover;
+            pointer-events: none;
+        }
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentThumbnailVideoComponent {

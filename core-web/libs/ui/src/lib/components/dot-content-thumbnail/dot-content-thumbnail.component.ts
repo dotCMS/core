@@ -71,8 +71,8 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
                     [src]="model.src"
                     [alt]="model.alt"
                     [playable]="model.playable ?? false"
-                    [class.opacity-0]="$state() === 'loading' && !model.playable"
-                    class="transition-opacity duration-300" />
+                    [class.thumbnail-media--hidden]="$state() === 'loading' && !model.playable"
+                    class="thumbnail-media" />
             }
             @case ('icon') {
                 <dot-content-thumbnail-icon
@@ -87,26 +87,56 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
                     [src]="model.src"
                     [alt]="model.alt"
                     [fit]="$type() === 'svg' ? 'contain' : 'cover'"
-                    [class.opacity-0]="$state() === 'loading'"
-                    class="transition-opacity duration-300" />
+                    [class.thumbnail-media--hidden]="$state() === 'loading'"
+                    class="thumbnail-media" />
             }
         }
 
         @if ($hasLoadingOverlay()) {
             <div
-                class="dot-content-thumbnail__loading pointer-events-none absolute inset-0 overflow-hidden bg-gray-200 transition-opacity duration-300"
-                [class.opacity-0]="$state() !== 'loading'"
+                class="thumbnail-loading"
+                [class.thumbnail-loading--hidden]="$state() !== 'loading'"
                 data-testId="dot-content-thumbnail-loading"></div>
         }
     `,
-    host: {
-        class: 'relative flex h-full w-full items-center justify-center overflow-hidden [container-type:size]'
-    },
+    /* Styles are self-contained (no Tailwind): the component also ships inside
+       bundles without the Tailwind utilities (e.g. dotcms-binary-field-builder). */
     styles: `
-        /* Sliding-highlight shimmer, exact replica of PrimeNG p-skeleton (needs
-           keyframes, not expressible in Tailwind utilities). Uses the PrimeNG
-           token when the theme provides it, with the Lara default as fallback. */
-        .dot-content-thumbnail__loading::after {
+        :host {
+            position: relative;
+            display: flex;
+            height: 100%;
+            width: 100%;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            container-type: size;
+        }
+
+        .thumbnail-media {
+            transition: opacity 0.3s;
+        }
+
+        .thumbnail-media--hidden {
+            opacity: 0;
+        }
+
+        .thumbnail-loading {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            background: var(--color-palette-gray-200, #e5e7eb);
+            transition: opacity 0.3s;
+        }
+
+        .thumbnail-loading--hidden {
+            opacity: 0;
+        }
+
+        /* Sliding-highlight shimmer, exact replica of PrimeNG p-skeleton. Uses the
+           PrimeNG token when the theme provides it, with the Lara default as fallback. */
+        .thumbnail-loading::after {
             content: '';
             position: absolute;
             inset: 0;
@@ -121,7 +151,7 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
         }
 
         /* Stop compositing work once the overlay has faded out */
-        .dot-content-thumbnail__loading.opacity-0::after {
+        .thumbnail-loading--hidden::after {
             animation: none;
         }
 
