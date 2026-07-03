@@ -110,7 +110,10 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            container-type: size;
+            /* inline-size only: size containment would zero the content's height
+               contribution and collapse auto-height wrappers (e.g. the file field
+               below its 500px container breakpoint) */
+            container-type: inline-size;
         }
 
         .thumbnail-media {

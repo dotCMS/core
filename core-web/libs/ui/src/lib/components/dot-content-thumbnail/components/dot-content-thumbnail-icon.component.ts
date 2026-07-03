@@ -32,7 +32,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
         }
 
         i {
-            font-size: clamp(16px, 55cqmin, 72px);
+            /* cqi (inline size): the viewer host is an inline-size container only,
+               so this is a fallback for consumers that skip the iconSize input */
+            font-size: clamp(16px, 55cqi, 72px);
             line-height: 1;
             user-select: none;
             color: var(--dot-content-thumbnail-icon-color, var(--gray-700, #6c7389));
