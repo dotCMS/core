@@ -50,13 +50,30 @@ section and a mandatory **ADR Alignment (Gate)** to the stock Spec-Kit plan.
 - **Progressive enhancements**: [Small in-scope cleanups in the code being touched — generics,
   `Logger` over `System.out`, `@Override`/`@Nullable`, `@if` over `*ngIf`. No wholesale rewrites.]
 
+## Test Strategy (TDD — mandatory)
+
+*Constitution Principle V: no implementation code before tests are written, developer-approved,
+and confirmed failing (Red). Declare the plan here; `/speckit-tasks` turns it into per-story
+Tests → Approval GATE → Red GATE → Implementation tasks.*
+
+| Component / behavior | Test type(s) | Where | Notes |
+|----------------------|--------------|-------|-------|
+| [e.g. FooService logic] | Unit (JUnit) | `dotCMS/.../FooServiceTest` | |
+| [e.g. /api/v1/foo endpoint] | Integration + Postman | `dotcms-integration/...`, `dotcms-postman/...` | |
+| [e.g. admin UI flow] | Jest/Spectator + e2e | `core-web/...` | |
+
+- **Tests that cannot be implemented**: [List any layer where a test genuinely can't be
+  written, with the reason. This is the only sanctioned exception and requires explicit
+  developer sign-off at the task gate — it is never the default.]
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
 [Evaluate the plan against `.specify/memory/constitution.md`. List each relevant principle
-and PASS/FAIL. Unjustified violations block the plan — record justified ones in Complexity
-Tracking.]
+and PASS/FAIL. Explicitly include **Principle V (Test-First/TDD)** — confirm the Test Strategy
+above covers the change and that tasks will be ordered tests-first with approval + Red gates.
+Unjustified violations block the plan — record justified ones in Complexity Tracking.]
 
 ## ADR Alignment (Gate)
 

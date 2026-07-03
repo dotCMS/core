@@ -30,9 +30,16 @@ gates apply to features and fixes alike.
 ### 1. Constitution — `.specify/memory/constitution.md` (AUTHORED)
 
 Replaced the placeholder with dotCMS project law: Legacy-Aware Development, Config/Logger
-discipline, security, contract correctness, test-backed delivery, and the **ADR section**
-(mandatory consultation in the plan phase + the "never create ADRs" guardrail). Loaded by
-every `/speckit-*` skill. Keep it in sync with the repo root `CLAUDE.md`.
+discipline, security, contract correctness, **Test-First/TDD (Principle V, NON-NEGOTIABLE)**,
+and the **ADR section** (mandatory consultation in the plan phase + the "never create ADRs"
+guardrail). Loaded by every `/speckit-*` skill. Keep it in sync with the repo root `CLAUDE.md`.
+
+**TDD gate (Principle V):** no implementation code is written before (1) tests are written
+(unit/Postman/integration/Karate/e2e as applicable), (2) the developer validates and approves
+them — or explicitly states which type can't be implemented and why, and (3) tests are
+confirmed to FAIL (Red). Enforced via the constitution + the `tasks-template` override's
+per-story `[GATE]` tasks + the plan's Test Strategy section. `/speckit-implement` reads the
+constitution and executes tasks in order, halting at each gate.
 
 ### 2. ADR consultation in the plan phase — UPGRADE-SAFE (no shipped files edited)
 
@@ -63,6 +70,10 @@ templates:
   conflicts with accepted ADRs, **Proposed ADRs = propose-only**).
 - **`overrides/spec-template.md`** — feature spec + a **Legacy Considerations** section. Used by
   `/speckit-specify` automatically.
+- **`overrides/tasks-template.md`** — makes tests **mandatory** (stock template marks them
+  optional) and bakes the TDD gates into every user story: Tests → `[GATE]` developer approval
+  → `[GATE]` Red (confirmed failing) → Implementation. Includes a dotCMS test-type table
+  (unit/integration/Postman/Karate/e2e).
 
 ### 4. Separate issue-resolution flow — ADDITIVE
 

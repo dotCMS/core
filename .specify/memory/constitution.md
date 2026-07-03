@@ -46,12 +46,28 @@ dotCMS/core is a mixed-age codebase and must be treated as one, not as greenfiel
 - Be mindful of rollback-unsafe changes (DB schema, ES mapping, API contracts) — see
   [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md).
 
-### V. Test-Backed Delivery
+### V. Test-First / TDD (NON-NEGOTIABLE)
 
-- New behavior is covered by tests appropriate to the layer (unit / integration / postman /
-  e2e). Never run the full integration suite; target specific classes/methods.
+Test-Driven Development is mandatory. **No implementation code shall be written before:**
+
+1. **Tests are written** whenever possible — using the layer-appropriate type(s): unit,
+   Postman, integration, Karate, and/or e2e.
+2. **Tests are validated and approved by the developer.** If a test type genuinely cannot be
+   implemented, the developer must **explicitly say so and explain why** — silence is not
+   consent, and "no tests" is never the default.
+3. **Tests are confirmed to FAIL** for the right reason (the **Red** phase) before any
+   implementation is written.
+
+Only after these three gates pass may implementation proceed (Green), followed by refactor.
+`/speckit-tasks` MUST order every user story as tests → approval gate → Red gate →
+implementation, and `/speckit-implement` MUST honor that order and halt at each gate.
+
+Operational notes:
+
+- Never run the full integration suite; target specific classes/methods
+  (`-Dit.test=Class#method`). Postman via `-Dpostman.collections=`.
 - Prefer reusing existing utilities (`UtilMethods`, `APILocator`, batch
-  `permissionAPI.filterCollection`) over new bespoke helpers.
+  `permissionAPI.filterCollection`) over new bespoke helpers, in both tests and code.
 
 ## Architecture Decision Records (ADRs)
 
@@ -76,4 +92,7 @@ ADRs are binding architectural context and live **only** in the private reposito
   table, or the plan is rejected.
 - Amendments: keep this file and root `CLAUDE.md` in sync; bump the version below.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+**Version**: 1.1.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+
+<!-- 1.1.0: Principle V strengthened to Test-First / TDD (NON-NEGOTIABLE) with the 3-gate rule. -->
+
