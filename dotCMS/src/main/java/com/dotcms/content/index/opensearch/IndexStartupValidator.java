@@ -204,23 +204,13 @@ public class IndexStartupValidator {
     // -------------------------------------------------------------------------
 
     /**
-     * Resolves the effective ES and OS endpoint sets and asserts they do not share
-     * any {@code host:port} pair.
-     *
-     * <p>The OS side comes from the already-resolved {@link OSClientConfig#endpoints()} (the very
-     * endpoints the client is built with), and the ES side is read from config; both are passed
-     * through the same {@link #normalizeEndpoint} path so the comparison is consistent.</p>
-     *
-     * <p><strong>Best-effort:</strong> two configs that refer to the same host via different forms
-     * (e.g. {@code "127.0.0.1"} vs {@code "localhost"}) will not be detected as overlapping.</p>
-     *
-     * @throws DotRuntimeException if at least one endpoint is common to both clients
-     */
-    /**
      * Asserts that the ES and OS clients do not share any {@code host:port}. Shared by the
      * startup validator ({@link #validate()}) and the config-only OS index-creation gate
      * ({@link #endpointsAreSeparate()}) so both enforce separation with identical logic.
      * On success it logs the compared sets so the "passed" line is proof of what was compared.
+     *
+     * <p><strong>Best-effort:</strong> two configs that refer to the same host via different forms
+     * (e.g. {@code "127.0.0.1"} vs {@code "localhost"}) will not be detected as overlapping.</p>
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
