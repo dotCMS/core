@@ -59,6 +59,7 @@ public class LanguageViewStrategyTest {
         final Map<String, Object> inner = (Map<String, Object>) result.get("languageMap");
         assertEquals("", inner.get("country"));
         assertEquals("", inner.get("countryCode"));
+        assertEquals("fr", inner.get("isoCode"));
         assertEquals(2L, inner.get("id"));
     }
 
@@ -106,5 +107,6 @@ public class LanguageViewStrategyTest {
         final Map<String, Object> languageMap = (Map<String, Object>) outputMap.get("languageMap");
         assertEquals("", languageMap.get("country"));
         assertEquals("", languageMap.get("countryCode"));
+        assertEquals("es", languageMap.get("isoCode"));
     }
 }
