@@ -15,6 +15,7 @@ import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
@@ -41,6 +42,8 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
         const canUndo = signal(false);
         const canRedo = signal(false);
         const isFullscreen = signal(false);
+        const saveStatus = signal<'idle' | 'saving' | 'error'>('idle');
+        const saveError = signal<string | null>(null);
 
         const createComponent = createComponentFactory({
             component: DotImageEditorComponent,
@@ -57,7 +60,14 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // mocking only the store.
             componentProviders: [
                 ConfirmationService,
-                mockProvider(ImageEditorStore, { isDirty, canUndo, canRedo, isFullscreen })
+                mockProvider(ImageEditorStore, {
+                    isDirty,
+                    canUndo,
+                    canRedo,
+                    isFullscreen,
+                    saveStatus,
+                    saveError
+                })
             ],
             // Isolate the shell from the children's own store/dispatch wiring.
             overrideComponents: [
@@ -94,6 +104,8 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             canUndo.set(false);
             canRedo.set(false);
             isFullscreen.set(false);
+            saveStatus.set('idle');
+            saveError.set(null);
 
             // Spy before creation so the constructor's assetRequested dispatch is
             // captured (injectDispatch dispatches through Dispatcher.prototype).
@@ -213,6 +225,48 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 
             expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
+        });
+
+        describe('save lifecycle', () => {
+            const tempFile: DotCMSTempFile = {
+                fileName: 'edited.png',
+                folder: 'shared',
+                id: 'temp_578026b7cc',
+                image: true,
+                length: 1024,
+                mimeType: 'image/png',
+                referenceUrl: '/dA/temp_578026b7cc',
+                thumbnailUrl: '/dA/temp_578026b7cc/thumb'
+            };
+
+            it('should close with the temp file when a save succeeds', () => {
+                dispatcher.dispatch(imageEditorLifecycleEvents.saveSucceeded(tempFile));
+
+                expect(dialogRef.close).toHaveBeenCalledWith(tempFile);
+            });
+
+            it('should NOT close when a save fails', () => {
+                dispatcher.dispatch(imageEditorLifecycleEvents.saveFailed(new Error('boom')));
+
+                expect(dialogRef.close).not.toHaveBeenCalled();
+            });
+
+            it('should surface the save error when saveStatus is error', () => {
+                saveStatus.set('error');
+                saveError.set('Failed to save image');
+                spectator.detectChanges();
+
+                const error = spectator.query(byTestId('image-editor-save-error'));
+                expect(error).toExist();
+                expect(error?.textContent?.trim()).toBe('Failed to save image');
+            });
+
+            it('should not render the save error when saveStatus is idle', () => {
+                saveStatus.set('idle');
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('image-editor-save-error'))).not.toExist();
+            });
         });
 
         describe('undo/redo shortcuts', () => {

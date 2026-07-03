@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}, {@code openrouter}, {@code google_ai}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -52,6 +52,22 @@ import java.util.List;
  * {@code apac.}) for models offered only via cross-region inference profiles
  * (e.g. {@code us.deepseek.r1-v1:0}); use the bare ID for on-demand models
  * (e.g. {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}).
+ *
+ * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
+ * <ul>
+ *   <li>{@code apiKey} – OpenRouter API key</li>
+ *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4}</li>
+ *   <li>{@code endpoint} – optional override of the default base URL ({@code https://openrouter.ai/api/v1})</li>
+ * </ul>
+ *
+ * <p>Google AI (Gemini API / AI Studio — chat, embeddings and image):
+ * <ul>
+ *   <li>{@code apiKey} – Google AI Studio API key</li>
+ *   <li>{@code model} – e.g. {@code gemini-2.0-flash}, {@code gemini-embedding-001}, {@code gemini-2.5-flash-image}</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
+ *   <li>{@code size} – image size, e.g. {@code 1K}, {@code 2K} (image only)</li>
+ *   <li>{@code endpoint} – optional base URL override</li>
+ * </ul>
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
  * <ul>

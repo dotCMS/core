@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
@@ -304,7 +302,6 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
 
-    // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', async () => {
         spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,

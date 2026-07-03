@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'portlet',
     preset: '../../../../jest.preset.js',

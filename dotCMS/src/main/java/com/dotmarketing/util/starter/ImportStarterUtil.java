@@ -10,7 +10,6 @@ import com.dotcms.experiments.business.ExperimentsFactory;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.VariantFactory;
 import com.dotcms.variant.model.Variant;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -603,10 +602,13 @@ public class ImportStarterUtil {
             final VariantFactory variantFactory = FactoryLocator.getVariantFactory();
             for (int j = 0; j < l.size(); j++) {
                 final Variant v = (Variant) l.get(j);
-                // The variant table is not cleared by deleteDotCMS(); the DEFAULT variant always
-                // exists (created at startup), so skip it and any variant already present.
-                if (VariantAPI.DEFAULT_VARIANT.name().equals(v.name())
-                        || variantFactory.get(v.name()).isPresent()) {
+                // Skip variants already present to avoid PK violations (the variant table is not
+                // cleared by deleteDotCMS()). We DO import the DEFAULT variant from the starter:
+                // on a fresh install postgres.sql does not seed it and DefaultVariantInitializer
+                // runs only AFTER the starter import (MainServlet line 129 vs 218), so an experiment
+                // referencing the DEFAULT variant would otherwise fail TrafficProportion validation
+                // when its Experiment model is deserialized below.
+                if (variantFactory.get(v.name()).isPresent()) {
                     continue;
                 }
                 variantFactory.save(v);

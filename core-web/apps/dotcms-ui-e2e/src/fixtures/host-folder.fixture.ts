@@ -51,7 +51,6 @@ export const test = base.extend<{
         await use(page);
     },
 
-    // eslint-disable-next-line no-empty-pattern
     testSuffix: async ({}, use) => {
         await use(crypto.randomUUID().slice(0, 8));
     },

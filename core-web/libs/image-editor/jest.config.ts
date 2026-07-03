@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'image-editor',
     preset: '../../jest.preset.js',

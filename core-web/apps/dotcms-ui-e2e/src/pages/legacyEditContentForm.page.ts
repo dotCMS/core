@@ -1,12 +1,14 @@
 import { expect, type Frame, type Page } from '@playwright/test';
+import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
 
-const LEGACY_EDIT_FRAME_URL_PATTERN = /edit_contentlet|portlet\/ext\/contentlet/;
+const LEGACY_EDIT_FRAME_URL_PATTERN = /edit_contentlet/i;
 
 export class LegacyEditContentFormPage {
     constructor(private page: Page) {}
 
     /**
-     * Returns the legacy content edit iframe (edit_contentlet JSP), distinct from the shell detailFrame.
+     * Returns the legacy content edit iframe (edit_contentlet JSP) inside the PrimeNG dialog,
+     * not the Dojo listing frame (view_contentlets).
      */
     async getLegacyContentFrame(): Promise<Frame> {
         let frame: Frame | undefined;
@@ -14,9 +16,11 @@ export class LegacyEditContentFormPage {
         await expect
             .poll(
                 () => {
-                    frame = this.page
+                    const matchingFrames = this.page
                         .frames()
-                        .find((f) => LEGACY_EDIT_FRAME_URL_PATTERN.test(f.url()));
+                        .filter((f) => LEGACY_EDIT_FRAME_URL_PATTERN.test(f.url()));
+
+                    frame = matchingFrames.at(-1);
                     return frame;
                 },
                 { timeout: 20000 }
@@ -31,12 +35,11 @@ export class LegacyEditContentFormPage {
     }
 
     /**
-     * Navigates to create new content in the legacy editor (Dojo portlet inside detailFrame).
-     * URL: /dotAdmin/#/c/content/new/{contentTypeVariable}
+     * Navigates to create new content in the legacy editor (Dojo listing → Add New Content).
      */
     async goToLegacyNew(contentTypeVariable: string) {
-        await this.page.goto(`/dotAdmin/#/c/content/new/${contentTypeVariable}`);
-        await this.page.waitForLoadState('domcontentloaded');
+        await goToContentList(this.page, contentTypeVariable);
+        await clickAddNewContentFromList(this.page);
 
         const frame = await this.getLegacyContentFrame();
         await frame.locator('dotcms-binary-field').first().waitFor({
