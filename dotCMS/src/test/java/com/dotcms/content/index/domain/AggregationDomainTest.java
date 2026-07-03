@@ -144,13 +144,14 @@ public class AggregationDomainTest {
     }
 
     /**
-     * Serialization contract for {@code POST /api/es/raw}. After
-     * <a href="https://github.com/dotCMS/core/issues/36396">#36396</a> the endpoint
-     * ({@code ESContentResourcePortlet.searchRaw()}) no longer emits the Elasticsearch
-     * {@code SearchResponse.toString()} wire format; it serializes the vendor-neutral
-     * {@link ContentSearchResponse} with the dotCMS default {@link ObjectMapper}. This test pins the
-     * resulting JSON shape using that exact mapper so a change to the DTO (or the mapper config) that
-     * would break existing {@code /api/es/raw} clients is caught here rather than in production.
+     * Jackson serialization contract for the vendor-neutral {@link ContentSearchResponse} DTO.
+     *
+     * <p>Note: {@code POST /api/es/raw} and the {@code esresponse} field of {@code /api/es/search} now
+     * emit the legacy Elasticsearch-wire shape via {@code ESContentResourcePortlet#toLegacyEsJson()}
+     * (for backward compatibility / rollback safety), so this neutral Jackson form is the DTO's
+     * canonical/internal representation rather than a REST wire contract. This test still pins that
+     * neutral form with the dotCMS default {@link ObjectMapper} so a change to the DTO (or the mapper
+     * config) is caught here.</p>
      *
      * <p>Key guarantees: the top-level object carries {@code hits}, {@code tookMillis} and
      * {@code aggregationTree}; {@code hits} is a nested object with a {@code hits} array and
@@ -158,8 +159,8 @@ public class AggregationDomainTest {
      * {@link Iterable}); and each hit exposes {@code id} and {@code sourceAsMap}.</p>
      */
     @Test
-    public void contentSearchResponse_jacksonSerializesNeutralShapeForEsRawEndpoint() throws Exception {
-        // The exact mapper ESContentResourcePortlet.searchRaw() uses to serialize the response.
+    public void contentSearchResponse_jacksonSerializesNeutralShape() throws Exception {
+        // The dotCMS default mapper (the DTO's canonical neutral serialization).
         final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
 
         final SearchHit hit = SearchHit.builder()

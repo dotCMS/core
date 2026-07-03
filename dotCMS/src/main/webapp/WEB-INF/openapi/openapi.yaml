@@ -1243,10 +1243,10 @@ paths:
         \ the search engine without additional contentlet processing. The query is\
         \ routed through the phase-aware search API, so it targets whichever engine\
         \ the active OpenSearch migration phase selects (Elasticsearch in phases 0-1,\
-        \ OpenSearch in phases 2-3). Note: the response is the vendor-neutral ContentSearchResponse\
-        \ serialized as JSON (fields: hits, scrollId, tookMillis, aggregationTree),\
-        \ not the raw Elasticsearch SearchResponse wire format previously returned\
-        \ by this endpoint."
+        \ OpenSearch in phases 2-3). The response preserves the legacy Elasticsearch-wire\
+        \ shape (took, hits.total, hits.hits[]._id/._index/._score/._source, aggregations,\
+        \ suggest) for backward compatibility, regardless of the engine that served\
+        \ the query."
       operationId: rawSearchContentByESPost
       responses:
         "200":
@@ -1254,8 +1254,8 @@ paths:
             application/json:
               schema:
                 type: object
-                description: "Vendor-neutral ContentSearchResponse including hits,\
-                  \ scrollId, tookMillis, and the aggregation tree"
+                description: "Search response in the legacy Elasticsearch-wire shape\
+                  \ (took, hits, aggregations, suggest)"
           description: Search response returned successfully
         "400":
           content:
