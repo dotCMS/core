@@ -39,6 +39,7 @@ import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -397,7 +398,7 @@ public class ESIndexResource {
             // Readable 404 body (no stack trace) so a mistyped/nonexistent name is clear
             // (issue #35640, TC-017).
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ResponseEntityView<>("Index not found: " + indexName)).build();
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
         }
 
         try {
@@ -407,7 +408,7 @@ public class ESIndexResource {
             // readable 400 instead of a stack trace. See issue #35640, TC-018.
             Logger.warn(this, "Rejected deletion of index '" + resolvedName + "': " + e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(e.getMessage())).build();
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
         }
 
         String message = "Index:" + resolvedName + " deleted";
@@ -568,7 +569,7 @@ public class ESIndexResource {
         if(indexDoesNotExist(resolvedName) ){
             // Readable 404 body, consistent with deleteIndex (issue #35640, TC-017).
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(new ResponseEntityView<>("Index not found: " + indexName)).build();
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
         }
 
 
