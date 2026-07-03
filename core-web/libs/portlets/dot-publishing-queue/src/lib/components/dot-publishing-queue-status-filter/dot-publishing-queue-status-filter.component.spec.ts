@@ -20,10 +20,10 @@ const STATUS_LABELS: Record<PublishAuditStatus, string> = {
     [PublishAuditStatus.SENDING_TO_ENDPOINTS]: 'Sending',
     [PublishAuditStatus.PUBLISHING_BUNDLE]: 'Publishing',
     [PublishAuditStatus.RECEIVED_BUNDLE]: 'Received',
-    [PublishAuditStatus.SUCCESS]: 'Sent',
-    [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'Sent',
+    [PublishAuditStatus.SUCCESS]: 'Success',
+    [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'Success',
     [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]: 'Saved',
-    [PublishAuditStatus.SUCCESS_WITH_WARNINGS]: 'Sent (warn)',
+    [PublishAuditStatus.SUCCESS_WITH_WARNINGS]: 'Success (warn)',
     [PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS]: 'Failed (all)',
     [PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS]: 'Failed (some)',
     [PublishAuditStatus.FAILED_TO_BUNDLE]: 'Build error',
@@ -95,21 +95,21 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
                 spectator.component as unknown as { $options: { label: string }[] }
             ).$options;
             const labels = options.map((o) => o.label);
-            // SUCCESS + BUNDLE_SENT_SUCCESSFULLY both render as "Sent" → one option
-            expect(labels.filter((l) => l === 'Sent').length).toBe(1);
+            // SUCCESS + BUNDLE_SENT_SUCCESSFULLY both render as "Success" → one option
+            expect(labels.filter((l) => l === 'Success').length).toBe(1);
             // No duplicates across the full list
             expect(new Set(labels).size).toBe(labels.length);
         });
 
-        it('the "Sent" option groups SUCCESS and BUNDLE_SENT_SUCCESSFULLY', () => {
+        it('the "Success" option groups SUCCESS and BUNDLE_SENT_SUCCESSFULLY', () => {
             const options = (
                 spectator.component as unknown as {
                     $options: { label: string; codes: PublishAuditStatus[] }[];
                 }
             ).$options;
-            const sent = options.find((o) => o.label === 'Sent');
-            expect(sent).toBeDefined();
-            expect([...(sent?.codes ?? [])].sort()).toEqual(
+            const success = options.find((o) => o.label === 'Success');
+            expect(success).toBeDefined();
+            expect([...(success?.codes ?? [])].sort()).toEqual(
                 [
                     PublishAuditStatus.SUCCESS,
                     PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
@@ -150,8 +150,8 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             ).onChange();
         }
 
-        it('picking "Sent" flattens to SUCCESS + BUNDLE_SENT_SUCCESSFULLY in the store', () => {
-            setSelected(['Sent']);
+        it('picking "Success" flattens to SUCCESS + BUNDLE_SENT_SUCCESSFULLY in the store', () => {
+            setSelected(['Success']);
             callOnChange();
             const stored = [...statusFilter()].sort();
             expect(stored).toEqual(
@@ -162,11 +162,11 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             );
         });
 
-        it('shows "Sent" selected only when both grouped codes are present in the store filter', () => {
+        it('shows "Success" selected only when both grouped codes are present in the store filter', () => {
             // Only one of the two grouped codes → option is NOT considered selected.
             statusFilter.set([PublishAuditStatus.SUCCESS]);
             spectator.detectChanges();
-            expect(getSelected()).not.toContain('Sent');
+            expect(getSelected()).not.toContain('Success');
 
             // Both codes → option IS considered selected.
             statusFilter.set([
@@ -174,7 +174,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
                 PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
             ]);
             spectator.detectChanges();
-            expect(getSelected()).toContain('Sent');
+            expect(getSelected()).toContain('Success');
         });
 
         it('clearing all empties the store filter', () => {

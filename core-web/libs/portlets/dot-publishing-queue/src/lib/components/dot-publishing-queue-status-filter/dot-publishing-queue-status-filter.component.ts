@@ -29,7 +29,7 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
  *   missing before.
  *
  * Several enum values share a translated label (e.g. SUCCESS and
- * BUNDLE_SENT_SUCCESSFULLY both render as "Sent"). They are grouped into a
+ * BUNDLE_SENT_SUCCESSFULLY both render as "Success"). They are grouped into a
  * single dropdown option at render time — see `$options` below.
  */
 const STATUS_ORDER: readonly PublishAuditStatus[] = [
@@ -56,8 +56,8 @@ const STATUS_ORDER: readonly PublishAuditStatus[] = [
 
 interface StatusOption {
     /** The translated label — also doubles as the listbox `value` so picking
-     * "Sent" emits the string "Sent", which we expand back to its codes on
-     * change. */
+     * "Success" emits the string "Success", which we expand back to its codes
+     * on change. */
     value: string;
     label: string;
     /** Every enum value that maps to this label. Picking the option in the UI
@@ -93,7 +93,7 @@ export class DotPublishingQueueStatusFilterComponent {
 
     /** Selected labels, reactively derived from the store. An option is
      * considered selected when **all** of its codes are present in the store
-     * filter — picking "Sent" only counts when SUCCESS *and*
+     * filter — picking "Success" only counts when SUCCESS *and*
      * BUNDLE_SENT_SUCCESSFULLY are both in the filter. */
     protected readonly $selected = linkedSignal<string[]>(() => {
         const filter = new Set(this.store.statusFilter());

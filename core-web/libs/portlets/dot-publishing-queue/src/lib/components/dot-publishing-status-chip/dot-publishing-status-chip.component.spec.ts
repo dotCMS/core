@@ -54,7 +54,7 @@ describe('DotPublishingStatusChipComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'publishing-queue.status.SUCCESS': 'Sent',
+                    'publishing-queue.status.SUCCESS': 'Success',
                     'publishing-queue.status.FAILED_TO_PUBLISH': 'Publish error',
                     'publishing-queue.status.BUNDLING': 'Bundling',
                     'publishing-queue.status.WAITING_FOR_PUBLISHING': 'Waiting'
@@ -76,7 +76,7 @@ describe('DotPublishingStatusChipComponent', () => {
         const chip = spectator.query(byTestId('pq-status-chip'));
         expect(chip?.classList.contains('bg-green-100!')).toBe(true);
         expect(chip?.classList.contains('text-green-700!')).toBe(true);
-        expect(chip?.textContent?.trim()).toContain('Sent');
+        expect(chip?.textContent?.trim()).toContain('Success');
     });
 
     it('renders red classes for danger bucket', () => {
