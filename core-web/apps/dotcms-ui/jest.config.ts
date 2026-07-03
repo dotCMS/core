@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'dotcms-ui',
     preset: '../../jest.preset.js',

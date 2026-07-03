@@ -33,6 +33,7 @@ build-no-cache:
     rm -rf ./core-web/.nx/
     rm -rf ./core-web/.angular/
     rm -rf ./core-web/node_modules/
+    rm -rf ./installs/node
     ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
 
 # Builds the project without running tests, skip using docker or creating image

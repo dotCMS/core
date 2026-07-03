@@ -140,6 +140,7 @@ export class DotEditContentSidebarComponent {
      * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
      * page load when the user never actually opens the sidebar.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #informationEffect = effect(() => {
         const identifier = this.$identifier();
         const isSidebarOpen = this.$store.isSidebarOpen();

@@ -10,7 +10,8 @@ import { CropState } from '../../models/image-editor.models';
 import { imageEditorToolEvents } from '../image-editor.events';
 import { initialImageEditorState } from '../image-editor.state';
 
-// Seed a pending resize so applying a crop can be shown to clear it.
+// Seed a pending resize so applying a crop can be shown to PRESERVE it (legacy
+// parity: a crop drawn on the scaled preview keeps the resize, chain Resize->Crop).
 const RESIZED = {
     ...initialImageEditorState,
     transform: { ...initialImageEditorState.transform, scale: 50, outputWidth: 500 }
@@ -35,7 +36,7 @@ describe('withCrop', () => {
             runInInjectionContext(injector, () => (tool = injectDispatch(imageEditorToolEvents)));
         });
 
-        it('applies a crop, clears resize, returns to move and adds a crop entry', () => {
+        it('applies a crop, preserves resize, returns to move and adds a crop entry', () => {
             tool.cropApplied({ x: 10, y: 10, w: 200, h: 150, active: false, aspect: null });
 
             expect(store.crop()).toEqual({
@@ -46,8 +47,9 @@ describe('withCrop', () => {
                 active: true,
                 aspect: null
             });
-            expect(store.transform().scale).toBe(100);
-            expect(store.transform().outputWidth).toBeNull();
+            // Legacy parity: a crop keeps the resize (it was drawn on the scaled preview).
+            expect(store.transform().scale).toBe(50);
+            expect(store.transform().outputWidth).toBe(500);
             expect(store.activeTool()).toBe('move');
             expect(store.history().at(-1)?.category).toBe('crop');
             expect(store.previewStatus()).toBe('loading');

@@ -43,10 +43,10 @@
         },
         "publish": {
             "executor": "nx:run-commands",
+            "dependsOn": ["build"],
             "options": {
                 "command": "node tools/scripts/publish.mjs sdk-client {args.ver} {args.tag}"
-            },
-            "dependsOn": ["build"]
+            }
         },
         "nx-release-publish": {
             "options": {
@@ -54,23 +54,18 @@
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/sdk/client/**/*.ts"]
+                "args": ["**/*.ts"]
             }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/sdk/client/jest.config.ts",
                 "passWithNoTests": true
             },
             "configurations": {
                 "ci": {
                     "ci": true,
-                    "codeCoverage": true
+                    "coverage": true
                 }
             }
         }
