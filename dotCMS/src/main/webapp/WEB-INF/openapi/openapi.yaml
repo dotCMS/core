@@ -1270,9 +1270,15 @@ paths:
       - Elasticsearch Content Search
   /es/search:
     post:
-      description: Executes an Elasticsearch query against dotCMS content in a portlet
-        context. The request body accepts an Elasticsearch JSON query. Results include
-        matching contentlets and the raw Elasticsearch response metadata.
+      description: "Executes a JSON search query against dotCMS content in a portlet\
+        \ context. The request body accepts an Elasticsearch/OpenSearch JSON query.\
+        \ The query is routed through the phase-aware search API, so it targets whichever\
+        \ engine the active OpenSearch migration phase selects (Elasticsearch in phases\
+        \ 0-1, OpenSearch in phases 2-3). Results include the matching contentlets\
+        \ plus the search response metadata under 'esresponse', which retains the\
+        \ legacy Elasticsearch-wire shape (took, hits.total, hits.hits[]._id/._index/._score/._source,\
+        \ aggregations) for backward compatibility, regardless of the engine that\
+        \ served the query."
       operationId: searchContentByESPost
       parameters:
       - description: "Depth of related content to include: 0=identifiers only, 1=related\
@@ -1311,9 +1317,9 @@ paths:
             application/json:
               schema:
                 type: object
-                description: Elasticsearch search results containing contentlets matching
-                  the query and raw ES response metadata
-          description: Elasticsearch search results returned successfully
+                description: Search results containing the matching contentlets and
+                  the Elasticsearch-wire response metadata under 'esresponse'
+          description: Search results returned successfully
         "400":
           content:
             application/json: {}
@@ -1322,7 +1328,7 @@ paths:
           content:
             application/json: {}
           description: Authentication required
-      summary: Search content using Elasticsearch query (POST)
+      summary: Search content using a search query (POST)
       tags:
       - Elasticsearch Content Search
   /integrity/_fixconflictsfromremote:
