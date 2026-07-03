@@ -9,6 +9,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import java.time.ZoneOffset;
@@ -139,6 +141,90 @@ public class AggregationDomainTest {
 
         assertNotNull(bucket.getAggregations().get("top_content"));
         assertEquals("top_hits", bucket.getAggregations().get("top_content").getType());
+    }
+
+    /**
+     * Jackson serialization contract for the vendor-neutral {@link ContentSearchResponse} DTO.
+     *
+     * <p>Note: {@code POST /api/es/raw} and the {@code esresponse} field of {@code /api/es/search} now
+     * emit the legacy Elasticsearch-wire shape via {@code ESContentResourcePortlet#toLegacyEsJson()}
+     * (for backward compatibility / rollback safety), so this neutral Jackson form is the DTO's
+     * canonical/internal representation rather than a REST wire contract. This test still pins that
+     * neutral form with the dotCMS default {@link ObjectMapper} so a change to the DTO (or the mapper
+     * config) is caught here.</p>
+     *
+     * <p>Key guarantees: the top-level object carries {@code hits}, {@code tookMillis} and
+     * {@code aggregationTree}; {@code hits} is a nested object with a {@code hits} array and
+     * {@code totalHits} — NOT a bare array (a real risk because {@link SearchHits} implements
+     * {@link Iterable}); and each hit exposes {@code id} and {@code sourceAsMap}.</p>
+     */
+    @Test
+    public void contentSearchResponse_jacksonSerializesNeutralShape() throws Exception {
+        // The dotCMS default mapper (the DTO's canonical neutral serialization).
+        final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+
+        final SearchHit hit = SearchHit.builder()
+                .id("abc123").index("live_idx")
+                .sourceAsMap(Map.of("title", "hello"))
+                .score(1.5f).build();
+        final SearchHits hits = SearchHits.builder()
+                .addHits(hit)
+                .totalHits(TotalHits.builder().value(1L).build())
+                .build();
+        final Aggregation terms = Aggregation.builder()
+                .name("content_types").type("sterms")
+                .buckets(List.of(AggregationBucket.builder().key("Blog").docCount(7).build()))
+                .build();
+        final ContentSearchResponse response = ContentSearchResponse.builder()
+                .hits(hits).tookMillis(42L)
+                .aggregationTree(Map.of("content_types", terms))
+                .build();
+
+        final JsonNode root = mapper.readTree(mapper.writeValueAsString(response));
+
+        assertEquals("tookMillis must round-trip", 42L, root.get("tookMillis").asLong());
+        assertTrue("aggregationTree must be present", root.has("aggregationTree"));
+        assertTrue("declared aggregation must survive serialization",
+                root.path("aggregationTree").has("content_types"));
+
+        // hits must be a nested object, not a bare array (SearchHits implements Iterable).
+        final JsonNode hitsNode = root.get("hits");
+        assertNotNull("hits object must be present", hitsNode);
+        assertTrue("hits must serialize as an object, not an array", hitsNode.isObject());
+        assertTrue("hits.hits array must be present", hitsNode.path("hits").isArray());
+        assertTrue("totalHits must be present", hitsNode.has("totalHits"));
+        assertEquals("the single hit id must be preserved",
+                "abc123", hitsNode.path("hits").get(0).path("id").asText());
+        assertEquals("the hit source document must be preserved",
+                "hello", hitsNode.path("hits").get(0).path("sourceAsMap").path("title").asText());
+    }
+
+    /**
+     * Anti-regression for the {@code value()} / {@code getValue()} pair on {@link TotalHits}. The
+     * record component accessor ({@code value()}, annotated {@code @JsonProperty("value")}) and the
+     * Velocity back-compat getter ({@code getValue()}) both map to the logical property {@code value},
+     * so Jackson must merge them into a <b>single</b> {@code value} field — it must not emit a
+     * duplicate nor throw a conflicting-getter/duplicate-property error. Serializes with the exact
+     * default mapper the {@code /api/es} endpoints use, guarding against the (invalid) "duplicate
+     * field" concern for good.
+     */
+    @Test
+    public void totalHits_serializesValueOnce_despiteBackCompatGetter() throws Exception {
+        final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+        final TotalHits total = TotalHits.builder().value(7L).build();
+
+        // Must not throw: value() + getValue() do not create a conflicting/duplicate property.
+        final String json = mapper.writeValueAsString(total);
+
+        // Exactly one "value" key — the back-compat getter must not double-emit it.
+        final int valueKeyOccurrences = json.split("\"value\"", -1).length - 1;
+        assertEquals("TotalHits must serialize 'value' exactly once (no duplicate from getValue())",
+                1, valueKeyOccurrences);
+
+        final JsonNode node = mapper.readTree(json);
+        assertEquals("serialized 'value' must carry the correct number", 7L, node.get("value").asLong());
+        assertEquals("value() and getValue() must return the same number",
+                total.value(), total.getValue());
     }
 
     // =========================================================================
