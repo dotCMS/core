@@ -87,7 +87,7 @@ public class IndexStartupValidator {
         final OSClientConfig config = resolveConfig();
         logConfigSummary(config);
         validateOSVersion();
-        validateEndpointSeparation(config);
+        assertEndpointsSeparate(config);
     }
 
     // -------------------------------------------------------------------------
@@ -216,15 +216,11 @@ public class IndexStartupValidator {
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
-    private void validateEndpointSeparation(final OSClientConfig config) {
-        assertEndpointsSeparate(config);
-        Logger.info(this, "Endpoint separation check passed.");
-    }
-
     /**
      * Asserts that the ES and OS clients do not share any {@code host:port}. Shared by the
      * startup validator ({@link #validate()}) and the config-only OS index-creation gate
      * ({@link #endpointsAreSeparate()}) so both enforce separation with identical logic.
+     * On success it logs the compared sets so the "passed" line is proof of what was compared.
      *
      * @throws DotRuntimeException if at least one endpoint is common to both clients
      */
@@ -244,6 +240,8 @@ public class IndexStartupValidator {
                     + " — OS endpoints: " + osEndpoints
                     + ". Set OS_ENDPOINTS to a separate OpenSearch instance.");
         }
+        Logger.info(IndexStartupValidator.class, "Endpoint separation check passed."
+                + " ES: " + esEndpoints + " — OS: " + osEndpoints);
     }
 
     /**

@@ -61,6 +61,33 @@ public class IndexStartupValidatorTest {
     }
 
     /**
+     * Given Scenario: multi-endpoint ES [a,b] and OS [b,c] share one endpoint.
+     * Expected Result: partial overlap is detected — returns false.
+     */
+    @Test
+    public void test_endpointsAreSeparate_multiEndpointPartialOverlap_returnsFalse() {
+        Config.setProperty("ES_ENDPOINTS",
+                new String[]{"https://es-a:9200", "https://shared:9200"});
+        Config.setProperty("OS_ENDPOINTS",
+                new String[]{"https://shared:9200", "https://os-c:9200"});
+
+        assertFalse(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
+     * Given Scenario: OS config cannot be resolved (blank endpoint trips OSClientConfig validation).
+     * Expected Result: endpointsAreSeparate() fails closed — returns false — rather than throwing
+     *                  out of the OS bootstrap gate.
+     */
+    @Test
+    public void test_endpointsAreSeparate_unresolvableOsConfig_returnsFalse() {
+        Config.setProperty("ES_ENDPOINTS", new String[]{"https://localhost:9200"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{""});
+
+        assertFalse(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
      * Given Scenario: ES and OS share the same host:port.
      * Expected Result: assertEndpointsSeparate throws DotRuntimeException naming the overlap.
      */

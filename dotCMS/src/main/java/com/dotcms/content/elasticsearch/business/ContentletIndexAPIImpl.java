@@ -1014,6 +1014,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // before InitServlet's later validateIndexingConfig() caught the ES==OS overlap. On
         // overlap we halt the migration (ES-only) and skip OS bootstrap entirely.
         if (!IndexStartupValidator.endpointsAreSeparate()) {
+            if (isMigrationComplete()) {
+                // Phase 3: ES is decommissioned. Silently halting to ES-only would serve a stale
+                // or absent ES index — the same reason checkAndInitializeIndex and the connection
+                // gate fail loudly in Phase 3. Throw instead of haltMigration(); the outer handler
+                // logs it FATAL. This bites initOSCatchup Case 1 (Phase-3 disaster recovery).
+                throw new DotRuntimeException(
+                        "OpenSearch endpoint-separation check failed in PHASE_3_OPENSEARCH_ONLY"
+                        + " (ES and OS resolve to the same cluster, or the OS config is unresolved)."
+                        + " Cannot auto-rollback to ES (ES may be decommissioned or stale)."
+                        + " Fix OS_ENDPOINTS and restart dotCMS.");
+            }
             Logger.warn(this.getClass(),
                     "Skipping OpenSearch index bootstrap (working=" + workingName
                     + ", live=" + liveName + "): OS migration configuration rejected"
@@ -1024,10 +1035,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         // Connection gate (issue #36244): verify OS reachability BEFORE creating OS indices.
-        // This is the single chokepoint for all OS index creation (fresh-install bootstrap and
+        // This is the single chokepoint for OS working/live index bootstrap (fresh-install and
         // migration catchup), so both startup paths — populated-DB (InitServlet) and empty-DB
         // (Task00004LoadStarter) — pass through the same phase-aware gate instead of failing
         // late and opaquely with a transport exception deep inside createContentIndex.
+        // (Reindex-slot creation via initAndPointReindex does NOT pass through here — see the
+        // runtime phase-flip caveat in PR #36421.)
         //
         // operationsOS.indexAPI() is the OS-specific IndexAPI, so the gate always probes OS
         // regardless of the current read provider (in Phase 1 the read provider is ES). The
