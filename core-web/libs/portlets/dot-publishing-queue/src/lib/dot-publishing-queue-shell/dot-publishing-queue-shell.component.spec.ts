@@ -11,6 +11,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPublishingQueueService
 } from '@dotcms/data-access';
@@ -58,6 +59,7 @@ describe('DotPublishingQueueShellComponent', () => {
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
             mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
             mockProvider(DotDownloadBundleDialogService, { open: jest.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }

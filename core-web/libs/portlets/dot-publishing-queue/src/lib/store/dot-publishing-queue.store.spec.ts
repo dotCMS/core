@@ -2,13 +2,15 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/sp
 import { of, throwError } from 'rxjs';
 
 import {
-    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPublishingQueueService
 } from '@dotcms/data-access';
 import {
     BundleAssetView,
+    DotMessageSeverity,
+    DotMessageType,
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobsResponse,
@@ -72,7 +74,7 @@ describe('DotPublishingQueueStore', () => {
     let store: InstanceType<typeof DotPublishingQueueStore>;
     let service: jest.Mocked<DotPublishingQueueService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
-    let globalMessage: jest.Mocked<DotGlobalMessageService>;
+    let messageDisplay: jest.Mocked<DotMessageDisplayService>;
 
     const createService = createServiceFactory({
         service: DotPublishingQueueStore,
@@ -92,9 +94,8 @@ describe('DotPublishingQueueStore', () => {
                 purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } }))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, {
-                success: jest.fn(),
-                error: jest.fn()
+            mockProvider(DotMessageDisplayService, {
+                push: jest.fn()
             }),
             {
                 provide: DotMessageService,
@@ -118,9 +119,9 @@ describe('DotPublishingQueueStore', () => {
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
         ) as jest.Mocked<DotHttpErrorManagerService>;
-        globalMessage = spectator.inject(
-            DotGlobalMessageService
-        ) as jest.Mocked<DotGlobalMessageService>;
+        messageDisplay = spectator.inject(
+            DotMessageDisplayService
+        ) as jest.Mocked<DotMessageDisplayService>;
         spectator.flushEffects();
     });
 
@@ -297,11 +298,27 @@ describe('DotPublishingQueueStore', () => {
             ...overrides
         });
 
+        const expectToast = (severity: DotMessageSeverity, message: string) =>
+            expect.objectContaining({
+                severity,
+                message,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+
+        const successCalls = () =>
+            (messageDisplay.push as jest.Mock).mock.calls.filter(
+                ([m]) => m.severity === DotMessageSeverity.SUCCESS
+            );
+
+        const errorCalls = () =>
+            (messageDisplay.push as jest.Mock).mock.calls.filter(
+                ([m]) => m.severity === DotMessageSeverity.ERROR
+            );
+
         beforeEach(() => {
-            // Toast mocks accumulate across the retry cases below; reset them so
+            // Toast mock accumulates across the retry cases below; reset it so
             // each `not.toHaveBeenCalled` assertion sees a clean slate.
-            (globalMessage.success as jest.Mock).mockClear();
-            (globalMessage.error as jest.Mock).mockClear();
+            (messageDisplay.push as jest.Mock).mockClear();
         });
 
         it('retryBundles calls service and refreshes', () => {
@@ -316,10 +333,13 @@ describe('DotPublishingQueueStore', () => {
                 of([retryResult({ message: 'Bundle successfully re-queued for publishing' })])
             );
             store.retryBundles({ bundleIds: ['x'] });
-            expect(globalMessage.success).toHaveBeenCalledWith(
-                'Bundle successfully re-queued for publishing'
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.SUCCESS,
+                    'Bundle successfully re-queued for publishing'
+                )
             );
-            expect(globalMessage.error).not.toHaveBeenCalled();
+            expect(errorCalls()).toHaveLength(0);
         });
 
         it('retryBundles summarizes with a count when N bundles all succeed', () => {
@@ -333,7 +353,9 @@ describe('DotPublishingQueueStore', () => {
                 ])
             );
             store.retryBundles({ bundleIds: ['a', 'b', 'c'] });
-            expect(globalMessage.success).toHaveBeenCalledWith('3 bundles queued for retry.');
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(DotMessageSeverity.SUCCESS, '3 bundles queued for retry.')
+            );
         });
 
         it('retryBundles surfaces the BE message verbatim when a single bundle fails', () => {
@@ -348,10 +370,13 @@ describe('DotPublishingQueueStore', () => {
                 ])
             );
             store.retryBundles({ bundleIds: ['x'] });
-            expect(globalMessage.error).toHaveBeenCalledWith(
-                'Bundle already in queue - cannot retry while publishing: x'
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.ERROR,
+                    'Bundle already in queue - cannot retry while publishing: x'
+                )
             );
-            expect(globalMessage.success).not.toHaveBeenCalled();
+            expect(successCalls()).toHaveLength(0);
         });
 
         it('retryBundles lists per-bundle names + BE messages when several fail', () => {
@@ -372,8 +397,11 @@ describe('DotPublishingQueueStore', () => {
                 ])
             );
             store.retryBundles({ bundleIds: ['bundle-A', 'bundle-B'] });
-            expect(globalMessage.error).toHaveBeenCalledWith(
-                "Could not retry 2 bundles: 'Bundle One' — Bundle already in queue; 'Bundle One' — Permission denied"
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.ERROR,
+                    "Could not retry 2 bundles: 'Bundle One' — Bundle already in queue; 'Bundle One' — Permission denied"
+                )
             );
         });
 
@@ -385,8 +413,11 @@ describe('DotPublishingQueueStore', () => {
                 ])
             );
             store.retryBundles({ bundleIds: ['zzz', 'yyy'] });
-            expect(globalMessage.error).toHaveBeenCalledWith(
-                "Could not retry 2 bundles: 'zzz' — boom; 'yyy' — bang"
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.ERROR,
+                    "Could not retry 2 bundles: 'zzz' — boom; 'yyy' — bang"
+                )
             );
         });
 
@@ -396,8 +427,11 @@ describe('DotPublishingQueueStore', () => {
             );
             (service.retryBundles as jest.Mock).mockReturnValueOnce(of(fails));
             store.retryBundles({ bundleIds: fails.map((f) => f.bundleId) });
-            expect(globalMessage.error).toHaveBeenCalledWith(
-                "Could not retry 5 bundles: 'a' — msg-a; 'b' — msg-b; 'c' — msg-c — and 2 more"
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.ERROR,
+                    "Could not retry 5 bundles: 'a' — msg-a; 'b' — msg-b; 'c' — msg-c — and 2 more"
+                )
             );
         });
 
@@ -411,17 +445,19 @@ describe('DotPublishingQueueStore', () => {
                 ])
             );
             store.retryBundles({ bundleIds: ['bundle-A', 'bundle-B', 'zzz'] });
-            expect(globalMessage.error).toHaveBeenCalledWith(
-                "2 of 3 bundles queued for retry. Failed: 'zzz' — nope"
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expectToast(
+                    DotMessageSeverity.ERROR,
+                    "2 of 3 bundles queued for retry. Failed: 'zzz' — nope"
+                )
             );
-            expect(globalMessage.success).not.toHaveBeenCalled();
+            expect(successCalls()).toHaveLength(0);
         });
 
         it('retryBundles does NOT emit any toast when the response is empty', () => {
             (service.retryBundles as jest.Mock).mockReturnValueOnce(of([]));
             store.retryBundles({ bundleIds: [] });
-            expect(globalMessage.success).not.toHaveBeenCalled();
-            expect(globalMessage.error).not.toHaveBeenCalled();
+            expect(messageDisplay.push).not.toHaveBeenCalled();
         });
 
         it('deleteBundle calls service', () => {

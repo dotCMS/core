@@ -6,8 +6,8 @@ import { DestroyRef, effect, inject, untracked } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import {
-    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPublishingQueueService,
     PublishingSortDirection,
@@ -16,6 +16,8 @@ import {
 } from '@dotcms/data-access';
 import {
     BundleAssetView,
+    DotMessageSeverity,
+    DotMessageType,
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobView,
@@ -109,7 +111,7 @@ export const DotPublishingQueueStore = signalStore(
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
-        const globalMessage = inject(DotGlobalMessageService);
+        const messageDisplay = inject(DotMessageDisplayService);
         const dotMessageService = inject(DotMessageService);
         const destroyRef = inject(DestroyRef);
 
@@ -437,7 +439,7 @@ export const DotPublishingQueueStore = signalStore(
              * The BE always responds with HTTP 200; per-bundle success/failure is
              * carried in `entity[].success`. HTTP-level failures (auth, network)
              * are handled by httpErrorManager as usual. Business outcomes are
-             * surfaced via `DotGlobalMessageService` toasts so the user always
+             * surfaced via `DotMessageDisplayService` toasts so the user always
              * knows what happened — a common failure is "Bundle already in queue"
              * which returns 200 + success:false and would otherwise be silent.
              */
@@ -456,7 +458,7 @@ export const DotPublishingQueueStore = signalStore(
                             const row = store.bundlesRows().find((r) => r.bundleId === bundleId);
                             return row?.bundleName ?? bundleId;
                         };
-                        notifyRetryOutcome(results, resolveName, globalMessage, dotMessageService);
+                        notifyRetryOutcome(results, resolveName, messageDisplay, dotMessageService);
                         refresh();
                         onDone?.();
                     });
@@ -551,11 +553,15 @@ export const DotPublishingQueueStore = signalStore(
  * batches while still surfacing enough context for the common 1–3 case. */
 const RETRY_FAILURE_INLINE_CAP = 3;
 
+/** How long the retry toast stays on screen. Matches the app-wide default for
+ * the PrimeNG p-toast hosted by `<dot-message-display>`. */
+const RETRY_TOAST_LIFE_MS = 3000;
+
 /**
- * Picks the right global-message toast for the outcome of a retry batch. The
- * BE always responds HTTP 200; per-bundle success/failure lives in the entity
- * array and the BE `message` field is authoritative for what actually
- * happened. This helper is exported so the store spec can hit it in isolation.
+ * Picks the right toast for the outcome of a retry batch. The BE always
+ * responds HTTP 200; per-bundle success/failure lives in the entity array and
+ * the BE `message` field is authoritative for what actually happened. This
+ * helper is exported so the store spec can hit it in isolation.
  *
  * Rules for what to surface:
  *  - Single success or single failure → BE `message` verbatim. The BE is the
@@ -568,13 +574,19 @@ const RETRY_FAILURE_INLINE_CAP = 3;
  *  - Mixed → success count in the header, then the failure detail list under
  *    the same cap. Users see what succeeded AND what failed in one toast.
  *
+ * Toasts are pushed via `DotMessageDisplayService` (rendered app-wide by
+ * `<dot-message-display>` in the main shell). `DotGlobalMessageService` is NOT
+ * used because it only shows when a portlet explicitly hosts
+ * `<dot-global-message>` in its own template — the publishing queue portlet
+ * does not, which is why retry outcomes were previously silent.
+ *
  * `resolveName` maps a bundle id to its human-readable name (falling back to
  * the id when unresolved) so the toast never leaks raw ULIDs.
  */
 export function notifyRetryOutcome(
     results: readonly RetryBundleResultView[],
     resolveName: (bundleId: string) => string,
-    globalMessage: DotGlobalMessageService,
+    messageDisplay: DotMessageDisplayService,
     dotMessageService: DotMessageService
 ): void {
     if (results.length === 0) {
@@ -583,6 +595,15 @@ export function notifyRetryOutcome(
 
     const successes = results.filter((r) => r.success);
     const failures = results.filter((r) => !r.success);
+
+    const push = (severity: DotMessageSeverity, message: string): void => {
+        messageDisplay.push({
+            life: RETRY_TOAST_LIFE_MS,
+            message,
+            severity,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+    };
 
     if (failures.length === 0) {
         // BE returns a canned success message per bundle; for a single bundle
@@ -594,7 +615,7 @@ export function notifyRetryOutcome(
                       'publishing-queue.retry.success.plural',
                       String(successes.length)
                   );
-        globalMessage.success(msg);
+        push(DotMessageSeverity.SUCCESS, msg);
         return;
     }
 
@@ -602,14 +623,15 @@ export function notifyRetryOutcome(
     // point of the toast). Skips name-prefixing because there's no ambiguity
     // about which bundle failed when only one was attempted.
     if (failures.length === 1 && successes.length === 0) {
-        globalMessage.error(failures[0].message);
+        push(DotMessageSeverity.ERROR, failures[0].message);
         return;
     }
 
     const details = buildFailureDetailList(failures, resolveName, dotMessageService);
 
     if (successes.length === 0) {
-        globalMessage.error(
+        push(
+            DotMessageSeverity.ERROR,
             dotMessageService.get(
                 'publishing-queue.retry.failed.plural',
                 String(failures.length),
@@ -619,7 +641,8 @@ export function notifyRetryOutcome(
         return;
     }
 
-    globalMessage.error(
+    push(
+        DotMessageSeverity.ERROR,
         dotMessageService.get(
             'publishing-queue.retry.partial',
             String(successes.length),
