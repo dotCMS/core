@@ -1678,15 +1678,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
 
     /**
-     * Controls whether {@link #delete(String)} cascades to the index's twin in the other
-     * engine. On by default.
+     * Controls whether deleting the authoritative ES/logical index also removes its OS twin.
+     * On by default. The cascade is <strong>strictly ES→OS</strong>: it only fires when the
+     * caller passes a bare (untagged) name. An explicit {@code .os} name is always a
+     * tag-dispatched, OS-only delete regardless of this flag — a shadow delete must never
+     * tumble the authoritative ES index.
      * <ul>
-     *   <li><strong>true (default)</strong> — a logical index and its counterpart in the other
-     *       engine are deleted together (phase-dispatched broadcast to every write provider),
-     *       so the {@code .os} twin is never left orphaned.</li>
-     *   <li><strong>false</strong> — only the engine that owns the given name is touched
-     *       (tag-dispatched: a name ending in {@code .os} → OpenSearch, otherwise
-     *       Elasticsearch), leaving the twin intact (issue #35640, TC-016 documented behavior).</li>
+     *   <li><strong>true (default)</strong> — a bare name deletes the ES index and its OS
+     *       {@code .os} twin together (phase-dispatched broadcast), so the twin is not orphaned.</li>
+     *   <li><strong>false</strong> — a bare name deletes only ES, leaving the OS twin intact
+     *       (issue #35640, TC-016 documented behavior).</li>
      * </ul>
      */
     public static final String FF_INDEX_DELETE_CASCADE = "FEATURE_FLAG_INDEX_DELETE_CASCADE";
@@ -1710,11 +1711,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (Config.getBooleanProperty(FF_ALLOW_ACTIVE_INDEX_DELETE, false)) {
             return;
         }
-        final String requested = indexAPI.removeClusterIdFromName(indexName);
+        // Compare on the LOGICAL (cluster-stripped, untagged) name on BOTH sides. The active
+        // set is bare in Phases 0-2 and .os-tagged in Phase 3, and the caller may pass either
+        // the bare or the .os name — normalizing both to the logical form makes the guard match
+        // regardless of phase or which twin's name was given (issue #35640).
+        final String requested = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
         final Set<String> protectedIndices = new HashSet<>();
         try {
-            protectedIndices.addAll(getCurrentIndex()); // active working + live
-            protectedIndices.addAll(getNewIndex());     // building reindex slots
+            for (final String n : getCurrentIndex()) { // active working + live
+                protectedIndices.add(IndexTag.OS.untag(n));
+            }
+            for (final String n : getNewIndex()) {     // building reindex slots
+                protectedIndices.add(IndexTag.OS.untag(n));
+            }
         } catch (final DotDataException e) {
             throw new DotStateException("Unable to verify whether index '" + indexName
                     + "' is active before deletion; refusing to delete.", e);
@@ -1730,23 +1739,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Guard first: never delete an active/building index (issue #35640, TC-018).
         assertIndexIsDeletable(indexName);
 
-        // Cascade (default) deletes the index and its twin in the other engine together;
-        // when disabled, only the engine that owns the given name is touched. See
-        // FF_INDEX_DELETE_CASCADE (issue #35640, TC-016).
+        // The cascade is strictly ES→OS: deleting the authoritative ES/logical index also
+        // removes its OS twin, but deleting an explicit .os index NEVER touches ES (a shadow
+        // delete must not tumble the authoritative index). See FF_INDEX_DELETE_CASCADE
+        // (issue #35640, TC-016).
         final boolean cascade = Config.getBooleanProperty(FF_INDEX_DELETE_CASCADE, true);
+        final boolean osTagged = IndexTag.OS.isTagged(indexName);
         final ContentletIndexOperations primary;
         final List<ContentletIndexOperations> targets;
-        if (cascade) {
-            // Phase-dispatched broadcast: fan out to every write provider so the .os twin
-            // is not orphaned. Track the read provider's result as the primary; shadow
-            // failures in dual-write phases are fire-and-forget.
+        if (osTagged || !cascade) {
+            // Tag-dispatched, single engine. An explicit .os name always targets OS only
+            // (never cascades back to ES). A bare name with cascade off targets ES only.
+            primary = osTagged ? router.osImpl() : router.esImpl();
+            targets = List.of(primary);
+        } else {
+            // Bare name + cascade on: phase-dispatched broadcast to every write provider so
+            // the ES delete also removes its OS twin (ES→OS, no orphan shadow). The bare name
+            // lets each provider re-derive its OWN physical name (ES → bare, OS → .os).
+            // Track the read provider's result as the primary; shadow failures in dual-write
+            // phases are fire-and-forget.
             primary = router.readProvider();
             targets = router.writeProviders();
-        } else {
-            // Tag-dispatched: the vendor tag on the name decides the single target
-            // (.os → OS, otherwise ES). The twin in the other engine is left intact.
-            primary = IndexTag.OS.isTagged(indexName) ? router.osImpl() : router.esImpl();
-            targets = List.of(primary);
         }
 
         boolean primaryResult = false;

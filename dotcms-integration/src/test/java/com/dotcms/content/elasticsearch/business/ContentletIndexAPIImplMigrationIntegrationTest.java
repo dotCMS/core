@@ -476,6 +476,32 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         Logger.info(this, "✅ delete Phase 1 cascade OFF — only ES removed: " + DUAL_WORKING);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
+     * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
+     *        shows the OS index), with cascade on (default).
+     * Then : ONLY the OS index is removed; the authoritative ES twin is left intact. The cascade
+     *        is strictly ES→OS — an explicit {@code .os} name is a tag-dispatched OS-only delete
+     *        and never tumbles the ES index (issue #35640).
+     */
+    @Test
+    public void test_delete_phase1_byOsName_removesOnlyOs()
+            throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        contentletIndexAPI().delete(IndexTag.OS.tag(DUAL_WORKING)); // delete by the .os name
+
+        assertTrue("ES twin must survive a .os-targeted delete (no reverse cascade)",
+                esImpl().indexExists(DUAL_WORKING));
+        assertFalse("OS .os index must be gone", osIndexAPI.indexExists(physicalDualWorking));
+
+        Logger.info(this, "✅ delete Phase 1 by .os name — OS only, ES preserved: " + DUAL_WORKING);
+    }
+
     // =========================================================================
     // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
