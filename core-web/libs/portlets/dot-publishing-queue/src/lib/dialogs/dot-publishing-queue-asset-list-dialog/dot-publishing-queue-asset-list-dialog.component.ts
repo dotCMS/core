@@ -32,6 +32,7 @@ import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
+import { groupContentletAssetsByType } from '../../util/asset-groups.util';
 
 /** Show the search input only when the bundle is big enough that scrolling alone is painful. */
 const ASSET_SEARCH_THRESHOLD = 10;
@@ -165,25 +166,33 @@ export class DotPublishingQueueAssetListDialogComponent {
         this.dialogRef?.close();
     }
 
+    /** Same fan-out avoidance as the Select Bundle dialog: group by content type,
+     * fetch once per type, apply the resolved URL to every asset in that group.
+     * See `groupContentletAssetsByType` and the rationale in the sister dialog. */
     private resolveAssetEditUrls(assets: BundleAssetView[]): void {
-        const urls = new Map<string, string>();
+        const groups = groupContentletAssetsByType(assets);
 
-        for (const asset of assets) {
-            if (asset.type !== 'contentlet' || !asset.inode) {
-                continue;
-            }
-            const partial = {
-                inode: asset.inode,
-                contentType: asset.content_type_name ?? ''
-            } as DotCMSContentlet;
-
+        for (const [contentType, group] of groups) {
+            const [head, ...rest] = group;
             this.editUrlService
-                .resolveEditUrl(partial)
+                .resolveEditUrl({ inode: head.inode, contentType } as DotCMSContentlet)
                 .pipe(take(1))
-                .subscribe((url) => {
-                    urls.set(asset.asset, url);
-                    // Re-emit to notify signal consumers — Map mutation alone won't.
-                    this.assetEditUrls.set(new Map(urls));
+                .subscribe((headUrl) => {
+                    const patch = new Map<string, string>([[head.asset, headUrl]]);
+                    for (const asset of rest) {
+                        this.editUrlService
+                            .resolveEditUrl({
+                                inode: asset.inode,
+                                contentType
+                            } as DotCMSContentlet)
+                            .pipe(take(1))
+                            .subscribe((url) => patch.set(asset.asset, url));
+                    }
+                    this.assetEditUrls.update((prev) => {
+                        const next = new Map(prev);
+                        for (const [k, v] of patch) next.set(k, v);
+                        return next;
+                    });
                 });
         }
     }

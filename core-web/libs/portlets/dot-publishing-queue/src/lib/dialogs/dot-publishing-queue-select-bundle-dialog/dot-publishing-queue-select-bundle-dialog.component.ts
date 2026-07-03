@@ -55,6 +55,8 @@ import {
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
+import { groupContentletAssetsByType } from '../../util/asset-groups.util';
+
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
 interface BundleRow {
@@ -319,6 +321,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     onBundlesPagePrev(): void {
         if (this.bundlesPage() > 1) {
             this.bundlesPage.update((p) => p - 1);
+            this.resetCheckedForPageChange();
             this.loadBundles();
         }
     }
@@ -326,8 +329,18 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     onBundlesPageNext(): void {
         if (this.bundlesHasMore()) {
             this.bundlesPage.update((p) => p + 1);
+            this.resetCheckedForPageChange();
             this.loadBundles();
         }
+    }
+
+    /** Cursor pagination replaces the visible bundle list on every page change,
+     * so any ids checked on the previous page would silently outlive the rows
+     * they came from — the counter in the footer would include invisible ids.
+     * Clear the selection to keep the visible state honest. */
+    private resetCheckedForPageChange(): void {
+        this.checkedBundleIds.set([]);
+        this.validationWarningKey.set(null);
     }
 
     onAssetsPagePrev(): void {
@@ -678,35 +691,48 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             });
     }
 
-    /** Resolves the edit URL for each contentlet asset in parallel. Non-contentlet
-     * types (templates, languages, containers, etc.) are skipped — the row renders
-     * as plain text.
+    /** Resolves the edit URL for each contentlet asset. Non-contentlet types
+     * (templates, languages, containers, etc.) are skipped — the row renders as
+     * plain text.
      *
-     * The service caches by content type, so 50 contentlets of the same type
-     * trigger one metadata fetch. `baseType` is not available from
-     * `/api/bundle/{id}/assets`, so HTML pages won't get the dedicated page editor
-     * route — they'll get the contentlet editor URL instead (acceptable; the
-     * user can navigate to the visual editor from there).
+     * Assets are grouped by content type so the underlying service is called
+     * once per distinct content type instead of once per asset. The service
+     * caches the editor flag per type, so the first call primes the cache; the
+     * remaining calls in the same group hit the cache and emit synchronously.
+     * A bundle with 200 contentlets of 4 types costs 4 HTTP requests, not 200.
+     *
+     * `baseType` is not available from `/api/bundle/{id}/assets`, so HTML pages
+     * won't get the dedicated page editor route — they get the contentlet
+     * editor URL instead (acceptable; the user can navigate to the visual
+     * editor from there).
      */
     private resolveAssetEditUrls(assets: BundleAssetView[]): void {
-        const urls = new Map<string, string>();
+        const groups = groupContentletAssetsByType(assets);
 
-        for (const asset of assets) {
-            if (asset.type !== 'contentlet' || !asset.inode) {
-                continue;
-            }
-            const partial = {
-                inode: asset.inode,
-                contentType: asset.content_type_name ?? ''
-            } as DotCMSContentlet;
-
+        for (const [contentType, group] of groups) {
+            // Prime the per-type cache with the first asset. Once that emits,
+            // the remaining calls in the same group hit the cache synchronously
+            // via `of(...)` — no additional HTTP.
+            const [head, ...rest] = group;
             this.editUrlService
-                .resolveEditUrl(partial)
+                .resolveEditUrl({ inode: head.inode, contentType } as DotCMSContentlet)
                 .pipe(take(1))
-                .subscribe((url) => {
-                    urls.set(asset.asset, url);
-                    // Re-emit to trigger CD — Map mutation alone won't notify signal consumers
-                    this.assetEditUrls.set(new Map(urls));
+                .subscribe((headUrl) => {
+                    const patch = new Map<string, string>([[head.asset, headUrl]]);
+                    for (const asset of rest) {
+                        this.editUrlService
+                            .resolveEditUrl({
+                                inode: asset.inode,
+                                contentType
+                            } as DotCMSContentlet)
+                            .pipe(take(1))
+                            .subscribe((url) => patch.set(asset.asset, url));
+                    }
+                    this.assetEditUrls.update((prev) => {
+                        const next = new Map(prev);
+                        for (const [k, v] of patch) next.set(k, v);
+                        return next;
+                    });
                 });
         }
     }

@@ -206,6 +206,42 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
     });
 
+    describe('bundle list pagination', () => {
+        it('clears the checked selection and any active warning when paging forward', () => {
+            spectator.detectChanges();
+            spectator.component.checkedBundleIds.set(['bundle-1', 'bundle-2']);
+            spectator.component.validationWarningKey.set('any-key');
+            spectator.component.bundlesHasMore.set(true);
+
+            spectator.component.onBundlesPageNext();
+
+            expect(spectator.component.checkedBundleIds()).toEqual([]);
+            expect(spectator.component.validationWarningKey()).toBeNull();
+            expect(spectator.component.bundlesPage()).toBe(2);
+        });
+
+        it('clears the checked selection when paging back', () => {
+            spectator.detectChanges();
+            spectator.component.bundlesPage.set(2);
+            spectator.component.checkedBundleIds.set(['bundle-1']);
+
+            spectator.component.onBundlesPagePrev();
+
+            expect(spectator.component.checkedBundleIds()).toEqual([]);
+            expect(spectator.component.bundlesPage()).toBe(1);
+        });
+
+        it('does not touch selection when page-forward is blocked (no more pages)', () => {
+            spectator.detectChanges();
+            spectator.component.checkedBundleIds.set(['bundle-1']);
+            spectator.component.bundlesHasMore.set(false);
+
+            spectator.component.onBundlesPageNext();
+
+            expect(spectator.component.checkedBundleIds()).toEqual(['bundle-1']);
+        });
+    });
+
     describe('type icon', () => {
         it('maps known asset types to icons', () => {
             expect(spectator.component.typeIcon('contentlet')).toBe('pi pi-file');
@@ -229,9 +265,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('opens the resolved edit URL in a new tab when the row has one', () => {
             // Prime the resolved URL map so editUrlFor() returns a non-null URL.
-            spectator.component.assetEditUrls.set(
-                new Map([['a1', '/edit/contentlet/a1']])
-            );
+            spectator.component.assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
             spectator.component.onSelectAssetRow({
                 asset: 'a1',
                 title: 'Spring Sale Landing',
@@ -251,9 +285,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('renders the asset name as plain text, not as an anchor', () => {
-            spectator.component.assetEditUrls.set(
-                new Map([['a1', '/edit/contentlet/a1']])
-            );
+            spectator.component.assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
             spectator.detectChanges();
             const name = spectator.query(byTestId('pq-select-bundle-asset-name'));
             // The element tag must not be <a> — the row, not the name, is the

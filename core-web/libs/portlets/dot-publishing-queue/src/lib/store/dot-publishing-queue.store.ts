@@ -62,10 +62,6 @@ interface DotPublishingQueueState {
     detailBundleId: string | null;
     detail: PublishingJobDetailView | null;
     detailStatus: LoadStatus;
-    /** Asset list shown inside the Bundle Details modal (separate from the standalone
-     * Asset List modal's `selectedAssets` so the two modals don't fight over state). */
-    detailAssets: BundleAssetView[];
-    detailAssetsStatus: LoadStatus;
 
     /** File-on-disk probes for the detail dialog's two download buttons.
      *
@@ -101,8 +97,6 @@ const initialState: DotPublishingQueueState = {
     detailBundleId: null,
     detail: null,
     detailStatus: 'init',
-    detailAssets: [],
-    detailAssetsStatus: 'init',
     canDownloadBundle: null,
     canDownloadManifest: null
 };
@@ -256,41 +250,15 @@ export const DotPublishingQueueStore = signalStore(
                 });
         }
 
-        /**
-         * Lazy-loads the assets that travelled in a bundle. Backed by the legacy
-         * `GET /api/bundle/{bundleId}/assets` (the only endpoint that returns the
-         * full list — `/api/v1/publishing/{bundleId}` only carries metadata +
-         * endpoints + a 3-item assetPreview).
-         */
-        function loadDetailAssets() {
-            const bundleId = store.detailBundleId();
-            if (!bundleId) {
-                return;
-            }
-
-            patchState(store, { detailAssetsStatus: 'loading', detailAssets: [] });
-            service
-                .getBundleAssets(bundleId)
-                .pipe(
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        patchState(store, { detailAssetsStatus: 'loaded' });
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((assets) => {
-                    patchState(store, {
-                        detailAssets: assets,
-                        detailAssetsStatus: 'loaded'
-                    });
-                });
-        }
-
         function refresh() {
             loadBundles();
         }
+
+        // Fires a silent refresh as soon as the tab comes back into focus so
+        // the user doesn't stare at stale rows waiting for the next interval.
+        // Assigned in startPolling / cleared in stopPolling so the listener
+        // matches the interval's lifetime exactly.
+        let onVisibilityChange: (() => void) | null = null;
 
         function startPolling() {
             stopPolling();
@@ -302,12 +270,23 @@ export const DotPublishingQueueStore = signalStore(
                 // response arrives. No skeleton flash every 15 s.
                 loadBundles(true);
             }, POLL_INTERVAL_MS);
+
+            onVisibilityChange = () => {
+                if (!document.hidden) {
+                    loadBundles(true);
+                }
+            };
+            document.addEventListener('visibilitychange', onVisibilityChange);
         }
 
         function stopPolling() {
             if (pollHandle !== null) {
                 clearInterval(pollHandle);
                 pollHandle = null;
+            }
+            if (onVisibilityChange !== null) {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+                onVisibilityChange = null;
             }
         }
 
@@ -430,25 +409,18 @@ export const DotPublishingQueueStore = signalStore(
                     detailBundleId: bundleId,
                     detail: null,
                     detailStatus: 'init',
-                    detailAssets: [],
-                    detailAssetsStatus: 'init',
                     canDownloadBundle: null,
                     canDownloadManifest: null
                 });
                 loadDetail();
-                loadDetailAssets();
                 probeDownloads();
             },
-
-            loadDetailAssets,
 
             closeDetail() {
                 patchState(store, {
                     detailBundleId: null,
                     detail: null,
                     detailStatus: 'init',
-                    detailAssets: [],
-                    detailAssetsStatus: 'init',
                     canDownloadBundle: null,
                     canDownloadManifest: null
                 });

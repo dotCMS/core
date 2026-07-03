@@ -57,9 +57,9 @@ export class DotPublishingQueueToolbarComponent {
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
     readonly hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
 
-    /** "Add Bundle" dropdown items. "Select Bundle" is reserved for a future
-     * dialog (issue #36040 follow-up); for now it just emits the output so the
-     * shell can wire it up when ready. */
+    /** "Add Bundle" split-menu items. The commands emit outputs instead of
+     * calling services directly so the shell owns dialog orchestration
+     * (component ↔ dialog separation per libs/portlets/CLAUDE.md). */
     readonly addBundleItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('publishing-queue.add-bundle.select'),

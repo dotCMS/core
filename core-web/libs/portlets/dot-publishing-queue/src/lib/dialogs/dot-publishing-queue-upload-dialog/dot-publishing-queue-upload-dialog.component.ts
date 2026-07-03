@@ -93,20 +93,29 @@ export class DotPublishingQueueUploadDialogComponent {
     }
 
     /** Pulls the most useful message out of a dotCMS error body. Handles the
-     * three shapes the BE returns: array, `{ errors: [...] }`, `{ message: ... }`,
-     * or a plain string. Falls back to the HTTP error message. */
+     * four shapes the BE returns: array, `{ errors: [...] }`, `{ message: ... }`,
+     * or a plain string. Uses nullish coalescing so empty-string BE fields don't
+     * silently fall through to the HTTP error message. */
     private extractErrorMessage(error: HttpErrorResponse): string {
         const body = error.error;
 
         if (Array.isArray(body) && body.length > 0) {
-            return body[0]?.message || body[0]?.error || error.message;
+            return body[0]?.message ?? body[0]?.error ?? error.message;
         }
 
         if (body?.errors?.length > 0) {
-            return body.errors[0]?.message || body.errors[0]?.error || error.message;
+            return body.errors[0]?.message ?? body.errors[0]?.error ?? error.message;
         }
 
-        return body?.message || (typeof body === 'string' ? body : null) || error.message;
+        if (typeof body?.message === 'string') {
+            return body.message;
+        }
+
+        if (typeof body === 'string') {
+            return body;
+        }
+
+        return error.message;
     }
 
     private isBundleFile(file: File | null): file is File {

@@ -237,31 +237,24 @@ describe('DotPublishingQueueStore', () => {
     });
 
     describe('openDetail / loadDetail / closeDetail', () => {
-        it('loads details + assets when opened', () => {
+        it('loads details when opened (assets fetched lazily by view-contents dialog)', () => {
+            (service.getBundleAssets as jest.Mock).mockClear();
             store.openDetail('B-Y');
             expect(service.getPublishingJobDetails).toHaveBeenCalledWith('B-Y');
-            expect(service.getBundleAssets).toHaveBeenCalledWith('B-Y');
+            // Details dialog only renders metadata + endpoints + download links.
+            // Asset list lives in the separate View Contents dialog, so openDetail
+            // must NOT eagerly fetch assets.
+            expect(service.getBundleAssets).not.toHaveBeenCalled();
             expect(store.detail()).toEqual(MOCK_DETAIL);
             expect(store.detailStatus()).toBe('loaded');
-            expect(store.detailAssets()).toEqual(MOCK_ASSETS);
-            expect(store.detailAssetsStatus()).toBe('loaded');
         });
 
-        it('closeDetail clears state including detail assets', () => {
+        it('closeDetail clears detail state', () => {
             store.openDetail('B-Y');
             store.closeDetail();
             expect(store.detailBundleId()).toBeNull();
             expect(store.detail()).toBeNull();
-            expect(store.detailAssets()).toEqual([]);
-            expect(store.detailAssetsStatus()).toBe('init');
-        });
-
-        it('loadDetailAssets error → handle + status reset to loaded', () => {
-            const error = new Error('boom');
-            (service.getBundleAssets as jest.Mock).mockReturnValueOnce(throwError(() => error));
-            store.openDetail('B-Z');
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(store.detailAssetsStatus()).toBe('loaded');
+            expect(store.detailStatus()).toBe('init');
         });
     });
 
@@ -315,6 +308,45 @@ describe('DotPublishingQueueStore', () => {
             store.stopPolling();
             store.startPolling();
             store.stopPolling();
+        });
+
+        it('fires a silent refresh when the tab becomes visible again', () => {
+            // `onInit` already started polling — reset the counter and simulate
+            // the tab going hidden then visible.
+            (service.listPublishingJobs as jest.Mock).mockClear();
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => false
+            });
+
+            document.dispatchEvent(new Event('visibilitychange'));
+
+            expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT fetch on visibilitychange while the tab is still hidden', () => {
+            (service.listPublishingJobs as jest.Mock).mockClear();
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => true
+            });
+
+            document.dispatchEvent(new Event('visibilitychange'));
+
+            expect(service.listPublishingJobs).not.toHaveBeenCalled();
+        });
+
+        it('unbinds the visibilitychange listener when stopPolling is called', () => {
+            (service.listPublishingJobs as jest.Mock).mockClear();
+            store.stopPolling();
+            Object.defineProperty(document, 'hidden', {
+                configurable: true,
+                get: () => false
+            });
+
+            document.dispatchEvent(new Event('visibilitychange'));
+
+            expect(service.listPublishingJobs).not.toHaveBeenCalled();
         });
     });
 

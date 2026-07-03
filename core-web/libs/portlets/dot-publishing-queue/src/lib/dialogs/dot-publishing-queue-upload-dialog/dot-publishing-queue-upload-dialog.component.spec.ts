@@ -145,6 +145,14 @@ describe('DotPublishingQueueUploadDialogComponent', () => {
             expect(spectator.component.errorMessage()).toBe('Upload failed: disk full');
         });
 
+        it('preserves an empty-string body.message instead of falling back to HTTP status', () => {
+            // Regression: `||` chaining would treat '' as falsy and surface the
+            // generic HTTP message ("Http failure response for..."). `??` keeps
+            // whatever the BE actually said — including intentional empties.
+            submitWithError(makeError({ message: '' }));
+            expect(spectator.component.errorMessage()).toBe('');
+        });
+
         it('clears the previous error before retrying', () => {
             submitWithError(makeError({ message: 'first error' }));
             expect(spectator.component.errorMessage()).toBe('first error');
