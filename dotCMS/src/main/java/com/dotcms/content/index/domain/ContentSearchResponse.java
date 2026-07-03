@@ -167,7 +167,7 @@ public record ContentSearchResponse(
      * options: [ { text, score } ] } ] } }. Vendor imports are confined to this factory (like the
      * other {@code from(...)} methods). Returns an empty map when there are no suggestions.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static Map<String, Object> suggestFrom(
             final org.elasticsearch.search.suggest.Suggest esSuggest) {
         if (esSuggest == null) {
