@@ -320,11 +320,22 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
         assertTrue("hit must carry legacy '_id'", firstHit.has("_id"));
         assertTrue("hit must carry legacy '_source'", firstHit.has("_source"));
 
-        // Legacy ES-wire aggregations shape (buckets)
+        // Legacy ES-wire aggregations shape. The adapter emits ES-native typed keys
+        // (e.g. "sterms#types") that the dot-es-search portlet's splitAggKey() parses; accept the
+        // typed key or the plain name, and require the legacy 'buckets' array to be present.
         final JSONObject aggregations = esresponse.getJSONObject("aggregations");
-        assertTrue("aggregations must contain the declared 'types' aggregation", aggregations.has("types"));
-        assertTrue("aggregation must expose the legacy 'buckets' array",
-                aggregations.getJSONObject("types").getJSONArray("buckets").length() > 0);
+        boolean typesAggFound = false;
+        for (final Object rawKey : aggregations.keySet()) {
+            final String key = (String) rawKey;
+            if ((key.equals("types") || key.endsWith("#types"))
+                    && aggregations.getJSONObject(key).getJSONArray("buckets").length() > 0) {
+                typesAggFound = true;
+                break;
+            }
+        }
+        assertTrue("aggregations must contain the declared 'types' terms aggregation with a legacy "
+                + "'buckets' array (ES-native typed key like 'sterms#types', or plain 'types')",
+                typesAggFound);
     }
 
     private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{
