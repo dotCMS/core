@@ -269,6 +269,75 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
+     * Given scenario: the backend now routes /api/es/search through the vendor-neutral phase-aware
+     *          SearchAPI, but the "esresponse" field is rebuilt into the legacy Elasticsearch-wire
+     *          shape by {@code ESContentResourcePortlet#toLegacyEsJson}.
+     * Expected result: "esresponse" keeps the ES-wire contract the dot-es-search Angular portlet and
+     *          external clients parse — {@code took}, {@code hits.total.value},
+     *          {@code hits.hits[]._id}/{@code ._source}, and {@code aggregations.<name>.buckets}.
+     */
+    @Test
+    public void test_search_esresponse_preservesLegacyEsWireShape() throws Exception {
+        final long now = System.currentTimeMillis();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("Title").velocityVarName("title").next())
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "esresponse-shape-" + now)
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+        APILocator.getContentletAPI().isInodeIndexed(contentlet.getInode(), true);
+
+        final String jsonQuery = "{\n"
+                + "    \"size\": 5,\n"
+                + "    \"aggs\": { \"types\": { \"terms\": { \"field\": \"contenttype\", \"size\": 5 } } },\n"
+                + "    \"query\": {\n"
+                + "        \"bool\": {\n"
+                + "            \"must\": {\n"
+                + "                \"term\": {\n"
+                + "                    \"contenttype\": " + contentType.variable() + "\n"
+                + "                }\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+        final Response responseResource = new ESContentResourcePortlet()
+                .search(createHttpRequest(false), new MockHttpResponse(), jsonQuery, "0", true, null, false);
+        assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+        final JSONObject json = new JSONObject(responseResource.getEntity().toString());
+        final JSONObject esresponse = json.getJSONArray("esresponse").getJSONObject(0);
+
+        // Legacy ES-wire timing + hits shape
+        assertTrue("esresponse must expose legacy 'took'", esresponse.has("took"));
+        final JSONObject hits = esresponse.getJSONObject("hits");
+        assertTrue("hits.total.value must be present (ES-wire)", hits.getJSONObject("total").has("value"));
+        final JSONArray hitArr = hits.getJSONArray("hits");
+        assertTrue("query must return at least one hit", hitArr.length() > 0);
+        final JSONObject firstHit = hitArr.getJSONObject(0);
+        assertTrue("hit must carry legacy '_id'", firstHit.has("_id"));
+        assertTrue("hit must carry legacy '_source'", firstHit.has("_source"));
+
+        // Legacy ES-wire aggregations shape. The adapter emits ES-native typed keys
+        // (e.g. "sterms#types") that the dot-es-search portlet's splitAggKey() parses; accept the
+        // typed key or the plain name, and require the legacy 'buckets' array to be present.
+        final JSONObject aggregations = esresponse.getJSONObject("aggregations");
+        boolean typesAggFound = false;
+        for (final Object rawKey : aggregations.keySet()) {
+            final String key = (String) rawKey;
+            if ((key.equals("types") || key.endsWith("#types"))
+                    && aggregations.getJSONObject(key).getJSONArray("buckets").length() > 0) {
+                typesAggFound = true;
+                break;
+            }
+        }
+        assertTrue("aggregations must contain the declared 'types' terms aggregation with a legacy "
+                + "'buckets' array (ES-native typed key like 'sterms#types', or plain 'types')",
+                typesAggFound);
+    }
+
     private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
