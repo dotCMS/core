@@ -3,12 +3,13 @@ package com.dotcms.health.checks.cdi;
 import com.dotcms.health.util.HealthCheckBase;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.Logger;
-
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.StringWriter;
+
+import static com.dotmarketing.util.WebKeys.DOTCMS_STARTED_UP;
 
 /**
  * CDI-based health check that verifies the Velocity engine's global macro
@@ -81,7 +82,7 @@ public class VelocityHealthCheck extends HealthCheckBase {
         // VelocityUtil.getEngine() triggers a lazy init that touches the DB/company context.
         // On a fresh install this fires before Task00001LoadSchema runs, throwing "No Company!".
         // Defer until InitServlet has set dotcms.started.up=true.
-        if (!"true".equals(System.getProperty("dotcms.started.up"))) {
+        if (!"true".equals(System.getProperty(DOTCMS_STARTED_UP))) {
             return new CheckResult(false, 0L,
                     "Velocity probe deferred: dotCMS startup not yet complete");
         }
