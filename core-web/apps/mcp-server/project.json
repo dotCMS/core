@@ -8,7 +8,12 @@
         "build": {
             "executor": "nx:run-commands",
             "outputs": ["{workspaceRoot}/dist/apps/mcp-server"],
-            "dependsOn": [{ "target": "generate-spec", "projects": ["sdk-ai"] }],
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
             "options": {
                 "commands": [
                     "npx xmcp build",
@@ -22,25 +27,37 @@
         },
         "serve": {
             "executor": "nx:run-commands",
-            "dependsOn": [{ "target": "generate-spec", "projects": ["sdk-ai"] }],
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
             "options": {
                 "command": "npx xmcp dev",
                 "cwd": "apps/mcp-server"
             }
         },
         "test": {
-            "executor": "@nx/jest:jest",
-            "dependsOn": [{ "target": "generate-spec", "projects": ["sdk-ai"] }],
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "dependsOn": [
+                {
+                    "target": "generate-spec",
+                    "projects": ["sdk-ai"]
+                }
+            ],
             "options": {
-                "jestConfig": "apps/mcp-server/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
             "options": {
-                "lintFilePatterns": ["apps/mcp-server/src/**/*.ts"]
+                "args": ["src/**/*.ts"]
             }
         }
     }

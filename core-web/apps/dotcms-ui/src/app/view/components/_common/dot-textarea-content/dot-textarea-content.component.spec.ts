@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
