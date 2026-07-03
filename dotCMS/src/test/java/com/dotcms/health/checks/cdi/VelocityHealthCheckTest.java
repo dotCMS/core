@@ -27,16 +27,29 @@ import static org.mockito.Mockito.mockStatic;
  */
 public class VelocityHealthCheckTest {
 
+    private static final String STARTED_UP_PROPERTY = "dotcms.started.up";
+
     private MockedStatic<VelocityUtil> velocityUtilMock;
+    private String previousStartedUpProperty;
 
     @Before
     public void setUp() {
+        // The probe defers until dotCMS startup completes, which InitServlet signals via this
+        // property in production. Set it here so the probe logic under test actually runs
+        // instead of short-circuiting on every test.
+        previousStartedUpProperty = System.getProperty(STARTED_UP_PROPERTY);
+        System.setProperty(STARTED_UP_PROPERTY, "true");
         velocityUtilMock = mockStatic(VelocityUtil.class);
     }
 
     @After
     public void tearDown() {
         velocityUtilMock.close();
+        if (previousStartedUpProperty == null) {
+            System.clearProperty(STARTED_UP_PROPERTY);
+        } else {
+            System.setProperty(STARTED_UP_PROPERTY, previousStartedUpProperty);
+        }
     }
 
     @Test
@@ -46,6 +59,18 @@ public class VelocityHealthCheckTest {
         final HealthCheckResult result = new VelocityHealthCheck().check();
 
         assertEquals(HealthStatus.UP, result.status());
+    }
+
+    @Test
+    public void returnsDownWhenStartupNotComplete() {
+        // Even a healthy-looking engine shouldn't matter: the probe must defer before touching
+        // VelocityUtil.getEngine() at all until InitServlet marks startup complete.
+        System.clearProperty(STARTED_UP_PROPERTY);
+        stubEngineToWrite("<span class=\"editor-marks\"></span>");
+
+        final HealthCheckResult result = new VelocityHealthCheck().check();
+
+        assertEquals(HealthStatus.DOWN, result.status());
     }
 
     @Test
