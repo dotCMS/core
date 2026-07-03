@@ -258,12 +258,23 @@ public class IndexStartupValidator {
      *         {@code false} when they overlap (caller must skip the OS bootstrap and halt the migration)
      */
     public static boolean endpointsAreSeparate() {
+        final OSClientConfig config;
         try {
-            assertEndpointsSeparate(ConfigurableOpenSearchProvider.configFromProperties());
-            return true;
+            config = ConfigurableOpenSearchProvider.configFromProperties();
         } catch (Exception e) {
+            // Config could not be resolved — this is NOT an ES/OS overlap. Log it distinctly so the
+            // operator is not sent chasing a same-endpoint misconfiguration that does not exist.
             Logger.error(IndexStartupValidator.class,
-                    "OpenSearch endpoint-separation check failed: " + e.getMessage());
+                    "Cannot resolve OpenSearch configuration for the endpoint-separation check: "
+                    + e.getMessage());
+            return false;
+        }
+        try {
+            assertEndpointsSeparate(config);
+            return true;
+        } catch (DotRuntimeException e) {
+            // The overlap message (with the actionable "Set OS_ENDPOINTS to a separate instance").
+            Logger.error(IndexStartupValidator.class, e.getMessage());
             return false;
         }
     }

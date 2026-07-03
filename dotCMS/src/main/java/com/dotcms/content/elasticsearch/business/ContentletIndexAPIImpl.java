@@ -1016,9 +1016,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (!IndexStartupValidator.endpointsAreSeparate()) {
             Logger.warn(this.getClass(),
                     "Skipping OpenSearch index bootstrap (working=" + workingName
-                    + ", live=" + liveName + "): OS endpoints overlap ES (same cluster)."
-                    + " Migration halted (now ES-only). Set OS_ENDPOINTS to a separate"
-                    + " OpenSearch instance and restart.");
+                    + ", live=" + liveName + "): OS migration configuration rejected"
+                    + " (see the preceding error for the cause — e.g. ES/OS endpoint overlap or"
+                    + " an unresolved OS config). Migration halted (now ES-only).");
             haltMigration();
             return;
         }
