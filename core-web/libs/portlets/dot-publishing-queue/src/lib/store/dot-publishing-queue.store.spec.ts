@@ -1,14 +1,21 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService, DotPublishingQueueService } from '@dotcms/data-access';
+import {
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotPublishingQueueService
+} from '@dotcms/data-access';
 import {
     BundleAssetView,
     PublishAuditStatus,
     PublishingJobDetailView,
     PublishingJobsResponse,
-    PublishingJobView
+    PublishingJobView,
+    RetryBundleResultView
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueStore } from './dot-publishing-queue.store';
 
@@ -65,6 +72,7 @@ describe('DotPublishingQueueStore', () => {
     let store: InstanceType<typeof DotPublishingQueueStore>;
     let service: jest.Mocked<DotPublishingQueueService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let globalMessage: jest.Mocked<DotGlobalMessageService>;
 
     const createService = createServiceFactory({
         service: DotPublishingQueueStore,
@@ -83,7 +91,21 @@ describe('DotPublishingQueueStore', () => {
                 deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
                 purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } }))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, {
+                success: jest.fn(),
+                error: jest.fn()
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'publishing-queue.retry.success.plural': '{0} bundles queued for retry.',
+                    'publishing-queue.retry.failed.plural': 'Could not retry {0} bundles: {1}',
+                    'publishing-queue.retry.partial':
+                        '{0} of {1} bundles queued for retry. Failed: {2}',
+                    'publishing-queue.retry.more': 'and {0} more'
+                })
+            }
         ]
     });
 
@@ -96,6 +118,9 @@ describe('DotPublishingQueueStore', () => {
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
         ) as jest.Mocked<DotHttpErrorManagerService>;
+        globalMessage = spectator.inject(
+            DotGlobalMessageService
+        ) as jest.Mocked<DotGlobalMessageService>;
         spectator.flushEffects();
     });
 
@@ -259,11 +284,144 @@ describe('DotPublishingQueueStore', () => {
     });
 
     describe('retryBundles / deleteBundle / deleteBundlesBulk / purgeBundles', () => {
+        const retryResult = (
+            overrides: Partial<RetryBundleResultView> = {}
+        ): RetryBundleResultView => ({
+            bundleId: 'x',
+            success: true,
+            message: 'ok',
+            forcePush: false,
+            operation: 'PUBLISH',
+            deliveryStrategy: 'ALL_ENDPOINTS',
+            assetCount: 1,
+            ...overrides
+        });
+
+        beforeEach(() => {
+            // Toast mocks accumulate across the retry cases below; reset them so
+            // each `not.toHaveBeenCalled` assertion sees a clean slate.
+            (globalMessage.success as jest.Mock).mockClear();
+            (globalMessage.error as jest.Mock).mockClear();
+        });
+
         it('retryBundles calls service and refreshes', () => {
             const onDone = jest.fn();
             store.retryBundles({ bundleIds: ['x'] }, onDone);
             expect(service.retryBundles).toHaveBeenCalledWith({ bundleIds: ['x'] });
             expect(onDone).toHaveBeenCalled();
+        });
+
+        it('retryBundles passes the BE success message through verbatim for a single bundle', () => {
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([retryResult({ message: 'Bundle successfully re-queued for publishing' })])
+            );
+            store.retryBundles({ bundleIds: ['x'] });
+            expect(globalMessage.success).toHaveBeenCalledWith(
+                'Bundle successfully re-queued for publishing'
+            );
+            expect(globalMessage.error).not.toHaveBeenCalled();
+        });
+
+        it('retryBundles summarizes with a count when N bundles all succeed', () => {
+            // Individual BE messages are identical canned strings for every bundle
+            // in an all-success batch — listing them would just be repetition.
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([
+                    retryResult({ bundleId: 'a' }),
+                    retryResult({ bundleId: 'b' }),
+                    retryResult({ bundleId: 'c' })
+                ])
+            );
+            store.retryBundles({ bundleIds: ['a', 'b', 'c'] });
+            expect(globalMessage.success).toHaveBeenCalledWith('3 bundles queued for retry.');
+        });
+
+        it('retryBundles surfaces the BE message verbatim when a single bundle fails', () => {
+            // The BE returns HTTP 200 with success:false when a bundle is already
+            // queued — the classic "silent failure" this notification prevents.
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([
+                    retryResult({
+                        success: false,
+                        message: 'Bundle already in queue - cannot retry while publishing: x'
+                    })
+                ])
+            );
+            store.retryBundles({ bundleIds: ['x'] });
+            expect(globalMessage.error).toHaveBeenCalledWith(
+                'Bundle already in queue - cannot retry while publishing: x'
+            );
+            expect(globalMessage.success).not.toHaveBeenCalled();
+        });
+
+        it('retryBundles lists per-bundle names + BE messages when several fail', () => {
+            // Bundle names come from the store's already-loaded rows (bundle-A,
+            // bundle-B are the seed fixtures from BUNDLES_RESPONSE).
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([
+                    retryResult({
+                        bundleId: 'bundle-A',
+                        success: false,
+                        message: 'Bundle already in queue'
+                    }),
+                    retryResult({
+                        bundleId: 'bundle-B',
+                        success: false,
+                        message: 'Permission denied'
+                    })
+                ])
+            );
+            store.retryBundles({ bundleIds: ['bundle-A', 'bundle-B'] });
+            expect(globalMessage.error).toHaveBeenCalledWith(
+                "Could not retry 2 bundles: 'Bundle One' — Bundle already in queue; 'Bundle One' — Permission denied"
+            );
+        });
+
+        it('retryBundles falls back to the bundle id when the row is not in the store', () => {
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([
+                    retryResult({ bundleId: 'zzz', success: false, message: 'boom' }),
+                    retryResult({ bundleId: 'yyy', success: false, message: 'bang' })
+                ])
+            );
+            store.retryBundles({ bundleIds: ['zzz', 'yyy'] });
+            expect(globalMessage.error).toHaveBeenCalledWith(
+                "Could not retry 2 bundles: 'zzz' — boom; 'yyy' — bang"
+            );
+        });
+
+        it('retryBundles caps the inline failure list at 3 with an "and N more" tail', () => {
+            const fails: RetryBundleResultView[] = ['a', 'b', 'c', 'd', 'e'].map((id) =>
+                retryResult({ bundleId: id, success: false, message: `msg-${id}` })
+            );
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(of(fails));
+            store.retryBundles({ bundleIds: fails.map((f) => f.bundleId) });
+            expect(globalMessage.error).toHaveBeenCalledWith(
+                "Could not retry 5 bundles: 'a' — msg-a; 'b' — msg-b; 'c' — msg-c — and 2 more"
+            );
+        });
+
+        it('retryBundles emits a partial-outcome toast listing only the failures', () => {
+            // Success detail is a count; failure detail is a per-item list.
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+                of([
+                    retryResult({ bundleId: 'bundle-A' }),
+                    retryResult({ bundleId: 'bundle-B' }),
+                    retryResult({ bundleId: 'zzz', success: false, message: 'nope' })
+                ])
+            );
+            store.retryBundles({ bundleIds: ['bundle-A', 'bundle-B', 'zzz'] });
+            expect(globalMessage.error).toHaveBeenCalledWith(
+                "2 of 3 bundles queued for retry. Failed: 'zzz' — nope"
+            );
+            expect(globalMessage.success).not.toHaveBeenCalled();
+        });
+
+        it('retryBundles does NOT emit any toast when the response is empty', () => {
+            (service.retryBundles as jest.Mock).mockReturnValueOnce(of([]));
+            store.retryBundles({ bundleIds: [] });
+            expect(globalMessage.success).not.toHaveBeenCalled();
+            expect(globalMessage.error).not.toHaveBeenCalled();
         });
 
         it('deleteBundle calls service', () => {

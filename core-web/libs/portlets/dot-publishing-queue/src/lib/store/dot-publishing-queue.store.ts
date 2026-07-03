@@ -6,7 +6,9 @@ import { DestroyRef, effect, inject, untracked } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import {
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotPublishingQueueService,
     PublishingSortDirection,
     PublishingSortField,
@@ -16,7 +18,8 @@ import {
     BundleAssetView,
     PublishAuditStatus,
     PublishingJobDetailView,
-    PublishingJobView
+    PublishingJobView,
+    RetryBundleResultView
 } from '@dotcms/dotcms-models';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
@@ -106,6 +109,8 @@ export const DotPublishingQueueStore = signalStore(
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const globalMessage = inject(DotGlobalMessageService);
+        const dotMessageService = inject(DotMessageService);
         const destroyRef = inject(DestroyRef);
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
@@ -426,6 +431,16 @@ export const DotPublishingQueueStore = signalStore(
                 });
             },
 
+            /**
+             * Retries one or more bundles.
+             *
+             * The BE always responds with HTTP 200; per-bundle success/failure is
+             * carried in `entity[].success`. HTTP-level failures (auth, network)
+             * are handled by httpErrorManager as usual. Business outcomes are
+             * surfaced via `DotGlobalMessageService` toasts so the user always
+             * knows what happened — a common failure is "Bundle already in queue"
+             * which returns 200 + success:false and would otherwise be silent.
+             */
             retryBundles(payload: RetryBundlesPayload, onDone?: () => void) {
                 service
                     .retryBundles(payload)
@@ -436,7 +451,17 @@ export const DotPublishingQueueStore = signalStore(
                             return EMPTY;
                         })
                     )
-                    .subscribe(() => {
+                    .subscribe((results) => {
+                        const resolveName = (bundleId: string): string => {
+                            const row = store.bundlesRows().find((r) => r.bundleId === bundleId);
+                            return row?.bundleName ?? bundleId;
+                        };
+                        notifyRetryOutcome(
+                            results,
+                            resolveName,
+                            globalMessage,
+                            dotMessageService
+                        );
                         refresh();
                         onDone?.();
                     });
@@ -525,3 +550,106 @@ export const DotPublishingQueueStore = signalStore(
         };
     })
 );
+
+/** Max number of per-bundle failure details listed inline in a retry toast
+ * before it collapses to "and N more". Keeps the toast readable for large
+ * batches while still surfacing enough context for the common 1–3 case. */
+const RETRY_FAILURE_INLINE_CAP = 3;
+
+/**
+ * Picks the right global-message toast for the outcome of a retry batch. The
+ * BE always responds HTTP 200; per-bundle success/failure lives in the entity
+ * array and the BE `message` field is authoritative for what actually
+ * happened. This helper is exported so the store spec can hit it in isolation.
+ *
+ * Rules for what to surface:
+ *  - Single success or single failure → BE `message` verbatim. The BE is the
+ *    source of truth and its wording is what the user needs to see (e.g.
+ *    "Bundle already in queue — cannot retry while publishing").
+ *  - Multi all-success → summarized count. Individual BE messages are the
+ *    same canned string per bundle, so listing them would be pure noise.
+ *  - Multi all-failed → count header plus per-bundle "'{name}' — {message}"
+ *    details, capped at `RETRY_FAILURE_INLINE_CAP` with an "and N more" tail.
+ *  - Mixed → success count in the header, then the failure detail list under
+ *    the same cap. Users see what succeeded AND what failed in one toast.
+ *
+ * `resolveName` maps a bundle id to its human-readable name (falling back to
+ * the id when unresolved) so the toast never leaks raw ULIDs.
+ */
+export function notifyRetryOutcome(
+    results: readonly RetryBundleResultView[],
+    resolveName: (bundleId: string) => string,
+    globalMessage: DotGlobalMessageService,
+    dotMessageService: DotMessageService
+): void {
+    if (results.length === 0) {
+        return;
+    }
+
+    const successes = results.filter((r) => r.success);
+    const failures = results.filter((r) => !r.success);
+
+    if (failures.length === 0) {
+        // BE returns a canned success message per bundle; for a single bundle
+        // pass it through, for many we summarize with the count.
+        const msg =
+            successes.length === 1
+                ? successes[0].message
+                : dotMessageService.get(
+                      'publishing-queue.retry.success.plural',
+                      String(successes.length)
+                  );
+        globalMessage.success(msg);
+        return;
+    }
+
+    // Single bundle — pass the BE message through unchanged (it's the whole
+    // point of the toast). Skips name-prefixing because there's no ambiguity
+    // about which bundle failed when only one was attempted.
+    if (failures.length === 1 && successes.length === 0) {
+        globalMessage.error(failures[0].message);
+        return;
+    }
+
+    const details = buildFailureDetailList(failures, resolveName, dotMessageService);
+
+    if (successes.length === 0) {
+        globalMessage.error(
+            dotMessageService.get(
+                'publishing-queue.retry.failed.plural',
+                String(failures.length),
+                details
+            )
+        );
+        return;
+    }
+
+    globalMessage.error(
+        dotMessageService.get(
+            'publishing-queue.retry.partial',
+            String(successes.length),
+            String(results.length),
+            details
+        )
+    );
+}
+
+/** Assembles the "'Bundle A' — msg; 'Bundle B' — msg; ... and N more" detail
+ * string used inside the multi-failure and mixed toasts. Capped by
+ * `RETRY_FAILURE_INLINE_CAP` so the toast doesn't grow unbounded. */
+function buildFailureDetailList(
+    failures: readonly RetryBundleResultView[],
+    resolveName: (bundleId: string) => string,
+    dotMessageService: DotMessageService
+): string {
+    const shown = failures
+        .slice(0, RETRY_FAILURE_INLINE_CAP)
+        .map((f) => `'${resolveName(f.bundleId)}' — ${f.message}`)
+        .join('; ');
+    const remaining = failures.length - RETRY_FAILURE_INLINE_CAP;
+    if (remaining <= 0) {
+        return shown;
+    }
+    const overflow = dotMessageService.get('publishing-queue.retry.more', String(remaining));
+    return `${shown} — ${overflow}`;
+}
