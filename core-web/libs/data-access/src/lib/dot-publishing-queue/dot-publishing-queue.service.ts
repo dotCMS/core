@@ -108,7 +108,9 @@ export class DotPublishingQueueService {
 
     getPublishingJobDetails(bundleId: string): Observable<PublishingJobDetailView> {
         return this.http
-            .get<DotCMSResponse<PublishingJobDetailView>>(`/api/v1/publishing/${bundleId}`)
+            .get<
+                DotCMSResponse<PublishingJobDetailView>
+            >(`/api/v1/publishing/${encodeURIComponent(bundleId)}`)
             .pipe(map((response) => response.entity));
     }
 
@@ -130,12 +132,16 @@ export class DotPublishingQueueService {
      */
     pushBundle(bundleId: string, form: PushBundleForm): Observable<PushBundleResultView> {
         return this.http
-            .post<DotCMSResponse<PushBundleResultView>>(`/api/v1/publishing/push/${bundleId}`, form)
+            .post<
+                DotCMSResponse<PushBundleResultView>
+            >(`/api/v1/publishing/push/${encodeURIComponent(bundleId)}`, form)
             .pipe(map((response) => response.entity));
     }
 
     deleteBundle(bundleId: string): Observable<{ message: string }> {
-        return this.http.delete<{ message: string }>(`/api/v1/publishing/${bundleId}`);
+        return this.http.delete<{
+            message: string;
+        }>(`/api/v1/publishing/${encodeURIComponent(bundleId)}`);
     }
 
     /**
@@ -175,7 +181,7 @@ export class DotPublishingQueueService {
 
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
     getBundleDownloadUrl(bundleId: string): string {
-        return `/api/bundle/_download/${bundleId}`;
+        return `/api/bundle/_download/${encodeURIComponent(bundleId)}`;
     }
 
     /**
@@ -222,7 +228,7 @@ export class DotPublishingQueueService {
 
     /** Builds the absolute download URL for a bundle's manifest CSV. */
     getBundleManifestUrl(bundleId: string): string {
-        return `/api/bundle/${bundleId}/manifest`;
+        return `/api/bundle/${encodeURIComponent(bundleId)}/manifest`;
     }
 
     /**
@@ -299,7 +305,7 @@ export class DotPublishingQueueService {
             .set('count', count);
 
         return this.http.get<UnsentBundlesResponse>(
-            `/api/bundle/getunsendbundles/userid/${userId}`,
+            `/api/bundle/getunsendbundles/userid/${encodeURIComponent(userId)}`,
             { params: query }
         );
     }
@@ -307,9 +313,10 @@ export class DotPublishingQueueService {
     getBundleAssets(bundleId: string): Observable<BundleAssetView[]> {
         const params = new HttpParams().set('limit', -1);
 
-        return this.http.get<BundleAssetView[]>(`/api/bundle/${bundleId}/assets`, {
-            params
-        });
+        return this.http.get<BundleAssetView[]>(
+            `/api/bundle/${encodeURIComponent(bundleId)}/assets`,
+            { params }
+        );
     }
 
     /**
@@ -327,7 +334,7 @@ export class DotPublishingQueueService {
         return this.http
             .request<
                 DotCMSResponse<RemoveAssetResultView[]>
-            >('DELETE', `/api/v1/bundles/${bundleId}/assets`, { body: { assetIds } })
+            >('DELETE', `/api/v1/bundles/${encodeURIComponent(bundleId)}/assets`, { body: { assetIds } })
             .pipe(map((response) => response.entity));
     }
 }

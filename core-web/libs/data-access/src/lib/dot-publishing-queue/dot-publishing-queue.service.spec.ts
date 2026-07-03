@@ -217,6 +217,13 @@ describe('DotPublishingQueueService', () => {
         it('getBundleManifestUrl returns the /api/bundle/{id}/manifest path', () => {
             expect(service.getBundleManifestUrl('b-1')).toBe('/api/bundle/b-1/manifest');
         });
+
+        it('URL-encodes special characters in the bundleId (defense-in-depth)', () => {
+            // BE currently only issues bundle ids matching [a-zA-Z0-9_-]+, but the
+            // encoding keeps the path safe if that ever changes.
+            expect(service.getBundleDownloadUrl('a/b c')).toBe('/api/bundle/_download/a%2Fb%20c');
+            expect(service.getBundleManifestUrl('a/b c')).toBe('/api/bundle/a%2Fb%20c/manifest');
+        });
     });
 
     // These probes mirror the legacy JSP's file-existence checks because the
