@@ -566,7 +566,9 @@ public class ESIndexResource {
         final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
 
         if(indexDoesNotExist(resolvedName) ){
-            return Response.status(404).build();
+            // Readable 404 body, consistent with deleteIndex (issue #35640, TC-017).
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>("Index not found: " + indexName)).build();
         }
 
 
