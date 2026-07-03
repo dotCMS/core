@@ -168,7 +168,6 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 				Logger.debug(this.getClass(), "unable to create JSONObject", e);
 			}
 
-			esresult.getContentlets().clear();
 			// Emit the legacy Elasticsearch-wire shape for "esresponse" (took, hits.total,
 			// hits.hits[]._id/._index/._score/._source, aggregations) rebuilt from the neutral
 			// ContentSearchResponse. The backend still routes through the phase-aware SearchAPI (ES in
