@@ -614,29 +614,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.dragDropService.setupDragEvents(
-            this.uveStore,
-            this.iframe,
-            this.customDragImage,
-            {
-                onDrop: (event) => this.handleDrop(event),
-                onDragEnter: () => {
-                    // Handled in dragDropService
-                },
-                onDragOver: () => {
-                    // Handled in dragDropService
-                },
-                onDragLeave: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragEnd: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragStart: () => {
-                    // Handled in dragDropService
-                }
+        this.dragDropService.setupDragEvents(this.uveStore, this.iframe, this.customDragImage, {
+            onDrop: (event) => this.handleDrop(event),
+            onDragEnter: () => {
+                // Handled in dragDropService
+            },
+            onDragOver: () => {
+                // Handled in dragDropService
+            },
+            onDragLeave: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragEnd: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragStart: () => {
+                // Handled in dragDropService
             }
-        );
+        });
     }
 
     private handleUveMessage(message: PostMessage): void {
