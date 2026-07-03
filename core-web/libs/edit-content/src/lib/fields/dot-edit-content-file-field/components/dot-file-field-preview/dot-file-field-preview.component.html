@@ -15,19 +15,9 @@
         </div>
     } @else {
         <div class="dot-file-field-preview__thumbnail">
-            @if (fileInfo.source === 'temp') {
-                <dot-temp-file-thumbnail
-                    [tempFile]="fileInfo.file"
-                    [iconSize]="'48px'"
-                    data-testId="temp-file-thumbnail" />
-            } @else {
-                <dot-contentlet-thumbnail
-                    [fieldVariable]="fileInfo.fieldVariable"
-                    [iconSize]="'48px'"
-                    [contentlet]="fileInfo.file"
-                    [playableVideo]="true"
-                    data-testId="contentlet-thumbnail" />
-            }
+            <dot-content-thumbnail
+                [thumbnail]="fileInfo.thumbnail"
+                data-testId="contentlet-thumbnail" />
         </div>
         <div class="dot-file-field-preview__metadata">
             @if (metadata) {

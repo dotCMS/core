@@ -80,10 +80,9 @@
                         class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         @if (!isFolder) {
-                            <dot-contentlet-thumbnail
-                                [fieldVariable]="item?.contentType"
-                                [iconSize]="'36px'"
+                            <dot-content-thumbnail
                                 [contentlet]="item"
+                                [options]="{ fieldVariable: item?.contentType }"
                                 data-testId="contentlet-thumbnail"
                                 [attr.data-table-id]="item.identifier" />
                         } @else {

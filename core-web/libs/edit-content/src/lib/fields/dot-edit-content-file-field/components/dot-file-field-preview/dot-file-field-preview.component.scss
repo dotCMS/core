@@ -196,17 +196,6 @@
     text-decoration: none;
 }
 
-// Third-party web-component internals – cannot be styled with Tailwind
-:host {
-    dot-contentlet-thumbnail::ng-deep {
-        .thumbnail img,
-        .background-image:not(.svg-thumbnail) img {
-            object-fit: cover;
-        }
-    }
-}
-
-// Third-party web-component internals – cannot be styled with Tailwind
 .preview-container--fade .preview-code_container::after {
     content: "";
     background: linear-gradient(0deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
