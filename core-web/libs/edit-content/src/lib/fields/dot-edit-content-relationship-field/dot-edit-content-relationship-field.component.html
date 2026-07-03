@@ -19,7 +19,7 @@
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (fieldHasError) {
-            <div class="error-message">
+            <div class="error-message" data-testid="relationship-field-error">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                 }

@@ -173,10 +173,10 @@ describe('DotRelationshipFieldComponent', () => {
             );
         });
 
-        it('should call showExistingContentDialog when the relate link is clicked', () => {
-            const dialogSpy = jest.spyOn(spectator.component, 'showExistingContentDialog');
+        it('should open the existing-content dialog when the relate link is clicked', () => {
+            const dialogService = spectator.inject(DialogService);
             spectator.click(byTestId('relationship-empty-relate-link'));
-            expect(dialogSpy).toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalled();
         });
     });
 

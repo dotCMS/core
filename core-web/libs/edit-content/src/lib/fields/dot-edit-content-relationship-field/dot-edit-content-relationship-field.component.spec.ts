@@ -586,6 +586,32 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
     });
 
+    // Shared by the two footer host factories below (hint + error), which are
+    // otherwise identical — keeps provider changes a single-point edit.
+    const FOOTER_PROVIDERS = [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        mockProvider(DotMessageService, {
+            get: jest.fn().mockReturnValue('Mock Message')
+        }),
+        mockProvider(DotContentTypeService, {
+            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+        }),
+        mockProvider(DotHttpErrorManagerService, {
+            handle: jest.fn()
+        }),
+        mockProvider(DotCurrentUserService),
+        mockProvider(DotEditContentStore, {
+            contentType: jest.fn().mockReturnValue(null),
+            currentLocale: jest.fn().mockReturnValue(null),
+            isCopyingLocale: jest.fn().mockReturnValue(false)
+        }),
+        mockProvider(DotEditContentService, {
+            getContentById: jest.fn().mockReturnValue(of({}))
+        }),
+        DialogService
+    ];
+
     describe('Footer hint rendering', () => {
         // Uses a dedicated host that does NOT mock the card-field components so
         // their <ng-content> projects, allowing the footer hint to render for real.
@@ -605,29 +631,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             imports: [ReactiveFormsModule],
             detectChanges: false,
             componentMocks: [PaginationComponent],
-            providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                mockProvider(DotMessageService, {
-                    get: jest.fn().mockReturnValue('Mock Message')
-                }),
-                mockProvider(DotContentTypeService, {
-                    getContentType: jest.fn().mockReturnValue(of(mockContentType))
-                }),
-                mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn()
-                }),
-                mockProvider(DotCurrentUserService),
-                mockProvider(DotEditContentStore, {
-                    contentType: jest.fn().mockReturnValue(null),
-                    currentLocale: jest.fn().mockReturnValue(null),
-                    isCopyingLocale: jest.fn().mockReturnValue(false)
-                }),
-                mockProvider(DotEditContentService, {
-                    getContentById: jest.fn().mockReturnValue(of({}))
-                }),
-                DialogService
-            ]
+            providers: FOOTER_PROVIDERS
         });
 
         let footerSpectator: SpectatorHost<
@@ -692,29 +696,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             imports: [ReactiveFormsModule],
             detectChanges: false,
             componentMocks: [PaginationComponent],
-            providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                mockProvider(DotMessageService, {
-                    get: jest.fn().mockReturnValue('Mock Message')
-                }),
-                mockProvider(DotContentTypeService, {
-                    getContentType: jest.fn().mockReturnValue(of(mockContentType))
-                }),
-                mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn()
-                }),
-                mockProvider(DotCurrentUserService),
-                mockProvider(DotEditContentStore, {
-                    contentType: jest.fn().mockReturnValue(null),
-                    currentLocale: jest.fn().mockReturnValue(null),
-                    isCopyingLocale: jest.fn().mockReturnValue(false)
-                }),
-                mockProvider(DotEditContentService, {
-                    getContentById: jest.fn().mockReturnValue(of({}))
-                }),
-                DialogService
-            ]
+            providers: FOOTER_PROVIDERS
         });
 
         it('should render the required error and hide the hint when invalid and touched', () => {
@@ -741,7 +723,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             errorSpectator.detectChanges();
 
             // Error branch is rendered...
-            expect(errorSpectator.query('.error-message')).toBeTruthy();
+            expect(errorSpectator.query(byTestId('relationship-field-error'))).toBeTruthy();
             // ...and the mutually-exclusive hint branch is not.
             expect(
                 errorSpectator.query(byTestId(`hint-${REQUIRED_HINTED_FIELD_MOCK.variable}`))
