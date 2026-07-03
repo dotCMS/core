@@ -57,7 +57,9 @@ public class RelationshipUtil {
         List<Contentlet> relatedContentlets = List.of();
 
         if (UtilMethods.isSet(query)) {
-            relatedContentlets = filterContentlet(language, query, user, true);
+            // Resolve related content as read-only references only. This path just needs the
+            // related contentlets to write the parent's relationship (Tree) records
+            relatedContentlets = filterContentlet(language, query, user, false);
             validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 
