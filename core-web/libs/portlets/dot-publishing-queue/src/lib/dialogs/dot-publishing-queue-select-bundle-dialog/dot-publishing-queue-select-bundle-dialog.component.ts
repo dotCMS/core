@@ -52,7 +52,12 @@ import {
     PushBundleForm,
     PushBundleOperation
 } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { groupContentletAssetsByType } from '../../util/asset-groups.util';
@@ -112,6 +117,7 @@ const ASSETS_PER_PAGE = 10;
         TieredMenuModule,
         TooltipModule,
         DotCopyButtonComponent,
+        DotEmptyContainerComponent,
         DotMessagePipe,
         DotPushPublishFormComponent
     ],
@@ -283,6 +289,56 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     });
 
     readonly assetsTotal = computed(() => this.assets().length);
+
+    /** Empty-state configuration for the bundles pane. Splits the "no results"
+     * copy between "nothing exists yet" and "search returned nothing" so the
+     * user gets the right cue for what to do next. */
+    readonly bundlesEmptyConfig = computed<PrincipalConfiguration>(() => {
+        const hasSearch = this.bundleSearch().trim().length > 0;
+        return hasSearch
+            ? {
+                  icon: 'pi-search',
+                  title: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.empty.search.title'
+                  ),
+                  subtitle: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.empty.search.subtitle'
+                  )
+              }
+            : {
+                  icon: 'pi-inbox',
+                  title: this.dotMessageService.get('publishing-queue.select-bundle.empty.title'),
+                  subtitle: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.empty.subtitle'
+                  )
+              };
+    });
+
+    /** Empty-state configuration for the assets pane. Distinguishes "no bundle
+     * picked yet" (guide the user toward the left list) from "picked bundle is
+     * empty" (tell them where to add content). */
+    readonly assetsEmptyConfig = computed<PrincipalConfiguration>(() => {
+        const hasActive = this.activeBundleId() !== null;
+        return hasActive
+            ? {
+                  icon: 'pi-box',
+                  title: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.asset-empty.title'
+                  ),
+                  subtitle: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.asset-empty.subtitle'
+                  )
+              }
+            : {
+                  icon: 'pi-hand-point-left',
+                  title: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.no-active.title'
+                  ),
+                  subtitle: this.dotMessageService.get(
+                      'publishing-queue.select-bundle.no-active.subtitle'
+                  )
+              };
+    });
 
     private readonly bundleSearchSubject = new Subject<string>();
 

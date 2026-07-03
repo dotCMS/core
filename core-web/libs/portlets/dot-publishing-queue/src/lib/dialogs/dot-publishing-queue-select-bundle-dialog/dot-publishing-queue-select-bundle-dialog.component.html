@@ -169,12 +169,11 @@
                             </ng-template>
                             <ng-template pTemplate="emptymessage">
                                 <tr class="hover:bg-transparent!">
-                                    <td colspan="2" class="p-6 text-center">
-                                        <span
-                                            class="text-color-secondary text-sm"
-                                            data-testid="pq-select-bundle-empty">
-                                            {{ 'publishing-queue.select-bundle.empty' | dm }}
-                                        </span>
+                                    <td colspan="2" class="p-6">
+                                        <dot-empty-container
+                                            [configuration]="bundlesEmptyConfig()"
+                                            [hideContactUsLink]="true"
+                                            data-testid="pq-select-bundle-empty" />
                                     </td>
                                 </tr>
                             </ng-template>
@@ -299,21 +298,11 @@
                             </ng-template>
                             <ng-template pTemplate="emptymessage">
                                 <tr class="hover:bg-transparent!">
-                                    <td colspan="3" class="p-6 text-center">
-                                        <span
-                                            class="text-color-secondary text-sm"
-                                            data-testid="pq-select-bundle-asset-empty">
-                                            @if (activeBundleId()) {
-                                                {{
-                                                    'publishing-queue.select-bundle.asset-empty'
-                                                        | dm
-                                                }}
-                                            } @else {
-                                                {{
-                                                    'publishing-queue.select-bundle.no-active' | dm
-                                                }}
-                                            }
-                                        </span>
+                                    <td colspan="3" class="p-6">
+                                        <dot-empty-container
+                                            [configuration]="assetsEmptyConfig()"
+                                            [hideContactUsLink]="true"
+                                            data-testid="pq-select-bundle-asset-empty" />
                                     </td>
                                 </tr>
                             </ng-template>

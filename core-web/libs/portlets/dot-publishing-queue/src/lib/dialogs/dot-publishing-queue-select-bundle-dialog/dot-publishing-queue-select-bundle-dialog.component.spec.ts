@@ -737,4 +737,41 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.query(byTestId('pq-select-bundle-actions'))).toBeFalsy();
         });
     });
+
+    describe('empty states', () => {
+        it('bundlesEmptyConfig uses the "no drafts" copy when there is no active search', () => {
+            spectator.detectChanges();
+            const config = spectator.component.bundlesEmptyConfig();
+            expect(config.icon).toBe('pi-inbox');
+            expect(config.title).toBe('publishing-queue.select-bundle.empty.title');
+            expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.subtitle');
+        });
+
+        it('bundlesEmptyConfig switches to the "search" copy when a search is active', () => {
+            spectator.detectChanges();
+            spectator.component.bundleSearch.set('anything');
+            const config = spectator.component.bundlesEmptyConfig();
+            expect(config.icon).toBe('pi-search');
+            expect(config.title).toBe('publishing-queue.select-bundle.empty.search.title');
+            expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.search.subtitle');
+        });
+
+        it('assetsEmptyConfig uses the "pick a bundle" copy when no bundle is active', () => {
+            spectator.detectChanges();
+            spectator.component.activeBundleId.set(null);
+            const config = spectator.component.assetsEmptyConfig();
+            expect(config.icon).toBe('pi-hand-point-left');
+            expect(config.title).toBe('publishing-queue.select-bundle.no-active.title');
+            expect(config.subtitle).toBe('publishing-queue.select-bundle.no-active.subtitle');
+        });
+
+        it('assetsEmptyConfig uses the "empty bundle" copy once a bundle is active', () => {
+            spectator.detectChanges();
+            spectator.component.activeBundleId.set('bundle-1');
+            const config = spectator.component.assetsEmptyConfig();
+            expect(config.icon).toBe('pi-box');
+            expect(config.title).toBe('publishing-queue.select-bundle.asset-empty.title');
+            expect(config.subtitle).toBe('publishing-queue.select-bundle.asset-empty.subtitle');
+        });
+    });
 });
