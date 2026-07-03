@@ -118,11 +118,9 @@ describe('DotPublishingQueueService', () => {
                 { assetId: 'a2', success: true, message: 'ok' }
             ];
 
-            service
-                .removeAssetsFromBundle('bundle-123', ['a1', 'a2'])
-                .subscribe((response) => {
-                    expect(response).toEqual(results);
-                });
+            service.removeAssetsFromBundle('bundle-123', ['a1', 'a2']).subscribe((response) => {
+                expect(response).toEqual(results);
+            });
 
             const req = httpMock.expectOne(
                 (request) => request.url === '/api/v1/bundles/bundle-123/assets'

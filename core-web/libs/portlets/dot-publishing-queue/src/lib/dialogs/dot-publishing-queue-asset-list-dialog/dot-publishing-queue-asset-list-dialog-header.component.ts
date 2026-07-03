@@ -17,7 +17,7 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
     template: `
         <div class="flex min-w-0 items-center gap-3">
             <h2
-                class="m-0 truncate text-xl font-bold leading-tight"
+                class="m-0 truncate text-xl leading-tight font-bold"
                 [title]="bundleName"
                 data-testid="pq-asset-list-title">
                 {{ displayTitle }}

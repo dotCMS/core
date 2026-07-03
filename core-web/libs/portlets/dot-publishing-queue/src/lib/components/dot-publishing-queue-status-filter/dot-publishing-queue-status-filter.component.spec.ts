@@ -72,9 +72,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
 
     describe('source-of-truth invariant', () => {
         it('STATUS_ORDER covers every value of PublishAuditStatus (catches future enum drift)', () => {
-            const ordered = new Set<string>(
-                DotPublishingQueueStatusFilterComponent.STATUS_ORDER
-            );
+            const ordered = new Set<string>(DotPublishingQueueStatusFilterComponent.STATUS_ORDER);
             for (const value of Object.values(PublishAuditStatus)) {
                 expect(ordered.has(value)).toBe(true);
             }
@@ -91,9 +89,8 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
 
     describe('option list (dedupe by label)', () => {
         it('renders one option per unique translated label', () => {
-            const options = (
-                spectator.component as unknown as { $options: { label: string }[] }
-            ).$options;
+            const options = (spectator.component as unknown as { $options: { label: string }[] })
+                .$options;
             const labels = options.map((o) => o.label);
             // SUCCESS + BUNDLE_SENT_SUCCESSFULLY both render as "Success" → one option
             expect(labels.filter((l) => l === 'Success').length).toBe(1);
@@ -110,17 +107,13 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             const success = options.find((o) => o.label === 'Success');
             expect(success).toBeDefined();
             expect([...(success?.codes ?? [])].sort()).toEqual(
-                [
-                    PublishAuditStatus.SUCCESS,
-                    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
-                ].sort()
+                [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY].sort()
             );
         });
 
         it('Scheduled appears first in the rendered order', () => {
-            const options = (
-                spectator.component as unknown as { $options: { label: string }[] }
-            ).$options;
+            const options = (spectator.component as unknown as { $options: { label: string }[] })
+                .$options;
             expect(options[0].label).toBe('Scheduled');
         });
     });
@@ -145,9 +138,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
         }
 
         function callOnChange(): void {
-            (
-                spectator.component as unknown as { onChange: () => void }
-            ).onChange();
+            (spectator.component as unknown as { onChange: () => void }).onChange();
         }
 
         it('picking "Success" flattens to SUCCESS + BUNDLE_SENT_SUCCESSFULLY in the store', () => {
@@ -155,10 +146,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             callOnChange();
             const stored = [...statusFilter()].sort();
             expect(stored).toEqual(
-                [
-                    PublishAuditStatus.SUCCESS,
-                    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
-                ].sort()
+                [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY].sort()
             );
         });
 
@@ -183,9 +171,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
                 PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
             ]);
             spectator.detectChanges();
-            (
-                spectator.component as unknown as { onRemoveAll: () => void }
-            ).onRemoveAll();
+            (spectator.component as unknown as { onRemoveAll: () => void }).onRemoveAll();
             expect(statusFilter()).toEqual([]);
         });
 

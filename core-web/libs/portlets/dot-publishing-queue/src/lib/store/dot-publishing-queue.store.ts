@@ -456,12 +456,7 @@ export const DotPublishingQueueStore = signalStore(
                             const row = store.bundlesRows().find((r) => r.bundleId === bundleId);
                             return row?.bundleName ?? bundleId;
                         };
-                        notifyRetryOutcome(
-                            results,
-                            resolveName,
-                            globalMessage,
-                            dotMessageService
-                        );
+                        notifyRetryOutcome(results, resolveName, globalMessage, dotMessageService);
                         refresh();
                         onDone?.();
                     });

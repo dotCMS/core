@@ -136,11 +136,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
             // First asset is a contentlet with a resolved URL (see mock in providers).
             spectator.component.onAssetRowClick(ASSETS[0]);
-            expect(openSpy).toHaveBeenCalledWith(
-                '/dotAdmin/#/edit/inode/i1',
-                '_blank',
-                'noopener'
-            );
+            expect(openSpy).toHaveBeenCalledWith('/dotAdmin/#/edit/inode/i1', '_blank', 'noopener');
             openSpy.mockRestore();
         });
 
