@@ -9,6 +9,19 @@ export const LAYOUT_URL = '/c/portal/layout';
 
 export const PERSONA_KEY = 'com.dotmarketing.persona.id';
 
+/**
+ * Default relationship expansion depth sent to the Page API.
+ *
+ * The backend (`ContentUtils.addRelationships`) only expands relationship
+ * fields on the page's contentlets when the `depth` query param is present
+ * at all — omitting it skips relationship expansion entirely rather than
+ * falling back to a default. UVE's REST page fetch (used for the editor's
+ * own state on every page type, and as the pre-CLIENT_READY fetch for
+ * headless pages) must always send a value so relationship data isn't
+ * silently dropped from the page response.
+ */
+export const DEFAULT_PAGE_DEPTH = '0';
+
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
