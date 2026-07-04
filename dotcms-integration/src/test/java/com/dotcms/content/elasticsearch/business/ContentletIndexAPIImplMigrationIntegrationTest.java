@@ -480,12 +480,12 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
      * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
      * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
      *        shows the OS index), with cascade on (default).
-     * Then : ONLY the OS index is removed; the authoritative ES twin is left intact. The cascade
-     *        is strictly ES→OS — an explicit {@code .os} name is a tag-dispatched OS-only delete
-     *        and never tumbles the ES index (issue #35640).
+     * Then : BOTH twins are removed — the cascade is bidirectional, so deleting by the OS name
+     *        also removes the ES twin (the tag is stripped to the logical name and broadcast to
+     *        every provider). Regression for the one-directional-cascade bug (issue #35640).
      */
     @Test
-    public void test_delete_phase1_byOsName_removesOnlyOs()
+    public void test_delete_phase1_byOsName_removesFromBothClusters()
             throws IOException, DotIndexException {
         setPhase(1);
 
@@ -495,11 +495,11 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
 
         contentletIndexAPI().delete(IndexTag.OS.tag(DUAL_WORKING)); // delete by the .os name
 
-        assertTrue("ES twin must survive a .os-targeted delete (no reverse cascade)",
+        assertFalse("ES twin must be gone when deleting by the .os name (bidirectional cascade)",
                 esImpl().indexExists(DUAL_WORKING));
         assertFalse("OS .os index must be gone", osIndexAPI.indexExists(physicalDualWorking));
 
-        Logger.info(this, "✅ delete Phase 1 by .os name — OS only, ES preserved: " + DUAL_WORKING);
+        Logger.info(this, "✅ delete Phase 1 by .os name — both removed: " + DUAL_WORKING);
     }
 
     // =========================================================================

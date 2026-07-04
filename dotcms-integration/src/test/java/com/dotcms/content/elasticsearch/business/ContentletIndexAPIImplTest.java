@@ -479,6 +479,53 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+     * Issue #35640: deleting an index must also remove its pointer row from the {@code indicies}
+     * DB table, so no row is left dangling at a deleted index. Uses the feature-flag bypass to
+     * delete an active index (whose pointer exists in the store) and asserts the pointer is gone.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_clearsDbPointer() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        // Sanity: the working pointer now references the new index.
+        final IndiciesInfo before = APILocator.getIndiciesAPI().loadIndicies();
+        assertTrue("Pre: working pointer must reference the new index",
+                before.getWorking() != null && before.getWorking().endsWith(workingIndex));
+
+        // Delete it, bypassing the active-index guard — the DB pointer must be cleared too.
+        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        try {
+            assertTrue(indexAPI.delete(workingIndex));
+        } finally {
+            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+        }
+
+        final IndiciesInfo after = APILocator.getIndiciesAPI().loadIndicies();
+        assertTrue("Working pointer must no longer reference the deleted index",
+                after.getWorking() == null || !after.getWorking().endsWith(workingIndex));
+        assertFalse("Deleted index must be gone from the cluster",
+                indexAPI.listDotCMSIndices().contains(workingIndex));
+
+        // Restore the prior active working pointer (best effort).
+        try {
+            if (oldActiveWorking != null) {
+                indexAPI.activateIndex(oldActiveWorking);
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to restore active working index after test", e);
+        }
+    }
+
+    /**
      * Testing {@link ContentletIndexAPI#isDotCMSIndexName(String)}
      *
      * @see ContentletIndexAPI

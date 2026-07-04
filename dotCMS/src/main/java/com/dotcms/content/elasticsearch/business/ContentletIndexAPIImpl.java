@@ -1678,16 +1678,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
 
     /**
-     * Controls whether deleting the authoritative ES/logical index also removes its OS twin.
-     * On by default. The cascade is <strong>strictly ES→OS</strong>: it only fires when the
-     * caller passes a bare (untagged) name. An explicit {@code .os} name is always a
-     * tag-dispatched, OS-only delete regardless of this flag — a shadow delete must never
-     * tumble the authoritative ES index.
+     * Controls whether {@link #delete(String)} cascades to the index's twin in the other engine.
+     * On by default. The cascade is <strong>bidirectional</strong>: deleting a logical index by
+     * either its ES (bare) name or its OpenSearch ({@code .os}) name removes the index in every
+     * engine that holds it in the current phase (ES + OS twin during dual-write).
      * <ul>
-     *   <li><strong>true (default)</strong> — a bare name deletes the ES index and its OS
-     *       {@code .os} twin together (phase-dispatched broadcast), so the twin is not orphaned.</li>
-     *   <li><strong>false</strong> — a bare name deletes only ES, leaving the OS twin intact
-     *       (issue #35640, TC-016 documented behavior).</li>
+     *   <li><strong>true (default)</strong> — delete both twins together, so neither engine is
+     *       left with an orphan copy.</li>
+     *   <li><strong>false</strong> — tag-dispatched, single engine only: a {@code .os} name
+     *       deletes OpenSearch, any other name deletes Elasticsearch; the twin is left intact
+     *       (issue #35640, TC-016).</li>
      * </ul>
      */
     public static final String FF_INDEX_DELETE_CASCADE = "FEATURE_FLAG_INDEX_DELETE_CASCADE";
@@ -1739,28 +1739,29 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Guard first: never delete an active/building index (issue #35640, TC-018).
         assertIndexIsDeletable(indexName);
 
-        // The cascade is strictly ES→OS: deleting the authoritative ES/logical index also
-        // removes its OS twin, but deleting an explicit .os index NEVER touches ES (a shadow
-        // delete must not tumble the authoritative index). See FF_INDEX_DELETE_CASCADE
-        // (issue #35640, TC-016).
+        // Bidirectional cascade (default): deleting by either the ES (bare) or OS (.os) name
+        // removes the index in every engine that holds it. When disabled, only the engine that
+        // owns the given name is touched. See FF_INDEX_DELETE_CASCADE (issue #35640, TC-016).
         final boolean cascade = Config.getBooleanProperty(FF_INDEX_DELETE_CASCADE, true);
-        final boolean osTagged = IndexTag.OS.isTagged(indexName);
         final ContentletIndexOperations primary;
         final List<ContentletIndexOperations> targets;
-        if (osTagged || !cascade) {
-            // Tag-dispatched, single engine. An explicit .os name always targets OS only
-            // (never cascades back to ES). A bare name with cascade off targets ES only.
-            primary = osTagged ? router.osImpl() : router.esImpl();
-            targets = List.of(primary);
-        } else {
-            // Bare name + cascade on: phase-dispatched broadcast to every write provider so
-            // the ES delete also removes its OS twin (ES→OS, no orphan shadow). The bare name
-            // lets each provider re-derive its OWN physical name (ES → bare, OS → .os).
-            // Track the read provider's result as the primary; shadow failures in dual-write
-            // phases are fire-and-forget.
+        final String nameForTargets;
+        if (cascade) {
+            // Broadcast the LOGICAL (untagged) name to every write provider so each re-derives
+            // its OWN physical name (ES → bare, OS → .os) and both twins are removed regardless
+            // of which name the caller passed. Track the read provider's result as the primary.
             primary = router.readProvider();
             targets = router.writeProviders();
+            nameForTargets = IndexTag.OS.untag(indexName);
+        } else {
+            // Tag-dispatched, single engine: .os → OS, otherwise ES. The twin is left intact.
+            primary = IndexTag.OS.isTagged(indexName) ? router.osImpl() : router.esImpl();
+            targets = List.of(primary);
+            nameForTargets = indexName;
         }
+
+        // The logical (cluster-stripped, untagged) name is used to find and clear DB pointers.
+        final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
 
         boolean primaryResult = false;
         for (final ContentletIndexOperations ops : targets) {
@@ -1768,21 +1769,106 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
             // logical name straight to OSIndexAPIImpl.delete would hit an untagged name
             // that does not exist and orphan the actual .os index.
-            final String physicalName = ops.toPhysicalName(indexName);
+            final String physicalName = ops.toPhysicalName(nameForTargets);
+            // (1) Delete the cluster index. A failure here must NOT abort the operation —
+            // keep going so the remaining engine and the DB pointers are still handled.
             try {
                 final boolean r = ops.indexAPI().delete(physicalName);
                 if (ops == primary) {
                     primaryResult = r;
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                 if (ops == primary) {
                     primaryResult = false;
                 }
                 // shadow failures are fire-and-forget in dual-write phases
             }
+            // (2) Always remove the indicies-table pointer for this engine, even if the cluster
+            // delete above failed, so no DB row is left dangling at a deleted index.
+            try {
+                clearStorePointer(ops, logicalName);
+            } catch (final Exception e) {
+                Logger.warn(this.getClass(),
+                        "Could not clear the indicies DB pointer for " + physicalName, e);
+            }
         }
         return primaryResult;
+    }
+
+    /**
+     * Removes any {@code indicies} row that points at {@code logicalName} in the store that backs
+     * {@code ops}: the OpenSearch provider clears the versioned store, any other provider clears
+     * the legacy ES store. Best-effort — the caller wraps this so a failure never aborts the
+     * delete (issue #35640).
+     */
+    private void clearStorePointer(final ContentletIndexOperations ops, final String logicalName)
+            throws DotDataException {
+        if (ops == router.osImpl()) {
+            clearOsStorePointer(logicalName);
+        } else {
+            clearEsStorePointer(logicalName);
+        }
+    }
+
+    /**
+     * True when {@code storedName} resolves to the same logical (cluster-stripped, untagged) name
+     * as {@code logicalName}. Lets a DB slot be matched regardless of the prefix/tag form it was
+     * stored in.
+     */
+    private boolean matchesLogical(final String storedName, final String logicalName) {
+        return storedName != null
+                && logicalName.equals(IndexTag.OS.untag(indexAPI.removeClusterIdFromName(storedName)));
+    }
+
+    /** Clears any legacy ES-store ({@link IndiciesInfo}) slot pointing at {@code logicalName}. */
+    private void clearEsStorePointer(final String logicalName) throws DotDataException {
+        final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        boolean changed = false;
+        if (matchesLogical(info.getWorking(), logicalName))        { builder.setWorking(null);        changed = true; }
+        if (matchesLogical(info.getLive(), logicalName))           { builder.setLive(null);           changed = true; }
+        if (matchesLogical(info.getReindexWorking(), logicalName)) { builder.setReindexWorking(null); changed = true; }
+        if (matchesLogical(info.getReindexLive(), logicalName))    { builder.setReindexLive(null);    changed = true; }
+        if (matchesLogical(info.getSiteSearch(), logicalName))     { builder.setSiteSearch(null);     changed = true; }
+        if (changed) {
+            legacyIndiciesAPI.point(builder.build());
+        }
+    }
+
+    /** Clears any OS versioned-store ({@link VersionedIndices}) slot pointing at {@code logicalName}. */
+    private void clearOsStorePointer(final String logicalName) throws DotDataException {
+        final Optional<VersionedIndices> existingOpt = versionedIndicesAPI.loadDefaultVersionedIndices();
+        if (existingOpt.isEmpty()) {
+            return;
+        }
+        final VersionedIndices existing = existingOpt.get();
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        boolean changed = false;
+        // Re-add every slot except the one(s) that resolve to the deleted logical name.
+        if (existing.working().isPresent()) {
+            if (matchesLogical(existing.working().get(), logicalName)) { changed = true; }
+            else { builder.working(existing.working().get()); }
+        }
+        if (existing.live().isPresent()) {
+            if (matchesLogical(existing.live().get(), logicalName)) { changed = true; }
+            else { builder.live(existing.live().get()); }
+        }
+        if (existing.reindexWorking().isPresent()) {
+            if (matchesLogical(existing.reindexWorking().get(), logicalName)) { changed = true; }
+            else { builder.reindexWorking(existing.reindexWorking().get()); }
+        }
+        if (existing.reindexLive().isPresent()) {
+            if (matchesLogical(existing.reindexLive().get(), logicalName)) { changed = true; }
+            else { builder.reindexLive(existing.reindexLive().get()); }
+        }
+        if (existing.siteSearch().isPresent()) {
+            if (matchesLogical(existing.siteSearch().get(), logicalName)) { changed = true; }
+            else { builder.siteSearch(existing.siteSearch().get()); }
+        }
+        if (changed) {
+            versionedIndicesAPI.saveIndices(builder.build());
+        }
     }
 
     public boolean optimize(List<String> indexNames) {
