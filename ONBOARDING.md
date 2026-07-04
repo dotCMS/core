@@ -154,12 +154,23 @@ just test-integration-stop    # tear down when done
 **Debug the running app:** `just dev-run-debug-suspend` starts dotCMS in Docker
 waiting on debug port **5005** for your IDE to attach.
 
-### Postman API tests
+### API tests — Postman & Karate
+
+dotCMS uses two API testing frameworks: **Postman** (legacy) and **Karate** (the
+modern replacement, in `test-karate/` — prefer it for new API tests).
 
 ```bash
+# Postman
 just test-postman ai          # a single collection (recommended)
 just test-postman all         # all collections (slower)
+
+# Karate
+just test-karate                          # default collection
+just test-karate KarateCITests#defaults   # a specific runner/collection
+just test-karate-ide                      # boot services to run Karate from your IDE
 ```
+
+More detail: [`docs/testing/API_TESTING.md`](docs/testing/API_TESTING.md).
 
 ### Frontend tests
 
@@ -213,6 +224,13 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
     `FEATURE_FLAG_SEO_IMPROVEMENTS` becomes `DOT_FEATURE_FLAG_SEO_IMPROVEMENTS`).
   - The list of available flags lives in
     [`dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java`](dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java).
+- **Starter site:** a **starter** is a ZIP of seed content (sites, content types,
+  pages, assets) that dotCMS loads on first startup to give you a populated instance
+  instead of an empty one. Published starters live in our Artifactory:
+  [`repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/`](https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/).
+  To pick one, set the `<starter.deploy.version>` property in `parent/pom.xml`, drop a
+  renamed `starter.zip` into `dotCMS/target/starter/`, or point `DOT_STARTER_DATA_LOAD`
+  at a starter URL. Full details in [`dotBackendOnboarding.md`](dotBackendOnboarding.md).
 - **Edit JSPs without rebuilding:** mount the webapp html dir into the Tomcat root
   via a docker-compose volume (see [`docs/infrastructure/`](docs/infrastructure/) /
   the frontend docker-compose for the exact mapping).
@@ -223,12 +241,16 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
 
 ## 6. Your first PR — end to end
 
-1. **Branch** from up-to-date `main` following the naming convention in
+1. **One-time setup — GPG commit signing.** Before your first commit, configure GPG
+   signing so your commits show as **Verified** on GitHub — including commits made on
+   your behalf by Claude Code. Follow
+   [`docs/claude/GPG_COMMIT_SIGNING.md`](docs/claude/GPG_COMMIT_SIGNING.md).
+2. **Branch** from up-to-date `main` following the naming convention in
    [`docs/core/GIT_WORKFLOWS.md`](docs/core/GIT_WORKFLOWS.md).
-2. **Commit** using conventional commits (`feat:`, `fix:`, `docs:`, …).
-3. **Open the PR** linked to its issue. Expectations and the PR template are in
+3. **Commit** using conventional commits (`feat:`, `fix:`, `docs:`, …).
+4. **Open the PR** linked to its issue. Expectations and the PR template are in
    [`docs/core/GITHUB_ISSUE_MANAGEMENT.md`](docs/core/GITHUB_ISSUE_MANAGEMENT.md).
-4. **CI / merge queue:** dotCMS uses **GitHub's native merge queue** — the final gate
+5. **CI / merge queue:** dotCMS uses **GitHub's native merge queue** — the final gate
    before code lands on `main`. An approved, ready PR isn't merged directly. It's added
    to a queue where GitHub creates a temporary `merge_group` branch containing your PR
    plus any PRs already ahead of it, then runs the merge-queue workflow against that
@@ -238,7 +260,7 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
      least **1 reviewer approval**.
    - **Typical wait:** ~1 hour average to merge.
    - Pipeline reference: [`docs/core/CICD_PIPELINE.md`](docs/core/CICD_PIPELINE.md).
-5. **When CI fails:** ask Claude Code to run the **`cicd-diagnostics`** skill — it
+6. **When CI fails:** ask Claude Code to run the **`cicd-diagnostics`** skill — it
    knows how to read dotCMS build failures and flaky tests.
 
 ---
