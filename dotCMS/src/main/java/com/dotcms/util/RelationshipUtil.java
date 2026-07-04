@@ -68,7 +68,7 @@ public class RelationshipUtil {
             // user cannot see (#35222). Batch-filter in a single round-trip (JAVA_STANDARDS:
             // permission checks batch vs scalar).
             relatedContentlets = permissionAPI.filterCollection(
-                    relatedContentlets, PermissionAPI.PERMISSION_READ, false, user);
+                    relatedContentlets, PermissionAPI.PERMISSION_READ, user, false);
             validateRelatedContent(relationship, contentType, relatedContentlets);
         }
 
