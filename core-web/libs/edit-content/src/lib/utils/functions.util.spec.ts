@@ -55,6 +55,7 @@ describe('Utils Functions', () => {
         isFlattenedField,
         isCalendarField,
         processCalendarFieldValue,
+        parseCalendarTimestamp,
         processFieldValue
     } = functionsUtil;
 
@@ -572,19 +573,24 @@ describe('Utils Functions', () => {
         });
 
         describe('DATE field', () => {
-            it('should convert value to string for DATE field', () => {
-                const value = '2021-09-01T18:00:00.000Z';
+            it('should preserve numeric timestamp for DATE field', () => {
+                const value = 1736899200000;
                 const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
 
-                // DATE field goes through castSingleSelectableValue which returns String(value)
                 expect(getFinalCastedValue(value, field)).toEqual(value);
             });
 
-            it("should convert 'now' to string for DATE field", () => {
+            it('should preserve ISO string for DATE field', () => {
+                const value = '2021-09-01T18:00:00.000Z';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it("should preserve 'now' for DATE field", () => {
                 const value = 'now';
                 const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
 
-                // DATE field goes through castSingleSelectableValue which returns String(value)
                 expect(getFinalCastedValue(value, field)).toEqual(value);
             });
 
@@ -1592,6 +1598,20 @@ describe('Utils Functions', () => {
                     expect(processCalendarFieldValue(invalidString, fieldName)).toBeNull();
                 });
 
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+                    const expected = Date.parse(isoDate);
+
+                    expect(processCalendarFieldValue(isoDate, fieldName)).toBe(expected);
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+                    const expected = Date.parse(formattedDate);
+
+                    expect(processCalendarFieldValue(formattedDate, fieldName)).toBe(expected);
+                });
+
                 it('should return null for empty string after trim', () => {
                     const emptyString = '   ';
 
@@ -1628,15 +1648,6 @@ describe('Utils Functions', () => {
                     consoleErrorSpy.mockRestore();
                 });
 
-                it('should log warning for string timestamp conversion', () => {
-                    processCalendarFieldValue('1737021000000', fieldName);
-
-                    expect(consoleWarnSpy).toHaveBeenCalledWith(
-                        `Calendar field ${fieldName} received string timestamp, converted to number:`,
-                        { original: '1737021000000', converted: 1737021000000 }
-                    );
-                });
-
                 it('should log warning for invalid string timestamps', () => {
                     processCalendarFieldValue('invalid', fieldName);
 
@@ -1644,6 +1655,12 @@ describe('Utils Functions', () => {
                         `Calendar field ${fieldName} has invalid timestamp string:`,
                         'invalid'
                     );
+                });
+
+                it('should not log warning for valid numeric string timestamps', () => {
+                    processCalendarFieldValue('1737021000000', fieldName);
+
+                    expect(consoleWarnSpy).not.toHaveBeenCalled();
                 });
 
                 it('should log error for unexpected value types', () => {
