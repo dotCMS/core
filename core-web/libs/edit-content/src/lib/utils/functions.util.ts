@@ -88,6 +88,11 @@ export const castSingleSelectableValue = (
  * Note: If the input contains line breaks, it will be treated as a single option,
  * preserving the line breaks as part of the option text.
  *
+ * Pipe detection is applied per option, so a single option (`label|value`),
+ * multi-line options (`label|value` per line) and comma-separated options
+ * (`label|value,label|value`) are all parsed correctly. Options without a pipe
+ * use the whole string as both label and value.
+ *
  * @param options - The string containing the options to parse
  * @param dataType - The data type of the field
  * @returns Array of parsed options with label and value
@@ -99,23 +104,18 @@ export const getSingleSelectableFieldOptions = (
     if (!options?.trim()) return [];
 
     const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
-    const PIPE_REGEX = /\|/;
     const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
-    const hasPipes = PIPE_REGEX.test(options);
 
     let items: string[] = [];
-    let isPipeFormat = false;
 
-    if (hasPipes && hasLineBreaks) {
-        // Multi-line pipe format (standard dotCMS format)
+    if (hasLineBreaks) {
+        // Multi-line format (standard dotCMS format)
         items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-        isPipeFormat = true;
-    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
+    } else if (options.trim().startsWith('|')) {
         // Special case: "|true" (checkbox without label)
         items = [options.trim()];
-        isPipeFormat = true;
     } else {
-        // Simple comma format or single-line with pipes treated as comma format
+        // Comma-separated format
         items = options
             .split(',')
             .map((v) => v.trim())
@@ -132,16 +132,16 @@ export const getSingleSelectableFieldOptions = (
             let label: string;
             let value: string;
 
-            if (isPipeFormat) {
+            if (item.includes('|')) {
                 const parts = item.split('|');
-                // Si hay pipe, el label es la primera parte y el value es la segunda
-                // Si no hay segunda parte, el value es igual al label
+                // If a pipe is present, label is the first part and value the second;
+                // if there's no second part, value equals label
                 label = (parts[0] || '').trim();
                 value = parts[1]?.trim() || label;
             } else {
-                // Si no hay pipe, tanto label como value son el mismo valor
-                label = item;
-                value = item;
+                // No pipe: label and value are the same
+                label = item.trim();
+                value = label;
             }
 
             if (!value) return null;
@@ -236,6 +236,61 @@ export const isValidJson = (value: string): boolean => {
 
         return false;
     }
+};
+
+/**
+ * Escapes HTML special characters so an API-provided value (e.g. a user display name) can be
+ * safely interpolated into a string that is rendered via `[innerHTML]`. Angular already
+ * sanitizes `[innerHTML]`, but escaping at the source neutralizes the markup entirely and
+ * keeps the value rendering as plain text.
+ *
+ * @param {string} value - The raw value to escape.
+ * @returns {string} - The value with `& < > " '` replaced by their HTML entities.
+ */
+export const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => {
+        switch (char) {
+            case '&':
+                return '&amp;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '"':
+                return '&quot;';
+            default:
+                return '&#39;';
+        }
+    });
+
+/**
+ * Resolves the user that holds the lock on a contentlet.
+ *
+ * The `lockedBy` field has two shapes depending on the API endpoint: a plain string (userId)
+ * with the display name in `lockedByName`, or a `{ userId, firstName, lastName }` object.
+ * TODO: remove this branching once the backend normalizes the shape across content types.
+ *
+ * @param {DotCMSContentlet | null | undefined} contentlet - The contentlet to inspect.
+ * @returns `{ userId, displayName }`, or null when the content is not locked.
+ */
+export const resolveLocker = (
+    contentlet: DotCMSContentlet | null | undefined
+): { userId: string; displayName: string } | null => {
+    const lockedBy = contentlet?.lockedBy;
+
+    if (!lockedBy) {
+        return null;
+    }
+
+    const isLockedByString = typeof lockedBy === 'string';
+    const userId = isLockedByString ? lockedBy : lockedBy.userId;
+    const displayName = (
+        isLockedByString
+            ? (contentlet?.lockedByName ?? '')
+            : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+    ).trim();
+
+    return { userId, displayName };
 };
 
 /**
@@ -383,26 +438,52 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
+ * Generates an edit-page URL for a given page contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated edit-page URL.
+ */
+export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
+    if (!contentlet.url || !contentlet.host || contentlet.languageId === undefined) {
+        console.warn('Missing required contentlet attributes to generate edit page URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.url}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
+    const defaults: UIState = {
+        view: 'form',
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
+    };
+
     try {
         const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
-            return JSON.parse(storedState);
+            return { ...defaults, ...JSON.parse(storedState) };
         }
     } catch (e) {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
-    // Default values
-    return {
-        view: 'form',
-        activeTab: 0,
-        isSidebarOpen: true,
-        activeSidebarTab: 0,
-        isBetaMessageVisible: true
-    };
+    return defaults;
 };
 
 /**

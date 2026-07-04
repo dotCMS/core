@@ -22,6 +22,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditorToolbarStore } from './editor-toolbar.store';
 
+import {
+    FULLSCREEN_AWARE_OVERLAY_OPTIONS,
+    OVERLAY_ABOVE_FULLSCREEN_Z_INDEX
+} from '../../config.utils';
+import { DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorModalService } from '../../services/editor-modal.service';
@@ -48,7 +53,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStore);
     protected readonly store = inject(EditorStore);
-    private readonly popovers = inject(EditorPopoverService);
+    protected readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentletEditUrl = inject(ContentletEditUrlService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -68,8 +73,19 @@ export class ToolbarComponent implements OnDestroy {
      */
     protected readonly overlayTooltipOptions = computed(
         (): TooltipOptions =>
-            this.isFullscreen() ? { tooltipZIndex: '10050' } : { tooltipZIndex: 'auto' }
+            this.isFullscreen()
+                ? { tooltipZIndex: `${OVERLAY_ABOVE_FULLSCREEN_Z_INDEX}` }
+                : { tooltipZIndex: 'auto' }
     );
+
+    /**
+     * Overlay options for the block-type `<p-select>` panel, which appends to `document.body`.
+     * Like the tooltips above, its default base z-index (≈1000) would be painted under the
+     * fullscreen shell's `z-[9998]` backdrop, leaving the dropdown invisible/unclickable in
+     * fullscreen. An open dropdown anchored to its trigger should sit on top in either mode, so
+     * it is lifted unconditionally — the single rule every body-portaled editor overlay follows.
+     */
+    protected readonly overlayOptions = FULLSCREEN_AWARE_OVERLAY_OPTIONS;
 
     readonly fullscreenToggle = output<void>();
     readonly contentletEdit = output<ContentletEditEvent>();
@@ -396,6 +412,19 @@ export class ToolbarComponent implements OnDestroy {
         const editor = this.editor();
         const { from, to, empty } = editor.state.selection;
         const btn = event.currentTarget as HTMLElement;
+
+        // Image selected → apply the link to the image node's href/target instead of inserting
+        // text. Without this branch the insert-text path below would delete the image (#36361).
+        if (editor.isActive(DOT_IMAGE_NODE_NAME)) {
+            const attrs = editor.getAttributes(DOT_IMAGE_NODE_NAME);
+            this.popovers.openLink(() => btn.getBoundingClientRect(), {
+                isImageLink: true,
+                initialValues: attrs['href']
+                    ? { href: attrs['href'], target: attrs['target'] ?? null }
+                    : undefined
+            });
+            return;
+        }
 
         // Check if cursor/selection is inside an existing link
         const linkMark = editor.state.doc

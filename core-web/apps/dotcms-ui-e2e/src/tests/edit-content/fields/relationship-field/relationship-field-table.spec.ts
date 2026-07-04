@@ -68,28 +68,7 @@ test.describe('Reorder (Drag & Drop)', () => {
         const originalThird = await relationshipField.getRowTitle(2);
 
         // Drag row 3 to row 1 position
-        const handles = relationshipField.getDragHandles();
-        const sourceHandle = handles.nth(2);
-        const targetHandle = handles.nth(0);
-
-        const sourceBounds = await sourceHandle.boundingBox();
-        const targetBounds = await targetHandle.boundingBox();
-
-        if (!sourceBounds || !targetBounds) {
-            throw new Error('Could not get bounding boxes for drag handles');
-        }
-
-        await adminPage.mouse.move(
-            sourceBounds.x + sourceBounds.width / 2,
-            sourceBounds.y + sourceBounds.height / 2
-        );
-        await adminPage.mouse.down();
-        await adminPage.mouse.move(
-            targetBounds.x + targetBounds.width / 2,
-            targetBounds.y + targetBounds.height / 2,
-            { steps: 10 }
-        );
-        await adminPage.mouse.up();
+        await relationshipField.dragRowToPosition(2, 0);
 
         // Verify order changed: original 3rd should now be 1st
         const newFirst = await relationshipField.getRowTitle(0);

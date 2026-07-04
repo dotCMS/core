@@ -24,6 +24,7 @@
                 <p-autoComplete
                     inputId="link-url"
                     appendTo="body"
+                    [overlayOptions]="overlayOptions"
                     optionLabel="url"
                     [size]="'small'"
                     [ngModel]="linkModel()"
@@ -74,22 +75,24 @@
                 </p-autoComplete>
             </div>
 
-            <div class="flex flex-col gap-1">
-                <label for="link-text" class="text-xs font-medium text-gray-700">
-                    {{ 'dot.block.editor.dialog.link.field.text.label' | dm }}
-                    <span class="font-normal text-gray-400">
-                        {{ 'dot.block.editor.dialog.link.field.text.optional' | dm }}
-                    </span>
-                </label>
-                <input
-                    pInputText
-                    id="link-text"
-                    type="text"
-                    [formControl]="form.controls.displayText"
-                    [placeholder]="'dot.block.editor.dialog.link.field.text.placeholder' | dm"
-                    pSize="small"
-                    class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
-            </div>
+            @if (!isImageLink()) {
+                <div class="flex flex-col gap-1">
+                    <label for="link-text" class="text-xs font-medium text-gray-700">
+                        {{ 'dot.block.editor.dialog.link.field.text.label' | dm }}
+                        <span class="font-normal text-gray-400">
+                            {{ 'dot.block.editor.dialog.link.field.text.optional' | dm }}
+                        </span>
+                    </label>
+                    <input
+                        pInputText
+                        id="link-text"
+                        type="text"
+                        [formControl]="form.controls.displayText"
+                        [placeholder]="'dot.block.editor.dialog.link.field.text.placeholder' | dm"
+                        pSize="small"
+                        class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                </div>
+            }
 
             <label class="flex cursor-pointer items-center gap-2" for="open-in-new-tab">
                 <input
@@ -102,20 +105,22 @@
                 </span>
             </label>
 
-            <button
-                type="button"
-                [attr.aria-expanded]="advancedOpen()"
-                aria-controls="link-advanced-section"
-                data-testid="link-advanced-toggle"
-                (mousedown)="$event.preventDefault(); toggleAdvanced()"
-                class="flex items-center gap-1 self-start rounded-sm text-xs font-medium text-gray-600 hover:text-indigo-700 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
-                <span>{{ 'dot.block.editor.dialog.link.advanced' | dm }}</span>
-                <span aria-hidden="true" class="material-symbols-outlined text-base">
-                    {{ advancedOpen() ? 'expand_less' : 'expand_more' }}
-                </span>
-            </button>
+            @if (!isImageLink()) {
+                <button
+                    type="button"
+                    [attr.aria-expanded]="advancedOpen()"
+                    aria-controls="link-advanced-section"
+                    data-testid="link-advanced-toggle"
+                    (mousedown)="$event.preventDefault(); toggleAdvanced()"
+                    class="flex items-center gap-1 self-start rounded-sm text-xs font-medium text-gray-600 hover:text-indigo-700 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                    <span>{{ 'dot.block.editor.dialog.link.advanced' | dm }}</span>
+                    <span aria-hidden="true" class="material-symbols-outlined text-base">
+                        {{ advancedOpen() ? 'expand_less' : 'expand_more' }}
+                    </span>
+                </button>
+            }
 
-            @if (advancedOpen()) {
+            @if (!isImageLink() && advancedOpen()) {
                 <div id="link-advanced-section" class="flex flex-col gap-3">
                     <div class="flex flex-col gap-1">
                         <label for="link-title" class="text-xs font-medium text-gray-700">
@@ -156,6 +161,7 @@
                         <p-select
                             inputId="link-rel"
                             appendTo="body"
+                            [overlayOptions]="overlayOptions"
                             [size]="'small'"
                             [showClear]="true"
                             [options]="relOptions"
@@ -172,6 +178,20 @@
             }
 
             <div class="flex justify-end gap-2 pt-1">
+                @if (canRemoveLink()) {
+                    <button
+                        type="button"
+                        data-testid="link-remove"
+                        [attr.aria-label]="'dot.block.editor.dialog.link.remove' | dm"
+                        [attr.title]="'dot.block.editor.dialog.link.remove' | dm"
+                        (mousedown)="$event.preventDefault()"
+                        (click)="onRemoveLink()"
+                        class="mr-auto flex cursor-pointer items-center rounded-sm p-1.5 text-red-600 hover:bg-red-50 focus:ring-2 focus:ring-red-300 focus:outline-none">
+                        <span aria-hidden="true" class="material-symbols-outlined text-xl">
+                            delete
+                        </span>
+                    </button>
+                }
                 <button
                     type="button"
                     (mousedown)="$event.preventDefault(); manager.close()"

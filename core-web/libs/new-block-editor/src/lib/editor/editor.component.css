@@ -16,7 +16,23 @@
    force font-size 0.875rem on many controls. Tailwind v4 emits prose +
    utilities inside @layer, so unlayered author CSS beats them regardless of
    specificity. These (unlayered) rules match that priority, then revert-layer
-   falls back to prose/utilities. */
+   falls back to prose/utilities.
+
+   PrimeNG widgets are excluded: PrimeNG's theme is injected UNLAYERED (no
+   `cssLayer` configured), so `.p-button` (0,1,0) already out-specifies JSP's
+   `button` (0,0,1) and wins on its own. It never needed this defense — and
+   reverting its padding/margin/font-size would roll back to Tailwind preflight
+   (0) and strip its design tokens. `[class~="p-component"]` is PrimeNG's host
+   marker on every widget root; the `, [class~="p-component"] *` also excludes
+   everything inside it (labels, icons, inner controls). A token match (`~=`)
+   avoids the `[class*="p-"]` trap of also matching Tailwind's `p-4` utility.
+
+   SPECIFICITY IS LOAD-BEARING: the exclusion is wrapped in `:where()` (which
+   contributes ZERO specificity) so the whole rule stays at (0,1,1) — high enough
+   to beat JSP's element selectors (0,0,1), but BELOW this file's own component
+   rules like `.tiptap { padding }` (0,2,0). Without `:where()`, each bare
+   `:not([class~=…])` would add (0,1,0), pushing the rule past our own styles and
+   reverting the editor's own padding/spacing to nothing. */
 :host(dotcms-block-editor) {
     display: block;
     font-family:
@@ -32,7 +48,9 @@
     color: #1f2937;
 }
 
-:host(dotcms-block-editor) ::ng-deep * {
+:host(dotcms-block-editor)
+    ::ng-deep
+    *:not(:where([class~='p-component'], [class~='p-component'] *)) {
     margin: revert-layer;
     padding: revert-layer;
     font-size: revert-layer;
@@ -115,6 +133,63 @@
     margin-top: 2.5rem;
 }
 
+/* ─── Lists ─────────────────────────────────────────────── */
+/* Self-contained list rendering. We do NOT rely on the host page's Tailwind
+   Typography (`prose`) for markers: Tailwind's preflight resets
+   `ol, ul, menu { list-style: none }` in `@layer base`, and depending on the
+   consuming app's layer order that can beat `prose` (it does in the
+   `dotcms-block-editor` web-component build, where lists rendered with no
+   bullets/numbers). These rules are unlayered component CSS, so they win over
+   any layered Tailwind reset regardless of host. `padding-left` is required for
+   the markers to be visible (`list-style-position: outside` paints them in the
+   indent); it also out-specifies the host-style `revert-layer` defense (0,1,1),
+   which would otherwise strip the list's padding and clip the markers. */
+:host ::ng-deep .tiptap ul,
+:host ::ng-deep .tiptap ol {
+    padding-left: 1.625rem;
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap ul {
+    list-style: disc;
+}
+
+:host ::ng-deep .tiptap ol {
+    list-style: decimal;
+}
+
+/* Nested markers cycle so depth stays legible */
+:host ::ng-deep .tiptap ul ul {
+    list-style: circle;
+}
+
+:host ::ng-deep .tiptap ul ul ul {
+    list-style: square;
+}
+
+/* `list-style: inherit` is load-bearing: the admin JSP ships an unlayered
+   `li { list-style: none }` that sets the property *directly on the <li>*,
+   overriding the value `list-style-type` would otherwise inherit from the
+   <ul>/<ol> above. Forcing the li to inherit re-derives the correct marker
+   (disc / decimal / circle / square) from its list parent. `.tiptap li`
+   (0,2,1) out-specifies the JSP's `li` (0,0,1). */
+:host ::ng-deep .tiptap li {
+    margin: 0.25rem 0;
+    list-style: inherit;
+}
+
+/* Markers default to Tailwind prose's light-gray bullet/counter color; match
+   them to the editor's text color so they read as part of the content. */
+:host ::ng-deep .tiptap li::marker {
+    color: currentColor;
+}
+
+/* TipTap wraps list-item content in a <p>; collapse its prose margins so the
+   marker stays vertically aligned with the first line of text. */
+:host ::ng-deep .tiptap li > p {
+    margin: 0;
+}
+
 /* ─── Figures / Images ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror figure {
     display: block;
@@ -150,6 +225,26 @@
     display: inline-block;
     max-width: 100%;
     height: auto;
+    /* Align to the top of the line box so the inline-block image carries no baseline
+       descender gap. Without this, wrapping the image in an inline <a> (when a link is
+       added) introduces extra space below it and the layout visibly jumps (#36361). */
+    vertical-align: top;
+    /* Tailwind Typography's `.prose :where(img)` adds `margin: 2em 0`, normally cancelled by
+       its `figure > *` reset. Once the image is wrapped in <a> (linked), it's no longer a direct
+       figure child so that reset stops applying and the 2em margin returns. Zero it explicitly —
+       this selector out-specifies prose's zero-specificity `:where()` rules (#36361). */
+    margin: 0;
+}
+
+/* A linked image is rendered as <figure><a href><img></a></figure>. Keep the anchor a
+   zero-line-height inline-block so it hugs the image and linking doesn't shift layout.
+   `vertical-align: top` is essential: once the anchor wraps the image, the *anchor* (not the
+   img) is the inline-level box in the figure's formatting context, so it must align to the top
+   or the browser reserves font-descender space below it and the layout jumps (#36361). */
+:host ::ng-deep .ProseMirror figure a {
+    display: inline-block;
+    line-height: 0;
+    vertical-align: top;
 }
 
 /* ─── Selected node ring ────────────────────────────────── */

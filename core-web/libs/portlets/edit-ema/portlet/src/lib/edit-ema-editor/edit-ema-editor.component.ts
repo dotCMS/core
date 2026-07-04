@@ -58,7 +58,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
-import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -74,7 +74,6 @@ import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-
 import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
-import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
 import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
@@ -615,31 +614,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.dragDropService.setupDragEvents(
-            this.uveStore,
-            this.iframe,
-            this.customDragImage,
-            this.contentWindow,
-            this.host,
-            {
-                onDrop: (event) => this.handleDrop(event),
-                onDragEnter: () => {
-                    // Handled in dragDropService
-                },
-                onDragOver: () => {
-                    // Handled in dragDropService
-                },
-                onDragLeave: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragEnd: () => {
-                    this.uveStore.resetEditorProperties();
-                },
-                onDragStart: () => {
-                    // Handled in dragDropService
-                }
+        this.dragDropService.setupDragEvents(this.uveStore, this.iframe, this.customDragImage, {
+            onDrop: (event) => this.handleDrop(event),
+            onDragEnter: () => {
+                // Handled in dragDropService
+            },
+            onDragOver: () => {
+                // Handled in dragDropService
+            },
+            onDragLeave: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragEnd: () => {
+                this.uveStore.resetEditorProperties();
+            },
+            onDragStart: () => {
+                // Handled in dragDropService
             }
-        );
+        });
     }
 
     private handleUveMessage(message: PostMessage): void {

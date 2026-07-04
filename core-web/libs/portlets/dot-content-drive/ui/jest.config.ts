@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'content-drive-ui',
     preset: '../../../../jest.preset.js',

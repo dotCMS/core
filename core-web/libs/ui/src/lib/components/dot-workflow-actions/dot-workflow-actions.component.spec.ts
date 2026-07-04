@@ -119,7 +119,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(1);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
         });
 
         it('should render primary and outlined buttons for 2 actions', () => {
@@ -129,7 +129,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(2);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
             expect(buttons[1].variant).toBe('outlined');
         });
 
@@ -140,7 +140,7 @@ describe('DotWorkflowActionsComponent', () => {
             const buttons = spectator.queryAll(Button);
 
             expect(buttons.length).toBe(3);
-            expect(buttons[0].variant).toBeNull();
+            expect(buttons[0].variant).toBeUndefined();
             expect(buttons[1].variant).toBe('outlined');
             expect(buttons[2].variant).toBe('outlined');
         });
@@ -369,6 +369,78 @@ describe('DotWorkflowActionsComponent', () => {
 
             expect(spectator.queryAll(Button).length).toBe(4);
             expect(spectator.query(byTestId('overflow-button'))).toBeNull();
+        });
+    });
+
+    describe('stacked', () => {
+        beforeEach(() => {
+            spectator.setInput('stacked', true);
+        });
+
+        it('should render ALL actions as buttons with no overflow menu', () => {
+            setBreakpointMatch({ [Breakpoints.XSmall]: true }); // would otherwise force overflow
+            spectator.setInput('actions', mockWorkflowsActionsWithMove);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(mockWorkflowsActionsWithMove.length);
+            expect(spectator.query(byTestId('overflow-button'))).toBeNull();
+            expect(spectator.query(Menu)).toBeNull();
+        });
+
+        it('should render the first action solid and the rest outlined', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const buttons = spectator.queryAll(Button);
+
+            expect(buttons[0].variant).toBeUndefined();
+            expect(buttons[1].variant).toBe('outlined');
+            expect(buttons[2].variant).toBe('outlined');
+        });
+
+        it('should render every button full-width (fluid)', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            spectator.queryAll(Button).forEach((button) => {
+                expect(button.fluid()).toBe(true);
+            });
+        });
+
+        it('should stack the host in a column (no flex-row-reverse)', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const host = spectator.element;
+
+            expect(host.classList.contains('flex-col')).toBe(true);
+            expect(host.classList.contains('flex-row-reverse')).toBe(false);
+        });
+
+        it('should filter out SEPARATOR actions', () => {
+            spectator.setInput('actions', [
+                mockWorkflowsActions[0],
+                SEPARATOR_ACTION,
+                mockWorkflowsActions[1]
+            ]);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(2);
+        });
+
+        it('should emit actionFired when a stacked button is clicked', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const action = mockWorkflowsActions[1];
+            const btn = spectator
+                .query(byTestId(`action-button-${action.id}`))
+                ?.querySelector('button');
+
+            spectator.click(btn);
+
+            expect(spy).toHaveBeenCalledWith(action);
         });
     });
 

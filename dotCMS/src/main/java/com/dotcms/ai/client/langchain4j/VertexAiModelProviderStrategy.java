@@ -9,8 +9,8 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
-import dev.langchain4j.model.vertexai.VertexAiGeminiChatModel;
-import dev.langchain4j.model.vertexai.VertexAiGeminiStreamingChatModel;
+import dev.langchain4j.model.vertexai.gemini.VertexAiGeminiChatModel;
+import dev.langchain4j.model.vertexai.gemini.VertexAiGeminiStreamingChatModel;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,12 +42,12 @@ class VertexAiModelProviderStrategy implements ModelProviderStrategy {
     public ChatModel buildChatModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
         if (config.timeout() != null) {
-            Logger.warn(VertexAiModelProviderStrategy.class,
+            Logger.debug(VertexAiModelProviderStrategy.class,
                     "timeout is not supported for Vertex AI and will be ignored");
         }
         if (config.credentialsJson() != null && !config.credentialsJson().isBlank()) {
             if (config.maxRetries() != null) {
-                Logger.warn(VertexAiModelProviderStrategy.class,
+                Logger.debug(VertexAiModelProviderStrategy.class,
                         "maxRetries is not supported when using credentialsJson auth for Vertex AI and will be ignored");
             }
             Logger.debug(VertexAiModelProviderStrategy.class, "building chat model for Vertex AI with credentialsJson auth");
@@ -77,11 +77,11 @@ class VertexAiModelProviderStrategy implements ModelProviderStrategy {
     public StreamingChatModel buildStreamingChatModel(final ProviderConfig config, final String modelType) {
         validate(config, modelType);
         if (config.timeout() != null) {
-            Logger.warn(VertexAiModelProviderStrategy.class,
+            Logger.debug(VertexAiModelProviderStrategy.class,
                     "timeout is not supported for Vertex AI streaming providers and will be ignored");
         }
         if (config.maxRetries() != null) {
-            Logger.warn(VertexAiModelProviderStrategy.class,
+            Logger.debug(VertexAiModelProviderStrategy.class,
                     "maxRetries is not supported for Vertex AI streaming providers and will be ignored");
         }
         if (config.credentialsJson() != null && !config.credentialsJson().isBlank()) {

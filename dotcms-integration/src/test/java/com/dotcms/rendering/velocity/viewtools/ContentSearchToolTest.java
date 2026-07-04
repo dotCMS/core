@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -11,6 +12,9 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.SearchHit;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -69,6 +73,23 @@ public class ContentSearchToolTest extends IntegrationTestBase {
     /** Flat terms aggregation on the {@code contenttype} system field — same shape the customer uses. */
     private static final String AGG_QUERY =
             "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contenttype\",\"size\":5}}},"
+                    + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
+
+    /**
+     * The <i>same</i> flat terms aggregation as {@link #AGG_QUERY} but with the field name in
+     * camelCase ({@code contentType}) — exactly how the customer wrote it. The physical index field
+     * is the all-lowercase {@code contenttype}.
+     *
+     * <p>After the fix, <b>both</b> paths resolve this: each lowercases the whole query (via
+     * {@code StringUtils.lowercaseStringExceptMatchingTokens}) before executing it, so
+     * {@code contentType} folds to {@code contenttype}. Before the fix, {@code raw()} forwarded the
+     * query untouched, so {@code contentType} aggregated over a non-existent field and yielded zero
+     * buckets — the customer's empty {@code getBuckets=[]}. The aggregation mapping itself was never
+     * at fault (it is shared by both paths via
+     * {@link ContentSearchResponse#from(org.elasticsearch.action.search.SearchResponse)}).
+     */
+    private static final String CAMELCASE_AGG_QUERY =
+            "{\"aggs\":{\"content_types\":{\"terms\":{\"field\":\"contentType\",\"size\":5}}},"
                     + "\"size\":0,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
 
     /** Terms aggregation with a nested {@code top_hits} sub-aggregation, as in the customer's query. */
@@ -171,8 +192,11 @@ public class ContentSearchToolTest extends IntegrationTestBase {
      * {@link Aggregation}'s components are named {@code getBuckets}/{@code getHits} and
      * {@link AggregationBucket} exposes bean getters.</p>
      *
-     * <p>Uses the already-lowercase {@code contenttype} field name because {@code raw()} does not
-     * normalize the query the way {@code search()} does.</p>
+     * <p>Uses the camelCase {@code contentType} field name on purpose: after the fix, {@code raw()}
+     * lowercases the whole query (via {@code StringUtils.lowercaseStringExceptMatchingTokens}, the
+     * same helper {@code search()} uses), so this resolves to the physical {@code contenttype} field
+     * and renders buckets just like {@code search()} — exercising the fix end-to-end through
+     * Velocity.</p>
      */
     private static final String RAW_VTL = """
             $response.setContentType("text/plain")
@@ -181,7 +205,7 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #set($esQuery = '{
                 "aggs": {
                     "content_types": {
-                        "terms": { "field": "contenttype", "size": 5 },
+                        "terms": { "field": "contentType", "size": 5 },
                         "aggs": {
                             "top_content": {
                                 "top_hits": { "size": 3 }
@@ -220,6 +244,85 @@ public class ContentSearchToolTest extends IntegrationTestBase {
             #foreach($bucket in $flat.content_types)
               flat key: $!{bucket.getKeyAsString()}
               flat docCount: $!{bucket.getDocCount()}
+            #end
+            """;
+
+    /**
+     * A plain document query ({@code size > 0}, no aggregations) so the response carries actual
+     * search hits. Filters on {@code live:true} so it resolves against the live index in the
+     * LIVE-mode tool, matching the contentlets published in {@link #prepare()}.
+     */
+    private static final String HITS_QUERY =
+            "{\"size\":5,\"query\":{\"bool\":{\"filter\":[{\"term\":{\"live\":true}}]}}}";
+
+    /**
+     * Locks the non-aggregation accessor surface of {@code $estool.search(...)} —
+     * {@link ContentSearchResults} — that customer VTL relies on: top-level timing/count getters
+     * ({@code totalResults}, {@code queryTook}, {@code scrollId}) and the hit walk
+     * ({@code $results.hits.hits} → {@code $hit.id} / {@code $hit.index} / {@code $hit.sourceAsMap}).
+     *
+     * <p>{@link ContentSearchResults} keeps JavaBean getters ({@code getHits}, {@code getTotalResults},
+     * {@code getQueryTook}, {@code getScrollId}), so property syntax ({@code $results.hits}) resolves.
+     * The neutral hit records also name their components {@code getId}/{@code getIndex}/
+     * {@code getSourceAsMap}, so {@code $hit.id} resolves too. {@code TotalHits.value()} is a bare
+     * record accessor, hence the explicit {@code ()}. This is the back-compat safety net for
+     * {@code $dotcontent.search(...)} templates that read hits/timing, not just aggregations.</p>
+     */
+    private static final String SEARCH_HITS_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.search($esQuery))
+            totalResults: $!{results.totalResults}
+            queryTook: $!{results.queryTook}
+            scrollId: [$!{results.scrollId}]
+            totalHits: $!{results.hits.totalHits.value()}
+            #foreach($hit in $results.hits.hits)
+              hit id: $!{hit.id}
+              hit index: $!{hit.index}
+              hit source: $!{hit.sourceAsMap}
+            #end
+            """;
+
+    /**
+     * Locks the same non-aggregation accessor surface for {@code $estool.raw(...)} —
+     * {@link ContentSearchResponse}. Because {@code raw()} returns a <i>record</i>, its top-level
+     * accessors need explicit method syntax ({@code $results.tookMillis()}, {@code $results.hits()},
+     * {@code $results.scrollId()}); property syntax ({@code $results.took}, {@code $results.hits})
+     * silently yields {@code null} on a record. Downstream the neutral {@link SearchHits} /
+     * {@link SearchHit} components are {@code get}-named ({@code getHits}, {@code getTotalHits},
+     * {@code getId}...), so those resolve either way; {@code TotalHits.value()} needs the explicit
+     * {@code ()}. This guards {@code $dotcontent.raw(...)} templates that read hits/timing.
+     */
+    private static final String RAW_HITS_VTL = """
+            #set($esQuery = '{"size":5,"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.raw($esQuery))
+            tookMillis: $!{results.tookMillis()}
+            scrollId: [$!{results.scrollId()}]
+            #set($hits = $results.hits())
+            totalHits: $!{hits.getTotalHits().value()}
+            #foreach($hit in $hits.getHits())
+              raw hit id: $!{hit.id}
+              raw hit index: $!{hit.index}
+              raw hit source: $!{hit.sourceAsMap}
+            #end
+            """;
+
+    /**
+     * Legacy ES-style <b>property syntax</b> (no parentheses) on {@code $estool.raw(...)}. Before the
+     * back-compat accessors were added to {@link ContentSearchResponse} / {@link TotalHits}, these
+     * would silently yield {@code null} on the record. They must resolve now:
+     * {@code $r.tookInMillis} → {@code getTookInMillis()}, {@code $r.scrollId} → {@code getScrollId()},
+     * {@code $r.hits.totalHits.value} → {@code getValue()}, and {@code $r.aggregations.<name>.buckets}
+     * → {@code getAggregations()} (the tree, matching {@code search()}).
+     */
+    private static final String RAW_LEGACY_PROPERTY_VTL = """
+            #set($esQuery = '{"size":5,"aggs":{"content_types":{"terms":{"field":"contenttype","size":5}}},"query":{"bool":{"filter":[{"term":{"live":true}}]}}}')
+            #set($results = $estool.raw($esQuery))
+            tookInMillis: $!{results.tookInMillis}
+            scrollId: [$!{results.scrollId}]
+            totalHits: $!{results.hits.totalHits.value}
+            #foreach($group in $results.aggregations.content_types.buckets)
+              legacy key: $!{group.getKeyAsString()}
+              legacy docCount: $!{group.getDocCount()}
             #end
             """;
 
@@ -382,5 +485,134 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 response.aggregations().containsKey("content_types"));
         assertFalse("content_types aggregation must have at least one bucket",
                 response.aggregations().get("content_types").isEmpty());
+    }
+
+    /**
+     * Regression guard for the fix: {@code raw()} now lowercases the whole query before executing it
+     * (via {@code StringUtils.lowercaseStringExceptMatchingTokens}, the same helper {@code search()}
+     * uses), so a camelCase aggregation field such as {@code contentType} resolves to the physical
+     * lower-case index field {@code contenttype} and yields populated buckets — reaching parity with
+     * {@code search()} for the customer's query.
+     *
+     * <ul>
+     *   <li>{@code raw(camelCase)} now populates buckets (previously empty — the customer's bug).</li>
+     *   <li>{@code raw(lowercase)} populates the same buckets — proving parity within {@code raw}.</li>
+     *   <li>{@code search(camelCase)} populates buckets (unchanged) and matches the {@code raw} count.</li>
+     * </ul>
+     *
+     * <p>The aggregation mapping was never at fault: both paths map the response through
+     * {@link ContentSearchResponse#from(org.elasticsearch.action.search.SearchResponse)}. The fix
+     * only adds the same query normalization {@code search()} already had to the {@code raw} path.</p>
+     */
+    @Test
+    public void rawNormalizesQuery_reachingParityWithSearch() throws Exception {
+        final ESContentTool tool = liveContentTool();
+
+        // raw(): the whole query is now lowercased -> camelCase 'contentType' resolves to
+        // 'contenttype' -> buckets populated. This is the fix: the query that used to return empty
+        // getBuckets=[] now works.
+        final ContentSearchResponse rawCamel = tool.raw(CAMELCASE_AGG_QUERY);
+        Logger.info(this, "raw(camelCase) aggregations=" + rawCamel.aggregations());
+        assertTrue("raw() must expose the content_types aggregation",
+                rawCamel.aggregations().containsKey("content_types"));
+        assertFalse("FIX: raw() now lowercases the query, so camelCase 'contentType' resolves to "
+                        + "'contenttype' and populates buckets (was empty before the fix)",
+                rawCamel.aggregations().get("content_types").isEmpty());
+
+        // raw(): the already-lowercase field name resolves to the same result -> parity within raw().
+        final ContentSearchResponse rawLower = tool.raw(AGG_QUERY);
+        Logger.info(this, "raw(lowercase) aggregations=" + rawLower.aggregations());
+        assertEquals("raw() must yield the same bucket count for camelCase and lowercase field names",
+                rawLower.aggregations().get("content_types").size(),
+                rawCamel.aggregations().get("content_types").size());
+
+        // search(): same camelCase query, same bucket count -> raw() reaches parity with search().
+        final ContentSearchResults<Contentlet> searchCamel =
+                APILocator.getSearchAPI().search(CAMELCASE_AGG_QUERY, true, systemUser, true);
+        final Aggregation searchAgg = searchCamel.getResponse().aggregationTree().get("content_types");
+        Logger.info(this, "search(camelCase) content_types=" + searchAgg);
+        assertNotNull("search() must expose the content_types aggregation", searchAgg);
+        assertEquals("raw() and search() must produce the same bucket count for the same camelCase query",
+                searchAgg.getBuckets().size(),
+                rawCamel.aggregations().get("content_types").size());
+    }
+
+    /**
+     * Gap closer: exercises the <b>hit &amp; timing</b> accessor surface of {@code $estool.search(...)}
+     * through the Velocity engine — the part not covered by the aggregation-focused tests. Asserts a
+     * VTL template that reads {@code $results.totalResults}, {@code $results.queryTook},
+     * {@code $results.scrollId} and walks {@code $results.hits.hits} (each hit's {@code id},
+     * {@code index}, {@code sourceAsMap}) renders real data. Locks the {@link ContentSearchResults}
+     * getter contract that keeps {@code $dotcontent.search(...)} templates working after the ES→OS
+     * migration.
+     */
+    @Test
+    public void searchVtl_rendersHitFieldsAndTiming() throws Exception {
+        final String output = VelocityUtil.eval(SEARCH_HITS_VTL, velocityContext());
+        Logger.info(this, "\n===== search hits VTL output =====\n" + output + "\n================================");
+
+        assertTrue("search() totalResults getter must render a number",
+                Pattern.compile("totalResults:\\s*\\d+").matcher(output).find());
+        assertTrue("search() queryTook getter must render a number",
+                Pattern.compile("queryTook:\\s*\\d+").matcher(output).find());
+        assertTrue("search() scrollId accessor must resolve without error",
+                output.contains("scrollId:"));
+        assertTrue("search() hits.totalHits.value() must render a number",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("search() hit walk must reach hit ids ($hit.id -> getId())",
+                Pattern.compile("hit id:\\s*\\S+").matcher(output).find());
+        assertTrue("search() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
+                        + "_source (identifier/inode) map",
+                output.contains("inode"));
+    }
+
+    /**
+     * Gap closer for the {@code raw()} sibling: exercises the hit &amp; timing accessor surface of
+     * {@code $estool.raw(...)} — a {@link ContentSearchResponse} record — through Velocity. Because
+     * the top-level accessors are record-style, the template uses explicit method syntax
+     * ({@code $results.tookMillis()}, {@code $results.hits()}, {@code $results.scrollId()}); the
+     * downstream {@link SearchHits}/{@link SearchHit} components are {@code get}-named so they resolve
+     * as properties. Asserts timing, total-hits count and per-hit {@code id}/{@code index}/
+     * {@code sourceAsMap} all render, locking the accessor contract for {@code $dotcontent.raw(...)}
+     * templates that read hits/timing rather than aggregations.
+     */
+    @Test
+    public void rawVtl_rendersHitFieldsAndTiming() throws Exception {
+        final String output = VelocityUtil.eval(RAW_HITS_VTL, velocityContext());
+        Logger.info(this, "\n===== raw hits VTL output =====\n" + output + "\n================================");
+
+        assertTrue("raw() tookMillis() record accessor must render a number",
+                Pattern.compile("tookMillis:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() scrollId() record accessor must resolve without error",
+                output.contains("scrollId:"));
+        assertTrue("raw() hits().getTotalHits().value() must render a number",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("raw() hit walk must reach hit ids ($hit.id -> getId())",
+                Pattern.compile("raw hit id:\\s*\\S+").matcher(output).find());
+        assertTrue("raw() hit sourceAsMap ($hit.sourceAsMap -> getSourceAsMap()) must render the "
+                        + "_source (identifier/inode) map",
+                output.contains("inode"));
+    }
+
+    /**
+     * Back-compat proof for the Velocity accessors added to {@link ContentSearchResponse} /
+     * {@link TotalHits}: legacy {@code $dotcontent.raw(...)} templates using ES-style property syntax
+     * (no parentheses) must resolve on the record again — not silently yield {@code null}.
+     */
+    @Test
+    public void rawVtl_legacyPropertyAccessorsResolve() throws Exception {
+        final String output = VelocityUtil.eval(RAW_LEGACY_PROPERTY_VTL, velocityContext());
+        Logger.info(this, "\n===== raw legacy-property VTL output =====\n" + output + "\n==============================");
+
+        assertTrue("$results.tookInMillis (property) must resolve via getTookInMillis()",
+                Pattern.compile("tookInMillis:\\s*\\d+").matcher(output).find());
+        assertTrue("$results.scrollId (property) must resolve via getScrollId() without error",
+                output.contains("scrollId:"));
+        assertTrue("$results.hits.totalHits.value (property) must resolve via TotalHits.getValue()",
+                Pattern.compile("totalHits:\\s*\\d+").matcher(output).find());
+        assertTrue("$results.aggregations.<name>.buckets (property) must walk via getAggregations() (tree)",
+                output.contains("legacy key:"));
+        assertTrue("legacy bucket doc counts must render with real numbers",
+                Pattern.compile("legacy docCount:\\s*\\d+").matcher(output).find());
     }
 }

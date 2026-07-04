@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: '@dotcms/types',
     preset: '../../../jest.preset.js',

@@ -32,7 +32,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -62,7 +62,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotRelativeDatePipe,
         ActionHeaderComponent,
         InputTextModule,
-        DotContentletStatusChipComponent,
+        DotContentletStatusBadgeComponent,
         AsyncPipe
     ],
     providers: [

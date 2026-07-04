@@ -1,3 +1,4 @@
+import { signalMethod } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
@@ -8,6 +9,7 @@ import {
     effect,
     ElementRef,
     inject,
+    OnInit,
     signal,
     untracked,
     viewChild
@@ -32,6 +34,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent
 } from '@dotcms/dotcms-models';
@@ -41,9 +44,12 @@ import {
     DotFolderTreeNodeData,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
+import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotAddToBundleComponent, DotMessagePipe, DotSeverityIconComponent } from '@dotcms/ui';
 
+import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import { DotContentDriveDropzoneComponent } from '../components/dot-content-drive-dropzone/dot-content-drive-dropzone.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -57,7 +63,14 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveContentTypeSelectorPayload,
+    DotContentDriveDialog,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus,
+    DotContentDriveUploadSelection,
+    DotContentDriveUploadSelectorPayload
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { encodeFilters, isFolder } from '../utils/functions';
@@ -73,6 +86,8 @@ import { encodeFilters, isFolder } from '../utils/functions';
         ToastModule,
         DialogModule,
         DotContentDriveDialogFolderComponent,
+        DotContentDriveDialogContentTypeSelectorComponent,
+        DotContentDriveDialogUploadSelectorComponent,
         MessageModule,
         ButtonModule,
         DotMessagePipe,
@@ -86,7 +101,7 @@ import { encodeFilters, isFolder } from '../utils/functions';
         class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
     }
 })
-export class DotContentDriveShellComponent {
+export class DotContentDriveShellComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
@@ -106,9 +121,86 @@ export class DotContentDriveShellComponent {
 
     readonly $contextMenuData = this.#store.contextMenu;
 
-    readonly $dialog = this.#store.dialog;
-
     readonly DIALOG_TYPE = DIALOG_TYPE;
+
+    /** Drives `[visible]`: open/close state of the dialog. */
+    protected readonly $dialogVisible = signal(false);
+
+    /**
+     * The dialog currently rendered in the body. Held through PrimeNG's close animation
+     * (only cleared on `(onHide)`) so the body doesn't blank out before the dialog finishes
+     * animating away. Synced from the store by {@link #syncDialog}.
+     */
+    protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
+
+    /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
+    readonly $folderPayload = computed(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.FOLDER
+            ? (dialog.payload as DotContentDriveFolder)
+            : undefined;
+    });
+
+    /** List type for the content-type selector dialog (encodes which base types to show). */
+    readonly $contentTypeSelectorListType = computed<DotUVEPaletteListTypes | undefined>(() => {
+        const dialog = this.$activeDialog();
+
+        return dialog?.type === DIALOG_TYPE.CONTENT_TYPE_SELECTOR
+            ? (dialog.payload as DotContentDriveContentTypeSelectorPayload).listType
+            : undefined;
+    });
+
+    /** Payload (target folder + optional dropped files) for the upload-type selector dialog. */
+    readonly $uploadSelectorPayload = computed<DotContentDriveUploadSelectorPayload | undefined>(
+        () => {
+            const dialog = this.$activeDialog();
+
+            return dialog?.type === DIALOG_TYPE.UPLOAD_SELECTOR
+                ? (dialog.payload as DotContentDriveUploadSelectorPayload)
+                : undefined;
+        }
+    );
+
+    /**
+     * Holds the selection emitted by the upload dialog while the OS file picker is open (Upload-button
+     * flow only). The dropped-files flow uploads immediately and never sets this.
+     */
+    readonly $activeSelection = signal<DotContentDriveUploadSelection | undefined>(undefined);
+
+    /**
+     * Content-type selector: sized to fit ~4 UVE-width cards per row. No horizontal padding so
+     * the paginator/footer separators span edge-to-edge; the list and footer add their own inset.
+     */
+    readonly $dialogContentClass = computed(() => {
+        switch (this.$activeDialog()?.type) {
+            case DIALOG_TYPE.CONTENT_TYPE_SELECTOR:
+                return 'w-152 max-w-[92vw] px-0! pt-0 pb-4';
+            case DIALOG_TYPE.UPLOAD_SELECTOR:
+                return 'w-125 max-w-[92vw] pt-0 p-4';
+            default:
+                return 'w-175 pt-0 p-4';
+        }
+    });
+
+    /**
+     * Syncs the dialog open/close state from the store. Opening sets the body and visibility
+     * together (no blank-frame flash); closing flips visibility off but leaves the body mounted
+     * so PrimeNG can animate it out — the body is cleared later in {@link onDialogHidden}.
+     * `signalMethod` only tracks its input, so the writes here need no manual `untracked`.
+     */
+    readonly #syncDialog = signalMethod<DotContentDriveDialog | undefined>((dialog) => {
+        if (dialog) {
+            this.$activeDialog.set(dialog);
+            this.$dialogVisible.set(true);
+        } else {
+            this.$dialogVisible.set(false);
+        }
+    });
+
+    constructor() {
+        this.#syncDialog(this.#store.dialog);
+    }
 
     readonly $offset = computed(() => this.#store.pagination().offset, {
         equal: (a, b) => a === b
@@ -253,10 +345,20 @@ export class DotContentDriveShellComponent {
     }
 
     /**
-     * Handles dialog hide event to reset the dialog state
+     * Fired by PrimeNG when the dialog visibility changes. A user-driven close (X / ESC /
+     * mask) emits `false`; propagate it to the store so the dialog state stays consistent.
      */
-    protected onHideDialog() {
-        this.#store.closeDialog();
+    protected onVisibleChange(visible: boolean) {
+        if (!visible) {
+            this.#store.closeDialog();
+        }
+    }
+
+    /**
+     * Fired after the close animation completes — now safe to drop the rendered body.
+     */
+    protected onDialogHidden() {
+        this.$activeDialog.set(undefined);
     }
 
     /**
@@ -271,26 +373,73 @@ export class DotContentDriveShellComponent {
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
-    protected onAddNewDotAsset() {
+    /**
+     * Upload-button flow: prompt for the asset type first; the OS file picker opens later, once the
+     * user confirms a type in {@link onUploadTypeSelected}.
+     */
+    protected onUpload() {
+        this.openUploadSelector({ targetFolder: this.#store.selectedNode()?.data });
+    }
+
+    /**
+     * Drag-and-drop / sidebar flow: the files are already known, so prompt for the asset type and
+     * carry the files into the dialog payload to upload right after the user confirms.
+     */
+    protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+        this.openUploadSelector({ targetFolder, files });
+    }
+
+    /**
+     * Opens the upload-type selector dialog (Asset vs File).
+     */
+    protected openUploadSelector(payload: DotContentDriveUploadSelectorPayload) {
+        this.#store.setDialog({
+            type: DIALOG_TYPE.UPLOAD_SELECTOR,
+            header: this.#dotMessageService.get('content-drive.dialog.upload-selector.header'),
+            payload
+        });
+    }
+
+    /**
+     * Handles the asset-type choice emitted by the upload selector dialog.
+     * - Drag-and-drop: the files are already in the selection, so upload immediately.
+     * - Upload button: stash the selection and open the OS file picker; {@link onFileChange}
+     *   completes the upload once files are chosen.
+     */
+    protected onUploadTypeSelected(selection: DotContentDriveUploadSelection) {
+        this.#store.closeDialog();
+
+        if (selection.files?.length) {
+            this.resolveFilesUpload(selection);
+
+            return;
+        }
+
+        this.$activeSelection.set(selection);
         this.$fileInput().nativeElement.click();
     }
 
     /**
-     * Handles file change event
+     * Handles file change event (Upload-button flow): merges the chosen files into the pending
+     * selection and triggers the upload with the previously chosen content type.
      * @param event The event that triggered the file change
      */
     protected onFileChange(event: Event) {
         const input = event.target as HTMLInputElement;
 
         const files = input.files;
+        const selection = this.$activeSelection();
 
-        if (!files || files.length === 0) {
-            return;
+        // Consume the files BEFORE resetting the input: `input.files` is a live FileList, so
+        // `input.value = ''` empties it. Resetting first would drop the selection and the upload
+        // would never fire (the file is captured synchronously into FormData by resolveFilesUpload).
+        if (files && files.length > 0 && selection) {
+            this.resolveFilesUpload({ ...selection, files });
         }
 
-        const targetFolder = this.#store.selectedNode()?.data;
-
-        this.resolveFilesUpload({ files, targetFolder });
+        // Reset so a cancelled/re-opened picker can't reuse a stale selection.
+        this.$activeSelection.set(undefined);
+        input.value = '';
     }
 
     /**
@@ -310,26 +459,34 @@ export class DotContentDriveShellComponent {
 
     /**
      * Resolves the upload of multiple files or a single file
-     * @param files The files to upload
+     * @param selection The chosen content type, target folder and files to upload
      */
-    protected resolveFilesUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected resolveFilesUpload({
+        files,
+        targetFolder,
+        baseType
+    }: DotContentDriveUploadSelection) {
+        if (!files?.length) {
+            return;
+        }
+
         if (files.length > 1) {
-            this.uploadFiles({ files, targetFolder });
+            this.uploadFiles({ files, targetFolder, baseType });
 
             return;
         }
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolder, baseType });
     }
 
     /**
      * Shows a warning message when multiple files are uploaded
      *
      * @protected
-     * @param {FileList} files
+     * @param {DotContentDriveUploadSelection} selection
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadFiles({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFiles({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
         this.#messageService.add({
             severity: 'warn',
             summary: this.#dotMessageService.get('content-drive.work-in-progress'),
@@ -337,47 +494,56 @@ export class DotContentDriveShellComponent {
             life: WARNING_MESSAGE_LIFE
         });
 
-        this.uploadFile({ files, targetFolder });
+        this.uploadFile({ files, targetFolder, baseType });
     }
 
     /**
      * Uploads a file to the content drive
-     * @param file The file to upload
+     * @param selection The chosen content type, target folder and files to upload
      */
-    protected uploadFile({ files, targetFolder }: DotContentDriveUploadFiles) {
+    protected uploadFile({ files, targetFolder, baseType }: DotContentDriveUploadSelection) {
+        if (!files?.length) {
+            return;
+        }
+
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
             detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
         });
 
-        this.uploadDotAsset(files[0], targetFolder);
+        this.uploadByBaseType(files[0], baseType, targetFolder);
     }
 
     /**
-     * Uploads a file to the content drive
+     * Uploads a file to the content drive resolving the content type from the given base type
+     * (`DOTASSET` for Assets, `FILEASSET` for Files).
      *
      * @protected
      * @param {File} file
-     * @param {string} hostFolder
+     * @param {string} baseType
+     * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
-    protected uploadDotAsset(file: File, hostFolder: DotFolderTreeNodeData) {
+    protected uploadByBaseType(file: File, baseType: string, hostFolder?: DotFolderTreeNodeData) {
         this.#fileService
-            .uploadDotAsset(file, {
-                baseType: 'dotAsset',
-                hostFolder: hostFolder?.id,
+            .uploadFileByBaseType(file, baseType, {
+                // A folder id carries its site; at the site root (no folder) fall back to the
+                // current site identifier so the upload lands on the site being browsed, not the
+                // backend default host.
+                hostFolder: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? '',
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                next: ({ title, contentType }) => {
+                // `contentType` here is the created contentlet's resolved type (from the response).
+                next: ({ title, contentType: uploadedContentType }) => {
                     this.#messageService.add({
                         severity: 'success',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
                         detail: this.#dotMessageService.get(
                             'content-drive.add-dotasset-success-detail',
                             title,
-                            contentType
+                            uploadedContentType
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });

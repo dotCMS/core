@@ -111,7 +111,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task when parent route id is empty', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {
@@ -129,7 +128,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task when parent route id is workflow', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {
@@ -147,7 +145,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-contentlets when parent route id is content', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {

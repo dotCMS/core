@@ -3,10 +3,6 @@
 @let data = store.paginatedData();
 @let isDisabled = $isDisabled();
 @let isEmpty = store.data().length === 0;
-@let field = $field();
-@let hintText = field.hint || null;
-@let hasError = $hasError();
-@let isRequired = $isRequired();
 @let showThumbnail = store.showThumbnail();
 
 <p-table
@@ -35,12 +31,18 @@
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" class="w-32 max-w-32 min-w-32">
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32"
+                            data-testid="relationship-locale-header">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 max-w-32 min-w-32 text-right!">
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32 text-right!"
+                            data-testid="relationship-status-header">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
@@ -76,9 +78,19 @@
                     class="flex items-center justify-center gap-2 p-2"
                     data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-gray-600">
+                    <span class="text-gray-600">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
-                    </p>
+                        @if (!isDisabled) {
+                            <button
+                                type="button"
+                                class="cursor-pointer border-0 bg-transparent p-0 text-blue-600 underline hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-hidden"
+                                (click)="showExistingContentDialog()"
+                                data-testid="relationship-empty-relate-link">
+                                {{ 'dot.file.relationship.field.empty.relate.link' | dm }}
+                            </button>
+                            {{ 'dot.file.relationship.field.empty.message.suffix' | dm }}
+                        }
+                    </span>
                 </div>
             </td>
         </tr>
@@ -128,15 +140,20 @@
                     }
                     @case ('language') {
                         <td class="w-32 max-w-32 min-w-32" [class.cursor-not-allowed]="isDisabled">
-                            {{ item.language | language }}
+                            @if (item.language | language; as localeLabel) {
+                                <p-tag
+                                    class="whitespace-nowrap"
+                                    severity="info"
+                                    [value]="localeLabel"
+                                    data-testid="relationship-locale-tag" />
+                            }
                         </td>
                     }
                     @case ('status') {
                         <td
                             class="w-32 max-w-32 min-w-32 text-right!"
                             [class.cursor-not-allowed]="isDisabled">
-                            @let status = item | contentletStatus;
-                            <p-chip [class]="status.classes" [label]="status.label" />
+                            <dot-contentlet-status-badge [state]="item" />
                         </td>
                     }
                     @case ('image') {
@@ -178,34 +195,15 @@
     </ng-template>
 
     <ng-template pTemplate="summary">
-        @if (hintText || showPagination || hasError) {
-            <div
-                class="flex items-center pt-2"
-                [class.justify-between]="hintText || hasError"
-                [class.justify-center]="!hintText && !hasError">
-                @if (hasError) {
-                    <div class="text-red-500">
-                        @if (isRequired) {
-                            <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
-                        }
-                    </div>
-                }
-                @if (!hasError && hintText) {
-                    <div class="text-gray-600">
-                        <small [attr.data-testId]="'hint-' + field.variable">
-                            {{ hintText }}
-                        </small>
-                    </div>
-                }
-                @if (showPagination) {
-                    <dot-pagination
-                        data-testid="relationship-table-pagination"
-                        [currentPageReportLayout]="'center'"
-                        (nextPage)="store.nextPage()"
-                        (previousPage)="store.previousPage()"
-                        [totalPages]="store.totalPages()"
-                        [currentPage]="pagination.currentPage" />
-                }
+        @if (showPagination) {
+            <div class="flex items-center justify-center pt-2">
+                <dot-pagination
+                    data-testid="relationship-table-pagination"
+                    [currentPageReportLayout]="'center'"
+                    (nextPage)="store.nextPage()"
+                    (previousPage)="store.previousPage()"
+                    [totalPages]="store.totalPages()"
+                    [currentPage]="pagination.currentPage" />
             </div>
         }
     </ng-template>

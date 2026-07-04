@@ -26,9 +26,11 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.UUID;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -178,6 +180,63 @@ public class RelationshipUtilTest {
         }
 
 
+    }
+
+    /**
+     * Method to test: {@link RelationshipUtil#filterContentlet(long, String, User, boolean)}
+     * Given Scenario: An identifier is filtered requesting a language for which the contentlet has
+     *   no version (it only exists in the default language) — the scenario behind issue #35862 where
+     *   an article is translated to Spanish but a related contentlet only exists in English.
+     * ExpectedResult: Instead of throwing a NullPointerException, the method falls back to the
+     *   working version in any language and returns it (relationships are stored at the identifier
+     *   level, so the fallback version is the correct one to relate).
+     */
+    @Test
+    public void test_filterContentlet_fallsBackToAnyLanguage_whenNoVersionInTargetLanguage()
+            throws DotSecurityException, DotDataException {
+
+        final Language spanish = TestDataUtils.getSpanishLanguage();
+        final ContentType authorType = createContentType("AuthorFallback" + System.currentTimeMillis());
+
+        // Contentlet exists ONLY in the default language
+        final Contentlet englishOnly = new ContentletDataGen(authorType.id())
+                .languageId(defaultLang).nextPersisted();
+
+        try {
+            // Filter requesting the Spanish version of an identifier that only exists in English
+            final List<Contentlet> results = RelationshipUtil
+                    .filterContentlet(spanish.getId(), englishOnly.getIdentifier(), user, false);
+
+            assertNotNull(results);
+            assertEquals(1, results.size());
+            assertEquals(englishOnly.getIdentifier(), results.get(0).getIdentifier());
+            // The fallback returns the working version in the available (default) language
+            assertEquals(defaultLang, results.get(0).getLanguageId());
+        } finally {
+            if (englishOnly.getInode() != null) {
+                ContentletDataGen.remove(englishOnly);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link RelationshipUtil#filterContentlet(long, String, User, boolean)}
+     * Given Scenario: The filter contains a syntactically valid UUID that does not correspond to any
+     *   existing identifier.
+     * ExpectedResult: The element is skipped (no contentlet found in any language) and the method
+     *   returns an empty list without throwing a NullPointerException.
+     */
+    @Test
+    public void test_filterContentlet_skipsMissingIdentifier_withoutNPE()
+            throws DotSecurityException, DotDataException {
+
+        final String nonExistentId = UUID.randomUUID().toString();
+
+        final List<Contentlet> results = RelationshipUtil
+                .filterContentlet(defaultLang, nonExistentId, user, false);
+
+        assertNotNull(results);
+        assertTrue(results.isEmpty());
     }
 
 
