@@ -87,6 +87,14 @@ public class IndexStartupValidator {
         final OSClientConfig config = resolveConfig();
         logConfigSummary(config);
         validateOSVersion();
+        if (IndexConfigHelper.isMigrationComplete()) {
+            // Phase 3: ES is decommissioned and ES_ENDPOINTS is no longer required, so the
+            // resolved ES side would just be the localhost:9200 default — comparing it against
+            // OS would false-positive on a legitimate config. Skip the separation check.
+            Logger.info(this, "Endpoint separation check skipped: PHASE_3_OPENSEARCH_ONLY"
+                    + " — ES is decommissioned and ES_ENDPOINTS is not required.");
+            return;
+        }
         assertEndpointsSeparate(config);
     }
 
@@ -242,10 +250,21 @@ public class IndexStartupValidator {
      * (empty-DB starter-load or populated-DB InitServlet), closing the window where the
      * starter-load path created {@code .os} indices before the late startup validation ran.
      *
+     * <p><strong>Phase-aware:</strong> in {@code PHASE_3_OPENSEARCH_ONLY} the check is skipped
+     * (returns {@code true}) — ES is decommissioned and {@code ES_ENDPOINTS} is no longer
+     * required, so the resolved ES side would just be the {@code localhost:9200} default and
+     * comparing it against OS would false-positive on a legitimate configuration.</p>
+     *
      * @return {@code true} when ES and OS point to distinct clusters (safe to create OS indices);
      *         {@code false} when they overlap (caller must skip the OS bootstrap and halt the migration)
      */
     public static boolean endpointsAreSeparate() {
+        if (IndexConfigHelper.isMigrationComplete()) {
+            Logger.info(IndexStartupValidator.class,
+                    "Endpoint separation check skipped: PHASE_3_OPENSEARCH_ONLY"
+                    + " — ES is decommissioned and ES_ENDPOINTS is not required.");
+            return true;
+        }
         final OSClientConfig config;
         try {
             config = ConfigurableOpenSearchProvider.configFromProperties();

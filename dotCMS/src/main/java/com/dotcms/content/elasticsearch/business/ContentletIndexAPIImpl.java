@@ -1013,18 +1013,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // chokepoint closes the window where the empty-DB starter-load path created .os indices
         // before InitServlet's later validateIndexingConfig() caught the ES==OS overlap. On
         // overlap we halt the migration (ES-only) and skip OS bootstrap entirely.
+        // Phase-aware: in Phase 3 (ES decommissioned, ES_ENDPOINTS not required) the check is
+        // skipped inside endpointsAreSeparate(), so this branch never fires there and the
+        // haltMigration() fallback below only ever runs in dual-write phases where ES is live.
         if (!IndexStartupValidator.endpointsAreSeparate()) {
-            if (isMigrationComplete()) {
-                // Phase 3: ES is decommissioned. Silently halting to ES-only would serve a stale
-                // or absent ES index — the same reason checkAndInitializeIndex and the connection
-                // gate fail loudly in Phase 3. Throw instead of haltMigration(); the outer handler
-                // logs it FATAL. This bites initOSCatchup Case 1 (Phase-3 disaster recovery).
-                throw new DotRuntimeException(
-                        "OpenSearch endpoint-separation check failed in PHASE_3_OPENSEARCH_ONLY"
-                        + " (ES and OS resolve to the same cluster, or the OS config is unresolved)."
-                        + " Cannot auto-rollback to ES (ES may be decommissioned or stale)."
-                        + " Fix OS_ENDPOINTS and restart dotCMS.");
-            }
             Logger.warn(this.getClass(),
                     "Skipping OpenSearch index bootstrap (working=" + workingName
                     + ", live=" + liveName + "): OS migration configuration rejected"

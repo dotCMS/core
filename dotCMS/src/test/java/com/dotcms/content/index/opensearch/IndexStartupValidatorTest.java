@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import org.junit.After;
@@ -22,6 +23,7 @@ public class IndexStartupValidatorTest {
     public void clearEndpoints() {
         Config.setProperty("ES_ENDPOINTS", null);
         Config.setProperty("OS_ENDPOINTS", null);
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, 0);
     }
 
     /**
@@ -85,6 +87,20 @@ public class IndexStartupValidatorTest {
         Config.setProperty("OS_ENDPOINTS", new String[]{""});
 
         assertFalse(IndexStartupValidator.endpointsAreSeparate());
+    }
+
+    /**
+     * Given Scenario: Phase 3 (OPENSEARCH_ONLY) with ES and OS resolving to the same address —
+     *                 legitimate, since ES is decommissioned and ES_ENDPOINTS is not required.
+     * Expected Result: the separation check is skipped — endpointsAreSeparate() returns true.
+     */
+    @Test
+    public void test_endpointsAreSeparate_phase3_checkSkipped_returnsTrue() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, 3);
+        Config.setProperty("ES_ENDPOINTS", new String[]{"https://localhost:9201"});
+        Config.setProperty("OS_ENDPOINTS", new String[]{"https://localhost:9201"});
+
+        assertTrue(IndexStartupValidator.endpointsAreSeparate());
     }
 
     /**
