@@ -48,9 +48,7 @@ describe('DotPublishingQueueService', () => {
 
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.method).toBe('GET');
-            expect(req.request.params.get('status')).toBe(
-                `${PublishAuditStatus.BUNDLE_REQUESTED}`
-            );
+            expect(req.request.params.get('status')).toBe(`${PublishAuditStatus.BUNDLE_REQUESTED}`);
             expect(req.request.params.get('page')).toBe('2');
             expect(req.request.params.get('per_page')).toBe('25');
             expect(req.request.params.get('filter')).toBe('bundle-x');

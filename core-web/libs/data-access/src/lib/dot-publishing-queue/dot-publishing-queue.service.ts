@@ -179,7 +179,10 @@ export class DotPublishingQueueService {
     uploadBundle(file: File): Observable<{ bundleName: string; status: string }> {
         const formData = new FormData();
         formData.append('file', file, file.name);
-        return this.#http.post<{ bundleName: string; status: string }>('/api/bundle/sync', formData);
+        return this.#http.post<{ bundleName: string; status: string }>(
+            '/api/bundle/sync',
+            formData
+        );
     }
 
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
