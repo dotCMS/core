@@ -231,10 +231,12 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
     public void test_deleteIndex_activeIndex_isRejected() throws Exception {
         router.createSiteSearchIndex(IDX, null, 1);
         router.activateIndex(IDX);
+        final ESIndexAPI esIndex = ((IndexAPIImpl) APILocator.getESIndexAPI()).esImpl();
         try {
             assertThrows(DotStateException.class, () -> router.deleteIndex(IDX));
-            assertTrue("Active site-search index must survive a rejected delete",
-                    osIndexAPI.indexExists(IDX));
+            // The active index must survive in BOTH engines — the guard blocks before any delete.
+            assertTrue("Active site-search index must survive in ES", esIndex.indexExists(IDX));
+            assertTrue("Active site-search index must survive in OS", osIndexAPI.indexExists(IDX));
         } finally {
             router.deactivateIndex(IDX);
         }
