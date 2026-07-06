@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
-import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
+import { computeScrollIsInBottom, getNativeEventBinder } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 
@@ -32,13 +31,18 @@ export function scrollHandler() {
         });
     };
 
-    window.addEventListener('scroll', scrollCallback);
-    window.addEventListener('scrollend', scrollEndCallback);
+    // Native binder: scroll survives the iframe rewrite under Zone.js. It can't
+    // move to a fresh `documentElement` like hover/click (viewport scroll only
+    // fires on `window`). See getNativeEventBinder.
+    const { addEventListener, removeEventListener } = getNativeEventBinder(window);
+
+    addEventListener('scroll', scrollCallback);
+    addEventListener('scrollend', scrollEndCallback);
 
     return {
         destroyScrollHandler: () => {
-            window.removeEventListener('scroll', scrollCallback);
-            window.removeEventListener('scrollend', scrollEndCallback);
+            removeEventListener('scroll', scrollCallback);
+            removeEventListener('scrollend', scrollEndCallback);
         }
     };
 }
@@ -185,16 +189,18 @@ export function listenBlockEditorInlineEvent() {
         };
     }
 
-    // If the page is not fully loaded, listen for the DOMContentLoaded event
+    // Native binder: `DOMContentLoaded` fires on `document` (not `<html>`), so
+    // it survives the iframe rewrite under Zone.js. See getNativeEventBinder.
     const handleDOMContentLoaded = () => {
         listenBlockEditorClick();
     };
 
-    document.addEventListener('DOMContentLoaded', handleDOMContentLoaded);
+    const { addEventListener, removeEventListener } = getNativeEventBinder(document);
+    addEventListener('DOMContentLoaded', handleDOMContentLoaded);
 
     return {
         destroyListenBlockEditorInlineEvent: () => {
-            document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
+            removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
 }
