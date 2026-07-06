@@ -1669,27 +1669,49 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public boolean delete(String indexName) {
-        // Mirror createContentIndex: resolve the per-provider physical name (ES → bare,
-        // OS → .os tag) via ops.toPhysicalName so a router-driven delete targets the REAL
-        // OS index. Routing the bare logical name straight to OSIndexAPIImpl.delete would
-        // hit an untagged name that does not exist and orphan the actual .os index.
-        // Track the primary provider's result; shadow failures in dual-write phases are
-        // fire-and-forget (the primary ES delete must not be undone by an OS shadow miss).
+        // Tag-dispatch (see IndexTag): an explicitly OS-tagged name identifies the OS index
+        // set, so it goes to the OS provider only — fanning it to ES would target a physical
+        // ".os" name that can never exist in the ES cluster and always miss.
+        if (IndexTag.resolve(indexName) == IndexTag.OS) {
+            final String physicalName = router.osImpl().toPhysicalName(indexName);
+            try {
+                return router.osImpl().indexAPI().delete(physicalName);
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
+                return false;
+            }
+        }
+        // Bare name — mirror createContentIndex: fan out over the write providers with each
+        // provider's physical name (ES → bare, OS → .os tag) so a paired delete removes the
+        // .os sibling too. Divergent names are normal after catchup, so the shadow leg skips
+        // names its engine does not hold instead of ERROR-logging an expected miss; real
+        // shadow failures follow the shadow-write log policy (fire-and-forget). The primary
+        // provider's result is returned; the primary delete must not be undone by a shadow miss.
         final ContentletIndexOperations primary = router.readProvider();
         boolean primaryResult = false;
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final String physicalName = ops.toPhysicalName(indexName);
             try {
+                if (ops != primary && !ops.indexAPI().indexExists(physicalName)) {
+                    logShadowWriteFailure(this.getClass(),
+                            "Skipping shadow delete of " + physicalName
+                            + ": index does not exist in the shadow provider (divergent names"
+                            + " are expected during migration catchup)", null);
+                    continue;
+                }
                 final boolean r = ops.indexAPI().delete(physicalName);
                 if (ops == primary) {
                     primaryResult = r;
                 }
             } catch (Exception e) {
-                Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                 if (ops == primary) {
+                    Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                     primaryResult = false;
+                } else {
+                    logShadowWriteFailure(this.getClass(),
+                            "Shadow delete failed (fire-and-forget in dual-write phase): "
+                            + physicalName + ": " + e.getMessage(), e);
                 }
-                // shadow failures are fire-and-forget in dual-write phases
             }
         }
         return primaryResult;
