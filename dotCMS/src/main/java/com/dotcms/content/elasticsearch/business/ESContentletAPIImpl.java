@@ -4535,7 +4535,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         relationTypeValue)
                 : TreeFactory.getRelatedIdsByChildAndRelationType(contentlet.getIdentifier(),
                         relationTypeValue))
-                .stream().distinct().toList();
+                .stream().distinct().collect(Collectors.toList());
 
         if (hasParent) {
             TreeFactory.deleteTreesByParentAndRelationType(contentlet.getIdentifier(),
@@ -4550,7 +4550,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!hasParent) {
             final List<String> removedParentIds = relatedIds.stream()
                     .filter(identifier -> !identifiersToBeRelated.contains(identifier))
-                    .toList();
+                    .collect(Collectors.toList());
             for (final Contentlet removedParent : findAllWorkingVersions(removedParentIds)) {
                 removedParent.setIndexPolicy(contentlet.getIndexPolicyDependencies());
                 removedParent.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
@@ -4601,7 +4601,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } else {
             final List<String> readableRelatedIds = relatedContents.stream()
-                    .map(Contentlet::getIdentifier).distinct().toList();
+                    .map(Contentlet::getIdentifier).distinct().collect(Collectors.toList());
             if (hasParent) {
                 TreeFactory.deleteTreesByParentAndChildrenAndRelationType(
                         contentlet.getIdentifier(), readableRelatedIds,
@@ -4646,7 +4646,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .findAllContentletVersionInfos(identifiers).stream()
                 .map(ContentletVersionInfo::getWorkingInode)
                 .filter(UtilMethods::isSet)
-                .toList();
+                .collect(Collectors.toList());
         return findContentlets(workingInodes);
     }
 
