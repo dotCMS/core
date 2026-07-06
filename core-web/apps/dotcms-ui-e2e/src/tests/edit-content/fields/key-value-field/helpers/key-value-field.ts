@@ -78,9 +78,7 @@ export class KeyValueField {
         await expect(valueInput).toBeVisible({ timeout: 10000 });
         await valueInput.fill(newValue);
         await valueInput.press('Enter');
-        await expect
-            .poll(async () => valueInput.inputValue(), { timeout: 10000 })
-            .toBe(newValue);
+        await expect.poll(async () => valueInput.inputValue(), { timeout: 10000 }).toBe(newValue);
     }
 
     async deleteEntry(index: number): Promise<void> {

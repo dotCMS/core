@@ -118,7 +118,9 @@ test.describe('Key Value Field', () => {
             await reloadedField.expectEntry('secondKey', 'secondValue');
         });
 
-        test('edit key-value entry value persists after save and reload @smoke', async ({ page }) => {
+        test('edit key-value entry value persists after save and reload @smoke', async ({
+            page
+        }) => {
             const title = `E2E KV Edit ${faker.lorem.word()}`;
             const formPage = new NewEditContentFormPage(page);
             await formPage.goToNew(contentTypeVariable);

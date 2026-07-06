@@ -1675,6 +1675,100 @@ describe('Utils Functions', () => {
             });
         });
 
+        describe('parseCalendarTimestamp', () => {
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(parseCalendarTimestamp(null)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(parseCalendarTimestamp(undefined)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(parseCalendarTimestamp('')).toBeNull();
+                });
+
+                it('should return null for whitespace-only string', () => {
+                    expect(parseCalendarTimestamp('   ')).toBeNull();
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return valid numbers as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(parseCalendarTimestamp(timestamp)).toBe(timestamp);
+                });
+
+                it('should handle zero', () => {
+                    expect(parseCalendarTimestamp(0)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    expect(parseCalendarTimestamp(-1737021000000)).toBe(-1737021000000);
+                });
+
+                it('should return null for NaN', () => {
+                    expect(parseCalendarTimestamp(NaN)).toBeNull();
+                });
+
+                it('should return null for Infinity', () => {
+                    expect(parseCalendarTimestamp(Infinity)).toBeNull();
+                    expect(parseCalendarTimestamp(-Infinity)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert valid Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+
+                    expect(parseCalendarTimestamp(date)).toBe(date.getTime());
+                });
+
+                it('should return null for invalid Date objects', () => {
+                    expect(parseCalendarTimestamp(new Date('invalid'))).toBeNull();
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert numeric strings to numbers', () => {
+                    expect(parseCalendarTimestamp('1737021000000')).toBe(1737021000000);
+                });
+
+                it('should trim before parsing numeric strings', () => {
+                    expect(parseCalendarTimestamp('  1737021000000  ')).toBe(1737021000000);
+                });
+
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+
+                    expect(parseCalendarTimestamp(isoDate)).toBe(Date.parse(isoDate));
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+
+                    expect(parseCalendarTimestamp(formattedDate)).toBe(Date.parse(formattedDate));
+                });
+
+                it('should return null for non-parseable strings', () => {
+                    expect(parseCalendarTimestamp('not-a-date')).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for object values', () => {
+                    expect(parseCalendarTimestamp({ timestamp: 1737021000000 })).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(parseCalendarTimestamp(true)).toBeNull();
+                    expect(parseCalendarTimestamp(false)).toBeNull();
+                });
+            });
+        });
+
         describe('processFieldValue', () => {
             describe('flattened fields', () => {
                 it('should join array values with commas for flattened fields', () => {

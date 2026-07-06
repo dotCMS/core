@@ -13,7 +13,6 @@ import { UVE_MODE } from '@dotcms/types';
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
-    CALENDAR_FIELD_TYPES_WITH_TIME,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
@@ -625,9 +624,7 @@ export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
  * @param value - Raw calendar field value
  * @returns Numeric timestamp, null for empty/invalid, or undefined when value is undefined
  */
-export const parseCalendarTimestamp = (
-    value: unknown
-): number | null | undefined => {
+export const parseCalendarTimestamp = (value: unknown): number | null | undefined => {
     if (value === null || value === undefined) {
         return value as null | undefined;
     }
@@ -684,10 +681,7 @@ export const processCalendarFieldValue = (
     if (parsed === null && fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
         if (typeof fieldValue === 'string') {
             console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
-        } else if (
-            typeof fieldValue !== 'number' &&
-            !(fieldValue instanceof Date)
-        ) {
+        } else if (typeof fieldValue !== 'number' && !(fieldValue instanceof Date)) {
             console.error(`Calendar field ${fieldName} received unexpected value:`, {
                 value: fieldValue,
                 type: typeof fieldValue

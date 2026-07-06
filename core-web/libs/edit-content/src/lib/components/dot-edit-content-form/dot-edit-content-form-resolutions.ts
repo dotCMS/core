@@ -6,7 +6,10 @@ import {
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { EditContentQueryParams } from '../../store/edit-content.store';
-import { getSingleSelectableFieldOptions, parseCalendarTimestamp } from '../../utils/functions.util';
+import {
+    getSingleSelectableFieldOptions,
+    parseCalendarTimestamp
+} from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**

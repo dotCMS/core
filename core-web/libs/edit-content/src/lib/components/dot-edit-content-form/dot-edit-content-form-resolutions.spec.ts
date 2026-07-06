@@ -572,7 +572,9 @@ describe('DotEditContentFormResolutions', () => {
                     campoDate: 1736899200000
                 };
 
-                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(1736899200000);
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    1736899200000
+                );
             });
 
             it('should parse ISO date strings from contentlet', () => {
