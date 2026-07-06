@@ -52,7 +52,7 @@ import {
 } from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
-import { parseFocalPoint } from './../../utils/focal-point.util';
+import { focalPointFromMetadata, parseFocalPoint } from './../../utils/focal-point.util';
 import { getUiMessage } from './../../utils/messages';
 import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
@@ -427,10 +427,10 @@ export class DotFileFieldComponent
 
         if (newLauncher?.isAvailable()) {
             const metadata = this.#currentMetadata();
-            // Seed the editor with the asset's stored focal point (exposed on the binary
-            // metadata as an "x,y" string by DefaultTransformStrategy) so reopening restores
-            // the marker instead of resetting it to centre.
-            const focalPoint = parseFocalPoint(metadata?.focalPoint);
+            // Seed the editor with the asset's stored focal point so reopening restores
+            // the marker instead of resetting it to centre. Binary fields expose the
+            // clean `focalPoint` key; a referenced dotAsset exposes `dot:focalPoint`.
+            const focalPoint = parseFocalPoint(focalPointFromMetadata(metadata));
 
             this.store.applyEditedImage(
                 newLauncher.open({

@@ -1,4 +1,26 @@
+import { DotFileMetadata } from '@dotcms/dotcms-models';
 import { NormalizedPoint } from '@dotcms/image-editor';
+
+/**
+ * Resolves the focal point string from file metadata across its two shapes.
+ *
+ * A Binary field's own metadata surfaces the clean `focalPoint` key (added by the
+ * backend view transform), whereas a referenced `dotAsset`'s `assetMetaData`
+ * exposes the raw namespaced custom attribute `dot:focalPoint`. Reading both lets
+ * the editor restore the marker on reopen regardless of which shape backs the field.
+ *
+ * @param metadata - The resolved file metadata (binary metaData or dotAsset assetMetaData).
+ * @returns The focal point `"x,y"` string, or undefined when none is present.
+ */
+export function focalPointFromMetadata(
+    metadata: DotFileMetadata | null | undefined
+): string | undefined {
+    if (!metadata) {
+        return undefined;
+    }
+
+    return metadata.focalPoint ?? (metadata as unknown as Record<string, string>)['dot:focalPoint'];
+}
 
 /**
  * Parses a focal point stored as an `"x,y"` string (the backend exposes it on the
