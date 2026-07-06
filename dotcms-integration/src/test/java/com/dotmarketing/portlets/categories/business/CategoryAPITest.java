@@ -364,6 +364,76 @@ public class CategoryAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link CategoryAPI#save(Category, Category, User, boolean)}
+     * Given Scenario: An existing child category is saved again with a different parent than the
+     *                 one it currently belongs to (re-parenting), as done by PUT /api/v1/categories.
+     * Expected Result: The category is detached from its original parent and attached to the new
+     *                  one. See issue #33989.
+     */
+    @Test
+    public void reParentExistingCategory() throws Exception {
+
+        final long time = new Date().getTime();
+
+        Category originalParent = null;
+        Category newParent = null;
+        Category child = null;
+
+        try {
+            originalParent = new Category();
+            originalParent.setCategoryName("Original Parent " + time);
+            originalParent.setKey("original-parent-" + time);
+            originalParent.setCategoryVelocityVarName("originalParent" + time);
+            categoryAPI.save(null, originalParent, user, false);
+
+            newParent = new Category();
+            newParent.setCategoryName("New Parent " + time);
+            newParent.setKey("new-parent-" + time);
+            newParent.setCategoryVelocityVarName("newParent" + time);
+            categoryAPI.save(null, newParent, user, false);
+
+            child = new Category();
+            child.setCategoryName("Child " + time);
+            child.setKey("child-" + time);
+            child.setCategoryVelocityVarName("child" + time);
+            categoryAPI.save(originalParent, child, user, false);
+
+            // Precondition: the child sits under the original parent.
+            List<Category> parents = categoryAPI.getParents(child, user, false);
+            assertEquals(1, parents.size());
+            assertEquals(originalParent.getInode(), parents.get(0).getInode());
+
+            // Re-parent: save the existing child passing the new parent.
+            categoryAPI.save(newParent, child, user, false);
+
+            // The child is now under the new parent only.
+            parents = categoryAPI.getParents(child, user, false);
+            assertEquals(1, parents.size());
+            assertEquals(newParent.getInode(), parents.get(0).getInode());
+            assertNotEquals(originalParent.getInode(), parents.get(0).getInode());
+
+            // The original parent no longer lists the child; the new parent does.
+            final Category originalParentRef = originalParent;
+            final Category childRef = child;
+            final Category newParentRef = newParent;
+            assertTrue(categoryAPI.getChildren(originalParentRef, user, false).stream()
+                    .noneMatch(c -> c.getInode().equals(childRef.getInode())));
+            assertTrue(categoryAPI.getChildren(newParentRef, user, false).stream()
+                    .anyMatch(c -> c.getInode().equals(childRef.getInode())));
+        } finally {
+            if (UtilMethods.isSet(child)) {
+                categoryAPI.delete(child, user, false);
+            }
+            if (UtilMethods.isSet(originalParent)) {
+                categoryAPI.delete(originalParent, user, false);
+            }
+            if (UtilMethods.isSet(newParent)) {
+                categoryAPI.delete(newParent, user, false);
+            }
+        }
+    }
+
+    /**
      * This method will focus on testing the Category cache
      *
      * @throws Exception

@@ -171,12 +171,66 @@ public class CategoryAPIImpl implements CategoryAPI {
 		category.setModDate(new Date());
 		categoryFactory.save(category, parent);
 
-		//if is a new category and is not top level, relate the category to the parent category
-		if(isANewCategory && parent != null) {
-			categoryFactory.addChild(parent, category, null);
-			permissionAPI.copyPermissions(parent, category);
+		if (isANewCategory) {
+			//if is a new category and is not top level, relate the category to the parent category
+			if (parent != null) {
+				categoryFactory.addChild(parent, category, null);
+				permissionAPI.copyPermissions(parent, category);
+			}
+		} else if (parent != null) {
+			//Re-parenting an existing category: move it under the requested parent when it differs
+			//from its current parent (issue #33989). A null parent (an omitted "parent" field) leaves
+			//the current relationship untouched, so an update never accidentally detaches a category.
+			reParent(category, parent, user, respectFrontendRoles);
 		}
 
+	}
+
+	/**
+	 * Moves an existing category under a new parent when the requested parent differs from the
+	 * category's current parent. Detaches the category from its previous parent(s) and links it to
+	 * the new one, mirroring the parent/child tree wiring done for brand-new categories. Added to
+	 * support re-parenting through the Category REST API (issue #33989).
+	 *
+	 * @param category              the existing category being moved
+	 * @param newParent             the parent the category should be moved under
+	 * @param user                  the user performing the operation
+	 * @param respectFrontendRoles  whether front-end roles should be respected
+	 */
+	private void reParent(final Category category, final Category newParent, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		final List<Category> currentParents = categoryFactory.getParents(category);
+
+		final boolean alreadyUnderNewParent = currentParents.stream()
+				.anyMatch(current -> newParent.getInode().equals(current.getInode()));
+
+		// Nothing to do when the category already sits under the requested parent only.
+		if (alreadyUnderNewParent && currentParents.size() == 1) {
+			return;
+		}
+
+		// The user must be allowed to add children under the new parent.
+		if (!permissionAPI.doesUserHavePermission(newParent, PermissionAPI.PERMISSION_EDIT, user,
+				respectFrontendRoles)) {
+			final String errorMsg = String.format("User '%s' doesn't have EDIT permissions to move " +
+							"Category '%s' under parent Category '%s'.", null != user ? user.getUserId() : null,
+					category.getInode(), newParent.getInode());
+			Logger.error(this, errorMsg);
+			throw new DotSecurityException(errorMsg);
+		}
+
+		// Detach the category from every current parent that is not the requested one.
+		for (final Category currentParent : currentParents) {
+			if (!newParent.getInode().equals(currentParent.getInode())) {
+				categoryFactory.removeParent(category, currentParent);
+			}
+		}
+
+		// Link the category to the new parent (addChild is a no-op if the link already exists).
+		if (!alreadyUnderNewParent) {
+			categoryFactory.addChild(newParent, category, null);
+		}
 	}
 
 	@WrapInTransaction
