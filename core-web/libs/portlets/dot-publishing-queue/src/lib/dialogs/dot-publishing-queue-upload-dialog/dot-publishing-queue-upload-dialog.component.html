@@ -1,12 +1,12 @@
 <div class="flex h-full flex-col" data-testid="pq-upload-dialog">
-    @if (errorMessage()) {
+    @if ($errorMessage()) {
         <p-message
             severity="error"
             icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="pq-upload-error">
-            {{ errorMessage() }}
+            {{ $errorMessage() }}
         </p-message>
     }
 
@@ -54,7 +54,7 @@
                         {{ 'publishing-queue.upload.file-types' | dm }}
                     </div>
 
-                    @if (selectedFile(); as file) {
+                    @if ($selectedFile(); as file) {
                         <span class="text-sm font-medium text-color" data-testid="pq-upload-file">
                             {{ file.name }}
                         </span>
@@ -68,13 +68,13 @@
         <p-button
             [label]="'publishing-queue.cancel' | dm"
             text
-            [disabled]="uploading()"
+            [disabled]="$uploading()"
             (onClick)="onCancel()"
             data-testid="pq-upload-cancel" />
         <p-button
             [label]="'publishing-queue.upload.submit' | dm"
-            [disabled]="uploading()"
-            [loading]="uploading()"
+            [disabled]="$uploading()"
+            [loading]="$uploading()"
             (onClick)="onSubmit()"
             data-testid="pq-upload-submit" />
     </div>

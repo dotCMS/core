@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-4" data-testid="pq-asset-list-dialog">
-    @if (showAssetSearch()) {
+    @if ($showAssetSearch()) {
         <!-- mt-1 reserves room for the focus ring; without it the ring clips
              against the dialog header when the input gets keyboard focus. -->
         <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
@@ -9,7 +9,7 @@
                     pInputText
                     type="text"
                     size="small"
-                    [ngModel]="assetSearch()"
+                    [ngModel]="$assetSearch()"
                     (ngModelChange)="onSearch($event)"
                     [placeholder]="'publishing-queue.detail.search-assets' | dm"
                     [attr.aria-label]="'publishing-queue.detail.search-assets' | dm"
@@ -23,7 +23,7 @@
         class="flex h-96 flex-col overflow-hidden rounded-md border border-surface-200"
         data-testid="pq-asset-list-shell">
         <p-table
-            [value]="filteredAssets()"
+            [value]="$filteredAssets()"
             [loading]="store.assetListStatus() === 'loading'"
             [rowHover]="true"
             [scrollable]="true"
@@ -85,7 +85,7 @@
                     <td
                         [attr.colspan]="allowRemove ? 3 : 2"
                         class="text-color-secondary p-6 text-center">
-                        @if (hasNoMatches()) {
+                        @if ($hasNoMatches()) {
                             <span data-testid="pq-asset-list-no-matches">
                                 {{ 'publishing-queue.detail.assets-no-matches' | dm }}
                             </span>

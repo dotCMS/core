@@ -5,7 +5,7 @@
         <p-skeleton height="6rem" width="100%" />
     } @else if (store.detail(); as detail) {
         <p-table
-            [value]="metaRows()"
+            [value]="$metaRows()"
             dataKey="key"
             styleClass="rounded-md border border-surface-200 overflow-hidden text-sm"
             data-testid="pq-detail-meta">
@@ -86,7 +86,7 @@
                 </p>
             } @else {
                 <p-table
-                    [value]="endpointRows()"
+                    [value]="$endpointRows()"
                     dataKey="key"
                     styleClass="rounded-md border border-surface-200 overflow-hidden"
                     data-testid="pq-detail-endpoint-table">
@@ -129,7 +129,7 @@
         </section>
 
         <div class="flex justify-end gap-2 pt-2">
-            @if (canDownloadManifest()) {
+            @if ($canDownloadManifest()) {
                 <a
                     [href]="manifestHref(detail.bundleId)"
                     [download]="'manifest_' + detail.bundleId + '.csv'"
@@ -139,7 +139,7 @@
                     {{ 'publishing-queue.detail.download-manifest' | dm }}
                 </a>
             }
-            @if (canDownloadBundle()) {
+            @if ($canDownloadBundle()) {
                 <a
                     [href]="downloadHref(detail.bundleId)"
                     [download]="detail.bundleName || detail.bundleId"

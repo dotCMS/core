@@ -39,56 +39,56 @@ export class DotPublishingQueueUploadDialogComponent {
     readonly #store = inject(DotPublishingQueueStore);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly selectedFile = signal<File | null>(null);
-    readonly uploading = signal(false);
-    readonly errorMessage = signal<string | null>(null);
+    readonly $selectedFile = signal<File | null>(null);
+    readonly $uploading = signal(false);
+    readonly $errorMessage = signal<string | null>(null);
 
     onFileSelect(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
         if (file && !this.#isBundleFile(file)) {
-            this.selectedFile.set(null);
-            this.errorMessage.set(
+            this.$selectedFile.set(null);
+            this.$errorMessage.set(
                 this.#dotMessageService.get('publishing-queue.upload.warning.invalid-file-type')
             );
             return;
         }
-        this.selectedFile.set(file);
-        this.errorMessage.set(null);
+        this.$selectedFile.set(file);
+        this.$errorMessage.set(null);
     }
 
     onFileClear(): void {
-        this.selectedFile.set(null);
-        this.errorMessage.set(null);
+        this.$selectedFile.set(null);
+        this.$errorMessage.set(null);
     }
 
     onSubmit(): void {
-        const file = this.selectedFile();
+        const file = this.$selectedFile();
         // Upload stays clickable at all times — clicking without a file surfaces
         // the file-required warning inline via `errorMessage` instead of doing
         // nothing silently. Auto-clears when the user picks a valid file
         // (see `onFileSelect`).
         if (!file) {
-            this.errorMessage.set(
+            this.$errorMessage.set(
                 this.#dotMessageService.get('publishing-queue.upload.warning.file-required')
             );
             return;
         }
 
-        this.uploading.set(true);
-        this.errorMessage.set(null);
+        this.$uploading.set(true);
+        this.$errorMessage.set(null);
 
         this.#service
             .uploadBundle(file)
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => {
-                    this.errorMessage.set(this.#extractErrorMessage(error));
-                    this.uploading.set(false);
+                    this.$errorMessage.set(this.#extractErrorMessage(error));
+                    this.$uploading.set(false);
                     return EMPTY;
                 })
             )
             .subscribe(() => {
-                this.uploading.set(false);
+                this.$uploading.set(false);
                 this.#store.refresh();
                 this.dialogRef.close({ uploaded: true });
             });

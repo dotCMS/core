@@ -91,14 +91,14 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
         it('Upload item → emits uploadClick', () => {
             const emit = jest.fn();
-            spectator.component.uploadClick.subscribe(emit);
+            spectator.component.$uploadClick.subscribe(emit);
             spectator.component.addBundleItems[1].command?.({} as never);
             expect(emit).toHaveBeenCalled();
         });
 
         it('Select Bundle item → emits selectBundleClick (placeholder for future dialog)', () => {
             const emit = jest.fn();
-            spectator.component.selectBundleClick.subscribe(emit);
+            spectator.component.$selectBundleClick.subscribe(emit);
             spectator.component.addBundleItems[0].command?.({} as never);
             expect(emit).toHaveBeenCalled();
         });
@@ -192,7 +192,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
             bundlesSelectedIds.set(['b1']);
             spectator.detectChanges();
             const emit = jest.fn();
-            spectator.component.deleteClick.subscribe(emit);
+            spectator.component.$deleteClick.subscribe(emit);
             const btn = spectator.query(byTestId('pq-bulk-delete'))?.querySelector('button');
             spectator.click(btn as HTMLButtonElement);
             expect(emit).toHaveBeenCalled();

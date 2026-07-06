@@ -236,7 +236,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             assetListStatus.set('loaded');
             spectator.detectChanges();
 
-            spectator.component.assetSearch.set('something-that-doesnt-exist');
+            spectator.component.$assetSearch.set('something-that-doesnt-exist');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('pq-asset-list-no-matches'))).toBeTruthy();
@@ -249,13 +249,13 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             assetListStatus.set('loaded');
             spectator.detectChanges();
 
-            spectator.component.assetSearch.set('homepage');
+            spectator.component.$assetSearch.set('homepage');
             spectator.detectChanges();
-            expect(spectator.component.assetSearch()).toBe('homepage');
+            expect(spectator.component.$assetSearch()).toBe('homepage');
 
             selectedBundleId.set('B');
             spectator.detectChanges();
-            expect(spectator.component.assetSearch()).toBe('');
+            expect(spectator.component.$assetSearch()).toBe('');
         });
     });
 });

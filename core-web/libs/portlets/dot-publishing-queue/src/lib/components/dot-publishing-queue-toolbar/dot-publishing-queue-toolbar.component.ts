@@ -45,16 +45,16 @@ import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue
 })
 export class DotPublishingQueueToolbarComponent {
     protected readonly store = inject(DotPublishingQueueStore);
-    readonly uploadClick = output<void>();
-    readonly selectBundleClick = output<void>();
-    readonly deleteClick = output<void>();
+    readonly $uploadClick = output<void>({ alias: 'uploadClick' });
+    readonly $selectBundleClick = output<void>({ alias: 'selectBundleClick' });
+    readonly $deleteClick = output<void>({ alias: 'deleteClick' });
 
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
     #searchSubject = new Subject<string>();
 
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
-    readonly hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
+    protected readonly $hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
 
     /** "Add Bundle" split-menu items. The commands emit outputs instead of
      * calling services directly so the shell owns dialog orchestration
@@ -63,12 +63,12 @@ export class DotPublishingQueueToolbarComponent {
         {
             label: this.#dotMessageService.get('publishing-queue.add-bundle.select'),
             icon: 'pi pi-table',
-            command: () => this.selectBundleClick.emit()
+            command: () => this.$selectBundleClick.emit()
         },
         {
             label: this.#dotMessageService.get('publishing-queue.add-bundle.upload'),
             icon: 'pi pi-upload',
-            command: () => this.uploadClick.emit()
+            command: () => this.$uploadClick.emit()
         }
     ];
 

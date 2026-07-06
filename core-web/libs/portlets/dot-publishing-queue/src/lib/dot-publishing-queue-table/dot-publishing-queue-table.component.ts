@@ -93,7 +93,7 @@ export class DotPublishingQueueTableComponent {
     readonly #dotPushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
 
-    readonly first = computed(() => (this.store.bundlesPage() - 1) * this.store.rowsPerPage());
+    readonly $first = computed(() => (this.store.bundlesPage() - 1) * this.store.rowsPerPage());
 
     /** Page-size dropdown options. Mirrors `dot-folder-list-view` (content-drive)
      * for visual consistency across the admin UI. The store seeds at 20 too. */
@@ -125,7 +125,7 @@ export class DotPublishingQueueTableComponent {
         subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
 
-    readonly selectedRows = computed(() => {
+    readonly $selectedRows = computed(() => {
         const selectedIds = new Set(this.store.bundlesSelectedIds());
         return this.store.bundlesRows().filter((row) => selectedIds.has(row.bundleId));
     });

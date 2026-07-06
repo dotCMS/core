@@ -24,7 +24,7 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
             <p-tag
                 severity="secondary"
                 [rounded]="true"
-                [value]="itemsCountLabel()"
+                [value]="$itemsCountLabel()"
                 styleClass="text-xs font-medium px-2 py-0.5"
                 data-testid="pq-asset-list-count" />
         </div>
@@ -49,7 +49,7 @@ export class DotPublishingQueueAssetListDialogHeaderComponent {
     })();
 
     /** "N items" / "1 item" — singular vs plural so the pill reads naturally. */
-    readonly itemsCountLabel = computed(() => {
+    readonly $itemsCountLabel = computed(() => {
         const count = this.#store.selectedAssets().length;
         const key =
             count === 1

@@ -76,23 +76,23 @@ export class DotPublishingQueueAssetListDialogComponent {
      * the reserved 384px (h-96) and the dialog stays stable on load + after deletes. */
     readonly assetSkeletonRows = Array.from({ length: 8 });
 
-    readonly assetSearch = signal('');
+    readonly $assetSearch = signal('');
     readonly #searchSubject = new Subject<string>();
 
     /** Per-asset edit URL, resolved by `DotContentletEditUrlService` after each
      * asset list load. Non-contentlet assets (templates, languages, containers,
      * etc.) are never resolved and stay plain text — same rule as the Select
      * Bundle dialog. */
-    readonly assetEditUrls = signal<Map<string, string>>(new Map());
+    readonly $assetEditUrls = signal<Map<string, string>>(new Map());
 
     /** Search input only shows when the loaded asset list has more than ASSET_SEARCH_THRESHOLD items. */
-    readonly showAssetSearch = computed(
+    readonly $showAssetSearch = computed(
         () => this.store.selectedAssets().length > ASSET_SEARCH_THRESHOLD
     );
 
     /** Client-side filter over title + type. Case-insensitive. */
-    readonly filteredAssets = computed(() => {
-        const query = this.assetSearch().trim().toLowerCase();
+    readonly $filteredAssets = computed(() => {
+        const query = this.$assetSearch().trim().toLowerCase();
         const assets = this.store.selectedAssets();
         if (!query) {
             return assets;
@@ -103,18 +103,18 @@ export class DotPublishingQueueAssetListDialogComponent {
     });
 
     /** True when search is active but returns nothing — distinct UX from "bundle is empty". */
-    readonly hasNoMatches = computed(
+    readonly $hasNoMatches = computed(
         () =>
-            this.assetSearch().trim().length > 0 &&
+            this.$assetSearch().trim().length > 0 &&
             this.store.assetListStatus() === 'loaded' &&
-            this.filteredAssets().length === 0 &&
+            this.$filteredAssets().length === 0 &&
             this.store.selectedAssets().length > 0
     );
 
     constructor() {
         this.#searchSubject
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((value) => this.assetSearch.set(value));
+            .subscribe((value) => this.$assetSearch.set(value));
 
         // Reset input + resolved URLs every time the dialog is reused for a
         // different bundle. The bundleId signal changes before assets stream in,
@@ -122,8 +122,8 @@ export class DotPublishingQueueAssetListDialogComponent {
         effect(() => {
             this.store.selectedBundleId();
             untracked(() => {
-                this.assetSearch.set('');
-                this.assetEditUrls.set(new Map());
+                this.$assetSearch.set('');
+                this.$assetEditUrls.set(new Map());
             });
         });
 
@@ -157,7 +157,7 @@ export class DotPublishingQueueAssetListDialogComponent {
     /** Template helper — used to bind `cursor-pointer` on linkable rows and to
      * short-circuit `onAssetRowClick` when the asset isn't linkable. */
     editUrlFor(asset: BundleAssetView): string | null {
-        return this.assetEditUrls().get(asset.asset) ?? null;
+        return this.$assetEditUrls().get(asset.asset) ?? null;
     }
 
     /** Closes the dialog. Called from the footer Close button. */
@@ -183,7 +183,7 @@ export class DotPublishingQueueAssetListDialogComponent {
             );
 
             forkJoin(perAsset$).subscribe((entries) => {
-                this.assetEditUrls.update((prev) => {
+                this.$assetEditUrls.update((prev) => {
                     const next = new Map(prev);
                     for (const [key, url] of entries) {
                         if (url) {

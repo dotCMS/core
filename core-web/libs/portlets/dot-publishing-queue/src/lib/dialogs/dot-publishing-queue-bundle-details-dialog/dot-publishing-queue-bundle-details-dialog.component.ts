@@ -66,7 +66,7 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
      * cell. Computed because the `scheduledFor` row is only included when the
      * bundle is in SCHEDULED status (the BE leaves `scheduledPublishDate` null
      * for every other status, so the row would be a permanent "—" otherwise). */
-    readonly metaRows = computed<readonly MetaRow[]>(() => {
+    readonly $metaRows = computed<readonly MetaRow[]>(() => {
         const isScheduled = this.store.detail()?.status === PublishAuditStatus.SCHEDULED;
         return [
             { key: 'title', label: this.#dotMessageService.get('publishing-queue.detail.title') },
@@ -114,12 +114,12 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
      * actually downloadable right now. `null` (in flight) stays hidden so the
      * UI doesn't flicker on the way in. See
      * `DotPublishingQueueService.probeBundleDownload` for the full why. */
-    readonly canDownloadBundle = computed(() => this.store.canDownloadBundle() === true);
-    readonly canDownloadManifest = computed(() => this.store.canDownloadManifest() === true);
+    readonly $canDownloadBundle = computed(() => this.store.canDownloadBundle() === true);
+    readonly $canDownloadManifest = computed(() => this.store.canDownloadManifest() === true);
 
     /** Flattens environments → one row per endpoint, with the env name carried
      * as a column. Single table, no subheader rows. */
-    readonly endpointRows = computed<EndpointTableRow[]>(() => {
+    readonly $endpointRows = computed<EndpointTableRow[]>(() => {
         const detail = this.store.detail();
         if (!detail) {
             return [];

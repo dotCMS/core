@@ -16,12 +16,12 @@
         <dot-publishing-queue-status-filter />
 
         <div class="ml-auto flex items-center gap-2">
-            @if (hasBulkActions()) {
+            @if ($hasBulkActions()) {
                 <p-button
                     [label]="'publishing-queue.delete-bundles' | dm"
                     [text]="true"
                     severity="danger"
-                    (onClick)="deleteClick.emit()"
+                    (onClick)="$deleteClick.emit()"
                     data-testid="pq-bulk-delete" />
             }
             <p-button
@@ -30,7 +30,7 @@
                 [text]="true"
                 (onClick)="store.refresh()"
                 data-testid="pq-refresh-btn" />
-            @if (hasBulkActions()) {
+            @if ($hasBulkActions()) {
                 <p-button
                     [label]="'publishing-queue.retry-send' | dm"
                     (onClick)="onBulkRetry()"
