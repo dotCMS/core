@@ -4,22 +4,25 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
-    linkedSignal
+    linkedSignal,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import {
@@ -32,11 +35,13 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     DEBOUNCE_TIME,
+    FIELD_FILTER_CATEGORY_TYPE,
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TIME_TYPE,
     FIELD_FILTER_MULTISELECT_TYPE,
     FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_SELECT_TYPE,
+    FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_TIME_ONLY_TYPE,
     PANEL_SCROLL_HEIGHT,
     USER_SEARCHABLE_PREFIX
@@ -52,6 +57,8 @@ type FieldFilterControl =
     | 'checkbox'
     | 'binary-checkbox'
     | 'radio'
+    | 'tag'
+    | 'category'
     | 'date';
 
 interface FieldFilterOption {
@@ -74,6 +81,7 @@ interface FieldFilterOption {
         ListboxModule,
         RadioButtonModule,
         DatePickerModule,
+        AutoCompleteModule,
         PopoverModule,
         DotChipFilterComponent,
         DotFilterListItemComponent,
@@ -85,6 +93,9 @@ interface FieldFilterOption {
 export class DotContentDriveFieldFilterComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #tagsService = inject(DotTagsService);
+    readonly #categoriesService = inject(DotCategoriesService);
+    readonly #destroyRef = inject(DestroyRef);
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
@@ -128,6 +139,10 @@ export class DotContentDriveFieldFilterComponent {
                 return 'radio';
             case FIELD_FILTER_SELECT_TYPE:
                 return 'single-select';
+            case FIELD_FILTER_TAG_TYPE:
+                return 'tag';
+            case FIELD_FILTER_CATEGORY_TYPE:
+                return 'category';
             default:
                 return 'text';
         }
@@ -169,6 +184,25 @@ export class DotContentDriveFieldFilterComponent {
         const raw = this.$rawValue();
 
         return raw ? raw.split(',').filter(Boolean) : [];
+    });
+
+    /** Tag autocomplete suggestions (labels), refreshed as the user types. */
+    protected readonly $tagSuggestions = signal<string[]>([]);
+
+    /** Category autocomplete: option objects (label = name, value = category key). */
+    protected readonly $categorySuggestions = signal<FieldFilterOption[]>([]);
+    /** key → category name, accumulated from searches/selection so restored chips can show names. */
+    readonly #categoryLabelByKey = signal<Record<string, string>>({});
+    /** Selected categories as option objects, resolved from the stored keys via the label cache. */
+    protected readonly $categorySelected = linkedSignal<FieldFilterOption[]>(() => {
+        const raw = this.$rawValue();
+        if (!raw) return [];
+        const labels = this.#categoryLabelByKey();
+
+        return raw
+            .split(',')
+            .filter(Boolean)
+            .map((key) => ({ label: labels[key] || key, value: key }));
     });
 
     /**
@@ -214,7 +248,11 @@ export class DotContentDriveFieldFilterComponent {
             return [this.#dotMessageService.get(raw === 'true' ? 'true' : 'false')];
         }
 
-        if (control === 'multi-select' || control === 'checkbox') {
+        if (control === 'category') {
+            return this.$categorySelected().map((option) => option.label);
+        }
+
+        if (control === 'multi-select' || control === 'checkbox' || control === 'tag') {
             const labels = this.#labelByValue();
 
             return raw
@@ -273,6 +311,60 @@ export class DotContentDriveFieldFilterComponent {
         this.#patch(
             serializeUserSearchableValue(this.$multiValue() ?? [], this.$field().fieldType)
         );
+    }
+
+    /** Multi-value change from a control that emits the full list (e.g. the tag autocomplete). */
+    protected onMultiValueChange(values: string[]): void {
+        this.$multiValue.set(values ?? []);
+        this.#patch(serializeUserSearchableValue(values ?? [], this.$field().fieldType));
+    }
+
+    protected onTagSearch(event: AutoCompleteCompleteEvent): void {
+        this.#tagsService
+            .getSuggestions(event.query)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((tags) => this.$tagSuggestions.set(tags.map((tag) => tag.label)));
+    }
+
+    protected onCategorySearch(event: AutoCompleteCompleteEvent): void {
+        // The field's `values` holds the root category inode, so we search within that tree
+        // rather than across every category in the system.
+        const rootInode = this.$field().values;
+        const params = { filter: event.query, per_page: 20 };
+        const request$ = rootInode
+            ? this.#categoriesService.getChildrenPaginated(rootInode, params)
+            : this.#categoriesService.getCategoriesPaginated(params);
+
+        request$.pipe(take(1), takeUntilDestroyed(this.#destroyRef)).subscribe((response) => {
+            const options = (response.entity ?? []).map((category) => ({
+                label: category.categoryName,
+                value: category.key
+            }));
+            this.#cacheCategoryLabels(options);
+            this.$categorySuggestions.set(options);
+        });
+    }
+
+    protected onCategoryChange(selected: FieldFilterOption[]): void {
+        const options = selected ?? [];
+        this.#cacheCategoryLabels(options);
+        this.$categorySelected.set(options);
+        this.#patch(
+            serializeUserSearchableValue(
+                options.map((option) => option.value),
+                this.$field().fieldType
+            )
+        );
+    }
+
+    #cacheCategoryLabels(options: FieldFilterOption[]): void {
+        if (!options.length) return;
+        this.#categoryLabelByKey.update((cache) => {
+            const next = { ...cache };
+            for (const option of options) next[option.value] = option.label;
+
+            return next;
+        });
     }
 
     protected onDateChange(dates: Date[] | null): void {

@@ -106,17 +106,30 @@ export const FIELD_FILTER_MULTI_SELECT_TYPES = [
     FIELD_FILTER_MULTISELECT_TYPE,
     FIELD_FILTER_CHECKBOX_TYPE
 ] as const;
+/** Complex field types (own picker + fetched options), added in phase 2. */
+export const FIELD_FILTER_TAG_TYPE = 'Tag';
+export const FIELD_FILTER_CATEGORY_TYPE = 'Category';
+export const FIELD_FILTER_RELATIONSHIP_TYPE = 'Relationship';
+/** Every field type whose value is a list stored comma-joined (multi-select, checkbox, tag, …). */
+export const FIELD_FILTER_MULTI_VALUE_TYPES: readonly string[] = [
+    ...FIELD_FILTER_MULTI_SELECT_TYPES,
+    FIELD_FILTER_TAG_TYPE,
+    FIELD_FILTER_CATEGORY_TYPE,
+    FIELD_FILTER_RELATIONSHIP_TYPE
+];
 export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as const;
 /** Date field type showing time; `Time` is time-only, `Date-and-Time` shows date + time. */
 export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
 export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
 
-/** Every field type eligible to become a filter in phase 1 (excludes Host-Folder + out-of-scope). */
+/** Every field type eligible to become a filter (excludes Host-Folder + out-of-scope types). */
 export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
     ...FIELD_FILTER_TEXT_TYPES,
     ...FIELD_FILTER_SINGLE_SELECT_TYPES,
     ...FIELD_FILTER_MULTI_SELECT_TYPES,
-    ...FIELD_FILTER_DATE_TYPES
+    ...FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_TAG_TYPE,
+    FIELD_FILTER_CATEGORY_TYPE
 ];
 
 /**

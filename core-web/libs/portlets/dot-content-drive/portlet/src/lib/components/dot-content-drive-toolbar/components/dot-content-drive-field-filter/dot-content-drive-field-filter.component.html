@@ -135,6 +135,43 @@
                 </ng-template>
             </p-listbox>
         }
+        @case ('tag') {
+            <div class="flex w-72 flex-col p-3" data-testid="field-filter-panel">
+                <p-autoComplete
+                    [ngModel]="$multiValue()"
+                    (ngModelChange)="onMultiValueChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [suggestions]="$tagSuggestions()"
+                    (completeMethod)="onTagSearch($event)"
+                    [multiple]="true"
+                    [minLength]="2"
+                    [delay]="300"
+                    appendTo="body"
+                    class="block w-full"
+                    [placeholder]="'content-drive.field-filter.text.placeholder' | dm"
+                    [attr.aria-label]="$title()"
+                    data-testid="field-filter-tag" />
+            </div>
+        }
+        @case ('category') {
+            <div class="flex w-72 flex-col p-3" data-testid="field-filter-panel">
+                <p-autoComplete
+                    [ngModel]="$categorySelected()"
+                    (ngModelChange)="onCategoryChange($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [suggestions]="$categorySuggestions()"
+                    (completeMethod)="onCategorySearch($event)"
+                    [multiple]="true"
+                    [minLength]="1"
+                    [delay]="300"
+                    optionLabel="label"
+                    appendTo="body"
+                    class="block w-full"
+                    [placeholder]="'content-drive.field-filter.text.placeholder' | dm"
+                    [attr.aria-label]="$title()"
+                    data-testid="field-filter-category" />
+            </div>
+        }
         @case ('date') {
             <p-datePicker
                 selectionMode="range"

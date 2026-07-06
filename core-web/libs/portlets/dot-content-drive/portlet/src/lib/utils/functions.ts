@@ -19,7 +19,7 @@ import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 import {
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
-    FIELD_FILTER_MULTI_SELECT_TYPES,
+    FIELD_FILTER_MULTI_VALUE_TYPES,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../shared/constants';
@@ -295,9 +295,9 @@ export function isDateFieldFilterType(fieldType: string): boolean {
     return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
 }
 
-/** True when the field type stores a list of values (Multi-Select / Checkbox). */
+/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
 export function isMultiValueFieldFilterType(fieldType: string): boolean {
-    return (FIELD_FILTER_MULTI_SELECT_TYPES as readonly string[]).includes(fieldType);
+    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
 }
 
 /**
