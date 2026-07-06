@@ -81,14 +81,14 @@
             <p-tabpanel [value]="0" class="flex h-full min-h-0 flex-col">
                 <!-- Actions tab content — padding lives on this first inner wrapper -->
                 <div class="flex h-full min-h-0 flex-col px-4 pt-4">
-                    <!-- Lock / unlock button — visually grouped with the workflow actions below:
-                         no divider and the same 0.5rem gap the stacked actions use (gap-2), so it
-                         reads as part of the Actions block even though it lives in its own @if and
-                         fires a separate handler. -->
+                    <!-- Lock / unlock button — separated from the workflow actions below
+                         by a divider, matching the sidebar's section separators. -->
                     @if (
                         !$store.isNew() && !$store.isViewingHistoricalVersion() && $store.canLock()
                     ) {
-                        <div class="pb-2" data-testId="sidebar-lock-section">
+                        <div
+                            class="mb-4 border-b border-surface-200 pb-4"
+                            data-testId="sidebar-lock-section">
                             <!-- Secondary (gray) button for both states; the lock icon and label
                                  switch between "Lock for Editing" and "Unlock". -->
                             <button
@@ -112,9 +112,9 @@
                         </div>
                     }
 
-                    <!-- Workflow actions: full-width, stacked one above another. No top padding so
-                         the lock button above sits flush against the stack (one Actions group); the
-                         bottom border + padding separate that group from the collapsible sections. -->
+                    <!-- Workflow actions: full-width, stacked one above another. The divider above
+                         comes from the lock section; the bottom border + padding separate the
+                         actions from the collapsible sections. -->
                     @if ($store.showWorkflowActions()) {
                         <dot-workflow-actions
                             class="border-b border-surface-200 pb-4"
