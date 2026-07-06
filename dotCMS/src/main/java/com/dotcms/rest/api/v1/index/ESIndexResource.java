@@ -390,13 +390,17 @@ public class ESIndexResource {
             return Response.status(404).build();
         }
         
-        idxApi.delete(indexName);
+        if (!idxApi.delete(indexName)) {
+            final String message = "Index:" + indexName + " could not be deleted";
+            sendAdminMessage(message, MessageSeverity.ERROR, init.getUser(), 5000);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        }
 
         String message = "Index:" + indexName + " deleted";
-        
+
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
-        
-        
+
+
         return getIndexStatus(request, response);
 
     }

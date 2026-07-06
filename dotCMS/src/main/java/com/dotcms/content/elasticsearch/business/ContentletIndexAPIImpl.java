@@ -1675,8 +1675,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // hit an untagged name that does not exist and orphan the actual .os index.
         // Track the primary provider's result; shadow failures in dual-write phases are
         // fire-and-forget (the primary ES delete must not be undone by an OS shadow miss).
+        // Primary failures are re-thrown after every provider has been called, matching the
+        // PhaseRouter.writeBoolean contract — pre-migration these propagated to the caller,
+        // and swallowing them lets the REST layer report success for a failed delete (#36430).
         final ContentletIndexOperations primary = router.readProvider();
         boolean primaryResult = false;
+        RuntimeException primaryEx = null;
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final String physicalName = ops.toPhysicalName(indexName);
             try {
@@ -1687,10 +1691,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                 if (ops == primary) {
-                    primaryResult = false;
+                    primaryEx = e instanceof RuntimeException
+                            ? (RuntimeException) e : new DotRuntimeException(e);
                 }
                 // shadow failures are fire-and-forget in dual-write phases
             }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
         }
         return primaryResult;
     }
