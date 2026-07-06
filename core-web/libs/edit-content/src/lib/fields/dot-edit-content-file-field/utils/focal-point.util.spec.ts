@@ -1,30 +1,53 @@
-import { DotFileMetadata } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotFileMetadata } from '@dotcms/dotcms-models';
 
-import { focalPointFromMetadata, parseFocalPoint } from './focal-point.util';
+import {
+    focalPointFromContentlet,
+    focalPointFromMetadata,
+    parseFocalPoint
+} from './focal-point.util';
+
+describe('focalPointFromContentlet', () => {
+    it('reads a dotAsset focal from assetMetaData (titleImage=asset)', () => {
+        const file = {
+            titleImage: 'asset',
+            assetMetaData: { focalPoint: '0.4,0.6' }
+        } as unknown as DotCMSContentlet;
+        expect(focalPointFromContentlet(file)).toBe('0.4,0.6');
+    });
+
+    it('reads a legacy FileAsset focal from fileAssetMetaData (titleImage=fileAsset)', () => {
+        const file = {
+            titleImage: 'fileAsset',
+            metaData: { name: 'a.png' },
+            fileAssetMetaData: { focalPoint: '0.76,0.13' }
+        } as unknown as DotCMSContentlet;
+        expect(focalPointFromContentlet(file)).toBe('0.76,0.13');
+    });
+
+    it('defaults the field variable to asset when titleImage is absent', () => {
+        const file = { assetMetaData: { focalPoint: '0.1,0.2' } } as unknown as DotCMSContentlet;
+        expect(focalPointFromContentlet(file)).toBe('0.1,0.2');
+    });
+
+    it('returns undefined when the field metadata carries no focal', () => {
+        expect(focalPointFromContentlet(null)).toBeUndefined();
+        expect(
+            focalPointFromContentlet({
+                titleImage: 'fileAsset',
+                fileAssetMetaData: { name: 'a.png' }
+            } as unknown as DotCMSContentlet)
+        ).toBeUndefined();
+    });
+});
 
 describe('focalPointFromMetadata', () => {
-    it('reads the clean focalPoint key (Binary field metadata)', () => {
+    it('reads the focalPoint key', () => {
         expect(focalPointFromMetadata({ focalPoint: '0.4,0.6' } as DotFileMetadata)).toBe(
             '0.4,0.6'
         );
     });
 
-    it('falls back to the namespaced dot:focalPoint key (referenced dotAsset assetMetaData)', () => {
-        expect(
-            focalPointFromMetadata({ 'dot:focalPoint': '0.14,0.29' } as unknown as DotFileMetadata)
-        ).toBe('0.14,0.29');
-    });
-
-    it('prefers the clean key when both are present', () => {
-        expect(
-            focalPointFromMetadata({
-                focalPoint: '0.4,0.6',
-                'dot:focalPoint': '0.1,0.2'
-            } as unknown as DotFileMetadata)
-        ).toBe('0.4,0.6');
-    });
-
-    it('returns undefined for null/undefined or when neither key is present', () => {
+    it('returns undefined for null/undefined or when the key is absent', () => {
         expect(focalPointFromMetadata(null)).toBeUndefined();
         expect(focalPointFromMetadata(undefined)).toBeUndefined();
         expect(focalPointFromMetadata({} as DotFileMetadata)).toBeUndefined();

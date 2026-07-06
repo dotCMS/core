@@ -1,25 +1,45 @@
-import { DotFileMetadata } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotFileMetadata } from '@dotcms/dotcms-models';
 import { NormalizedPoint } from '@dotcms/image-editor';
 
 /**
- * Resolves the focal point string from file metadata across its two shapes.
+ * Reads the focal point string from a resolved binary metadata object.
  *
- * A Binary field's own metadata surfaces the clean `focalPoint` key (added by the
- * backend view transform), whereas a referenced `dotAsset`'s `assetMetaData`
- * exposes the raw namespaced custom attribute `dot:focalPoint`. Reading both lets
- * the editor restore the marker on reopen regardless of which shape backs the field.
+ * The backend surfaces it under the single clean `focalPoint` key on the binary
+ * field's metadata — the same mechanism Binary fields have always used.
  *
- * @param metadata - The resolved file metadata (binary metaData or dotAsset assetMetaData).
+ * @param metadata - The resolved file metadata.
  * @returns The focal point `"x,y"` string, or undefined when none is present.
  */
 export function focalPointFromMetadata(
     metadata: DotFileMetadata | null | undefined
 ): string | undefined {
-    if (!metadata) {
+    return metadata?.focalPoint;
+}
+
+/**
+ * Resolves the focal point from a referenced asset contentlet.
+ *
+ * The focal lives on the binary field's metadata, exposed by the backend as
+ * `{fieldVar}MetaData`, where `fieldVar` is the asset's binary field (`asset` for a
+ * dotAsset, `fileAsset` for a legacy FileAsset) — carried by the contentlet's
+ * `titleImage`. This is the same `{fieldVar}MetaData.focalPoint` mechanism a Binary
+ * field uses, applied uniformly.
+ *
+ * @param file - The referenced asset contentlet (dotAsset or FileAsset).
+ * @returns The focal point `"x,y"` string, or undefined when none is present.
+ */
+export function focalPointFromContentlet(
+    file: DotCMSContentlet | null | undefined
+): string | undefined {
+    if (!file) {
         return undefined;
     }
 
-    return metadata.focalPoint ?? (metadata as unknown as Record<string, string>)['dot:focalPoint'];
+    const raw = file as unknown as Record<string, DotFileMetadata | undefined>;
+    const fieldVar =
+        ((file as unknown as Record<string, string>)['titleImage'] ?? 'asset') || 'asset';
+
+    return focalPointFromMetadata(raw[`${fieldVar}MetaData`]);
 }
 
 /**
