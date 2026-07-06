@@ -86,12 +86,12 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
 })
 export class DotPublishingQueueTableComponent {
     protected readonly store = inject(DotPublishingQueueStore);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly clipboard = inject(DotClipboardUtil);
-    private readonly globalMessage = inject(DotGlobalMessageService);
-    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
-    private readonly dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #clipboard = inject(DotClipboardUtil);
+    readonly #globalMessage = inject(DotGlobalMessageService);
+    readonly #dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    readonly #dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
 
     readonly first = computed(() => (this.store.bundlesPage() - 1) * this.store.rowsPerPage());
 
@@ -121,8 +121,8 @@ export class DotPublishingQueueTableComponent {
 
     readonly bundlesEmpty: PrincipalConfiguration = {
         icon: 'pi-inbox',
-        title: this.dotMessageService.get('publishing-queue.empty.bundles.title'),
-        subtitle: this.dotMessageService.get('publishing-queue.empty.bundles.subtitle')
+        title: this.#dotMessageService.get('publishing-queue.empty.bundles.title'),
+        subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
 
     readonly selectedRows = computed(() => {
@@ -136,39 +136,39 @@ export class DotPublishingQueueTableComponent {
     readonly bundlesKebabFor = (row: PublishingJobView): MenuItem[] => {
         const items: MenuItem[] = [
             {
-                label: this.dotMessageService.get('publishing-queue.history.kebab.view-details'),
+                label: this.#dotMessageService.get('publishing-queue.history.kebab.view-details'),
                 command: () => this.store.openDetail(row.bundleId)
             },
             {
-                label: this.dotMessageService.get('publishing-queue.history.kebab.view-contents'),
+                label: this.#dotMessageService.get('publishing-queue.history.kebab.view-contents'),
                 command: () => this.store.openAssetList(row.bundleId)
             }
         ];
 
         if (row.status && ACTIVE_STATUSES.has(row.status)) {
             items.push({
-                label: this.dotMessageService.get('publishing-queue.kebab.configure-send'),
-                command: () => this.openPushPublish(row)
+                label: this.#dotMessageService.get('publishing-queue.kebab.configure-send'),
+                command: () => this.#openPushPublish(row)
             });
         }
 
         if (row.status && FAILURE_STATUSES.has(row.status)) {
             items.push({
-                label: this.dotMessageService.get('publishing-queue.retry-send'),
+                label: this.#dotMessageService.get('publishing-queue.retry-send'),
                 command: () => this.store.retryBundles({ bundleIds: [row.bundleId] })
             });
         }
 
         items.push({
-            label: this.dotMessageService.get('publishing-queue.kebab.generate-download'),
-            command: () => this.dotDownloadBundleDialogService.open(row.bundleId)
+            label: this.#dotMessageService.get('publishing-queue.kebab.generate-download'),
+            command: () => this.#dotDownloadBundleDialogService.open(row.bundleId)
         });
 
         items.push({ separator: true });
         items.push({
-            label: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
+            label: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
             styleClass: 'p-menuitem-danger',
-            command: () => this.confirmRemove(row)
+            command: () => this.#confirmRemove(row)
         });
 
         return items;
@@ -179,7 +179,7 @@ export class DotPublishingQueueTableComponent {
      * items on every CD and the menu thrashes — the first click only closes the
      * menu instead of firing the item's `command`, forcing the user to click
      * twice. */
-    private readonly kebabMenus = computed(() => {
+    readonly #kebabMenus = computed(() => {
         const map = new Map<string, MenuItem[]>();
         for (const row of this.store.bundlesRows()) {
             map.set(row.bundleId, this.bundlesKebabFor(row));
@@ -188,7 +188,7 @@ export class DotPublishingQueueTableComponent {
     });
 
     kebabFor(row: PublishingJobView): MenuItem[] {
-        return this.kebabMenus().get(row.bundleId) ?? [];
+        return this.#kebabMenus().get(row.bundleId) ?? [];
     }
 
     /** Right-click context menu reuses the same kebab items, scoped to whichever
@@ -250,9 +250,9 @@ export class DotPublishingQueueTableComponent {
      * toast. Lighter than wrapping `<dot-copy-button>` for the row hover-only,
      * compact icon-only style we want here. */
     async copyToClipboard(value: string): Promise<void> {
-        const ok = await this.clipboard.copy(value);
+        const ok = await this.#clipboard.copy(value);
         if (!ok) {
-            this.globalMessage.error();
+            this.#globalMessage.error();
         }
     }
 
@@ -269,23 +269,23 @@ export class DotPublishingQueueTableComponent {
      * service — the dialog itself is mounted once in `main-legacy.component.html`.
      * `isBundle: true` routes the submit to the bundle endpoint instead of asset.
      */
-    private openPushPublish(row: PublishingJobView): void {
-        this.dotPushPublishDialogService.open({
+    #openPushPublish(row: PublishingJobView): void {
+        this.#dotPushPublishDialogService.open({
             assetIdentifier: row.bundleId,
             title: row.bundleName || row.bundleId,
             isBundle: true
         });
     }
 
-    private confirmRemove(row: PublishingJobView): void {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
-            message: this.dotMessageService.get(
+    #confirmRemove(row: PublishingJobView): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
+            message: this.#dotMessageService.get(
                 'publishing-queue.delete.confirm.message',
                 row.bundleName || row.bundleId
             ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
+            rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',

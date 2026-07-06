@@ -35,9 +35,9 @@ const BUNDLE_FILE_PATTERN = /\.(tar\.gz|tgz)$/i;
 })
 export class DotPublishingQueueUploadDialogComponent {
     readonly dialogRef = inject(DynamicDialogRef);
-    private readonly service = inject(DotPublishingQueueService);
-    private readonly store = inject(DotPublishingQueueStore);
-    private readonly dotMessageService = inject(DotMessageService);
+    readonly #service = inject(DotPublishingQueueService);
+    readonly #store = inject(DotPublishingQueueStore);
+    readonly #dotMessageService = inject(DotMessageService);
 
     readonly selectedFile = signal<File | null>(null);
     readonly uploading = signal(false);
@@ -45,10 +45,10 @@ export class DotPublishingQueueUploadDialogComponent {
 
     onFileSelect(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
-        if (file && !this.isBundleFile(file)) {
+        if (file && !this.#isBundleFile(file)) {
             this.selectedFile.set(null);
             this.errorMessage.set(
-                this.dotMessageService.get('publishing-queue.upload.warning.invalid-file-type')
+                this.#dotMessageService.get('publishing-queue.upload.warning.invalid-file-type')
             );
             return;
         }
@@ -69,7 +69,7 @@ export class DotPublishingQueueUploadDialogComponent {
         // (see `onFileSelect`).
         if (!file) {
             this.errorMessage.set(
-                this.dotMessageService.get('publishing-queue.upload.warning.file-required')
+                this.#dotMessageService.get('publishing-queue.upload.warning.file-required')
             );
             return;
         }
@@ -77,19 +77,19 @@ export class DotPublishingQueueUploadDialogComponent {
         this.uploading.set(true);
         this.errorMessage.set(null);
 
-        this.service
+        this.#service
             .uploadBundle(file)
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => {
-                    this.errorMessage.set(this.extractErrorMessage(error));
+                    this.errorMessage.set(this.#extractErrorMessage(error));
                     this.uploading.set(false);
                     return EMPTY;
                 })
             )
             .subscribe(() => {
                 this.uploading.set(false);
-                this.store.refresh();
+                this.#store.refresh();
                 this.dialogRef.close({ uploaded: true });
             });
     }
@@ -102,7 +102,7 @@ export class DotPublishingQueueUploadDialogComponent {
      * four shapes the BE returns: array, `{ errors: [...] }`, `{ message: ... }`,
      * or a plain string. Uses nullish coalescing so empty-string BE fields don't
      * silently fall through to the HTTP error message. */
-    private extractErrorMessage(error: HttpErrorResponse): string {
+    #extractErrorMessage(error: HttpErrorResponse): string {
         const body = error.error;
 
         if (Array.isArray(body) && body.length > 0) {
@@ -124,7 +124,7 @@ export class DotPublishingQueueUploadDialogComponent {
         return error.message;
     }
 
-    private isBundleFile(file: File | null): file is File {
+    #isBundleFile(file: File | null): file is File {
         if (!file) {
             return false;
         }

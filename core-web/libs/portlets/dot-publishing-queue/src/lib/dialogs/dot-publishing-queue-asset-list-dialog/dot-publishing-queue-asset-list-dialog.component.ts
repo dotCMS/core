@@ -59,25 +59,25 @@ const ASSET_SEARCH_THRESHOLD = 10;
 export class DotPublishingQueueAssetListDialogComponent {
     protected readonly store = inject(DotPublishingQueueStore);
 
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly destroyRef = inject(DestroyRef);
-    private readonly editUrlService = inject(DotContentletEditUrlService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #editUrlService = inject(DotContentletEditUrlService);
     /** Optional — present only when opened via DialogService. */
-    private readonly dialogConfig = inject(DynamicDialogConfig, { optional: true });
-    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
+    readonly #dialogConfig = inject(DynamicDialogConfig, { optional: true });
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
     /** When opened from the History tab the bundle is already in `publish_audit`
      * and assets can no longer be removed — the dialog renders as read-only.
      * Default true so existing call sites (Queue/Ready) keep their edit UX. */
-    readonly allowRemove = (this.dialogConfig?.data?.allowRemove ?? true) as boolean;
+    readonly allowRemove = (this.#dialogConfig?.data?.allowRemove ?? true) as boolean;
 
     /** Skeleton rows for the loading state. Length chosen so the placeholder fills
      * the reserved 384px (h-96) and the dialog stays stable on load + after deletes. */
     readonly assetSkeletonRows = Array.from({ length: 8 });
 
     readonly assetSearch = signal('');
-    private readonly searchSubject = new Subject<string>();
+    readonly #searchSubject = new Subject<string>();
 
     /** Per-asset edit URL, resolved by `DotContentletEditUrlService` after each
      * asset list load. Non-contentlet assets (templates, languages, containers,
@@ -112,8 +112,8 @@ export class DotPublishingQueueAssetListDialogComponent {
     );
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.assetSearch.set(value));
 
         // Reset input + resolved URLs every time the dialog is reused for a
@@ -136,12 +136,12 @@ export class DotPublishingQueueAssetListDialogComponent {
             if (status !== 'loaded') {
                 return;
             }
-            untracked(() => this.resolveAssetEditUrls(assets));
+            untracked(() => this.#resolveAssetEditUrls(assets));
         });
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     /** Opens the resolved contentlet editor URL in a new tab. No-op for assets
@@ -162,18 +162,18 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     /** Closes the dialog. Called from the footer Close button. */
     closeDialog(): void {
-        this.dialogRef?.close();
+        this.#dialogRef?.close();
     }
 
     /** Same fan-out avoidance as the Select Bundle dialog: group by content type,
      * fetch once per type, apply the resolved URL to every asset in that group.
      * See `groupContentletAssetsByType` and the rationale in the sister dialog. */
-    private resolveAssetEditUrls(assets: BundleAssetView[]): void {
+    #resolveAssetEditUrls(assets: BundleAssetView[]): void {
         const groups = groupContentletAssetsByType(assets);
 
         for (const [contentType, group] of groups) {
             const perAsset$ = group.map((asset) =>
-                this.editUrlService
+                this.#editUrlService
                     .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
                     .pipe(
                         take(1),
@@ -197,14 +197,16 @@ export class DotPublishingQueueAssetListDialogComponent {
     }
 
     onRemoveAsset(asset: BundleAssetView): void {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.asset-list.remove-confirm.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'publishing-queue.asset-list.remove-confirm.header'
+            ),
+            message: this.#dotMessageService.get(
                 'publishing-queue.asset-list.remove-confirm.message',
                 asset.title || asset.asset
             ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',

@@ -139,18 +139,18 @@ const ASSETS_PER_PAGE = 10;
     host: { class: 'flex h-full min-h-0 flex-col' }
 })
 export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
-    private readonly publishingService = inject(DotPublishingQueueService);
-    private readonly currentUserService = inject(DotCurrentUserService);
-    private readonly httpErrorManager = inject(DotHttpErrorManagerService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly destroyRef = inject(DestroyRef);
-    private readonly filtersService = inject(DotPushPublishFiltersService);
-    private readonly editUrlService = inject(DotContentletEditUrlService);
-    private readonly globalMessage = inject(DotGlobalMessageService);
-    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
+    readonly #publishingService = inject(DotPublishingQueueService);
+    readonly #currentUserService = inject(DotCurrentUserService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #filtersService = inject(DotPushPublishFiltersService);
+    readonly #editUrlService = inject(DotContentletEditUrlService);
+    readonly #globalMessage = inject(DotGlobalMessageService);
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
-    private userId: string | null = null;
+    #userId: string | null = null;
 
     readonly bundles = signal<BundleRow[]>([]);
     /** Cursor-style "there is a next page" flag. The BE's `numRows` returns the
@@ -233,7 +233,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * viewport. PrimeNG's auto-positioning measures the viewport, not the
      * dialog container, so we reposition explicitly in `onDownloadMenuShow`. */
     private readonly downloadMenuRef = viewChild<TieredMenu>('downloadMenu');
-    private downloadTrigger: HTMLElement | null = null;
+    #downloadTrigger: HTMLElement | null = null;
 
     /** Two-level menu model for the Download chevron. "To Publish" reveals
      * the filter list as a submenu; "To Unpublish" is a leaf that fires the
@@ -248,14 +248,14 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
         return [
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'publishing-queue.select-bundle.download.to-publish'
                 ),
                 items: filterItems,
                 disabled: filterItems.length === 0
             },
             {
-                label: this.dotMessageService.get(
+                label: this.#dotMessageService.get(
                     'publishing-queue.select-bundle.download.to-unpublish'
                 ),
                 command: () => this.onDownloadOption('1', '')
@@ -305,17 +305,17 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         return hasSearch
             ? {
                   icon: 'pi-search',
-                  title: this.dotMessageService.get(
+                  title: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.empty.search.title'
                   ),
-                  subtitle: this.dotMessageService.get(
+                  subtitle: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.empty.search.subtitle'
                   )
               }
             : {
                   icon: 'pi-inbox',
-                  title: this.dotMessageService.get('publishing-queue.select-bundle.empty.title'),
-                  subtitle: this.dotMessageService.get(
+                  title: this.#dotMessageService.get('publishing-queue.select-bundle.empty.title'),
+                  subtitle: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.empty.subtitle'
                   )
               };
@@ -329,54 +329,54 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         return hasActive
             ? {
                   icon: 'pi-box',
-                  title: this.dotMessageService.get(
+                  title: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.asset-empty.title'
                   ),
-                  subtitle: this.dotMessageService.get(
+                  subtitle: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.asset-empty.subtitle'
                   )
               }
             : {
                   icon: 'pi-hand-point-left',
-                  title: this.dotMessageService.get(
+                  title: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.no-active.title'
                   ),
-                  subtitle: this.dotMessageService.get(
+                  subtitle: this.#dotMessageService.get(
                       'publishing-queue.select-bundle.no-active.subtitle'
                   )
               };
     });
 
-    private readonly bundleSearchSubject = new Subject<string>();
+    readonly #bundleSearchSubject = new Subject<string>();
 
     ngOnInit(): void {
-        this.bundleSearchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#bundleSearchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
                 this.bundleSearch.set(value);
                 this.bundlesPage.set(1);
-                this.loadBundles();
+                this.#loadBundles();
             });
 
-        this.currentUserService
+        this.#currentUserService
             .getCurrentUser()
             .pipe(
                 take(1),
                 catchError((error) => {
-                    this.httpErrorManager.handle(error);
+                    this.#httpErrorManager.handle(error);
                     this.bundlesStatus.set('error');
                     return EMPTY;
                 })
             )
             .subscribe((user) => {
-                this.userId = user.userId;
-                this.loadBundles();
+                this.#userId = user.userId;
+                this.#loadBundles();
             });
 
         // Eager-load filters for the inline Download menu. We tolerate errors
         // silently for the UI — the menu falls back to a single "To Unpublish"
         // leaf — but log the failure so ops can spot a broken filters endpoint.
-        this.filtersService
+        this.#filtersService
             .get()
             .pipe(
                 take(1),
@@ -392,22 +392,22 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onBundleSearch(value: string): void {
-        this.bundleSearchSubject.next(value);
+        this.#bundleSearchSubject.next(value);
     }
 
     onBundlesPagePrev(): void {
         if (this.bundlesPage() > 1) {
             this.bundlesPage.update((p) => p - 1);
-            this.resetCheckedForPageChange();
-            this.loadBundles();
+            this.#resetCheckedForPageChange();
+            this.#loadBundles();
         }
     }
 
     onBundlesPageNext(): void {
         if (this.bundlesHasMore()) {
             this.bundlesPage.update((p) => p + 1);
-            this.resetCheckedForPageChange();
-            this.loadBundles();
+            this.#resetCheckedForPageChange();
+            this.#loadBundles();
         }
     }
 
@@ -415,7 +415,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * so any ids checked on the previous page would silently outlive the rows
      * they came from — the counter in the footer would include invisible ids.
      * Clear the selection to keep the visible state honest. */
-    private resetCheckedForPageChange(): void {
+    #resetCheckedForPageChange(): void {
         this.checkedBundleIds.set([]);
         this.validationWarningKey.set(null);
     }
@@ -439,7 +439,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         }
         this.activeBundleId.set(bundle.id);
         this.assetsPage.set(1);
-        this.loadAssets(bundle.id);
+        this.#loadAssets(bundle.id);
     }
 
     onCheckedChange(ids: BundleRow[]): void {
@@ -458,30 +458,32 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         if (!bundleId) {
             return;
         }
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.asset-list.remove-confirm.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'publishing-queue.asset-list.remove-confirm.header'
+            ),
+            message: this.#dotMessageService.get(
                 'publishing-queue.asset-list.remove-confirm.message',
                 asset.title || asset.asset
             ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
             accept: () => {
-                this.publishingService
+                this.#publishingService
                     .removeAssetsFromBundle(bundleId, [asset.asset])
                     .pipe(
                         take(1),
                         catchError((error) => {
-                            this.httpErrorManager.handle(error);
+                            this.#httpErrorManager.handle(error);
                             return EMPTY;
                         })
                     )
-                    .subscribe(() => this.loadAssets(bundleId));
+                    .subscribe(() => this.#loadAssets(bundleId));
             }
         });
     }
@@ -493,26 +495,26 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             return;
         }
         this.validationWarningKey.set(null);
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.delete.confirm.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
+            message: this.#dotMessageService.get(
                 'publishing-queue.select-bundle.remove.confirm.message',
                 String(ids.length)
             ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.history.kebab.delete'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
+            rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
             accept: () => {
-                this.publishingService
+                this.#publishingService
                     .deleteBundles(ids)
                     .pipe(
                         take(1),
                         catchError((error) => {
-                            this.httpErrorManager.handle(error);
+                            this.#httpErrorManager.handle(error);
                             return EMPTY;
                         })
                     )
@@ -523,7 +525,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                             this.activeBundleId.set(null);
                             this.assets.set([]);
                         }
-                        this.loadBundles();
+                        this.#loadBundles();
                     });
             }
         });
@@ -546,7 +548,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             return;
         }
         this.validationWarningKey.set(null);
-        this.downloadTrigger = (event.currentTarget as HTMLElement) ?? null;
+        this.#downloadTrigger = (event.currentTarget as HTMLElement) ?? null;
         this.downloadMenuRef()?.toggle(event);
     }
 
@@ -565,7 +567,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * just above the trigger.
      */
     onDownloadMenuShow(): void {
-        const trigger = this.downloadTrigger;
+        const trigger = this.#downloadTrigger;
         const overlay = this.downloadMenuRef()?.containerViewChild?.nativeElement as
             | HTMLElement
             | undefined;
@@ -598,12 +600,12 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         const bundleId = ids[0];
 
         this.isDownloading.set(true);
-        this.publishingService
+        this.#publishingService
             .generateBundle(bundleId, operation, filterKey)
             .pipe(
                 take(1),
                 catchError((error) => {
-                    this.httpErrorManager.handle(error);
+                    this.#httpErrorManager.handle(error);
                     return EMPTY;
                 }),
                 finalize(() => this.isDownloading.set(false))
@@ -642,7 +644,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     /** Closes the dialog via the custom header's X button. */
     closeDialog(): void {
-        this.dialogRef?.close();
+        this.#dialogRef?.close();
     }
 
     /**
@@ -670,7 +672,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         this.isSending.set(true);
         forkJoin(
             ids.map((id) =>
-                this.publishingService.pushBundle(id, form).pipe(
+                this.#publishingService.pushBundle(id, form).pipe(
                     map((result) => ({ bundleId: id, ok: true as const, result })),
                     catchError((error: HttpErrorResponse) =>
                         of({ bundleId: id, ok: false as const, error })
@@ -686,7 +688,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 const failed = outcomes.filter((o) => !o.ok);
 
                 if (failed.length === 0) {
-                    this.dialogRef?.close();
+                    this.#dialogRef?.close();
                     return;
                 }
 
@@ -695,7 +697,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 // the count alone was previously the only signal.
                 const firstFailure = failed[0];
                 if (!firstFailure.ok) {
-                    this.httpErrorManager.handle(firstFailure.error);
+                    this.#httpErrorManager.handle(firstFailure.error);
                 }
 
                 // Drop the bundles that already succeeded from the checked set
@@ -704,8 +706,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 const failedIds = new Set(failed.map((o) => o.bundleId));
                 this.checkedBundleIds.update((prev) => prev.filter((id) => failedIds.has(id)));
 
-                this.globalMessage.error(
-                    this.dotMessageService.get(
+                this.#globalMessage.error(
+                    this.#dotMessageService.get(
                         'publishing-queue.select-bundle.send-partial-fail',
                         String(failed.length),
                         String(ids.length)
@@ -714,8 +716,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             });
     }
 
-    private loadBundles(): void {
-        if (!this.userId) {
+    #loadBundles(): void {
+        if (!this.#userId) {
             return;
         }
         this.bundlesStatus.set('loading');
@@ -723,12 +725,12 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         const search = this.bundleSearch().trim();
         const filter = search ? `*${search}*` : '*';
 
-        this.publishingService
-            .getUnsendBundles(this.userId, filter, start, BUNDLES_PER_PAGE)
+        this.#publishingService
+            .getUnsendBundles(this.#userId, filter, start, BUNDLES_PER_PAGE)
             .pipe(
                 take(1),
                 catchError((error) => {
-                    this.httpErrorManager.handle(error);
+                    this.#httpErrorManager.handle(error);
                     this.bundlesStatus.set('error');
                     return EMPTY;
                 })
@@ -762,15 +764,15 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             });
     }
 
-    private loadAssets(bundleId: string): void {
+    #loadAssets(bundleId: string): void {
         this.assetsStatus.set('loading');
         this.assetEditUrls.set(new Map());
-        this.publishingService
+        this.#publishingService
             .getBundleAssets(bundleId)
             .pipe(
                 take(1),
                 catchError((error) => {
-                    this.httpErrorManager.handle(error);
+                    this.#httpErrorManager.handle(error);
                     this.assetsStatus.set('error');
                     return EMPTY;
                 }),
@@ -783,7 +785,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             .subscribe((assets) => {
                 this.assets.set(assets);
                 this.assetsStatus.set('loaded');
-                this.resolveAssetEditUrls(assets);
+                this.#resolveAssetEditUrls(assets);
             });
     }
 
@@ -802,7 +804,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * editor URL instead (acceptable; the user can navigate to the visual
      * editor from there).
      */
-    private resolveAssetEditUrls(assets: BundleAssetView[]): void {
+    #resolveAssetEditUrls(assets: BundleAssetView[]): void {
         const groups = groupContentletAssetsByType(assets);
 
         for (const [contentType, group] of groups) {
@@ -811,7 +813,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             // additional HTTP. `forkJoin` waits for all group resolutions
             // before writing back atomically.
             const perAsset$ = group.map((asset) =>
-                this.editUrlService
+                this.#editUrlService
                     .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
                     .pipe(
                         take(1),

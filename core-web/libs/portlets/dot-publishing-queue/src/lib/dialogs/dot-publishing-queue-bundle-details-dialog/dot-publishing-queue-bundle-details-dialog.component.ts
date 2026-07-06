@@ -57,9 +57,9 @@ export interface MetaRow {
 export class DotPublishingQueueBundleDetailsDialogComponent {
     protected readonly store = inject(DotPublishingQueueStore);
 
-    private readonly publishingService = inject(DotPublishingQueueService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dialogRef = inject(DynamicDialogRef, { optional: true });
+    readonly #publishingService = inject(DotPublishingQueueService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
     /** Rows shown in the meta key/value table — the order here is the order
      * rendered. The body template switches on `key` to pick the right value
@@ -69,40 +69,42 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
     readonly metaRows = computed<readonly MetaRow[]>(() => {
         const isScheduled = this.store.detail()?.status === PublishAuditStatus.SCHEDULED;
         return [
-            { key: 'title', label: this.dotMessageService.get('publishing-queue.detail.title') },
-            { key: 'status', label: this.dotMessageService.get('publishing-queue.detail.status') },
+            { key: 'title', label: this.#dotMessageService.get('publishing-queue.detail.title') },
+            { key: 'status', label: this.#dotMessageService.get('publishing-queue.detail.status') },
             ...(isScheduled
                 ? [
                       {
                           key: 'scheduledFor' as const,
-                          label: this.dotMessageService.get('publishing-queue.detail.scheduled-for')
+                          label: this.#dotMessageService.get(
+                              'publishing-queue.detail.scheduled-for'
+                          )
                       }
                   ]
                 : []),
             {
                 key: 'bundleId',
-                label: this.dotMessageService.get('publishing-queue.detail.bundle-id')
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-id')
             },
             {
                 key: 'bundleStart',
-                label: this.dotMessageService.get('publishing-queue.detail.bundle-start')
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-start')
             },
             {
                 key: 'bundleEnd',
-                label: this.dotMessageService.get('publishing-queue.detail.bundle-end')
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-end')
             },
             {
                 key: 'publishStart',
-                label: this.dotMessageService.get('publishing-queue.detail.publish-start')
+                label: this.#dotMessageService.get('publishing-queue.detail.publish-start')
             },
             {
                 key: 'publishEnd',
-                label: this.dotMessageService.get('publishing-queue.detail.publish-end')
+                label: this.#dotMessageService.get('publishing-queue.detail.publish-end')
             },
-            { key: 'filter', label: this.dotMessageService.get('publishing-queue.detail.filter') },
+            { key: 'filter', label: this.#dotMessageService.get('publishing-queue.detail.filter') },
             {
                 key: 'assets',
-                label: this.dotMessageService.get('publishing-queue.detail.total-assets')
+                label: this.#dotMessageService.get('publishing-queue.detail.total-assets')
             }
         ];
     });
@@ -151,14 +153,14 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
     }
 
     downloadHref(bundleId: string): string {
-        return this.publishingService.getBundleDownloadUrl(bundleId);
+        return this.#publishingService.getBundleDownloadUrl(bundleId);
     }
 
     manifestHref(bundleId: string): string {
-        return this.publishingService.getBundleManifestUrl(bundleId);
+        return this.#publishingService.getBundleManifestUrl(bundleId);
     }
 
     closeDialog(): void {
-        this.dialogRef?.close();
+        this.#dialogRef?.close();
     }
 }

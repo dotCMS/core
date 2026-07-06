@@ -49,9 +49,9 @@ export class DotPublishingQueueToolbarComponent {
     readonly selectBundleClick = output<void>();
     readonly deleteClick = output<void>();
 
-    private readonly destroyRef = inject(DestroyRef);
-    private readonly dotMessageService = inject(DotMessageService);
-    private searchSubject = new Subject<string>();
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #dotMessageService = inject(DotMessageService);
+    #searchSubject = new Subject<string>();
 
     /** Bulk actions appear only when the user has explicitly checked one or more rows. */
     readonly hasBulkActions = computed(() => this.store.bundlesSelectedIds().length > 0);
@@ -61,25 +61,25 @@ export class DotPublishingQueueToolbarComponent {
      * (component ↔ dialog separation per libs/portlets/CLAUDE.md). */
     readonly addBundleItems: MenuItem[] = [
         {
-            label: this.dotMessageService.get('publishing-queue.add-bundle.select'),
+            label: this.#dotMessageService.get('publishing-queue.add-bundle.select'),
             icon: 'pi pi-table',
             command: () => this.selectBundleClick.emit()
         },
         {
-            label: this.dotMessageService.get('publishing-queue.add-bundle.upload'),
+            label: this.#dotMessageService.get('publishing-queue.add-bundle.upload'),
             icon: 'pi pi-upload',
             command: () => this.uploadClick.emit()
         }
     ];
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setSearch(value));
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     onBulkRetry(): void {

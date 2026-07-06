@@ -32,30 +32,30 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPublishingQueueAssetListDialogHeaderComponent {
-    private readonly store = inject(DotPublishingQueueStore);
-    private readonly dialogConfig = inject(DynamicDialogConfig);
-    private readonly dotMessageService = inject(DotMessageService);
+    readonly #store = inject(DotPublishingQueueStore);
+    readonly #dialogConfig = inject(DynamicDialogConfig);
+    readonly #dotMessageService = inject(DotMessageService);
 
-    readonly bundleName = (this.dialogConfig.data?.bundleName ?? null) as string | null;
+    readonly bundleName = (this.#dialogConfig.data?.bundleName ?? null) as string | null;
 
     /** Truncate long bundle names so the header stays in one tidy line. The full
      * name is exposed via the `title` attribute for hover discovery. */
     readonly displayTitle = ((): string => {
         const name = this.bundleName;
         if (!name) {
-            return this.dotMessageService.get('publishing-queue.asset-list.title');
+            return this.#dotMessageService.get('publishing-queue.asset-list.title');
         }
         return name.length > 30 ? `${name.slice(0, 30)}…` : name;
     })();
 
     /** "N items" / "1 item" — singular vs plural so the pill reads naturally. */
     readonly itemsCountLabel = computed(() => {
-        const count = this.store.selectedAssets().length;
+        const count = this.#store.selectedAssets().length;
         const key =
             count === 1
                 ? 'publishing-queue.asset-list.items-count.singular'
                 : 'publishing-queue.asset-list.items-count.plural';
 
-        return this.dotMessageService.get(key, String(count));
+        return this.#dotMessageService.get(key, String(count));
     });
 }

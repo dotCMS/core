@@ -75,7 +75,7 @@ export interface RetryBundlesPayload {
     providedIn: 'root'
 })
 export class DotPublishingQueueService {
-    private http = inject(HttpClient);
+    readonly #http = inject(HttpClient);
 
     listPublishingJobs(params: ListPublishingJobsParams): Observable<PublishingJobsResponse> {
         let httpParams = new HttpParams();
@@ -104,13 +104,13 @@ export class DotPublishingQueueService {
             httpParams = httpParams.set('sort', `${order}${params.sort}`);
         }
 
-        return this.http.get<PublishingJobsResponse>('/api/v1/publishing', {
+        return this.#http.get<PublishingJobsResponse>('/api/v1/publishing', {
             params: httpParams
         });
     }
 
     getPublishingJobDetails(bundleId: string): Observable<PublishingJobDetailView> {
-        return this.http
+        return this.#http
             .get<
                 DotCMSResponse<PublishingJobDetailView>
             >(`/api/v1/publishing/${encodeURIComponent(bundleId)}`)
@@ -118,7 +118,7 @@ export class DotPublishingQueueService {
     }
 
     retryBundles(payload: RetryBundlesPayload): Observable<RetryBundleResultView[]> {
-        return this.http
+        return this.#http
             .post<DotCMSResponse<RetryBundleResultView[]>>('/api/v1/publishing/retry', payload)
             .pipe(map((response) => response.entity));
     }
@@ -134,7 +134,7 @@ export class DotPublishingQueueService {
      * (e.g. via `forkJoin`).
      */
     pushBundle(bundleId: string, form: PushBundleForm): Observable<PushBundleResultView> {
-        return this.http
+        return this.#http
             .post<
                 DotCMSResponse<PushBundleResultView>
             >(`/api/v1/publishing/push/${encodeURIComponent(bundleId)}`, form)
@@ -142,7 +142,7 @@ export class DotPublishingQueueService {
     }
 
     deleteBundle(bundleId: string): Observable<{ message: string }> {
-        return this.http.delete<{
+        return this.#http.delete<{
             message: string;
         }>(`/api/v1/publishing/${encodeURIComponent(bundleId)}`);
     }
@@ -156,7 +156,7 @@ export class DotPublishingQueueService {
      * v1 consolidation work (#36048) ships an equivalent under `/api/v1/publishing`.
      */
     deleteBundles(bundleIds: string[]): Observable<unknown> {
-        return this.http.request<unknown>('DELETE', '/api/bundle/ids', {
+        return this.#http.request<unknown>('DELETE', '/api/bundle/ids', {
             body: { identifiers: bundleIds }
         });
     }
@@ -173,13 +173,13 @@ export class DotPublishingQueueService {
             statuses && statuses.length > 0
                 ? new HttpParams().set('status', statuses.join(','))
                 : new HttpParams();
-        return this.http.delete<unknown>('/api/v1/publishing/purge', { params });
+        return this.#http.delete<unknown>('/api/v1/publishing/purge', { params });
     }
 
     uploadBundle(file: File): Observable<{ bundleName: string; status: string }> {
         const formData = new FormData();
         formData.append('file', file, file.name);
-        return this.http.post<{ bundleName: string; status: string }>('/api/bundle/sync', formData);
+        return this.#http.post<{ bundleName: string; status: string }>('/api/bundle/sync', formData);
     }
 
     /** Builds the absolute download URL for a bundle's `.tar.gz`. */
@@ -210,7 +210,7 @@ export class DotPublishingQueueService {
         operation: '0' | '1',
         filterKey: string
     ): Observable<{ blob: Blob; filename: string }> {
-        return this.http
+        return this.#http
             .post(
                 '/api/bundle/_generate',
                 { bundleId, operation, filterKey },
@@ -263,7 +263,7 @@ export class DotPublishingQueueService {
      *      for the server-side behavior.
      */
     probeBundleDownload(bundleId: string): Observable<boolean> {
-        return this.http.head(this.getBundleDownloadUrl(bundleId), { observe: 'response' }).pipe(
+        return this.#http.head(this.getBundleDownloadUrl(bundleId), { observe: 'response' }).pipe(
             map((response) => response.status === 200),
             catchError(() => of(false))
         );
@@ -283,7 +283,7 @@ export class DotPublishingQueueService {
      *      for the server-side behavior.
      */
     probeBundleManifest(bundleId: string): Observable<boolean> {
-        return this.http.head(this.getBundleManifestUrl(bundleId), { observe: 'response' }).pipe(
+        return this.#http.head(this.getBundleManifestUrl(bundleId), { observe: 'response' }).pipe(
             map((response) => response.status === 200),
             catchError(() => of(false))
         );
@@ -312,7 +312,7 @@ export class DotPublishingQueueService {
             .set('start', start)
             .set('count', count);
 
-        return this.http.get<UnsentBundlesResponse>(
+        return this.#http.get<UnsentBundlesResponse>(
             `/api/bundle/getunsendbundles/userid/${encodeURIComponent(userId)}`,
             { params: query }
         );
@@ -321,7 +321,7 @@ export class DotPublishingQueueService {
     getBundleAssets(bundleId: string): Observable<BundleAssetView[]> {
         const params = new HttpParams().set('limit', -1);
 
-        return this.http.get<BundleAssetView[]>(
+        return this.#http.get<BundleAssetView[]>(
             `/api/bundle/${encodeURIComponent(bundleId)}/assets`,
             { params }
         );
@@ -339,7 +339,7 @@ export class DotPublishingQueueService {
         bundleId: string,
         assetIds: string[]
     ): Observable<RemoveAssetResultView[]> {
-        return this.http
+        return this.#http
             .request<
                 DotCMSResponse<RemoveAssetResultView[]>
             >('DELETE', `/api/v1/bundles/${encodeURIComponent(bundleId)}/assets`, { body: { assetIds } })

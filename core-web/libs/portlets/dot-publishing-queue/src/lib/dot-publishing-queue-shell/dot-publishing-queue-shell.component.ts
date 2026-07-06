@@ -43,33 +43,33 @@ const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
     host: { class: 'flex flex-col h-full min-h-0 block' }
 })
 export class DotPublishingQueueShellComponent {
-    private readonly store = inject(DotPublishingQueueStore);
-    private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
+    readonly #store = inject(DotPublishingQueueStore);
+    readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
 
-    private detailRef: DynamicDialogRef | null = null;
-    private uploadRef: DynamicDialogRef | null = null;
-    private assetListRef: DynamicDialogRef | null = null;
-    private selectBundleRef: DynamicDialogRef | null = null;
+    #detailRef: DynamicDialogRef | null = null;
+    #uploadRef: DynamicDialogRef | null = null;
+    #assetListRef: DynamicDialogRef | null = null;
+    #selectBundleRef: DynamicDialogRef | null = null;
 
     constructor() {
         effect(() => {
-            const bundleId = this.store.selectedBundleId();
-            untracked(() => this.syncAssetList(bundleId));
+            const bundleId = this.#store.selectedBundleId();
+            untracked(() => this.#syncAssetList(bundleId));
         });
 
         effect(() => {
-            const bundleId = this.store.detailBundleId();
-            untracked(() => this.syncDetail(bundleId));
+            const bundleId = this.#store.detailBundleId();
+            untracked(() => this.#syncDetail(bundleId));
         });
     }
 
     openSelectBundle(): void {
-        if (this.selectBundleRef) {
+        if (this.#selectBundleRef) {
             return;
         }
-        this.selectBundleRef = this.dialogService.open(
+        this.#selectBundleRef = this.#dialogService.open(
             DotPublishingQueueSelectBundleDialogComponent,
             {
                 // Header is rendered inside the dialog body so its title can
@@ -84,20 +84,20 @@ export class DotPublishingQueueShellComponent {
                 position: 'center'
             }
         );
-        this.selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
-            this.selectBundleRef = null;
+        this.#selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
+            this.#selectBundleRef = null;
             // Selecting/removing bundles inside the dialog may have changed the
             // active set — refresh the unified table so the user sees the latest.
-            this.store.refresh();
+            this.#store.refresh();
         });
     }
 
     openUpload(): void {
-        if (this.uploadRef) {
+        if (this.#uploadRef) {
             return;
         }
-        this.uploadRef = this.dialogService.open(DotPublishingQueueUploadDialogComponent, {
-            header: this.dotMessageService.get('publishing-queue.upload.title'),
+        this.#uploadRef = this.#dialogService.open(DotPublishingQueueUploadDialogComponent, {
+            header: this.#dotMessageService.get('publishing-queue.upload.title'),
             width: '700px',
             contentStyle: { height: '460px' },
             closable: true,
@@ -105,8 +105,8 @@ export class DotPublishingQueueShellComponent {
             draggable: false,
             position: 'center'
         });
-        this.uploadRef.onClose.pipe(take(1)).subscribe(() => {
-            this.uploadRef = null;
+        this.#uploadRef.onClose.pipe(take(1)).subscribe(() => {
+            this.#uploadRef = null;
         });
     }
 
@@ -115,37 +115,37 @@ export class DotPublishingQueueShellComponent {
      * an empty list under normal use — but we still guard, since signals can
      * change between the click and the accept callback. */
     confirmDeleteBundles(): void {
-        const bundleIds = this.store.bundlesSelectedIds();
+        const bundleIds = this.#store.bundlesSelectedIds();
         if (bundleIds.length === 0) {
             return;
         }
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('publishing-queue.bulk-remove.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('publishing-queue.bulk-remove.header'),
+            message: this.#dotMessageService.get(
                 'publishing-queue.bulk-remove.message',
                 `${bundleIds.length}`
             ),
-            acceptLabel: this.dotMessageService.get('publishing-queue.remove'),
-            rejectLabel: this.dotMessageService.get('publishing-queue.cancel'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
-            accept: () => this.store.deleteBundlesBulk(this.store.bundlesSelectedIds())
+            accept: () => this.#store.deleteBundlesBulk(this.#store.bundlesSelectedIds())
         });
     }
 
-    private syncAssetList(bundleId: string | null): void {
-        if (bundleId && !this.assetListRef) {
+    #syncAssetList(bundleId: string | null): void {
+        if (bundleId && !this.#assetListRef) {
             // Editable only when the bundle hasn't started packing yet
             // (BUNDLE_REQUESTED / WAITING_FOR_PUBLISHING / drafts with null status).
             // Once the bundle is in motion or terminal, the asset list is read-only.
-            const row = this.store.bundlesRows().find((r) => r.bundleId === bundleId);
+            const row = this.#store.bundlesRows().find((r) => r.bundleId === bundleId);
             const allowRemove = EDITABLE_ASSET_STATUSES.has(row?.status ?? null);
             const bundleName = row?.bundleName ?? null;
 
-            this.assetListRef = this.dialogService.open(
+            this.#assetListRef = this.#dialogService.open(
                 DotPublishingQueueAssetListDialogComponent,
                 {
                     templates: {
@@ -159,22 +159,22 @@ export class DotPublishingQueueShellComponent {
                     data: { allowRemove, bundleName }
                 }
             );
-            this.assetListRef.onClose.pipe(take(1)).subscribe(() => {
-                this.assetListRef = null;
-                this.store.closeAssetList();
+            this.#assetListRef.onClose.pipe(take(1)).subscribe(() => {
+                this.#assetListRef = null;
+                this.#store.closeAssetList();
             });
-        } else if (!bundleId && this.assetListRef) {
-            this.assetListRef.close();
-            this.assetListRef = null;
+        } else if (!bundleId && this.#assetListRef) {
+            this.#assetListRef.close();
+            this.#assetListRef = null;
         }
     }
 
-    private syncDetail(bundleId: string | null): void {
-        if (bundleId && !this.detailRef) {
-            this.detailRef = this.dialogService.open(
+    #syncDetail(bundleId: string | null): void {
+        if (bundleId && !this.#detailRef) {
+            this.#detailRef = this.#dialogService.open(
                 DotPublishingQueueBundleDetailsDialogComponent,
                 {
-                    header: this.dotMessageService.get('publishing-queue.detail.title'),
+                    header: this.#dotMessageService.get('publishing-queue.detail.title'),
                     width: '780px',
                     closable: true,
                     closeOnEscape: true,
@@ -182,13 +182,13 @@ export class DotPublishingQueueShellComponent {
                     position: 'center'
                 }
             );
-            this.detailRef.onClose.pipe(take(1)).subscribe(() => {
-                this.detailRef = null;
-                this.store.closeDetail();
+            this.#detailRef.onClose.pipe(take(1)).subscribe(() => {
+                this.#detailRef = null;
+                this.#store.closeDetail();
             });
-        } else if (!bundleId && this.detailRef) {
-            this.detailRef.close();
-            this.detailRef = null;
+        } else if (!bundleId && this.#detailRef) {
+            this.#detailRef.close();
+            this.#detailRef = null;
         }
     }
 }

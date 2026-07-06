@@ -79,8 +79,8 @@ interface StatusOption {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPublishingQueueStatusFilterComponent {
-    private readonly store = inject(DotPublishingQueueStore);
-    private readonly dotMessageService = inject(DotMessageService);
+    readonly #store = inject(DotPublishingQueueStore);
+    readonly #dotMessageService = inject(DotMessageService);
 
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
@@ -88,14 +88,14 @@ export class DotPublishingQueueStatusFilterComponent {
 
     /** Listbox options, deduplicated by translated label. Order follows
      * `STATUS_ORDER` (first occurrence wins). */
-    protected readonly $options: StatusOption[] = this.buildOptions();
+    protected readonly $options: StatusOption[] = this.#buildOptions();
 
     /** Selected labels, reactively derived from the store. An option is
      * considered selected when **all** of its codes are present in the store
      * filter — picking "Success" only counts when SUCCESS *and*
      * BUNDLE_SENT_SUCCESSFULLY are both in the filter. */
     protected readonly $selected = linkedSignal<string[]>(() => {
-        const filter = new Set(this.store.statusFilter());
+        const filter = new Set(this.#store.statusFilter());
         return this.$options
             .filter((opt) => opt.codes.every((c) => filter.has(c)))
             .map((opt) => opt.value);
@@ -109,7 +109,7 @@ export class DotPublishingQueueStatusFilterComponent {
         const codes = this.$options
             .filter((opt) => selectedLabels.has(opt.value))
             .flatMap((opt) => [...opt.codes]);
-        this.store.setStatusFilter(codes);
+        this.#store.setStatusFilter(codes);
     }
 
     protected onRemoveAll(): void {
@@ -117,13 +117,13 @@ export class DotPublishingQueueStatusFilterComponent {
         this.onChange();
     }
 
-    private buildOptions(): StatusOption[] {
+    #buildOptions(): StatusOption[] {
         // Group consecutive-or-not enum values by their translated label, in
         // STATUS_ORDER. First occurrence determines display position; later
         // occurrences just append to the same option's `codes`.
         const byLabel = new Map<string, { label: string; codes: PublishAuditStatus[] }>();
         for (const value of STATUS_ORDER) {
-            const label = this.dotMessageService.get(`publishing-queue.status.${value}`);
+            const label = this.#dotMessageService.get(`publishing-queue.status.${value}`);
             const existing = byLabel.get(label);
             if (existing) {
                 existing.codes.push(value);
