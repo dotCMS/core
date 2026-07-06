@@ -4,6 +4,7 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -430,11 +431,27 @@ public class IndexAPIImpl implements IndexAPI {
         }
     }
 
+    /**
+     * The physical name each write provider should receive for a single-name fan-out so it targets
+     * its OWN real index: the OpenSearch provider gets the {@code .os}-tagged name, every other
+     * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
+     * a faithful mirror across both engines instead of silently hitting only ES.
+     *
+     * <p>Site-search indices are the exception — their OS copy is NOT {@code .os}-tagged (separate
+     * cluster, own {@code siteSearch} slot), so they stay bare on both engines.</p>
+     */
+    private String providerName(final IndexAPI provider, final String indexName) {
+        final String logical = IndexTag.OS.untag(indexName);
+        return provider == router.osImpl() && !IndexType.SITE_SEARCH.is(logical)
+                ? IndexTag.OS.tag(logical)
+                : logical;
+    }
+
     @Override
     public void clearIndex(final String indexName)
             throws DotStateException, IOException, DotDataException {
         try {
-            router.writeChecked(impl -> impl.clearIndex(indexName));
+            router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));
         } catch (DotStateException | IOException | DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -458,7 +475,7 @@ public class IndexAPIImpl implements IndexAPI {
     public void updateReplicas(final String indexName, final int replicas)
             throws DotDataException {
         try {
-            router.writeChecked(impl -> impl.updateReplicas(indexName, replicas));
+            router.writeChecked(impl -> impl.updateReplicas(providerName(impl, indexName), replicas));
         } catch (DotDataException e) {
             throw e;
         } catch (Exception e) {
@@ -473,11 +490,11 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public void closeIndex(final String indexName) {
-        router.write(impl -> impl.closeIndex(indexName));
+        router.write(impl -> impl.closeIndex(providerName(impl, indexName)));
     }
 
     @Override
     public void openIndex(final String indexName) {
-        router.write(impl -> impl.openIndex(indexName));
+        router.write(impl -> impl.openIndex(providerName(impl, indexName)));
     }
 }

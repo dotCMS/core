@@ -500,6 +500,36 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         Logger.info(this, "✅ flushCaches Phase 1 — both engines flushed cleanly: " + result);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
+     * When : {@code closeIndex()} / {@code openIndex()} are called with the bare (ES) name.
+     * Then : the lifecycle op is mirrored to BOTH engines — the OS twin is closed/opened too, not
+     *        just ES. Under the transparent-mirror principle a user lifecycle op applies to the
+     *        whole mirror; the OS leg receives the {@code .os} name so it targets the real OS index
+     *        instead of a bare name it does not hold (issue #35640). Exercises the {@code providerName}
+     *        routing shared by clear/open/close/updateReplicas.
+     */
+    @Test
+    public void test_closeAndOpen_phase1_mirrorToBothEngines() throws Exception {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        APILocator.getESIndexAPI().closeIndex(DUAL_WORKING); // close by the bare name
+        assertTrue("ES twin must be closed", esImpl().isIndexClosed(DUAL_WORKING));
+        assertTrue("OS twin must be closed too (mirror)",
+                osIndexAPI.isIndexClosed(IndexTag.OS.tag(DUAL_WORKING)));
+
+        APILocator.getESIndexAPI().openIndex(DUAL_WORKING); // reopen by the bare name
+        assertFalse("ES twin must be open again", esImpl().isIndexClosed(DUAL_WORKING));
+        assertFalse("OS twin must be open again (mirror)",
+                osIndexAPI.isIndexClosed(IndexTag.OS.tag(DUAL_WORKING)));
+
+        Logger.info(this, "✅ close/open Phase 1 — mirrored to both engines: " + DUAL_WORKING);
+    }
+
     // =========================================================================
     // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
