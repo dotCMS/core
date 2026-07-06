@@ -390,7 +390,13 @@ public class ESIndexResource {
             return Response.status(404).build();
         }
         
-        if (!idxApi.delete(indexName)) {
+        // delete() throws on a primary-provider failure and returns false on an
+        // unacknowledged delete — both must surface as an error toast + 500, not success.
+        final boolean deleted = Try.of(() -> idxApi.delete(indexName))
+                .onFailure(e -> Logger.error(this,
+                        "Error deleting index " + indexName + ": " + e.getMessage(), e))
+                .getOrElse(false);
+        if (!deleted) {
             final String message = "Index:" + indexName + " could not be deleted";
             sendAdminMessage(message, MessageSeverity.ERROR, init.getUser(), 5000);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
