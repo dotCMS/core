@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
@@ -442,6 +443,30 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
                 osIndexAPI.indexExists(physicalDualWorking));
 
         Logger.info(this, "✅ delete Phase 1 — both removed: " + DUAL_WORKING);
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). The supplied name exists in NEITHER engine
+     *                 ({@code GHOST_WORKING} was never created anywhere).
+     * When : {@code delete(GHOST_WORKING)} is called.
+     * Then : the primary provider's failure propagates to the caller (#36430) — matching the
+     *        {@code PhaseRouter.writeBoolean} contract and the pre-migration behavior where
+     *        {@code ESIndexAPI.deleteMultiple} threw on a missing index. A silent
+     *        {@code false}/success here is what let the REST layer report "deleted" for an
+     *        index that was never removed.
+     */
+    @Test
+    public void test_delete_phase1_nameInNeither_primaryFailurePropagates() {
+        setPhase(1);
+
+        assertFalse("Pre: ghost name must not exist in ES", esImpl().indexExists(GHOST_WORKING));
+        assertFalse("Pre: ghost name must not exist in OS",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(GHOST_WORKING)));
+
+        assertThrows("Primary delete failure must propagate to the caller",
+                RuntimeException.class, () -> contentletIndexAPI().delete(GHOST_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — name in neither engine propagates: " + GHOST_WORKING);
     }
 
     // =========================================================================
