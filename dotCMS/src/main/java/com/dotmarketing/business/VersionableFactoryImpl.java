@@ -1,11 +1,7 @@
 package com.dotmarketing.business;
 
-import static com.dotcms.util.CollectionsUtils.set;
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
@@ -16,7 +12,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -26,8 +21,12 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -35,10 +34,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtils;
+import static com.dotcms.util.CollectionsUtils.set;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 /**
  * Implementation class for the {@link VersionableFactory} class.
@@ -462,6 +461,30 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		return versionInfos == null || versionInfos.isEmpty()
 				? Collections.emptyList()
 				: versionInfos;
+	}
+
+	private static final int VERSION_INFO_LOOKUP_CHUNK_SIZE = 500;
+
+	@Override
+	public List<ContentletVersionInfo> findAllContentletVersionInfos(
+			final Collection<String> identifiers) throws DotDataException {
+		if (identifiers == null || identifiers.isEmpty()) {
+			return Collections.emptyList();
+		}
+		final List<String> idList = List.copyOf(identifiers);
+		final List<ContentletVersionInfo> versionInfos = new ArrayList<>();
+		for (int from = 0; from < idList.size(); from += VERSION_INFO_LOOKUP_CHUNK_SIZE) {
+			final List<String> chunk = idList.subList(from,
+					Math.min(from + VERSION_INFO_LOOKUP_CHUNK_SIZE, idList.size()));
+			final DotConnect dotConnect = new DotConnect().setSQL(
+					"SELECT * FROM contentlet_version_info WHERE identifier IN ("
+							+ DotConnect.createParametersPlaceholder(chunk.size()) + ")");
+			chunk.forEach(dotConnect::addParam);
+			versionInfos.addAll(TransformerLocator
+					.createContentletVersionInfoTransformer(dotConnect.loadObjectResults())
+					.asList());
+		}
+		return versionInfos;
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.app.ConfigServiceTest;
@@ -358,6 +359,7 @@ import org.junit.runners.Suite.SuiteClasses;
         HttpServletRequestImpersonatorTest.class,
         Task250107RemoveEsReadOnlyMonitorJobTest.class,
         ImportContentletsActionSmokeTest.class,
+        TreeFactoryTest.class,
 })
 
 public class MainSuite2b {
