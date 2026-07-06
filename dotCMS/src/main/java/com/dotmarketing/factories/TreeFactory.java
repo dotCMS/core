@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Provides low-level, direct database access to the {@code tree} table, which stores
@@ -480,7 +481,7 @@ public class TreeFactory {
                     .addParam(relationType)
                     .loadObjectResults().stream()
                     .map(row -> (String) row.get(selectColumn))
-                    .toList();
+                    .collect(Collectors.toList());
         } catch (final DotDataException e) {
             throw new DotStateException(e);
         }

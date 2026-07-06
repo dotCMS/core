@@ -12,6 +12,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
