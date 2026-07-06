@@ -685,7 +685,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 finalize(() => this.isSending.set(false))
             )
             .subscribe((outcomes) => {
-                const failed = outcomes.filter((o) => !o.ok);
+                const failed = outcomes.filter((o): o is Extract<typeof o, { ok: false }> => !o.ok);
 
                 if (failed.length === 0) {
                     this.#dialogRef?.close();
@@ -695,10 +695,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 // Surface the first real error via the standard handler so the
                 // user sees a concrete reason (auth, business rule, server) —
                 // the count alone was previously the only signal.
-                const firstFailure = failed[0];
-                if (!firstFailure.ok) {
-                    this.#httpErrorManager.handle(firstFailure.error);
-                }
+                this.#httpErrorManager.handle(failed[0].error);
 
                 // Drop the bundles that already succeeded from the checked set
                 // so a follow-up Send can't re-push them (was previously how a
