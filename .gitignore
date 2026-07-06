@@ -140,7 +140,6 @@ dotsecure
 /core-web/e2e/*.js
 /core-web/e2e/*.map
 
-/core-web/storybook
 /core-web/out*/
 dist-docs/
 **/test-reports/
