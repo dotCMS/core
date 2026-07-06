@@ -70,6 +70,11 @@
             --add-opens java.base/jdk.internal.module=ALL-UNNAMED
         </java.module.args>
 
+        <!-- Empty by default: CI/Linux finds libvips on the standard library path.
+             On macOS (SIP strips DYLD_*), pass on the mvn command line, e.g.:
+             -Dvipsffm.libpath.args="-Dvipsffm.libpath.vips.override=/opt/homebrew/lib/libvips.42.dylib -Dvipsffm.libpath.glib.override=/opt/homebrew/lib/libglib-2.0.0.dylib -Dvipsffm.libpath.gobject.override=/opt/homebrew/lib/libgobject-2.0.0.dylib" -->
+        <vipsffm.libpath.args></vipsffm.libpath.args>
+
         <maven.deploy.skip>false</maven.deploy.skip>
         <tomcat.version>9.0.118</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
@@ -170,6 +175,11 @@
         <surefireArgline/>
         <integrationTestCoverageAgent/>
         <argLine/>
+        <!-- Empty by default; a module that needs the byte-buddy agent preloaded for tests
+             (e.g. dotcms-core for Instrumentation.getObjectSize) sets this to
+             "-javaagent:${net.bytebuddy:byte-buddy-agent:jar}" and binds the dependency-plugin
+             'properties' goal to populate that path. -->
+        <bytebuddy.agent.argline/>
         <skipTests>false</skipTests>
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
         <surefire.fork.count>1</surefire.fork.count>
@@ -798,7 +808,11 @@
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
                             --enable-preview
+                            -XX:+UseCompactObjectHeaders
+                            --enable-native-access=ALL-UNNAMED
+                            ${vipsffm.libpath.args}
                             -Dnet.bytebuddy.experimental=true
+                            ${bytebuddy.agent.argline}
                         </argLine>
 
                         <trimStackTrace>false</trimStackTrace>
@@ -951,7 +965,11 @@
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
                             --enable-preview
+                            -XX:+UseCompactObjectHeaders
+                            --enable-native-access=ALL-UNNAMED
+                            ${vipsffm.libpath.args}
                             -Dnet.bytebuddy.experimental=true
+                            ${bytebuddy.agent.argline}
                         </argLine>
 
                         <systemPropertyVariables/>

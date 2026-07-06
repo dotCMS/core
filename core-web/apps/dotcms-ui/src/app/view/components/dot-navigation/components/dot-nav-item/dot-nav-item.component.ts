@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import {
     LABEL_IMPORTANT_ICON,
@@ -32,8 +31,6 @@ export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
 
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
-
-    readonly #globalStore = inject(GlobalStore);
 
     $data = input.required<MenuGroup>({ alias: 'data' });
 

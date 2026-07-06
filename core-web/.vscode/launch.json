@@ -33,9 +33,9 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug api-dot-ai-chat with Nx",
+            "name": "Debug ai-evals with Nx",
             "runtimeExecutable": "yarn",
-            "runtimeArgs": ["nx", "serve", "api-dot-ai-chat"],
+            "runtimeArgs": ["nx", "serve", "ai-evals"],
             "env": {
                 "NODE_OPTIONS": "--inspect=9229"
             },
@@ -44,7 +44,7 @@
             "skipFiles": ["<node_internals>/**"],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceFolder}/api-dot-ai-chat/dist/**/*.(m|c|)js",
+                "${workspaceFolder}/apps/ai-evals/dist/**/*.(m|c|)js",
                 "!**/node_modules/**"
             ]
         },
@@ -55,7 +55,7 @@
             "runtimeExecutable": "yarn",
             "runtimeArgs": ["nx", "serve", "api-dot-ai-chat"],
             "env": {
-                "NODE_OPTIONS": "--inspect=9230"
+                "NODE_OPTIONS": "--inspect=9229"
             },
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

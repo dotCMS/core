@@ -9,6 +9,19 @@ export const LAYOUT_URL = '/c/portal/layout';
 
 export const PERSONA_KEY = 'com.dotmarketing.persona.id';
 
+/**
+ * Default relationship expansion depth sent to the Page API.
+ *
+ * The backend (`ContentUtils.addRelationships`) only expands relationship
+ * fields on the page's contentlets when the `depth` query param is present
+ * at all — omitting it skips relationship expansion entirely rather than
+ * falling back to a default. UVE's REST page fetch (used for the editor's
+ * own state on every page type, and as the pre-CLIENT_READY fetch for
+ * headless pages) must always send a value so relationship data isn't
+ * silently dropped from the page response.
+ */
+export const DEFAULT_PAGE_DEPTH = '0';
+
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
@@ -21,8 +34,25 @@ export const IFRAME_SCROLL_ZONE = 100;
 
 export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
-export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
-export const STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME = 500;
+/**
+ * Coalescing window (ms) for persisting style-editor changes.
+ *
+ * This is intentionally small: it only batches a rapid burst of commits (e.g.
+ * several quick radio clicks, or a blur landing right after a change) into a
+ * single save. It is NOT used to "wait for typing to finish" — that is handled
+ * by blur/Enter and by STYLE_EDITOR_INPUT_IDLE_SAVE_TIME.
+ */
+export const STYLE_EDITOR_SAVE_DEBOUNCE_TIME = 250;
+
+/**
+ * Idle window (ms) after the last keystroke before a continuous field
+ * (text/number input) auto-commits without requiring blur/Enter.
+ *
+ * Deliberately much longer than any inter-keystroke gap, so even a slow typist
+ * never triggers a save (or a traditional page reload) mid-word. Blur/Enter
+ * still commits immediately — this is the "user stopped typing" fallback.
+ */
+export const STYLE_EDITOR_INPUT_IDLE_SAVE_TIME = 2000;
 
 export const DEFAULT_IFRAME_HEIGHT = 1080;
 

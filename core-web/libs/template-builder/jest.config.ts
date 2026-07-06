@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'template-builder',
     preset: '../../jest.preset.js',
@@ -13,7 +12,7 @@ export default {
             }
         ]
     },
-    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|gridstack)'],
+    transformIgnorePatterns: ['node_modules/(?!.*(?:\\.mjs$|gridstack))'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

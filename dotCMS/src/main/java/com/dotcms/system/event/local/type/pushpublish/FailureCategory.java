@@ -35,6 +35,12 @@ public enum FailureCategory {
     /** Bundle could not be built before sending. */
     BUNDLE_ERROR(false),
 
+    /** Filesystem I/O error writing the static bundle to disk (non-retryable). */
+    FILESYSTEM_ERROR(false),
+
+    /** Network or connection error reaching an S3 or similar static endpoint (retryable). */
+    CONNECTION_ERROR(true),
+
     /** Failure could not be classified. */
     UNKNOWN(false);
 

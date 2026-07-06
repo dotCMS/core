@@ -18,7 +18,7 @@ import java.util.List;
  *
  * <p>Common fields (all providers):
  * <ul>
- *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}</li>
+ *   <li>{@code provider} – identifier: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}, {@code anthropic}, {@code openrouter}, {@code google_ai}</li>
  *   <li>{@code model} – model name or ID</li>
  *   <li>{@code maxTokens} – max output tokens</li>
  *   <li>{@code temperature} – sampling temperature (0.0–2.0)</li>
@@ -39,8 +39,41 @@ import java.util.List;
  * <p>AWS Bedrock:
  * <ul>
  *   <li>{@code region}</li>
- *   <li>{@code accessKeyId}</li>
+ *   <li>{@code accessKeyId} – set together with {@code secretAccessKey}, or omit both to use the
+ *       AWS default credential chain (env, profile, container/EKS IRSA)</li>
  *   <li>{@code secretAccessKey}</li>
+ *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
+ *   <li>{@code timeout} and {@code maxRetries} (common fields above) apply to the Bedrock runtime
+ *       clients: {@code timeout} as the per-attempt {@code apiCallAttemptTimeout};
+ *       {@code maxRetries} as the SDK retry-strategy {@code maxAttempts} (= {@code max(1, maxRetries + 1)})</li>
+ * </ul>
+ *
+ * <p>Bedrock {@code model} ID forms: use an inference-profile prefix ({@code us.}, {@code eu.},
+ * {@code apac.}) for models offered only via cross-region inference profiles
+ * (e.g. {@code us.deepseek.r1-v1:0}); use the bare ID for on-demand models
+ * (e.g. {@code openai.gpt-oss-120b-1:0}, {@code amazon.titan-embed-text-v2:0}).
+ *
+ * <p>Anthropic (chat only — Anthropic has no embeddings or image APIs):
+ * <ul>
+ *   <li>{@code apiKey} – Anthropic API key</li>
+ *   <li>{@code model} – e.g. {@code claude-sonnet-4-6}, {@code claude-haiku-4-5}</li>
+ *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
+ * </ul>
+ *
+ * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
+ * <ul>
+ *   <li>{@code apiKey} – OpenRouter API key</li>
+ *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4}</li>
+ *   <li>{@code endpoint} – optional override of the default base URL ({@code https://openrouter.ai/api/v1})</li>
+ * </ul>
+ *
+ * <p>Google AI (Gemini API / AI Studio — chat, embeddings and image):
+ * <ul>
+ *   <li>{@code apiKey} – Google AI Studio API key</li>
+ *   <li>{@code model} – e.g. {@code gemini-2.0-flash}, {@code gemini-embedding-001}, {@code gemini-2.5-flash-image}</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
+ *   <li>{@code size} – image size, e.g. {@code 1K}, {@code 2K} (image only)</li>
+ *   <li>{@code endpoint} – optional base URL override</li>
  * </ul>
  *
  * <p>Google Vertex AI (chat only — embeddings and image not supported by this integration):
@@ -102,6 +135,12 @@ public interface ProviderConfig {
     @Nullable String region();
     @Value.Redacted @Nullable String accessKeyId();
     @Value.Redacted @Nullable String secretAccessKey();
+    /**
+     * Cohere embedding input type. Valid values: {@code search_document} (default), {@code search_query}.
+     * Use {@code search_document} when indexing content, {@code search_query} when embedding search queries.
+     */
+    @Value.Default
+    default String embeddingInputType() { return "search_document"; }
 
     // Google Vertex AI
     @Nullable String projectId();

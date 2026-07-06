@@ -19,6 +19,7 @@
     [minLength]="AUTO_COMPLETE_MIN_LENGTH"
     [delay]="AUTO_COMPLETE_DELAY"
     [disabled]="$isDisabled()"
+    [placeholder]="'edit.content.form.field.tags.placeholder' | dm"
     (ngModelChange)="onTagsChange($event)"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="onEnterKey($event)">

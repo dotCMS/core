@@ -1,4 +1,4 @@
-import { EMPTY, Observable, of, timer } from 'rxjs';
+import { EMPTY, merge, Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -21,13 +21,15 @@ import { ButtonModule } from 'primeng/button';
 
 import {
     catchError,
-    debounce,
+    debounceTime,
     distinctUntilChanged,
     filter,
     map,
     mergeMap,
+    share,
     switchMap,
-    tap
+    tap,
+    withLatestFrom
 } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -42,9 +44,9 @@ import { StyleEditorFormBuilderService } from './services/style-editor-form-buil
 
 import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import {
-    STYLE_EDITOR_DEBOUNCE_TIME,
     STYLE_EDITOR_FIELD_TYPES,
-    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+    STYLE_EDITOR_INPUT_IDLE_SAVE_TIME,
+    STYLE_EDITOR_SAVE_DEBOUNCE_TIME
 } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
@@ -55,6 +57,16 @@ import { filterFormValues } from '../../utils';
 type SaveResult =
     | { ok: true; isTraditionalPage: boolean }
     | { ok: false; error: { message?: string } | null; isTraditionalPage: boolean };
+
+/**
+ * Save target captured at form-change time. Frozen alongside each change so a
+ * commit that fires later (idle debounce, blur) can never pick up a contentlet
+ * selected after the edit happened.
+ */
+type SaveContext = {
+    activeContentlet: ActionPayload | null | undefined;
+    isTraditionalPage: boolean;
+};
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -90,6 +102,31 @@ export class DotUveStyleEditorFormComponent {
     readonly $form = computed(() => this.#form());
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
+
+    /**
+     * Commit trigger for continuous (streaming) fields — text/number inputs.
+     * Emitted on blur/Enter so a save fires once the user finishes editing,
+     * instead of once per keystroke.
+     */
+    readonly #inputCommit$ = new Subject<void>();
+
+    /**
+     * Set of control ids that stream intermediate values while editing (inputs).
+     * These are excluded from the per-change save path; they commit on blur/Enter.
+     * Anything not in this set is treated as a discrete control and commits on change.
+     */
+    readonly #continuousFieldIds = computed(() => {
+        const ids = new Set<string>();
+        this.$schema().sections.forEach((section) =>
+            section.fields.forEach((field) => {
+                if (field.type === STYLE_EDITOR_FIELD_TYPES.INPUT) {
+                    ids.add(field.id);
+                }
+            })
+        );
+
+        return ids;
+    });
 
     /**
      * Tracks only the contentlet identifier so that bounds updates (which call setSelected
@@ -135,6 +172,14 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
+     * Called when a continuous field (text/number input) finishes editing
+     * (blur or Enter). Triggers a single save of the current form value.
+     */
+    onInputCommit(): void {
+        this.#inputCommit$.next();
+    }
+
+    /**
      * Builds a form from the schema using the form builder service.
      * Reads initial values from pageAsset (the source of truth) rather than from
      * editorSelected.payload, which is populated from SDK postMessages and may not
@@ -166,9 +211,12 @@ export class DotUveStyleEditorFormComponent {
      * Restores form values from the rolled-back pageAssetResponse state.
      * Used when rollback occurs to sync form with restored state.
      *
-     * This method rebuilds the entire form (rather than patching) to trigger
-     * the switchMap in #listenToFormChanges, which automatically cancels any
-     * pending debounced saves from the old form instance.
+     * This method rebuilds the entire form (rather than patching) so
+     * #listenToFormChanges starts a fresh per-form stream. The old form's
+     * stream stays subscribed (mergeMap) so its pending idle commits still
+     * complete — they carry the context captured at change time, so they can
+     * only target the contentlet that was actually edited — while its blur
+     * path goes inert because the old form is no longer the current $form().
      */
     #restoreFormFromRollback(): void {
         const activeContentlet = this.#uveStore.editorSelected()?.payload;
@@ -191,65 +239,150 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Listens to form changes and handles:
-     * 1. Immediate updates to iframe (no debounce)
-     * 2. Debounced API calls to save style properties
+     * Listens to form changes and separates two concerns that used to be fused
+     * into a single inactivity-timer debounce:
      *
-     * Uses mergeMap to subscribe to each form's valueChanges when the form signal changes
-     * (e.g., during rollback restoration). mergeMap keeps all subscriptions active, so both
-     * old and new forms' valueChanges will be processed. This ensures that pending debounced
-     * saves from the old form will still complete, while also processing changes from the new form.
-     * This is a clean reactive approach that eliminates the need for flags, timeouts, or
-     * manual subscription management.
+     * 1. **Live preview** (headless only) — pushes every value change to the
+     *    iframe instantly, including each keystroke of a text input.
+     * 2. **Persist** — saves on a *commit*, where the commit signal differs by
+     *    field type:
+     *      - discrete fields (dropdown/radio/checkbox) commit on value change;
+     *      - continuous fields (text/number inputs) commit on blur/Enter, or
+     *        automatically after an idle pause far longer than any
+     *        inter-keystroke gap — so a slow typist never triggers one save
+     *        per letter, and no interaction is required to persist.
+     *
+     * Uses mergeMap to subscribe to each form's valueChanges when the form signal
+     * changes (e.g., during rollback restoration). mergeMap keeps all subscriptions
+     * active, so pending saves from the old form still complete while the new form
+     * is also processed — no flags, timeouts, or manual subscription management.
+     *
+     * Two guarantees protect against cross-contentlet writes when a form is
+     * rebuilt while a commit is pending:
+     * - the save target (contentlet + page type) is captured at change time
+     *   inside each per-form stream, never re-read after a debounce, so a
+     *   pending idle save always targets the contentlet that was being edited
+     *   (form values, by contrast, are read at emit time — they belong to the
+     *   closed-over form and can never cross contentlets);
+     * - blur/Enter commits are gated to the current form, so a stale stream
+     *   never reacts to a blur that happened on a newer form.
      */
     #listenToFormChanges(): void {
-        // Convert the form signal to an observable
-        // When the form signal changes (rebuilt during rollback), mergeMap subscribes to the new form's valueChanges
-        // while keeping the old form's subscription active
+        // When the form signal changes (rebuilt during rollback), mergeMap subscribes
+        // to the new form while keeping the old form's subscription active.
         toObservable(this.$form)
             .pipe(
-                // Filter out null forms
                 filter((form): form is FormGroup => form !== null),
-                // Merge with the new form's valueChanges
-                // mergeMap keeps all inner subscriptions active, so both old and new forms'
-                // valueChanges will be processed, including any pending debounced saves
-                mergeMap((form) =>
-                    form.valueChanges.pipe(
-                        distinctUntilChanged(
-                            (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
-                        ),
-                        // Capture activeContentlet at the time of form change (before debounce)
-                        // and identify the editor mode for this update.
-                        map((formValues) => ({
-                            formValues,
-                            activeContentlet: this.#uveStore.editorSelected()?.payload,
-                            isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
-                        })),
-                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
-                            // Traditional pages do not support instant iframe updates.
-                            if (!isTraditionalPage) {
-                                this.#optimisticSave.updateIframeOptimistically(activeContentlet, {
-                                    dotStyleProperties: formValues
-                                });
+                mergeMap((form) => {
+                    const continuousFieldIds = this.#continuousFieldIds();
+                    let previousValue = form.getRawValue();
+
+                    // Maps a change to the save payload. The contentlet/page-type
+                    // context is the one frozen at change time; the form values are
+                    // read at emit time from the closed-over form — always this
+                    // form's own values, so reading them live can never cross
+                    // contentlets, and it lets distinctUntilChanged dedupe a late
+                    // idle commit against a newer discrete commit.
+                    const toCommit = ({ context }: { context: SaveContext }) => ({
+                        formValues: form.getRawValue(),
+                        activeContentlet: context.activeContentlet,
+                        isTraditionalPage: context.isTraditionalPage
+                    });
+
+                    // Every value change drives the live preview and is classified
+                    // so the save path can decide when to commit. The save context
+                    // (active contentlet + page type) is frozen HERE, at change
+                    // time — never re-read after a debounce — so a selection change
+                    // while a commit is pending can never re-target the save to
+                    // the wrong contentlet.
+                    const changes$ = form.valueChanges.pipe(
+                        map(() => {
+                            const currentValue = form.getRawValue();
+                            const changedKeys = this.#changedFieldKeys(previousValue, currentValue);
+                            previousValue = currentValue;
+
+                            const context: SaveContext = {
+                                activeContentlet: this.#uveStore.editorSelected()?.payload,
+                                isTraditionalPage:
+                                    this.#uveStore.pageType() === PageType.TRADITIONAL
+                            };
+
+                            return { changedKeys, context };
+                        }),
+                        filter(({ changedKeys }) => changedKeys.length > 0),
+                        // Live preview: headless pushes every change (incl. keystrokes)
+                        // to the iframe immediately. Traditional pages cannot do this.
+                        tap(({ context }) => {
+                            if (!context.isTraditionalPage) {
+                                this.#optimisticSave.updateIframeOptimistically(
+                                    context.activeContentlet,
+                                    { dotStyleProperties: form.getRawValue() }
+                                );
                             }
                         }),
-                        // Traditional: 500ms — short window so the iframe reload
-                        // following the save still feels responsive.
-                        // Headless: 2s — coalesces rapid slider/picker drags.
-                        debounce((changeEvent) =>
-                            changeEvent.isTraditionalPage
-                                ? timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
-                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        // All commit branches below consume this stream; share() keeps
+                        // a single subscription so the diff/preview run once per change.
+                        share()
+                    );
+
+                    // Discrete fields (dropdown/radio/checkbox): the change IS the commit.
+                    const discreteCommits$ = changes$.pipe(
+                        filter(({ changedKeys }) =>
+                            changedKeys.some((key) => !continuousFieldIds.has(key))
                         ),
+                        map(toCommit)
+                    );
+
+                    // Continuous fields (inputs): a keystroke is NOT a commit. The user
+                    // finishes either explicitly (blur/Enter → blurCommits$) or
+                    // implicitly by pausing — an idle window far longer than any
+                    // inter-keystroke gap, so it never fires mid-word. The commit
+                    // context was frozen at change time, so even if the selection
+                    // moves during this idle window the save still targets the
+                    // contentlet that was being edited.
+                    const idleInputCommits$ = changes$.pipe(
+                        filter(({ changedKeys }) =>
+                            changedKeys.some((key) => continuousFieldIds.has(key))
+                        ),
+                        debounceTime(STYLE_EDITOR_INPUT_IDLE_SAVE_TIME),
+                        map(toCommit)
+                    );
+
+                    // Blur/Enter commits. #inputCommit$ is component-lifetime while
+                    // this inner stream is per-form (mergeMap keeps old inners alive
+                    // so their pending saves complete), so:
+                    // - gate on the form still being current — a stale inner must
+                    //   not react to a blur that happened on a NEWER form;
+                    // - withLatestFrom pairs the blur with the context frozen at
+                    //   the last change. A blur with no prior change emits nothing
+                    //   (there is nothing to save).
+                    const blurCommits$ = this.#inputCommit$.pipe(
+                        filter(() => this.$form() === form),
+                        withLatestFrom(changes$),
+                        map(([, change]) => toCommit(change))
+                    );
+
+                    // A commit is: a discrete field change, an input idle pause,
+                    // or an input signalling it finished editing (blur/Enter).
+                    // Every branch carries the context captured at change time.
+                    return merge(discreteCommits$, idleInputCommits$, blurCommits$).pipe(
+                        // A blur with no net change (e.g. tabbing through a field)
+                        // must not hit the API.
+                        distinctUntilChanged(
+                            (prev, curr) =>
+                                JSON.stringify(prev.formValues) === JSON.stringify(curr.formValues)
+                        ),
+                        // Small window: batches a rapid burst of commits into one save.
+                        // NOT a "wait for typing to finish" timer — blur/Enter does that.
+                        debounceTime(STYLE_EDITOR_SAVE_DEBOUNCE_TIME),
                         // switchMap cancels the previous in-flight save when a new
-                        // debounced emission arrives, so a fast burst of edits
-                        // resolves to a single save (and a single toast) for the
-                        // latest value rather than one per change.
+                        // commit arrives, so a fast burst resolves to a single save
+                        // (and a single toast) for the latest value.
                         switchMap(({ formValues, activeContentlet, isTraditionalPage }) =>
                             this.#performSave(formValues, activeContentlet, isTraditionalPage)
                         )
-                    )
-                ),
+                    );
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((result) => {
@@ -290,6 +423,22 @@ export class DotUveStyleEditorFormComponent {
                     life: 2000
                 });
             });
+    }
+
+    /**
+     * Returns the top-level field ids whose value changed between two form
+     * snapshots. Nested groups (e.g. checkbox groups) are compared structurally,
+     * so a change inside the group surfaces as a change to its field id.
+     */
+    #changedFieldKeys(
+        previous: Record<string, unknown>,
+        current: Record<string, unknown>
+    ): string[] {
+        const keys = new Set([...Object.keys(previous), ...Object.keys(current)]);
+
+        return [...keys].filter(
+            (key) => JSON.stringify(previous[key]) !== JSON.stringify(current[key])
+        );
     }
 
     /**

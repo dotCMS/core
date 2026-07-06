@@ -10,7 +10,11 @@ import {
     replacePlaceholder,
     removePlaceholder
 } from './extensions/nodes/upload-placeholder.extension';
-import { type DotVideoData, DOT_VIDEO_NODE_NAME } from './extensions/nodes/video.extension';
+import {
+    type DotVideoData,
+    DOT_VIDEO_NODE_NAME,
+    videoMetaAttrsFromContentlet
+} from './extensions/nodes/video.extension';
 import { type UploadedImage, type UploadedVideo } from './services/dot-upload.service';
 
 export function handleMediaDrop(
@@ -81,11 +85,11 @@ export function handleMediaDrop(
 
         if (uploadVideo) {
             uploadVideo(file)
-                .then(({ src, data }) => {
+                .then(({ src, data, mimeType, width, height, orientation }) => {
                     const title = file.name.replace(/\.[^.]+$/, '');
                     replacePlaceholder(editor, id, {
                         type: DOT_VIDEO_NODE_NAME,
-                        attrs: { src, title, data }
+                        attrs: { src, title, data, mimeType, width, height, orientation }
                     });
                 })
                 .catch((err) => {
@@ -154,7 +158,8 @@ export function insertDotVideoFromContentlet(editor: Editor, contentlet: DotCMSC
             attrs: {
                 src: data.asset,
                 title: data.title || null,
-                data
+                data,
+                ...videoMetaAttrsFromContentlet(contentlet)
             }
         })
         .run();

@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.categories;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,5 +66,46 @@ public class CategoryFormTest {
                 .build();
 
         assertTrue("Builder default for active must be true", form.isActive());
+    }
+
+    /**
+     * The update path (PUT /api/v1/categories) must be able to tell an omitted {@code active}
+     * from an explicit value so it does not silently flip the flag. When omitted,
+     * {@link CategoryForm#activeProvided()} must be {@code null} (issue #35501).
+     */
+    @Test
+    public void deserialize_omittedActive_activeProvidedIsNull() throws IOException {
+        final String json = "{\"inode\":\"abc\",\"categoryName\":\"adds\"}";
+
+        final CategoryForm form = mapper.readValue(json, CategoryForm.class);
+
+        assertNull("activeProvided() must be null when active is omitted", form.activeProvided());
+    }
+
+    /**
+     * An explicit {@code "active": false} on update must be reported as provided so the update
+     * path applies it instead of keeping the previous value (issue #35501).
+     */
+    @Test
+    public void deserialize_explicitActiveFalse_activeProvidedIsFalse() throws IOException {
+        final String json = "{\"inode\":\"abc\",\"categoryName\":\"adds\",\"active\":false}";
+
+        final CategoryForm form = mapper.readValue(json, CategoryForm.class);
+
+        assertEquals("activeProvided() must reflect explicit false", Boolean.FALSE,
+                form.activeProvided());
+    }
+
+    /**
+     * An explicit {@code "active": true} on update must be reported as provided (issue #35501).
+     */
+    @Test
+    public void deserialize_explicitActiveTrue_activeProvidedIsTrue() throws IOException {
+        final String json = "{\"inode\":\"abc\",\"categoryName\":\"adds\",\"active\":true}";
+
+        final CategoryForm form = mapper.readValue(json, CategoryForm.class);
+
+        assertEquals("activeProvided() must reflect explicit true", Boolean.TRUE,
+                form.activeProvided());
     }
 }

@@ -202,6 +202,13 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     showFolders?: boolean;
+
+    /**
+     * Workflow filter entries. Each entry is one workflow scheme, optionally pinned to a
+     * single step (omit `step` to match the whole scheme). Entries combine with OR.
+     * @example [{ scheme: "d61a59e1-…", step: "dc3c9cd0-…" }, { scheme: "2a4e1d2e-…" }]
+     */
+    workflow?: { scheme: string; step?: string }[];
 }
 
 /**

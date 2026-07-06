@@ -163,6 +163,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.DotLambdas.not;
@@ -225,6 +226,17 @@ public class WorkflowResource {
             "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
+
+    private static final String BLOCK_EDITOR_FIELD_NOTE =
+            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown** string — " +
+            "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
+            "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
+            "back as structured content with no editor round-trip required. A value that is already a " +
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown is intended " +
+            "for plain content: if the field already holds rich blocks that Markdown cannot represent " +
+            "(embedded contentlets, video or layout blocks), the Markdown value is ignored and the existing " +
+            "document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
@@ -618,7 +630,7 @@ public class WorkflowResource {
                     .map(String::trim)
                     .filter(UtilMethods::isSet)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (ids.isEmpty()) {
                 throw new IllegalArgumentException("contentTypeIds must not be empty");
@@ -658,7 +670,7 @@ public class WorkflowResource {
 
             if (!errors.isEmpty()) {
                 Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
-                        errors.stream().map(ErrorEntity::getFieldName).collect(Collectors.toList()));
+                        errors.stream().map(ErrorEntity::getFieldName).toList());
             }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
@@ -958,42 +970,44 @@ public class WorkflowResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putBulkActionsFire", summary = "Perform workflow actions on bulk content",
-            description = "This operation allows you to specify a multiple content items (either by query or a list of " +
-                          "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                          "to perform on them, and additional parameters as needed by the selected action.\n\n" +
-                          BULK_FIRE_CONTRACT_NOTES + "\n" +
-                          "- `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and " +
-                          "`POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.\n" +
-                          "- For batches larger than a few contentlets, the synchronous response can exceed common client " +
-                          "timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) "
+                    + "on multiple contentlets identified either by a Lucene 'query' or an explicit "
+                    + "'contentletIds' list. If both are supplied, 'query' wins and 'contentletIds' is ignored.\n\n"
+                    + "**Scheme association is enforced.** Contentlets whose workflow scheme does not own the "
+                    + "supplied 'workflowActionId' are skipped — they are not processed and are counted in "
+                    + "'skippedCount' on the response, with a 'skipReason' explaining the mismatch. When *every* "
+                    + "input contentlet is skipped, the endpoint returns 422. To bypass scheme association checks "
+                    + "(e.g. for System Workflow actions like Move on content from a custom scheme), use "
+                    + "PUT /api/v1/workflow/actions/{actionId}/fire instead.\n\n"
+                    + BULK_FIRE_CONTRACT_NOTES + "\n"
+                    + "- `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and "
+                    + "`POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.\n"
+                    + "- For batches larger than a few contentlets, the synchronous response can exceed common client "
+                    + "timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.",
             tags = {"Workflow"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Success",
+                    @ApiResponse(responseCode = "200", description = "Success — at least one contentlet processed.",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityBulkActionsResultView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
+                    @ApiResponse(responseCode = "422", description = "Whole batch skipped — none of the input "
+                            + "contentlets are on a workflow scheme that owns the supplied 'workflowActionId'.")
             }
     )
     public final void fireBulkActions(@Context final HttpServletRequest request,
                                       @Suspended final AsyncResponse asyncResponse,
                                       @RequestBody(
-                                              description = "Body consists of a JSON object with the following possible properties:\n\n" +
-                                                      "| Property | Type | Description |\n" +
-                                                      "|-|-|-|\n" +
-                                                      "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
-                                                      "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
-                                                                                        "uses all matching contentlets. |\n" +
-                                                      "| `workflowActionId` | String | The identifier of the workflow action to be performed on the " +
-                                                                                        "selected content. |\n" +
-                                                      "| `additionalParams` | Object | Further parameters and properties are conveyed here, depending " +
-                                                                                        "on the particulars of the selected action.<br><br>For a " +
-                                                                                        "complete list of possible parameters, refer to the various " +
-                                                                                        "keys listed in `GET /workflow/actionlets`. |\n\n" +
-                                                      "If both `contentletIds` and `query` properties are present, the operation will use the query and " +
-                                                      "disregard the identifier list.",
+                                              description = "See FireBulkActionsForm for full field-level docs. "
+                                                      + "Either 'query' OR 'contentletIds' is required (not both); "
+                                                      + "'contentletIds' is a list of contentlet **inodes** (not identifiers, "
+                                                      + "despite the property name). "
+                                                      + "'workflowActionId' must be a workflow action UUID — discover via "
+                                                      + "GET /api/v1/workflow/schemes/{schemeId}/actions or "
+                                                      + "GET /api/v1/workflow/contentlet/{inode}/actions. To pass a target "
+                                                      + "path to a Move actionlet, set 'additionalParams.additionalParamsMap._path_to_move'.",
                                               required = true,
                                               content = @Content(schema = @Schema(implementation = FireBulkActionsForm.class))
                                       ) final FireBulkActionsForm fireBulkActionsForm) {
@@ -1007,6 +1021,13 @@ public class WorkflowResource {
                 try {
                     final BulkActionsResultView view = workflowHelper
                             .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
+                    // Whole-batch scheme mismatch: every input contentlet was skipped because its
+                    // workflow scheme does not own the supplied action. Today this returns 200 with
+                    // successCount: 0; surface it as 422 so the caller learns the request was wrong.
+                    if (isWholeBatchSkipped(view)) {
+                        return Response.status(Response.Status.fromStatusCode(422))
+                                .entity(new ResponseEntityView<>(view)).build();
+                    }
                     return Response.ok( new ResponseEntityView<>(view)).build();
                 } catch (Exception e) {
                     asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
@@ -1018,6 +1039,19 @@ public class WorkflowResource {
             Logger.error(this.getClass(), "Exception attempting to fire bulk actions by : " +fireBulkActionsForm + ", exception message: " + e.getMessage(), e);
             asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
         }
+    }
+
+    /**
+     * True when the bulk-fire result indicates none of the input contentlets were eligible
+     * (zero successes, zero processing failures, but at least one skipped). The cause is
+     * almost always a scheme-mismatch — the supplied workflow action does not own any of the
+     * workflow steps that the input contentlets are currently in.
+     */
+    private boolean isWholeBatchSkipped(final BulkActionsResultView view) {
+        return view != null
+                && view.getSuccessCount() != null && view.getSuccessCount() == 0L
+                && view.getSkippedCount() != null && view.getSkippedCount() > 0L
+                && (view.getFails() == null || view.getFails().isEmpty());
     }
 
     @POST
@@ -2681,7 +2715,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -2826,7 +2860,7 @@ public class WorkflowResource {
                             "specified by name, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                             "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                             "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                            INDEX_POLICY_CHAINING_NOTE,
+                            INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3000,6 +3034,8 @@ public class WorkflowResource {
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
+        final Set<String> ignoredSystemFields = validateFireActionForm(fireActionForm, actionId);
+
         final PageMode pageMode = PageMode.get(request);
         final IndexPolicy indexPolicy = contentlet.getIndexPolicy()!=null
                 ? contentlet.getIndexPolicy()
@@ -3047,9 +3083,104 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
+        final List<MessageEntity> messages = ignoredSystemFieldsMessages(ignoredSystemFields);
+        final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
-                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
+                null != messages
+                        ? new ResponseEntityView<>(entity, messages)
+                        : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /**
+     * Validates fields on the {@link FireActionForm} that the workflow engine would otherwise
+     * silently ignore.
+     *
+     * <ul>
+     *   <li>{@code pathToMove} is meaningful only when the resolved workflow action wires a
+     *       Move actionlet. Without it, the value is set on the contentlet's
+     *       {@link Contentlet#PATH_TO_MOVE} property but never read, so we reject it as a
+     *       {@link BadRequestException} to surface the misconfiguration.</li>
+     *   <li>{@code host} / {@code hostId} / {@code hostname} / {@code folder} keys in the
+     *       {@code contentlet} body are not applied by this endpoint. {@code MapToContentletPopulator}
+     *       silently ignores any key that is not a content-type field, so payloads carrying these
+     *       keys have always saved fine for content types without a matching Site-or-Folder field.
+     *       We preserve that long-standing contract by logging a warning instead of rejecting; the
+     *       only path that relocates a contentlet is a workflow action wired with the Move actionlet
+     *       (see {@code pathToMove}).</li>
+     * </ul>
+     */
+    private Set<String> validateFireActionForm(final FireActionForm fireActionForm,
+                                        final String actionId) throws DotDataException, DotSecurityException {
+
+        if (null == fireActionForm) {
+            return Set.of();
+        }
+
+        if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
+
+            final WorkflowAction resolvedAction = null != actionId
+                    ? this.workflowAPI.findAction(actionId, APILocator.systemUser())
+                    : null;
+
+            if (null != resolvedAction && !resolvedAction.hasMoveActionletActionlet()) {
+
+                throw new BadRequestException(String.format(
+                        "Workflow action '%s' (%s) does not include the Move actionlet. "
+                                + "The 'pathToMove' field cannot be applied. Use a workflow action that has "
+                                + "the Move actionlet wired, or fire by explicit Move action ID via "
+                                + "PUT /api/v1/workflow/actions/{actionId}/fire.",
+                        resolvedAction.getName(), resolvedAction.getId()));
+            }
+        }
+
+        final Map<String, Object> contentletMap = fireActionForm.getContentletFormData();
+        if (null != contentletMap) {
+
+            final Set<String> protectedFields = Stream.of("host", "hostId", "hostname", "folder")
+                    .filter(contentletMap::containsKey)
+                    .collect(Collectors.toSet());
+
+            if (!protectedFields.isEmpty()) {
+
+                // These system keys are not applied by this endpoint. Historically
+                // MapToContentletPopulator silently ignores any key that does not map to a
+                // content-type field, so payloads carrying these keys saved fine for content
+                // types without a matching Site-or-Folder field. We preserve that contract by
+                // warning instead of rejecting; the returned set is surfaced back to the caller
+                // (e.g. an MCP agent) so it learns its location intent was ignored. To actually
+                // relocate a contentlet, fire a workflow action wired with the Move actionlet
+                // (see 'pathToMove').
+                Logger.warn(this, String.format(
+                        "Fire action payload contains system field(s) %s; these are ignored by "
+                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "action that includes the Move actionlet (see 'pathToMove').",
+                        protectedFields));
+
+                return protectedFields;
+            }
+        }
+
+        return Set.of();
+    }
+
+    /**
+     * Builds a single advisory {@link MessageEntity} explaining that the given system fields were
+     * ignored by the fire endpoint, so callers (notably MCP agents) do not silently assume the
+     * contentlet was relocated. Returns {@code null} when there is nothing to report.
+     */
+    private List<MessageEntity> ignoredSystemFieldsMessages(final Set<String> ignoredFields) {
+
+        if (null == ignoredFields || ignoredFields.isEmpty()) {
+            return null;
+        }
+
+        return List.of(new MessageEntity(String.format(
+                "System field(s) %s were ignored: this endpoint does not set a contentlet's "
+                        + "location. The content was saved at its existing/default location. To "
+                        + "place or move content, fire a workflow action that includes the Move "
+                        + "actionlet and pass 'pathToMove'.",
+                ignoredFields)));
     }
 
     private void processPermissions(final FireActionForm fireActionForm,
@@ -3154,7 +3285,7 @@ public class WorkflowResource {
                     "their actions later will fail with 'Workflow Action is not available in the Workflow Step the content " +
                     "is currently in.' To exercise actions in those other schemes, fire by action ID via " +
                     "`PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3853,6 +3984,12 @@ public class WorkflowResource {
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
 
+        // host/folder in the contentlet body are not applied by this endpoint (they are system
+        // fields, not content-type fields). We warn rather than reject so long-standing callers are
+        // not broken; this streaming merge path cannot carry a per-response message, so the warning
+        // is logged only. pathToMove misconfiguration is still rejected per-contentlet downstream.
+        validateFireActionForm(fireActionForm, null);
+
         final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;
         Logger.debug(this, ()-> "On Fire Merge Action: systemAction = " + systemAction + ", inode = " + inode +
                 ", identifier = " + identifier + ", language = " + language + ", query: " + query);
@@ -4144,7 +4281,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4293,7 +4430,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4498,7 +4635,7 @@ public class WorkflowResource {
                     "follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in " +
                     "`SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) " +
                     "are silently ignored. Fire the Move action afterwards to relocate.\n\n" +
-                    INDEX_POLICY_CHAINING_NOTE,
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",

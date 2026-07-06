@@ -1588,6 +1588,361 @@
       "response": []
     },
     {
+      "name": "v2",
+      "item": [
+        {
+          "name": "v2 :: Setup - Upload file for reads",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"v2AssetId\", jsonData.entity.identifier);",
+                  "    pm.collectionVariables.set(\"v2AssetPath\", \"//default/web_assets/make-my-day.jpeg\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "resources/WebAssets/make-my-day.jpeg"
+                },
+                {
+                  "key": "detail",
+                  "value": "{\n   \"assetPath\":\"//default/web_assets/make-my-day.jpeg\",\n   \"language\":\"en_us\",\n   \"live\":true\n}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/assets",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "assets"]
+            },
+            "description": "Pre-condition: upload the file via v1 so v2 GET tests have something to read."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: GET by path - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Content-Disposition header is present\", function () {",
+                  "    const cd = pm.response.headers.find(h => h.key === 'Content-Disposition');",
+                  "    pm.expect(cd).to.not.be.undefined;",
+                  "    pm.expect(cd.value).to.include('make-my-day.jpeg');",
+                  "});",
+                  "pm.test(\"Response body is non-empty\", function () {",
+                  "    pm.expect(pm.response.responseSize).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets?path=//default/web_assets/make-my-day.jpeg&version=live",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets"],
+              "query": [
+                {"key": "path", "value": "//default/web_assets/make-my-day.jpeg"},
+                {"key": "version", "value": "live"}
+              ]
+            },
+            "description": "Read raw file bytes by host-qualified path — expect 200 with binary body."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: GET by identifier - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Response body is non-empty\", function () {",
+                  "    pm.expect(pm.response.responseSize).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets/{{v2AssetId}}?version=live",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets", "{{v2AssetId}}"],
+              "query": [
+                {"key": "version", "value": "live"}
+              ]
+            },
+            "description": "Read raw file bytes by dotCMS identifier — expect 200 with binary body."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: PUT /save - 200 (working only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has entity.identifier\", function () {",
+                  "    pm.expect(jsonData.entity.identifier).to.not.be.empty;",
+                  "});",
+                  "pm.test(\"Response has entity.fileSize > 0\", function () {",
+                  "    pm.expect(jsonData.entity.fileSize).to.be.above(0);",
+                  "});",
+                  "pm.test(\"working is true\", function () {",
+                  "    pm.expect(jsonData.entity.working).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "resources/WebAssets/make-my-day.jpeg"
+                },
+                {
+                  "key": "path",
+                  "value": "//default/web_assets/make-my-day.jpeg",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "en-us",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets/save",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets", "save"]
+            },
+            "description": "Create or update working version only. Live version must NOT change."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: PUT /publish - 200 (live promoted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Response has entity.identifier\", function () {",
+                  "    pm.expect(jsonData.entity.identifier).to.not.be.empty;",
+                  "});",
+                  "pm.test(\"Response has entity.fileSize > 0\", function () {",
+                  "    pm.expect(jsonData.entity.fileSize).to.be.above(0);",
+                  "});",
+                  "pm.test(\"live is true\", function () {",
+                  "    pm.expect(jsonData.entity.live).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "resources/WebAssets/make-my-day.jpeg"
+                },
+                {
+                  "key": "path",
+                  "value": "//default/web_assets/make-my-day.jpeg",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "en-us",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets/publish",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets", "publish"]
+            },
+            "description": "Create or update asset and immediately promote to live."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: PUT /save - missing file part → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error message mentions missing file\", function () {",
+                  "    var body = pm.response.text().toLowerCase();",
+                  "    pm.expect(body).to.satisfy(b => b.includes('missing') || b.includes('file'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "path",
+                  "value": "//default/web_assets/make-my-day.jpeg",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets/save",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets", "save"]
+            },
+            "description": "Omit the 'file' part entirely — must return 400."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: PUT /save - unknown language → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "resources/WebAssets/make-my-day.jpeg"
+                },
+                {
+                  "key": "path",
+                  "value": "//default/web_assets/make-my-day.jpeg",
+                  "type": "text"
+                },
+                {
+                  "key": "language",
+                  "value": "zz-INVALID",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets/save",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets", "save"]
+            },
+            "description": "Provide an unknown language tag — must return 400."
+          },
+          "response": []
+        },
+        {
+          "name": "v2 :: GET by path - unknown host → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v2/assets?path=//no-such-host-xyz-9999.invalid/some/file.txt",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v2", "assets"],
+              "query": [
+                {"key": "path", "value": "//no-such-host-xyz-9999.invalid/some/file.txt"}
+              ]
+            },
+            "description": "Host component of path does not match any site — must return 404."
+          },
+          "response": []
+        }
+      ],
+      "description": "Tests for the v2 file-asset REST endpoint (/api/v2/assets). Covers GET by path, GET by identifier, PUT /save, PUT /publish, and error cases."
+    },
+    {
       "name": "Folders :: Update Folder - Name Conflict (409)",
       "event": [
         {
@@ -1742,6 +2097,14 @@
     },
     {
       "key": "nestedFolderId",
+      "value": ""
+    },
+    {
+      "key": "v2AssetId",
+      "value": ""
+    },
+    {
+      "key": "v2AssetPath",
       "value": ""
     }
   ]

@@ -154,10 +154,10 @@ public class PageScannerResource {
         }
 
         final Map<String, Secret> secrets = appSecretsOpt.get().getSecrets();
-        final String apiUrl = Try.of(() -> secrets.get("apiUrl").getString())
-                .getOrElse(DEFAULT_API_URL);
-        final String apiAuthToken = Try.of(() -> secrets.get("apiAuthToken").getString())
-                .getOrElse((String) null);
+        final String apiUrl = sanitizeSecret(Try.of(() -> secrets.get("apiUrl").getString())
+                .getOrElse(DEFAULT_API_URL));
+        final String apiAuthToken = sanitizeSecret(Try.of(() -> secrets.get("apiAuthToken").getString())
+                .getOrElse((String) null));
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
@@ -266,6 +266,29 @@ public class PageScannerResource {
                     .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_UNREACHABLE", "Unable to reach the Page Scanner service.")))
                     .build();
         }
+    }
+
+    /**
+     * Cleans a secret value read from the Apps portfolio before it is used in an
+     * outbound HTTP header or URL. Hidden secret fields are pasted blind, so a
+     * line-wrapped or trailing newline easily slips in. Java's {@link HttpRequest}
+     * rejects any header value char that is not a valid RFC 7230 field-vchar
+     * (see {@code jdk.internal.net.http.common.Utils#isValidValue}): control
+     * chars below {@code 0x20}, DEL ({@code 0x7F}), and anything above
+     * {@code 0xFF} (smart quotes, em-dashes, zero-width spaces, BOM, etc.). A
+     * blind paste into a hidden secret field can carry any of these, so we strip
+     * every disallowed char before the value reaches the header, then trim
+     * surrounding whitespace.
+     */
+    private String sanitizeSecret(final String value) {
+        if (value == null) {
+            return null;
+        }
+        // Keep only chars Java's HttpRequest accepts in a header value: the
+        // printable range 0x20-0xFF minus DEL (0x7F). Everything else — control
+        // chars (0x00-0x1F), DEL, and any char above 0xFF — is dropped. Then trim
+        // surrounding whitespace (0x20 / tab).
+        return value.replaceAll("[^\\u0020-\\u007E\\u0080-\\u00FF]", "").trim();
     }
 
     /**

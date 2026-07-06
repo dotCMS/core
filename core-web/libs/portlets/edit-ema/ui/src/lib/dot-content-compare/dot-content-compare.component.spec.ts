@@ -90,8 +90,7 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getFeatureFlag: () => of(true),
-                        getFeatureFlagWithDefault: () => of(true)
+                        getFeatureFlag: () => of(true)
                     }
                 }
             ]

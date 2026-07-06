@@ -1,0 +1,70 @@
+{
+    "name": "sdk-ai",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/ai/src",
+    "projectType": "library",
+    "tags": ["scope:ai"],
+    "targets": {
+        "generate-spec": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npx tsx scripts/generate-spec.ts",
+                "cwd": "libs/sdk/ai"
+            }
+        },
+        "build": {
+            "executor": "@nx/rollup:rollup",
+            "outputs": ["{options.outputPath}"],
+            "dependsOn": ["generate-spec"],
+            "options": {
+                "format": ["esm", "cjs"],
+                "compiler": "tsc",
+                "generateExportsField": true,
+                "additionalEntryPoints": [
+                    "libs/sdk/ai/src/sandbox/index.ts",
+                    "libs/sdk/ai/src/adapter/index.ts",
+                    "libs/sdk/ai/src/spec/index.ts"
+                ],
+                "outputPath": "dist/libs/sdk/ai",
+                "assets": [
+                    {
+                        "input": "libs/sdk/ai",
+                        "output": ".",
+                        "glob": "*.md"
+                    }
+                ],
+                "main": "libs/sdk/ai/src/runtime.ts",
+                "tsConfig": "libs/sdk/ai/tsconfig.lib.json"
+            }
+        },
+        "publish": {
+            "executor": "nx:run-commands",
+            "dependsOn": ["build"],
+            "options": {
+                "command": "node tools/scripts/publish.mjs sdk-ai {args.ver} {args.tag}"
+            }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/ai"
+            }
+        },
+        "lint": {
+            "options": {
+                "args": ["src/**/*.ts", "scripts/**/*.ts"]
+            }
+        },
+        "test": {
+            "dependsOn": ["generate-spec"],
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        }
+    }
+}

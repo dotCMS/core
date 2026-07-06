@@ -1,12 +1,17 @@
 package com.dotcms.architecture;
 
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
+import com.dotcms.rest.WebResource;
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.equivalentTo;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
@@ -82,6 +87,55 @@ public class CodingStandardsArchTest {
                 )
                 .because("Classes annotated with @IndexLibraryIndependent must not depend on specific " +
                         "search engine libraries (Elasticsearch, OpenSearch) to maintain abstraction and portability");
+        rule.check(getProductionClasses());
+    }
+
+    /**
+     * Enforces that the servlet-only {@code WebResource.authenticate(...)} /
+     * {@code WebResource.getCurrentUser(...)} overloads which take a {@code boolean} anonymous-fallback
+     * flag are called only from the static/binary asset-servlet helper in
+     * {@code com.dotmarketing.servlets} (i.e. {@code ServletUtils}).
+     *
+     * <p>Rationale: those overloads downgrade an authentication failure to anonymous access so that
+     * an upstream Basic-Auth gating layer (whose credentials the browser replays on sub-resource
+     * requests, per RFC 7617) does not break anonymously-readable assets — see
+     * <a href="https://github.com/dotCMS/core/issues/35536">#35536</a>. A JAX-RS REST endpoint
+     * calling them would silently convert a {@code 401} (invalid credentials) into anonymous data
+     * access. The capability is intentionally not exposed via {@code AuthCheckOptions} or
+     * {@code InitBuilder}; this rule is the structural guard against the remaining public overload.</p>
+     *
+     * <p>The two target overloads are identified by carrying both a {@code boolean} parameter and an
+     * {@code AuthCheckOptions[]} (varargs) parameter, which distinguishes them from the legacy
+     * {@code rejectWhenNoUser} boolean overloads. {@code WebResource} itself is excluded because its
+     * public overloads delegate to these with {@code false}.</p>
+     */
+    @Test
+    public void shouldNotCallServletAnonymousFallbackOverloadsOutsideAssetServlets() {
+
+        final DescribedPredicate<JavaMethodCall> servletFallbackOverloadCall =
+                new DescribedPredicate<JavaMethodCall>(
+                        "a WebResource.authenticate/getCurrentUser overload taking a boolean anonymous-fallback flag") {
+                    @Override
+                    public boolean test(final JavaMethodCall call) {
+                        return call.getTarget().getOwner().isEquivalentTo(WebResource.class)
+                                && ("authenticate".equals(call.getTarget().getName())
+                                        || "getCurrentUser".equals(call.getTarget().getName()))
+                                && call.getTarget().getRawParameterTypes().stream()
+                                        .anyMatch(p -> p.isEquivalentTo(boolean.class))
+                                && call.getTarget().getRawParameterTypes().stream()
+                                        .anyMatch(p -> p.isEquivalentTo(WebResource.AuthCheckOptions[].class));
+                    }
+                };
+
+        ArchRule rule = noClasses()
+                .that().resideOutsideOfPackage("com.dotmarketing.servlets..")
+                .and(not(equivalentTo(WebResource.class)))
+                .should().callMethodWhere(servletFallbackOverloadCall)
+                .because("The anonymous-fallback authenticate/getCurrentUser overloads downgrade an "
+                        + "authentication failure to anonymous access and must only be used by the "
+                        + "static/binary asset servlets (com.dotmarketing.servlets). A REST endpoint "
+                        + "calling them would silently turn a 401 into anonymous data access (#35536).");
+
         rule.check(getProductionClasses());
     }
 }

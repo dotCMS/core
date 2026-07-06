@@ -265,7 +265,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
             // Simulate page unload
             expect(unloadCallback).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
 
             // Verify cleanup
@@ -320,7 +320,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
             plugin.loaded();
 
             // Simulate page unload
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
 
             expect(consoleInfoSpy).toHaveBeenCalledWith(
@@ -407,7 +407,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
             expect(mockAnalyticsInstance.track).toHaveBeenCalled();
 
             // Step 4: Cleanup
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
             expect(mockSubscription.unsubscribe).toHaveBeenCalled();
             expect(mockTracker.cleanup).toHaveBeenCalled();

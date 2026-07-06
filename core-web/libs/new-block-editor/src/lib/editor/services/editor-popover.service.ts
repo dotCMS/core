@@ -24,7 +24,6 @@ export interface ImagePropertiesPayload {
 export interface TablePropertiesPayload {
     initialValues: {
         caption: string;
-        hasCaption: boolean;
         ariaLabel: string;
         ariaLabelledby: string;
     };
@@ -61,6 +60,12 @@ export interface LinkPopoverPayload {
     linkEl?: HTMLElement;
     /** Pre-computed position for edit-mode insertions — captured at open time. */
     anchorPos?: number;
+    /**
+     * True when the link targets a selected `dotImage` node. In this mode the popover sets the
+     * image node's `href`/`target` attributes instead of inserting a text node with a link mark,
+     * and hides the text-only fields (Text, Advanced).
+     */
+    isImageLink?: boolean;
 }
 
 interface ActivePopover {

@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 import { render, screen } from '@testing-library/react';
 
 import * as utils from '@dotcms/uve/internal';
@@ -142,6 +144,40 @@ describe('Container', () => {
             );
 
             expect(emptyContainerMessage?.getAttribute('data-dot-object')).toBe('empty-content');
+        });
+    });
+
+    describe('data-dot attribute gating', () => {
+        beforeEach(() =>
+            getContentletsInContainerMock.mockReturnValue([{ identifier: 'contentlet-1' }])
+        );
+
+        test('should emit container data-dot-* attributes in edit mode', () => {
+            renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
+                mode: 'development'
+            });
+
+            const containerDiv = screen.getByTestId('mock-contentlet').parentElement as HTMLElement;
+
+            expect(utils.getDotContainerAttributes).toHaveBeenCalled();
+            expect(containerDiv).toHaveAttribute('data-dot-object', 'container');
+            expect(containerDiv).toHaveAttribute('data-dot-identifier', 'test-container-id');
+        });
+
+        test('should not emit any container data-dot-* attributes in live mode', () => {
+            renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
+                mode: 'production'
+            });
+
+            const containerDiv = screen.getByTestId('mock-contentlet').parentElement as HTMLElement;
+
+            expect(utils.getDotContainerAttributes).not.toHaveBeenCalled();
+            const dotAttrs = containerDiv
+                .getAttributeNames()
+                .filter((name) => name.startsWith('data-dot') || name === 'data-max-contentlets');
+            expect(dotAttrs).toEqual([]);
         });
     });
 

@@ -32,7 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.startup.runonce.Task260408CreateS3VanityAliasTable;
+import com.dotmarketing.startup.runonce.Task260507CreateS3VanityAliasTable;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,7 +62,7 @@ public class S3VanityStaticPublishingIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        new Task260408CreateS3VanityAliasTable().executeUpgrade();
+        new Task260507CreateS3VanityAliasTable().executeUpgrade();
     }
 
     @Before
@@ -221,6 +221,37 @@ public class S3VanityStaticPublishingIntegrationTest {
         verify(endpointPublisher).deleteFilesFromEndpoint(eq(BUCKET_NAME), eq(BUCKET_PREFIX),
                 eq("/canonical-removed-alias"));
         assertTrue(deletedPaths.contains("/canonical-removed-alias"));
+        assertTrue(repository.findByLookup(lookup(source)).isEmpty());
+    }
+
+    /**
+     * Method to Test: {@link S3VanityAliasService#unpublishAliases(S3VanityAliasContext)}
+     * Given Scenario: A canonical page is removed and its materialized Vanity URL shadows a live dotCMS page
+     * ExpectedResult: The live page should be restored on the vanity key and the mapping should be removed.
+     */
+    @Test
+    public void unpublishAliasesShouldRestoreShadowedLiveResourceWhenCanonicalContentIsRemoved()
+            throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final PageFixture source = createLivePage(host, language, "source-canonical-shadow",
+                "canonical source content");
+        final PageFixture shadowed = createLivePage(host, language, "canonical-shadowed-alias",
+                "shadowed canonical content");
+        final Contentlet vanity = createLiveVanity(source, shadowed.path, source.path);
+        service.publishAliasForVanityUrl(context(source), vanity);
+        pushedPaths.clear();
+        pushedContentByPath.clear();
+        clearInvocations(endpointPublisher);
+
+        service.unpublishAliases(aliasContext(source, temporaryStaticFile("unused")));
+
+        verify(endpointPublisher, never()).deleteFilesFromEndpoint(eq(BUCKET_NAME), eq(BUCKET_PREFIX),
+                eq(shadowed.path));
+        verify(endpointPublisher).pushFileToEndpoint(eq(BUCKET_NAME), eq(BUCKET_REGION),
+                eq(BUCKET_PREFIX), eq(shadowed.path), any(File.class));
+        assertEquals(List.of(shadowed.path), pushedPaths);
+        assertTrue(pushedContentByPath.get(shadowed.path).contains("shadowed canonical content"));
         assertTrue(repository.findByLookup(lookup(source)).isEmpty());
     }
 

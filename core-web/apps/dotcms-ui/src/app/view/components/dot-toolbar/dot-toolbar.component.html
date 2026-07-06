@@ -3,10 +3,10 @@
         <dot-crumbtrail class="ml-4 w-full" />
     </ng-template>
     <ng-template pTemplate="end">
-        <div class="flex gap-1 items-center">
+        <div class="flex items-center gap-1">
             <div class="px-2">
                 <dot-site
-                    [value]="globalStore.siteDetails()?.identifier"
+                    [value]="$currentSite()?.identifier"
                     [placeholder]="'Select a site'"
                     [showSystemHost]="false"
                     class="w-64"

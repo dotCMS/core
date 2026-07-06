@@ -1,5 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
+import { HttpClient } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,17 +21,21 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import {
-    DotCrudService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSResponse,
+    DotMessageSeverity,
+    DotMessageType
+} from '@dotcms/dotcms-models';
 import { StyleEditorFieldSchema, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
 import { StyleEditorField, defineStyleEditorSchema, styleEditorField } from '@dotcms/uve/internal';
 
-import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
+import { DotStyleEditorSectionComponent } from './components/dot-style-editor-section/dot-style-editor-section.component';
 import {
     BuilderField,
     BuilderOption,
@@ -83,7 +88,7 @@ interface DotStyleEditorBuilderState {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotStyleEditorBuilderComponent {
-    readonly #crudService = inject(DotCrudService);
+    readonly #http = inject(HttpClient);
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -187,15 +192,11 @@ export class DotStyleEditorBuilderComponent {
         const contentType = this.$contentType();
         if (!contentType) return;
 
-        const existingMetadata = { ...(contentType.metadata ?? {}) };
-
-        let updatedMetadata: typeof existingMetadata;
+        let metadataPatch: Record<string, string | null>;
 
         if (this.$sections().length === 0) {
-            // Empty form — remove the key so metadata stays clean (no empty schema noise)
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { [STYLE_EDITOR_SCHEMA_KEY]: _removed, ...rest } = existingMetadata;
-            updatedMetadata = rest;
+            // Null tells the PATCH endpoint to remove the key entirely
+            metadataPatch = { [STYLE_EDITOR_SCHEMA_KEY]: null };
         } else {
             const schema = defineStyleEditorSchema({
                 contentType: contentType.variable,
@@ -204,25 +205,12 @@ export class DotStyleEditorBuilderComponent {
                     fields: section.fields.map((field) => this.#toStyleEditorField(field))
                 }))
             });
-            updatedMetadata = {
-                ...existingMetadata,
-                [STYLE_EDITOR_SCHEMA_KEY]: JSON.stringify(schema)
-            };
+            metadataPatch = { [STYLE_EDITOR_SCHEMA_KEY]: JSON.stringify(schema) };
         }
 
-        // `systemActionMappings` contains full workflow-action objects that the API
-        // misinterprets as action IDs when round-tripped in a PUT body. Strip it out.
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { systemActionMappings: _wf, ...contentTypeData } = contentType;
-
-        const payload: DotCMSContentType = {
-            ...contentTypeData,
-            metadata: updatedMetadata
-        };
-
         patchState(this.#state, { saving: true });
-        this.#crudService
-            .putData<DotCMSContentType>(`v1/contenttype/id/${contentType.id}`, payload)
+        this.#http
+            .patch<DotCMSResponse>(`v1/contenttype/id/${contentType.id}/metadata`, metadataPatch)
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
@@ -253,8 +241,11 @@ export class DotStyleEditorBuilderComponent {
      */
     #loadFromMetadata(contentType: DotCMSContentType): void {
         const raw = contentType.metadata?.[STYLE_EDITOR_SCHEMA_KEY];
-        if (!raw || typeof raw !== 'string') {
-            console.warn('[StyleEditorBuilder] Invalid schema in metadata');
+        if (!raw) {
+            return;
+        }
+        if (typeof raw !== 'string') {
+            console.warn('[StyleEditorBuilder] DOT_STYLE_EDITOR_SCHEMA is not a string; ignoring');
             return;
         }
 

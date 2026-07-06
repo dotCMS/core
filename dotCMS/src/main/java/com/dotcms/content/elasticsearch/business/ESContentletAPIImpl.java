@@ -1,12 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-import static com.liferay.util.StringPool.BLANK;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -22,6 +15,7 @@ import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFacto
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -71,6 +65,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.RelationshipUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -199,6 +194,16 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+
+import javax.activation.MimeType;
+import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -228,16 +233,13 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import com.dotcms.content.index.domain.ContentSearchResponse;
-import org.elasticsearch.action.search.SearchResponse;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 
 /**
@@ -311,8 +313,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
-
-    ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
 
@@ -1683,17 +1683,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final com.dotcms.content.index.domain.SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
-            list.setTotalResults(searchHits.totalHits().value());
+            list.setTotalResults(searchHits.getTotalHits().value());
 
-            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
+            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.getHits()) {
                 try {
-                    final Map<String, Object> sourceMap = searchHit.sourceAsMap();
+                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
                     list.add(ImmutableContentletSearch.builder()
-                            .id(searchHit.id())
-                            .index(searchHit.index())
+                            .id(searchHit.getId())
+                            .index(searchHit.getIndex())
                             .identifier(sourceMap.get("identifier").toString())
                             .inode(sourceMap.get("inode").toString())
-                            .score(searchHit.score())
+                            .score(searchHit.getScore())
                             .build());
                 } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
@@ -2400,12 +2400,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (response.hits().hits().isEmpty()) {
+            if (response.hits().getHits().isEmpty()) {
                 return result;
             }
 
             for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
-                final Map<String, Object> sourceMap = sh.sourceAsMap();
+                final Map<String, Object> sourceMap = sh.getSourceAsMap();
                 if (sourceMap.get(relationshipName) != null) {
                     List<String> relatedIdentifiers = ((ArrayList<String>) sourceMap.get(
                             relationshipName));
@@ -2493,9 +2493,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 respectFrontendRoles, limit, offset, null);
             }
 
-            if (!response.hits().hits().isEmpty()) {
+            if (!response.hits().getHits().isEmpty()) {
                 for (final com.dotcms.content.index.domain.SearchHit sh : response.hits()) {
-                    final Map<String, Object> sourceMap = sh.sourceAsMap();
+                    final Map<String, Object> sourceMap = sh.getSourceAsMap();
                     final String identifier = (String) sourceMap.get("identifier");
                     if (identifier != null && !relatedMap.containsKey(identifier)) {
                         final Contentlet mappedContentlet = findContentletByIdentifierAnyLanguage(
@@ -4592,54 +4592,211 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
 
-        List<Relationship> rels = APILocator.getRelationshipAPI()
+        final List<Relationship> relationshipsFromContent = APILocator.getRelationshipAPI()
                 .byContentType(contentlet.getContentType());
-        if (!rels.contains(relationship)) {
+        if (!relationshipsFromContent.contains(relationship)) {
             throw new DotContentletStateException(
                     "Error deleting existing relationships in contentlet: " + (contentlet != null
                             ? contentlet.getInode() : "Unknown"));
         }
 
-        List<Contentlet> cons = relationshipAPI
-                .dbRelatedContent(relationship, contentlet, hasParent);
-        cons = permissionAPI
-                .filterCollection(cons, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        final Set<String> identifiersToBeRelated = contentletsToBeRelated.stream()
+                .map(Contentlet::getIdentifier).collect(Collectors.toSet());
 
-        for (final Contentlet relatedContent : cons) {
-            if (hasParent) {
-                TreeFactory.deleteTreesByParentAndChildAndRelationType(contentlet.getIdentifier(),
-                        relatedContent.getIdentifier(), relationship.getRelationTypeValue());
-            } else {
-                TreeFactory.deleteTreesByParentAndChildAndRelationType(
-                        relatedContent.getIdentifier(),
-                        contentlet.getIdentifier(), relationship.getRelationTypeValue());
-            }
-        }
-
-        final List<String> identifiersToBeRelated = contentletsToBeRelated.stream().map(
-                Contentlet::getIdentifier).collect(Collectors.toList());
-
-        // We need to refresh related parents, because currently the system does not
-        // update the contentlets that lost the relationship (when the user remove a relationship).
-        if (cons != null) {
-            for (final Contentlet relatedContentlet : cons) {
-                //Only deleted parents will be reindexed
-                if (!hasParent && !identifiersToBeRelated
-                        .contains(relatedContentlet.getIdentifier())) {
-                    relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
-                    relatedContentlet
-                            .setIndexPolicyDependencies(
-                                    contentlet.getIndexPolicyDependencies());
-                    refreshNoDeps(relatedContentlet);
-                }
-                //If relationship field, related content cache must be invalidated
-                invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
-            }
+        if (isExemptFromPermissionFiltering(user)) {
+            deleteAllRelatedContent(contentlet, relationship, hasParent, identifiersToBeRelated);
+        } else {
+            deleteReadableRelatedContent(contentlet, relationship, hasParent, user,
+                    respectFrontendRoles, identifiersToBeRelated);
         }
 
         // Refresh the parent only if the contentlet is not already in the checkin
         if (!contentlet.getBoolProperty(CHECKIN_IN_PROGRESS)) {
             refreshNoDeps(contentlet);
+        }
+    }
+
+    /**
+     * Mirrors the fast path of
+     * {@link PermissionAPI#filterCollection(List, int, boolean, User)}: for the system user and
+     * CMS Admins the READ-permission filter never removes related content, so the much cheaper
+     * identifier-only deletion path can be used instead of hydrating every related contentlet.
+     *
+     * @param user The {@link User} performing the deletion
+     * @return If the user is exempt from permission filtering, {@code true}
+     */
+    private boolean isExemptFromPermissionFiltering(final User user) throws DotDataException {
+        if (user == null) {
+            return false;
+        }
+        final var roleAPI = APILocator.getRoleAPI();
+        return APILocator.systemUser().getUserId().equals(user.getUserId())
+                || roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
+    }
+
+    /**
+     * Deletes ALL the tree rows for the given relationship and direction without hydrating the
+     * related contentlets: related identifiers are read straight from the tree table, the rows
+     * are removed with a single bulk delete, and only the parents that actually lost the
+     * relationship — and therefore must be re-indexed — get loaded.
+     *
+     * @param contentlet              The {@link Contentlet} whose related content is deleted
+     * @param relationship            The {@link Relationship} being cleared
+     * @param hasParent               If the contentlet is the parent side, {@code true}
+     * @param identifiersToBeRelated  Identifiers that will be re-related right after this call,
+     *                                which therefore do NOT need re-indexing
+     */
+    private void deleteAllRelatedContent(final Contentlet contentlet,
+            final Relationship relationship, final boolean hasParent,
+            final Set<String> identifiersToBeRelated)
+            throws DotDataException, DotSecurityException {
+
+        final String relationTypeValue = relationship.getRelationTypeValue();
+        final List<String> relatedIds = (hasParent
+                ? TreeFactory.getRelatedIdsByParentAndRelationType(contentlet.getIdentifier(),
+                        relationTypeValue)
+                : TreeFactory.getRelatedIdsByChildAndRelationType(contentlet.getIdentifier(),
+                        relationTypeValue))
+                .stream().distinct().toList();
+
+        if (hasParent) {
+            TreeFactory.deleteTreesByParentAndRelationType(contentlet.getIdentifier(),
+                    relationTypeValue);
+        } else {
+            TreeFactory.deleteTreesByChildAndRelationType(contentlet.getIdentifier(),
+                    relationTypeValue);
+        }
+
+        // We need to refresh related parents, because currently the system does not
+        // update the contentlets that lost the relationship (when the user removes a relationship)
+        if (!hasParent) {
+            final List<String> removedParentIds = relatedIds.stream()
+                    .filter(identifier -> !identifiersToBeRelated.contains(identifier))
+                    .toList();
+            for (final Contentlet removedParent : findAllWorkingVersions(removedParentIds)) {
+                removedParent.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                removedParent.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+                refreshNoDeps(removedParent);
+            }
+        }
+
+        //If relationship field, related content cache must be invalidated
+        for (final String relatedId : relatedIds) {
+            invalidateRelatedContentCache(relatedId, relationship, !hasParent);
+        }
+    }
+
+    /**
+     * Deletes the tree rows for the given relationship and direction preserving the legacy
+     * permission semantics: only relationships to content the user can READ are removed. This
+     * path must hydrate the related contentlets in order to evaluate their permissions.
+     *
+     * @param contentlet              The {@link Contentlet} whose related content is deleted
+     * @param relationship            The {@link Relationship} being cleared
+     * @param hasParent               If the contentlet is the parent side, {@code true}
+     * @param user                    The {@link User} performing the deletion
+     * @param respectFrontendRoles    If front-end roles must be validated, {@code true}
+     * @param identifiersToBeRelated  Identifiers that will be re-related right after this call,
+     *                                which therefore do NOT need re-indexing
+     */
+    private void deleteReadableRelatedContent(final Contentlet contentlet,
+            final Relationship relationship, final boolean hasParent, final User user,
+            final boolean respectFrontendRoles, final Set<String> identifiersToBeRelated)
+            throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> allRelatedContents = relationshipAPI
+                .dbRelatedContent(relationship, contentlet, hasParent);
+        final List<Contentlet> relatedContents = permissionAPI
+                .filterCollection(allRelatedContents, PermissionAPI.PERMISSION_READ,
+                        respectFrontendRoles, user);
+
+        // When the permission filter removed nothing, a single bulk delete per direction is
+        // safe; otherwise, the delete operation must be scoped to the readable identifiers so the
+        // remaining rows are preserved
+        if (relatedContents.size() == allRelatedContents.size()) {
+            if (hasParent) {
+                TreeFactory.deleteTreesByParentAndRelationType(contentlet.getIdentifier(),
+                        relationship.getRelationTypeValue());
+            } else {
+                TreeFactory.deleteTreesByChildAndRelationType(contentlet.getIdentifier(),
+                        relationship.getRelationTypeValue());
+            }
+        } else {
+            final List<String> readableRelatedIds = relatedContents.stream()
+                    .map(Contentlet::getIdentifier).distinct().toList();
+            if (hasParent) {
+                TreeFactory.deleteTreesByParentAndChildrenAndRelationType(
+                        contentlet.getIdentifier(), readableRelatedIds,
+                        relationship.getRelationTypeValue());
+            } else {
+                TreeFactory.deleteTreesByChildAndParentsAndRelationType(
+                        contentlet.getIdentifier(), readableRelatedIds,
+                        relationship.getRelationTypeValue());
+            }
+        }
+
+        // We need to refresh related parents, because currently the system does not
+        // update the contentlets that lost the relationship (when the user removes a relationship)
+        for (final Contentlet relatedContentlet : relatedContents) {
+            //Only deleted parents will be re-indexed
+            if (!hasParent && !identifiersToBeRelated
+                    .contains(relatedContentlet.getIdentifier())) {
+                relatedContentlet.setIndexPolicy(contentlet.getIndexPolicyDependencies());
+                relatedContentlet
+                        .setIndexPolicyDependencies(
+                                contentlet.getIndexPolicyDependencies());
+                refreshNoDeps(relatedContentlet);
+            }
+            //If relationship field, related content cache must be invalidated
+            invalidateRelatedContentCache(relatedContentlet, relationship, !hasParent);
+        }
+    }
+
+    /**
+     * Loads the working version of every language/variant of the given identifiers using the
+     * batched {@link com.dotmarketing.business.VersionableFactory} lookup instead of one query
+     * per identifier.
+     *
+     * @param identifiers The identifiers of the contentlets to load
+     * @return The working version {@link Contentlet} objects, one per existing version row
+     */
+    private List<Contentlet> findAllWorkingVersions(final List<String> identifiers)
+            throws DotDataException, DotSecurityException {
+        if (identifiers.isEmpty()) {
+            return List.of();
+        }
+        final List<String> workingInodes = FactoryLocator.getVersionableFactory()
+                .findAllContentletVersionInfos(identifiers).stream()
+                .map(ContentletVersionInfo::getWorkingInode)
+                .filter(UtilMethods::isSet)
+                .toList();
+        return findContentlets(workingInodes);
+    }
+
+    /**
+     * Identifier-only counterpart of
+     * {@link #invalidateRelatedContentCache(Contentlet, Relationship, boolean)} for callers that
+     * never hydrated the related contentlet. Clearing the per-instance related-content map is
+     * not needed in that case — readers always resolve related content through the API, so
+     * evicting the relationship cache entry is what keeps them consistent.
+     *
+     * @param contentletIdentifier Identifier of the contentlet whose cache entry is evicted
+     * @param relationship         The {@link Relationship} that changed
+     * @param hasParent            If the contentlet is the parent side, {@code true}
+     */
+    private void invalidateRelatedContentCache(final String contentletIdentifier,
+            final Relationship relationship, final boolean hasParent) {
+        if (!relationship.isRelationshipField()) {
+            return;
+        }
+        if (relationshipAPI.sameParentAndChild(relationship)) {
+            if (relationship.getParentRelationName() != null
+                    || relationship.getChildRelationName() != null) {
+                CacheLocator.getRelationshipCache().removeRelatedContentMap(contentletIdentifier);
+            }
+        } else if ((!hasParent && relationship.getParentRelationName() != null)
+                || (hasParent && relationship.getChildRelationName() != null)) {
+            CacheLocator.getRelationshipCache().removeRelatedContentMap(contentletIdentifier);
         }
     }
 
@@ -4977,45 +5134,45 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     respectFrontendRoles, related.getRecords());
 
             Tree newTree;
-            Set<Tree> uniqueRelationshipSet = new HashSet<>();
+            final Set<Tree> uniqueRelationshipSet = new HashSet<>();
 
-            List<Contentlet> conRels = getRelatedContentFromIndex(contentlet, relationship,
-                    related.isHasParent(), user, respectFrontendRoles);
-
-            int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1;
+            // Tree rows can survive the delete above: relationships to content the user cannot
+            // READ are preserved by deleteRelatedContent. New rows are appended after the
+            // highest surviving position so their relative order never collides with them;
+            // when nothing survived, positions simply start at 1
+            // The next position is only needed when this contentlet is the parent side: the
+            // child branch below positions its rows via positionInParent instead
+            int treePosition = related.isHasParent()
+                    ? TreeFactory.getNextTreeOrderByParentAndRelationType(
+                            contentlet.getIdentifier(), relationship.getRelationTypeValue())
+                    : 1;
             int positionInParent = 1;
-
-            for (Contentlet c : related.getRecords()) {
+            final List<Tree> treesToInsert = new ArrayList<>();
+            for (final Contentlet relatedContent : related.getRecords()) {
                 if (child) {
-                    for (Tree currentTree : contentParents) {
+                    for (final Tree currentTree : contentParents) {
                         if (currentTree.getRelationType()
-                                .equals(relationship.getRelationTypeValue()) && c.getIdentifier()
+                                .equals(relationship.getRelationTypeValue()) && relatedContent.getIdentifier()
                                 .equals(currentTree.getParent())) {
                             positionInParent = currentTree.getTreeOrder();
                         }
                     }
 
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(),
+                    newTree = new Tree(relatedContent.getIdentifier(), contentlet.getIdentifier(),
                             relationship.getRelationTypeValue(), positionInParent);
                 } else {
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(),
+                    newTree = new Tree(contentlet.getIdentifier(), relatedContent.getIdentifier(),
                             relationship.getRelationTypeValue(), treePosition);
                 }
                 positionInParent = positionInParent + 1;
 
                 if (uniqueRelationshipSet.add(newTree)) {
-                    final int newTreePosition = newTree.getTreeOrder();
-                    final Tree treeToUpdate = TreeFactory.getTree(newTree);
-                    treeToUpdate.setTreeOrder(newTreePosition);
-
-                    TreeFactory.saveTree(treeToUpdate != null && UtilMethods.isSet(
-                            treeToUpdate.getRelationType()) ? treeToUpdate : newTree);
-
+                    treesToInsert.add(newTree);
                     treePosition++;
                 }
-                invalidateRelatedContentCache(c, relationship, !related.isHasParent());
+                invalidateRelatedContentCache(relatedContent, relationship, !related.isHasParent());
             }
-
+            TreeFactory.insertTrees(treesToInsert);
             //If relationship field, related content cache must be invalidated
             invalidateRelatedContentCache(contentlet, relationship, related.isHasParent());
 
@@ -6713,8 +6870,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     final ContentletRelationshipRecords relationshipRecords = contentRelationships.new ContentletRelationshipRecords(
                             relationship, hasParent);
-                    relationshipRecords.getRecords()
-                            .addAll((List<Contentlet>) contentlet.get(field.variable()));
+                    // The contentlet map normally holds a List<Contentlet> for a relationship
+                    // field, but some flows (e.g. "Translate Manually" / saveDraft) leave the raw
+                    // comma-separated UUID String set by MapToContentletPopulator. Inspect the
+                    // runtime type and resolve the String via RelationshipUtil when needed.
+                    final Object fieldValue = contentlet.get(field.variable());
+                    if (fieldValue instanceof List) {
+                        relationshipRecords.getRecords().addAll((List<Contentlet>) fieldValue);
+                    } else if (fieldValue instanceof String && UtilMethods.isSet((String) fieldValue)) {
+                        try {
+                            relationshipRecords.getRecords().addAll(RelationshipUtil.filterContentlet(
+                                    contentlet.getLanguageId(), (String) fieldValue, user, false));
+                        } catch (DotDataException | DotSecurityException | DotStateException e) {
+                            Logger.warn(this, "Could not resolve relationship field '"
+                                    + field.variable() + "': " + e.getMessage());
+                        }
+                    }
 
                     contentRelationships.getRelationshipsRecords().add(relationshipRecords);
                 }
@@ -6781,6 +6952,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentlet.getBoolProperty(DO_NOT_UPDATE_TEMPLATES)) {
             return;
         }
+        // Template propagation is irrelevant for archived pages. Returning early here also guards
+        // against a DotDataException when an already-archived page version is checked in directly.
+        if (contentlet.isArchived()) {
+            return;
+        }
         if (UtilMethods.isSet(contentlet.getIdentifier())) {
 
             final Optional<com.dotcms.contenttype.model.field.Field> templateField = contentlet
@@ -6806,9 +6982,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 "Contentlet with ID '%s' has not been found: ",
                                 contentlet.getIdentifier()));
                     } else if (contentletByIdentifierAnyLanguageArchived.isArchived()) {
-                        throw new DotDataException(String.format(
-                                "Contentlet is currently marked as 'Archived'.",
-                                contentlet.getIdentifier()));
+                        Logger.warn(ESContentletAPIImpl.class, String.format(
+                                "Skipping template propagation: all existing versions of Contentlet"
+                                        + " '%s' are archived.", contentlet.getIdentifier()));
+                        return;
                     } else {
                         return;
                     }

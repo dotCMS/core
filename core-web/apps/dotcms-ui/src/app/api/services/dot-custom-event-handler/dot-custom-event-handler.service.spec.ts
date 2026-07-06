@@ -33,9 +33,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -52,7 +49,7 @@ import {
 
 import { DotCustomEventHandlerService } from './dot-custom-event-handler.service';
 
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../dot-menu.service';
@@ -94,10 +91,7 @@ describe('DotCustomEventHandlerService', () => {
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 UserModel,
                 StringUtils,
-                DotcmsEventsService,
                 LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,

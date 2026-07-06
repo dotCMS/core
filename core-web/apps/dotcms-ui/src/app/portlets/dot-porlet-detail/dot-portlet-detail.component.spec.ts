@@ -33,9 +33,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -49,7 +46,7 @@ import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -77,10 +74,7 @@ describe('DotPortletDetailComponent', () => {
                 DotFormatDateService,
                 UserModel,
                 StringUtils,
-                DotcmsEventsService,
                 LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,
@@ -117,7 +111,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should not have dot-workflow-task when parent route id is empty', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {
@@ -135,7 +128,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task when parent route id is workflow', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {
@@ -153,7 +145,6 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-contentlets when parent route id is content', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {

@@ -18,12 +18,8 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import {
-    DotcmsEventsServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 
@@ -82,7 +78,6 @@ describe('DotCreateContentletComponent', () => {
                 provide: DotRouterService,
                 useClass: MockDotRouterService
             },
-            { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -130,6 +125,22 @@ describe('DotCreateContentletComponent', () => {
         expect(routerService.goToContent).toHaveBeenCalledTimes(1);
         expect(dotIframeService.reloadData).toHaveBeenCalledWith('123-567');
         expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
+    });
+
+    it('should emit shutdown and redirect to Content Drive with un-prefixed params when coming from Content Drive', () => {
+        jest.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/c/content/new/');
+        jest.spyOn(routerService, 'currentPortlet', 'get').mockReturnValue({
+            url: 'c/content/new/blog?CD_path=/foo&CD_filters=bar',
+            id: 'content'
+        } as any);
+        spectator.detectChanges();
+        // Drive the wrapper's (shutdown) output so the close wiring is covered, not just onClose().
+        spectator.triggerEventHandler('dot-contentlet-wrapper', 'shutdown', {});
+        expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
+        expect(routerService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
+            queryParams: { path: '/foo', filters: 'bar' }
+        });
+        expect(routerService.goToContent).not.toHaveBeenCalled();
     });
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {

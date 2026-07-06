@@ -111,14 +111,15 @@
                 </td>
                 <td data-testId="item-status">
                     @if (!isFolder) {
-                        <dot-contentlet-status-chip [state]="item" />
+                        <dot-contentlet-status-badge [state]="item" />
                     }
                 </td>
                 <td data-testId="item-language">
                     @if (!isFolder) {
-                        <p-chip
-                            class="border-blue-100! bg-blue-100! text-xs text-blue-700!"
-                            [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
+                        <p-tag
+                            class="whitespace-nowrap"
+                            severity="info"
+                            [value]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
                 </td>
 
