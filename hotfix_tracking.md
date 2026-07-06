@@ -42,3 +42,4 @@ Release-25.07.10 LTS
 36. https://github.com/dotCMS/core/issues/35536 : Basic Auth plugin issue: SpeedyAssetServlet rejects anonymously-readable assets when an unrelated Basic Authorization header is present #35536
 37. https://github.com/dotCMS/core/issues/36147 : Saving contentlets with many-to-many relationship fields and large related-content volumes is extremely slow #36147
 38. https://github.com/dotCMS/core/issues/33784 : [DEFECT] Full cache flush shutdown h22 threadpool #33784
+39. https://github.com/dotCMS/core/issues/33645 : [DEFECT] NPE when fetching content via content api with depth 3 and high limit #33645
