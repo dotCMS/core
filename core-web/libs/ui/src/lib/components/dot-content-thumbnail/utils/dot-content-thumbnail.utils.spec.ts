@@ -192,7 +192,7 @@ describe('contentletToThumbnailModel', () => {
     });
 
     describe('svg', () => {
-        it('resolves the raw asset URL even when fieldVariable is set', () => {
+        it('resolves the raw vector through the fieldVariable (never the resized /dA path)', () => {
             const model = contentletToThumbnailModel(
                 createContentlet({ mimeType: 'image/svg+xml', hasTitleImage: true }),
                 { fieldVariable: 'asset' }
@@ -200,6 +200,32 @@ describe('contentletToThumbnailModel', () => {
 
             expect(model.type).toBe('svg');
             expect(model.src).toBe(`/contentAsset/image/${INODE}/asset`);
+        });
+
+        it('uses the FileAsset binary field for FileAsset SVGs (legacy hardcoded "asset" 404d)', () => {
+            const model = contentletToThumbnailModel(
+                createContentlet({
+                    mimeType: 'image/svg+xml',
+                    baseType: 'FILEASSET',
+                    contentType: 'FileAsset',
+                    titleImage: 'fileAsset'
+                }),
+                { fieldVariable: 'fileAsset' }
+            );
+
+            expect(model.src).toBe(`/contentAsset/image/${INODE}/fileAsset`);
+        });
+
+        it('falls back to titleImage and then to "asset" when no fieldVariable is given', () => {
+            const withTitleImage = contentletToThumbnailModel(
+                createContentlet({ mimeType: 'image/svg+xml', titleImage: 'fileAsset' })
+            );
+            const bare = contentletToThumbnailModel(
+                createContentlet({ mimeType: 'image/svg+xml' })
+            );
+
+            expect(withTitleImage.src).toBe(`/contentAsset/image/${INODE}/fileAsset`);
+            expect(bare.src).toBe(`/contentAsset/image/${INODE}/asset`);
         });
     });
 

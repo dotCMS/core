@@ -213,7 +213,15 @@ export function contentletToThumbnailModel(
     }
 
     if (mimeType === SVG_MIME_TYPE) {
-        return { type: 'svg', src: `/contentAsset/image/${inode}/asset`, icon, alt };
+        // Serve the raw vector through the binary field that actually holds it:
+        // 'fileAsset' for FileAssets, 'asset' for dotAssets (the legacy Stencil
+        // hardcoded 'asset' and 404'd -> icon for FileAsset SVGs)
+        return {
+            type: 'svg',
+            src: `/contentAsset/image/${inode}/${variable || 'asset'}`,
+            icon,
+            alt
+        };
     }
 
     // hasTitleImage is typed boolean but some endpoints return the string 'true'
