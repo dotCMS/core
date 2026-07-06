@@ -139,11 +139,18 @@ public class IndexAjaxAction extends AjaxAction {
 
 	}
 
-	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		if(UtilMethods.isSet(indexName))
-		    APILocator.getESIndexAPI().delete(indexName);
+		if(UtilMethods.isSet(indexName)) {
+			// Site-search indices go through the site-search subsystem (like activate/deactivate),
+			// not the content delete path — they are OS-aware with their own naming (issue #35640).
+			if(IndexType.SITE_SEARCH.is(indexName)){
+				APILocator.getSiteSearchAPI().deleteIndex(indexName);
+			} else {
+				APILocator.getESIndexAPI().delete(indexName);
+			}
+		}
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {

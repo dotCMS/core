@@ -1,8 +1,10 @@
 package com.dotcms.enterprise.publishing.sitesearch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
@@ -10,6 +12,7 @@ import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
@@ -192,6 +195,51 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
         }
 
         Logger.info(this, "✅ test_dualWriteBatchPutToIndex_allDocumentsReachOpenSearch passed");
+    }
+
+    /**
+     * Given Scenario: dual-write phase; a site-search index created via the router exists in both
+     *                 backends.
+     * When : {@code router.deleteIndex(IDX)} is called.
+     * Then : the index is removed from BOTH the ES and the OS cluster — a site-search delete mirrors
+     *        to both engines instead of being mistreated as a content index (issue #35640).
+     */
+    @Test
+    public void test_deleteIndex_removesFromBothBackends() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        final ESIndexAPI esIndex = ((IndexAPIImpl) APILocator.getESIndexAPI()).esImpl();
+        assertTrue("Pre: must exist in ES", esIndex.indexExists(IDX));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(IDX));
+
+        router.deleteIndex(IDX);
+
+        assertFalse("Site-search index must be gone from ES", esIndex.indexExists(IDX));
+        assertFalse("Site-search index must be gone from OS", osIndexAPI.indexExists(IDX));
+
+        Logger.info(this, "✅ test_deleteIndex_removesFromBothBackends passed");
+    }
+
+    /**
+     * Given Scenario: dual-write phase; a site-search index is created and activated (it becomes the
+     *                 default/active site-search index).
+     * When : {@code router.deleteIndex(IDX)} is called on the active index.
+     * Then : it is rejected with {@link DotStateException} and the index survives — the active
+     *        site-search index cannot be deleted (deactivate first), mirroring the content
+     *        active-index guard (issue #35640).
+     */
+    @Test
+    public void test_deleteIndex_activeIndex_isRejected() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        router.activateIndex(IDX);
+        try {
+            assertThrows(DotStateException.class, () -> router.deleteIndex(IDX));
+            assertTrue("Active site-search index must survive a rejected delete",
+                    osIndexAPI.indexExists(IDX));
+        } finally {
+            router.deactivateIndex(IDX);
+        }
+
+        Logger.info(this, "✅ test_deleteIndex_activeIndex_isRejected passed");
     }
 
     // =======================================================================

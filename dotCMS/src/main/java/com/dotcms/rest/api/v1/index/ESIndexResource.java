@@ -33,6 +33,7 @@ import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.domain.NodeStats;
@@ -394,6 +395,14 @@ public class ESIndexResource {
         // (issue #35640, TC-016).
         final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
 
+        // Site-search indices are a separate subsystem (their own OS-aware router, plain names,
+        // own siteSearch DB slot) and are NOT in listDotCMSIndices() — route them to the site-search
+        // API instead of the content delete path, which would mis-tag the OS name and orphan it
+        // (issue #35640).
+        if (IndexType.SITE_SEARCH.is(resolvedName)) {
+            return deleteSiteSearchIndex(request, response, init, resolvedName, indexName);
+        }
+
         if(indexDoesNotExist(resolvedName) ){
             // Readable 404 body (no stack trace) so a mistyped/nonexistent name is clear
             // (issue #35640, TC-017).
@@ -623,5 +632,42 @@ public class ESIndexResource {
      */
     private boolean indexDoesNotExist(final String indexName) {
         return !idxApi.listDotCMSIndices().contains(indexName) && !idxApi.listDotCMSClosedIndices().contains(indexName) ;
+    }
+
+    /**
+     * Deletes a site-search index through the site-search subsystem (its own ES/OS-aware router),
+     * translating its outcome to REST responses consistently with the content delete path:
+     * 404 when the index is unknown, 400 when it is the active index (deactivate first),
+     * 500 on an engine error. See issue #35640.
+     */
+    private Response deleteSiteSearchIndex(final HttpServletRequest request,
+            final HttpServletResponse response, final InitDataObject init,
+            final String resolvedName, final String requestedName) throws DotDataException {
+
+        final com.dotmarketing.sitesearch.business.SiteSearchAPI siteSearchAPI =
+                APILocator.getSiteSearchAPI();
+
+        if (!siteSearchAPI.listIndices().contains(resolvedName)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + requestedName)))).build();
+        }
+
+        try {
+            siteSearchAPI.deleteIndex(resolvedName);
+        } catch (final DotStateException e) {
+            Logger.warn(this, "Rejected deletion of site-search index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
+        } catch (final IOException | DotDataException e) {
+            Logger.error(this, "Error deleting site-search index '" + resolvedName + "': " + e.getMessage(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>(List.of(
+                            new ErrorEntity("INDEX_DELETE_ERROR", "Could not delete index: " + requestedName)))).build();
+        }
+
+        sendAdminMessage("Index:" + resolvedName + " deleted", MessageSeverity.INFO, init.getUser(), 5000);
+        return getIndexStatus(request, response);
     }
 }
