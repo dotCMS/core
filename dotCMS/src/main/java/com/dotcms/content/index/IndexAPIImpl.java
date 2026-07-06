@@ -14,6 +14,7 @@ import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -351,7 +352,34 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public Map<String, Integer> flushCaches(final List<String> indexNames) {
-        return router.writeReturning(impl -> impl.flushCaches(indexNames));
+        // Tag-dispatch (mirrors optimize): flush each provider only with the names it owns
+        // (OS → .os-tagged, ES → untagged). The list handed in comes from getIndices(), which in
+        // dual-write phases aggregates BOTH providers; passing that mixed list to a single
+        // provider made each hit index_not_found_exception on the other engine's names, so the
+        // OS cache flush depended on the .os names being present and was cross-contaminated with
+        // ES names (issue #35640). Skip a provider whose subset is empty so Phase 0 never
+        // contacts OS and Phase 3 never contacts ES. Shard counts are aggregated across the
+        // providers actually contacted.
+        if (indexNames == null || indexNames.isEmpty()) {
+            return ImmutableMap.of("failedShards", 0, "successfulShards", 0);
+        }
+        final Map<IndexTag, List<String>> byVendor = indexNames.stream()
+                .collect(Collectors.groupingBy(IndexTag::resolve));
+        int failedShards = 0;
+        int successfulShards = 0;
+        final List<String> esNames = byVendor.getOrDefault(IndexTag.ES, List.of());
+        if (!esNames.isEmpty()) {
+            final Map<String, Integer> esResult = router.esImpl().flushCaches(esNames);
+            failedShards += esResult.getOrDefault("failedShards", 0);
+            successfulShards += esResult.getOrDefault("successfulShards", 0);
+        }
+        final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
+        if (!osNames.isEmpty()) {
+            final Map<String, Integer> osResult = router.osImpl().flushCaches(osNames);
+            failedShards += osResult.getOrDefault("failedShards", 0);
+            successfulShards += osResult.getOrDefault("successfulShards", 0);
+        }
+        return ImmutableMap.of("failedShards", failedShards, "successfulShards", successfulShards);
     }
 
     // -------------------------------------------------------------------------

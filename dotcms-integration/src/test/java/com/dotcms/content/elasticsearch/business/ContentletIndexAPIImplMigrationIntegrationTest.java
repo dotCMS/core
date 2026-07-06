@@ -502,6 +502,36 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         Logger.info(this, "✅ delete Phase 1 by .os name — both removed: " + DUAL_WORKING);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters, so a
+     *                 real flush must reach the ES index (bare name) and the OS index ({@code .os}).
+     * When : flushCaches() is called with the mixed list (ES bare + OS {@code .os}), exactly as the
+     *        {@code /api/v1/esindex/cache} endpoint does via {@code listDotCMSIndices()}.
+     * Then : the call succeeds with NO failed shards — each engine is flushed only with the names
+     *        it owns, instead of every engine receiving the other's names and hitting
+     *        {@code index_not_found_exception} (issue #35640).
+     */
+    @Test
+    public void test_flushCaches_phase1_flushesBothEnginesWithoutCrossContamination()
+            throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        final List<String> mixed = List.of(DUAL_WORKING, IndexTag.OS.tag(DUAL_WORKING));
+        final Map<String, Integer> result = APILocator.getESIndexAPI().flushCaches(mixed);
+
+        assertNotNull(result);
+        assertEquals("No failed shards — no engine received the other's index names",
+                Integer.valueOf(0), result.get("failedShards"));
+        assertTrue("Both twins must still exist after a cache flush (flush is not a delete)",
+                esImpl().indexExists(DUAL_WORKING) && osIndexAPI.indexExists(physicalDualWorking));
+
+        Logger.info(this, "✅ flushCaches Phase 1 — both engines flushed cleanly: " + result);
+    }
+
     // =========================================================================
     // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
