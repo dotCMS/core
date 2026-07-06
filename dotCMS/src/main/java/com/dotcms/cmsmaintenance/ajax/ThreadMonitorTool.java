@@ -8,11 +8,9 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,20 +50,27 @@ public class ThreadMonitorTool{
 	/**
 	  *	Helper method; stringfies the ThreadInfos and returns them as a string array
 	*/
-	public String[] getThreads() {
+    public String[] getThreads() {
+        return getThreads(false);
+    }
+
+
+    public String[] getThreads(boolean hideSystemThreads) {
 
 		// Validate user has access to the CMS Maintenance Portlet
 		if (!validateUser()) {
 			throw new DotRuntimeException("User does not have access to the CMS Maintenance Portlet");
 		}
-		
-		ThreadMXBean mxBean = ManagementFactory.getThreadMXBean(); 
 
-	    StringBuilder sb = new StringBuilder();
-	    sb.append( "<pre>" );   
-	    sb.append("\n" + new Date() + "\n");
-	    sb.append( "Full thread dump "  + System.getProperty("java.vm.name")+ " " + System.getProperty("java.runtime.version") +   " (" + System.getProperty("java.vm.version") + " " + System.getProperty("java.vm.info")  + "):");
-	    sb.append( "\n\n" );    
+        ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+
+        StringBuilder mainString = new StringBuilder();
+        mainString.append("<pre>");
+        mainString.append("\n" + new Date() + "\n");
+        mainString.append("Full thread dump " + System.getProperty("java.vm.name") + " " + System.getProperty(
+                "java.runtime.version") + " (" + System.getProperty("java.vm.version") + " " + System.getProperty(
+                "java.vm.info") + "):");
+        mainString.append("\n\n");
 
 	    long[] deadLockedArray = mxBean.findDeadlockedThreads();
 	    Set<Long> deadlocks = new HashSet<>();
@@ -73,140 +78,141 @@ public class ThreadMonitorTool{
 	        for( long i : deadLockedArray ) {
 	            deadlocks.add(i);
 	        }
-	    }
+        }
 
 	    // Build a TID map for looking up more specific thread
 	    // information than provided by ThreadInfo
 	    Map<Long, Thread> threadMap = new HashMap<>();
 	    for( Thread t : Thread.getAllStackTraces().keySet() ) {
 	        threadMap.put( t.getId(), t );
-	    } 
+	    }
 
 
 	    ThreadInfo[] infos = mxBean.dumpAllThreads(true, true);
-	    
+
 	    Map<String, String> blockers = new HashMap<>();
-	    
-	    
-	    
-	    for( ThreadInfo info : infos ) {
-	        Thread thread = threadMap.get(info.getThreadId());           
+
+
+
+        for (ThreadInfo info : infos) {
+            StringBuilder builder = new StringBuilder();
+            Thread thread = threadMap.get(info.getThreadId());
 	        LockInfo lockInfo = info.getLockInfo();
 	        MonitorInfo[] monitors = info.getLockedMonitors() ;
 	        LockInfo[] locks= info.getLockedSynchronizers();
-	        
-	        
-	        if( thread == null ) continue;
-    
+
+
+            if (thread == null) {
+                continue;
+            }
+
 
 	        long tid = info.getThreadId();
-	       
 	        try{
 	        	Field f = Thread.class.getDeclaredField("eetop");
 	        	f.setAccessible(true);
 	        	Object x = f.get(thread);
 	        	tid = Long.parseLong(x.toString());
 	        }catch(Exception e){
-	        	
+
 	        }
-	        
-	        
-	        
-	        long nativeParkPointer = 0;
+
+
+            long nativeParkPointer = 0;
 	        try{
 	        	Field f = Thread.class.getDeclaredField("nativeParkEventPointer");
 	        	f.setAccessible(true);
 	        	Object x = f.get(thread);
 	        	nativeParkPointer = Long.parseLong(x.toString());
 	        }catch(Exception e){
-	        	
+
 	        }
-	        
-	        sb.append("\"");
-	        sb.append(info.getThreadName());
-	        sb.append("\"");
-	        sb.append(" ");
-        	sb.append(thread.isDaemon() ? "daemon " : "");
-        	sb.append(thread.isInterrupted() ? "interrupted " : "");
-        	sb.append("prio=" + thread.getPriority());        
-	        sb.append(" ");
-	        sb.append("tid=" + hexMe(tid));
+
+
+            builder.append("\"");
+            builder.append(info.getThreadName());
+            builder.append("\"");
+            builder.append(" ");
+            builder.append(thread.isDaemon() ? "daemon " : "");
+            builder.append(thread.isInterrupted() ? "interrupted " : "");
+            builder.append("prio=" + thread.getPriority());
+            builder.append(" ");
+            builder.append("tid=" + hexMe(tid));
 	        if((lockInfo!=null)  ){
-		        sb.append(" waiting on condition [");
-		        sb.append( hexMe(lockInfo.getIdentityHashCode()));
-		        sb.append("]");
+                builder.append(" waiting on condition [");
+                builder.append(hexMe(lockInfo.getIdentityHashCode()));
+                builder.append("]");
 	        }
-	        
-	        
-	        Object blocker =  java.util.concurrent.locks.LockSupport.getBlocker(thread);
+
+
+            Object blocker = java.util.concurrent.locks.LockSupport.getBlocker(thread);
 	        if(blocker !=null){
 	        //sb.append(" ");
 	       // sb.append("nativeParkPointer=" + hexMe(blocker.hashCode()));
 	        }
-	        
-	        
 
-	        
 
-	        
-	        sb.append("\n");
-	        
-	        sb.append("  java.lang.Thread.State: ");
-	        sb.append(thread.getState());
+            builder.append("\n");
+            builder.append("  java.lang.Thread.State: ");
+            builder.append(thread.getState());
 	        if(info.getStackTrace()!=null && info.getStackTrace().length>0){
 		        StackTraceElement first = info.getStackTrace()[0];
 		        if("sleep".equals(first.getMethodName())){
-		        	sb.append("  (sleeping)");
+                    builder.append("  (sleeping)");
 		        }else if("park".equals(first.getMethodName())){
-		        	sb.append("  (parking)");
+                    builder.append("  (parking)");
 		        }else if("wait".equals(first.getMethodName())){
-		        	sb.append("  (on object monitor)");
+                    builder.append("  (on object monitor)");
 		        }
 	        }
-	        
-	        sb.append("\n"); 
+
+
+            builder.append("\n");
 	        int i=0;
         	for(StackTraceElement trace : info.getStackTrace()){
 
-        		sb.append("\tat " + trace.toString() + "\n");
+                builder.append("\tat " + trace.toString() + "\n");
 
-        		
+
         		if(i==0 && lockInfo != null){
-        			
-        			if(thread.getState().equals(Thread.State.WAITING) || thread.getState().equals(Thread.State.TIMED_WAITING))
-        			sb.append("\t- waiting on " + lockInfo+ ")\n");
+
+
+                    if (thread.getState().equals(Thread.State.WAITING) || thread.getState()
+                            .equals(Thread.State.TIMED_WAITING)) {
+                        builder.append("\t- waiting on " + lockInfo + ")\n");
+                    }
         		}
-        		
-        		
-    	        if(monitors != null){
+
+
+                if (monitors != null) {
     	        	for(MonitorInfo mi : monitors){
     	        		if(i==mi.getLockedStackDepth()){
-    	        			sb.append("\t- locked <");
-    	        			sb.append(hexMe(mi.getIdentityHashCode()));
-    	        			sb.append("> (a ");
-    	        			sb.append(mi.getClassName());
-    	        			sb.append(")\n");
+                            builder.append("\t- locked <");
+                            builder.append(hexMe(mi.getIdentityHashCode()));
+                            builder.append("> (a ");
+                            builder.append(mi.getClassName());
+                            builder.append(")\n");
     	        		}
-    	        		
     	        	}
     	        }
-        		
 	        	i++;
 	        }
 
 
-
-	        sb.append( "\n" );
+            builder.append("\n");
 
 	        if( deadlocks.contains(info.getThreadId()) ) {
-	            sb.append( " ** Deadlocked **" );
-	            sb.append( "\n" );
+                builder.append(" ** Deadlocked **");
+                builder.append("\n");
 	        }
 
-	        sb.append( "\n" );
+            builder.append("\n");
+            if (!hideSystemThreads || builder.indexOf("com.dotmarketing") > 1 || builder.indexOf("com.dotcms") > 1) {
+                mainString.append(builder.toString());
+            }
 	    }
-	    sb.append( "</pre>" );   
-	    return new String[] {sb.toString()};    
+        mainString.append("</pre>");
+        return new String[]{mainString.toString()};
 
 	} // end of getThreadArray method
 
@@ -245,10 +251,10 @@ public class ThreadMonitorTool{
 		return sysProps;
 	}
 
-	
-	private String hexMe(long x){
-		
-		return String.format("0x%016X", x).toLowerCase();
-		
-	}
+
+    private String hexMe(long x) {
+
+        return String.format("0x%016X", x).toLowerCase();
+
+    }
 }
