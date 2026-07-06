@@ -1,6 +1,6 @@
 <dot-chip-filter
     [title]="'publishing-queue.filter.status' | dm"
-    [selections]="$selectedLabels()"
+    [selections]="$selected()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"
     data-testid="pq-status-filter-chip" />

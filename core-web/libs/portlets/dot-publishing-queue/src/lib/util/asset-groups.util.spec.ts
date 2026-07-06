@@ -45,11 +45,11 @@ describe('groupContentletAssetsByType', () => {
         expect(result.get('News')?.map((a) => a.asset)).toEqual(['c2', 'c4']);
     });
 
-    it('buckets contentlets with missing content_type_name under the empty-string key', () => {
+    it('skips contentlet assets with missing content_type_name (edit-URL cache collides otherwise)', () => {
         const result = groupContentletAssetsByType([
             asset({ asset: 'c1', content_type_name: undefined }),
             asset({ asset: 'c2', content_type_name: undefined })
         ]);
-        expect(result.get('')?.map((a) => a.asset)).toEqual(['c1', 'c2']);
+        expect(result.size).toBe(0);
     });
 });

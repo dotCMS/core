@@ -29,7 +29,6 @@ import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue
 
 @Component({
     selector: 'dot-publishing-queue-toolbar',
-    standalone: true,
     imports: [
         FormsModule,
         ButtonModule,
@@ -45,7 +44,7 @@ import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPublishingQueueToolbarComponent {
-    readonly store = inject(DotPublishingQueueStore);
+    protected readonly store = inject(DotPublishingQueueStore);
     readonly uploadClick = output<void>();
     readonly selectBundleClick = output<void>();
     readonly deleteClick = output<void>();

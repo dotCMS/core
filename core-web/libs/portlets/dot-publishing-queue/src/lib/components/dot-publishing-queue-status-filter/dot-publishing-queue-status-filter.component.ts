@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -67,7 +67,6 @@ interface StatusOption {
 
 @Component({
     selector: 'dot-publishing-queue-status-filter',
-    standalone: true,
     imports: [
         FormsModule,
         ListboxModule,
@@ -101,8 +100,6 @@ export class DotPublishingQueueStatusFilterComponent {
             .filter((opt) => opt.codes.every((c) => filter.has(c)))
             .map((opt) => opt.value);
     });
-
-    protected readonly $selectedLabels = computed(() => this.$selected());
 
     /** Exposed for the unit test that pins the source-of-truth invariant. */
     static readonly STATUS_ORDER = STATUS_ORDER;

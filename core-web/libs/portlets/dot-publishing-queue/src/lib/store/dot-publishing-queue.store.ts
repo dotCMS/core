@@ -186,7 +186,7 @@ export const DotPublishingQueueStore = signalStore(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { assetListStatus: 'loaded' });
+                        patchState(store, { assetListStatus: 'error' });
 
                         return EMPTY;
                     })
@@ -245,15 +245,17 @@ export const DotPublishingQueueStore = signalStore(
             service
                 .probeBundleDownload(bundleId)
                 .pipe(take(1))
-                .subscribe((canDownload) => {
-                    patchState(store, { canDownloadBundle: canDownload });
+                .subscribe({
+                    next: (canDownload) => patchState(store, { canDownloadBundle: canDownload }),
+                    error: () => patchState(store, { canDownloadBundle: false })
                 });
 
             service
                 .probeBundleManifest(bundleId)
                 .pipe(take(1))
-                .subscribe((canDownload) => {
-                    patchState(store, { canDownloadManifest: canDownload });
+                .subscribe({
+                    next: (canDownload) => patchState(store, { canDownloadManifest: canDownload }),
+                    error: () => patchState(store, { canDownloadManifest: false })
                 });
         }
 

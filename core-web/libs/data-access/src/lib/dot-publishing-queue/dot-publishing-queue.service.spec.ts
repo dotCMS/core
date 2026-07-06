@@ -49,7 +49,7 @@ describe('DotPublishingQueueService', () => {
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.method).toBe('GET');
             expect(req.request.params.get('status')).toBe(
-                `${PublishAuditStatus.WAITING_FOR_PUBLISHING},${PublishAuditStatus.BUNDLE_REQUESTED}`
+                `${PublishAuditStatus.BUNDLE_REQUESTED}`
             );
             expect(req.request.params.get('page')).toBe('2');
             expect(req.request.params.get('per_page')).toBe('25');
@@ -293,12 +293,11 @@ describe('DotPublishingQueueService', () => {
             });
         });
 
-        it('emits { blob, filename } parsed from content-disposition', (done) => {
-            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe(({ blob, filename }) => {
-                expect(blob).toBeInstanceOf(Blob);
-                expect(filename).toBe('b-1.tar.gz');
-                done();
-            });
+        it('emits { blob, filename } parsed from content-disposition', () => {
+            let result: { blob: Blob; filename: string } | undefined;
+            service
+                .generateBundle('b-1', '0', 'ForcePush.yml')
+                .subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             req.flush(new Blob(['x']), {
@@ -306,13 +305,16 @@ describe('DotPublishingQueueService', () => {
                 statusText: 'OK',
                 headers: { 'content-disposition': 'attachment; filename=b-1.tar.gz' }
             });
+
+            expect(result?.blob).toBeInstanceOf(Blob);
+            expect(result?.filename).toBe('b-1.tar.gz');
         });
 
-        it('strips surrounding quotes from the filename', (done) => {
-            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe(({ filename }) => {
-                expect(filename).toBe('b-1.tar.gz');
-                done();
-            });
+        it('strips surrounding quotes from the filename', () => {
+            let filename: string | undefined;
+            service
+                .generateBundle('b-1', '0', 'ForcePush.yml')
+                .subscribe((value) => (filename = value.filename));
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             req.flush(new Blob(['x']), {
@@ -320,17 +322,31 @@ describe('DotPublishingQueueService', () => {
                 statusText: 'OK',
                 headers: { 'content-disposition': 'attachment; filename="b-1.tar.gz"' }
             });
+
+            expect(filename).toBe('b-1.tar.gz');
         });
 
-        it('returns an empty filename when content-disposition is missing (still emits the blob)', (done) => {
-            service.generateBundle('b-1', '1', '').subscribe(({ blob, filename }) => {
-                expect(blob).toBeInstanceOf(Blob);
-                expect(filename).toBe('');
-                done();
-            });
+        it('returns an empty filename when content-disposition is missing (still emits the blob)', () => {
+            let result: { blob: Blob; filename: string } | undefined;
+            service.generateBundle('b-1', '1', '').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             req.flush(new Blob(['x']), { status: 200, statusText: 'OK' });
+
+            expect(result?.blob).toBeInstanceOf(Blob);
+            expect(result?.filename).toBe('');
+        });
+
+        it('throws when the response body is null (guards the Blob cast)', () => {
+            let error: Error | undefined;
+            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe({
+                error: (err) => (error = err)
+            });
+
+            const req = httpMock.expectOne('/api/bundle/_generate');
+            req.flush(null, { status: 204, statusText: 'No Content' });
+
+            expect(error?.message).toBe('Empty bundle-generate response body');
         });
 
         it('passes empty filterKey for unpublish operation', () => {
@@ -343,6 +359,36 @@ describe('DotPublishingQueueService', () => {
                 filterKey: ''
             });
             req.flush(new Blob(['x']), { status: 200, statusText: 'OK' });
+        });
+    });
+
+    describe('uploadBundle', () => {
+        it('POSTs multipart FormData with the file to /api/bundle/sync', () => {
+            const file = new File(['payload'], 'my-bundle.tar.gz', {
+                type: 'application/gzip'
+            });
+
+            service.uploadBundle(file).subscribe();
+
+            const req = httpMock.expectOne('/api/bundle/sync');
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toBeInstanceOf(FormData);
+            const body = req.request.body as FormData;
+            const stored = body.get('file') as File | null;
+            expect(stored).not.toBeNull();
+            expect(stored?.name).toBe('my-bundle.tar.gz');
+            req.flush({ bundleName: 'my-bundle', status: 'OK' });
+        });
+
+        it('propagates the { bundleName, status } response', () => {
+            const file = new File(['x'], 'b.tgz');
+            let result: { bundleName: string; status: string } | undefined;
+            service.uploadBundle(file).subscribe((value) => (result = value));
+
+            const req = httpMock.expectOne('/api/bundle/sync');
+            req.flush({ bundleName: 'b', status: 'ok' });
+
+            expect(result).toEqual({ bundleName: 'b', status: 'ok' });
         });
     });
 });

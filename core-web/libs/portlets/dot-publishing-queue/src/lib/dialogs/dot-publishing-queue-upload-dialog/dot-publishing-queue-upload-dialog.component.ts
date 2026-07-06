@@ -29,7 +29,6 @@ const BUNDLE_FILE_PATTERN = /\.(tar\.gz|tgz)$/i;
  */
 @Component({
     selector: 'dot-publishing-queue-upload-dialog',
-    standalone: true,
     imports: [ButtonModule, FileUploadModule, MessageModule, DotMessagePipe],
     templateUrl: './dot-publishing-queue-upload-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,7 +45,14 @@ export class DotPublishingQueueUploadDialogComponent {
 
     onFileSelect(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
-        this.selectedFile.set(this.isBundleFile(file) ? file : null);
+        if (file && !this.isBundleFile(file)) {
+            this.selectedFile.set(null);
+            this.errorMessage.set(
+                this.dotMessageService.get('publishing-queue.upload.warning.invalid-file-type')
+            );
+            return;
+        }
+        this.selectedFile.set(file);
         this.errorMessage.set(null);
     }
 

@@ -14,11 +14,16 @@ export function groupContentletAssetsByType(
 ): Map<string, BundleAssetView[]> {
     const groups = new Map<string, BundleAssetView[]>();
     for (const asset of assets) {
-        if (asset.type !== 'contentlet' || !asset.inode) {
+        if (asset.type !== 'contentlet' || !asset.inode || !asset.content_type_name) {
             continue;
         }
-        const key = asset.content_type_name ?? '';
-        groups.set(key, [...(groups.get(key) ?? []), asset]);
+        const key = asset.content_type_name;
+        const existing = groups.get(key);
+        if (existing) {
+            existing.push(asset);
+        } else {
+            groups.set(key, [asset]);
+        }
     }
     return groups;
 }

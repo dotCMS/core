@@ -12,7 +12,6 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
  * and close button; we only contribute the title + items-count pill. */
 @Component({
     selector: 'dot-publishing-queue-asset-list-dialog-header',
-    standalone: true,
     imports: [TagModule],
     template: `
         <div class="flex min-w-0 items-center gap-3">

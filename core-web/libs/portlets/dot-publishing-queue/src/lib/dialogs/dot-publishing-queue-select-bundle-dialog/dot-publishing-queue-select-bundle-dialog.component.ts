@@ -1,5 +1,6 @@
 import { EMPTY, Subject, forkJoin, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,7 +27,14 @@ import { TagModule } from 'primeng/tag';
 import { TieredMenu, TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, debounceTime, distinctUntilChanged, finalize, take } from 'rxjs/operators';
+import {
+    catchError,
+    debounceTime,
+    distinctUntilChanged,
+    finalize,
+    map,
+    take
+} from 'rxjs/operators';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 // `DotPushPublishFormComponent` lives in apps/dotcms-ui (not yet promoted to
@@ -103,7 +111,6 @@ const ASSETS_PER_PAGE = 10;
  */
 @Component({
     selector: 'dot-publishing-queue-select-bundle-dialog',
-    standalone: true,
     imports: [
         FormsModule,
         ButtonModule,
@@ -353,19 +360,33 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
         this.currentUserService
             .getCurrentUser()
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                catchError((error) => {
+                    this.httpErrorManager.handle(error);
+                    this.bundlesStatus.set('error');
+                    return EMPTY;
+                })
+            )
             .subscribe((user) => {
                 this.userId = user.userId;
                 this.loadBundles();
             });
 
         // Eager-load filters for the inline Download menu. We tolerate errors
-        // silently — the menu just falls back to a single "To Unpublish" leaf.
+        // silently for the UI — the menu falls back to a single "To Unpublish"
+        // leaf — but log the failure so ops can spot a broken filters endpoint.
         this.filtersService
             .get()
             .pipe(
                 take(1),
-                catchError(() => of([] as DotPushPublishFilter[]))
+                catchError((error) => {
+                    console.warn(
+                        '[dot-publishing-queue] Failed to load push-publish filters',
+                        error
+                    );
+                    return of([] as DotPushPublishFilter[]);
+                })
             )
             .subscribe((filters) => this.downloadFilters.set(filters));
     }
@@ -649,25 +670,44 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         this.isSending.set(true);
         forkJoin(
             ids.map((id) =>
-                this.publishingService.pushBundle(id, form).pipe(catchError(() => of(null)))
+                this.publishingService.pushBundle(id, form).pipe(
+                    map((result) => ({ bundleId: id, ok: true as const, result })),
+                    catchError((error: HttpErrorResponse) =>
+                        of({ bundleId: id, ok: false as const, error })
+                    )
+                )
             )
         )
             .pipe(
                 take(1),
                 finalize(() => this.isSending.set(false))
             )
-            .subscribe((results) => {
-                const failed = results.filter((r) => r === null).length;
+            .subscribe((outcomes) => {
+                const failed = outcomes.filter((o) => !o.ok);
 
-                if (failed === 0) {
+                if (failed.length === 0) {
                     this.dialogRef?.close();
                     return;
                 }
 
+                // Surface the first real error via the standard handler so the
+                // user sees a concrete reason (auth, business rule, server) —
+                // the count alone was previously the only signal.
+                const firstFailure = failed[0];
+                if (!firstFailure.ok) {
+                    this.httpErrorManager.handle(firstFailure.error);
+                }
+
+                // Drop the bundles that already succeeded from the checked set
+                // so a follow-up Send can't re-push them (was previously how a
+                // partial failure produced double pushes).
+                const failedIds = new Set(failed.map((o) => o.bundleId));
+                this.checkedBundleIds.update((prev) => prev.filter((id) => failedIds.has(id)));
+
                 this.globalMessage.error(
                     this.dotMessageService.get(
                         'publishing-queue.select-bundle.send-partial-fail',
-                        String(failed),
+                        String(failed.length),
                         String(ids.length)
                     )
                 );
@@ -766,30 +806,31 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         const groups = groupContentletAssetsByType(assets);
 
         for (const [contentType, group] of groups) {
-            // Prime the per-type cache with the first asset. Once that emits,
-            // the remaining calls in the same group hit the cache synchronously
-            // via `of(...)` — no additional HTTP.
-            const [head, ...rest] = group;
-            this.editUrlService
-                .resolveEditUrl({ inode: head.inode, contentType } as DotCMSContentlet)
-                .pipe(take(1))
-                .subscribe((headUrl) => {
-                    const patch = new Map<string, string>([[head.asset, headUrl]]);
-                    for (const asset of rest) {
-                        this.editUrlService
-                            .resolveEditUrl({
-                                inode: asset.inode,
-                                contentType
-                            } as DotCMSContentlet)
-                            .pipe(take(1))
-                            .subscribe((url) => patch.set(asset.asset, url));
+            // Prime the per-type cache with the first asset. Subsequent calls
+            // in the same group hit the cache and emit synchronously — no
+            // additional HTTP. `forkJoin` waits for all group resolutions
+            // before writing back atomically.
+            const perAsset$ = group.map((asset) =>
+                this.editUrlService
+                    .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
+                    .pipe(
+                        take(1),
+                        catchError(() => of('')),
+                        map((url) => [asset.asset, url] as const)
+                    )
+            );
+
+            forkJoin(perAsset$).subscribe((entries) => {
+                this.assetEditUrls.update((prev) => {
+                    const next = new Map(prev);
+                    for (const [key, url] of entries) {
+                        if (url) {
+                            next.set(key, url);
+                        }
                     }
-                    this.assetEditUrls.update((prev) => {
-                        const next = new Map(prev);
-                        for (const [k, v] of patch) next.set(k, v);
-                        return next;
-                    });
+                    return next;
                 });
+            });
         }
     }
 

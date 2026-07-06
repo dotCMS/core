@@ -57,10 +57,13 @@ export interface RetryBundlesPayload {
  * - `POST /api/bundle/sync` — synchronous .tar.gz upload (licensed)
  * - `GET /api/bundle/_download/{bundleId}` — bundle download (URL only)
  *
- * Push-to-environment flow is delegated to the project-wide push publish dialog
- * (`DotPushPublishDialogService.open(...)` from `@dotcms/dotcms-js`), which hits
- * the legacy `/DotAjaxDirector/.../cmd/pushBundle` endpoint via `PushPublishService`.
- * No bespoke push endpoint lives here.
+ * Two push paths exist:
+ * - Row-level "Configure & Send" delegates to the project-wide push publish
+ *   dialog (`DotPushPublishDialogService.open(...)` from `@dotcms/dotcms-js`),
+ *   which hits the legacy `/DotAjaxDirector/.../cmd/pushBundle` endpoint via
+ *   `PushPublishService`.
+ * - The Select Bundle dialog calls `pushBundle` (see below), which posts to
+ *   `POST /api/v1/publishing/push/{bundleId}` — the modern v1 REST endpoint.
  *
  * Bundle generate-and-download is delegated to the project-wide download dialog
  * (`DotDownloadBundleDialogService.open(bundleId)` from
@@ -217,12 +220,17 @@ export class DotPublishingQueueService {
                 }
             )
             .pipe(
-                map((response) => ({
-                    blob: response.body as Blob,
-                    filename: parseFilenameFromContentDisposition(
-                        response.headers.get('content-disposition')
-                    )
-                }))
+                map((response) => {
+                    if (!response.body) {
+                        throw new Error('Empty bundle-generate response body');
+                    }
+                    return {
+                        blob: response.body,
+                        filename: parseFilenameFromContentDisposition(
+                            response.headers.get('content-disposition')
+                        )
+                    };
+                })
             );
     }
 

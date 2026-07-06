@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, forkJoin, of } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -25,7 +25,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
 
 import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -39,7 +39,6 @@ const ASSET_SEARCH_THRESHOLD = 10;
 
 @Component({
     selector: 'dot-publishing-queue-asset-list-dialog',
-    standalone: true,
     imports: [
         FormsModule,
         ButtonModule,
@@ -58,7 +57,7 @@ const ASSET_SEARCH_THRESHOLD = 10;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPublishingQueueAssetListDialogComponent {
-    readonly store = inject(DotPublishingQueueStore);
+    protected readonly store = inject(DotPublishingQueueStore);
 
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
@@ -173,27 +172,27 @@ export class DotPublishingQueueAssetListDialogComponent {
         const groups = groupContentletAssetsByType(assets);
 
         for (const [contentType, group] of groups) {
-            const [head, ...rest] = group;
-            this.editUrlService
-                .resolveEditUrl({ inode: head.inode, contentType } as DotCMSContentlet)
-                .pipe(take(1))
-                .subscribe((headUrl) => {
-                    const patch = new Map<string, string>([[head.asset, headUrl]]);
-                    for (const asset of rest) {
-                        this.editUrlService
-                            .resolveEditUrl({
-                                inode: asset.inode,
-                                contentType
-                            } as DotCMSContentlet)
-                            .pipe(take(1))
-                            .subscribe((url) => patch.set(asset.asset, url));
+            const perAsset$ = group.map((asset) =>
+                this.editUrlService
+                    .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
+                    .pipe(
+                        take(1),
+                        catchError(() => of('')),
+                        map((url) => [asset.asset, url] as const)
+                    )
+            );
+
+            forkJoin(perAsset$).subscribe((entries) => {
+                this.assetEditUrls.update((prev) => {
+                    const next = new Map(prev);
+                    for (const [key, url] of entries) {
+                        if (url) {
+                            next.set(key, url);
+                        }
                     }
-                    this.assetEditUrls.update((prev) => {
-                        const next = new Map(prev);
-                        for (const [k, v] of patch) next.set(k, v);
-                        return next;
-                    });
+                    return next;
                 });
+            });
         }
     }
 

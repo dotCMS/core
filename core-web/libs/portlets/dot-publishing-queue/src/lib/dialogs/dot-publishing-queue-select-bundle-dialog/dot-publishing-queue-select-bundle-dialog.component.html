@@ -89,7 +89,7 @@
                             data-testid="pq-select-bundle-list">
                             <ng-template pTemplate="header">
                                 <tr>
-                                    <th style="width: 3rem">
+                                    <th class="w-12">
                                         <p-tableHeaderCheckbox />
                                     </th>
                                     <th
@@ -227,11 +227,10 @@
                                         {{ 'publishing-queue.select-bundle.col.name' | dm }}
                                     </th>
                                     <th
-                                        style="width: 10rem"
-                                        class="text-color-secondary text-xs font-semibold tracking-wide uppercase">
+                                        class="text-color-secondary w-40 text-xs font-semibold tracking-wide uppercase">
                                         {{ 'publishing-queue.select-bundle.col.type' | dm }}
                                     </th>
-                                    <th style="width: 5rem"></th>
+                                    <th class="w-20"></th>
                                 </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-asset>

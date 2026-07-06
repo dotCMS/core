@@ -43,7 +43,6 @@ export interface MetaRow {
 
 @Component({
     selector: 'dot-publishing-queue-bundle-details-dialog',
-    standalone: true,
     imports: [
         DatePipe,
         ButtonModule,
@@ -56,7 +55,7 @@ export interface MetaRow {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPublishingQueueBundleDetailsDialogComponent {
-    readonly store = inject(DotPublishingQueueStore);
+    protected readonly store = inject(DotPublishingQueueStore);
 
     private readonly publishingService = inject(DotPublishingQueueService);
     private readonly dotMessageService = inject(DotMessageService);

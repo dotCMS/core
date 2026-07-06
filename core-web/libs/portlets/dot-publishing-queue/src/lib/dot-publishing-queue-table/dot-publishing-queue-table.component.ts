@@ -64,7 +64,6 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
 
 @Component({
     selector: 'dot-publishing-queue-table',
-    standalone: true,
     imports: [
         DatePipe,
         ButtonModule,
@@ -86,7 +85,7 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
     host: { class: 'flex flex-col h-full min-h-0 flex-1' }
 })
 export class DotPublishingQueueTableComponent {
-    readonly store = inject(DotPublishingQueueStore);
+    protected readonly store = inject(DotPublishingQueueStore);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly clipboard = inject(DotClipboardUtil);
@@ -225,11 +224,12 @@ export class DotPublishingQueueTableComponent {
         // fetch goes out with the new size. The store's effect debounces both
         // patches into a single `loadBundles` call.
         //
-        // Sort handling is intentionally omitted: the `/api/v1/publishing`
-        // endpoint does not accept a `sort` query param (the BE always returns
-        // rows by `status_updated DESC`), so there are no `pSortableColumn`
-        // directives in the template — PrimeNG never emits a sortField change.
-        // Re-add the sort branch here when the BE gains the param.
+        // Sort handling is intentionally NOT translated from this lazy-load
+        // event: the sortable header buttons dispatch `cycleBundlesSort` on the
+        // store directly (see the template's header cells), which drives the
+        // `bundlesSort` / `bundlesSortDirection` state and its refetch effect.
+        // The p-table lazy-load event doesn't carry that state, so relying on
+        // its `sortField` here would double-fire the load.
         if (rows !== this.store.rowsPerPage()) {
             this.store.setRowsPerPage(rows);
         } else if (page !== this.store.bundlesPage()) {

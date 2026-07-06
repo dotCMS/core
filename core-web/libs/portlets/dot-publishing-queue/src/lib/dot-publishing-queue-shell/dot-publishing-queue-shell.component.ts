@@ -32,7 +32,6 @@ const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
 
 @Component({
     selector: 'dot-publishing-queue-shell',
-    standalone: true,
     imports: [
         ConfirmDialogModule,
         DotPublishingQueueToolbarComponent,
@@ -44,8 +43,7 @@ const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
     host: { class: 'flex flex-col h-full min-h-0 block' }
 })
 export class DotPublishingQueueShellComponent {
-    readonly store = inject(DotPublishingQueueStore);
-
+    private readonly store = inject(DotPublishingQueueStore);
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);

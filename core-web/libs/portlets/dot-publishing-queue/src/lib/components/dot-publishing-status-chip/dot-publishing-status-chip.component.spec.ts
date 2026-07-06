@@ -70,37 +70,34 @@ describe('DotPublishingStatusChipComponent', () => {
         expect(spectator.query(byTestId('pq-status-chip'))).toBeFalsy();
     });
 
-    it('renders green classes for success bucket', () => {
+    it('exposes success severity for SUCCESS status', () => {
         spectator = createComponent({ props: { status: PublishAuditStatus.SUCCESS } });
         spectator.detectChanges();
-        const chip = spectator.query(byTestId('pq-status-chip'));
-        expect(chip?.classList.contains('bg-green-100!')).toBe(true);
-        expect(chip?.classList.contains('text-green-700!')).toBe(true);
-        expect(chip?.textContent?.trim()).toContain('Success');
+        expect(spectator.query(byTestId('pq-status-chip'))?.textContent?.trim()).toContain(
+            'Success'
+        );
+        expect(spectator.component.$bucket()).toBe('success');
     });
 
-    it('renders red classes for danger bucket', () => {
+    it('exposes danger severity for FAILED_TO_PUBLISH status', () => {
         spectator = createComponent({
             props: { status: PublishAuditStatus.FAILED_TO_PUBLISH }
         });
         spectator.detectChanges();
-        const chip = spectator.query(byTestId('pq-status-chip'));
-        expect(chip?.classList.contains('bg-red-100!')).toBe(true);
+        expect(spectator.component.$bucket()).toBe('danger');
     });
 
-    it('renders yellow classes for warning bucket (in-flight)', () => {
+    it('exposes warning severity for BUNDLING status (in-flight)', () => {
         spectator = createComponent({ props: { status: PublishAuditStatus.BUNDLING } });
         spectator.detectChanges();
-        const chip = spectator.query(byTestId('pq-status-chip'));
-        expect(chip?.classList.contains('bg-yellow-100!')).toBe(true);
+        expect(spectator.component.$bucket()).toBe('warning');
     });
 
-    it('renders blue classes for info bucket (waiting)', () => {
+    it('exposes info severity for WAITING_FOR_PUBLISHING status', () => {
         spectator = createComponent({
             props: { status: PublishAuditStatus.WAITING_FOR_PUBLISHING }
         });
         spectator.detectChanges();
-        const chip = spectator.query(byTestId('pq-status-chip'));
-        expect(chip?.classList.contains('bg-blue-100!')).toBe(true);
+        expect(spectator.component.$bucket()).toBe('info');
     });
 });
