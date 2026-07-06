@@ -86,7 +86,6 @@ const EMPTY_THUMBNAIL: DotContentThumbnail = {
                     (failed)="onFailed()"
                     [src]="model.src"
                     [alt]="model.alt"
-                    [fit]="$type() === 'svg' ? 'contain' : 'cover'"
                     [class.thumbnail-media--hidden]="$state() === 'loading'"
                     class="thumbnail-media" />
             }

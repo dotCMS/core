@@ -109,7 +109,7 @@ describe('DotContentThumbnailComponent', () => {
     });
 
     describe('rendering by type', () => {
-        it('renders an image with object-cover for type image', () => {
+        it('renders a cover-fit image for type image', () => {
             create(IMAGE_THUMBNAIL);
 
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
@@ -117,25 +117,25 @@ describe('DotContentThumbnailComponent', () => {
             expect(img).toBeTruthy();
             expect(img.getAttribute('src')).toBe(IMAGE_THUMBNAIL.src);
             expect(img.getAttribute('alt')).toBe(IMAGE_THUMBNAIL.alt);
-            expect(img.classList).not.toContain('thumbnail-image--contain');
+            expect(img.classList).toContain('thumbnail-image');
         });
 
-        it('renders an image with object-contain for type svg', () => {
+        it('renders svg like any other image (cover fit, raw vector src)', () => {
             create(SVG_THUMBNAIL);
 
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
 
             expect(img.getAttribute('src')).toBe(SVG_THUMBNAIL.src);
-            expect(img.classList).toContain('thumbnail-image--contain');
+            expect(img.classList).toContain('thumbnail-image');
         });
 
-        it('renders an image with object-cover for type pdf', () => {
+        it('renders a cover-fit image for type pdf', () => {
             create(PDF_THUMBNAIL);
 
             const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
 
             expect(img.getAttribute('src')).toBe(PDF_THUMBNAIL.src);
-            expect(img.classList).not.toContain('thumbnail-image--contain');
+            expect(img.classList).toContain('thumbnail-image');
         });
 
         it('renders a video with controls when playable', () => {

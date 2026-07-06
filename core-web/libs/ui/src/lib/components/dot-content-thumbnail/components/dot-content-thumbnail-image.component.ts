@@ -18,7 +18,6 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
             [src]="$src()"
             [alt]="$alt()"
             [title]="$alt()"
-            [class.thumbnail-image--contain]="$fit() === 'contain'"
             class="thumbnail-image"
             data-testId="dot-content-thumbnail-image" />
     `,
@@ -34,17 +33,12 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
             width: 100%;
             object-fit: cover;
         }
-
-        .thumbnail-image--contain {
-            object-fit: contain;
-        }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentThumbnailImageComponent {
     $src = input.required<string>({ alias: 'src' });
     $alt = input<string>('', { alias: 'alt' });
-    $fit = input<'cover' | 'contain'>('cover', { alias: 'fit' });
 
     loaded = output<void>();
     failed = output<void>();
