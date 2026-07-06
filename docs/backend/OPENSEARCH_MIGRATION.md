@@ -647,33 +647,37 @@ rollback, with no impact on normal operation.
 
 ### ⚠ Open issue — fan-out error handling with divergent index names
 
-**Status: unresolved — test coverage needed.**
+**Status: resolved for `ContentletIndexAPIImpl.delete()` (#36423, #36430); still open for other
+fan-out methods.**
 
 When a public method on an `@IndexRouter`-annotated class accepts an index name and the current
-migration phase requires fan-out to both providers, there is no agreed-upon error handling strategy
-for the case where the supplied name exists in one provider but not the other.
+migration phase requires fan-out to both providers, the supplied name may exist in one provider
+but not the other. This is highly likely in production: ES and OS do **not** always hold indices
+with the same logical name (see "Index name divergence between providers" above). An ES-resolved
+name passed to an OS fan-out will produce a 404 or provider-level exception.
 
-This is highly likely in production: ES and OS do **not** always hold indices with the same logical
-name (see "Index name divergence between providers" above). An ES-resolved name passed to an OS
-fan-out will produce a 404 or provider-level exception.
+**Decided semantics for `delete()`** (QA #36219, TC-041):
 
-**The gap:** The `IndexTag`-overloaded pattern handles the *routing* decision, but not the *failure*
-semantics when the wrong name is inadvertently passed to the wrong provider. Current code
-fire-and-forgets OS errors in dual-write phases, which means a 404 on OS may be silently swallowed
-even though it signals that the caller passed an incorrect index name rather than a transient
-cluster error.
+- An explicitly **tagged name is tag-dispatched** to its owning provider and never fanned out
+  (per "Why tagged names don't fan out" above).
+- For a bare-name fan-out, the **shadow leg skips** names its engine does not hold (exists-check)
+  and logs the skip through the shadow-write policy (`DOTCMS_SHADOW_WRITE_LOG_LEVEL`, default
+  WARN) — an expected divergent-name miss is not an ERROR.
+- Genuine shadow failures stay fire-and-forget (policy-level log); **primary failures propagate**
+  to the caller (#36430) — matching the `PhaseRouter.writeBoolean` contract.
+- Covered in `OpenSearchUpgradeSuite` by `ContentletIndexAPIImplMigrationIntegrationTest`
+  (name only in ES, only in OS via tag-dispatch, paired, and name-in-neither propagation).
 
-**What needs to happen before this is production-safe:**
+**Still open for other fan-out methods** (e.g. mapping and lifecycle operations):
 
-- Define whether a "wrong index name" error on OS in dual-write phases should: (a) be swallowed
-  like other OS shadow errors, (b) log at ERROR severity with a distinct message, or (c) propagate.
-- Write test cases in `OpenSearchUpgradeSuite` that cover: fan-out with a name that exists only in
-  ES, fan-out with a name that exists only in OS, and fan-out with a name that exists in neither.
+- The same "expected miss vs. genuine failure" distinction has not been applied outside
+  `delete()`; a 404 on OS may still be silently swallowed where it signals a caller bug rather
+  than a transient cluster error.
 - Verify that `loadProviderIndices` / `ProviderIndices` correctly returns `null` (skip) for a
   provider whose store has no record yet, rather than silently passing a stale or wrong name.
 
-Until test coverage exists for these scenarios, treat any public `@IndexRouter` method that accepts
-a raw index name string in dual-write phases as **untested for the name-mismatch case**.
+Until test coverage exists for those scenarios, treat other public `@IndexRouter` methods that
+accept a raw index name string in dual-write phases as **untested for the name-mismatch case**.
 
 ---
 

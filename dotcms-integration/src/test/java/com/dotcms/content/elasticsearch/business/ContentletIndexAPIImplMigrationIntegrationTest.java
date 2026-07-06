@@ -444,6 +444,59 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         Logger.info(this, "✅ delete Phase 1 — both removed: " + DUAL_WORKING);
     }
 
+    /**
+     * Given Scenario: Phase 1 (dual-write) with divergent names — {@code ES_WORKING} exists
+     *                 only in the legacy set; there is no {@code .os} sibling for it
+     *                 (the normal state after a migration catchup deployment).
+     * When : {@code delete(ES_WORKING)} is called with the bare logical name.
+     * Then : the ES index is removed and the call reports success; the shadow leg is skipped
+     *        (no delete attempt against a {@code .os} name that does not exist), so no
+     *        ERROR-level index_not_found noise is produced (#36423). Works in single-cluster
+     *        mode because the missing {@code .os} physical name is distinct from the bare name.
+     */
+    @Test
+    public void test_delete_phase1_bareNameOnlyInEs_skipsShadowAndSucceeds() {
+        setPhase(1);
+
+        assertTrue("Pre: bare name must exist in the legacy set", esImpl().indexExists(ES_WORKING));
+        assertFalse("Pre: no .os sibling may exist",
+                osIndexAPI.indexExists(opsOS.toPhysicalName(ES_WORKING)));
+
+        final boolean deleted = contentletIndexAPI().delete(ES_WORKING);
+
+        assertTrue("Primary delete must report success despite the missing .os sibling", deleted);
+        assertFalse("ES index must be gone after delete", esImpl().indexExists(ES_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — bare-only-in-ES removed, shadow skipped: " + ES_WORKING);
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both sets
+     *                 (bare in ES, {@code .os}-tagged in OS).
+     * When : {@code delete(...)} is called with the explicitly {@code .os}-tagged name.
+     * Then : the delete is tag-dispatched to the OS provider only (see {@code IndexTag}):
+     *        the {@code .os} index is removed and the ES bare index is left untouched —
+     *        ES is never asked to delete a physical {@code .os} name it can never hold (#36423).
+     */
+    @Test
+    public void test_delete_phase1_osTaggedName_tagDispatchedToOsOnly() throws IOException, DotIndexException {
+        setPhase(1);
+
+        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
+        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
+
+        final boolean deleted = contentletIndexAPI().delete(IndexTag.OS.tag(DUAL_WORKING));
+
+        assertTrue("Tag-dispatched OS delete must report success", deleted);
+        assertFalse("OS .os index must be gone after the tag-dispatched delete",
+                osIndexAPI.indexExists(physicalDualWorking));
+        assertTrue("ES bare index must be untouched by a .os-tagged delete",
+                esImpl().indexExists(DUAL_WORKING));
+
+        Logger.info(this, "✅ delete Phase 1 — .os name tag-dispatched to OS only: " + DUAL_WORKING);
+    }
+
     // =========================================================================
     // Orphan bootstrap repair — bare cluster index missing from the store (#36237)
     // =========================================================================
