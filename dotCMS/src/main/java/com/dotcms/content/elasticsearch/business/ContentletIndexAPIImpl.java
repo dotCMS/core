@@ -1678,21 +1678,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
 
     /**
-     * Controls whether {@link #delete(String)} cascades to the index's twin in the other engine.
-     * On by default. The cascade is <strong>bidirectional</strong>: deleting a logical index by
-     * either its ES (bare) name or its OpenSearch ({@code .os}) name removes the index in every
-     * engine that holds it in the current phase (ES + OS twin during dual-write).
-     * <ul>
-     *   <li><strong>true (default)</strong> — delete both twins together, so neither engine is
-     *       left with an orphan copy.</li>
-     *   <li><strong>false</strong> — tag-dispatched, single engine only: a {@code .os} name
-     *       deletes OpenSearch, any other name deletes Elasticsearch; the twin is left intact
-     *       (issue #35640, TC-016).</li>
-     * </ul>
-     */
-    public static final String FF_INDEX_DELETE_CASCADE = "FEATURE_FLAG_INDEX_DELETE_CASCADE";
-
-    /**
      * Rejects deletion of an index that is currently active (working/live) or being
      * rebuilt (a reindex slot). The protected set is resolved phase-aware via
      * {@link #getCurrentIndex()} and {@link #getNewIndex()} — the same sources the
@@ -1739,26 +1724,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Guard first: never delete an active/building index (issue #35640, TC-018).
         assertIndexIsDeletable(indexName);
 
-        // Bidirectional cascade (default): deleting by either the ES (bare) or OS (.os) name
-        // removes the index in every engine that holds it. When disabled, only the engine that
-        // owns the given name is touched. See FF_INDEX_DELETE_CASCADE (issue #35640, TC-016).
-        final boolean cascade = Config.getBooleanProperty(FF_INDEX_DELETE_CASCADE, true);
-        final ContentletIndexOperations primary;
-        final List<ContentletIndexOperations> targets;
-        final String nameForTargets;
-        if (cascade) {
-            // Broadcast the LOGICAL (untagged) name to every write provider so each re-derives
-            // its OWN physical name (ES → bare, OS → .os) and both twins are removed regardless
-            // of which name the caller passed. Track the read provider's result as the primary.
-            primary = router.readProvider();
-            targets = router.writeProviders();
-            nameForTargets = IndexTag.OS.untag(indexName);
-        } else {
-            // Tag-dispatched, single engine: .os → OS, otherwise ES. The twin is left intact.
-            primary = IndexTag.OS.isTagged(indexName) ? router.osImpl() : router.esImpl();
-            targets = List.of(primary);
-            nameForTargets = indexName;
-        }
+        // Transparent-mirror: the operator sees one index, so deleting by either the ES (bare)
+        // or the OS (.os) name removes the index in EVERY engine that holds it — the mirror is
+        // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
+        // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
+        // provider's result as the primary (issue #35640).
+        final ContentletIndexOperations primary = router.readProvider();
+        final List<ContentletIndexOperations> targets = router.writeProviders();
+        final String nameForTargets = IndexTag.OS.untag(indexName);
 
         // The logical (cluster-stripped, untagged) name is used to find and clear DB pointers.
         final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));

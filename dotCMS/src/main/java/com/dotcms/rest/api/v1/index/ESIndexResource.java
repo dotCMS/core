@@ -256,7 +256,7 @@ public class ESIndexResource {
         message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
-        return Response.ok(new ResponseEntityView(data)).build();
+        return Response.ok(new ResponseEntityView<>(data)).build();
 
     }
 

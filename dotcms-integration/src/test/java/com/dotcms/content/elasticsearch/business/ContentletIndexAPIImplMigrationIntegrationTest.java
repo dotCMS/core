@@ -446,38 +446,6 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
 
     /**
      * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
-     * When : cascade is disabled ({@code FEATURE_FLAG_INDEX_DELETE_CASCADE=false}) and
-     *        {@code delete(DUAL_WORKING)} is called with the BARE (ES) name.
-     * Then : only the ES index is removed; the OS {@code .os} twin is left intact. This is the
-     *        tag-dispatched, no-cascade behavior gated by the feature flag (issue #35640, TC-016).
-     *        Works in single-cluster mode because the OS physical name carries the {@code .os} tag.
-     */
-    @Test
-    public void test_delete_phase1_cascadeOff_removesOnlyNamedEngine()
-            throws IOException, DotIndexException {
-        setPhase(1);
-
-        contentletIndexAPI().createContentIndex(DUAL_WORKING, 1);
-        assertTrue("Pre: must exist in ES", esImpl().indexExists(DUAL_WORKING));
-        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(physicalDualWorking));
-
-        Config.setProperty(ContentletIndexAPIImpl.FF_INDEX_DELETE_CASCADE, false);
-        try {
-            contentletIndexAPI().delete(DUAL_WORKING); // bare name → tag-dispatched to ES only
-        } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_INDEX_DELETE_CASCADE, true);
-        }
-
-        assertFalse("ES index must be gone (it was the named engine)",
-                esImpl().indexExists(DUAL_WORKING));
-        assertTrue("OS .os twin must survive with cascade off",
-                osIndexAPI.indexExists(physicalDualWorking));
-
-        Logger.info(this, "✅ delete Phase 1 cascade OFF — only ES removed: " + DUAL_WORKING);
-    }
-
-    /**
-     * Given Scenario: Phase 1 (dual-write). {@code DUAL_WORKING} exists in both clusters.
      * When : {@code delete()} is called with the {@code .os}-tagged name (as the QA/preview UI
      *        shows the OS index), with cascade on (default).
      * Then : BOTH twins are removed — the cascade is bidirectional, so deleting by the OS name
