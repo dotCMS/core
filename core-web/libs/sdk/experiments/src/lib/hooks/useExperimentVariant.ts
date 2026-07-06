@@ -39,7 +39,6 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
 
         // If variantId is not provided, show content and warn
         if (!variantId) {
-            // eslint-disable-next-line no-console
             console.warn(
                 '[DotExperiments] variantId is required but missing. ' +
                     'Please ensure the page data includes variantId in viewAs. ' +

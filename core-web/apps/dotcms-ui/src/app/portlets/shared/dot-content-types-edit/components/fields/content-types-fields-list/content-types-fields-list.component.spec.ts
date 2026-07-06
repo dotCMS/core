@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { of } from 'rxjs';
 

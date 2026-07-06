@@ -1,11 +1,13 @@
 package com.dotcms.content.index;
 
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -325,6 +327,127 @@ public class PhaseRouterTest {
     }
 
     // =========================================================================
+    // read() / readChecked() — single-provider read with Phase-2 ES fallback
+    // Used by: SearchAPIImpl.search(), searchRaw(), searchRelated()
+    //
+    // TC-030 (L-5): in Phase 2 OS is the read provider but ES is still active.
+    // If OS throws, the router logs "OS read failed in Phase 2 — falling back to ES"
+    // and retries the read against ES, so a transient OS failure never surfaces.
+    // No fallback exists in phases 0/1 (read from ES) or phase 3 (ES decommissioned).
+    // =========================================================================
+
+    /**
+     * Given Scenario: Phase 2 (OS reads, ES still active). OS.search() throws; ES.search() succeeds.
+     * When : read() delegates the search.
+     * Then : the call does NOT throw and returns the ES fallback result. Both providers are called
+     *        (OS first, then ES). This is the core TC-030 safety mechanism for {@code read()}.
+     */
+    @Test
+    public void test_read_phase2_osFailure_fallsBackToEs() {
+        final AtomicBoolean osCalled = new AtomicBoolean();
+        final AtomicBoolean esCalled = new AtomicBoolean();
+
+        final Supplier<String> osRead = () -> {
+            osCalled.set(true);
+            throw new RuntimeException("OS read failed — index stale or unavailable");
+        };
+        final Supplier<String> esRead = () -> {
+            esCalled.set(true);
+            return "es-result";
+        };
+
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(esRead, osRead);
+        setPhase(2);
+
+        final String result = router.read(Supplier::get);
+
+        assertEquals("Phase-2 read must fall back to the ES result when OS throws",
+                "es-result", result);
+        assertTrue("OS (read provider) must be attempted first", osCalled.get());
+        assertTrue("ES (fallback) must be called after the OS failure", esCalled.get());
+    }
+
+    /**
+     * Given Scenario: Phase 2. OS.search() throws a checked exception; ES.search() succeeds.
+     * When : readChecked() delegates the search (this is the path {@code SearchAPIImpl.search()} uses).
+     * Then : the checked call does NOT throw and returns the ES fallback result.
+     */
+    @Test
+    public void test_readChecked_phase2_osFailure_fallsBackToEs() throws Exception {
+        final AtomicBoolean osCalled = new AtomicBoolean();
+        final AtomicBoolean esCalled = new AtomicBoolean();
+
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { esCalled.set(true); return "es-result"; },
+                () -> {
+                    osCalled.set(true);
+                    throw new DotDataException("OS read failed in Phase 2");
+                });
+        setPhase(2);
+
+        final String result = router.readChecked(CheckedSupplier::get);
+
+        assertEquals("Phase-2 checked read must fall back to ES when OS throws",
+                "es-result", result);
+        assertTrue("OS (read provider) must be attempted first", osCalled.get());
+        assertTrue("ES (fallback) must be called after the OS failure", esCalled.get());
+    }
+
+    /**
+     * Given Scenario: Phase 2. Both OS (primary read) and ES (fallback) fail.
+     * When : readChecked() delegates the search.
+     * Then : the fallback is exhausted — the ES exception propagates to the caller.
+     */
+    @Test
+    public void test_readChecked_phase2_bothFail_esExceptionPropagates() {
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { throw new DotDataException("ES also unavailable"); },
+                () -> { throw new DotDataException("OS read failed in Phase 2"); });
+        setPhase(2);
+
+        final Exception thrown = assertThrows(Exception.class,
+                () -> router.readChecked(CheckedSupplier::get));
+        assertTrue("the ES (fallback) failure must be the one that surfaces",
+                thrown.getMessage().contains("ES also unavailable"));
+    }
+
+    /**
+     * Given Scenario: Phase 3 (OS only, ES decommissioned). OS.search() throws.
+     * When : read() delegates the search.
+     * Then : there is NO fallback — the OS exception propagates and ES is never contacted.
+     *        Confirms the fallback is strictly Phase-2 scoped.
+     */
+    @Test
+    public void test_read_phase3_osFailure_propagates_esNeverCalled() {
+        final Supplier<String> esRead = () -> { fail("ES must NOT be called in Phase 3"); return null; };
+        final Supplier<String> osRead = () -> { throw new RuntimeException("OS read failed"); };
+
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(esRead, osRead);
+        setPhase(3);
+
+        assertThrows(RuntimeException.class, () -> router.read(Supplier::get));
+    }
+
+    /**
+     * Given Scenario: Phase 1 (dual-write, ES reads). ES is the read provider.
+     * When : read() delegates the search.
+     * Then : the result comes from ES and OS is never contacted — there is no read-path fan-out
+     *        and no spurious fallback in phases 0/1.
+     */
+    @Test
+    public void test_read_phase1_readsFromEs_osNeverCalled() {
+        final AtomicBoolean osCalled = new AtomicBoolean();
+        final Supplier<String> esRead = () -> "es-result";
+        final Supplier<String> osRead = () -> { osCalled.set(true); return "os-result"; };
+
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(esRead, osRead);
+        setPhase(1);
+
+        assertEquals("Phase-1 reads must come from ES", "es-result", router.read(Supplier::get));
+        assertFalse("OS must NOT be contacted on the Phase-1 read path", osCalled.get());
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
@@ -332,6 +455,12 @@ public class PhaseRouterTest {
     @FunctionalInterface
     interface ThrowingAction {
         void run() throws Exception;
+    }
+
+    /** Simulates a checked read operation returning a value (e.g. search, searchRaw). */
+    @FunctionalInterface
+    interface CheckedSupplier<R> {
+        R get() throws Exception;
     }
 
     private static void setPhase(final int ordinal) {

@@ -206,6 +206,24 @@ export class RelationshipField {
         await deleteButtons.nth(rowIndex).click();
     }
 
+    // ─── Status / Locale Chips ───────────────────────────────────────
+
+    /**
+     * Returns the `relationship-locale-tag` chip (a `p-tag`) rendered in the
+     * Locales cell of the given data row.
+     */
+    localeTag(rowIndex = 0): Locator {
+        return this.dataRows().nth(rowIndex).getByTestId('relationship-locale-tag');
+    }
+
+    /**
+     * Returns the `status-tag` chip (a `p-tag`, rendered by
+     * `dot-contentlet-status-badge`) in the Status cell of the given data row.
+     */
+    statusTag(rowIndex = 0): Locator {
+        return this.dataRows().nth(rowIndex).getByTestId('status-tag');
+    }
+
     // ─── Add Button State ────────────────────────────────────────────
 
     /**
