@@ -15,6 +15,7 @@ import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTyp
 import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeTest;
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
+import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import org.junit.runner.RunWith;
@@ -38,6 +39,7 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         ImportContentletsActionSmokeTest.class,
+        TreeFactoryTest.class,
 })
 public class MainSuite3a {
 }

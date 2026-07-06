@@ -40,3 +40,4 @@ Release-25.07.10 LTS
 34. https://github.com/dotCMS/core/issues/35568 : fix(lang-var-migration): unique_fields duplicate key cascades and aborts entire migration transaction #35568
 35. https://github.com/dotCMS/core/issues/35793 : deps: bump Apache Tomcat 9.0.113 → 9.0.118 (resolves 6 published CVEs) #35793
 36. https://github.com/dotCMS/core/issues/35536 : Basic Auth plugin issue: SpeedyAssetServlet rejects anonymously-readable assets when an unrelated Basic Authorization header is present #35536
+37. https://github.com/dotCMS/core/issues/36147 : Saving contentlets with many-to-many relationship fields and large related-content volumes is extremely slow #36147
