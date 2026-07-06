@@ -1,7 +1,7 @@
 <dot-chip-filter
     [title]="$chipTitle()"
     [selections]="$chipSelections()"
-    (clicked)="popover.toggle($event)"
+    (clicked)="$isRelationship() ? openRelationshipDialog() : popover.toggle($event)"
     (removed)="onRemove()"
     [attr.data-testid]="'field-filter-chip-' + $field().variable" />
 

@@ -15,16 +15,23 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { debounceTime, take } from 'rxjs/operators';
+import { debounceTime, filter, take } from 'rxjs/operators';
 
 import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotSelectExistingContentComponent,
+    DotSelectExistingContentFooterComponent,
+    getContentTypeIdFromRelationship,
+    getSelectionModeByCardinality,
+    getSingleSelectableFieldOptions
+} from '@dotcms/edit-content';
 import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
@@ -40,6 +47,7 @@ import {
     FIELD_FILTER_DATE_TIME_TYPE,
     FIELD_FILTER_MULTISELECT_TYPE,
     FIELD_FILTER_RADIO_TYPE,
+    FIELD_FILTER_RELATIONSHIP_TYPE,
     FIELD_FILTER_SELECT_TYPE,
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_TIME_ONLY_TYPE,
@@ -59,6 +67,7 @@ type FieldFilterControl =
     | 'radio'
     | 'tag'
     | 'category'
+    | 'relationship'
     | 'date';
 
 interface FieldFilterOption {
@@ -88,13 +97,15 @@ interface FieldFilterOption {
         DotMessagePipe
     ],
     templateUrl: './dot-content-drive-field-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DialogService]
 })
 export class DotContentDriveFieldFilterComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #tagsService = inject(DotTagsService);
     readonly #categoriesService = inject(DotCategoriesService);
+    readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
@@ -143,6 +154,8 @@ export class DotContentDriveFieldFilterComponent {
                 return 'tag';
             case FIELD_FILTER_CATEGORY_TYPE:
                 return 'category';
+            case FIELD_FILTER_RELATIONSHIP_TYPE:
+                return 'relationship';
             default:
                 return 'text';
         }
@@ -237,6 +250,11 @@ export class DotContentDriveFieldFilterComponent {
 
     protected readonly $isBinary = computed(() => this.$control() === 'binary-checkbox');
 
+    /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
+    protected readonly $isRelationship = computed(() => this.$control() === 'relationship');
+    /** identifier → contentlet title, cached from the picker so restored chips can show titles. */
+    readonly #relationshipTitleById = signal<Record<string, string>>({});
+
     /** Chip label parts: a concise summary of the current value (empty when unset). */
     protected readonly $chipSelections = computed<string[]>(() => {
         const control = this.$control();
@@ -250,6 +268,22 @@ export class DotContentDriveFieldFilterComponent {
 
         if (control === 'category') {
             return this.$categorySelected().map((option) => option.label);
+        }
+
+        if (control === 'relationship') {
+            const ids = raw.split(',').filter(Boolean);
+            const titles = this.#relationshipTitleById();
+            const named = ids.map((id) => titles[id]).filter(Boolean);
+
+            // Show titles once resolved; otherwise a count (identifiers aren't user-readable).
+            return named.length === ids.length
+                ? named
+                : [
+                      this.#dotMessageService.get(
+                          'content-drive.field-filter.selected-count',
+                          `${ids.length}`
+                      )
+                  ];
         }
 
         if (control === 'multi-select' || control === 'checkbox' || control === 'tag') {
@@ -365,6 +399,68 @@ export class DotContentDriveFieldFilterComponent {
 
             return next;
         });
+    }
+
+    /**
+     * Opens the reused "select existing content" dialog to pick related content. The target content
+     * type and single/multiple mode are derived from the relationship field; the chosen contentlets'
+     * identifiers become the filter value.
+     */
+    protected openRelationshipDialog(): void {
+        const field = this.$field();
+        const contentTypeId = getContentTypeIdFromRelationship(field);
+        const cardinality = field.relationships?.cardinality;
+        if (!contentTypeId || cardinality == null) {
+            return;
+        }
+
+        const selectionMode = getSelectionModeByCardinality(
+            cardinality,
+            field.relationships?.isParentField
+        );
+        const currentItemsIds = this.$rawValue() ? this.$rawValue().split(',').filter(Boolean) : [];
+
+        const ref = this.#dialogService.open(DotSelectExistingContentComponent, {
+            header: field.name,
+            width: '90%',
+            height: '90%',
+            modal: true,
+            appendTo: 'body',
+            baseZIndex: 10000,
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
+            style: { 'max-width': '1040px', 'max-height': '800px' },
+            templates: { footer: DotSelectExistingContentFooterComponent },
+            data: {
+                contentTypeId,
+                selectionMode,
+                currentItemsIds,
+                cardinality,
+                parentContentTypeId: field.contentTypeId,
+                fieldVariable: field.variable,
+                isParentField: field.relationships?.isParentField
+            }
+        });
+
+        ref.onClose
+            .pipe(
+                filter((items): items is DotCMSContentlet[] => Array.isArray(items)),
+                take(1),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((items) => {
+                this.#relationshipTitleById.update((cache) => {
+                    const next = { ...cache };
+                    for (const item of items) next[item.identifier] = item.title ?? item.identifier;
+
+                    return next;
+                });
+                this.#patch(
+                    serializeUserSearchableValue(
+                        items.map((item) => item.identifier),
+                        field.fieldType
+                    )
+                );
+            });
     }
 
     protected onDateChange(dates: Date[] | null): void {
