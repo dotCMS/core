@@ -3,11 +3,26 @@ import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveFolder, DotContentDriveItem, DotFolder } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotContentDriveDateRange,
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotContentDriveUserSearchableValue,
+    DotFolder
+} from '@dotcms/dotcms-models';
+import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
+import {
+    FIELD_FILTER_CHECKBOX_TYPE,
+    FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_MULTI_SELECT_TYPES,
+    USER_SEARCHABLE_PREFIX,
+    USER_SEARCHABLE_VALUE_SEPARATOR
+} from '../shared/constants';
 import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
@@ -141,6 +156,14 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
+        // Field-filter (user-searchable) values are stored raw: the field type — not comma
+        // sniffing — decides their shape downstream, so never split/trim them here.
+        if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
+            acc[key] = singleSelector(value);
+
+            return acc;
+        }
+
         const decodeFunction = decodeByFilterKey[key];
 
         if (decodeFunction) {
@@ -265,4 +288,144 @@ export function getFolderNodesByPath(
  */
 export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
     return item != null && 'type' in item && item.type === 'folder';
+}
+
+/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
+export function isDateFieldFilterType(fieldType: string): boolean {
+    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
+}
+
+/** True when the field type stores a list of values (Multi-Select / Checkbox). */
+export function isMultiValueFieldFilterType(fieldType: string): boolean {
+    return (FIELD_FILTER_MULTI_SELECT_TYPES as readonly string[]).includes(fieldType);
+}
+
+/**
+ * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
+ * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
+ */
+export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
+    return (
+        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
+        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
+    );
+}
+
+/**
+ * Reshapes a raw stored field-filter string into the payload value for its field type:
+ * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
+ * Returns `undefined` when the value is effectively empty (so callers can skip it).
+ *
+ * @param {string} raw - The raw value stored in the filter bag.
+ * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
+ * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
+ */
+export function parseUserSearchableValue(
+    raw: string,
+    fieldType: string
+): DotContentDriveUserSearchableValue | undefined {
+    if (!raw) {
+        return undefined;
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
+
+        return from || to ? { from, to } : undefined;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        const values = raw
+            .split(USER_SEARCHABLE_VALUE_SEPARATOR)
+            .map((value) => value.trim())
+            .filter(Boolean);
+
+        return values.length ? values : undefined;
+    }
+
+    return raw;
+}
+
+/**
+ * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
+ * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
+ * (which drops empty entries) leaves no dangling criterion.
+ *
+ * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
+ * @param {string} fieldType
+ * @return {*}  {string}
+ */
+export function serializeUserSearchableValue(
+    value: DotContentDriveUserSearchableValue | null | undefined,
+    fieldType: string
+): string {
+    if (value == null) {
+        return '';
+    }
+
+    if (isDateFieldFilterType(fieldType)) {
+        const range = value as DotContentDriveDateRange;
+        if (!range?.from && !range?.to) {
+            return '';
+        }
+
+        return `${range.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${range.to ?? ''}`;
+    }
+
+    if (isMultiValueFieldFilterType(fieldType)) {
+        return (Array.isArray(value) ? value : []).join(USER_SEARCHABLE_VALUE_SEPARATOR);
+    }
+
+    return String(value);
+}
+
+/**
+ * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
+ * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. Binary
+ * checkboxes always emit their boolean value (default `false` — a value, not a selection); every
+ * other field type is included only when its value is non-empty. Returns `undefined` when there are
+ * no active field filters.
+ *
+ * @param {DotContentDriveFilters} filters - The full filter bag.
+ * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
+ * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
+ */
+export function buildUserSearchablePayload(
+    filters: DotContentDriveFilters,
+    fields: DotCMSContentTypeField[]
+): Record<string, DotContentDriveUserSearchableValue> | undefined {
+    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
+    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
+
+    for (const [key, raw] of Object.entries(filters ?? {})) {
+        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
+            continue;
+        }
+
+        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
+        const field = fieldByVariable.get(variable);
+        if (!field) {
+            continue;
+        }
+
+        const rawValue = Array.isArray(raw) ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR) : raw ?? '';
+
+        // A binary checkbox filters for the chosen boolean; empty means not filtering.
+        if (isBinaryCheckboxField(field)) {
+            if (rawValue === 'true' || rawValue === 'false') {
+                payload[variable] = rawValue === 'true';
+            }
+
+            continue;
+        }
+
+        const value = parseUserSearchableValue(rawValue, field.fieldType);
+        if (value === undefined) {
+            continue;
+        }
+
+        payload[variable] = value;
+    }
+
+    return Object.keys(payload).length ? payload : undefined;
 }

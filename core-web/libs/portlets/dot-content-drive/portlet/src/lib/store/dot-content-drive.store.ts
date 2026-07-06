@@ -14,7 +14,11 @@ import { ActivatedRoute } from '@angular/router';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentDriveService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotContentDriveItem,
+    DotContentDriveSearchRequest
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
@@ -29,7 +33,8 @@ import {
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
-    SYSTEM_HOST
+    SYSTEM_HOST,
+    USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
     DotContentDriveFilters,
@@ -39,7 +44,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
-import { decodeFilters, parseWorkflowFilter } from '../utils/functions';
+import { buildUserSearchablePayload, decodeFilters, parseWorkflowFilter } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -51,47 +56,54 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
-    pages: [DEFAULT_PAGE]
+    pages: [DEFAULT_PAGE],
+    userSearchableFields: []
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite, pagination, sort, pages }) => {
-        return {
-            $request: computed<DotContentDriveSearchRequest>(() => {
-                const paginationSignal = pagination();
-                const page = untracked(() => pages()[paginationSignal?.page - 1]);
+    withComputed(
+        ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
+            return {
+                $request: computed<DotContentDriveSearchRequest>(() => {
+                    const paginationSignal = pagination();
+                    const page = untracked(() => pages()[paginationSignal?.page - 1]);
 
-                return {
-                    assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                    includeSystemHost: true,
-                    filters: {
-                        text: filters()?.title || '',
-                        filterFolders: true
-                    },
-                    language: filters()?.languageId,
-                    contentTypes: filters()?.contentType,
-                    baseTypes: filters()?.baseType?.map(
-                        (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                    ),
-                    workflow: filters()?.workflow?.length
-                        ? parseWorkflowFilter(filters()?.workflow)
-                        : undefined,
-                    contentCursor: page.contentCursor ?? 0,
-                    folderCursor: page.folderCursor ?? 0,
-                    maxResults: paginationSignal?.limit,
-                    sortBy: sort()?.field + ':' + sort()?.order,
-                    archived: false,
-                    showFolders:
-                        page.hasMoreFolders &&
-                        !filters()?.baseType?.length &&
-                        !filters()?.contentType?.length &&
-                        !filters()?.languageId?.length &&
-                        !filters()?.workflow?.length
-                };
-            })
-        };
-    }),
+                    return {
+                        assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                        includeSystemHost: true,
+                        filters: {
+                            text: filters()?.title || '',
+                            filterFolders: true
+                        },
+                        language: filters()?.languageId,
+                        contentTypes: filters()?.contentType,
+                        baseTypes: filters()?.baseType?.map(
+                            (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                        ),
+                        workflow: filters()?.workflow?.length
+                            ? parseWorkflowFilter(filters()?.workflow)
+                            : undefined,
+                        userSearchable: buildUserSearchablePayload(
+                            filters(),
+                            userSearchableFields()
+                        ),
+                        contentCursor: page.contentCursor ?? 0,
+                        folderCursor: page.folderCursor ?? 0,
+                        maxResults: paginationSignal?.limit,
+                        sortBy: sort()?.field + ':' + sort()?.order,
+                        archived: false,
+                        showFolders:
+                            page.hasMoreFolders &&
+                            !filters()?.baseType?.length &&
+                            !filters()?.contentType?.length &&
+                            !filters()?.languageId?.length &&
+                            !filters()?.workflow?.length
+                    };
+                })
+            };
+        }
+    ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
         return {
@@ -199,6 +211,63 @@ export const DotContentDriveStore = signalStore(
             },
             getFilterValue(filter: string) {
                 return store.filters()[filter];
+            },
+            /**
+             * Caches the eligible searchable fields of the active single content type. Consumed by
+             * the field-filter chips (to render controls) and by `$request` (to reshape values).
+             */
+            setUserSearchableFields(fields: DotCMSContentTypeField[]) {
+                patchState(store, { userSearchableFields: fields });
+            },
+            /**
+             * Adds an empty field-filter entry so its chip appears; the user then sets a value.
+             * No pagination reset — an empty criterion doesn't change results.
+             */
+            addUserSearchableField(variable: string) {
+                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
+                if (store.filters()[key] !== undefined) {
+                    return;
+                }
+
+                patchState(store, { filters: { ...store.filters(), [key]: '' } });
+            },
+            /**
+             * Removes a single field filter (whatever its value). Unlike `removeFilter`, this does
+             * not guard on a truthy value, so an empty (just-added) chip can still be removed.
+             */
+            removeUserSearchableField(variable: string) {
+                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
+                if (store.filters()[key] === undefined) {
+                    return;
+                }
+
+                const restFilters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(([filterKey]) => filterKey !== key)
+                );
+                patchState(store, {
+                    filters: restFilters,
+                    pagination: { ...store.pagination(), offset: 0, page: 1 },
+                    pages: [DEFAULT_PAGE]
+                });
+            },
+            /**
+             * Drops every `us.*` field filter and the cached field metadata. Called when the active
+             * content type changes (removed / another added / switched to a different single type).
+             * The reactive URL write-back removes these entries from the URL automatically.
+             */
+            clearUserSearchableFilters() {
+                const restFilters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(
+                        ([key]) => !key.startsWith(USER_SEARCHABLE_PREFIX)
+                    )
+                );
+
+                patchState(store, {
+                    filters: restFilters,
+                    userSearchableFields: [],
+                    pagination: { ...store.pagination(), offset: 0, page: 1 },
+                    pages: [DEFAULT_PAGE]
+                });
             },
             setSelectedItems(items: DotContentDriveItem[]) {
                 patchState(store, { selectedItems: items });

@@ -1,4 +1,5 @@
 import {
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
@@ -146,6 +147,13 @@ export interface DotContentDriveState extends DotContentDriveInit {
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
     pages: DotContentDrivePage[];
+    /**
+     * Eligible searchable fields of the currently-selected single content type. Populated by the
+     * field-filter menu after fetching the content type; empty when 0 or >1 content types are
+     * selected. Used to render field-filter chips and to reshape the `us.*` filter values into the
+     * `userSearchable` payload.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
 }
 
 /**

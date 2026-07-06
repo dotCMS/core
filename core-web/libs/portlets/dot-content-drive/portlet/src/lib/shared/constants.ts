@@ -73,6 +73,61 @@ export const MAP_BASE_TYPES_TO_NUMBERS: Partial<Record<DotCMSBaseTypesContentTyp
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
 
+/**
+ * Prefix that marks a filter-bag key as a per-field "user searchable" criterion, e.g. `us.title`.
+ * Keeping these entries in the flat `filters` bag lets them ride the existing URL encode/decode and
+ * be cleared alongside every other filter. The prefix avoids colliding with known filter keys or a
+ * field whose variable happens to be `title`, `workflow`, etc.
+ */
+export const USER_SEARCHABLE_PREFIX = 'us.';
+
+/**
+ * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
+ * The string values match the backend field-type contract (edit-content `FIELD_TYPES`). Grouped by
+ * the control rendered and the value shape stored/sent:
+ * - text  → single string (contains)
+ * - single-select (Select/Radio) → single string (equals), options from `field.values`
+ * - multi-select (Multi-Select/Checkbox) → string[], options from `field.values`
+ * - date  → `{ from, to }` ISO range
+ */
+export const FIELD_FILTER_TEXT_TYPES = ['Text', 'Textarea', 'WYSIWYG'] as const;
+/** Singular field-type names, matched to their native widget in the filter chip. */
+export const FIELD_FILTER_SELECT_TYPE = 'Select';
+export const FIELD_FILTER_RADIO_TYPE = 'Radio';
+export const FIELD_FILTER_MULTISELECT_TYPE = 'Multi-Select';
+export const FIELD_FILTER_CHECKBOX_TYPE = 'Checkbox';
+/** Single-value option fields (stored as one string). */
+export const FIELD_FILTER_SINGLE_SELECT_TYPES = [
+    FIELD_FILTER_SELECT_TYPE,
+    FIELD_FILTER_RADIO_TYPE
+] as const;
+/** Multi-value option fields (stored as a comma-joined list). */
+export const FIELD_FILTER_MULTI_SELECT_TYPES = [
+    FIELD_FILTER_MULTISELECT_TYPE,
+    FIELD_FILTER_CHECKBOX_TYPE
+] as const;
+export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as const;
+/** Date field type showing time; `Time` is time-only, `Date-and-Time` shows date + time. */
+export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
+export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
+
+/** Every field type eligible to become a filter in phase 1 (excludes Host-Folder + out-of-scope). */
+export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
+    ...FIELD_FILTER_TEXT_TYPES,
+    ...FIELD_FILTER_SINGLE_SELECT_TYPES,
+    ...FIELD_FILTER_MULTI_SELECT_TYPES,
+    ...FIELD_FILTER_DATE_TYPES
+];
+
+/**
+ * Field variable of the content type's title field. It's already covered by the toolbar's keyword
+ * search (which queries the contentlet title), so it's not offered as a redundant field filter.
+ */
+export const TITLE_FIELD_VARIABLE = 'title';
+
+/** Separator joining multi-select values and date-range `from,to` in the flat filter string. */
+export const USER_SEARCHABLE_VALUE_SEPARATOR = ',';
+
 export const PANEL_SCROLL_HEIGHT = '25rem';
 
 // Dialog type

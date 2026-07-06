@@ -16,17 +16,20 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
+import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
+import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
-import { DIALOG_TYPE } from '../../shared/constants';
+import { DIALOG_TYPE, USER_SEARCHABLE_PREFIX } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -106,7 +109,9 @@ interface ToolbarAnimationState {
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
         DotContentDriveWorkflowActionsComponent,
-        DotContentDriveWorkflowFilterComponent
+        DotContentDriveWorkflowFilterComponent,
+        DotContentDriveFieldFilterComponent,
+        DotContentDriveFieldFilterMenuComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -181,6 +186,24 @@ export class DotContentDriveToolbarComponent {
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    /**
+     * Active field-filter chips, in the order the user added them. The `us.*` keys in the filter
+     * bag preserve insertion order, so we iterate those (not the content type's field order) and
+     * resolve each to its field metadata — new chips append to the end instead of slotting into a
+     * fixed position. Populated once the field metadata loads, so on URL restore the chips appear as
+     * soon as the content type's fields are fetched.
+     */
+    readonly $activeFieldFilters = computed(() => {
+        const fieldByVariable = new Map(
+            this.#store.userSearchableFields().map((field) => [field.variable, field])
+        );
+
+        return Object.keys(this.#store.filters())
+            .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
+            .map((key) => fieldByVariable.get(key.slice(USER_SEARCHABLE_PREFIX.length)))
+            .filter((field): field is DotCMSContentTypeField => field !== undefined);
+    });
 
     onClearAll(): void {
         this.#store.clearFilters();
