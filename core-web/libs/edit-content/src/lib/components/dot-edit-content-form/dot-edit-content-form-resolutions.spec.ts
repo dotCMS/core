@@ -557,5 +557,58 @@ describe('DotEditContentFormResolutions', () => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.DATE]);
             });
         });
+
+        describe('dateResolutionFn', () => {
+            const dateField: DotCMSContentTypeField = {
+                ...mockField,
+                variable: 'campoDate',
+                fieldType: FIELD_TYPES.DATE,
+                dataType: 'DATE'
+            };
+
+            it('should return numeric timestamp from contentlet', () => {
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: 1736899200000
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    1736899200000
+                );
+            });
+
+            it('should parse ISO date strings from contentlet', () => {
+                const isoDate = '2025-01-15T10:30:00.000Z';
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: isoDate
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    Date.parse(isoDate)
+                );
+            });
+
+            it('should parse formatted date strings from contentlet', () => {
+                const formattedDate = '2025-01-15';
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: formattedDate
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBe(
+                    Date.parse(formattedDate)
+                );
+            });
+
+            it('should return null for empty date values', () => {
+                const contentlet = {
+                    ...mockContentlet,
+                    campoDate: ''
+                };
+
+                expect(resolutionValue[FIELD_TYPES.DATE](contentlet, dateField)).toBeNull();
+            });
+        });
     });
 });

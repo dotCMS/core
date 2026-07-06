@@ -194,8 +194,8 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         // Update internal display value (what user sees)
         this.internalFormControl.setValue(displayValue);
 
-        // Send the correct moment to form control
-        this.onChange(formValue);
+        // Send numeric timestamp to the parent form control for consistent storage
+        this.onChange(formValue.getTime());
         this.onTouched();
     }
 
