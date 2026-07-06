@@ -41,6 +41,7 @@ import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.model.Variant;
@@ -1694,8 +1695,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * (working/live) or building (reindex) index. Off by default: deleting an in-use
      * index leaves the site with nothing to serve reads from or reindex into. Intended
      * only for emergency/scripted maintenance.
+     *
+     * <p>The flag name is centralized in {@link FeatureFlagName}.</p>
      */
-    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
+    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE =
+            FeatureFlagName.FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE;
 
     /**
      * Rejects deletion of an index that is currently active (working/live) or being
