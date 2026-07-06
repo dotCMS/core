@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.ConversionUtils;
@@ -111,8 +112,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
         final boolean inTransaction = DbConnectionFactory.inTransaction();
-        if (!inTransaction && null != contentlet && null != contentlet.getContentType() &&
-                contentlet.getContentType().hasStoryBlockFields()) {
+        final ContentType contentType = null != contentlet ? contentlet.getContentType() : null;
+        if (!inTransaction && null != contentlet && null != contentType &&
+                contentType.hasStoryBlockFields()) {
 
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
             final int initialDepthValue = this.getCurrentDepthValue(request);
@@ -128,7 +130,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 return new StoryBlockReferenceResult(false, contentlet);
             }
 
-            contentlet.getContentType().fields(StoryBlockField.class)
+            contentType.fields(StoryBlockField.class)
                     .forEach(field -> {
 
                         final Object storyBlockValue = contentlet.get(field.variable());
