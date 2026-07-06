@@ -146,7 +146,7 @@ test.describe('Key Value Field', () => {
             await field.addEntry('removeKey', 'removeValue');
             await field.expectEntryCount(2);
 
-            await field.deleteEntry(0);
+            await field.deleteEntryByKey('removeKey');
             await field.expectEntryCount(1);
             await field.expectEntry('keepKey', 'keepValue');
             await field.expectKeyAbsent('removeKey');

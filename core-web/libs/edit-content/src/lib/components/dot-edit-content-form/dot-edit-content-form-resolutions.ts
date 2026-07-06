@@ -176,6 +176,16 @@ const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) =
     const value = contentlet[field.variable];
     const timestamp = parseCalendarTimestamp(value);
 
+    // Preserve diagnostics: backend should always return numeric timestamps, so a
+    // non-empty value that fails to parse signals an unexpected payload worth logging.
+    if (timestamp == null && value != null && value !== '') {
+        console.warn('Calendar field received unexpected value from backend:', {
+            fieldVariable: field.variable,
+            value,
+            type: typeof value
+        });
+    }
+
     return timestamp ?? null;
 };
 

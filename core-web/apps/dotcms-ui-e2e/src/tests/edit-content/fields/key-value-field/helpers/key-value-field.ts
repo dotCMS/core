@@ -81,7 +81,10 @@ export class KeyValueField {
         await expect.poll(async () => valueInput.inputValue(), { timeout: 10000 }).toBe(newValue);
     }
 
-    async deleteEntry(index: number): Promise<void> {
-        await this.root.getByTestId('dot-key-value-delete-button').nth(index).click();
+    async deleteEntryByKey(key: string): Promise<void> {
+        await this.exactKeyCell(key)
+            .locator('xpath=ancestor::tr[contains(@class,"dot-key-value-table-row")][1]')
+            .getByTestId('dot-key-value-delete-button')
+            .click();
     }
 }
