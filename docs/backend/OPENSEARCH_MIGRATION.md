@@ -647,7 +647,8 @@ rollback, with no impact on normal operation.
 
 ### ⚠ Open issue — fan-out error handling with divergent index names
 
-**Status: resolved for `ContentletIndexAPIImpl.delete()` (#36423, #36430); still open for other
+**Status: routing/noise semantics resolved for `ContentletIndexAPIImpl.delete()` (#36423);
+primary-failure propagation for `delete()` tracked separately in #36430; still open for other
 fan-out methods.**
 
 When a public method on an `@IndexRouter`-annotated class accepts an index name and the current
@@ -663,10 +664,12 @@ name passed to an OS fan-out will produce a 404 or provider-level exception.
 - For a bare-name fan-out, the **shadow leg skips** names its engine does not hold (exists-check)
   and logs the skip through the shadow-write policy (`DOTCMS_SHADOW_WRITE_LOG_LEVEL`, default
   WARN) — an expected divergent-name miss is not an ERROR.
-- Genuine shadow failures stay fire-and-forget (policy-level log); **primary failures propagate**
-  to the caller (#36430) — matching the `PhaseRouter.writeBoolean` contract.
+- Genuine shadow failures stay fire-and-forget (policy-level log); the primary leg still logs
+  at ERROR. Surfacing primary failures to the *caller* (the `PhaseRouter.writeBoolean`
+  contract: re-throw after all providers were called) is #36430.
 - Covered in `OpenSearchUpgradeSuite` by `ContentletIndexAPIImplMigrationIntegrationTest`
-  (name only in ES, only in OS via tag-dispatch, paired, and name-in-neither propagation).
+  (name only in ES, only in OS via tag-dispatch, and paired; name-in-neither propagation
+  coverage lands with #36430).
 
 **Still open for other fan-out methods** (e.g. mapping and lifecycle operations):
 
