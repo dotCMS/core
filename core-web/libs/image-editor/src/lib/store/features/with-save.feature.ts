@@ -8,6 +8,7 @@ import { exhaustMap } from 'rxjs/operators';
 
 import { AppliedFilter, ImageEditorState } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
+import { enrichEditedImage } from '../../utils/enrich-edited-image.util';
 import { buildSaveUrl } from '../../utils/image-filter-url.builder';
 import { imageEditorLifecycleEvents } from '../image-editor.events';
 import { errorMessage } from '../image-editor.store-utils';
@@ -72,15 +73,13 @@ export function withSave() {
                                 tapResponse({
                                     next: (tempFile) =>
                                         dispatcher.dispatch(
-                                            imageEditorLifecycleEvents.saveSucceeded({
-                                                ...tempFile,
-                                                metadata: tempFile.metadata
-                                                    ? {
-                                                          ...tempFile.metadata,
-                                                          focalPoint: `${focalPoint.x},${focalPoint.y}`
-                                                      }
-                                                    : tempFile.metadata
-                                            })
+                                            imageEditorLifecycleEvents.saveSucceeded(
+                                                enrichEditedImage(
+                                                    tempFile,
+                                                    store.assetContext(),
+                                                    focalPoint
+                                                )
+                                            )
                                         ),
                                     error: (error) =>
                                         dispatcher.dispatch(

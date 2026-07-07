@@ -253,6 +253,22 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                         : contentlet.getBinaryMetadata(FILE_ASSET).getName();
 
                     putBinaryLinks(FILE_ASSET, name, contentlet, map);
+
+                    // Surface the binary metadata (including the focal point from custom
+                    // metadata) for the FileAsset's binary field, mirroring the dotAsset path
+                    // below. Without this the image editor cannot re-seed the focal marker when
+                    // reopening a File/Image field that references a legacy FileAsset.
+                    final Metadata fileAssetMetadata = contentlet.getBinaryMetadata(FILE_ASSET);
+                    if (null != fileAssetMetadata) {
+                        final Map<String, Serializable> metaMap = new HashMap<>(
+                                fileAssetMetadata.getMap());
+                        metaMap.remove("path");
+                        final String focalPoint = Try.of(() -> fileAssetMetadata.getCustomMeta()
+                                .getOrDefault(FocalPointAPI.FOCAL_POINT, "0.0").toString())
+                                .getOrElse("0.0");
+                        metaMap.put(FocalPointAPI.FOCAL_POINT, focalPoint);
+                        map.put(FILE_ASSET + "MetaData", metaMap);
+                    }
                     continue;
                 }
 
