@@ -573,22 +573,30 @@ public class ESIndexResource {
         }
 
 
-        switch(indexAction){
-            case DEACTIVATE:
-                APILocator.getContentletIndexAPI().deactivateIndex(resolvedName);
-                break;
-            case CLEAR:
-                APILocator.getESIndexAPI().clearIndex(resolvedName);
-                break;
-            case OPEN:
-                APILocator.getESIndexAPI().openIndex(resolvedName);
-                break;
-            case CLOSE:
-                APILocator.getESIndexAPI().closeIndex(resolvedName);
-                break;
-            default:
-                APILocator.getContentletIndexAPI().activateIndex(resolvedName);
+        try {
+            switch(indexAction){
+                case DEACTIVATE:
+                    APILocator.getContentletIndexAPI().deactivateIndex(resolvedName);
+                    break;
+                case CLEAR:
+                    APILocator.getESIndexAPI().clearIndex(resolvedName);
+                    break;
+                case OPEN:
+                    APILocator.getESIndexAPI().openIndex(resolvedName);
+                    break;
+                case CLOSE:
+                    APILocator.getESIndexAPI().closeIndex(resolvedName);
+                    break;
+                default:
+                    APILocator.getContentletIndexAPI().activateIndex(resolvedName);
 
+            }
+        } catch (final DotStateException e) {
+            // CLEAR is delete + recreate, so it is guarded like delete: an active/building index
+            // is rejected with a readable 400 instead of a stack trace (issue #35640, TC-018).
+            Logger.warn(this, "Rejected '" + action + "' on index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE", e.getMessage())))).build();
         }
         String message = indexAction.name().toLowerCase() + " " + resolvedName;
         

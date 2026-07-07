@@ -13,6 +13,7 @@ import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
@@ -450,6 +451,10 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public void clearIndex(final String indexName)
             throws DotStateException, IOException, DotDataException {
+        // clearIndex is delete + recreate-empty, so it is as destructive as delete: guard the
+        // active/building index here too (issue #35640, TC-018, swicken review). Covers every
+        // clear entry point — REST modIndex, legacy PUT /clear, and IndexAjaxAction.clearIndex.
+        APILocator.getContentletIndexAPI().assertIndexNotActive(indexName, "cleared");
         try {
             router.writeChecked(impl -> impl.clearIndex(providerName(impl, indexName)));
         } catch (DotStateException | IOException | DotDataException e) {
