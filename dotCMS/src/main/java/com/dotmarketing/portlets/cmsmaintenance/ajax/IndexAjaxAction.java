@@ -142,8 +142,13 @@ public class IndexAjaxAction extends AjaxAction {
 	public void deleteIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
 		String indexName = indexHelper.getIndexNameOrAlias(map,"indexName","indexAlias",this.indexAPI);
-		if(UtilMethods.isSet(indexName))
-		    APILocator.getESIndexAPI().delete(indexName);
+		if(UtilMethods.isSet(indexName)) {
+		    // Route through ContentletIndexAPI.delete (same as the REST endpoint) so this legacy
+		    // AJAX path inherits the active-index guard, the bidirectional ES/OS cascade, and the
+		    // indicies-table pointer cleanup. It previously called ESIndexAPI.delete and bypassed
+		    // all three, leaving TC-018 open here and orphaning the .os twin (issue #35640).
+		    APILocator.getContentletIndexAPI().delete(indexName);
+		}
 	}
 
 	public void activateIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotDataException {
