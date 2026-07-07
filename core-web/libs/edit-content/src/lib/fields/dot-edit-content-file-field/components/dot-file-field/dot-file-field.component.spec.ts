@@ -2,7 +2,7 @@ import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectat
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -27,6 +27,7 @@ import { DotFileFieldUploadService } from '../../services/upload-file/upload-fil
 import { FileFieldStore } from '../../store/file-field.store';
 import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot-file-field-ui-message.component';
+import { DotFormFileEditorComponent } from '../dot-form-file-editor/dot-form-file-editor.component';
 
 describe('DotFileFieldComponent', () => {
     let spectator: Spectator<DotFileFieldComponent>;
@@ -221,6 +222,84 @@ describe('DotFileFieldComponent', () => {
             expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
             expect(legacyOpenSpy).toHaveBeenCalled();
             expect(applySpy).toHaveBeenCalled();
+        });
+
+        it('should route SVG contentlets to the source-code editor with the fetched text', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            setupBinaryWithImage();
+
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(null),
+                close: jest.fn()
+            });
+
+            spectator.component.store.setPreviewFile({
+                source: 'contentlet',
+                file: {
+                    ...createFakeContentlet({}),
+                    inode: 'svg-inode',
+                    fileAssetVersion: '/dA/svg-inode/fileAsset/test.svg',
+                    metaData: { isImage: true, contentType: 'image/svg+xml', name: 'test.svg' }
+                }
+            } as never);
+            spectator.detectChanges();
+
+            spectator.component.onEditImage();
+
+            const httpTesting = spectator.inject(HttpTestingController);
+            httpTesting.expectOne('/dA/svg-inode/fileAsset/test.svg').flush('<svg>source</svg>');
+
+            expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotFormFileEditorComponent,
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        uploadedFile: expect.objectContaining({
+                            file: expect.objectContaining({ content: '<svg>source</svg>' })
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should route temp SVGs to the source-code editor using the reference URL', () => {
+            mockImageEditorLauncher.isAvailable.mockReturnValue(true);
+            setupBinaryWithImage();
+
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(null),
+                close: jest.fn()
+            });
+
+            spectator.component.store.setPreviewFile({
+                source: 'temp',
+                file: {
+                    id: 'temp-svg',
+                    fileName: 'test.svg',
+                    referenceUrl: '/dA/temp-svg/tmp/test.svg',
+                    metadata: { isImage: true, contentType: 'image/svg+xml', name: 'test.svg' }
+                }
+            } as never);
+            spectator.detectChanges();
+
+            spectator.component.onEditImage();
+
+            const httpTesting = spectator.inject(HttpTestingController);
+            httpTesting.expectOne('/dA/temp-svg/tmp/test.svg').flush('<svg>temp</svg>');
+
+            expect(mockImageEditorLauncher.open).not.toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotFormFileEditorComponent,
+                expect.objectContaining({
+                    data: expect.objectContaining({
+                        uploadedFile: expect.objectContaining({
+                            file: expect.objectContaining({ content: '<svg>temp</svg>' })
+                        })
+                    })
+                })
+            );
         });
     });
 

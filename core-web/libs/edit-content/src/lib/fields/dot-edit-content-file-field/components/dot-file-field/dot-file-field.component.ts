@@ -1,5 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
+import { HttpClient } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -71,6 +72,9 @@ import {
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 
+/** SVGs route the edit action to the source-code editor instead of the raster image editor. */
+const SVG_MIME_TYPE = 'image/svg+xml';
+
 @Component({
     selector: 'dot-file-field',
     imports: [
@@ -141,6 +145,11 @@ export class DotFileFieldComponent
      * This service is used to provide AI-related functionalities within the component.
      */
     readonly #dotAiService = inject(DotAiService);
+    /**
+     * Fetches the text content of files whose edit action opens the source-code
+     * editor (SVGs), mirroring the store's editableAsText hydration.
+     */
+    readonly #http = inject(HttpClient);
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
@@ -400,6 +409,53 @@ export class DotFileFieldComponent
     }
 
     /**
+     * Opens the source-code editor for an SVG with its text content loaded.
+     *
+     * SVG content is not hydrated by the store (only `editableAsText` files are),
+     * so it is fetched lazily here: from the version URL for saved contentlets,
+     * from the reference URL for temp files. Saving re-uploads the edited text,
+     * keeping the asset a vector.
+     */
+    #openSvgSourceEditor(uploaded: UploadedFile | null): void {
+        if (!uploaded) {
+            return;
+        }
+
+        const { file } = uploaded;
+
+        if (file.content) {
+            this.showFileEditorDialog(uploaded);
+
+            return;
+        }
+
+        const textUrl =
+            uploaded.source === 'temp'
+                ? file.referenceUrl
+                : file['assetVersion'] ||
+                  file['fileAssetVersion'] ||
+                  file[`${file['fieldVariable']}Version`];
+
+        if (!textUrl) {
+            this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
+
+            return;
+        }
+
+        this.#http
+            .get(textUrl, { responseType: 'text' })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (content) =>
+                    this.showFileEditorDialog({
+                        ...uploaded,
+                        file: { ...file, content }
+                    } as UploadedFile),
+                error: () => this.store.setUIMessage(getUiMessage('SERVER_ERROR'))
+            });
+    }
+
+    /**
      * Opens the image editor for the current asset and applies the edited result.
      *
      * @memberof DotFileFieldComponent
@@ -411,6 +467,15 @@ export class DotFileFieldComponent
 
         const variable = this.$field().variable;
         const uploaded = this.store.uploadedFile();
+
+        // SVGs are vectors: the raster image editor would silently rasterize them on
+        // save, so the edit action routes to the source-code editor instead, with the
+        // file's text loaded.
+        if (this.#currentMetadata()?.contentType?.toLowerCase() === SVG_MIME_TYPE) {
+            this.#openSvgSourceEditor(uploaded);
+
+            return;
+        }
         const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
         // For an uploaded/AI-generated contentlet use its own inode; for an
         // unsaved draft that has no uploaded file yet fall back to the parent.
@@ -676,7 +741,7 @@ export class DotFileFieldComponent
      * - Subscribes to the dialog's onClose event to handle the uploaded file and update the store with the preview file.
      *
      */
-    showFileEditorDialog() {
+    showFileEditorDialog(uploadedFile: UploadedFile | null = this.store.uploadedFile()) {
         if (this.$isDisabled()) {
             return;
         }
@@ -702,7 +767,7 @@ export class DotFileFieldComponent
             contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             data: {
                 header,
-                uploadedFile: this.store.uploadedFile(),
+                uploadedFile,
                 allowFileNameEdit: true,
                 uploadType: this.store.uploadType(),
                 acceptedFiles: this.store.acceptedFiles()
