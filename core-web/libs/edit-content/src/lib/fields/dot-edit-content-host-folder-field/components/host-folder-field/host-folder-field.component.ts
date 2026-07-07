@@ -105,7 +105,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
      */
     protected readonly treePt = {
-        root: { class: '!p-0' }
+        root: { class: '!p-0 flex min-h-0 h-full flex-col' }
+    };
+
+    /**
+     * Clips horizontal overflow from PrimeNG Scroller so long site names do not scroll sideways.
+     */
+    protected readonly scrollerPt = {
+        root: { class: 'min-h-0 h-full w-full overflow-x-hidden' },
+        content: { class: 'w-full max-w-full overflow-x-hidden' }
     };
 
     private readonly destroyRef = inject(DestroyRef);

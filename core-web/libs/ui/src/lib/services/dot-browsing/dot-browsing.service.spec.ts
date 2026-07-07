@@ -17,7 +17,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
-import { DotBrowsingService } from './dot-browsing.service';
+import { DotBrowsingService, normalizeHostFolderBrowsePath } from './dot-browsing.service';
 
 describe('DotBrowsingService', () => {
     let spectator: SpectatorService<DotBrowsingService>;
@@ -33,6 +33,30 @@ describe('DotBrowsingService', () => {
         spectator = createService();
         dotSiteService = spectator.inject(DotSiteService);
         dotFolderService = spectator.inject(DotFolderService);
+    });
+
+    describe('normalizeHostFolderBrowsePath', () => {
+        it('should strip the leading double slash', () => {
+            expect(normalizeHostFolderBrowsePath('//demo.com/level1/')).toBe('demo.com/level1/');
+        });
+
+        it('should convert the colon-separated hostname:path format', () => {
+            expect(normalizeHostFolderBrowsePath('demo.com:/level1/level2/')).toBe(
+                'demo.com/level1/level2/'
+            );
+        });
+
+        it('should convert the colon-separated format for the site root', () => {
+            expect(normalizeHostFolderBrowsePath('demo.com:/')).toBe('demo.com/');
+        });
+
+        it('should leave an already-plain path untouched', () => {
+            expect(normalizeHostFolderBrowsePath('demo.com/level1/')).toBe('demo.com/level1/');
+        });
+
+        it('should leave a site-only value (no slash, no colon) untouched', () => {
+            expect(normalizeHostFolderBrowsePath('demo.com')).toBe('demo.com');
+        });
     });
 
     describe('getSitesTreePath', () => {
@@ -717,6 +741,71 @@ describe('DotBrowsingService', () => {
                 expect(result.node?.children).toBeDefined();
                 expect(Array.isArray(result.node?.children)).toBe(true);
                 expect(result.node?.children?.length).toBeGreaterThan(0);
+                done();
+            });
+        });
+
+        it('should mark ancestor folders as expanded so the tree opens to the target node', (done) => {
+            const path = 'demo.com/application/apivtl';
+
+            const targetFolders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'apivtl',
+                    hostName: 'demo.com',
+                    path: '/application/apivtl',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const applicationFolders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'application',
+                    hostName: 'demo.com',
+                    path: '/application',
+                    addChildrenAllowed: true
+                }),
+                createFakeFolder({
+                    id: 'apivtl',
+                    hostName: 'demo.com',
+                    path: '/application/apivtl',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const rootFolders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'root',
+                    hostName: 'demo.com',
+                    path: '/',
+                    addChildrenAllowed: true
+                }),
+                createFakeFolder({
+                    id: 'application',
+                    hostName: 'demo.com',
+                    path: '/application',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
+                if (requestedPath === '//demo.com/application/apivtl/') {
+                    return of(targetFolders);
+                }
+                if (requestedPath === '//demo.com/application/') {
+                    return of(applicationFolders);
+                }
+                if (requestedPath === '//demo.com/') {
+                    return of(rootFolders);
+                }
+                return of([]);
+            });
+
+            spectator.service.buildTreeByPaths(path).subscribe((result) => {
+                const applicationNode = result.tree?.folders.find(
+                    (folder) => folder.key === 'application'
+                );
+                expect(applicationNode?.expanded).toBe(true);
+                expect(result.node?.key).toBe('apivtl');
                 done();
             });
         });

@@ -57,40 +57,55 @@
     appendTo="body"
     [pt]="popoverPt"
     data-testid="host-folder-overlay">
-    <div class="flex max-h-88 w-full">
+    <div class="flex h-96 w-full min-h-0">
         <div
-            class="flex w-56 min-w-0 flex-none flex-col overflow-x-hidden border-r border-gray-300 p-4"
+            class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-gray-300 p-4"
             data-testid="host-folder-sites">
-            <span class="block pb-3 text-xs font-semibold text-gray-600 uppercase">
+            <span class="block shrink-0 pb-3 text-xs font-semibold text-gray-600 uppercase">
                 {{ 'dot.file.field.host.folder.sites.label' | dm }}
             </span>
 
             <p-scroller
-                class="overflow-x-hidden"
+                class="min-h-0 flex-1"
+                [pt]="scrollerPt"
                 [items]="store.sites()"
-                [itemSize]="36"
-                scrollHeight="220px">
+                [itemSize]="42"
+                scrollHeight="100%">
                 <ng-template pTemplate="item" let-site>
-                    <button
-                        type="button"
-                        class="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent py-2 text-left text-gray-900 hover:bg-gray-100"
-                        [class.bg-(--color-palette-primary-200)]="
-                            store.selectedSite()?.key === site.key
-                        "
-                        [class.font-semibold]="store.selectedSite()?.key === site.key"
-                        data-testid="host-folder-site-item"
-                        (click)="onSiteSelect(site)">
-                        <span class="material-symbols-outlined text-base text-gray-600">
-                            public
-                        </span>
-                        <span class="truncate">{{ site.label }}</span>
-                    </button>
+                    @let isSelectedSite = store.selectedSite()?.key === site.key;
+                    <div class="pb-1.5">
+                        <button
+                            type="button"
+                            class="flex w-full max-w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm border-0 p-2 text-left transition-none"
+                            [class.bg-(--color-palette-primary-op-10)]="isSelectedSite"
+                            [class.font-semibold]="isSelectedSite"
+                            [class.text-(--color-palette-primary)]="isSelectedSite"
+                            [class.text-gray-600]="!isSelectedSite"
+                            [class.hover:bg-gray-100]="!isSelectedSite"
+                            data-testid="host-folder-site-item"
+                            (click)="onSiteSelect(site)">
+                            <span
+                                class="material-symbols-outlined flex-none text-base"
+                                [class.text-(--color-palette-primary)]="isSelectedSite"
+                                [class.text-gray-600]="!isSelectedSite">
+                                public
+                            </span>
+                            <span class="min-w-0 flex-auto truncate">{{ site.label }}</span>
+                            <i
+                                class="pi pi-chevron-right flex-none text-sm"
+                                [class.text-(--color-palette-primary)]="isSelectedSite"
+                                [class.text-gray-300]="!isSelectedSite"
+                                data-testid="host-folder-site-chevron"></i>
+                        </button>
+                    </div>
                 </ng-template>
             </p-scroller>
         </div>
 
-        <div class="flex min-w-0 flex-auto flex-col gap-2 p-4" data-testid="host-folder-folders">
-            <p-iconField class="w-full">
+        <div
+            class="flex h-full min-w-0 flex-auto flex-col gap-2 p-4"
+            data-testid="host-folder-folders">
+            <p-iconField class="w-full shrink-0">
                 <p-inputIcon class="pi pi-search text-sm text-surface-500" />
                 <input
                     pInputText
@@ -104,10 +119,12 @@
             </p-iconField>
 
             <p-tree
+                class="min-h-0 flex-1"
                 [value]="store.displayedFolders()"
+                [selection]="store.treeSelection()"
                 [loading]="store.foldersLoading()"
                 selectionMode="single"
-                scrollHeight="220px"
+                scrollHeight="flex"
                 loadingMode="icon"
                 [pt]="treePt"
                 data-testid="host-folder-tree"
@@ -132,7 +149,7 @@
             @if (!store.isSearching() && store.hasMoreRootFolders()) {
                 <button
                     type="button"
-                    class="cursor-pointer self-start border-0 bg-transparent py-1 text-sm text-(--color-palette-primary-500) hover:underline"
+                    class="shrink-0 cursor-pointer self-start border-0 bg-transparent py-1 text-sm text-(--color-palette-primary-500) hover:underline"
                     data-testid="host-folder-load-more"
                     (click)="onLoadMore()">
                     {{ 'dot.file.field.host.folder.action.load.more' | dm: ['40'] }}

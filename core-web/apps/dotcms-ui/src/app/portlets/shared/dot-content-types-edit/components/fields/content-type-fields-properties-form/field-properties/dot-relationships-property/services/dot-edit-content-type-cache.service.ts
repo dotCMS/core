@@ -8,7 +8,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  * @export
  * @class DotEditContentTypeCacheService
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotEditContentTypeCacheService {
     private currentContentType: DotCMSContentType;
 

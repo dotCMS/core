@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { DotPagination, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotPagination, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 import {
@@ -116,6 +116,97 @@ describe('HostFolderFiledStore', () => {
             }));
         });
 
+        describe('path normalization', () => {
+            it('should normalize a colon-separated persisted path before calling buildTreeByPaths', fakeAsync(() => {
+                const [site] = TREE_SELECT_MOCK;
+                const targetNode = site.children[0];
+
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                service.buildTreeByPaths.mockReturnValue(
+                    of({
+                        node: targetNode,
+                        tree: {
+                            path: '/',
+                            folders: site.children,
+                            parent: {
+                                hostName: site.data.hostname,
+                                id: site.data.id,
+                                path: '/',
+                                addChildrenAllowed: true
+                            }
+                        }
+                    })
+                );
+
+                store.loadSites({ path: 'demo.dotcms.com:/level1/', isRequired: false });
+                tick();
+
+                expect(service.buildTreeByPaths).toHaveBeenCalledWith('demo.dotcms.com/level1/');
+            }));
+
+            it('should normalize a leading double-slash persisted path before calling buildTreeByPaths', fakeAsync(() => {
+                const [site] = TREE_SELECT_MOCK;
+                const targetNode = site.children[0];
+
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                service.buildTreeByPaths.mockReturnValue(
+                    of({
+                        node: targetNode,
+                        tree: {
+                            path: '/',
+                            folders: site.children,
+                            parent: {
+                                hostName: site.data.hostname,
+                                id: site.data.id,
+                                path: '/',
+                                addChildrenAllowed: true
+                            }
+                        }
+                    })
+                );
+
+                store.loadSites({ path: '//demo.dotcms.com/level1/', isRequired: false });
+                tick();
+
+                expect(service.buildTreeByPaths).toHaveBeenCalledWith('demo.dotcms.com/level1/');
+            }));
+        });
+
+        describe('ancestor expansion', () => {
+            it('should mark ancestor folders as expanded so the tree opens to the resolved node, even when buildTreeByPaths does not flag them', fakeAsync(() => {
+                const [site] = TREE_SELECT_MOCK;
+                const level1 = site.children[0];
+                const targetNode = { ...level1.children[0], expanded: false };
+                const unexpandedLevel1 = { ...level1, expanded: false, children: [targetNode] };
+
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_MOCK));
+                service.buildTreeByPaths.mockReturnValue(
+                    of({
+                        node: targetNode,
+                        tree: {
+                            path: '/',
+                            folders: [unexpandedLevel1],
+                            parent: {
+                                hostName: site.data.hostname,
+                                id: site.data.id,
+                                path: '/',
+                                addChildrenAllowed: true
+                            }
+                        }
+                    })
+                );
+
+                store.loadSites({
+                    path: 'demo.dotcms.com/level1/child1',
+                    isRequired: false
+                });
+                tick();
+
+                const [resolvedLevel1] = store.folders();
+                expect(resolvedLevel1.expanded).toBe(true);
+            }));
+        });
+
         describe('when path is empty', () => {
             it('should select System Host if not required', () => {
                 service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
@@ -135,6 +226,53 @@ describe('HostFolderFiledStore', () => {
 
                 expect(service.getCurrentSiteAsTreeNodeItem).toHaveBeenCalled();
                 expect(store.selectedSite().label).toBe(hostNode.label);
+            }));
+        });
+
+        describe('when the resolved site cannot be found', () => {
+            it('should surface an error instead of leaving the store silently uninitialized when there are no sites available', () => {
+                service.getSitesTreePath.mockReturnValue(of([]));
+
+                store.loadSites({ path: null, isRequired: false });
+
+                expect(store.selectedSite()).toBe(null);
+                expect(store.confirmedNode()).toBe(null);
+                expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
+            });
+
+            it('should surface an error instead of leaving the store silently uninitialized when the persisted path resolves to a hostname not present in the sites list (e.g. an archived/inaccessible site)', fakeAsync(() => {
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.buildTreeByPaths.mockReturnValue(
+                    of({
+                        node: {
+                            key: 'unknown-node',
+                            label: 'unknown-site.dotcms.com/level1/',
+                            data: {
+                                id: 'unknown-node',
+                                hostname: 'unknown-site.dotcms.com',
+                                path: '/level1/',
+                                type: 'folder'
+                            }
+                        },
+                        tree: {
+                            path: '/',
+                            folders: [],
+                            parent: {
+                                hostName: 'unknown-site.dotcms.com',
+                                id: 'unknown-site-id',
+                                path: '/',
+                                addChildrenAllowed: true
+                            }
+                        }
+                    })
+                );
+
+                store.loadSites({ path: 'unknown-site.dotcms.com/level1', isRequired: false });
+                tick();
+
+                expect(store.selectedSite()).toBe(null);
+                expect(store.confirmedNode()).toBe(null);
+                expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
             }));
         });
     });
@@ -206,6 +344,91 @@ describe('HostFolderFiledStore', () => {
                 site.data.hostname
             );
             expect(store.folders()).toEqual(mockFolders);
+        });
+
+        it('should be a no-op when re-selecting the already-selected site, preserving folders and pendingNode', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const mockFolders: TreeNodeItem[] = [
+                {
+                    key: 'folder-1',
+                    label: 'demo.dotcms.com/folder1/',
+                    data: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/',
+                        type: 'folder'
+                    },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder',
+                    leaf: false
+                }
+            ];
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: mockFolders,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.selectSite(site);
+            service.searchFolders.mockClear();
+
+            const pendingBeforeReclick = store.pendingNode();
+            const foldersBeforeReclick = store.folders();
+
+            store.selectSite(site);
+
+            expect(service.searchFolders).not.toHaveBeenCalled();
+            expect(store.pendingNode()).toBe(pendingBeforeReclick);
+            expect(store.folders()).toBe(foldersBeforeReclick);
+        });
+    });
+
+    describe('Computed: treeSelection', () => {
+        it('should return null when there is no pending node', () => {
+            expect(store.treeSelection()).toBe(null);
+        });
+
+        it('should resolve the pending node to the current object reference inside folders() by key', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const folder: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                }
+            };
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [folder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+            store.selectSite(site);
+
+            // A stale reference sharing the same key but not the object living in `folders()`
+            // (e.g. after a `structuredClone` elsewhere) should still resolve correctly.
+            store.setPendingNode({ ...folder });
+
+            expect(store.treeSelection()).toBe(store.folders()[0]);
+        });
+
+        it('should return null when the pending node is not found in the current folders', () => {
+            store.setPendingNode({
+                key: 'missing',
+                label: 'missing',
+                data: {
+                    id: 'missing',
+                    hostname: 'demo.dotcms.com',
+                    path: '/missing/',
+                    type: 'folder'
+                }
+            });
+
+            expect(store.treeSelection()).toBe(null);
         });
     });
 

@@ -13,7 +13,7 @@ import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
-import { DotBrowsingService } from '@dotcms/ui';
+import { DotBrowsingService, normalizeHostFolderBrowsePath } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
 export const FOLDER_PAGE_LIMIT = 40;
@@ -110,6 +110,35 @@ function buildInitialPaginationMap(folders: TreeNodeItem[]): Record<string, Node
     return map;
 }
 
+/**
+ * Marks every ancestor folder leading to `targetPath` as expanded, so `p-tree` renders the
+ * full branch open instead of requiring a manual expand click. Acts as a safety net on top
+ * of `buildTreeByPaths`'s own `expanded` flag, since the tree can be re-created via
+ * `structuredClone` elsewhere (e.g. `loadFolders`) which would otherwise silently drop it.
+ */
+function expandFoldersToTarget(folders: TreeNodeItem[], targetPath: string | undefined): void {
+    if (!targetPath) {
+        return;
+    }
+
+    const walk = (nodes: TreeNodeItem[]) => {
+        nodes.forEach((node) => {
+            const nodePath = node.data?.path;
+            const children = node.children as TreeNodeItem[] | undefined;
+
+            if (nodePath && nodePath !== targetPath && targetPath.startsWith(nodePath)) {
+                node.expanded = true;
+            }
+
+            if (Array.isArray(children)) {
+                walk(children);
+            }
+        });
+    };
+
+    walk(folders);
+}
+
 export const HostFolderFiledStore = signalStore(
     withState(initialState),
     withComputed(
@@ -117,6 +146,7 @@ export const HostFolderFiledStore = signalStore(
             sitesStatus,
             overlayOpen,
             confirmedNode,
+            pendingNode,
             searchTerm,
             searchResults,
             folders,
@@ -207,7 +237,42 @@ export const HostFolderFiledStore = signalStore(
              * Whether more root-level folders can be loaded ("Load 40 more") for the
              * currently selected site.
              */
-            hasMoreRootFolders: computed(() => nodePagination()[ROOT_NODE_KEY]?.hasMore ?? false)
+            hasMoreRootFolders: computed(() => nodePagination()[ROOT_NODE_KEY]?.hasMore ?? false),
+            /**
+             * The staged folder resolved to its matching object reference inside the folders
+             * currently rendered by the tree, so `p-tree`'s `[selection]` binding (which relies
+             * on referential equality against `value`) highlights it correctly. A plain
+             * `pendingNode()` read can go stale after tree mutations that clone the array
+             * (e.g. `loadFolders`'s `structuredClone`), so we re-resolve by `key` on every read.
+             */
+            treeSelection: computed<TreeNodeItem | null>(() => {
+                const pending = pendingNode();
+                if (!pending) {
+                    return null;
+                }
+
+                const source =
+                    searchTerm().length >= MIN_SEARCH_LENGTH ? (searchResults() ?? []) : folders();
+
+                const findByKey = (nodes: TreeNodeItem[]): TreeNodeItem | null => {
+                    for (const node of nodes) {
+                        if (node.key === pending.key) {
+                            return node;
+                        }
+
+                        if (Array.isArray(node.children)) {
+                            const found = findByKey(node.children as TreeNodeItem[]);
+                            if (found) {
+                                return found;
+                            }
+                        }
+                    }
+
+                    return null;
+                };
+
+                return findByKey(source);
+            })
         })
     ),
     withMethods((store) => {
@@ -409,6 +474,10 @@ export const HostFolderFiledStore = signalStore(
              */
             loadSites: rxMethod<{ path: string | null; isRequired: boolean }>(
                 pipe(
+                    map(({ path, isRequired }) => ({
+                        path: path ? normalizeHostFolderBrowsePath(path) : path,
+                        isRequired
+                    })),
                     tap(() => patchState(store, { sitesStatus: ComponentStatus.LOADING })),
                     switchMap(({ path, isRequired }) => {
                         return dotBrowsingService
@@ -475,8 +544,15 @@ export const HostFolderFiledStore = signalStore(
                             sites
                         });
                     }),
-                    filter(({ path }) => !!path),
                     switchMap(({ path, sites }) => {
+                        if (!path) {
+                            return of({
+                                site: undefined as TreeNodeItem | undefined,
+                                node: null as TreeNodeItem | null,
+                                tree: null as CustomTreeNode['tree']
+                            });
+                        }
+
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
@@ -502,6 +578,16 @@ export const HostFolderFiledStore = signalStore(
                     }),
                     tap(({ site, node, tree }) => {
                         if (!site) {
+                            // The preselected value (or default) couldn't be matched to a site
+                            // in the currently loaded list (e.g. an archived/inaccessible site,
+                            // or no sites available at all). Surface this deterministically
+                            // instead of leaving the store looking successfully-but-silently
+                            // uninitialized.
+                            patchState(store, {
+                                sitesStatus: ComponentStatus.ERROR,
+                                error: ''
+                            });
+
                             return;
                         }
 
@@ -512,6 +598,7 @@ export const HostFolderFiledStore = signalStore(
                         };
 
                         if (tree?.folders) {
+                            expandFoldersToTarget(tree.folders, node?.data?.path);
                             changes.folders = tree.folders;
                             changes.nodePagination = buildInitialPaginationMap(tree.folders);
                         } else {
@@ -535,9 +622,16 @@ export const HostFolderFiledStore = signalStore(
             /**
              * Selects a site in the overlay: resets folders/search/pagination and loads the
              * new site's root-level folders. Also stages the site itself as the pending
-             * selection, so clicking "Select" right away targets the site root.
+             * selection, so clicking "Select" right away targets the site root. Re-selecting
+             * the already-selected site (e.g. re-clicking it while browsing a preselected
+             * nested path) is a no-op, so the resolved folder tree and pending selection
+             * aren't lost.
              */
             selectSite: (site: TreeNodeItem) => {
+                if (store.selectedSite()?.key === site.key) {
+                    return;
+                }
+
                 patchState(store, {
                     selectedSite: site,
                     folders: [],

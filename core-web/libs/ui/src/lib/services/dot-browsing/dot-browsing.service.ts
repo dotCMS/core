@@ -16,6 +16,40 @@ import {
 } from '@dotcms/dotcms-models';
 
 /**
+ * Normalizes a persisted host/folder browse path into the plain `hostname/path/` format
+ * expected by `buildTreeByPaths`, regardless of how it was serialized when saved.
+ *
+ * Handles the known persisted formats:
+ * - `//hostname/path/` (leading double slash)
+ * - `hostname:/path/` (colon-separated, produced by the host/folder field's `pathToSave`)
+ *
+ * @param {string} path - The raw path value to normalize
+ * @returns {string} The normalized `hostname/path/` path
+ *
+ * @usageNotes
+ *
+ * ### Example
+ *
+ * ```ts
+ * normalizeHostFolderBrowsePath('//demo.com/level1/'); // 'demo.com/level1/'
+ * normalizeHostFolderBrowsePath('demo.com:/level1/'); // 'demo.com/level1/'
+ * ```
+ */
+export function normalizeHostFolderBrowsePath(path: string): string {
+    const withoutLeadingSlashes = path.replace(/^\/+/, '');
+    const colonIndex = withoutLeadingSlashes.indexOf(':');
+
+    if (colonIndex === -1) {
+        return withoutLeadingSlashes;
+    }
+
+    const hostname = withoutLeadingSlashes.slice(0, colonIndex);
+    const folderPath = withoutLeadingSlashes.slice(colonIndex + 1);
+
+    return `${hostname}${folderPath}`;
+}
+
+/**
  * Provide util methods to get Tags available in the system.
  * @export
  * @class DotBrowsingService
@@ -218,6 +252,10 @@ export class DotBrowsingService {
                                 );
                                 if (folder) {
                                     folder.children = node.folders;
+                                    // Mark the ancestor as expanded so `p-tree` renders this
+                                    // branch open immediately instead of requiring a manual
+                                    // expand click.
+                                    folder.expanded = true;
                                     if (mainNode.parent.id === folder.key) {
                                         rta.node = folder;
                                     }
