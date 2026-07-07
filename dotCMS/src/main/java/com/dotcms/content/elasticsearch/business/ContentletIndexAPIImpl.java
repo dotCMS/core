@@ -41,11 +41,13 @@ import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -1688,31 +1690,231 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     }
 
+    /**
+     * When {@code true}, bypasses the guard that blocks deletion of an active
+     * (working/live) or building (reindex) index. Off by default: deleting an in-use
+     * index leaves the site with nothing to serve reads from or reindex into. Intended
+     * only for emergency/scripted maintenance.
+     *
+     * <p>The flag name is centralized in {@link FeatureFlagName}.</p>
+     */
+    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE =
+            FeatureFlagName.FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE;
+
+    /**
+     * Rejects a destructive operation ({@code operation}, e.g. {@code "deleted"} / {@code "cleared"})
+     * on an index that is currently active (working/live) or being rebuilt (a reindex slot). The
+     * protected set is collected phase-aware and, in the dual-write phases, from <strong>both</strong>
+     * the ES and OS stores (see {@link #collectProtectedLogicalNames()}) so a divergently-named
+     * active OS index — the one actually serving reads in Phase 2 — is protected too. The UI hides
+     * the Delete/Clear option for these indices; a direct REST/AJAX call previously bypassed that
+     * and could wipe the only index (see issue #35640, TC-018).
+     *
+     * <p>Bypass with the {@value #FF_ALLOW_ACTIVE_INDEX_DELETE} feature flag.</p>
+     *
+     * @throws DotStateException if the index is active/building (bypass off), or if the active set
+     *                           cannot be resolved (fail closed — a destructive op must not proceed
+     *                           on an unknown state).
+     */
+    @Override
+    public void assertIndexNotActive(final String indexName, final String operation) {
+        if (Config.getBooleanProperty(FF_ALLOW_ACTIVE_INDEX_DELETE, false)) {
+            return;
+        }
+        // Compare on the LOGICAL (cluster-stripped, untagged) name on BOTH sides. The active set is
+        // bare in Phases 0-2 and .os-tagged in Phase 3, and the caller may pass either the bare or
+        // the .os name — normalizing both to the logical form makes the guard match regardless of
+        // phase or which twin's name was given (issue #35640).
+        final String requested = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
+        final Set<String> protectedIndices;
+        try {
+            protectedIndices = collectProtectedLogicalNames();
+        } catch (final DotDataException e) {
+            throw new DotStateException("Unable to verify whether index '" + indexName
+                    + "' is active before it is " + operation + "; refusing to proceed.", e);
+        }
+        if (protectedIndices.contains(requested)) {
+            throw new DotStateException("Index '" + indexName
+                    + "' is active or being rebuilt and cannot be " + operation + ". Deactivate it"
+                    + " first (or set " + FF_ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
+        }
+    }
+
+    /**
+     * Collects the logical (cluster-stripped, untagged) names of every active (working/live) and
+     * building (reindex) index that must be protected from destructive ops, unioning the stores
+     * authoritative for the current phase:
+     * <ul>
+     *   <li>Phase 0 — ES store only (the OS store is not written yet).</li>
+     *   <li>Phases 1/2 — <strong>both</strong> stores: reads resolve from the OS store while the
+     *       ES store / UI may carry different names, and the two can diverge silently, so
+     *       protecting only one store would leave the live OS index deletable
+     *       (issue #35640, swicken review).</li>
+     *   <li>Phase 3 — OS store only (ES decommissioned).</li>
+     * </ul>
+     */
+    private Set<String> collectProtectedLogicalNames() throws DotDataException {
+        final Set<String> protectedIndices = new HashSet<>();
+        // ES store — authoritative through Phase 2.
+        if (!isMigrationComplete()) {
+            final IndiciesInfo es = legacyIndiciesAPI.loadIndicies();
+            addLogical(protectedIndices, es.getWorking());
+            addLogical(protectedIndices, es.getLive());
+            addLogical(protectedIndices, es.getReindexWorking());
+            addLogical(protectedIndices, es.getReindexLive());
+        }
+        // OS store — populated from Phase 1 on.
+        if (isMigrationStarted()) {
+            versionedIndicesAPI.loadDefaultVersionedIndices().ifPresent(os -> {
+                os.working().ifPresent(n -> addLogical(protectedIndices, n));
+                os.live().ifPresent(n -> addLogical(protectedIndices, n));
+                os.reindexWorking().ifPresent(n -> addLogical(protectedIndices, n));
+                os.reindexLive().ifPresent(n -> addLogical(protectedIndices, n));
+            });
+        }
+        return protectedIndices;
+    }
+
+    /** Adds the logical (cluster-stripped, untagged) form of {@code name} to {@code set} if set. */
+    private void addLogical(final Set<String> set, final String name) {
+        if (name != null) {
+            set.add(IndexTag.OS.untag(indexAPI.removeClusterIdFromName(name)));
+        }
+    }
+
     public boolean delete(String indexName) {
-        // Mirror createContentIndex: resolve the per-provider physical name (ES → bare,
-        // OS → .os tag) via ops.toPhysicalName so a router-driven delete targets the REAL
-        // OS index. Routing the bare logical name straight to OSIndexAPIImpl.delete would
-        // hit an untagged name that does not exist and orphan the actual .os index.
-        // Track the primary provider's result; shadow failures in dual-write phases are
-        // fire-and-forget (the primary ES delete must not be undone by an OS shadow miss).
+        // Guard first: never delete an active/building index (issue #35640, TC-018).
+        assertIndexNotActive(indexName, "deleted");
+
+        // Transparent-mirror: the operator sees one index, so deleting by either the ES (bare)
+        // or the OS (.os) name removes the index in EVERY engine that holds it — the mirror is
+        // never left half-deleted. Broadcast the LOGICAL (untagged) name to every write provider
+        // so each re-derives its OWN physical name (ES → bare, OS → .os). Track the read
+        // provider's result as the primary (issue #35640).
         final ContentletIndexOperations primary = router.readProvider();
+        final List<ContentletIndexOperations> targets = router.writeProviders();
+        final String nameForTargets = IndexTag.OS.untag(indexName);
+
+        // The logical (cluster-stripped, untagged) name is used to find and clear DB pointers.
+        final String logicalName = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
+
         boolean primaryResult = false;
-        for (final ContentletIndexOperations ops : router.writeProviders()) {
-            final String physicalName = ops.toPhysicalName(indexName);
+        for (final ContentletIndexOperations ops : targets) {
+            // Resolve the per-provider physical name (ES → bare, OS → .os tag) via
+            // ops.toPhysicalName so the delete targets the REAL index. Routing a bare
+            // logical name straight to OSIndexAPIImpl.delete would hit an untagged name
+            // that does not exist and orphan the actual .os index.
+            final String physicalName = ops.toPhysicalName(nameForTargets);
+            // (1) Delete the cluster index. A failure here must NOT abort the operation —
+            // keep going so the remaining engine and the DB pointers are still handled.
             try {
                 final boolean r = ops.indexAPI().delete(physicalName);
                 if (ops == primary) {
                     primaryResult = r;
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Logger.error(this.getClass(), "Error while deleting index " + physicalName, e);
                 if (ops == primary) {
                     primaryResult = false;
                 }
                 // shadow failures are fire-and-forget in dual-write phases
             }
+            // (2) Always remove the indicies-table pointer for this engine, even if the cluster
+            // delete above failed, so no DB row is left dangling at a deleted index.
+            try {
+                clearStorePointer(ops, logicalName);
+            } catch (final Exception e) {
+                Logger.warn(this.getClass(),
+                        "Could not clear the indicies DB pointer for " + physicalName, e);
+            }
         }
         return primaryResult;
+    }
+
+    /**
+     * Removes any {@code indicies} row that points at {@code logicalName} in the store that backs
+     * {@code ops}: the OpenSearch provider clears the versioned store, any other provider clears
+     * the legacy ES store. Best-effort — the caller wraps this so a failure never aborts the
+     * delete (issue #35640).
+     */
+    private void clearStorePointer(final ContentletIndexOperations ops, final String logicalName)
+            throws DotDataException {
+        if (ops == router.osImpl()) {
+            clearOsStorePointer(logicalName);
+        } else {
+            clearEsStorePointer(logicalName);
+        }
+    }
+
+    /**
+     * True when {@code storedName} resolves to the same logical (cluster-stripped, untagged) name
+     * as {@code logicalName}. Lets a DB slot be matched regardless of the prefix/tag form it was
+     * stored in.
+     */
+    private boolean matchesLogical(final String storedName, final String logicalName) {
+        return storedName != null
+                && logicalName.equals(IndexTag.OS.untag(indexAPI.removeClusterIdFromName(storedName)));
+    }
+
+    /** Clears any legacy ES-store ({@link IndiciesInfo}) slot pointing at {@code logicalName}. */
+    private void clearEsStorePointer(final String logicalName) throws DotDataException {
+        final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+        boolean changed = false;
+        if (matchesLogical(info.getWorking(), logicalName))        { builder.setWorking(null);        changed = true; }
+        if (matchesLogical(info.getLive(), logicalName))           { builder.setLive(null);           changed = true; }
+        if (matchesLogical(info.getReindexWorking(), logicalName)) { builder.setReindexWorking(null); changed = true; }
+        if (matchesLogical(info.getReindexLive(), logicalName))    { builder.setReindexLive(null);    changed = true; }
+        if (matchesLogical(info.getSiteSearch(), logicalName))     { builder.setSiteSearch(null);     changed = true; }
+        if (changed) {
+            legacyIndiciesAPI.point(builder.build());
+        }
+    }
+
+    /** Clears any OS versioned-store ({@link VersionedIndices}) slot pointing at {@code logicalName}. */
+    private void clearOsStorePointer(final String logicalName) throws DotDataException {
+        final Optional<VersionedIndices> existingOpt = versionedIndicesAPI.loadDefaultVersionedIndices();
+        if (existingOpt.isEmpty()) {
+            return;
+        }
+        final VersionedIndices existing = existingOpt.get();
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        boolean changed = false;
+        // Re-add every slot except the one(s) that resolve to the deleted logical name.
+        if (existing.working().isPresent()) {
+            if (matchesLogical(existing.working().get(), logicalName)) { changed = true; }
+            else { builder.working(existing.working().get()); }
+        }
+        if (existing.live().isPresent()) {
+            if (matchesLogical(existing.live().get(), logicalName)) { changed = true; }
+            else { builder.live(existing.live().get()); }
+        }
+        if (existing.reindexWorking().isPresent()) {
+            if (matchesLogical(existing.reindexWorking().get(), logicalName)) { changed = true; }
+            else { builder.reindexWorking(existing.reindexWorking().get()); }
+        }
+        if (existing.reindexLive().isPresent()) {
+            if (matchesLogical(existing.reindexLive().get(), logicalName)) { changed = true; }
+            else { builder.reindexLive(existing.reindexLive().get()); }
+        }
+        if (existing.siteSearch().isPresent()) {
+            if (matchesLogical(existing.siteSearch().get(), logicalName)) { changed = true; }
+            else { builder.siteSearch(existing.siteSearch().get()); }
+        }
+        if (changed) {
+            final VersionedIndices rebuilt = builder.build();
+            if (rebuilt.hasAnyIndex()) {
+                versionedIndicesAPI.saveIndices(rebuilt);
+            } else {
+                // The deleted index held the LAST populated slot. saveIndices contractually
+                // rejects an empty record ("At least one index must be specified",
+                // IndicesFactoryImpl), which would throw and leave the very pointer this method
+                // exists to clear dangling — and on the next restart initOSCatchup would treat
+                // that stale row as authoritative and recreate the deleted index empty. Remove
+                // the store row instead (issue #35640, swicken review).
+                versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
+            }
+        }
     }
 
     public boolean optimize(List<String> indexNames) {

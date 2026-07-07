@@ -75,6 +75,21 @@ public interface ContentletIndexAPI {
     boolean delete(String indexName);
 
     /**
+     * Rejects a destructive operation on an index that is currently active (working/live) or being
+     * rebuilt (a reindex slot), so that no path — REST, legacy AJAX, or {@code clear} — can wipe the
+     * only index dotCMS serves reads from (issue #35640, TC-018). The protected set is collected
+     * phase-aware, unioning the ES and OS stores in the dual-write phases. Bypassable via the
+     * {@code FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE} feature flag.
+     *
+     * @param indexName the index being targeted (bare or {@code .os}-tagged, with or without the
+     *                  cluster prefix — normalized internally)
+     * @param operation past-tense verb for the error message, e.g. {@code "deleted"} / {@code "cleared"}
+     * @throws com.dotmarketing.business.DotStateException if the index is active/building (bypass
+     *                  off), or if the active set cannot be resolved (fail closed)
+     */
+    void assertIndexNotActive(String indexName, String operation);
+
+    /**
      * Optimizes shards for a list of indices.
      *
      * @param indexNames

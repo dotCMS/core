@@ -39,6 +39,7 @@ import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -46,6 +47,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.reindex.IndexResourceHelper;
@@ -254,7 +256,7 @@ public class ESIndexResource {
         message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
-        return Response.ok(new ResponseEntityView(data)).build();
+        return Response.ok(new ResponseEntityView<>(data)).build();
 
     }
 
@@ -386,13 +388,30 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        if(indexExists(indexName) ){
-            return Response.status(404).build();
-        }
-        
-        idxApi.delete(indexName);
+        // Accept either the short name (as the UI sends it) or the full physical name with the
+        // cluster prefix (as `_cat/indices` reports it): normalize to the cluster-stripped form
+        // that listDotCMSIndices()/delete() expect, so a full physical name no longer 404s
+        // (issue #35640, TC-016).
+        final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
 
-        String message = "Index:" + indexName + " deleted";
+        if(indexDoesNotExist(resolvedName) ){
+            // Readable 404 body (no stack trace) so a mistyped/nonexistent name is clear
+            // (issue #35640, TC-017).
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
+        }
+
+        try {
+            idxApi.delete(resolvedName);
+        } catch (final DotStateException e) {
+            // The index is active/building (or its state could not be verified): reject with a
+            // readable 400 instead of a stack trace. See issue #35640, TC-018.
+            Logger.warn(this, "Rejected deletion of index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_DELETABLE", e.getMessage())))).build();
+        }
+
+        String message = "Index:" + resolvedName + " deleted";
         
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
@@ -541,30 +560,45 @@ public class ESIndexResource {
 
         final InitDataObject init = auth(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
-        
-        if(indexExists(indexName) ){
-            return Response.status(404).build();
+
+        // Same normalization as deleteIndex: accept both the short name and the full physical
+        // name (with cluster prefix) so this endpoint stays consistent and does not 404 on the
+        // latter (issue #35640, TC-016).
+        final String resolvedName = indexAPI.removeClusterIdFromName(indexName);
+
+        if(indexDoesNotExist(resolvedName) ){
+            // Readable 404 body, consistent with deleteIndex (issue #35640, TC-017).
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_FOUND", "Index not found: " + indexName)))).build();
         }
-        
-        
-        switch(indexAction){
-            case DEACTIVATE:
-                APILocator.getContentletIndexAPI().deactivateIndex(indexName);
-                break;
-            case CLEAR:
-                APILocator.getESIndexAPI().clearIndex(indexName);
-                break;
-            case OPEN:
-                APILocator.getESIndexAPI().openIndex(indexName);
-                break;
-            case CLOSE:
-                APILocator.getESIndexAPI().closeIndex(indexName);
-                break;
-            default:
-                APILocator.getContentletIndexAPI().activateIndex(indexName);
-            
+
+
+        try {
+            switch(indexAction){
+                case DEACTIVATE:
+                    APILocator.getContentletIndexAPI().deactivateIndex(resolvedName);
+                    break;
+                case CLEAR:
+                    APILocator.getESIndexAPI().clearIndex(resolvedName);
+                    break;
+                case OPEN:
+                    APILocator.getESIndexAPI().openIndex(resolvedName);
+                    break;
+                case CLOSE:
+                    APILocator.getESIndexAPI().closeIndex(resolvedName);
+                    break;
+                default:
+                    APILocator.getContentletIndexAPI().activateIndex(resolvedName);
+
+            }
+        } catch (final DotStateException e) {
+            // CLEAR is delete + recreate, so it is guarded like delete: an active/building index
+            // is rejected with a readable 400 instead of a stack trace (issue #35640, TC-018).
+            Logger.warn(this, "Rejected '" + action + "' on index '" + resolvedName + "': " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(List.of(new ErrorEntity("INDEX_NOT_MODIFIABLE", e.getMessage())))).build();
         }
-        String message = indexAction.name().toLowerCase() + " " + indexName;
+        String message = indexAction.name().toLowerCase() + " " + resolvedName;
         
         sendAdminMessage(message, MessageSeverity.INFO,init.getUser(), 5000);
         
@@ -590,7 +624,12 @@ public class ESIndexResource {
 
     }
     
-    private boolean indexExists(final String indexName) {
+    /**
+     * Returns {@code true} when the given index name is present in neither the open nor the
+     * closed dotCMS index list — i.e. the index does <strong>not</strong> exist. Named for the
+     * caller's guard ({@code if (indexDoesNotExist(...)) return 404}).
+     */
+    private boolean indexDoesNotExist(final String indexName) {
         return !idxApi.listDotCMSIndices().contains(indexName) && !idxApi.listDotCMSClosedIndices().contains(indexName) ;
     }
 }
