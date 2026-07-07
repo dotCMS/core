@@ -9,7 +9,11 @@ import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
 
-import { DotContentTypeService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -140,7 +144,9 @@ describe('DotContentDriveFieldFilterMenuComponent', () => {
         spectator.click(moreButton() as HTMLElement);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('field-filter-menu-option-body'), { root: true })).toBeNull();
+        expect(
+            spectator.query(byTestId('field-filter-menu-option-body'), { root: true })
+        ).toBeNull();
         expect(spectator.query(byTestId('field-filter-menu-empty'), { root: true })).toBeTruthy();
     });
 });

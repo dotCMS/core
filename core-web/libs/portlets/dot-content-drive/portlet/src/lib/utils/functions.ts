@@ -408,7 +408,9 @@ export function buildUserSearchablePayload(
             continue;
         }
 
-        const rawValue = Array.isArray(raw) ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR) : raw ?? '';
+        const rawValue = Array.isArray(raw)
+            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
+            : (raw ?? '');
 
         // A binary checkbox filters for the chosen boolean; empty means not filtering.
         if (isBinaryCheckboxField(field)) {

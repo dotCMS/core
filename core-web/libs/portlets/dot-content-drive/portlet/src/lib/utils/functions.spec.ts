@@ -841,7 +841,9 @@ describe('User-searchable field helpers', () => {
         });
 
         it('should be false for non-checkbox fields', () => {
-            expect(isBinaryCheckboxField(field({ fieldType: 'Select', values: 'A|a' }))).toBe(false);
+            expect(isBinaryCheckboxField(field({ fieldType: 'Select', values: 'A|a' }))).toBe(
+                false
+            );
         });
     });
 
@@ -921,7 +923,9 @@ describe('User-searchable field helpers', () => {
         });
 
         it('should emit a boolean for a binary checkbox and always include it', () => {
-            const fields = [field({ variable: 'featured', fieldType: 'Checkbox', values: '|true' })];
+            const fields = [
+                field({ variable: 'featured', fieldType: 'Checkbox', values: '|true' })
+            ];
 
             expect(buildUserSearchablePayload({ 'us.featured': 'true' }, fields)).toEqual({
                 featured: true
