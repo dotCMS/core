@@ -1,5 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
+import { Clipboard } from '@angular/cdk/clipboard';
 import {
     afterNextRender,
     ChangeDetectionStrategy,
@@ -125,6 +126,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
     private readonly destroyRef = inject(DestroyRef);
     private readonly injector = inject(Injector);
+    private readonly clipboard = inject(Clipboard);
     private $copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 
     constructor() {
@@ -212,10 +214,10 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         }
 
         clearTimeout(this.$copyResetTimer);
-        void navigator.clipboard.writeText(path).then(() => {
+        if (this.clipboard.copy(path)) {
             this.$pathCopied.set(true);
             this.$copyResetTimer = setTimeout(() => this.$pathCopied.set(false), 1500);
-        });
+        }
     }
 
     /**

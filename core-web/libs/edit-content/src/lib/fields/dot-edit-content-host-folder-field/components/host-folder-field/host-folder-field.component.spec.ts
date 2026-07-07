@@ -7,6 +7,8 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { Clipboard } from '@angular/cdk/clipboard';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotBrowsingService } from '@dotcms/ui';
 
@@ -19,6 +21,7 @@ import { MessageServiceMock } from '../../utils/mocks';
 describe('DotHostFolderFieldComponent', () => {
     let spectator: Spectator<DotHostFolderFieldComponent>;
     let service: SpyObject<DotBrowsingService>;
+    let clipboard: SpyObject<Clipboard>;
     let store: InstanceType<typeof HostFolderFiledStore>;
 
     const createComponent = createComponentFactory({
@@ -33,6 +36,9 @@ describe('DotHostFolderFieldComponent', () => {
                         pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
                     })
                 )
+            }),
+            mockProvider(Clipboard, {
+                copy: jest.fn().mockReturnValue(true)
             }),
             { provide: DotMessageService, useValue: MessageServiceMock }
         ]
@@ -57,6 +63,7 @@ describe('DotHostFolderFieldComponent', () => {
             }
         });
         service = spectator.inject(DotBrowsingService);
+        clipboard = spectator.inject(Clipboard);
         store = spectator.component.store;
 
         // p-popover isn't rendered/attached in this unit test; stub it with a stable
@@ -278,21 +285,18 @@ describe('DotHostFolderFieldComponent', () => {
 
     describe('copyPath', () => {
         beforeEach(() => {
-            Object.assign(navigator, {
-                clipboard: { writeText: jest.fn().mockResolvedValue(undefined) }
-            });
+            clipboard.copy.mockClear();
         });
 
-        it('should copy the confirmed path to the clipboard', async () => {
+        it('should copy the confirmed path to the clipboard', () => {
             const site = TREE_SELECT_SITES_MOCK[0];
             store.setPendingNode(site);
             store.commit();
             spectator.detectChanges();
 
             spectator.component.copyPath();
-            await Promise.resolve();
 
-            expect(navigator.clipboard.writeText).toHaveBeenCalledWith('//demo.dotcms.com/');
+            expect(clipboard.copy).toHaveBeenCalledWith('//demo.dotcms.com/');
         });
 
         it('should do nothing when there is no confirmed selection', () => {
@@ -300,10 +304,10 @@ describe('DotHostFolderFieldComponent', () => {
 
             spectator.component.copyPath();
 
-            expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+            expect(clipboard.copy).not.toHaveBeenCalled();
         });
 
-        it('should show a check icon after copying and revert after a delay', async () => {
+        it('should show a check icon after copying and revert after a delay', () => {
             jest.useFakeTimers();
             const site = TREE_SELECT_SITES_MOCK[0];
             store.setPendingNode(site);
@@ -311,7 +315,6 @@ describe('DotHostFolderFieldComponent', () => {
             spectator.detectChanges();
 
             spectator.component.copyPath();
-            await Promise.resolve();
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('host-folder-copy-icon'))).toHaveText('check');
