@@ -436,7 +436,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * to delete the currently active index (the maintenance UI hides Delete for active indices,
      * but a direct REST/AJAX call previously bypassed that and could wipe the only index). The
      * refusal is enforced via a {@link DotStateException} and can be overridden with the
-     * {@code FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE} feature flag.
+     * {@code ALLOW_ACTIVE_INDEX_DELETE} config property.
      *
      * @see ContentletIndexAPIImpl#delete(String)
      */
@@ -459,12 +459,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                     indexAPI.listDotCMSIndices().contains(workingIndex));
 
             // Feature-flag bypass: the same delete now goes through.
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
             try {
                 assertTrue(indexAPI.delete(workingIndex));
                 assertFalse(indexAPI.listDotCMSIndices().contains(workingIndex));
             } finally {
-                Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+                Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
             }
         } finally {
             // Restore the prior active working pointer (best effort).
@@ -502,11 +502,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 before.getWorking() != null && before.getWorking().endsWith(workingIndex));
 
         // Delete it, bypassing the active-index guard — the DB pointer must be cleared too.
-        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
         try {
             assertTrue(indexAPI.delete(workingIndex));
         } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
         final IndiciesInfo after = APILocator.getIndiciesAPI().loadIndicies();

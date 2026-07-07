@@ -709,6 +709,20 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      * 4. Removes indices which were created in the last day from the list of indices to be removed.
      * 5. If there are any indices left to be removed, it logs their names and deletes them.
      */
+    @Override
+    public void deleteIndex(final String indexName) throws DotDataException, IOException {
+        if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+            return;
+        }
+        if (!IndexType.SITE_SEARCH.is(indexName)) {
+            throw new DotDataException("Index '" + indexName + "' is not a site-search index");
+        }
+        // Deletes only from THIS engine (indexApi is the direct ESIndexAPI, not the router) —
+        // the SiteSearchAPIImpl router is the single fan-out point. Site-search names are plain
+        // (no .os tag). Active-index protection is enforced by the router before dispatch.
+        indexApi.deleteMultiple(new String[]{indexName});
+    }
+
     public void deleteOldSiteSearchIndices(){
         //Get All SiteSearch Indices
         final List<String> indicesToRemove = new ArrayList<>();
