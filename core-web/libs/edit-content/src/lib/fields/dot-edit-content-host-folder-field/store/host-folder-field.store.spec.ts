@@ -3,7 +3,12 @@ import { of } from 'rxjs';
 
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { ComponentStatus, DotPagination, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotPagination,
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 import {
