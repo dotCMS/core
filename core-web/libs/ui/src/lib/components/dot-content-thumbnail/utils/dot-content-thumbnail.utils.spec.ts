@@ -140,13 +140,19 @@ describe('contentletToThumbnailModel', () => {
             expect(model.src).toBe(`/dA/${INODE}/fileAsset`);
         });
 
-        it('builds a first-frame src (no fieldVariable, #t=0.1) when not playable', () => {
+        it('builds a first-frame src (#t=0.1) through the fieldVariable when not playable', () => {
             const model = contentletToThumbnailModel(createContentlet({ mimeType: 'video/mp4' }), {
-                fieldVariable: 'asset'
+                fieldVariable: 'binaryVideo'
             });
 
             expect(model.type).toBe('video');
             expect(model.playable).toBe(false);
+            expect(model.src).toBe(`/dA/${INODE}/binaryVideo#t=0.1`);
+        });
+
+        it('builds a first-frame src without a field segment for standalone assets', () => {
+            const model = contentletToThumbnailModel(createContentlet({ mimeType: 'video/mp4' }));
+
             expect(model.src).toBe(`/dA/${INODE}#t=0.1`);
         });
 
@@ -401,7 +407,7 @@ describe('tempFileToThumbnailModel', () => {
         expect(model.src).toBe(tempFile.referenceUrl);
     });
 
-    it('returns playable video for video content types', () => {
+    it('returns a first-frame video preview for video content types', () => {
         const tempFile = createTempFile({
             fileName: 'clip.mp4',
             metadata: {
@@ -420,7 +426,8 @@ describe('tempFileToThumbnailModel', () => {
         const model = tempFileToThumbnailModel(tempFile);
 
         expect(model.type).toBe('video');
-        expect(model.playable).toBe(true);
+        expect(model.playable).toBe(false);
+        expect(model.src).toBe(`${tempFile.thumbnailUrl}#t=0.1`);
         expect(model.icon).toBe('videocam');
     });
 

@@ -154,7 +154,9 @@ export class DotFileFieldPreviewComponent implements OnInit {
                 fieldVariable,
                 downloadLink: `/contentAsset/raw-data/${file.inode}/${fieldVariable}?byInode=true&force_download=true`,
                 metadata: getFileMetadata(file),
-                thumbnail: contentletToThumbnailModel(file, { fieldVariable, playableVideo: true })
+                // Videos preview as a static first frame (no player controls), like
+                // every other surface
+                thumbnail: contentletToThumbnailModel(file, { fieldVariable })
             };
         }
 

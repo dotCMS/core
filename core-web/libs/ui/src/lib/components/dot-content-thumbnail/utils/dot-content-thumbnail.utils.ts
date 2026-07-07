@@ -198,9 +198,13 @@ export function contentletToThumbnailModel(
             return iconModel;
         }
 
+        // The field segment matters when the contentlet is a parent with multiple
+        // binaries (inline Binary fields); standalone assets resolve without it
+        const videoUrl = variable ? `/dA/${inode}/${variable}` : `/dA/${inode}`;
+
         return playableVideo
-            ? { type: 'video', src: `/dA/${inode}/${variable}`, icon, alt, playable: true }
-            : { type: 'video', src: `/dA/${inode}#t=0.1`, icon, alt, playable: false };
+            ? { type: 'video', src: videoUrl, icon, alt, playable: true }
+            : { type: 'video', src: `${videoUrl}#t=0.1`, icon, alt, playable: false };
     }
 
     if (mimeType === PDF_MIME_TYPE) {
@@ -295,7 +299,8 @@ export function tempFileToThumbnailModel(tempFile: DotCMSTempFile): DotContentTh
     }
 
     if (fileType === 'video') {
-        return { type: 'video', src, icon, alt, playable: true };
+        // Static first-frame preview (media fragment), consistent with saved assets
+        return { type: 'video', src: `${src}#t=0.1`, icon, alt, playable: false };
     }
 
     return iconModel;
