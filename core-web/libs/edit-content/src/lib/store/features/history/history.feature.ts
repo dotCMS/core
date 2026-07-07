@@ -63,6 +63,7 @@ export function withHistory() {
                 // "current" side of the diff reflects the active locale, not the default one.
                 // Matches backend Language.getIsoCode(): lowercase `languageCode-countryCode`
                 // (or just `languageCode` when there is no country code).
+                const compareContentlet = store.compareContentlet();
                 const locale = store.currentLocale();
                 const language = locale
                     ? (
@@ -74,8 +75,8 @@ export function withHistory() {
                     : DEFAULT_LOCALE_ISO_KEY;
 
                 return {
-                    inode: store.compareContentlet()?.inode,
-                    identifier: store.compareContentlet()?.identifier,
+                    inode: compareContentlet?.inode,
+                    identifier: compareContentlet?.identifier,
                     language
                 };
             })
