@@ -148,7 +148,12 @@ public class IndexAjaxAction extends AjaxAction {
 			if(IndexType.SITE_SEARCH.is(indexName)){
 				APILocator.getSiteSearchAPI().deleteIndex(indexName);
 			} else {
-				APILocator.getESIndexAPI().delete(indexName);
+				// Content indices route through ContentletIndexAPI.delete (same as the REST
+				// endpoint) so this legacy AJAX path inherits the active-index guard, the
+				// bidirectional ES/OS cascade, and the indicies-table pointer cleanup. It
+				// previously called ESIndexAPI.delete and bypassed all three, leaving TC-018 open
+				// here and orphaning the .os twin (issue #35640).
+				APILocator.getContentletIndexAPI().delete(indexName);
 			}
 		}
 	}

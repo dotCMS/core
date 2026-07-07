@@ -41,6 +41,7 @@ import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.model.Variant;
@@ -1694,55 +1695,96 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * (working/live) or building (reindex) index. Off by default: deleting an in-use
      * index leaves the site with nothing to serve reads from or reindex into. Intended
      * only for emergency/scripted maintenance.
+     *
+     * <p>The flag name is centralized in {@link FeatureFlagName}.</p>
      */
-    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE = "FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE";
+    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE =
+            FeatureFlagName.FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE;
 
     /**
-     * Rejects deletion of an index that is currently active (working/live) or being
-     * rebuilt (a reindex slot). The protected set is resolved phase-aware via
-     * {@link #getCurrentIndex()} and {@link #getNewIndex()} — the same sources the
-     * maintenance UI uses to flag an index <em>active</em>/<em>building</em> — so this
-     * server-side guard mirrors exactly what the UI already hides. The UI hid the Delete
-     * option for these indices; a direct REST/AJAX call previously bypassed that and could
-     * wipe the only index (see issue #35640, TC-018).
+     * Rejects a destructive operation ({@code operation}, e.g. {@code "deleted"} / {@code "cleared"})
+     * on an index that is currently active (working/live) or being rebuilt (a reindex slot). The
+     * protected set is collected phase-aware and, in the dual-write phases, from <strong>both</strong>
+     * the ES and OS stores (see {@link #collectProtectedLogicalNames()}) so a divergently-named
+     * active OS index — the one actually serving reads in Phase 2 — is protected too. The UI hides
+     * the Delete/Clear option for these indices; a direct REST/AJAX call previously bypassed that
+     * and could wipe the only index (see issue #35640, TC-018).
      *
      * <p>Bypass with the {@value #FF_ALLOW_ACTIVE_INDEX_DELETE} feature flag.</p>
      *
-     * @throws DotStateException if the index is active/building (bypass off), or if the
-     *                           active set cannot be resolved (fail closed — a destructive
-     *                           op must not proceed on an unknown state).
+     * @throws DotStateException if the index is active/building (bypass off), or if the active set
+     *                           cannot be resolved (fail closed — a destructive op must not proceed
+     *                           on an unknown state).
      */
-    private void assertIndexIsDeletable(final String indexName) {
+    @Override
+    public void assertIndexNotActive(final String indexName, final String operation) {
         if (Config.getBooleanProperty(FF_ALLOW_ACTIVE_INDEX_DELETE, false)) {
             return;
         }
-        // Compare on the LOGICAL (cluster-stripped, untagged) name on BOTH sides. The active
-        // set is bare in Phases 0-2 and .os-tagged in Phase 3, and the caller may pass either
-        // the bare or the .os name — normalizing both to the logical form makes the guard match
-        // regardless of phase or which twin's name was given (issue #35640).
+        // Compare on the LOGICAL (cluster-stripped, untagged) name on BOTH sides. The active set is
+        // bare in Phases 0-2 and .os-tagged in Phase 3, and the caller may pass either the bare or
+        // the .os name — normalizing both to the logical form makes the guard match regardless of
+        // phase or which twin's name was given (issue #35640).
         final String requested = IndexTag.OS.untag(indexAPI.removeClusterIdFromName(indexName));
-        final Set<String> protectedIndices = new HashSet<>();
+        final Set<String> protectedIndices;
         try {
-            for (final String n : getCurrentIndex()) { // active working + live
-                protectedIndices.add(IndexTag.OS.untag(n));
-            }
-            for (final String n : getNewIndex()) {     // building reindex slots
-                protectedIndices.add(IndexTag.OS.untag(n));
-            }
+            protectedIndices = collectProtectedLogicalNames();
         } catch (final DotDataException e) {
             throw new DotStateException("Unable to verify whether index '" + indexName
-                    + "' is active before deletion; refusing to delete.", e);
+                    + "' is active before it is " + operation + "; refusing to proceed.", e);
         }
         if (protectedIndices.contains(requested)) {
             throw new DotStateException("Index '" + indexName
-                    + "' is active or being rebuilt and cannot be deleted. Deactivate it first"
-                    + " (or set " + FF_ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
+                    + "' is active or being rebuilt and cannot be " + operation + ". Deactivate it"
+                    + " first (or set " + FF_ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
+        }
+    }
+
+    /**
+     * Collects the logical (cluster-stripped, untagged) names of every active (working/live) and
+     * building (reindex) index that must be protected from destructive ops, unioning the stores
+     * authoritative for the current phase:
+     * <ul>
+     *   <li>Phase 0 — ES store only (the OS store is not written yet).</li>
+     *   <li>Phases 1/2 — <strong>both</strong> stores: reads resolve from the OS store while the
+     *       ES store / UI may carry different names, and the two can diverge silently, so
+     *       protecting only one store would leave the live OS index deletable
+     *       (issue #35640, swicken review).</li>
+     *   <li>Phase 3 — OS store only (ES decommissioned).</li>
+     * </ul>
+     */
+    private Set<String> collectProtectedLogicalNames() throws DotDataException {
+        final Set<String> protectedIndices = new HashSet<>();
+        // ES store — authoritative through Phase 2.
+        if (!isMigrationComplete()) {
+            final IndiciesInfo es = legacyIndiciesAPI.loadIndicies();
+            addLogical(protectedIndices, es.getWorking());
+            addLogical(protectedIndices, es.getLive());
+            addLogical(protectedIndices, es.getReindexWorking());
+            addLogical(protectedIndices, es.getReindexLive());
+        }
+        // OS store — populated from Phase 1 on.
+        if (isMigrationStarted()) {
+            versionedIndicesAPI.loadDefaultVersionedIndices().ifPresent(os -> {
+                os.working().ifPresent(n -> addLogical(protectedIndices, n));
+                os.live().ifPresent(n -> addLogical(protectedIndices, n));
+                os.reindexWorking().ifPresent(n -> addLogical(protectedIndices, n));
+                os.reindexLive().ifPresent(n -> addLogical(protectedIndices, n));
+            });
+        }
+        return protectedIndices;
+    }
+
+    /** Adds the logical (cluster-stripped, untagged) form of {@code name} to {@code set} if set. */
+    private void addLogical(final Set<String> set, final String name) {
+        if (name != null) {
+            set.add(IndexTag.OS.untag(indexAPI.removeClusterIdFromName(name)));
         }
     }
 
     public boolean delete(String indexName) {
         // Guard first: never delete an active/building index (issue #35640, TC-018).
-        assertIndexIsDeletable(indexName);
+        assertIndexNotActive(indexName, "deleted");
 
         // Transparent-mirror: the operator sees one index, so deleting by either the ES (bare)
         // or the OS (.os) name removes the index in EVERY engine that holds it — the mirror is
@@ -1860,7 +1902,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             else { builder.siteSearch(existing.siteSearch().get()); }
         }
         if (changed) {
-            versionedIndicesAPI.saveIndices(builder.build());
+            final VersionedIndices rebuilt = builder.build();
+            if (rebuilt.hasAnyIndex()) {
+                versionedIndicesAPI.saveIndices(rebuilt);
+            } else {
+                // The deleted index held the LAST populated slot. saveIndices contractually
+                // rejects an empty record ("At least one index must be specified",
+                // IndicesFactoryImpl), which would throw and leave the very pointer this method
+                // exists to clear dangling — and on the next restart initOSCatchup would treat
+                // that stale row as authoritative and recreate the deleted index empty. Remove
+                // the store row instead (issue #35640, swicken review).
+                versionedIndicesAPI.removeVersion(VersionedIndices.OPENSEARCH_3X);
+            }
         }
     }
 

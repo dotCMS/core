@@ -99,7 +99,9 @@ Phase 1 / 2  →  isDualWrite = true, ops == operationsOS  →  shadow = true  �
 Dual-write alone does not guarantee perfect sync between indices. Adopted strategy:
 dual-write for ~2 weeks on low-volume customers → validate → activate Phase 2.
 
-Full reindex on OS is not viable at scale (up to 1000 sites × 100k content pieces per customer).
+A full OS reindex is implemented — it fans out through the same dual-write journal — but a
+concurrent full rebuild is operationally expensive at scale (up to 1000 sites × 100k content
+pieces per customer); plan reindex windows accordingly.
 
 ---
 
@@ -325,8 +327,12 @@ so a future change of the literal — or its removal — does not require touchi
 - Creates a new index copy in the background
 - Inserts all rows from `contentlet_version_info` into `dist_reindex_journal`
 - Keeps the current index live during the process
-- **OS is excluded** — a user-triggered full reindex only rebuilds the ES index.
-  See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
+- **From Phase 1 on, the reindex fans out to OS too**: `initAndPointReindex` creates the OS
+  `reindex_working`/`reindex_live` slots (router fan-out), the journal worker dual-writes every
+  reindexed document to them (`DualIndexBulkRequest`), and the switchover is phase-aware
+  (`fullReindexSwitchover` mirrors the promotion to the OS store; Phase 3 delegates to
+  `fullReindexSwitchoverOS`). Only in **Phase 0** does a reindex rebuild ES alone — there is no
+  shadow index yet. See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
 
 ---
 
@@ -340,7 +346,7 @@ so a future change of the literal — or its removal — does not require touchi
 | Content-type delete + content cleanup| ✅ Yes            |                                                              |
 | Permission update                    | ✅ Yes            |                                                              |
 | User-triggered index lifecycle (delete / clear / open / close / replicas) | ✅ Yes | Transparent-mirror principle — the operator sees one index; the action applies to both engines |
-| User-triggered reindex               | ❌ No             | **The one exception** — full reindex at OS scale is not viable (feasibility, not transparency); OS keeps its index. See Accepted Limitation |
+| User-triggered reindex               | ✅ Yes (Phase 1+) | Fans out to OS: creates OS reindex slots, dual-writes docs, and switches over phase-aware. Phase 0 rebuilds ES alone (no shadow yet). A full OS reindex on a very large customer is operationally expensive — a caveat, not a code exclusion |
 | Site Search index operations         | ✅ Yes (deferred) | In scope, lower priority than core content index            |
 
 ---
@@ -359,8 +365,10 @@ single-index cluster.
   **cascade to both engines**. Each op resolves the per-engine physical name (ES → bare,
   OS → `.os`) so it targets the real index on each side. *(This supersedes the earlier stance that
   lifecycle ops were "not user-controllable" on the shadow.)*
-- The one deliberate exception is **full reindex**, excluded for feasibility (OS-scale rebuild is
-  not viable), not for transparency.
+- **Full reindex is no mirror exception**: from Phase 1 on it also rebuilds and switches over the
+  OS twin (create OS reindex slots → dual-write docs → phase-aware switchover). The old "not viable
+  at OS scale" note survives only as an *operational* caveat (a concurrent full OS rebuild is
+  expensive on very large customers), not as a code-level exclusion.
 - Safety guards (e.g. the active-index delete guard, which blocks deleting the live/working index)
   exist to **reproduce** the single-index UX, not to protect OS from the operator.
 
@@ -700,5 +708,4 @@ Never add migration tests to general test suites — keep them isolated and easy
 
 ## Deferred (lower priority)
 - **Site Search** (`site-search` index) — in scope, but separate pipeline; will be addressed after core content index migration is stable
-- **Full reindex orchestration for OS** — not viable at current scale; deferred until a targeted catchup strategy is defined
 - **User-facing query routing during dual-write phase** — search queries are not yet phase-aware beyond the read provider selection in `PhaseRouter`
