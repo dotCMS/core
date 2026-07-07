@@ -213,8 +213,9 @@ describe('DotHostFolderFieldComponent', () => {
         };
 
         const callScroll = () =>
-            (spectator.component as unknown as ComponentWithPrivateScroll)
-                .scrollSelectedFolderIntoView();
+            (
+                spectator.component as unknown as ComponentWithPrivateScroll
+            ).scrollSelectedFolderIntoView();
 
         const stubFolderTree = (root: HTMLElement | undefined) => {
             Object.defineProperty(spectator.component, '$folderTree', {
@@ -248,9 +249,7 @@ describe('DotHostFolderFieldComponent', () => {
             store.openOverlay();
             jest.spyOn(store, 'treeSelection').mockReturnValue(node);
             jest.spyOn(store, 'foldersLoading').mockReturnValue(true);
-            const rafSpy = jest
-                .spyOn(window, 'requestAnimationFrame')
-                .mockImplementation(() => 0);
+            const rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
 
             callScroll();
 

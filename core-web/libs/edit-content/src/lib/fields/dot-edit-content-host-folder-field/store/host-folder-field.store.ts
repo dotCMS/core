@@ -359,16 +359,11 @@ export const HostFolderFiledStore = signalStore(
                                             target.icon = 'pi pi-folder-open';
 
                                             const prevChildren = params.append
-                                                ? stripLoadMore(
-                                                      target.children as TreeNodeItem[]
-                                                  )
+                                                ? stripLoadMore(target.children as TreeNodeItem[])
                                                 : [];
                                             const nextChildren = [...prevChildren, ...folders];
                                             target.children = hasMore
-                                                ? [
-                                                      ...nextChildren,
-                                                      createLoadMoreNode(params.key)
-                                                  ]
+                                                ? [...nextChildren, createLoadMoreNode(params.key)]
                                                 : nextChildren;
 
                                             patchState(store, {
