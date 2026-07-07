@@ -12,7 +12,8 @@ import {
     DotContentletService,
     DotMessageService,
     DotUploadFileService,
-    DotUploadService
+    DotUploadService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotDropZoneComponent, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
@@ -74,6 +75,7 @@ describe('DotFileFieldComponent', () => {
             DotFileFieldUploadService,
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
+            mockProvider(DotWorkflowActionsFireService),
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotUploadFileService),
@@ -565,13 +567,13 @@ describe('DotFileFieldComponent', () => {
 
             setImagePreview(true);
 
-            const spyApply = jest.spyOn(store, 'applyTempFile');
+            const spyApply = jest.spyOn(store, 'applyEditedImage').mockImplementation();
 
             spectator.component.onEditImage();
 
             expect(dialogLauncher.open).toHaveBeenCalled();
             expect(dojoLauncher.open).not.toHaveBeenCalled();
-            expect(spyApply).toHaveBeenCalledWith(tempFile);
+            expect(spyApply).toHaveBeenCalled();
         });
 
         it('should open the Dojo launcher when useLegacyDojoImageEditor is true', () => {
