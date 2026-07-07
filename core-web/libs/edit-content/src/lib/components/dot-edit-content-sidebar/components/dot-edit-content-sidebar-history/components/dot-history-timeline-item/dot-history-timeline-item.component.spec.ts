@@ -1,6 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-
-import { DatePipe } from '@angular/common';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -8,9 +6,9 @@ import { MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotGravatarDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './dot-history-timeline-item.component';
@@ -48,11 +46,9 @@ describe('DotHistoryTimelineItemComponent', () => {
             MenuModule,
             TooltipModule,
             DotGravatarDirective,
-            DotMessagePipe,
-            DotRelativeDatePipe
+            DotMessagePipe
         ],
         providers: [
-            DatePipe,
             DotMessagePipe,
             {
                 provide: DotMessageService,
@@ -66,8 +62,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                     'edit.content.sidebar.history.published': 'Published',
                     'edit.content.sidebar.history.draft': 'Draft'
                 })
-            },
-            mockProvider(DotFormatDateService)
+            }
         ]
     });
 
@@ -144,20 +139,56 @@ describe('DotHistoryTimelineItemComponent', () => {
             expect(spectator.query(byTestId('state-variant'))).toBeFalsy();
         });
 
-        it('should show "Current" text for working items', () => {
-            spectator.setInput('item', { ...mockVersionItem, working: true, live: false });
+        it('should show the exact date/time — not "Current" — for the working (most recent) version', () => {
+            spectator.setInput('item', {
+                ...mockVersionItem,
+                working: true,
+                live: false,
+                modDate: new Date(2026, 4, 16, 13, 10).getTime()
+            });
             spectator.detectChanges();
 
             const timeDisplay = spectator.query(byTestId('time-display'));
-            expect(timeDisplay.textContent?.trim()).toBe('Current');
+            expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
         });
 
-        it('should show relative date for non-working items', () => {
-            spectator.setInput('item', { ...mockVersionItem, working: false, live: true });
+        it('should show the exact date/time for non-working versions', () => {
+            spectator.setInput('item', {
+                ...mockVersionItem,
+                working: false,
+                live: true,
+                modDate: new Date(2026, 4, 16, 13, 10).getTime()
+            });
             spectator.detectChanges();
 
             const timeDisplay = spectator.query(byTestId('time-display'));
-            expect(timeDisplay.textContent?.trim()).not.toBe('Current');
+            expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
+        });
+
+        it.each([
+            [new Date(2026, 4, 16, 0, 0).getTime(), 'May 16, 2026 - 12:00 AM'],
+            [new Date(2026, 4, 16, 12, 0).getTime(), 'May 16, 2026 - 12:00 PM'],
+            [new Date(2026, 4, 16, 13, 10).getTime(), 'May 16, 2026 - 1:10 PM']
+        ])('should format %s as "%s" (AM/PM boundaries)', (modDate, expected) => {
+            spectator.setInput('item', { ...mockVersionItem, modDate });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe(expected);
+        });
+
+        it('should never render a relative-time string (e.g. "now", "ago") for any version', () => {
+            for (const overrides of [
+                { working: true, live: false },
+                { working: false, live: true },
+                { working: false, live: false }
+            ]) {
+                spectator.setInput('item', { ...mockVersionItem, ...overrides });
+                spectator.detectChanges();
+
+                const timeDisplay = spectator.query(byTestId('time-display'));
+                expect(timeDisplay.textContent?.trim()).not.toMatch(/now|ago|current/i);
+            }
         });
     });
 

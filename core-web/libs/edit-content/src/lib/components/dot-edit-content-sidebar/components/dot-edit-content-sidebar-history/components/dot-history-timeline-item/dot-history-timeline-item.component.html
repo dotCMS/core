@@ -22,7 +22,6 @@
                     {{ $item().title }}
                 </h4>
                 <ul class="m-0 list-none space-y-1 pl-0 text-xs">
-                    <li>{{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}</li>
                     <li>{{ $item().languageFlag }}</li>
                     @if ($item().experimentVariant) {
                         <li>
@@ -39,11 +38,7 @@
             <span
                 data-testid="time-display"
                 class="min-w-0 truncate text-sm leading-tight font-bold text-gray-900">
-                @if ($item().working) {
-                    {{ 'edit.content.sidebar.history.menu.current' | dm }}
-                } @else {
-                    {{ $item().modDate | dotRelativeDate }}
-                }
+                {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
             </span>
 
             <div class="flex shrink-0 items-center gap-2">

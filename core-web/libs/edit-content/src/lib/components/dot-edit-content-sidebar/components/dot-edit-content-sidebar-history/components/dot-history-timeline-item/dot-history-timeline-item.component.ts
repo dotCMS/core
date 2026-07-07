@@ -20,12 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotGravatarDirective,
-    DotMessagePipe,
-    DotRelativeDatePipe
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotGravatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     DotHistoryTimelineItemAction,
@@ -54,15 +49,12 @@ import {
         DotCopyButtonComponent,
         DotGravatarDirective,
         DotMessagePipe,
-        DotRelativeDatePipe,
         DatePipe
     ],
-    providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHistoryTimelineItemComponent implements OnDestroy {
-    private readonly datePipe = inject(DatePipe);
     private readonly dotMessageService = inject(DotMessageService);
 
     private static readonly MENU_HIDE_DELAY_MS = 200;
