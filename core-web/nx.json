@@ -107,8 +107,6 @@
             "cache": true,
             "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
         },
-<<<<<<< HEAD
-=======
         "@nx/jest:jest": {
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
             "cache": true,
@@ -136,7 +134,6 @@
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
->>>>>>> origin/main
         "@nx/angular:package": {
             "cache": true,
             "dependsOn": ["^build"],
