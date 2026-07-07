@@ -36,6 +36,13 @@ describe('DotCategoryFieldChipsComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
+    it('should left-align the chips list container', () => {
+        spectator.detectChanges();
+        const container = spectator.query(byTestId('category-list'));
+        expect(container.classList).toContain('justify-start');
+        expect(container.classList).not.toContain('justify-center');
+    });
+
     it('should the max input be equal to constant by default', () => {
         spectator.detectChanges();
         expect(spectator.component.$max()).toBe(MAX_CHIPS);

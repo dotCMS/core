@@ -89,6 +89,19 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
         });
+
+        it('renders without crashing when the temp file has no metadata', () => {
+            // Regression: the image-editor Save servlet can return a temp file with
+            // `metadata: null`. The file-info dialog header bound `metadata.title`
+            // unguarded and threw "Cannot read properties of null (reading 'title')".
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, image: false, mimeType: 'unknown', metadata: null }
+            } as unknown);
+
+            expect(() => spectator.detectChanges()).not.toThrow();
+            expect(spectator.component).toBeTruthy();
+        });
     });
 
     describe('contentlet without content preview file', () => {

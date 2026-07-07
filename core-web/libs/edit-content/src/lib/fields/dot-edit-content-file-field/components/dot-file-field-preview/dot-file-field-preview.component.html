@@ -162,22 +162,22 @@
     [closeOnEscape]="true"
     [dismissableMask]="true"
     [modal]="true"
-    [header]="metadata.title"
+    [header]="metadata?.title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
     <div class="dot-file-field-preview__dialog-list">
         <div class="file-info__item">
             <span class="file-info__label">{{ 'Size' | dm }}:</span>
             <div class="file-info__value-row">
-                @if (metadata.width && metadata.height) {
+                @if (metadata?.width && metadata?.height) {
                     <div class="file-info__value-group" data-testId="file-resolution">
                         <i class="pi pi-arrows-alt"></i>
-                        <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
+                        <span>{{ metadata?.width }}px, {{ metadata?.height }}px</span>
                     </div>
                 }
                 <div class="file-info__value-group">
                     <i class="pi pi-file"></i>
-                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                    <span>{{ metadata?.fileSize | dotFileSizeFormat }}</span>
                 </div>
             </div>
         </div>
