@@ -41,7 +41,6 @@ import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.model.Variant;
@@ -1691,15 +1690,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * When {@code true}, bypasses the guard that blocks deletion of an active
-     * (working/live) or building (reindex) index. Off by default: deleting an in-use
-     * index leaves the site with nothing to serve reads from or reindex into. Intended
-     * only for emergency/scripted maintenance.
-     *
-     * <p>The flag name is centralized in {@link FeatureFlagName}.</p>
+     * Config property that, when {@code true}, bypasses the guard blocking deletion of an active
+     * (working/live) or building (reindex) index. Off by default: deleting an in-use index leaves
+     * the site with nothing to serve reads from or reindex into. This is a maintenance/emergency
+     * override property — <strong>not</strong> a product feature flag — so it is a plain property
+     * key, not registered in {@code FeatureFlagName}. Intended only for emergency/scripted
+     * maintenance.
      */
-    public static final String FF_ALLOW_ACTIVE_INDEX_DELETE =
-            FeatureFlagName.FEATURE_FLAG_ALLOW_ACTIVE_INDEX_DELETE;
+    public static final String ALLOW_ACTIVE_INDEX_DELETE = "ALLOW_ACTIVE_INDEX_DELETE";
 
     /**
      * Rejects a destructive operation ({@code operation}, e.g. {@code "deleted"} / {@code "cleared"})
@@ -1710,7 +1708,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * the Delete/Clear option for these indices; a direct REST/AJAX call previously bypassed that
      * and could wipe the only index (see issue #35640, TC-018).
      *
-     * <p>Bypass with the {@value #FF_ALLOW_ACTIVE_INDEX_DELETE} feature flag.</p>
+     * <p>Bypass with the {@value #ALLOW_ACTIVE_INDEX_DELETE} config property.</p>
      *
      * @throws DotStateException if the index is active/building (bypass off), or if the active set
      *                           cannot be resolved (fail closed — a destructive op must not proceed
@@ -1718,7 +1716,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @Override
     public void assertIndexNotActive(final String indexName, final String operation) {
-        if (Config.getBooleanProperty(FF_ALLOW_ACTIVE_INDEX_DELETE, false)) {
+        if (Config.getBooleanProperty(ALLOW_ACTIVE_INDEX_DELETE, false)) {
             return;
         }
         // Compare on the LOGICAL (cluster-stripped, untagged) name on BOTH sides. The active set is
@@ -1736,7 +1734,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (protectedIndices.contains(requested)) {
             throw new DotStateException("Index '" + indexName
                     + "' is active or being rebuilt and cannot be " + operation + ". Deactivate it"
-                    + " first (or set " + FF_ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
+                    + " first (or set " + ALLOW_ACTIVE_INDEX_DELETE + "=true to override).");
         }
     }
 

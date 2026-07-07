@@ -540,13 +540,13 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         assertTrue("OS twin must survive a rejected clear",  osIndexAPI.indexExists(physicalDualWorking));
 
         // Bypass: the same clear now goes through; both twins still exist (recreated empty).
-        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
         try {
             APILocator.getESIndexAPI().clearIndex(DUAL_WORKING);
             assertTrue("ES twin exists after bypassed clear (recreated)", esImpl().indexExists(DUAL_WORKING));
             assertTrue("OS twin exists after bypassed clear (recreated)", osIndexAPI.indexExists(physicalDualWorking));
         } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
         Logger.info(this, "✅ clear Phase 1 — active index guarded, bypass works: " + DUAL_WORKING);
@@ -572,11 +572,11 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
         assertTrue("Pre: OS store row must exist with one slot",
                 APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices().isPresent());
 
-        Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, true);
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
         try {
             contentletIndexAPI().delete(IndexTag.OS.tag(logicalA));
         } finally {
-            Config.setProperty(ContentletIndexAPIImpl.FF_ALLOW_ACTIVE_INDEX_DELETE, false);
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
         }
 
         assertTrue("OS store row must be removed once its last slot was deleted (no dangling pointer)",
