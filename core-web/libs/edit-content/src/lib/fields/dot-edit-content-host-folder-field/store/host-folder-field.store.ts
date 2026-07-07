@@ -22,6 +22,36 @@ export const ROOT_NODE_KEY = 'root';
 
 export const SYSTEM_HOST_NAME = 'System Host';
 
+/**
+ * Marks a synthetic tree node used as an in-tree "Load N more" trigger, since `p-tree`
+ * has no per-node footer/slot. Injected as the last child of any level that still has
+ * more pages (`nodePagination[key].hasMore`).
+ */
+export const LOAD_MORE_NODE_TYPE = 'load-more';
+
+/**
+ * Creates the synthetic "Load more" node appended as the last child of a level.
+ * `selectable: false` makes `p-tree` skip selection on click, and `leaf: true` keeps
+ * it from rendering a toggler. The key is namespaced per level to avoid collisions.
+ */
+function createLoadMoreNode(levelKey: string): TreeNodeItem {
+    return {
+        key: `load-more:${levelKey}`,
+        label: '',
+        type: LOAD_MORE_NODE_TYPE,
+        selectable: false,
+        leaf: true
+    } as TreeNodeItem;
+}
+
+/**
+ * Removes any previously-injected "Load more" node from a level's children before
+ * appending a fresh page or re-evaluating `hasMore`.
+ */
+function stripLoadMore(nodes: TreeNodeItem[] | undefined): TreeNodeItem[] {
+    return (nodes ?? []).filter((node) => node.type !== LOAD_MORE_NODE_TYPE);
+}
+
 const HOST_FOLDER_DISPLAY_PATH_SEPARATOR = ' / ';
 
 /**
@@ -150,8 +180,7 @@ export const HostFolderFiledStore = signalStore(
             searchTerm,
             searchResults,
             folders,
-            foldersStatus,
-            nodePagination
+            foldersStatus
         }) => ({
             /**
              * Icon classes for the field trigger: spinner while the initial sites/value
@@ -233,11 +262,6 @@ export const HostFolderFiledStore = signalStore(
                 return folders();
             }),
             foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
-            /**
-             * Whether more root-level folders can be loaded ("Load 40 more") for the
-             * currently selected site.
-             */
-            hasMoreRootFolders: computed(() => nodePagination()[ROOT_NODE_KEY]?.hasMore ?? false),
             /**
              * The staged folder resolved to its matching object reference inside the folders
              * currently rendered by the tree, so `p-tree`'s `[selection]` binding (which relies
@@ -333,13 +357,19 @@ export const HostFolderFiledStore = signalStore(
                                             const target = params.targetNode;
                                             target.leaf = folders.length === 0 && params.page === 1;
                                             target.icon = 'pi pi-folder-open';
-                                            target.children = params.append
+
+                                            const prevChildren = params.append
+                                                ? stripLoadMore(
+                                                      target.children as TreeNodeItem[]
+                                                  )
+                                                : [];
+                                            const nextChildren = [...prevChildren, ...folders];
+                                            target.children = hasMore
                                                 ? [
-                                                      ...((target.children as TreeNodeItem[]) ??
-                                                          []),
-                                                      ...folders
+                                                      ...nextChildren,
+                                                      createLoadMoreNode(params.key)
                                                   ]
-                                                : folders;
+                                                : nextChildren;
 
                                             patchState(store, {
                                                 folders: structuredClone(store.folders()),
@@ -347,10 +377,18 @@ export const HostFolderFiledStore = signalStore(
                                                 nodePagination
                                             });
                                         } else {
+                                            const prevFolders = params.append
+                                                ? stripLoadMore(store.folders())
+                                                : [];
+                                            const nextFolders = [...prevFolders, ...folders];
+
                                             patchState(store, {
-                                                folders: params.append
-                                                    ? [...store.folders(), ...folders]
-                                                    : folders,
+                                                folders: hasMore
+                                                    ? [
+                                                          ...nextFolders,
+                                                          createLoadMoreNode(params.key)
+                                                      ]
+                                                    : nextFolders,
                                                 foldersStatus: ComponentStatus.LOADED,
                                                 nodePagination
                                             });

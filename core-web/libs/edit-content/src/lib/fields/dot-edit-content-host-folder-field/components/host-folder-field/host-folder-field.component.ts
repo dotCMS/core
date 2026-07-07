@@ -113,7 +113,13 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
      */
     protected readonly treePt = {
-        root: { class: '!p-0 flex min-h-0 h-full flex-col' }
+        root: { class: '!p-0 flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden' },
+        wrapper: { class: 'min-w-0 overflow-x-hidden' },
+        rootChildren: { class: 'min-w-0 w-full overflow-x-hidden' },
+        node: { class: 'min-w-0 max-w-full' },
+        nodeChildren: { class: 'min-w-0 overflow-x-hidden' },
+        nodeContent: { class: 'min-w-0 max-w-full overflow-hidden' },
+        nodeLabel: { class: 'min-w-0 flex-1 truncate overflow-hidden' }
     };
 
     /**
@@ -190,10 +196,13 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
-     * Loads the next page of root-level folders for the currently selected site.
+     * Loads the next page for the level owning the "Load more" sentinel node clicked.
+     * `node.parent` is the folder whose children are being paginated, or `undefined`
+     * for the root-level sentinel (which maps to `loadMore(null)`).
      */
-    onLoadMore(): void {
-        this.store.loadMore(null);
+    onLoadMoreNode(node: TreeNodeItem, event: Event): void {
+        event.stopPropagation();
+        this.store.loadMore(node.parent ?? null);
     }
 
     /**

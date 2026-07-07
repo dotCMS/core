@@ -103,7 +103,7 @@
         </div>
 
         <div
-            class="flex h-full min-w-0 flex-auto flex-col gap-2 p-4"
+            class="flex h-full min-w-0 flex-auto flex-col gap-2 overflow-hidden p-4"
             data-testid="host-folder-folders">
             <p-iconField class="w-full shrink-0">
                 <p-inputIcon class="pi pi-search text-sm text-surface-500" />
@@ -120,7 +120,7 @@
 
             <p-tree
                 #folderTree
-                class="min-h-0 flex-1"
+                class="min-h-0 min-w-0 flex-1 overflow-hidden"
                 [value]="store.displayedFolders()"
                 [selection]="store.treeSelection()"
                 [loading]="store.foldersLoading()"
@@ -132,7 +132,19 @@
                 (onNodeSelect)="onFolderSelect($event)"
                 (onNodeExpand)="onFolderExpand($event)">
                 <ng-template let-node pTemplate="default">
-                    <span>{{ node.label | dotTruncatePath }}</span>
+                    <span class="block w-full min-w-0 truncate">
+                        {{ node.label | dotTruncatePath }}
+                    </span>
+                </ng-template>
+                <ng-template let-node pTemplate="load-more">
+                    <button
+                        type="button"
+                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-sm text-(--color-palette-primary-500) hover:underline"
+                        data-testid="host-folder-load-more"
+                        (click)="onLoadMoreNode(node, $event)">
+                        <i class="pi pi-plus-circle"></i>
+                        {{ 'dot.file.field.host.folder.action.load.more' | dm: ['40'] }}
+                    </button>
                 </ng-template>
                 <ng-template pTemplate="empty">
                     <span class="block p-4 text-sm text-gray-600">
@@ -146,16 +158,6 @@
                         [class.pi-chevron-right]="!expanded"></i>
                 </ng-template>
             </p-tree>
-
-            @if (!store.isSearching() && store.hasMoreRootFolders()) {
-                <button
-                    type="button"
-                    class="shrink-0 cursor-pointer self-start border-0 bg-transparent py-1 text-sm text-(--color-palette-primary-500) hover:underline"
-                    data-testid="host-folder-load-more"
-                    (click)="onLoadMore()">
-                    {{ 'dot.file.field.host.folder.action.load.more' | dm: ['40'] }}
-                </button>
-            }
         </div>
     </div>
 

@@ -56,12 +56,10 @@ describe('DotHostFolderFieldComponent', () => {
     };
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                hasError: false,
-                isRequired: false
-            }
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.fixture.componentRef.setInput('hasError', false);
+        spectator.fixture.componentRef.setInput('isRequired', false);
+        spectator.detectChanges();
         service = spectator.inject(DotBrowsingService);
         clipboard = spectator.inject(Clipboard);
         store = spectator.component.store;
@@ -69,7 +67,10 @@ describe('DotHostFolderFieldComponent', () => {
         // p-popover isn't rendered/attached in this unit test; stub it with a stable
         // reference so trigger interactions can be verified without a real overlay.
         overlayMock = { toggle: jest.fn(), hide: jest.fn() };
-        spectator.component.$overlay = jest.fn(() => overlayMock as never);
+        Object.defineProperty(spectator.component, '$overlay', {
+            value: () => overlayMock,
+            writable: true
+        });
     });
 
     it('should create the component', () => {
@@ -143,12 +144,31 @@ describe('DotHostFolderFieldComponent', () => {
         expect(store.search).toHaveBeenCalledWith('foo');
     });
 
-    it('should load more root folders through the store', () => {
-        jest.spyOn(store, 'loadMore');
+    describe('onLoadMoreNode', () => {
+        it('should load more root folders when the sentinel has no parent', () => {
+            jest.spyOn(store, 'loadMore');
+            const node = { key: 'load-more:root', type: 'load-more' as const };
+            const event = new Event('click');
+            jest.spyOn(event, 'stopPropagation');
 
-        spectator.component.onLoadMore();
+            spectator.component.onLoadMoreNode(node, event);
 
-        expect(store.loadMore).toHaveBeenCalledWith(null);
+            expect(event.stopPropagation).toHaveBeenCalled();
+            expect(store.loadMore).toHaveBeenCalledWith(null);
+        });
+
+        it('should load more folders for the sentinel parent level', () => {
+            jest.spyOn(store, 'loadMore');
+            const parent = TREE_SELECT_MOCK[0];
+            const node = { key: 'load-more:folder-1', type: 'load-more' as const, parent };
+            const event = new Event('click');
+            jest.spyOn(event, 'stopPropagation');
+
+            spectator.component.onLoadMoreNode(node, event);
+
+            expect(event.stopPropagation).toHaveBeenCalled();
+            expect(store.loadMore).toHaveBeenCalledWith(parent);
+        });
     });
 
     it('should commit the pending selection and hide the overlay on Select', () => {
@@ -197,9 +217,10 @@ describe('DotHostFolderFieldComponent', () => {
                 .scrollSelectedFolderIntoView();
 
         const stubFolderTree = (root: HTMLElement | undefined) => {
-            spectator.component.$folderTree = jest.fn(
-                () => (root ? { el: { nativeElement: root } } : undefined) as never
-            );
+            Object.defineProperty(spectator.component, '$folderTree', {
+                value: () => (root ? { el: { nativeElement: root } } : undefined),
+                writable: true
+            });
         };
 
         it('should not scroll when the overlay is not open', () => {

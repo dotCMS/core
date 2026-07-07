@@ -615,6 +615,140 @@ describe('HostFolderFiledStore', () => {
         });
     });
 
+    describe('Load more sentinel node', () => {
+        it('should append a load-more sentinel as the last root folder when more pages are available', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const firstPage: TreeNodeItem[] = [
+                {
+                    key: 'folder-1',
+                    label: 'demo.dotcms.com/folder1/',
+                    data: {
+                        id: 'folder-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: firstPage,
+                    pagination: { currentPage: 1, perPage: 1, totalEntries: 2 }
+                })
+            );
+
+            store.selectSite(site);
+
+            const folders = store.folders();
+            expect(folders).toHaveLength(2);
+            expect(folders[0]).toEqual(firstPage[0]);
+            expect(folders[1].type).toBe('load-more');
+            expect(folders[1].selectable).toBe(false);
+            expect(folders[1].leaf).toBe(true);
+        });
+
+        it('should append a load-more sentinel as the last child of an expanded node with more pages', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+
+            const node: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const childFirstPage: TreeNodeItem[] = [
+                {
+                    key: 'child-1',
+                    label: 'demo.dotcms.com/folder1/child1/',
+                    data: {
+                        id: 'child-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/child1/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: childFirstPage,
+                    pagination: { currentPage: 1, perPage: 1, totalEntries: 2 }
+                })
+            );
+
+            store.expandNode({ originalEvent: new Event('click'), node });
+
+            const children = node.children as TreeNodeItem[];
+            expect(children).toHaveLength(2);
+            expect(children[0]).toEqual(childFirstPage[0]);
+            expect(children[1].type).toBe('load-more');
+            expect(children[1].selectable).toBe(false);
+        });
+
+        it('should drop the sentinel once a level is fully loaded after loading more', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const node: TreeNodeItem = {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/folder1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/folder1/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+            const childFirstPage: TreeNodeItem[] = [
+                {
+                    key: 'child-1',
+                    label: 'demo.dotcms.com/folder1/child1/',
+                    data: {
+                        id: 'child-1',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/child1/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: childFirstPage,
+                    pagination: { currentPage: 1, perPage: 1, totalEntries: 2 }
+                })
+            );
+            store.expandNode({ originalEvent: new Event('click'), node });
+
+            const childSecondPage: TreeNodeItem[] = [
+                {
+                    key: 'child-2',
+                    label: 'demo.dotcms.com/folder1/child2/',
+                    data: {
+                        id: 'child-2',
+                        hostname: 'demo.dotcms.com',
+                        path: '/folder1/child2/',
+                        type: 'folder'
+                    }
+                }
+            ];
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: childSecondPage,
+                    pagination: { currentPage: 2, perPage: 1, totalEntries: 2 }
+                })
+            );
+
+            store.loadMore(node);
+
+            expect(node.children).toEqual([childFirstPage[0], childSecondPage[0]]);
+        });
+    });
+
     describe('Method: search', () => {
         it('should ignore terms shorter than the minimum length', fakeAsync(() => {
             const site = TREE_SELECT_SITES_MOCK[0];
