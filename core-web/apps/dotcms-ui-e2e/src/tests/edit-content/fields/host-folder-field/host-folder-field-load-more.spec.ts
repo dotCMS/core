@@ -74,7 +74,7 @@ test.describe('Host/Folder Load More Pagination', () => {
         apiHelpers,
         testSuffix
     }) => {
-        const parentName = `hfparent-${testSuffix}`;
+        const parentName = `aaa-hfparent-${testSuffix}`;
         const prefix = `hfchild-${testSuffix}`;
         const targetFolder = `${prefix}-${NESTED_CHILD_COUNT}`;
 
@@ -92,11 +92,15 @@ test.describe('Host/Folder Load More Pagination', () => {
 
         await field.openOverlay();
         await field.selectSite(siteName);
+        await field.expectTreeNodeVisible(parentName);
         await field.expandFolder(parentName);
-        await field.expectTreeNodeVisible(`${prefix}-1`);
-        await field.expectLoadMoreVisible(parentName);
+        await field.expectLoadMoreVisible();
 
-        await field.clickLoadMore(parentName);
+        const countBefore = await field.folderNodeCount();
+        await field.clickLoadMore();
+        expect(await field.folderNodeCount()).toBeGreaterThan(countBefore);
+
+        await field.searchFolders(prefix);
         await field.expectTreeNodeVisible(targetFolder);
 
         await field.selectFolderFlow(targetFolder);

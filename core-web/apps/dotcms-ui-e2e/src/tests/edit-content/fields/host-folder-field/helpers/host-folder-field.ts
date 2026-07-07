@@ -148,7 +148,14 @@ export class HostFolderField {
         const node = this.folderNode(name);
         const toggle = node.locator('.p-tree-node-toggle-button').first();
         await toggle.waitFor({ state: 'visible', timeout: 10000 });
+        const responsePromise = this.page
+            .waitForResponse(
+                (r) => this.isFolderSearchResponse(r.url(), r.status()),
+                { timeout: 15000 }
+            )
+            .catch(() => null);
         await toggle.click();
+        await responsePromise;
     }
 
     /** @deprecated Use expandFolder */
@@ -250,7 +257,8 @@ export class HostFolderField {
                 timeout: 15000
             })
             .catch(() => null);
-        await button.click();
+        await button.scrollIntoViewIfNeeded();
+        await button.evaluate((element) => (element as HTMLButtonElement).click());
         await responsePromise;
         await expect
             .poll(async () => this.folderNodeCount(), { timeout: 15000 })
