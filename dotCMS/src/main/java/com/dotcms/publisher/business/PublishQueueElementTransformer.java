@@ -126,15 +126,22 @@ public class PublishQueueElementTransformer {
 
         final Language language = APILocator.getLanguageAPI().getLanguage(id);
 
-        return new HashMap<>(UtilMethods.isSet(language) ?
-                Map.of(
-                    TITLE_KEY, String.format( "%s(%s)", language.getLanguage(), language.getCountryCode()),
-                    LANGUAGE_CODE_KEY, language.getLanguageCode(),
-                    COUNTRY_CODE_KEY, language.getCountryCode(),
-                    CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
-                            PusheableAsset.LANGUAGE.getType())
-                ) :
-                Map.of(TITLE_KEY, id));
+        if (!UtilMethods.isSet(language)) {
+            return new HashMap<>(Map.of(TITLE_KEY, id));
+        }
+
+        // language-only locales (e.g. "es", no country) have a null countryCode; Map.of()
+        // throws NullPointerException on a null value, so default it to blank.
+        final String countryCode = UtilMethods.isSet(language.getCountryCode())
+                ? language.getCountryCode() : StringPool.BLANK;
+
+        return new HashMap<>(Map.of(
+                TITLE_KEY, String.format("%s(%s)", language.getLanguage(), countryCode),
+                LANGUAGE_CODE_KEY, language.getLanguageCode(),
+                COUNTRY_CODE_KEY, countryCode,
+                CONTENT_TYPE_NAME_KEY, CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
+                        PusheableAsset.LANGUAGE.getType())
+        ));
     }
 
     private static Map<String, Object> getMapForCategory(){

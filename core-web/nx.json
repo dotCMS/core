@@ -107,6 +107,36 @@
             "cache": true,
             "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
         },
+<<<<<<< HEAD
+=======
+        "@nx/jest:jest": {
+            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
+            "cache": true,
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "codeCoverage": true
+                }
+            }
+        },
+        "@nx/eslint:lint": {
+            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
+            "cache": true
+        },
+        "@nx/rollup:rollup": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "@nx/vite:build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+>>>>>>> origin/main
         "@nx/angular:package": {
             "cache": true,
             "dependsOn": ["^build"],
