@@ -53,10 +53,24 @@ export function withHistory() {
         { state: type<EditContentState>() },
         withComputed((store) => ({
             compareData: computed(() => {
+                // Derive the version-map key from the currently selected locale so the
+                // "current" side of the diff reflects the active locale, not the default one.
+                // Matches backend Language.getIsoCode(): lowercase `languageCode-countryCode`
+                // (or just `languageCode` when there is no country code).
+                const locale = store.currentLocale();
+                const language = locale
+                    ? (
+                          locale.isoCode ||
+                          (locale.countryCode
+                              ? `${locale.languageCode}-${locale.countryCode}`
+                              : locale.languageCode)
+                      ).toLowerCase()
+                    : 'en-us';
+
                 return {
                     inode: store.compareContentlet()?.inode,
                     identifier: store.compareContentlet()?.identifier,
-                    language: 'en-us'
+                    language
                 };
             })
         })),
