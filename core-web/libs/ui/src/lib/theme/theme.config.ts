@@ -24,6 +24,45 @@ export const CustomLaraPreset = definePreset(Lara, {
         primary: DotUiColorsService.getDefaultPrimeNGPalette()
     },
     components: {
+        accordion: {
+            // Flat accordion app-wide: Lara renders each panel as a rounded,
+            // bordered, surface-filled card. We drop the card chrome — the header
+            // fill, the L/R/B borders, the first/last corner radii — so sections
+            // read as flush bands separated only by their own dividers (and the
+            // focus ring becomes square along with the header). Per-feature spacing
+            // and dividers stay in the consuming component.
+            panel: {
+                borderWidth: '0'
+            },
+            header: {
+                borderWidth: '0',
+                borderRadius: '0',
+                first: {
+                    topBorderRadius: '0',
+                    borderWidth: '0'
+                },
+                last: {
+                    bottomBorderRadius: '0',
+                    activeBottomBorderRadius: '0'
+                }
+            },
+            content: {
+                borderWidth: '0'
+            },
+            colorScheme: {
+                light: {
+                    header: {
+                        // Opaque surface (not transparent) so a header pinned via
+                        // position: sticky never shows scrolling content through it.
+                        // On a white panel this still reads as a flat, fill-less band.
+                        background: '{surface.0}',
+                        hoverBackground: '{surface.50}',
+                        activeBackground: '{surface.0}',
+                        activeHoverBackground: '{surface.50}'
+                    }
+                }
+            }
+        },
         treeselect: {
             tree: {
                 padding: '0.5rem'
@@ -49,11 +88,21 @@ export const CustomLaraPreset = definePreset(Lara, {
             // without per-template classes. PrimeNG has no chip size token, so this
             // is expressed as CSS — same mechanism as card/confirmpopup. Content
             // status badges use `p-tag` (see the `tag` block below), not chips.
+            //
+            // The remove icon is flipped to the left of the label app-wide via flexbox
+            // `order` (`.p-chip` is `display:flex`): PrimeNG's Chip template always
+            // renders the remove icon after the label with no input to reorder it, so
+            // this is the only way to achieve it without forking the component. DOM
+            // order (and keyboard focus order) is unaffected — only the visual order
+            // changes.
             css: `
                 .p-chip {
                     height: calc(var(--spacing) * 7); /* 1.75rem */
                     padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
                     font-size: var(--text-xs); /* 0.75rem */
+                }
+                .p-chip .p-chip-remove-icon {
+                    order: -1;
                 }
             `
         },

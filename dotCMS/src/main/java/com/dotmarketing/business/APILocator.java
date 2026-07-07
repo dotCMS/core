@@ -67,6 +67,7 @@ import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchAPIImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
@@ -1483,7 +1484,7 @@ enum APIIndex
     		case FORM_API: return new FormAPIImpl();
     		case MENULINK_API: return new MenuLinkAPIImpl();
     		case DASHBOARD_API: return new DashboardAPIImpl();
-    		case SITESEARCH_API: return new ESSiteSearchAPI();
+    		case SITESEARCH_API: return new SiteSearchAPIImpl();
     		case FILEASSET_API: return new FileAssetAPIImpl();
     		case VERSIONABLE_API: return new VersionableAPIImpl();
     		case WORKFLOW_API : return new WorkflowAPIImpl();

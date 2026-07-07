@@ -10,14 +10,16 @@
             <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
-                <p-button
-                    [label]="'content-drive.upload' | dm"
-                    icon="pi pi-upload"
-                    [outlined]="true"
-                    data-testid="upload-asset-button"
-                    (click)="$addNewDotAsset.emit()" />
-
                 @if ($displayButton()) {
+                    <p-button
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        [label]="'content-drive.upload' | dm"
+                        icon="pi pi-upload"
+                        [outlined]="true"
+                        data-testid="upload-asset-button"
+                        (click)="$upload.emit()" />
+
                     <p-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"

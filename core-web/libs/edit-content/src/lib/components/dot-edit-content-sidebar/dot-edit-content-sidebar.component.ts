@@ -79,10 +79,7 @@ export class DotEditContentSidebarComponent {
     readonly #dotPropertiesService = inject(DotPropertiesService);
 
     readonly $isLocaleSelectorV2 = toSignal(
-        this.#dotPropertiesService.getFeatureFlagWithDefault(
-            FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2,
-            true
-        ),
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_LOCALE_SELECTOR_V2),
         { initialValue: true }
     );
     readonly $identifier = this.$store.getCurrentContentIdentifier;
@@ -143,6 +140,7 @@ export class DotEditContentSidebarComponent {
      * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
      * page load when the user never actually opens the sidebar.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #informationEffect = effect(() => {
         const identifier = this.$identifier();
         const isSidebarOpen = this.$store.isSidebarOpen();

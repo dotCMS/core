@@ -52,6 +52,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.content.ContentMapTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentToolTest.class,
         com.dotcms.rendering.velocity.viewtools.ContentSearchToolTest.class,
+        com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
         com.dotcms.rendering.velocity.viewtools.WebsiteToolTest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
@@ -95,7 +96,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
-        com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
+        com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class
 })
 
 public class MainSuite1b {

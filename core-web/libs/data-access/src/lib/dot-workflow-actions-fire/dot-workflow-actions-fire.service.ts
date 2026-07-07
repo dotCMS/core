@@ -17,6 +17,8 @@ export interface DotActionRequestOptions {
     action: ActionToFire;
     individualPermissions?: { [key: string]: string[] };
     formData?: FormData;
+    /** Language of the contentlet version to fire against (sent as `?language=`). */
+    language?: string | number;
 }
 
 export interface DotFireActionOptions<T> {
@@ -138,6 +140,26 @@ export class DotWorkflowActionsFireService {
     }
 
     /**
+     * Fire a "NEW" action resolving the content type from a base type instead of an explicit
+     * content type. The base type is sent in the contentlet body (no `contentType`), so the
+     * backend resolves the matching content type for that base type (e.g. `FILEASSET`, `DOTASSET`).
+     *
+     * @template T
+     * @param {string} baseType the base type to resolve the content type from
+     * @param {{ [key: string]: string }} data
+     * @param {FormData} [formData]
+     * @returns Observable<T>
+     * @memberof DotWorkflowActionsFireService
+     */
+    newContentletByBaseType<T>(
+        baseType: string,
+        data: { [key: string]: string },
+        formData?: FormData
+    ): Observable<T> {
+        return this.request<T>({ data: { baseType, ...data }, action: ActionToFire.NEW, formData });
+    }
+
+    /**
      * Fire a "PUBLISH" action over the content type received with the specified data
      *
      * @template T
@@ -172,6 +194,28 @@ export class DotWorkflowActionsFireService {
         return this.request<T>({
             data,
             action: ActionToFire.EDIT
+        });
+    }
+
+    /**
+     * Fire the default PUBLISH action against an existing contentlet, resolved by the
+     * `identifier` in `data` and the given language. Used to check in and publish a new
+     * version of the `dotAsset` referenced by an Image/File field from the image editor.
+     *
+     * @template T
+     * @param {{ [key: string]: string }} data contentlet fields (must include `identifier`)
+     * @param {string | number} [language] language of the version to fire against
+     * @returns {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    publishContentletByIdentifier<T>(
+        data: { [key: string]: string },
+        language?: string | number
+    ): Observable<T> {
+        return this.request<T>({
+            data,
+            action: ActionToFire.PUBLISH,
+            language
         });
     }
 
@@ -219,7 +263,8 @@ export class DotWorkflowActionsFireService {
         data,
         action,
         individualPermissions,
-        formData
+        formData,
+        language
     }: DotActionRequestOptions): Observable<T> {
         let url = `${this.BASE_URL}/actions/default/fire/${action}`;
 
@@ -228,6 +273,10 @@ export class DotWorkflowActionsFireService {
             ? { contentlet, individualPermissions }
             : { contentlet };
         const params = new URLSearchParams({});
+
+        if (language !== undefined && language !== null && `${language}` !== '') {
+            params.append('language', `${language}`);
+        }
 
         // It's not best approach but this legacy code
         if (contentlet['inode']) {

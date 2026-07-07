@@ -1,0 +1,23 @@
+<div class="image-editor" data-testid="image-editor-root">
+    <header class="image-editor__header border-b border-gray-200 px-4 py-3">
+        <dot-image-editor-header (close)="requestClose()" />
+    </header>
+
+    <dot-image-editor-canvas class="image-editor__canvas" />
+
+    <aside class="image-editor__panels overflow-y-auto border-l border-gray-200">
+        <dot-image-editor-panels />
+    </aside>
+
+    <footer class="image-editor__footer border-t border-gray-200 px-4 py-3">
+        @if (store.saveStatus() === 'error') {
+            <p class="mb-2 text-sm text-red-600" role="alert" data-testid="image-editor-save-error">
+                {{ store.saveError() }}
+            </p>
+        }
+
+        <dot-image-editor-footer (cancel)="requestClose()" />
+    </footer>
+</div>
+
+<p-confirmDialog [style]="{ width: '500px' }" />

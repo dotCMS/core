@@ -55,6 +55,7 @@ describe('Utils Functions', () => {
         isFlattenedField,
         isCalendarField,
         processCalendarFieldValue,
+        parseCalendarTimestamp,
         processFieldValue
     } = functionsUtil;
 
@@ -438,13 +439,13 @@ describe('Utils Functions', () => {
                 ]);
             });
 
-            it('should handle mixed formats (pipes take precedence)', () => {
-                // When pipes are present, comma splitting should not occur
+            it('should parse comma-separated pipe-format items individually', () => {
+                // Each comma-separated item has its own pipe applied for label/value
                 expect(
                     getSingleSelectableFieldOptions('label1|value1,label2|value2', 'text')
                 ).toEqual([
-                    { label: 'label1|value1', value: 'label1|value1' },
-                    { label: 'label2|value2', value: 'label2|value2' }
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
                 ]);
             });
 
@@ -507,6 +508,33 @@ describe('Utils Functions', () => {
                 ]);
             });
         });
+
+        describe('Single-option pipe format (issue #36157)', () => {
+            it('should parse a single pipe-format option using label and value (AC8)', () => {
+                expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'yes' }
+                ]);
+            });
+
+            it('should use the whole string as label and value for a single option without pipe (AC9)', () => {
+                expect(getSingleSelectableFieldOptions('Yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'Yes' }
+                ]);
+            });
+
+            // AC10: Checkbox, Radio, Select and Multiselect all delegate to this util
+            // with a text dataType, so a single `Yes|yes` option must resolve identically.
+            it.each(['Checkbox', 'Radio', 'Select', 'Multiselect'])(
+                'should parse single-option pipe format for %s field',
+                (fieldType) => {
+                    expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                        { label: 'Yes', value: 'yes' }
+                    ]);
+                    // fieldType is documented in the case name to clarify intent
+                    expect(fieldType).toBeDefined();
+                }
+            );
+        });
     });
 
     describe('getFinalCastedValue', () => {
@@ -545,19 +573,24 @@ describe('Utils Functions', () => {
         });
 
         describe('DATE field', () => {
-            it('should convert value to string for DATE field', () => {
-                const value = '2021-09-01T18:00:00.000Z';
+            it('should preserve numeric timestamp for DATE field', () => {
+                const value = 1736899200000;
                 const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
 
-                // DATE field goes through castSingleSelectableValue which returns String(value)
                 expect(getFinalCastedValue(value, field)).toEqual(value);
             });
 
-            it("should convert 'now' to string for DATE field", () => {
+            it('should preserve ISO string for DATE field', () => {
+                const value = '2021-09-01T18:00:00.000Z';
+                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
+
+                expect(getFinalCastedValue(value, field)).toEqual(value);
+            });
+
+            it("should preserve 'now' for DATE field", () => {
                 const value = 'now';
                 const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
 
-                // DATE field goes through castSingleSelectableValue which returns String(value)
                 expect(getFinalCastedValue(value, field)).toEqual(value);
             });
 
@@ -1565,6 +1598,20 @@ describe('Utils Functions', () => {
                     expect(processCalendarFieldValue(invalidString, fieldName)).toBeNull();
                 });
 
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+                    const expected = Date.parse(isoDate);
+
+                    expect(processCalendarFieldValue(isoDate, fieldName)).toBe(expected);
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+                    const expected = Date.parse(formattedDate);
+
+                    expect(processCalendarFieldValue(formattedDate, fieldName)).toBe(expected);
+                });
+
                 it('should return null for empty string after trim', () => {
                     const emptyString = '   ';
 
@@ -1601,15 +1648,6 @@ describe('Utils Functions', () => {
                     consoleErrorSpy.mockRestore();
                 });
 
-                it('should log warning for string timestamp conversion', () => {
-                    processCalendarFieldValue('1737021000000', fieldName);
-
-                    expect(consoleWarnSpy).toHaveBeenCalledWith(
-                        `Calendar field ${fieldName} received string timestamp, converted to number:`,
-                        { original: '1737021000000', converted: 1737021000000 }
-                    );
-                });
-
                 it('should log warning for invalid string timestamps', () => {
                     processCalendarFieldValue('invalid', fieldName);
 
@@ -1617,6 +1655,12 @@ describe('Utils Functions', () => {
                         `Calendar field ${fieldName} has invalid timestamp string:`,
                         'invalid'
                     );
+                });
+
+                it('should not log warning for valid numeric string timestamps', () => {
+                    processCalendarFieldValue('1737021000000', fieldName);
+
+                    expect(consoleWarnSpy).not.toHaveBeenCalled();
                 });
 
                 it('should log error for unexpected value types', () => {
@@ -1627,6 +1671,100 @@ describe('Utils Functions', () => {
                         `Calendar field ${fieldName} received unexpected value:`,
                         { value: unexpectedValue, type: 'object' }
                     );
+                });
+            });
+        });
+
+        describe('parseCalendarTimestamp', () => {
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(parseCalendarTimestamp(null)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(parseCalendarTimestamp(undefined)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(parseCalendarTimestamp('')).toBeNull();
+                });
+
+                it('should return null for whitespace-only string', () => {
+                    expect(parseCalendarTimestamp('   ')).toBeNull();
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return valid numbers as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(parseCalendarTimestamp(timestamp)).toBe(timestamp);
+                });
+
+                it('should handle zero', () => {
+                    expect(parseCalendarTimestamp(0)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    expect(parseCalendarTimestamp(-1737021000000)).toBe(-1737021000000);
+                });
+
+                it('should return null for NaN', () => {
+                    expect(parseCalendarTimestamp(NaN)).toBeNull();
+                });
+
+                it('should return null for Infinity', () => {
+                    expect(parseCalendarTimestamp(Infinity)).toBeNull();
+                    expect(parseCalendarTimestamp(-Infinity)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert valid Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+
+                    expect(parseCalendarTimestamp(date)).toBe(date.getTime());
+                });
+
+                it('should return null for invalid Date objects', () => {
+                    expect(parseCalendarTimestamp(new Date('invalid'))).toBeNull();
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert numeric strings to numbers', () => {
+                    expect(parseCalendarTimestamp('1737021000000')).toBe(1737021000000);
+                });
+
+                it('should trim before parsing numeric strings', () => {
+                    expect(parseCalendarTimestamp('  1737021000000  ')).toBe(1737021000000);
+                });
+
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+
+                    expect(parseCalendarTimestamp(isoDate)).toBe(Date.parse(isoDate));
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+
+                    expect(parseCalendarTimestamp(formattedDate)).toBe(Date.parse(formattedDate));
+                });
+
+                it('should return null for non-parseable strings', () => {
+                    expect(parseCalendarTimestamp('not-a-date')).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for object values', () => {
+                    expect(parseCalendarTimestamp({ timestamp: 1737021000000 })).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(parseCalendarTimestamp(true)).toBeNull();
+                    expect(parseCalendarTimestamp(false)).toBeNull();
                 });
             });
         });

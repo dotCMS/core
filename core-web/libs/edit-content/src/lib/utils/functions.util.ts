@@ -13,7 +13,6 @@ import { UVE_MODE } from '@dotcms/types';
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
-    CALENDAR_FIELD_TYPES_WITH_TIME,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
@@ -88,6 +87,11 @@ export const castSingleSelectableValue = (
  * Note: If the input contains line breaks, it will be treated as a single option,
  * preserving the line breaks as part of the option text.
  *
+ * Pipe detection is applied per option, so a single option (`label|value`),
+ * multi-line options (`label|value` per line) and comma-separated options
+ * (`label|value,label|value`) are all parsed correctly. Options without a pipe
+ * use the whole string as both label and value.
+ *
  * @param options - The string containing the options to parse
  * @param dataType - The data type of the field
  * @returns Array of parsed options with label and value
@@ -99,23 +103,18 @@ export const getSingleSelectableFieldOptions = (
     if (!options?.trim()) return [];
 
     const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
-    const PIPE_REGEX = /\|/;
     const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
-    const hasPipes = PIPE_REGEX.test(options);
 
     let items: string[] = [];
-    let isPipeFormat = false;
 
-    if (hasPipes && hasLineBreaks) {
-        // Multi-line pipe format (standard dotCMS format)
+    if (hasLineBreaks) {
+        // Multi-line format (standard dotCMS format)
         items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-        isPipeFormat = true;
-    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
+    } else if (options.trim().startsWith('|')) {
         // Special case: "|true" (checkbox without label)
         items = [options.trim()];
-        isPipeFormat = true;
     } else {
-        // Simple comma format or single-line with pipes treated as comma format
+        // Comma-separated format
         items = options
             .split(',')
             .map((v) => v.trim())
@@ -132,16 +131,16 @@ export const getSingleSelectableFieldOptions = (
             let label: string;
             let value: string;
 
-            if (isPipeFormat) {
+            if (item.includes('|')) {
                 const parts = item.split('|');
-                // Si hay pipe, el label es la primera parte y el value es la segunda
-                // Si no hay segunda parte, el value es igual al label
+                // If a pipe is present, label is the first part and value the second;
+                // if there's no second part, value equals label
                 label = (parts[0] || '').trim();
                 value = parts[1]?.trim() || label;
             } else {
-                // Si no hay pipe, tanto label como value son el mismo valor
-                label = item;
-                value = item;
+                // No pipe: label and value are the same
+                label = item.trim();
+                value = label;
             }
 
             if (!value) return null;
@@ -169,7 +168,7 @@ export const getFinalCastedValue = (
     value: object | string | number | undefined,
     field: DotCMSContentTypeField
 ) => {
-    if (CALENDAR_FIELD_TYPES_WITH_TIME.includes(field.fieldType as FIELD_TYPES)) {
+    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         return value;
     }
 
@@ -619,6 +618,53 @@ export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
 };
 
 /**
+ * Parses a calendar value from the backend or form into a numeric UTC timestamp.
+ * Accepts numbers, numeric strings, ISO/formatted date strings, and Date objects.
+ *
+ * @param value - Raw calendar field value
+ * @returns Numeric timestamp, null for empty/invalid, or undefined when value is undefined
+ */
+export const parseCalendarTimestamp = (value: unknown): number | null | undefined => {
+    if (value === null || value === undefined) {
+        return value as null | undefined;
+    }
+
+    if (value === '') {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return isNaN(value) || !isFinite(value) ? null : value;
+    }
+
+    if (value instanceof Date) {
+        const timestamp = value.getTime();
+
+        return isNaN(timestamp) ? null : timestamp;
+    }
+
+    if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+
+        if (trimmedValue === '') {
+            return null;
+        }
+
+        const numericValue = Number(trimmedValue);
+
+        if (!isNaN(numericValue) && isFinite(numericValue)) {
+            return numericValue;
+        }
+
+        const parsed = Date.parse(trimmedValue);
+
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
+};
+
+/**
  * Processes calendar field values to ensure they are always numeric timestamps.
  * Handles conversion from Date objects, strings, and validates numeric values.
  *
@@ -630,60 +676,20 @@ export const processCalendarFieldValue = (
     fieldValue: unknown,
     fieldName: string
 ): number | null | undefined => {
-    // Handle null/undefined values
-    if (fieldValue === null || fieldValue === undefined) {
-        return fieldValue as null | undefined;
-    }
+    const parsed = parseCalendarTimestamp(fieldValue);
 
-    // Handle empty strings
-    if (fieldValue === '') {
-        return null;
-    }
-
-    // Convert Date objects to timestamps (normal case from calendar component)
-    if (fieldValue instanceof Date) {
-        return fieldValue.getTime();
-    }
-
-    // Keep numeric values as-is (already correct timestamps)
-    if (typeof fieldValue === 'number') {
-        return fieldValue;
-    }
-
-    // Convert string timestamps to numbers (edge case - from form state)
-    if (typeof fieldValue === 'string') {
-        const trimmedValue = fieldValue.trim();
-
-        // Handle empty string after trim
-        if (trimmedValue === '') {
-            return null;
-        }
-
-        const numericValue = Number(trimmedValue);
-
-        if (isNaN(numericValue)) {
+    if (parsed === null && fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+        if (typeof fieldValue === 'string') {
             console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
-            return null;
+        } else if (typeof fieldValue !== 'number' && !(fieldValue instanceof Date)) {
+            console.error(`Calendar field ${fieldName} received unexpected value:`, {
+                value: fieldValue,
+                type: typeof fieldValue
+            });
         }
-
-        console.warn(
-            `Calendar field ${fieldName} received string timestamp, converted to number:`,
-            {
-                original: fieldValue,
-                converted: numericValue
-            }
-        );
-
-        return numericValue;
     }
 
-    // Handle unexpected cases (arrays, objects, etc.)
-    console.error(`Calendar field ${fieldName} received unexpected value:`, {
-        value: fieldValue,
-        type: typeof fieldValue
-    });
-
-    return null;
+    return parsed;
 };
 
 /**

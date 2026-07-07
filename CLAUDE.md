@@ -59,6 +59,8 @@ import com.dotmarketing.util.UtilMethods;   // UtilMethods.isSet(value)
 UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 ```
 
+> **Batch permission filtering**: prefer `permissionAPI.filterCollection(Collection<P>, int, User, boolean)` over per-item `doesUserHavePermission` loops — one SQL round-trip vs N. See [Java Standards → Permission Checks](docs/backend/JAVA_STANDARDS.md#permission-checks--batch-vs-scalar).
+
 ## Critical Rules
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
@@ -87,7 +89,7 @@ When editing ANY code, improve incrementally:
 ## Tech Stack
 
 - **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 19+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Frontend**: Angular 21+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)

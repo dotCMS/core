@@ -2,8 +2,8 @@
 // the ring encloses both the input and the calendar icon button as one unit.
 
 :host ::ng-deep p-datepicker {
-    display: flex;
-    width: 100%;
+    // Use PrimeNG's default datepicker sizing
+    display: inline-flex;
     border-radius: var(--p-inputtext-border-radius);
     transition:
         border-color var(--p-inputtext-transition-duration),

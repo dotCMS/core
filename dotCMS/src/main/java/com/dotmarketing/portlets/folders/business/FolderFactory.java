@@ -113,6 +113,23 @@ public abstract class FolderFactory {
 	protected List<Folder> findFoldersByHost(Host host) {
 		return null;
 	}
+
+	/**
+	 * Searches for folders within a site using an optional name filter and optional path scope.
+	 * SQL is built dynamically based on which parameters are provided.
+	 * {@code params.orderBy()} must be {@code "folder.name"} or {@code "folder.mod_date"};
+	 * invalid values fall back to {@code folder.name}.
+	 * The factory uses only the search-scoping fields ({@code name}, {@code path},
+	 * {@code recursive}, {@code siteId}, {@code orderBy}, {@code orderDirection});
+	 * pagination and security fields are handled at the API layer.
+	 *
+	 * @param params search parameters built via {@link FolderSearchParams#builder()}
+	 * @return matching folders in the requested order
+	 * @throws DotDataException on database error
+	 */
+	protected List<Folder> searchFolders(final FolderSearchParams params) throws DotDataException {
+		return List.of();
+	}
 	protected List<Folder> findThemesByHost(Host host) {
 		return null;
 	}
