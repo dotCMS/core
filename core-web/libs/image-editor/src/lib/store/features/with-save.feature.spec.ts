@@ -99,11 +99,61 @@ describe('withSave', () => {
         lifecycle.saveRequested();
 
         expect(service.saveEditedImage).toHaveBeenCalledTimes(1);
+        // The editor only edits images, so the result is always flagged as an image and
+        // seeded with the current focal point (see `enrichEditedImage`).
         expect(dispatchSpy).toHaveBeenCalledWith(
-            imageEditorLifecycleEvents.saveSucceeded(TEMP_FILE)
+            imageEditorLifecycleEvents.saveSucceeded({
+                ...TEMP_FILE,
+                image: true,
+                metadata: {
+                    contentType: 'image/png',
+                    fileSize: 1024,
+                    length: 1024,
+                    modDate: 0,
+                    name: 'edited.png',
+                    sha256: '',
+                    title: 'edited.png',
+                    version: 0,
+                    isImage: true,
+                    focalPoint: '0.25,0.75'
+                }
+            })
         );
         expect(store.saveStatus()).toBe('idle');
         expect(store.saveError()).toBeNull();
+    });
+
+    it('recognizes the edit as an image even when the servlet returns no metadata', () => {
+        // Regression: the Save servlet can return the edited temp file as
+        // `metadata: null, image: false, mimeType: "unknown"`. Without enrichment the
+        // thumbnail, the "edit image" gate and the file-info dialog stop treating it as
+        // an image (blank thumb / hidden pencil / crash on `metadata.title`).
+        service.saveEditedImage.mockReturnValue(
+            of({ ...TEMP_FILE, image: false, mimeType: 'unknown', metadata: null } as never)
+        );
+        const dispatchSpy = setup();
+
+        lifecycle.saveRequested();
+
+        expect(dispatchSpy).toHaveBeenCalledWith(
+            imageEditorLifecycleEvents.saveSucceeded({
+                ...TEMP_FILE,
+                image: true,
+                mimeType: 'unknown',
+                metadata: {
+                    contentType: 'unknown',
+                    fileSize: 1024,
+                    length: 1024,
+                    modDate: 0,
+                    name: 'edited.png',
+                    sha256: '',
+                    title: 'edited.png',
+                    version: 0,
+                    isImage: true,
+                    focalPoint: '0.25,0.75'
+                }
+            })
+        );
     });
 
     it('folds the current focal point into the returned temp metadata', () => {

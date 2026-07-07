@@ -81,14 +81,15 @@ test('upload an image, save, reload, and thumbnail still displayed @critical', a
     await field.expectPreviewShowsFileName(TEST_IMAGE.name);
 });
 
-test('upload image does not show Edit image button', async ({ page }) => {
+test('upload image shows Edit image button', async ({ page }) => {
     const formPage = new NewEditContentFormPage(page);
     await formPage.goToNew(contentTypeVariable);
 
     const field = new ImageField(page, IMAGE_FIELD_VARIABLE);
     await field.expectVisible();
     await field.uploadFile(TEST_IMAGE);
-    await field.expectEditButtonHidden();
+    // Image fields expose the image editor for images (#36363).
+    await field.expectEditButtonVisible();
 });
 
 test.describe('required image field', () => {
