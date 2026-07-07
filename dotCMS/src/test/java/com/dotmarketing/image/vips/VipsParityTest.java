@@ -366,6 +366,16 @@ public class VipsParityTest {
         final boolean container = (head[4] & 0xFF) == 0x4A && (head[5] & 0xFF) == 0x58
                 && (head[6] & 0xFF) == 0x4C && (head[7] & 0xFF) == 0x20;
         assertTrue("expected a JPEG XL signature", rawCodestream || container);
+
+        // Prove the jxl_* params are actually read (not silently ignored via a wrong prefix): lossless
+        // must produce a distinctly larger file than low-quality lossy. If the prefix regressed both
+        // would fall back to the same default and this assertion would fail.
+        final File lossy = tempOut("jxl");
+        final File lossless = tempOut("jxl");
+        new VipsJpegXlImageFilter().transform(in, lossy, params("jxl_q", "10"));
+        new VipsJpegXlImageFilter().transform(in, lossless, params("jxl_lossless", "true"));
+        assertTrue("jxl_lossless must be honored (lossless > lossy q10)",
+                lossless.length() > lossy.length() * 2);
     }
 
     @Test

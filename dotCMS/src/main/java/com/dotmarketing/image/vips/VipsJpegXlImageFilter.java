@@ -17,6 +17,19 @@ import java.util.Map;
  */
 public class VipsJpegXlImageFilter extends VipsImageFilter {
 
+    /**
+     * Force the parameter prefix to {@code jxl_} (the documented contract). Without this override the
+     * default derives the name from the class — {@code VipsJpegXlImageFilter -> "jpegxl"} — so the
+     * documented {@code jxl_q}/{@code jxl_lossless}/{@code jxl_effort} params would be silently ignored.
+     * The {@code jpegxl} request alias still resolves the filter (registered in
+     * {@code VipsImageFilterApiImpl}); only the param prefix is pinned here, so it is {@code jxl_} for
+     * both {@code filter=jxl} and {@code filter=jpegxl}.
+     */
+    @Override
+    protected String getFilterName() {
+        return "jxl";
+    }
+
     @Override
     public String[] getAcceptedParameters() {
         return new String[] {
