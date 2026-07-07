@@ -1,5 +1,5 @@
 # TODO: Add to the main cicd process to be activated by cicd_3-trunk.yml
-name: Publish Docs & Storybook
+name: Publish Docs
 on:
   workflow_dispatch:
   push:
@@ -24,9 +24,6 @@ jobs:
       - name: Run NX Commands
         run: |
           cd core-web
-          npm run nx build dotcms-webcomponents -- --with-deps
-          npm run nx run-many -- --target=build-storybook --parallel --projects=dotcms-ui,dotcms-webcomponents
-          npm run nx build-storybook dotcms-block-editor
           npm run build:docs:dotcms
           npm run build:docs:dotcms-models
       - name: Deploy to GitHub Pages
