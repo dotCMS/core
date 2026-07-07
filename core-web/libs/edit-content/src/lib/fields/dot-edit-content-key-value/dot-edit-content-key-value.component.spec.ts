@@ -215,6 +215,22 @@ describe('DotEditContentKeyValueComponent', () => {
                 { key: 'key3', value: 'value3' }
             ]);
         });
+
+        it('should not split string values into individual characters', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue('[object Object]' as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
+        });
+
+        it('should not split array values into individual entries', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue(['key1', 'key2'] as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
+        });
     });
 
     describe('should handle updateField method', () => {

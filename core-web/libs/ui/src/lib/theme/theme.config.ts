@@ -88,11 +88,21 @@ export const CustomLaraPreset = definePreset(Lara, {
             // without per-template classes. PrimeNG has no chip size token, so this
             // is expressed as CSS — same mechanism as card/confirmpopup. Content
             // status badges use `p-tag` (see the `tag` block below), not chips.
+            //
+            // The remove icon is flipped to the left of the label app-wide via flexbox
+            // `order` (`.p-chip` is `display:flex`): PrimeNG's Chip template always
+            // renders the remove icon after the label with no input to reorder it, so
+            // this is the only way to achieve it without forking the component. DOM
+            // order (and keyboard focus order) is unaffected — only the visual order
+            // changes.
             css: `
                 .p-chip {
                     height: calc(var(--spacing) * 7); /* 1.75rem */
                     padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
                     font-size: var(--text-xs); /* 0.75rem */
+                }
+                .p-chip .p-chip-remove-icon {
+                    order: -1;
                 }
             `
         },
