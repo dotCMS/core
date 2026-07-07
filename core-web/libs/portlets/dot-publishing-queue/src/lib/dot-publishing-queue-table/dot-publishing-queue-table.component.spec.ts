@@ -270,13 +270,18 @@ describe('DotPublishingQueueTableComponent', () => {
             expect(store.retryBundles).toHaveBeenCalledWith({ bundleIds: ['b1'] });
         });
 
-        it('Configure & send → push publish dialog', () => {
+        it('Configure & send → push publish dialog with isBundle: true', () => {
             const items = spectator.component.bundlesKebabFor(
                 row('b1', PublishAuditStatus.WAITING_FOR_PUBLISHING)
             );
             const configure = items.find((i) => i.label?.toLowerCase().includes('configure'));
             configure?.command?.({} as never);
-            expect(pushPublishService.open).toHaveBeenCalled();
+            // The payload's `isBundle: true` routes the submit through the
+            // bundle endpoint (vs asset). Regressing this quietly ships publishes
+            // to the wrong endpoint, so pin the exact shape.
+            expect(pushPublishService.open).toHaveBeenCalledWith(
+                expect.objectContaining({ isBundle: true, assetIdentifier: 'b1' })
+            );
         });
 
         it('Generate/download → download dialog', () => {
@@ -292,6 +297,90 @@ describe('DotPublishingQueueTableComponent', () => {
             del.command?.({} as never);
             expect(confirmationService.confirm).toHaveBeenCalled();
             expect(store.deleteBundle).toHaveBeenCalledWith('b1');
+        });
+    });
+
+    describe('onSelectionChange', () => {
+        // p-table emits the checked *rows* (full objects). The store's
+        // `bundlesSelectedIds` only cares about ids, so the handler must map
+        // one to the other — otherwise the toolbar's bulk-action guard reads
+        // "no selection" even after the user checks boxes.
+        it('maps rows to bundle ids and pushes into the store', () => {
+            spectator.component.onSelectionChange([row('b1'), row('b2')]);
+            expect(store.setBundlesSelection).toHaveBeenCalledWith(['b1', 'b2']);
+        });
+
+        it('clears the store selection when no rows are checked', () => {
+            spectator.component.onSelectionChange([]);
+            expect(store.setBundlesSelection).toHaveBeenCalledWith([]);
+        });
+    });
+
+    describe('truncateBundleId', () => {
+        it('returns the id unchanged when it fits under the display cap', () => {
+            const short = 'a'.repeat(20);
+            expect(spectator.component.truncateBundleId(short)).toBe(short);
+        });
+
+        it('truncates and appends an ellipsis when the id exceeds the cap', () => {
+            const long = 'a'.repeat(50);
+            const truncated = spectator.component.truncateBundleId(long);
+            expect(truncated.endsWith('…')).toBe(true);
+            expect(truncated.length).toBeLessThan(long.length);
+        });
+
+        it('returns the input as-is for empty strings', () => {
+            expect(spectator.component.truncateBundleId('')).toBe('');
+        });
+    });
+
+    describe('right-click context menu', () => {
+        it('onRowContextMenu preventDefaults the browser menu and pins the row', () => {
+            const event = {
+                preventDefault: jest.fn(),
+                stopPropagation: jest.fn()
+            } as unknown as MouseEvent;
+            spectator.component.onRowContextMenu(event, row('b1'));
+            expect(event.preventDefault).toHaveBeenCalled();
+            expect(spectator.component.contextMenuRow()).toEqual(row('b1'));
+        });
+
+        it('contextMenuItems mirrors the same kebab items for the pinned row', () => {
+            const event = {
+                preventDefault: jest.fn(),
+                stopPropagation: jest.fn()
+            } as unknown as MouseEvent;
+            spectator.component.onRowContextMenu(
+                event,
+                row('b2', PublishAuditStatus.FAILED_TO_PUBLISH)
+            );
+            const items = spectator.component.contextMenuItems();
+            expect(items.length).toBeGreaterThan(0);
+            // Same-status row should carry the retry action just like the kebab.
+            expect(items.some((i) => i.label?.toLowerCase().includes('retry'))).toBe(true);
+        });
+
+        it('contextMenuItems is empty until a row has been right-clicked', () => {
+            expect(spectator.component.contextMenuItems()).toEqual([]);
+        });
+    });
+
+    describe('$ptConfig', () => {
+        // The pass-through swaps between "fill the container" (empty/loading)
+        // and "natural width" (rows present) — otherwise PrimeNG's default
+        // width:100% squeezes the Filter column when Bundle Id has extra space.
+        it('uses natural width when rows are present', () => {
+            bundlesRows.set([row('b1')]);
+            spectator.detectChanges();
+            expect(spectator.component.$ptConfig().table.style.width).toBe('auto');
+        });
+
+        it('fills the container when the rows list is empty', () => {
+            bundlesRows.set([]);
+            spectator.detectChanges();
+            const style = spectator.component.$ptConfig().table.style as Record<string, string>;
+            expect(style.width).toBe('100%');
+            expect(style.height).toBe('100%');
         });
     });
 });

@@ -495,6 +495,39 @@ describe('DotPublishingQueueStore', () => {
             expect(service.purgeBundles).toHaveBeenCalledWith(undefined);
             expect(onDone).toHaveBeenCalled();
         });
+
+        // Each destructive op wraps its subscribe in `catchError → handle → EMPTY`.
+        // Pin that contract per method so a future refactor can't silently drop
+        // the error routing (which would swallow BE 4xx/5xx toasts).
+        describe('error paths', () => {
+            it('retryBundles routes service errors to httpErrorManager.handle', () => {
+                const error = new Error('boom-retry');
+                (service.retryBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                store.retryBundles({ bundleIds: ['x'] });
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            });
+
+            it('deleteBundle routes service errors to httpErrorManager.handle', () => {
+                const error = new Error('boom-delete');
+                (service.deleteBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                store.deleteBundle('x');
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            });
+
+            it('deleteBundlesBulk routes service errors to httpErrorManager.handle', () => {
+                const error = new Error('boom-bulk');
+                (service.deleteBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                store.deleteBundlesBulk(['a', 'b']);
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            });
+
+            it('purgeBundles routes service errors to httpErrorManager.handle', () => {
+                const error = new Error('boom-purge');
+                (service.purgeBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                store.purgeBundles([PublishAuditStatus.SUCCESS]);
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            });
+        });
     });
 
     describe('polling', () => {

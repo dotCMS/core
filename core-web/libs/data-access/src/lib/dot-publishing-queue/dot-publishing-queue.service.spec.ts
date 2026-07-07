@@ -1,6 +1,7 @@
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
 
 import {
     BundleAssetView,
@@ -13,15 +14,17 @@ import {
 import { DotPublishingQueueService } from './dot-publishing-queue.service';
 
 describe('DotPublishingQueueService', () => {
-    let service: DotPublishingQueueService;
+    let spectator: SpectatorService<DotPublishingQueueService>;
     let httpMock: HttpTestingController;
 
+    const createService = createServiceFactory({
+        service: DotPublishingQueueService,
+        providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
+
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting(), DotPublishingQueueService]
-        });
-        service = TestBed.inject(DotPublishingQueueService);
-        httpMock = TestBed.inject(HttpTestingController);
+        spectator = createService();
+        httpMock = spectator.inject(HttpTestingController);
     });
 
     afterEach(() => {
@@ -35,7 +38,7 @@ describe('DotPublishingQueueService', () => {
                 pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
             };
 
-            service
+            spectator.service
                 .listPublishingJobs({
                     statuses: READY_STATUSES,
                     page: 2,
@@ -56,7 +59,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('omits optional params when not provided', () => {
-            service.listPublishingJobs({ statuses: IN_PROGRESS_STATUSES }).subscribe();
+            spectator.service.listPublishingJobs({ statuses: IN_PROGRESS_STATUSES }).subscribe();
 
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.params.has('page')).toBe(false);
@@ -66,7 +69,9 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('omits filter when empty string', () => {
-            service.listPublishingJobs({ statuses: READY_STATUSES, filter: '' }).subscribe();
+            spectator.service
+                .listPublishingJobs({ statuses: READY_STATUSES, filter: '' })
+                .subscribe();
 
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.params.has('filter')).toBe(false);
@@ -74,7 +79,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('omits the status param when statuses is undefined (BE returns all)', () => {
-            service.listPublishingJobs({}).subscribe();
+            spectator.service.listPublishingJobs({}).subscribe();
 
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.params.has('status')).toBe(false);
@@ -82,7 +87,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('omits the status param when statuses is an empty array', () => {
-            service.listPublishingJobs({ statuses: [] }).subscribe();
+            spectator.service.listPublishingJobs({ statuses: [] }).subscribe();
 
             const req = httpMock.expectOne((request) => request.url === '/api/v1/publishing');
             expect(req.request.params.has('status')).toBe(false);
@@ -96,7 +101,7 @@ describe('DotPublishingQueueService', () => {
                 { asset: 'a1', title: 'Asset 1', type: 'contentlet' }
             ];
 
-            service.getBundleAssets('bundle-123').subscribe((assets) => {
+            spectator.service.getBundleAssets('bundle-123').subscribe((assets) => {
                 expect(assets).toEqual(mockAssets);
             });
 
@@ -116,9 +121,11 @@ describe('DotPublishingQueueService', () => {
                 { assetId: 'a2', success: true, message: 'ok' }
             ];
 
-            service.removeAssetsFromBundle('bundle-123', ['a1', 'a2']).subscribe((response) => {
-                expect(response).toEqual(results);
-            });
+            spectator.service
+                .removeAssetsFromBundle('bundle-123', ['a1', 'a2'])
+                .subscribe((response) => {
+                    expect(response).toEqual(results);
+                });
 
             const req = httpMock.expectOne(
                 (request) => request.url === '/api/v1/bundles/bundle-123/assets'
@@ -131,7 +138,7 @@ describe('DotPublishingQueueService', () => {
 
     describe('deleteBundles', () => {
         it('DELETEs /api/bundle/ids with { identifiers } body', () => {
-            service.deleteBundles(['b1', 'b2', 'b3']).subscribe();
+            spectator.service.deleteBundles(['b1', 'b2', 'b3']).subscribe();
 
             const req = httpMock.expectOne((r) => r.url === '/api/bundle/ids');
             expect(req.request.method).toBe('DELETE');
@@ -142,7 +149,7 @@ describe('DotPublishingQueueService', () => {
 
     describe('purgeBundles', () => {
         it('DELETEs /api/v1/publishing/purge with no status param when statuses is omitted', () => {
-            service.purgeBundles().subscribe();
+            spectator.service.purgeBundles().subscribe();
 
             const req = httpMock.expectOne((r) => r.url === '/api/v1/publishing/purge');
             expect(req.request.method).toBe('DELETE');
@@ -151,7 +158,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('DELETEs /api/v1/publishing/purge with comma-joined status param when statuses are provided', () => {
-            service
+            spectator.service
                 .purgeBundles([
                     PublishAuditStatus.SUCCESS,
                     PublishAuditStatus.SUCCESS_WITH_WARNINGS
@@ -165,7 +172,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('omits the status param when statuses is an empty array', () => {
-            service.purgeBundles([]).subscribe();
+            spectator.service.purgeBundles([]).subscribe();
             const req = httpMock.expectOne((r) => r.url === '/api/v1/publishing/purge');
             expect(req.request.params.has('status')).toBe(false);
             req.flush({ entity: { message: 'Purge started' } });
@@ -181,9 +188,11 @@ describe('DotPublishingQueueService', () => {
                 numRows: 1
             };
 
-            service.getUnsendBundles('dotcms.org.1', '*term*', 0, 50).subscribe((response) => {
-                expect(response).toEqual(mockResponse);
-            });
+            spectator.service
+                .getUnsendBundles('dotcms.org.1', '*term*', 0, 50)
+                .subscribe((response) => {
+                    expect(response).toEqual(mockResponse);
+                });
 
             const req = httpMock.expectOne(
                 (request) => request.url === '/api/bundle/getunsendbundles/userid/dotcms.org.1'
@@ -196,7 +205,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('falls back to wildcard when filter is empty', () => {
-            service.getUnsendBundles('u1', '').subscribe();
+            spectator.service.getUnsendBundles('u1', '').subscribe();
             const req = httpMock.expectOne(
                 (request) => request.url === '/api/bundle/getunsendbundles/userid/u1'
             );
@@ -207,18 +216,22 @@ describe('DotPublishingQueueService', () => {
 
     describe('download URL builders', () => {
         it('getBundleDownloadUrl returns the /api/bundle/_download path', () => {
-            expect(service.getBundleDownloadUrl('b-1')).toBe('/api/bundle/_download/b-1');
+            expect(spectator.service.getBundleDownloadUrl('b-1')).toBe('/api/bundle/_download/b-1');
         });
 
         it('getBundleManifestUrl returns the /api/bundle/{id}/manifest path', () => {
-            expect(service.getBundleManifestUrl('b-1')).toBe('/api/bundle/b-1/manifest');
+            expect(spectator.service.getBundleManifestUrl('b-1')).toBe('/api/bundle/b-1/manifest');
         });
 
         it('URL-encodes special characters in the bundleId (defense-in-depth)', () => {
             // BE currently only issues bundle ids matching [a-zA-Z0-9_-]+, but the
             // encoding keeps the path safe if that ever changes.
-            expect(service.getBundleDownloadUrl('a/b c')).toBe('/api/bundle/_download/a%2Fb%20c');
-            expect(service.getBundleManifestUrl('a/b c')).toBe('/api/bundle/a%2Fb%20c/manifest');
+            expect(spectator.service.getBundleDownloadUrl('a/b c')).toBe(
+                '/api/bundle/_download/a%2Fb%20c'
+            );
+            expect(spectator.service.getBundleManifestUrl('a/b c')).toBe(
+                '/api/bundle/a%2Fb%20c/manifest'
+            );
         });
     });
 
@@ -228,7 +241,7 @@ describe('DotPublishingQueueService', () => {
     describe('probeBundleDownload', () => {
         it('issues a HEAD against /api/bundle/_download/{id} and maps 200 → true', () => {
             let result: boolean | undefined;
-            service.probeBundleDownload('b-1').subscribe((value) => (result = value));
+            spectator.service.probeBundleDownload('b-1').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/_download/b-1');
             expect(req.request.method).toBe('HEAD');
@@ -239,7 +252,7 @@ describe('DotPublishingQueueService', () => {
 
         it('maps non-2xx (file purged) to false via catchError', () => {
             let result: boolean | undefined;
-            service.probeBundleDownload('b-1').subscribe((value) => (result = value));
+            spectator.service.probeBundleDownload('b-1').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/_download/b-1');
             req.flush(null, { status: 404, statusText: 'Not Found' });
@@ -251,7 +264,7 @@ describe('DotPublishingQueueService', () => {
     describe('probeBundleManifest', () => {
         it('issues a HEAD against /api/bundle/{id}/manifest and maps 200 → true', () => {
             let result: boolean | undefined;
-            service.probeBundleManifest('b-1').subscribe((value) => (result = value));
+            spectator.service.probeBundleManifest('b-1').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/b-1/manifest');
             expect(req.request.method).toBe('HEAD');
@@ -262,7 +275,7 @@ describe('DotPublishingQueueService', () => {
 
         it('maps non-2xx (no manifest / archive missing) to false', () => {
             let result: boolean | undefined;
-            service.probeBundleManifest('b-1').subscribe((value) => (result = value));
+            spectator.service.probeBundleManifest('b-1').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/b-1/manifest');
             req.flush(null, { status: 404, statusText: 'Not Found' });
@@ -275,7 +288,7 @@ describe('DotPublishingQueueService', () => {
     // so users get the same .tar.gz from the inline menu and the global modal.
     describe('generateBundle', () => {
         it('POSTs { bundleId, operation, filterKey } to /api/bundle/_generate', () => {
-            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe();
+            spectator.service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe();
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             expect(req.request.method).toBe('POST');
@@ -293,7 +306,7 @@ describe('DotPublishingQueueService', () => {
 
         it('emits { blob, filename } parsed from content-disposition', () => {
             let result: { blob: Blob; filename: string } | undefined;
-            service
+            spectator.service
                 .generateBundle('b-1', '0', 'ForcePush.yml')
                 .subscribe((value) => (result = value));
 
@@ -310,7 +323,7 @@ describe('DotPublishingQueueService', () => {
 
         it('strips surrounding quotes from the filename', () => {
             let filename: string | undefined;
-            service
+            spectator.service
                 .generateBundle('b-1', '0', 'ForcePush.yml')
                 .subscribe((value) => (filename = value.filename));
 
@@ -326,7 +339,7 @@ describe('DotPublishingQueueService', () => {
 
         it('returns an empty filename when content-disposition is missing (still emits the blob)', () => {
             let result: { blob: Blob; filename: string } | undefined;
-            service.generateBundle('b-1', '1', '').subscribe((value) => (result = value));
+            spectator.service.generateBundle('b-1', '1', '').subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             req.flush(new Blob(['x']), { status: 200, statusText: 'OK' });
@@ -337,7 +350,7 @@ describe('DotPublishingQueueService', () => {
 
         it('throws when the response body is null (guards the Blob cast)', () => {
             let error: Error | undefined;
-            service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe({
+            spectator.service.generateBundle('b-1', '0', 'ForcePush.yml').subscribe({
                 error: (err) => (error = err)
             });
 
@@ -348,7 +361,7 @@ describe('DotPublishingQueueService', () => {
         });
 
         it('passes empty filterKey for unpublish operation', () => {
-            service.generateBundle('b-1', '1', '').subscribe();
+            spectator.service.generateBundle('b-1', '1', '').subscribe();
 
             const req = httpMock.expectOne('/api/bundle/_generate');
             expect(req.request.body).toEqual({
@@ -366,7 +379,7 @@ describe('DotPublishingQueueService', () => {
                 type: 'application/gzip'
             });
 
-            service.uploadBundle(file).subscribe();
+            spectator.service.uploadBundle(file).subscribe();
 
             const req = httpMock.expectOne('/api/bundle/sync');
             expect(req.request.method).toBe('POST');
@@ -381,7 +394,7 @@ describe('DotPublishingQueueService', () => {
         it('propagates the { bundleName, status } response', () => {
             const file = new File(['x'], 'b.tgz');
             let result: { bundleName: string; status: string } | undefined;
-            service.uploadBundle(file).subscribe((value) => (result = value));
+            spectator.service.uploadBundle(file).subscribe((value) => (result = value));
 
             const req = httpMock.expectOne('/api/bundle/sync');
             req.flush({ bundleName: 'b', status: 'ok' });
