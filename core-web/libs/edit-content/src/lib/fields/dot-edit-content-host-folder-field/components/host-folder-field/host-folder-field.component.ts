@@ -3,32 +3,56 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     forwardRef,
     inject,
     input,
+    signal,
     viewChild
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+import { ButtonModule } from 'primeng/button';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { ScrollerModule } from 'primeng/scroller';
+import { TooltipModule } from 'primeng/tooltip';
+import { TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotTruncatePathPipe } from '@dotcms/ui';
+import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
 
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
 
 /**
- * Component for editing content site or folder field.
+ * Site/Folder selector field: a trigger showing the current selection that opens an
+ * overlay with a Sites list and a lazily-loaded, paginated Folders tree. The selection
+ * is staged in the overlay and only persisted to the form control when "Select" is
+ * clicked; closing the overlay without selecting discards the pending change.
  *
  * @export
- * @class DotEditContentHostFolderFieldComponent
+ * @class DotHostFolderFieldComponent
  */
 @Component({
     selector: 'dot-host-folder-field',
-    imports: [TreeSelectModule, ReactiveFormsModule, DotTruncatePathPipe, FormsModule],
+    imports: [
+        PopoverModule,
+        ScrollerModule,
+        TreeModule,
+        ButtonModule,
+        TooltipModule,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule,
+        DotMessagePipe,
+        DotTruncatePathPipe
+    ],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex items-center w-full' },
     providers: [
         HostFolderFiledStore,
         {
@@ -50,40 +74,123 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
     /**
-     * A signal that holds the tree select.
-     * It is used to display the tree select in the component.
+     * Reference to the overlay panel, used to close it programmatically after
+     * committing a selection.
      */
-    $treeSelect = viewChild<TreeSelect>(TreeSelect);
+    $overlay = viewChild<Popover>(Popover);
     /**
      * A readonly instance of the HostFolderFiledStore injected into the component.
      * This store is used to manage the state and actions related to the host folder field.
      */
     readonly store = inject(HostFolderFiledStore);
+
     /**
-     * A FormControl instance that holds the path of the field.
+     * Whether the path was just copied, used to briefly show a check icon on the copy button.
      */
-    pathControl = new FormControl(null);
+    readonly $pathCopied = signal(false);
+
+    /**
+     * The trigger button's width, applied to the overlay panel so it matches the field's width.
+     */
+    readonly $overlayWidth = signal<string | null>(null);
+
+    /**
+     * Removes PrimeNG's default popover content padding; sections manage their own spacing.
+     */
+    protected readonly popoverPt = {
+        content: { class: '!p-0' }
+    };
+
+    /**
+     * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
+     */
+    protected readonly treePt = {
+        root: { class: '!p-0' }
+    };
+
+    private readonly destroyRef = inject(DestroyRef);
+    private $copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 
     constructor() {
         super();
-        this.handleNodeExpanedChange(this.store.nodeExpaned);
-        this.handleNodeSelectedChange(this.store.nodeSelected);
         this.handlePathToSaveChange(this.store.pathToSave);
-        this.handleDisabledChange(this.$isDisabled);
         this.handleChangeValue(this.$value);
+        this.destroyRef.onDestroy(() => clearTimeout(this.$copyResetTimer));
     }
 
     /**
-     * Re-applies the current selection when PrimeNG tries to toggle-deselect
-     * the already-selected node in single selection mode.
+     * Toggles the selector overlay, keeping the trigger and the store's `overlayOpen`
+     * flag in sync (the overlay panel drives visibility; the store drives icon state).
      */
-    preventDeselect(): void {
-        const currentNode = this.store.nodeSelected();
-        if (currentNode) {
-            this.pathControl.setValue(currentNode);
+    toggleOverlay(event: Event): void {
+        if (this.$isDisabled()) {
+            return;
         }
 
-        this.$treeSelect()?.hide();
+        const trigger = event.currentTarget as HTMLElement;
+        this.$overlayWidth.set(`${trigger.offsetWidth}px`);
+        this.$overlay()?.toggle(event, trigger);
+    }
+
+    /**
+     * Selects a site in the overlay's Sites list.
+     */
+    onSiteSelect(site: TreeNodeItem): void {
+        this.store.selectSite(site);
+    }
+
+    /**
+     * Stages a folder as the pending selection when clicked in the Folders tree.
+     */
+    onFolderSelect(event: TreeNodeSelectItem): void {
+        this.store.setPendingNode(event.node);
+    }
+
+    /**
+     * Lazily loads a folder's children the first time it's expanded.
+     */
+    onFolderExpand(event: TreeNodeSelectItem): void {
+        this.store.expandNode(event);
+    }
+
+    /**
+     * Forwards the search input's value to the store, which debounces and validates
+     * the minimum length before querying the backend.
+     */
+    onSearchInput(event: Event): void {
+        const value = (event.target as HTMLInputElement).value;
+        this.store.search(value);
+    }
+
+    /**
+     * Loads the next page of root-level folders for the currently selected site.
+     */
+    onLoadMore(): void {
+        this.store.loadMore(null);
+    }
+
+    /**
+     * Persists the pending selection and closes the overlay.
+     */
+    onSelect(): void {
+        this.store.commit();
+        this.$overlay()?.hide();
+    }
+
+    /**
+     * Copies the full site/folder path to the clipboard.
+     */
+    copyPath(): void {
+        const path = this.store.copyPath();
+        if (!path) {
+            return;
+        }
+
+        clearTimeout(this.$copyResetTimer);
+        void navigator.clipboard.writeText(path).then(() => {
+            this.$pathCopied.set(true);
+            this.$copyResetTimer = setTimeout(() => this.$pathCopied.set(false), 1500);
+        });
     }
 
     /**
@@ -97,46 +204,6 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
 
         this.onChange(pathToSave);
         this.onTouched();
-    });
-
-    /**
-     * A signal that handles the node selected change of the field.
-     * It is used to update the path control.
-     */
-    readonly handleNodeSelectedChange = signalMethod<TreeNodeItem>((nodeSelected) => {
-        if (!nodeSelected) {
-            return;
-        }
-
-        this.pathControl.setValue(nodeSelected);
-    });
-
-    /**
-     * A signal that handles the node expanded change of the field.
-     * It is used to update the serialized value of the tree select.
-     */
-    readonly handleNodeExpanedChange = signalMethod<TreeNodeSelectItem['node']>((nodeExpaned) => {
-        if (!nodeExpaned) {
-            return;
-        }
-
-        const treeSelect = this.$treeSelect();
-        if (treeSelect.treeViewChild) {
-            treeSelect.treeViewChild.updateSerializedValue();
-            treeSelect.cd.detectChanges();
-        }
-    });
-
-    /**
-     * A signal that handles the disabled change of the field.
-     * It is used to disable the path control.
-     */
-    readonly handleDisabledChange = signalMethod<boolean>((isDisabled) => {
-        if (isDisabled) {
-            this.pathControl.disable({ emitEvent: false });
-        } else {
-            this.pathControl.enable({ emitEvent: false });
-        }
     });
 
     /**

@@ -1,46 +1,154 @@
 @let hasError = $hasError();
+@let confirmedNode = store.confirmedNode();
+@let displayPath = store.displayPath();
+@let isDisabled = $isDisabled();
 
-<p-treeselect
-    (onNodeSelect)="store.chooseNode($event)"
-    (onNodeUnselect)="preventDeselect()"
-    (onNodeExpand)="store.loadChildren($event)"
-    [formControl]="pathControl"
-    [class.ng-invalid]="hasError"
-    [class.ng-dirty]="hasError"
-    [filter]="true"
-    [options]="store.tree()"
-    [virtualScroll]="true"
-    scrollHeight="300px"
-    [virtualScrollItemSize]="50"
-    [virtualScrollOptions]="{
-        autoSize: true,
-        style: {
-            width: '100%',
-            height: '300px'
+<div class="flex w-full items-center gap-2">
+    <button
+        type="button"
+        class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
+        [class.ng-invalid]="hasError"
+        [class.ng-dirty]="hasError"
+        [class.border-(--p-inputtext-invalid-border-color)]="hasError"
+        [disabled]="isDisabled"
+        [attr.aria-expanded]="store.overlayOpen()"
+        data-testid="host-folder-trigger"
+        (click)="toggleOverlay($event)">
+        @if (store.triggerIconType() === 'site') {
+            <span class="material-symbols-outlined flex-none text-lg text-surface-500">public</span>
+        } @else {
+            <i class="pi pi-folder flex-none text-lg text-surface-500"></i>
         }
-    }"
-    filterBy="label"
-    filterMode="lenient"
-    [filterInputAutoFocus]="true"
-    selectionMode="single"
-    placeholder="Select Host/Folder"
-    class="w-full">
-    <ng-template let-node pTemplate="default">
-        <span>{{ node?.label | dotTruncatePath }}</span>
-    </ng-template>
-    <ng-template let-item pTemplate="value">
-        <span>//{{ item?.label }}</span>
-    </ng-template>
-    <ng-template pTemplate="triggericon">
-        <i [class]="store.iconClasses()" class="pi"></i>
-    </ng-template>
-    <ng-template pTemplate="filtericon">
-        <i class="pi pi-search"></i>
-    </ng-template>
-    <ng-template pTemplate="closeicon">
-        <i class="pi pi-times"></i>
-    </ng-template>
-    <ng-template pTemplate="itemtogglericon" let-expanded>
-        <i class="pi" [class.pi-chevron-down]="expanded" [class.pi-chevron-right]="!expanded"></i>
-    </ng-template>
-</p-treeselect>
+
+        <span
+            class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
+            data-testid="host-folder-trigger-label">
+            {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+        </span>
+
+        <i class="pi flex-none text-surface-500" [class]="store.iconClasses()"></i>
+    </button>
+
+    <p-button
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        severity="secondary"
+        type="button"
+        data-testid="host-folder-copy"
+        [disabled]="!confirmedNode || isDisabled"
+        [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
+        [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
+        tooltipPosition="bottom"
+        (onClick)="copyPath()">
+        <ng-template #icon>
+            <span class="material-symbols-outlined text-lg" data-testid="host-folder-copy-icon">
+                {{ $pathCopied() ? 'check' : 'content_copy' }}
+            </span>
+        </ng-template>
+    </p-button>
+</div>
+
+<p-popover
+    (onHide)="store.closeOverlay()"
+    (onShow)="store.openOverlay()"
+    [dismissable]="true"
+    [style]="{ width: $overlayWidth() }"
+    appendTo="body"
+    [pt]="popoverPt"
+    data-testid="host-folder-overlay">
+    <div class="flex max-h-88 w-full">
+        <div
+            class="flex w-56 min-w-0 flex-none flex-col overflow-x-hidden border-r border-gray-300 p-4"
+            data-testid="host-folder-sites">
+            <span class="block pb-3 text-xs font-semibold text-gray-600 uppercase">
+                {{ 'dot.file.field.host.folder.sites.label' | dm }}
+            </span>
+
+            <p-scroller
+                class="overflow-x-hidden"
+                [items]="store.sites()"
+                [itemSize]="36"
+                scrollHeight="220px">
+                <ng-template pTemplate="item" let-site>
+                    <button
+                        type="button"
+                        class="flex w-full cursor-pointer items-center gap-2 border-0 bg-transparent py-2 text-left text-gray-900 hover:bg-gray-100"
+                        [class.bg-(--color-palette-primary-200)]="
+                            store.selectedSite()?.key === site.key
+                        "
+                        [class.font-semibold]="store.selectedSite()?.key === site.key"
+                        data-testid="host-folder-site-item"
+                        (click)="onSiteSelect(site)">
+                        <span class="material-symbols-outlined text-base text-gray-600">
+                            public
+                        </span>
+                        <span class="truncate">{{ site.label }}</span>
+                    </button>
+                </ng-template>
+            </p-scroller>
+        </div>
+
+        <div class="flex min-w-0 flex-auto flex-col gap-2 p-4" data-testid="host-folder-folders">
+            <p-iconField class="w-full">
+                <p-inputIcon class="pi pi-search text-sm text-surface-500" />
+                <input
+                    pInputText
+                    size="large"
+                    type="text"
+                    class="w-full"
+                    data-testid="host-folder-search-input"
+                    [value]="store.searchTerm()"
+                    [placeholder]="'dot.file.field.host.folder.search.placeholder' | dm"
+                    (input)="onSearchInput($event)" />
+            </p-iconField>
+
+            <p-tree
+                [value]="store.displayedFolders()"
+                [loading]="store.foldersLoading()"
+                selectionMode="single"
+                scrollHeight="220px"
+                loadingMode="icon"
+                [pt]="treePt"
+                data-testid="host-folder-tree"
+                (onNodeSelect)="onFolderSelect($event)"
+                (onNodeExpand)="onFolderExpand($event)">
+                <ng-template let-node pTemplate="default">
+                    <span>{{ node.label | dotTruncatePath }}</span>
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <span class="block p-4 text-sm text-gray-600">
+                        {{ 'dot.file.field.host.folder.empty.folders' | dm }}
+                    </span>
+                </ng-template>
+                <ng-template let-expanded pTemplate="togglericon">
+                    <i
+                        class="pi"
+                        [class.pi-chevron-down]="expanded"
+                        [class.pi-chevron-right]="!expanded"></i>
+                </ng-template>
+            </p-tree>
+
+            @if (!store.isSearching() && store.hasMoreRootFolders()) {
+                <button
+                    type="button"
+                    class="cursor-pointer self-start border-0 bg-transparent py-1 text-sm text-(--color-palette-primary-500) hover:underline"
+                    data-testid="host-folder-load-more"
+                    (click)="onLoadMore()">
+                    {{ 'dot.file.field.host.folder.action.load.more' | dm: ['40'] }}
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="flex shrink-0 items-center justify-end border-t border-gray-300 bg-gray-50 p-3">
+        <button
+            type="button"
+            pButton
+            class="p-button-sm"
+            data-testid="host-folder-select"
+            (click)="onSelect()">
+            {{ 'dot.file.field.host.folder.action.select' | dm }}
+        </button>
+    </div>
+</p-popover>

@@ -1,11 +1,11 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { of, pipe } from 'rxjs';
+import { EMPTY, of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { exhaustMap, filter, map, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import {
     ComponentStatus,
@@ -16,59 +16,400 @@ import {
 import { DotBrowsingService } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
+export const FOLDER_PAGE_LIMIT = 40;
+export const MIN_SEARCH_LENGTH = 3;
+export const ROOT_NODE_KEY = 'root';
 
 export const SYSTEM_HOST_NAME = 'System Host';
 
+const HOST_FOLDER_DISPLAY_PATH_SEPARATOR = ' / ';
+
+/**
+ * Formats a host/folder label for display in the field trigger.
+ * Example: `demo.dotcms.com/application/apivtl/` → `demo.dotcms.com / application / apivtl`
+ */
+export function formatHostFolderDisplayPath(label: string): string {
+    return label.split('/').filter(Boolean).join(HOST_FOLDER_DISPLAY_PATH_SEPARATOR);
+}
+
+export type NodePaginationState = {
+    page: number;
+    hasMore: boolean;
+    loading: boolean;
+};
+
+/**
+ * Params for loading a level of folders (root or a specific node) through the
+ * paginated `searchFolders` endpoint. `append` distinguishes a fresh load
+ * (site switch, first expand) from a "Load 40 more" request.
+ */
+type LoadFoldersParams = {
+    key: string;
+    path: string;
+    siteId: string;
+    page: number;
+    append: boolean;
+    targetNode?: TreeNodeItem;
+};
+
 export type HostFolderFiledState = {
-    nodeSelected: TreeNodeItem | null;
-    nodeExpaned: TreeNodeSelectItem['node'] | null;
-    tree: TreeNodeItem[];
-    status: ComponentStatus;
+    sites: TreeNodeItem[];
+    sitesStatus: ComponentStatus;
+    selectedSite: TreeNodeItem | null;
+    folders: TreeNodeItem[];
+    foldersStatus: ComponentStatus;
+    nodePagination: Record<string, NodePaginationState>;
+    searchTerm: string;
+    searchResults: TreeNodeItem[] | null;
+    searchStatus: ComponentStatus;
+    confirmedNode: TreeNodeItem | null;
+    pendingNode: TreeNodeItem | null;
+    overlayOpen: boolean;
+    isRequired: boolean;
     error: string | null;
 };
 
 export const initialState: HostFolderFiledState = {
-    nodeSelected: null,
-    nodeExpaned: null,
-    tree: [],
-    status: ComponentStatus.INIT,
+    sites: [],
+    sitesStatus: ComponentStatus.INIT,
+    selectedSite: null,
+    folders: [],
+    foldersStatus: ComponentStatus.INIT,
+    nodePagination: {},
+    searchTerm: '',
+    searchResults: null,
+    searchStatus: ComponentStatus.INIT,
+    confirmedNode: null,
+    pendingNode: null,
+    overlayOpen: false,
+    isRequired: false,
     error: null
 };
 
+/**
+ * Walks an already-resolved folder tree (e.g. from `buildTreeByPaths`) and marks every
+ * node that already has a `children` array as fully loaded, so the overlay doesn't
+ * re-fetch levels that were populated during initialization from a preselected path.
+ */
+function buildInitialPaginationMap(folders: TreeNodeItem[]): Record<string, NodePaginationState> {
+    const map: Record<string, NodePaginationState> = {
+        [ROOT_NODE_KEY]: { page: 1, hasMore: false, loading: false }
+    };
+
+    const walk = (nodes: TreeNodeItem[]) => {
+        nodes.forEach((node) => {
+            if (Array.isArray(node.children)) {
+                map[node.key] = { page: 1, hasMore: false, loading: false };
+                walk(node.children as TreeNodeItem[]);
+            }
+        });
+    };
+
+    walk(folders);
+
+    return map;
+}
+
 export const HostFolderFiledStore = signalStore(
     withState(initialState),
-    withComputed(({ status, nodeSelected }) => ({
-        iconClasses: computed(() => {
-            const currentStatus = status();
+    withComputed(
+        ({
+            sitesStatus,
+            overlayOpen,
+            confirmedNode,
+            searchTerm,
+            searchResults,
+            folders,
+            foldersStatus,
+            nodePagination
+        }) => ({
+            /**
+             * Icon classes for the field trigger: spinner while the initial sites/value
+             * resolution is in flight, otherwise a chevron reflecting the overlay state.
+             */
+            iconClasses: computed(() => {
+                const loading = sitesStatus() === ComponentStatus.LOADING;
+                const open = overlayOpen();
 
-            return {
-                'pi-spin pi-spinner': currentStatus === ComponentStatus.LOADING,
-                'pi-chevron-down': currentStatus !== ComponentStatus.LOADING
-            };
-        }),
-        pathToSave: computed(() => {
-            const node = nodeSelected();
+                return {
+                    'pi-spin': loading,
+                    'pi-spinner': loading,
+                    'pi-chevron-up': !loading && open,
+                    'pi-chevron-down': !loading && !open
+                };
+            }),
+            /**
+             * Whether the confirmed selection is a site root or a folder, used to pick
+             * between the Material "globe" icon and the folder icon in the field trigger.
+             */
+            triggerIconType: computed<'site' | 'folder'>(() => {
+                const node = confirmedNode();
 
-            if (node?.data) {
-                const { data } = node;
-                const newHostname = data.hostname.replace('//', '');
+                return node?.data?.type === 'folder' ? 'folder' : 'site';
+            }),
+            pathToSave: computed(() => {
+                const node = confirmedNode();
 
-                return `${newHostname}:${data.path ? data.path : '/'}`;
-            }
+                if (node?.data) {
+                    const { data } = node;
+                    const newHostname = data.hostname.replace('//', '');
 
-            return null;
+                    return `${newHostname}:${data.path ? data.path : '/'}`;
+                }
+
+                return null;
+            }),
+            /**
+             * Full path in `//hostname/path/` format, used by the copy-to-clipboard action.
+             */
+            copyPath: computed(() => {
+                const node = confirmedNode();
+
+                if (!node?.data) {
+                    return '';
+                }
+
+                const { hostname, path } = node.data;
+                const cleanHostname = hostname.replace('//', '');
+
+                return `//${cleanHostname}${path ? path : '/'}`;
+            }),
+            /**
+             * Human-readable full path for the field trigger (hostname and folders separated by ` / `).
+             */
+            displayPath: computed(() => {
+                const node = confirmedNode();
+
+                if (!node?.label) {
+                    return '';
+                }
+
+                return formatHostFolderDisplayPath(node.label);
+            }),
+            /**
+             * Whether the current search term is long enough to trigger a backend search
+             * (the folder search endpoint requires at least `MIN_SEARCH_LENGTH` characters).
+             */
+            isSearching: computed(() => searchTerm().length >= MIN_SEARCH_LENGTH),
+            /**
+             * Folders to render in the tree: search results while searching, otherwise the
+             * regular (lazily-loaded) folder tree for the selected site.
+             */
+            displayedFolders: computed(() => {
+                if (searchTerm().length >= MIN_SEARCH_LENGTH) {
+                    return searchResults() ?? [];
+                }
+
+                return folders();
+            }),
+            foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
+            /**
+             * Whether more root-level folders can be loaded ("Load 40 more") for the
+             * currently selected site.
+             */
+            hasMoreRootFolders: computed(() => nodePagination()[ROOT_NODE_KEY]?.hasMore ?? false)
         })
-    })),
+    ),
     withMethods((store) => {
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
             /**
-             * Load the sites tree
+             * Loads a level of folders (root of the selected site, or a specific node)
+             * through the paginated search endpoint. Replaces the level's items unless
+             * `append` is set (used for "Load 40 more").
+             */
+            loadFolders: rxMethod<LoadFoldersParams>(
+                pipe(
+                    tap((params) => {
+                        const current = store.nodePagination()[params.key] ?? {
+                            page: 1,
+                            hasMore: false,
+                            loading: false
+                        };
+                        patchState(store, {
+                            foldersStatus: ComponentStatus.LOADING,
+                            nodePagination: {
+                                ...store.nodePagination(),
+                                [params.key]: { ...current, loading: true }
+                            }
+                        });
+                    }),
+                    switchMap((params) => {
+                        const hostname = store.selectedSite()?.data?.hostname ?? '';
+
+                        return dotBrowsingService
+                            .searchFolders(
+                                {
+                                    siteId: params.siteId,
+                                    path: params.path,
+                                    recursive: false,
+                                    page: params.page,
+                                    per_page: FOLDER_PAGE_LIMIT
+                                },
+                                hostname
+                            )
+                            .pipe(
+                                tapResponse({
+                                    next: ({ folders, pagination }) => {
+                                        const hasMore =
+                                            pagination.currentPage * pagination.perPage <
+                                            pagination.totalEntries;
+                                        const nodePagination = {
+                                            ...store.nodePagination(),
+                                            [params.key]: {
+                                                page: params.page,
+                                                hasMore,
+                                                loading: false
+                                            }
+                                        };
+
+                                        if (params.targetNode) {
+                                            const target = params.targetNode;
+                                            target.leaf = folders.length === 0 && params.page === 1;
+                                            target.icon = 'pi pi-folder-open';
+                                            target.children = params.append
+                                                ? [
+                                                      ...((target.children as TreeNodeItem[]) ??
+                                                          []),
+                                                      ...folders
+                                                  ]
+                                                : folders;
+
+                                            patchState(store, {
+                                                folders: structuredClone(store.folders()),
+                                                foldersStatus: ComponentStatus.LOADED,
+                                                nodePagination
+                                            });
+                                        } else {
+                                            patchState(store, {
+                                                folders: params.append
+                                                    ? [...store.folders(), ...folders]
+                                                    : folders,
+                                                foldersStatus: ComponentStatus.LOADED,
+                                                nodePagination
+                                            });
+                                        }
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            foldersStatus: ComponentStatus.ERROR,
+                                            error: '',
+                                            nodePagination: {
+                                                ...store.nodePagination(),
+                                                [params.key]: {
+                                                    ...(store.nodePagination()[params.key] ?? {
+                                                        page: 1,
+                                                        hasMore: false
+                                                    }),
+                                                    loading: false
+                                                }
+                                            }
+                                        });
+                                    }
+                                })
+                            );
+                    })
+                )
+            ),
+            /**
+             * Searches folders within the currently selected site (recursive), scoped by
+             * name. Clears search results when the term is empty; ignores 1-2 char terms
+             * since the backend requires a minimum of 3 characters.
+             */
+            search: rxMethod<string>(
+                pipe(
+                    tap((term) => patchState(store, { searchTerm: term })),
+                    filter((term) => term.length === 0 || term.length >= MIN_SEARCH_LENGTH),
+                    debounceTime(300),
+                    distinctUntilChanged(),
+                    switchMap((term) => {
+                        if (!term) {
+                            patchState(store, {
+                                searchResults: null,
+                                searchStatus: ComponentStatus.IDLE
+                            });
+
+                            return EMPTY;
+                        }
+
+                        const site = store.selectedSite();
+                        if (!site) {
+                            return EMPTY;
+                        }
+
+                        patchState(store, { searchStatus: ComponentStatus.LOADING });
+
+                        return dotBrowsingService
+                            .searchFolders(
+                                {
+                                    siteId: site.data.id,
+                                    path: '/',
+                                    recursive: true,
+                                    name: term
+                                },
+                                site.data.hostname
+                            )
+                            .pipe(
+                                tapResponse({
+                                    next: ({ folders }) =>
+                                        patchState(store, {
+                                            searchResults: folders,
+                                            searchStatus: ComponentStatus.LOADED
+                                        }),
+                                    error: () =>
+                                        patchState(store, {
+                                            searchResults: [],
+                                            searchStatus: ComponentStatus.ERROR
+                                        })
+                                })
+                            );
+                    })
+                )
+            ),
+            /**
+             * Stages a folder node as the pending selection (highlighted in the overlay),
+             * without persisting it to the field's value until `commit()` is called.
+             */
+            setPendingNode: (node: TreeNodeItem) => {
+                patchState(store, { pendingNode: node });
+            },
+            /**
+             * Persists the pending selection as the confirmed value. Called when the user
+             * clicks "Select".
+             */
+            commit: () => {
+                patchState(store, { confirmedNode: store.pendingNode() });
+            },
+            /**
+             * Opens the overlay.
+             */
+            openOverlay: () => {
+                patchState(store, { overlayOpen: true });
+            },
+            /**
+             * Closes the overlay and discards any pending (unconfirmed) selection.
+             */
+            closeOverlay: () => {
+                patchState(store, {
+                    overlayOpen: false,
+                    pendingNode: store.confirmedNode()
+                });
+            }
+        };
+    }),
+    withMethods((store) => {
+        const dotBrowsingService = inject(DotBrowsingService);
+
+        return {
+            /**
+             * Load the sites tree and resolve the initial selection (site + confirmed/pending
+             * node) from an optional preselected path, preserving parity with the previous
+             * implementation for backend-provided values (e.g. //demo.dotcms.com/app/folder/).
              */
             loadSites: rxMethod<{ path: string | null; isRequired: boolean }>(
                 pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                    tap(() => patchState(store, { sitesStatus: ComponentStatus.LOADING })),
                     switchMap(({ path, isRequired }) => {
                         return dotBrowsingService
                             .getSitesTreePath({
@@ -89,12 +430,13 @@ export const HostFolderFiledStore = signalStore(
                                 tapResponse({
                                     next: (sites) =>
                                         patchState(store, {
-                                            tree: sites,
-                                            status: ComponentStatus.LOADED
+                                            sites,
+                                            sitesStatus: ComponentStatus.LOADED,
+                                            isRequired
                                         }),
                                     error: () =>
                                         patchState(store, {
-                                            status: ComponentStatus.ERROR,
+                                            sitesStatus: ComponentStatus.ERROR,
                                             error: ''
                                         })
                                 }),
@@ -125,7 +467,8 @@ export const HostFolderFiledStore = signalStore(
                             );
                         }
 
-                        const node = sites.find((item) => item.label === SYSTEM_HOST_NAME);
+                        const node =
+                            sites.find((item) => item.label === SYSTEM_HOST_NAME) ?? sites[0];
 
                         return of({
                             path: node?.label,
@@ -137,89 +480,133 @@ export const HostFolderFiledStore = signalStore(
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
-                            const response: CustomTreeNode = {
-                                node: sites.find((item) => item.data.hostname === path),
-                                tree: null
-                            };
+                            const site = sites.find(
+                                (item) => item.data?.hostname === path || item.label === path
+                            );
 
-                            return of(response);
-                        }
-
-                        return dotBrowsingService.buildTreeByPaths(path);
-                    }),
-                    tap(({ node, tree }: CustomTreeNode) => {
-                        const changes: Partial<HostFolderFiledState> = {};
-                        if (node) {
-                            changes.nodeSelected = node;
-                        }
-
-                        if (tree) {
-                            const currentTree = store.tree();
-
-                            const newTree = currentTree.map((item) => {
-                                if (item.data?.hostname === tree?.parent?.hostName) {
-                                    return {
-                                        ...item,
-                                        children: [...tree.folders]
-                                    };
-                                }
-
-                                return item;
+                            return of({
+                                site,
+                                node: null as TreeNodeItem | null,
+                                tree: null as CustomTreeNode['tree']
                             });
-                            changes.tree = newTree;
+                        }
+
+                        return dotBrowsingService.buildTreeByPaths(path).pipe(
+                            map(({ node, tree }) => {
+                                const hostname = tree?.parent?.hostName;
+                                const site = sites.find((item) => item.data?.hostname === hostname);
+
+                                return { site, node, tree };
+                            })
+                        );
+                    }),
+                    tap(({ site, node, tree }) => {
+                        if (!site) {
+                            return;
+                        }
+
+                        const changes: Partial<HostFolderFiledState> = {
+                            selectedSite: site,
+                            confirmedNode: node ?? site,
+                            pendingNode: node ?? site
+                        };
+
+                        if (tree?.folders) {
+                            changes.folders = tree.folders;
+                            changes.nodePagination = buildInitialPaginationMap(tree.folders);
+                        } else {
+                            changes.folders = [];
                         }
 
                         patchState(store, changes);
+
+                        if (!tree?.folders) {
+                            store.loadFolders({
+                                key: ROOT_NODE_KEY,
+                                path: '/',
+                                siteId: site.data.id,
+                                page: 1,
+                                append: false
+                            });
+                        }
                     })
                 )
             ),
             /**
-             * Load children of a node.
-             * Skips the request when the node is already a leaf or has a non-empty children array
-             * (e.g. from buildTreeByPaths or a previous expand) to avoid overwriting the tree and
-             * losing items like the parent injected for pagination. Nodes with children: [] are
-             * still loaded so expandable placeholders get real data.
+             * Selects a site in the overlay: resets folders/search/pagination and loads the
+             * new site's root-level folders. Also stages the site itself as the pending
+             * selection, so clicking "Select" right away targets the site root.
              */
-            loadChildren: rxMethod<TreeNodeSelectItem>(
-                pipe(
-                    filter((event: TreeNodeSelectItem) => {
-                        const { node } = event;
-                        const hasChildrenArray = Array.isArray(node.children);
-                        const hasLoadedChildren =
-                            hasChildrenArray && (node.children as TreeNodeItem[]).length > 0;
-                        const isLeaf = node.leaf === true;
-                        // Only load children when the node is not already a leaf
-                        // and either has no children array or the array is empty.
-                        return !isLeaf && (!hasChildrenArray || !hasLoadedChildren);
-                    }),
-                    exhaustMap((event: TreeNodeSelectItem) => {
-                        const { node } = event;
-                        const { hostname, path } = node.data;
+            selectSite: (site: TreeNodeItem) => {
+                patchState(store, {
+                    selectedSite: site,
+                    folders: [],
+                    nodePagination: {},
+                    searchTerm: '',
+                    searchResults: null,
+                    pendingNode: site
+                });
 
-                        const fullPath = `${hostname}/${path}`;
-
-                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
-                            tap(({ folders }) => {
-                                node.leaf = true;
-                                node.icon = 'pi pi-folder-open';
-                                node.children = [...folders];
-                                patchState(store, { nodeExpaned: node });
-                            })
-                        );
-                    })
-                )
-            ),
+                store.loadFolders({
+                    key: ROOT_NODE_KEY,
+                    path: '/',
+                    siteId: site.data.id,
+                    page: 1,
+                    append: false
+                });
+            },
             /**
-             * Choose a node from the tree
+             * Lazily loads a node's children the first time it's expanded. Skips the
+             * request when the node is a leaf or already has loaded children (e.g. from
+             * the initial preselected-path expansion).
              */
-            chooseNode: (event: TreeNodeSelectItem) => {
-                const { node: nodeSelected } = event;
-                const data = nodeSelected.data;
-                if (!data) {
+            expandNode: (event: TreeNodeSelectItem) => {
+                const { node } = event;
+                const hasChildrenArray = Array.isArray(node.children);
+                const hasLoadedChildren =
+                    hasChildrenArray && (node.children as TreeNodeItem[]).length > 0;
+                const isLeaf = node.leaf === true;
+
+                if (isLeaf || (hasChildrenArray && hasLoadedChildren)) {
                     return;
                 }
 
-                patchState(store, { nodeSelected });
+                const site = store.selectedSite();
+                if (!site) {
+                    return;
+                }
+
+                store.loadFolders({
+                    key: node.key,
+                    path: node.data.path,
+                    siteId: site.data.id,
+                    page: 1,
+                    append: false,
+                    targetNode: node
+                });
+            },
+            /**
+             * Loads the next page (40 more) for the given level. Pass `null` to load
+             * more items at the root level of the selected site.
+             */
+            loadMore: (node: TreeNodeItem | null) => {
+                const site = store.selectedSite();
+                if (!site) {
+                    return;
+                }
+
+                const key = node ? node.key : ROOT_NODE_KEY;
+                const pagination = store.nodePagination()[key];
+                const nextPage = (pagination?.page ?? 1) + 1;
+
+                store.loadFolders({
+                    key,
+                    path: node ? node.data.path : '/',
+                    siteId: site.data.id,
+                    page: nextPage,
+                    append: true,
+                    targetNode: node ?? undefined
+                });
             }
         };
     })

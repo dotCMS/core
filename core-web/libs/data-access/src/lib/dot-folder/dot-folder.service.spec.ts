@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotFolder, DotFolderEntity } from '@dotcms/dotcms-models';
+import { DotFolder, DotFolderEntity, DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
 import { createFakeFolder } from '@dotcms/utils-testing';
 
 import { DotFolderService } from './dot-folder.service';
@@ -136,6 +136,65 @@ describe('DotFolderService', () => {
             const req = spectator.expectOne('/api/v1/folder/byPath', HttpMethod.POST);
             expect(req.request.body).toEqual({ path: '//application/test-folder_2024/images' });
             req.flush({ entity: mockFolders });
+        });
+    });
+
+    describe('searchFolders', () => {
+        const mockSearchFolders: FolderSearchView[] = [
+            { id: '1', inode: 'inode-1', name: 'folder1', path: '/', addChildrenAllowed: true },
+            { id: '2', inode: 'inode-2', name: 'folder2', path: '/', addChildrenAllowed: false }
+        ];
+        const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
+
+        it('should call GET /api/v1/folder/search with required siteId and defaults', () => {
+            spectator.service
+                .searchFolders({ siteId: 'site-1' })
+                .subscribe(({ folders, pagination }) => {
+                    expect(folders).toEqual(mockSearchFolders);
+                    expect(pagination).toEqual(mockPagination);
+                });
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: mockSearchFolders, pagination: mockPagination });
+        });
+
+        it('should include path, recursive, name, orderby, direction and pagination params when provided', () => {
+            spectator.service
+                .searchFolders({
+                    siteId: 'site-1',
+                    path: '/level1/',
+                    recursive: true,
+                    name: 'foo',
+                    orderby: 'mod_date',
+                    direction: 'DESC',
+                    page: 2,
+                    per_page: 10
+                })
+                .subscribe();
+
+            const url =
+                '/api/v1/folder/search?siteId=site-1&path=/level1/&recursive=true&name=foo&orderby=mod_date&direction=DESC&page=2&per_page=10';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: { currentPage: 2, perPage: 10, totalEntries: 0 } });
+        });
+
+        it('should set recursive param to false when explicitly false', () => {
+            spectator.service.searchFolders({ siteId: 'site-1', recursive: false }).subscribe();
+
+            const url = '/api/v1/folder/search?siteId=site-1&recursive=false&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: mockPagination });
+        });
+
+        it('should return an empty folders array when the API returns no entities', () => {
+            spectator.service.searchFolders({ siteId: 'site-1' }).subscribe(({ folders }) => {
+                expect(folders).toEqual([]);
+            });
+
+            const url = '/api/v1/folder/search?siteId=site-1&page=1&per_page=40';
+            const req = spectator.expectOne(url, HttpMethod.GET);
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } });
         });
     });
 

@@ -9,6 +9,9 @@ import {
     ContentByFolderParams,
     CustomTreeNode,
     DotFolder,
+    DotPagination,
+    FolderSearchParams,
+    FolderSearchView,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
@@ -111,6 +114,59 @@ export class DotBrowsingService {
             expandedIcon: 'pi pi-folder-open',
             collapsedIcon: 'pi pi-folder',
             leaf: false
+        };
+    }
+
+    /**
+     * Searches folders within a site using the new paginated `GET /api/v1/folder/search`
+     * endpoint and transforms them into TreeNode format. Used by the Site/Folder selector
+     * overlay for lazy-loading a level, paginating ("Load 40 more"), and site-scoped search.
+     *
+     * The search endpoint does not return the site's hostname, so it must be supplied by
+     * the caller (the selected site is already known when browsing/searching).
+     *
+     * @param {FolderSearchParams} params - Search scope (site, path, recursive), filter, sort and pagination
+     * @param {string} hostname - Hostname of the site being searched, used to build each folder's full path/label
+     * @returns {Observable<{ folders: TreeNodeItem[]; pagination: DotPagination }>} Observable that emits matching folders as TreeNodeItems and pagination metadata
+     */
+    searchFolders(
+        params: FolderSearchParams,
+        hostname: string
+    ): Observable<{ folders: TreeNodeItem[]; pagination: DotPagination }> {
+        return this.#folderService.searchFolders(params).pipe(
+            map(({ folders, pagination }) => ({
+                folders: folders.map((folder) =>
+                    this.#createFolderSearchTreeNode(folder, hostname)
+                ),
+                pagination
+            }))
+        );
+    }
+
+    /**
+     * Creates a TreeNodeItem from a FolderSearchView, using the caller-supplied hostname
+     * (not present in the search response) to build the full folder path and label.
+     *
+     * @param {FolderSearchView} folder - The folder search result to create a TreeNodeItem from
+     * @param {string} hostname - Hostname of the site the folder belongs to
+     * @returns {TreeNodeItem} The TreeNodeItem created from the FolderSearchView
+     */
+    #createFolderSearchTreeNode(folder: FolderSearchView, hostname: string): TreeNodeItem {
+        const parentPath = folder.path.endsWith('/') ? folder.path : `${folder.path}/`;
+        const path = `${parentPath}${folder.name}/`;
+
+        return {
+            key: folder.id,
+            label: `${hostname}${path}`,
+            data: {
+                id: folder.id,
+                hostname,
+                path,
+                type: 'folder'
+            },
+            expandedIcon: 'pi pi-folder-open',
+            collapsedIcon: 'pi pi-folder',
+            leaf: !folder.addChildrenAllowed
         };
     }
 
