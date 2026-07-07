@@ -59,7 +59,12 @@ describe('DotContentDriveToolbarComponent', () => {
                 clearFilters: jest.fn(),
                 filters: filtersSignal,
                 setDialog: jest.fn(),
-                selectedItems: selectedItemsSignal
+                selectedItems: selectedItemsSignal,
+                userSearchableFields: signal([]),
+                userSearchableActive: signal<string[]>([]),
+                setUserSearchableFields: jest.fn(),
+                addUserSearchableField: jest.fn(),
+                clearUserSearchableFilters: jest.fn()
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),

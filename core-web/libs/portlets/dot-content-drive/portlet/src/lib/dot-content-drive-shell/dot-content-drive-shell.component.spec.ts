@@ -181,7 +181,12 @@ describe('DotContentDriveShellComponent', () => {
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     loadItems: jest.fn(),
                     setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn()
+                    setShowAddToBundle: jest.fn(),
+                    userSearchableFields: jest.fn().mockReturnValue([]),
+                    userSearchableActive: jest.fn().mockReturnValue([]),
+                    setUserSearchableFields: jest.fn(),
+                    addUserSearchableField: jest.fn(),
+                    clearUserSearchableFilters: jest.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: jest.fn(

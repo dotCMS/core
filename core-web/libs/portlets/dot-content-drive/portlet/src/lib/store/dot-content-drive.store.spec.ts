@@ -6,7 +6,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchResponse, DotSite } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
@@ -827,5 +832,85 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         const lastPage = store.pages().at(-1);
         expect(lastPage?.hasMoreContent).toBe(false);
         expect(lastPage?.hasMoreFolders).toBe(false);
+    });
+
+    describe('User-searchable field filters', () => {
+        const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
+            ({
+                variable: 'aField',
+                fieldType: 'Text',
+                dataType: 'TEXT',
+                values: '',
+                ...overrides
+            }) as DotCMSContentTypeField;
+
+        it('should add a chip to the active list without touching the filter bag', () => {
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+            // No us.* entry until it has a value — so the search request is unchanged.
+            expect(store.filters()['us.title']).toBeUndefined();
+        });
+
+        it('should not add the same field twice', () => {
+            store.addUserSearchableField('title');
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+        });
+
+        it('should remove a field from both the active list and the filter bag', () => {
+            store.addUserSearchableField('title');
+            store.patchFilters({ 'us.title': 'review' });
+
+            store.removeUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual([]);
+            expect(store.filters()['us.title']).toBeUndefined();
+        });
+
+        it('should clear all field filters, the active list and the cached fields', () => {
+            store.setUserSearchableFields([field({ variable: 'title' })]);
+            store.addUserSearchableField('title');
+            store.patchFilters({ 'us.title': 'review', baseType: ['1'] });
+
+            store.clearUserSearchableFilters();
+
+            expect(store.userSearchableActive()).toEqual([]);
+            expect(store.userSearchableFields()).toEqual([]);
+            expect(store.filters()['us.title']).toBeUndefined();
+            // Non us.* filters are preserved.
+            expect(store.filters()['baseType']).toEqual(['1']);
+        });
+
+        it('should reshape us.* values into the userSearchable payload by field type', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setUserSearchableFields([
+                field({ variable: 'title', fieldType: 'Text' }),
+                field({ variable: 'tags', fieldType: 'Tag' })
+            ]);
+            store.patchFilters({ 'us.title': 'review', 'us.tags': 'angular,cms' });
+
+            expect(store.$request().userSearchable).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms']
+            });
+        });
+
+        it('should restore the active list from us.* keys in the URL filters on init', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: { 'us.title': 'review', 'us.tags': 'angular', contentType: ['Blog'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.userSearchableActive()).toEqual(['title', 'tags']);
+        });
     });
 });
