@@ -232,12 +232,7 @@ export class DotEditContentSidebarActivitiesComponent {
             // then or its `dirty` check fails and the message never renders.
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
-            // Custom error key (not Angular's built-in `required`) so
-            // dot-field-validation-message renders our specific copy instead
-            // of the shared, generic "This field is required" message.
-            this.commentControl.setErrors({
-                commentRequired: 'edit.content.sidebar.activities.required'
-            });
+            this.commentControl.setErrors({ required: true });
 
             return;
         }

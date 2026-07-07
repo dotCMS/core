@@ -212,7 +212,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             const control = spectator.component.form.get('comment');
             expect(control.errors).toBeTruthy();
-            expect(control.errors['commentRequired']).toBeTruthy();
+            expect(control.errors['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -375,12 +375,12 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
-            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(true);
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(true);
 
             spectator.typeInElement('Now it has content', commentInput);
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(
                 false
             );
             expect(getValidationErrorMsg()).toBeFalsy();
@@ -391,12 +391,12 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
-            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(true);
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(true);
 
             spectator.component.clearComment();
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(
+            expect(spectator.component.form.get('comment').hasError('required')).toBe(
                 false
             );
             expect(getValidationErrorMsg()).toBeFalsy();
@@ -448,7 +448,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             // Now should have required error
             const control = spectator.component.form.get('comment');
             expect(control.errors).toBeTruthy();
-            expect(control.errors['commentRequired']).toBeTruthy();
+            expect(control.errors['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
