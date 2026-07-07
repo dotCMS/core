@@ -154,6 +154,12 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * `userSearchable` payload.
      */
     userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables the user has added as chips, in add order. Kept separate from `filters` so
+     * adding an (empty) chip doesn't mutate the search request and re-trigger a reload; a `us.*`
+     * entry only lands in `filters` once the chip has a value.
+     */
+    userSearchableActive: string[];
 }
 
 /**

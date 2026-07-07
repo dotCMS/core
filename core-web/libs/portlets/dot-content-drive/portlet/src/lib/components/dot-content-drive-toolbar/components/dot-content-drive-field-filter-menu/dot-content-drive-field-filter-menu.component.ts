@@ -1,4 +1,4 @@
-import { EMPTY } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -15,8 +15,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -27,11 +28,7 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import {
-    TITLE_FIELD_VARIABLE,
-    USER_SEARCHABLE_FIELD_TYPES,
-    USER_SEARCHABLE_PREFIX
-} from '../../../../shared/constants';
+import { TITLE_FIELD_VARIABLE, USER_SEARCHABLE_FIELD_TYPES } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 /**
@@ -50,6 +47,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
         ButtonModule,
         ListboxModule,
         PopoverModule,
+        TooltipModule,
         DotFilterListItemComponent,
         DotMessagePipe
     ],
@@ -73,8 +71,8 @@ export class DotContentDriveFieldFilterMenuComponent {
 
     /** The previously-active single content-type variable, used to detect real changes. */
     #previousActive: string | null = null;
-    /** Bumped per fetch so a superseded response can't overwrite newer state. */
-    #requestId = 0;
+    /** Emits the content-type variable to load; switchMap cancels any superseded fetch. */
+    readonly #loadFields$ = new Subject<string>();
 
     /** Content-type selection as a stable array (never a freshly minted `[]`). */
     readonly #contentTypes = computed(() => {
@@ -93,16 +91,52 @@ export class DotContentDriveFieldFilterMenuComponent {
     /** The "More" button is only usable with exactly one content type selected. */
     protected readonly $enabled = computed(() => this.$activeContentType() !== null);
 
-    /** Eligible fields not yet added as chips. */
+    /** Eligible fields not yet added as chips (added ones live in the store's active list). */
     protected readonly $availableFields = computed(() => {
-        const filters = this.#store.filters();
+        const active = this.#store.userSearchableActive();
 
         return this.#store
             .userSearchableFields()
-            .filter((field) => filters[`${USER_SEARCHABLE_PREFIX}${field.variable}`] === undefined);
+            .filter((field) => !active.includes(field.variable));
     });
 
     constructor() {
+        // Fetch the active content type's fields. switchMap cancels a superseded fetch when the
+        // content type changes again mid-flight; cached types resolve synchronously.
+        this.#loadFields$
+            .pipe(
+                tap(() => this.$loading.set(true)),
+                switchMap((contentTypeVar) => {
+                    const cached = this.#fieldsCache()[contentTypeVar];
+                    if (cached) {
+                        return of(cached);
+                    }
+
+                    return this.#contentTypeService.getContentType(contentTypeVar).pipe(
+                        take(1),
+                        map((contentType: DotCMSContentType) => {
+                            const eligible = this.#eligibleFields(contentType?.fields ?? []);
+                            this.#fieldsCache.update((cache) => ({
+                                ...cache,
+                                [contentTypeVar]: eligible
+                            }));
+
+                            return eligible;
+                        }),
+                        catchError((error) => {
+                            this.#httpErrorManager.handle(error);
+
+                            return of<DotCMSContentTypeField[]>([]);
+                        })
+                    );
+                }),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((fields) => {
+                this.#store.setUserSearchableFields(fields);
+                this.$loading.set(false);
+            });
+
         // React to the content-type selection: reset field filters when the active type changes,
         // then (re)load the fields for the new active type.
         effect(() => {
@@ -134,45 +168,7 @@ export class DotContentDriveFieldFilterMenuComponent {
             return;
         }
 
-        this.#loadFields(active);
-    }
-
-    #loadFields(contentTypeVar: string): void {
-        const cached = this.#fieldsCache()[contentTypeVar];
-        if (cached) {
-            this.#store.setUserSearchableFields(cached);
-
-            return;
-        }
-
-        const requestId = ++this.#requestId;
-        this.$loading.set(true);
-
-        this.#contentTypeService
-            .getContentType(contentTypeVar)
-            .pipe(
-                take(1),
-                catchError((error) => {
-                    this.#httpErrorManager.handle(error);
-                    if (requestId === this.#requestId) {
-                        this.$loading.set(false);
-                        this.#store.setUserSearchableFields([]);
-                    }
-
-                    return EMPTY;
-                }),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((contentType: DotCMSContentType) => {
-                if (requestId !== this.#requestId) {
-                    return;
-                }
-
-                const eligible = this.#eligibleFields(contentType?.fields ?? []);
-                this.#fieldsCache.update((cache) => ({ ...cache, [contentTypeVar]: eligible }));
-                this.#store.setUserSearchableFields(eligible);
-                this.$loading.set(false);
-            });
+        this.#loadFields$.next(active);
     }
 
     /**

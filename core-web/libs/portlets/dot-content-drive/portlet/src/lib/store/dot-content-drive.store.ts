@@ -57,7 +57,8 @@ const initialState: DotContentDriveState = {
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
     pages: [DEFAULT_PAGE],
-    userSearchableFields: []
+    userSearchableFields: [],
+    userSearchableActive: []
 };
 
 export const DotContentDriveStore = signalStore(
@@ -119,7 +120,11 @@ export const DotContentDriveStore = signalStore(
                         page: 1,
                         offset: 0
                     },
-                    pages: [DEFAULT_PAGE]
+                    pages: [DEFAULT_PAGE],
+                    // Restore active field-filter chips from any `us.*` keys in the URL filters.
+                    userSearchableActive: Object.keys(filters)
+                        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
+                        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length))
                 });
             },
             setItems(items: DotContentDriveItem[]) {
@@ -220,40 +225,47 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { userSearchableFields: fields });
             },
             /**
-             * Adds an empty field-filter entry so its chip appears; the user then sets a value.
-             * No pagination reset — an empty criterion doesn't change results.
+             * Shows a field-filter chip by adding it to the active list only — NOT to `filters`.
+             * This keeps the search request unchanged (no reload/flicker); a `us.*` entry lands in
+             * `filters` only once the chip has a value.
              */
             addUserSearchableField(variable: string) {
-                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
-                if (store.filters()[key] !== undefined) {
+                if (store.userSearchableActive().includes(variable)) {
                     return;
                 }
 
-                patchState(store, { filters: { ...store.filters(), [key]: '' } });
-            },
-            /**
-             * Removes a single field filter (whatever its value). Unlike `removeFilter`, this does
-             * not guard on a truthy value, so an empty (just-added) chip can still be removed.
-             */
-            removeUserSearchableField(variable: string) {
-                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
-                if (store.filters()[key] === undefined) {
-                    return;
-                }
-
-                const restFilters = Object.fromEntries(
-                    Object.entries(store.filters()).filter(([filterKey]) => filterKey !== key)
-                );
                 patchState(store, {
-                    filters: restFilters,
-                    pagination: { ...store.pagination(), offset: 0, page: 1 },
-                    pages: [DEFAULT_PAGE]
+                    userSearchableActive: [...store.userSearchableActive(), variable]
                 });
             },
             /**
-             * Drops every `us.*` field filter and the cached field metadata. Called when the active
-             * content type changes (removed / another added / switched to a different single type).
-             * The reactive URL write-back removes these entries from the URL automatically.
+             * Removes a field-filter chip: drop it from the active list and from `filters` (if it
+             * had a value). Only resets pagination when a value was actually removed.
+             */
+            removeUserSearchableField(variable: string) {
+                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
+                const hadValue = store.filters()[key] !== undefined;
+                const restFilters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(([filterKey]) => filterKey !== key)
+                );
+
+                patchState(store, {
+                    filters: restFilters,
+                    userSearchableActive: store
+                        .userSearchableActive()
+                        .filter((active) => active !== variable),
+                    ...(hadValue
+                        ? {
+                              pagination: { ...store.pagination(), offset: 0, page: 1 },
+                              pages: [DEFAULT_PAGE]
+                          }
+                        : {})
+                });
+            },
+            /**
+             * Drops every `us.*` field filter, the active chip list, and the cached field metadata.
+             * Called when the active content type changes (removed / another added / switched to a
+             * different single type). The reactive URL write-back removes these entries from the URL.
              */
             clearUserSearchableFilters() {
                 const restFilters = Object.fromEntries(
@@ -265,6 +277,7 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, {
                     filters: restFilters,
                     userSearchableFields: [],
+                    userSearchableActive: [],
                     pagination: { ...store.pagination(), offset: 0, page: 1 },
                     pages: [DEFAULT_PAGE]
                 });

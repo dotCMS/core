@@ -1,12 +1,18 @@
-<p-button
-    [label]="'content-drive.field-filter.more' | dm"
-    icon="pi pi-plus"
-    [text]="true"
-    [rounded]="true"
-    size="small"
-    [disabled]="!$enabled()"
-    (click)="popover.toggle($event)"
-    data-testid="field-filter-more-button" />
+<!-- Span wrapper carries the tooltip so it still shows while the button is disabled. -->
+<span
+    [pTooltip]="'content-drive.field-filter.more.tooltip' | dm"
+    [tooltipDisabled]="$enabled()"
+    tooltipPosition="top">
+    <p-button
+        [label]="'content-drive.field-filter.more' | dm"
+        icon="pi pi-plus"
+        [text]="true"
+        [rounded]="true"
+        size="small"
+        [disabled]="!$enabled()"
+        (click)="popover.toggle($event)"
+        data-testid="field-filter-more-button" />
+</span>
 
 <p-popover #popover [pt]="popoverPt">
     <div class="flex w-72 flex-col" data-testid="field-filter-menu-panel">

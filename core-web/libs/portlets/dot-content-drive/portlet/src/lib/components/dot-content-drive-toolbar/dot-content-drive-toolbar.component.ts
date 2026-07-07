@@ -29,7 +29,7 @@ import { DotContentDriveTreeTogglerComponent } from './components/dot-content-dr
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
-import { DIALOG_TYPE, USER_SEARCHABLE_PREFIX } from '../../shared/constants';
+import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -136,6 +136,38 @@ interface ToolbarAnimationState {
                 opacity: 0;
                 transition: opacity 100ms ease-in;
             }
+            .field-filter-enter {
+                overflow: hidden;
+                animation: field-filter-in 180ms ease-out;
+            }
+            @keyframes field-filter-in {
+                from {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+                to {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+            }
+            .field-filter-leave {
+                overflow: hidden;
+                animation: field-filter-out 150ms ease-in forwards;
+            }
+            @keyframes field-filter-out {
+                from {
+                    opacity: 1;
+                    max-width: 16rem;
+                    transform: none;
+                }
+                to {
+                    opacity: 0;
+                    max-width: 0;
+                    transform: scale(0.96);
+                }
+            }
         `
     ]
 })
@@ -188,20 +220,18 @@ export class DotContentDriveToolbarComponent {
     readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
 
     /**
-     * Active field-filter chips, in the order the user added them. The `us.*` keys in the filter
-     * bag preserve insertion order, so we iterate those (not the content type's field order) and
-     * resolve each to its field metadata — new chips append to the end instead of slotting into a
-     * fixed position. Populated once the field metadata loads, so on URL restore the chips appear as
-     * soon as the content type's fields are fetched.
+     * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
+     * in add order). Each variable is resolved to its field metadata, so chips render only once the
+     * content type's fields have loaded — which also covers URL restore.
      */
     readonly $activeFieldFilters = computed(() => {
         const fieldByVariable = new Map(
             this.#store.userSearchableFields().map((field) => [field.variable, field])
         );
 
-        return Object.keys(this.#store.filters())
-            .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
-            .map((key) => fieldByVariable.get(key.slice(USER_SEARCHABLE_PREFIX.length)))
+        return this.#store
+            .userSearchableActive()
+            .map((variable) => fieldByVariable.get(variable))
             .filter((field): field is DotCMSContentTypeField => field !== undefined);
     });
 

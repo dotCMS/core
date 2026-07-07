@@ -5,15 +5,16 @@ import {
     Component,
     computed,
     DestroyRef,
+    effect,
     inject,
     input,
     linkedSignal,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -27,9 +28,7 @@ import { DotCategoriesService, DotMessageService, DotTagsService } from '@dotcms
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotSelectExistingContentComponent,
-    DotSelectExistingContentFooterComponent,
     getContentTypeIdFromRelationship,
-    getSelectionModeByCardinality,
     getSingleSelectableFieldOptions
 } from '@dotcms/edit-content';
 import {
@@ -39,6 +38,8 @@ import {
     DotFilterListItemComponent
 } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotContentDriveRelationshipFooterComponent } from './dot-content-drive-relationship-footer/dot-content-drive-relationship-footer.component';
 
 import {
     DEBOUNCE_TIME,
@@ -65,8 +66,6 @@ type FieldFilterControl =
     | 'checkbox'
     | 'binary-checkbox'
     | 'radio'
-    | 'tag'
-    | 'category'
     | 'relationship'
     | 'date';
 
@@ -90,7 +89,6 @@ interface FieldFilterOption {
         ListboxModule,
         RadioButtonModule,
         DatePickerModule,
-        AutoCompleteModule,
         PopoverModule,
         DotChipFilterComponent,
         DotFilterListItemComponent,
@@ -98,6 +96,9 @@ interface FieldFilterOption {
     ],
     templateUrl: './dot-content-drive-field-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    // inline-flex so the enter/leave animation can collapse the chip's width and let neighbours
+    // (the "More" button) slide smoothly instead of snapping.
+    host: { class: 'inline-flex' },
     providers: [DialogService]
 })
 export class DotContentDriveFieldFilterComponent {
@@ -144,16 +145,16 @@ export class DotContentDriveFieldFilterComponent {
             case FIELD_FILTER_CHECKBOX_TYPE:
                 // A single-option checkbox is a boolean value; multiple options is a selection.
                 return this.$options().length <= 1 ? 'binary-checkbox' : 'checkbox';
+            // Tag and Category are also multi-value browse-and-pick lists; their options are
+            // fetched (see $activeOptions) rather than parsed from the field.
             case FIELD_FILTER_MULTISELECT_TYPE:
+            case FIELD_FILTER_TAG_TYPE:
+            case FIELD_FILTER_CATEGORY_TYPE:
                 return 'multi-select';
             case FIELD_FILTER_RADIO_TYPE:
                 return 'radio';
             case FIELD_FILTER_SELECT_TYPE:
                 return 'single-select';
-            case FIELD_FILTER_TAG_TYPE:
-                return 'tag';
-            case FIELD_FILTER_CATEGORY_TYPE:
-                return 'category';
             case FIELD_FILTER_RELATIONSHIP_TYPE:
                 return 'relationship';
             default:
@@ -179,10 +180,26 @@ export class DotContentDriveFieldFilterComponent {
         )
     );
 
-    /** value → label lookup for rendering chip summaries of select/multi-select choices. */
+    /**
+     * Options fetched from a service (Tag, Category) rather than parsed from `field.values`.
+     * Loaded once on init so the user can browse them instead of guessing what exists.
+     */
+    protected readonly $fetchedOptions = signal<FieldFilterOption[]>([]);
+    protected readonly $loadingOptions = signal(false);
+
+    /** The option list to render — fetched for Tag/Category, field-derived otherwise. */
+    protected readonly $activeOptions = computed<FieldFilterOption[]>(() => {
+        const fieldType = this.$field().fieldType;
+
+        return fieldType === FIELD_FILTER_TAG_TYPE || fieldType === FIELD_FILTER_CATEGORY_TYPE
+            ? this.$fetchedOptions()
+            : this.$options();
+    });
+
+    /** value → label lookup for rendering chip summaries of option-based choices. */
     readonly #labelByValue = computed(() => {
         const map = new Map<string, string>();
-        for (const option of this.$options()) map.set(option.value, option.label);
+        for (const option of this.$activeOptions()) map.set(option.value, option.label);
 
         return map;
     });
@@ -197,25 +214,6 @@ export class DotContentDriveFieldFilterComponent {
         const raw = this.$rawValue();
 
         return raw ? raw.split(',').filter(Boolean) : [];
-    });
-
-    /** Tag autocomplete suggestions (labels), refreshed as the user types. */
-    protected readonly $tagSuggestions = signal<string[]>([]);
-
-    /** Category autocomplete: option objects (label = name, value = category key). */
-    protected readonly $categorySuggestions = signal<FieldFilterOption[]>([]);
-    /** key → category name, accumulated from searches/selection so restored chips can show names. */
-    readonly #categoryLabelByKey = signal<Record<string, string>>({});
-    /** Selected categories as option objects, resolved from the stored keys via the label cache. */
-    protected readonly $categorySelected = linkedSignal<FieldFilterOption[]>(() => {
-        const raw = this.$rawValue();
-        if (!raw) return [];
-        const labels = this.#categoryLabelByKey();
-
-        return raw
-            .split(',')
-            .filter(Boolean)
-            .map((key) => ({ label: labels[key] || key, value: key }));
     });
 
     /**
@@ -252,8 +250,13 @@ export class DotContentDriveFieldFilterComponent {
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
     protected readonly $isRelationship = computed(() => this.$control() === 'relationship');
-    /** identifier → contentlet title, cached from the picker so restored chips can show titles. */
+    /** identifier → contentlet title, cached from the picker so chips can show titles. */
     readonly #relationshipTitleById = signal<Record<string, string>>({});
+    /**
+     * identifier → inode, cached from the picker. The stored filter value is the identifier (per
+     * the search contract), but the picker preselects by inode, so we map back when reopening.
+     */
+    readonly #relationshipInodeById = signal<Record<string, string>>({});
 
     /** Chip label parts: a concise summary of the current value (empty when unset). */
     protected readonly $chipSelections = computed<string[]>(() => {
@@ -264,10 +267,6 @@ export class DotContentDriveFieldFilterComponent {
         // A binary checkbox shows True/False; empty is not filtering (handled above).
         if (control === 'binary-checkbox') {
             return [this.#dotMessageService.get(raw === 'true' ? 'true' : 'false')];
-        }
-
-        if (control === 'category') {
-            return this.$categorySelected().map((option) => option.label);
         }
 
         if (control === 'relationship') {
@@ -286,7 +285,7 @@ export class DotContentDriveFieldFilterComponent {
                   ];
         }
 
-        if (control === 'multi-select' || control === 'checkbox' || control === 'tag') {
+        if (control === 'multi-select' || control === 'checkbox') {
             const labels = this.#labelByValue();
 
             return raw
@@ -324,6 +323,13 @@ export class DotContentDriveFieldFilterComponent {
         this.#textInput$
             .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
             .subscribe((value) => this.#patch(value));
+
+        // Tag/Category options are fetched (not defined on the field), loaded once on init so the
+        // user can browse the full set in the multi-select instead of typing blind.
+        effect(() => {
+            const field = this.$field();
+            untracked(() => this.#loadFetchedOptions(field));
+        });
     }
 
     protected onTextInput(value: string): void {
@@ -347,78 +353,66 @@ export class DotContentDriveFieldFilterComponent {
         );
     }
 
-    /** Multi-value change from a control that emits the full list (e.g. the tag autocomplete). */
-    protected onMultiValueChange(values: string[]): void {
-        this.$multiValue.set(values ?? []);
-        this.#patch(serializeUserSearchableValue(values ?? [], this.$field().fieldType));
-    }
+    /** Loads the browsable option list for Tag/Category fields. */
+    #loadFetchedOptions(field: DotCMSContentTypeField): void {
+        if (field.fieldType === FIELD_FILTER_TAG_TYPE) {
+            this.$loadingOptions.set(true);
+            this.#tagsService
+                .getSuggestions()
+                .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+                .subscribe((tags) => {
+                    this.$fetchedOptions.set(
+                        tags.map((tag) => ({ label: tag.label, value: tag.label }))
+                    );
+                    this.$loadingOptions.set(false);
+                });
 
-    protected onTagSearch(event: AutoCompleteCompleteEvent): void {
-        this.#tagsService
-            .getSuggestions(event.query)
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((tags) => this.$tagSuggestions.set(tags.map((tag) => tag.label)));
-    }
+            return;
+        }
 
-    protected onCategorySearch(event: AutoCompleteCompleteEvent): void {
-        // The field's `values` holds the root category inode, so we search within that tree
-        // rather than across every category in the system.
-        const rootInode = this.$field().values;
-        const params = { filter: event.query, per_page: 20 };
-        const request$ = rootInode
-            ? this.#categoriesService.getChildrenPaginated(rootInode, params)
-            : this.#categoriesService.getCategoriesPaginated(params);
+        if (field.fieldType === FIELD_FILTER_CATEGORY_TYPE) {
+            // The field's `values` holds the root category inode, so we list within that tree.
+            const rootInode = field.values;
+            const params = { per_page: 1000 };
+            const request$ = rootInode
+                ? this.#categoriesService.getChildrenPaginated(rootInode, params)
+                : this.#categoriesService.getCategoriesPaginated(params);
 
-        request$.pipe(take(1), takeUntilDestroyed(this.#destroyRef)).subscribe((response) => {
-            const options = (response.entity ?? []).map((category) => ({
-                label: category.categoryName,
-                value: category.key
-            }));
-            this.#cacheCategoryLabels(options);
-            this.$categorySuggestions.set(options);
-        });
-    }
-
-    protected onCategoryChange(selected: FieldFilterOption[]): void {
-        const options = selected ?? [];
-        this.#cacheCategoryLabels(options);
-        this.$categorySelected.set(options);
-        this.#patch(
-            serializeUserSearchableValue(
-                options.map((option) => option.value),
-                this.$field().fieldType
-            )
-        );
-    }
-
-    #cacheCategoryLabels(options: FieldFilterOption[]): void {
-        if (!options.length) return;
-        this.#categoryLabelByKey.update((cache) => {
-            const next = { ...cache };
-            for (const option of options) next[option.value] = option.label;
-
-            return next;
-        });
+            this.$loadingOptions.set(true);
+            request$.pipe(take(1), takeUntilDestroyed(this.#destroyRef)).subscribe((response) => {
+                this.$fetchedOptions.set(
+                    (response.entity ?? []).map((category) => ({
+                        label: category.categoryName,
+                        // Backend filters categories by inode (per the search contract).
+                        value: category.inode
+                    }))
+                );
+                this.$loadingOptions.set(false);
+            });
+        }
     }
 
     /**
-     * Opens the reused "select existing content" dialog to pick related content. The target content
-     * type and single/multiple mode are derived from the relationship field; the chosen contentlets'
-     * identifiers become the filter value.
+     * Opens the reused "select existing content" dialog to pick related content. Only the target
+     * content type is derived from the relationship field; the chosen contentlets' inodes become the
+     * filter value. Cardinality/parent context are intentionally NOT passed — those drive the
+     * edit-time "already related elsewhere" constraint that disables rows, which is irrelevant to a
+     * filter. Selection is always multiple so the user can match any of several values.
      */
     protected openRelationshipDialog(): void {
         const field = this.$field();
         const contentTypeId = getContentTypeIdFromRelationship(field);
-        const cardinality = field.relationships?.cardinality;
-        if (!contentTypeId || cardinality == null) {
+        if (!contentTypeId) {
             return;
         }
 
-        const selectionMode = getSelectionModeByCardinality(
-            cardinality,
-            field.relationships?.isParentField
-        );
-        const currentItemsIds = this.$rawValue() ? this.$rawValue().split(',').filter(Boolean) : [];
+        // Stored value is identifiers; the picker preselects by inode, so map back via the cache.
+        const inodeById = this.#relationshipInodeById();
+        const currentItemsIds = (
+            this.$rawValue() ? this.$rawValue().split(',').filter(Boolean) : []
+        )
+            .map((identifier) => inodeById[identifier])
+            .filter(Boolean);
 
         const ref = this.#dialogService.open(DotSelectExistingContentComponent, {
             header: field.name,
@@ -429,15 +423,11 @@ export class DotContentDriveFieldFilterComponent {
             baseZIndex: 10000,
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
-            templates: { footer: DotSelectExistingContentFooterComponent },
+            templates: { footer: DotContentDriveRelationshipFooterComponent },
             data: {
                 contentTypeId,
-                selectionMode,
-                currentItemsIds,
-                cardinality,
-                parentContentTypeId: field.contentTypeId,
-                fieldVariable: field.variable,
-                isParentField: field.relationships?.isParentField
+                selectionMode: 'multiple',
+                currentItemsIds
             }
         });
 
@@ -448,9 +438,17 @@ export class DotContentDriveFieldFilterComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items) => {
+                // Store identifiers (the search contract), and cache title + inode by identifier so
+                // chips can show titles and the picker can preselect (by inode) on reopen.
                 this.#relationshipTitleById.update((cache) => {
                     const next = { ...cache };
                     for (const item of items) next[item.identifier] = item.title ?? item.identifier;
+
+                    return next;
+                });
+                this.#relationshipInodeById.update((cache) => {
+                    const next = { ...cache };
+                    for (const item of items) next[item.identifier] = item.inode;
 
                     return next;
                 });
