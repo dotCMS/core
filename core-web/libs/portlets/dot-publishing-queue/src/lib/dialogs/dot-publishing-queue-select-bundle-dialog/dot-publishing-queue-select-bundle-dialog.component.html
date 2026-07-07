@@ -5,7 +5,7 @@
     <div
         class="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4"
         data-testid="pq-select-bundle-header">
-        @if (step() === 'select') {
+        @if ($step() === 'select') {
             <h2 class="m-0 text-xl font-bold text-color" data-testid="pq-select-bundle-title">
                 {{ 'publishing-queue.select-bundle.title' | dm }}
             </h2>
@@ -28,11 +28,11 @@
                     severity="secondary"
                     [rounded]="true"
                     [value]="
-                        checkedBundleIds().length === 1
+                        $checkedBundleIds().length === 1
                             ? ('publishing-queue.select-bundle.bundle-count.singular'
-                              | dm: checkedBundleIds().length.toString())
+                              | dm: $checkedBundleIds().length.toString())
                             : ('publishing-queue.select-bundle.bundle-count.plural'
-                              | dm: checkedBundleIds().length.toString())
+                              | dm: $checkedBundleIds().length.toString())
                     "
                     styleClass="text-xs font-medium px-2 py-0.5"
                     data-testid="pq-select-bundle-configure-count" />
@@ -48,7 +48,7 @@
             data-testid="pq-select-bundle-close-btn" />
     </div>
 
-    @switch (step()) {
+    @switch ($step()) {
         @case ('select') {
             <div class="flex min-h-0 flex-1 overflow-hidden">
                 <!-- LEFT: Bundles list -->
@@ -61,7 +61,7 @@
                             <input
                                 pInputText
                                 type="text"
-                                [ngModel]="bundleSearch()"
+                                [ngModel]="$bundleSearch()"
                                 (ngModelChange)="onBundleSearch($event)"
                                 [placeholder]="
                                     'publishing-queue.select-bundle.search.placeholder' | dm
@@ -77,11 +77,11 @@
                     <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                         <p-table
                             [value]="
-                                bundlesStatus() === 'loading' || bundlesStatus() === 'init'
+                                $bundlesStatus() === 'loading' || $bundlesStatus() === 'init'
                                     ? bundlesSkeleton
-                                    : bundles()
+                                    : $bundles()
                             "
-                            [selection]="checkedBundles()"
+                            [selection]="$checkedBundles()"
                             (selectionChange)="onCheckedChange($event)"
                             dataKey="id"
                             [scrollable]="false"
@@ -99,7 +99,7 @@
                                 </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-bundle>
-                                @if (bundlesStatus() === 'loading') {
+                                @if ($bundlesStatus() === 'loading') {
                                     <tr class="cursor-default hover:bg-transparent!">
                                         <td><p-skeleton width="1rem" height="1rem" /></td>
                                         <td>
@@ -110,12 +110,12 @@
                                 } @else {
                                     <tr
                                         class="group cursor-pointer border-l-4 border-transparent"
-                                        [class.bg-primary-50!]="activeBundleId() === bundle.id"
+                                        [class.bg-primary-50!]="$activeBundleId() === bundle.id"
                                         [class.hover:bg-primary-50!]="
-                                            activeBundleId() === bundle.id
+                                            $activeBundleId() === bundle.id
                                         "
                                         [class.border-l-primary-500!]="
-                                            activeBundleId() === bundle.id
+                                            $activeBundleId() === bundle.id
                                         "
                                         (click)="onSelectBundle(bundle)"
                                         data-testid="pq-select-bundle-row"
@@ -129,7 +129,7 @@
                                                     <div
                                                         class="truncate font-medium text-color"
                                                         [class.text-primary-700]="
-                                                            activeBundleId() === bundle.id
+                                                            $activeBundleId() === bundle.id
                                                         "
                                                         data-testid="pq-select-bundle-name">
                                                         {{ bundle.name }}
@@ -156,10 +156,10 @@
                                                 <i
                                                     class="pi pi-chevron-right text-color-secondary text-xs opacity-0 transition-opacity group-hover:opacity-100"
                                                     [class.opacity-100]="
-                                                        activeBundleId() === bundle.id
+                                                        $activeBundleId() === bundle.id
                                                     "
                                                     [class.text-primary-500]="
-                                                        activeBundleId() === bundle.id
+                                                        $activeBundleId() === bundle.id
                                                     "
                                                     aria-hidden="true"></i>
                                             </div>
@@ -171,7 +171,7 @@
                                 <tr class="hover:bg-transparent!">
                                     <td colspan="2" class="p-6">
                                         <dot-empty-container
-                                            [configuration]="bundlesEmptyConfig()"
+                                            [configuration]="$bundlesEmptyConfig()"
                                             [hideContactUsLink]="true"
                                             data-testid="pq-select-bundle-empty" />
                                     </td>
@@ -185,7 +185,7 @@
                         <span
                             class="text-color-secondary text-sm"
                             data-testid="pq-select-bundle-page">
-                            {{ 'publishing-queue.select-bundle.page' | dm }} {{ bundlesPage() }}
+                            {{ 'publishing-queue.select-bundle.page' | dm }} {{ $bundlesPage() }}
                         </span>
                         <p-button
                             icon="pi pi-chevron-left"
@@ -193,7 +193,7 @@
                             [rounded]="true"
                             size="small"
                             severity="secondary"
-                            [disabled]="bundlesPage() <= 1"
+                            [disabled]="$bundlesPage() <= 1"
                             (onClick)="onBundlesPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
                             data-testid="pq-select-bundle-prev" />
@@ -203,7 +203,7 @@
                             [rounded]="true"
                             size="small"
                             severity="secondary"
-                            [disabled]="!bundlesHasMore()"
+                            [disabled]="!$bundlesHasMore()"
                             (onClick)="onBundlesPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
                             data-testid="pq-select-bundle-next" />
@@ -214,7 +214,9 @@
                 <div class="flex min-h-0 w-3/5 flex-col" data-testid="pq-select-bundle-right">
                     <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                         <p-table
-                            [value]="assetsStatus() === 'loading' ? assetsSkeleton : pagedAssets()"
+                            [value]="
+                                $assetsStatus() === 'loading' ? assetsSkeleton : $pagedAssets()
+                            "
                             dataKey="asset"
                             [scrollable]="false"
                             [rowHover]="true"
@@ -234,7 +236,7 @@
                                 </tr>
                             </ng-template>
                             <ng-template pTemplate="body" let-asset>
-                                @if (assetsStatus() === 'loading') {
+                                @if ($assetsStatus() === 'loading') {
                                     <tr class="cursor-default hover:bg-transparent!">
                                         <td><p-skeleton width="60%" height="1rem" /></td>
                                         <td><p-skeleton width="50%" height="1rem" /></td>
@@ -299,7 +301,7 @@
                                 <tr class="hover:bg-transparent!">
                                     <td colspan="3" class="p-6">
                                         <dot-empty-container
-                                            [configuration]="assetsEmptyConfig()"
+                                            [configuration]="$assetsEmptyConfig()"
                                             [hideContactUsLink]="true"
                                             data-testid="pq-select-bundle-asset-empty" />
                                     </td>
@@ -313,7 +315,7 @@
                         <span
                             class="text-color-secondary text-sm"
                             data-testid="pq-select-bundle-asset-page">
-                            {{ 'publishing-queue.select-bundle.page' | dm }} {{ assetsPage() }}
+                            {{ 'publishing-queue.select-bundle.page' | dm }} {{ $assetsPage() }}
                         </span>
                         <p-button
                             icon="pi pi-chevron-left"
@@ -321,7 +323,7 @@
                             [rounded]="true"
                             size="small"
                             severity="secondary"
-                            [disabled]="assetsPage() <= 1"
+                            [disabled]="$assetsPage() <= 1"
                             (onClick)="onAssetsPagePrev()"
                             [attr.aria-label]="'publishing-queue.select-bundle.prev-page' | dm"
                             data-testid="pq-select-bundle-asset-prev" />
@@ -331,7 +333,7 @@
                             [rounded]="true"
                             size="small"
                             severity="secondary"
-                            [disabled]="assetsPage() * assetsPerPage >= assetsTotal()"
+                            [disabled]="$assetsPage() * assetsPerPage >= $assetsTotal()"
                             (onClick)="onAssetsPageNext()"
                             [attr.aria-label]="'publishing-queue.select-bundle.next-page' | dm"
                             data-testid="pq-select-bundle-asset-next" />
@@ -349,7 +351,7 @@
                 class="flex shrink-0 items-center justify-between gap-3 border-t border-surface-200 px-4 py-3"
                 data-testid="pq-select-bundle-actions">
                 <div class="flex min-w-0 items-center gap-2 text-sm">
-                    @if (validationWarningKey(); as warningKey) {
+                    @if ($validationWarningKey(); as warningKey) {
                         <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
                         <span
                             class="font-medium text-red-600"
@@ -367,30 +369,30 @@
                         data-testid="pq-select-bundle-remove-btn" />
                     <p-button
                         [label]="
-                            isDownloading()
+                            $isDownloading()
                                 ? ('publishing-queue.select-bundle.download.in-progress' | dm)
                                 : ('publishing-queue.select-bundle.download' | dm)
                         "
                         icon="pi pi-chevron-down"
                         iconPos="right"
                         [outlined]="true"
-                        [loading]="isDownloading()"
-                        [disabled]="isDownloading()"
+                        [loading]="$isDownloading()"
+                        [disabled]="$isDownloading()"
                         (onClick)="onDownloadButtonClick($event)"
                         data-testid="pq-select-bundle-download-btn" />
                     <p-tieredMenu
                         #downloadMenu
-                        [model]="downloadMenuItems()"
+                        [model]="$downloadMenuItems()"
                         [popup]="true"
                         appendTo="body"
                         (onShow)="onDownloadMenuShow()"
                         data-testid="pq-select-bundle-download-menu" />
                     <p-button
                         [label]="
-                            hasChecked()
+                            $hasChecked()
                                 ? ('publishing-queue.select-bundle.configure' | dm) +
                                   ' (' +
-                                  checkedBundleIds().length +
+                                  $checkedBundleIds().length +
                                   ')'
                                 : ('publishing-queue.select-bundle.configure' | dm)
                         "
@@ -404,7 +406,7 @@
                 class="min-h-0 flex-1 overflow-y-auto p-4"
                 data-testid="pq-select-bundle-configure-body">
                 <dot-push-publish-form
-                    [data]="configureFormData()"
+                    [data]="$configureFormData()"
                     (value)="onConfigureFormValue($event)"
                     (valid)="onConfigureFormValid($event)" />
             </div>
@@ -420,7 +422,7 @@
                 class="flex shrink-0 items-center justify-between gap-3 border-t border-surface-200 px-4 py-3"
                 data-testid="pq-select-bundle-configure-footer">
                 <div class="flex min-w-0 items-center gap-2 text-sm">
-                    @if (validationWarningKey(); as warningKey) {
+                    @if ($validationWarningKey(); as warningKey) {
                         <i class="pi pi-exclamation-triangle text-red-600" aria-hidden="true"></i>
                         <span
                             class="font-medium text-red-600"
@@ -433,15 +435,15 @@
                     <p-button
                         [label]="'publishing-queue.select-bundle.back-to-list' | dm"
                         [text]="true"
-                        [disabled]="isSending()"
+                        [disabled]="$isSending()"
                         (onClick)="onBackToList()"
                         data-testid="pq-select-bundle-back-to-list-btn" />
                     <p-button
                         [label]="'publishing-queue.select-bundle.send' | dm"
-                        [loading]="isSending()"
-                        [disabled]="isSending()"
+                        [loading]="$isSending()"
+                        [disabled]="$isSending()"
                         (onClick)="onSend()"
-                        data-testid="pq-select-bundle-send-btn" />
+                        [pt]="{ root: { 'data-testid': 'pq-select-bundle-send-btn' } }" />
                 </div>
             </div>
         }

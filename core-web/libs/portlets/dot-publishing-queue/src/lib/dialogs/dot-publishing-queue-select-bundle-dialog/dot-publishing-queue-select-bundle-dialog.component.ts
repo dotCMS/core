@@ -152,30 +152,30 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     #userId: string | null = null;
 
-    readonly bundles = signal<BundleRow[]>([]);
+    readonly $bundles = signal<BundleRow[]>([]);
     /** Cursor-style "there is a next page" flag. The BE's `numRows` returns the
      * size of the current page, not the total across all pages, so we can't
      * compute a maxPage. Instead, `bundlesHasMore` is true when the current
      * response returned a full page (=== BUNDLES_PER_PAGE items) — as soon as
      * a partial page comes back, we're on the last page. Follow-up: extend the
      * BE to include a real total count so we can go back to numeric pagination. */
-    readonly bundlesHasMore = signal(false);
-    readonly bundlesStatus = signal<LoadStatus>('init');
-    readonly bundlesPage = signal(1);
-    readonly bundleSearch = signal('');
+    readonly $bundlesHasMore = signal(false);
+    readonly $bundlesStatus = signal<LoadStatus>('init');
+    readonly $bundlesPage = signal(1);
+    readonly $bundleSearch = signal('');
     /** Multi-select for bulk operations (Remove). Independent of `activeBundleId`. */
-    readonly checkedBundleIds = signal<string[]>([]);
+    readonly $checkedBundleIds = signal<string[]>([]);
     /** Single "active" bundle whose assets are shown on the right pane. */
-    readonly activeBundleId = signal<string | null>(null);
+    readonly $activeBundleId = signal<string | null>(null);
 
-    readonly assets = signal<BundleAssetView[]>([]);
-    readonly assetsStatus = signal<LoadStatus>('init');
-    readonly assetsPage = signal(1);
+    readonly $assets = signal<BundleAssetView[]>([]);
+    readonly $assetsStatus = signal<LoadStatus>('init');
+    readonly $assetsPage = signal(1);
     /** Per-asset edit URLs resolved by `DotContentletEditUrlService` after each
      * asset load. Only contentlet rows get an entry — non-contentlet types are
      * rendered as plain text. Resolution is async (one metadata fetch per
      * content type, cached app-wide by the service). */
-    readonly assetEditUrls = signal<Map<string, string>>(new Map());
+    readonly $assetEditUrls = signal<Map<string, string>>(new Map());
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
@@ -188,44 +188,44 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * trigger horizontal scroll. */
     readonly tableStyleFixed = { 'table-layout': 'fixed' as const, width: '100%' };
 
-    readonly activeBundle = computed(() => {
-        const id = this.activeBundleId();
-        return id ? (this.bundles().find((b) => b.id === id) ?? null) : null;
+    readonly $activeBundle = computed(() => {
+        const id = this.$activeBundleId();
+        return id ? (this.$bundles().find((b) => b.id === id) ?? null) : null;
     });
 
-    readonly hasChecked = computed(() => this.checkedBundleIds().length > 0);
-    readonly hasActive = computed(() => this.activeBundleId() !== null);
+    readonly $hasChecked = computed(() => this.$checkedBundleIds().length > 0);
+    readonly $hasActive = computed(() => this.$activeBundleId() !== null);
 
     /** Two-step wizard inside this single modal: step 1 picks bundles, step 2
      * embeds the push-publish form and submits to /api/v1/publishing/push. */
-    readonly step = signal<'select' | 'configure'>('select');
-    readonly isSending = signal(false);
+    readonly $step = signal<'select' | 'configure'>('select');
+    readonly $isSending = signal(false);
 
     /** Latest form value emitted by the embedded `<dot-push-publish-form>`. The
      * form re-emits on every keystroke; we just hold the most recent. */
-    readonly configureFormValue = signal<DotPushPublishData | null>(null);
-    readonly configureFormValid = signal(false);
+    readonly $configureFormValue = signal<DotPushPublishData | null>(null);
+    readonly $configureFormValid = signal(false);
 
     /** Send is enabled only when the form is valid AND we're not already
      * pushing. Disabled-while-sending prevents double-submit. */
-    readonly canSend = computed(() => this.configureFormValid() && !this.isSending());
+    readonly $canSend = computed(() => this.$configureFormValid() && !this.$isSending());
 
     /** Push publish filters powering the inline Download menu. Loaded once on
      * `ngOnInit` from the same source the legacy global dialog uses
      * (`/api/v1/pushpublish/filters/`). Empty until the fetch returns — the
      * menu just shows "To Unpublish" in the meantime. */
-    readonly downloadFilters = signal<DotPushPublishFilter[]>([]);
+    readonly $downloadFilters = signal<DotPushPublishFilter[]>([]);
 
     /** True while a `_generate` POST is in flight — disables the Download
      * button and swaps its label so the user can't double-click. */
-    readonly isDownloading = signal(false);
+    readonly $isDownloading = signal(false);
 
     /** Inline warning shown in the footer's left side when the user clicks an
      * action button (Remove / Download / Configure) without a valid selection.
      * Cleared automatically when the selection changes — `onCheckedChange` is
      * the only place a "valid" state can come into being from this dialog.
      * Stored as a translated i18n key, resolved at render time. */
-    readonly validationWarningKey = signal<string | null>(null);
+    readonly $validationWarningKey = signal<string | null>(null);
 
     /** Refs used to flip the Download tiered menu so it opens upward — the
      * button sits in the dialog footer, so the default downward popup would
@@ -239,8 +239,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * the filter list as a submenu; "To Unpublish" is a leaf that fires the
      * download with an empty filterKey (the legacy dialog disables the filter
      * dropdown entirely for unpublish, so there's no meaningful sub-choice). */
-    readonly downloadMenuItems = computed<MenuItem[]>(() => {
-        const filters = this.downloadFilters();
+    readonly $downloadMenuItems = computed<MenuItem[]>(() => {
+        const filters = this.$downloadFilters();
         const filterItems: MenuItem[] = filters.map((filter) => ({
             label: filter.title,
             command: () => this.onDownloadOption('0', filter.key)
@@ -267,10 +267,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * keys the env selector's "remember last push" — for multi-bundle we use
      * the first checked id (same form values get applied to all, so they share
      * the same "last push" memory anyway). */
-    readonly configureFormData = computed<DotPushPublishDialogData>(() => {
-        const ids = this.checkedBundleIds();
+    readonly $configureFormData = computed<DotPushPublishDialogData>(() => {
+        const ids = this.$checkedBundleIds();
         const first = ids[0] ?? '';
-        const firstName = this.bundles().find((b) => b.id === first)?.name ?? first;
+        const firstName = this.$bundles().find((b) => b.id === first)?.name ?? first;
         const title = ids.length <= 1 ? firstName : `${ids.length} bundles`;
 
         return {
@@ -283,25 +283,25 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     /** Bundle rows currently selected via checkbox. p-table's `[selection]`
      * binding wants the row objects (not just ids), so we re-derive them from
      * the visible bundle list each CD. */
-    readonly checkedBundles = computed(() => {
-        const ids = new Set(this.checkedBundleIds());
-        return this.bundles().filter((b) => ids.has(b.id));
+    readonly $checkedBundles = computed(() => {
+        const ids = new Set(this.$checkedBundleIds());
+        return this.$bundles().filter((b) => ids.has(b.id));
     });
 
-    readonly pagedAssets = computed(() => {
-        const all = this.assets();
-        const page = this.assetsPage();
+    readonly $pagedAssets = computed(() => {
+        const all = this.$assets();
+        const page = this.$assetsPage();
         const start = (page - 1) * ASSETS_PER_PAGE;
         return all.slice(start, start + ASSETS_PER_PAGE);
     });
 
-    readonly assetsTotal = computed(() => this.assets().length);
+    readonly $assetsTotal = computed(() => this.$assets().length);
 
     /** Empty-state configuration for the bundles pane. Splits the "no results"
      * copy between "nothing exists yet" and "search returned nothing" so the
      * user gets the right cue for what to do next. */
-    readonly bundlesEmptyConfig = computed<PrincipalConfiguration>(() => {
-        const hasSearch = this.bundleSearch().trim().length > 0;
+    readonly $bundlesEmptyConfig = computed<PrincipalConfiguration>(() => {
+        const hasSearch = this.$bundleSearch().trim().length > 0;
         return hasSearch
             ? {
                   icon: 'pi-search',
@@ -324,8 +324,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     /** Empty-state configuration for the assets pane. Distinguishes "no bundle
      * picked yet" (guide the user toward the left list) from "picked bundle is
      * empty" (tell them where to add content). */
-    readonly assetsEmptyConfig = computed<PrincipalConfiguration>(() => {
-        const hasActive = this.activeBundleId() !== null;
+    readonly $assetsEmptyConfig = computed<PrincipalConfiguration>(() => {
+        const hasActive = this.$activeBundleId() !== null;
         return hasActive
             ? {
                   icon: 'pi-box',
@@ -353,8 +353,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         this.#bundleSearchSubject
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
-                this.bundleSearch.set(value);
-                this.bundlesPage.set(1);
+                this.$bundleSearch.set(value);
+                this.$bundlesPage.set(1);
                 this.#loadBundles();
             });
 
@@ -364,7 +364,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 take(1),
                 catchError((error) => {
                     this.#httpErrorManager.handle(error);
-                    this.bundlesStatus.set('error');
+                    this.$bundlesStatus.set('error');
                     return EMPTY;
                 })
             )
@@ -388,7 +388,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                     return of([] as DotPushPublishFilter[]);
                 })
             )
-            .subscribe((filters) => this.downloadFilters.set(filters));
+            .subscribe((filters) => this.$downloadFilters.set(filters));
     }
 
     onBundleSearch(value: string): void {
@@ -396,16 +396,16 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onBundlesPagePrev(): void {
-        if (this.bundlesPage() > 1) {
-            this.bundlesPage.update((p) => p - 1);
+        if (this.$bundlesPage() > 1) {
+            this.$bundlesPage.update((p) => p - 1);
             this.#resetCheckedForPageChange();
             this.#loadBundles();
         }
     }
 
     onBundlesPageNext(): void {
-        if (this.bundlesHasMore()) {
-            this.bundlesPage.update((p) => p + 1);
+        if (this.$bundlesHasMore()) {
+            this.$bundlesPage.update((p) => p + 1);
             this.#resetCheckedForPageChange();
             this.#loadBundles();
         }
@@ -416,37 +416,37 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * they came from — the counter in the footer would include invisible ids.
      * Clear the selection to keep the visible state honest. */
     #resetCheckedForPageChange(): void {
-        this.checkedBundleIds.set([]);
-        this.validationWarningKey.set(null);
+        this.$checkedBundleIds.set([]);
+        this.$validationWarningKey.set(null);
     }
 
     onAssetsPagePrev(): void {
-        if (this.assetsPage() > 1) {
-            this.assetsPage.update((p) => p - 1);
+        if (this.$assetsPage() > 1) {
+            this.$assetsPage.update((p) => p - 1);
         }
     }
 
     onAssetsPageNext(): void {
-        const maxPage = Math.max(1, Math.ceil(this.assetsTotal() / ASSETS_PER_PAGE));
-        if (this.assetsPage() < maxPage) {
-            this.assetsPage.update((p) => p + 1);
+        const maxPage = Math.max(1, Math.ceil(this.$assetsTotal() / ASSETS_PER_PAGE));
+        if (this.$assetsPage() < maxPage) {
+            this.$assetsPage.update((p) => p + 1);
         }
     }
 
     onSelectBundle(bundle: BundleRow): void {
-        if (this.activeBundleId() === bundle.id) {
+        if (this.$activeBundleId() === bundle.id) {
             return;
         }
-        this.activeBundleId.set(bundle.id);
-        this.assetsPage.set(1);
+        this.$activeBundleId.set(bundle.id);
+        this.$assetsPage.set(1);
         this.#loadAssets(bundle.id);
     }
 
     onCheckedChange(ids: BundleRow[]): void {
-        this.checkedBundleIds.set(ids.map((b) => b.id));
+        this.$checkedBundleIds.set(ids.map((b) => b.id));
         // Any selection change is a direct response to a footer warning — clear
         // it so the user gets immediate feedback that their click registered.
-        this.validationWarningKey.set(null);
+        this.$validationWarningKey.set(null);
     }
 
     typeIcon(type: string): string {
@@ -454,7 +454,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onRemoveAsset(asset: BundleAssetView): void {
-        const bundleId = this.activeBundleId();
+        const bundleId = this.$activeBundleId();
         if (!bundleId) {
             return;
         }
@@ -489,12 +489,12 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onRemoveBundles(): void {
-        const ids = this.checkedBundleIds();
+        const ids = this.$checkedBundleIds();
         if (ids.length === 0) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
+            this.$validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
-        this.validationWarningKey.set(null);
+        this.$validationWarningKey.set(null);
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
             message: this.#dotMessageService.get(
@@ -519,11 +519,11 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                         })
                     )
                     .subscribe(() => {
-                        this.checkedBundleIds.set([]);
+                        this.$checkedBundleIds.set([]);
                         // If the active bundle was deleted, clear the right pane.
-                        if (this.activeBundleId() && ids.includes(this.activeBundleId() ?? '')) {
-                            this.activeBundleId.set(null);
-                            this.assets.set([]);
+                        if (this.$activeBundleId() && ids.includes(this.$activeBundleId() ?? '')) {
+                            this.$activeBundleId.set(null);
+                            this.$assets.set([]);
                         }
                         this.#loadBundles();
                     });
@@ -538,16 +538,16 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * only" (the BE `_generate` endpoint accepts one bundleId per call).
      */
     onDownloadButtonClick(event: MouseEvent): void {
-        const count = this.checkedBundleIds().length;
+        const count = this.$checkedBundleIds().length;
         if (count === 0) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
+            this.$validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
         if (count > 1) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.download.single-only');
+            this.$validationWarningKey.set('publishing-queue.select-bundle.download.single-only');
             return;
         }
-        this.validationWarningKey.set(null);
+        this.$validationWarningKey.set(null);
         this.#downloadTrigger = (event.currentTarget as HTMLElement) ?? null;
         this.downloadMenuRef()?.toggle(event);
     }
@@ -593,13 +593,13 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * one bundleId per call.
      */
     onDownloadOption(operation: '0' | '1', filterKey: string): void {
-        const ids = this.checkedBundleIds();
-        if (ids.length !== 1 || this.isDownloading()) {
+        const ids = this.$checkedBundleIds();
+        if (ids.length !== 1 || this.$isDownloading()) {
             return;
         }
         const bundleId = ids[0];
 
-        this.isDownloading.set(true);
+        this.$isDownloading.set(true);
         this.#publishingService
             .generateBundle(bundleId, operation, filterKey)
             .pipe(
@@ -608,7 +608,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                     this.#httpErrorManager.handle(error);
                     return EMPTY;
                 }),
-                finalize(() => this.isDownloading.set(false))
+                finalize(() => this.$isDownloading.set(false))
             )
             .subscribe(({ blob, filename }) => {
                 getDownloadLink(blob, filename).click();
@@ -616,29 +616,29 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     onOpenConfigureStep(): void {
-        if (!this.hasChecked()) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
+        if (!this.$hasChecked()) {
+            this.$validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
-        this.validationWarningKey.set(null);
-        this.step.set('configure');
+        this.$validationWarningKey.set(null);
+        this.$step.set('configure');
     }
 
     onBackToList(): void {
-        this.step.set('select');
-        this.validationWarningKey.set(null);
+        this.$step.set('select');
+        this.$validationWarningKey.set(null);
     }
 
     onConfigureFormValue(value: DotPushPublishData): void {
-        this.configureFormValue.set(value);
+        this.$configureFormValue.set(value);
     }
 
     onConfigureFormValid(valid: boolean): void {
-        this.configureFormValid.set(valid);
+        this.$configureFormValid.set(valid);
         // As soon as the form becomes valid, drop the "please complete required
         // fields" warning that a prior Send click may have surfaced.
         if (valid) {
-            this.validationWarningKey.set(null);
+            this.$validationWarningKey.set(null);
         }
     }
 
@@ -653,23 +653,23 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
      * calls are an implementation detail invisible to them.
      */
     onSend(): void {
-        const ids = this.checkedBundleIds();
-        const value = this.configureFormValue();
+        const ids = this.$checkedBundleIds();
+        const value = this.$configureFormValue();
         // Send stays clickable even when the form is incomplete — clicking with
         // an invalid form surfaces an inline warning instead of doing nothing
         // silently, so the user gets clear feedback about what to fix.
-        if (!value || !this.configureFormValid()) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.warning.form-invalid');
+        if (!value || !this.$configureFormValid()) {
+            this.$validationWarningKey.set('publishing-queue.select-bundle.warning.form-invalid');
             return;
         }
         if (ids.length === 0) {
-            this.validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
+            this.$validationWarningKey.set('publishing-queue.select-bundle.warning.select-one');
             return;
         }
 
         const form = toPushBundleForm(value);
 
-        this.isSending.set(true);
+        this.$isSending.set(true);
         forkJoin(
             ids.map((id) =>
                 this.#publishingService.pushBundle(id, form).pipe(
@@ -682,7 +682,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         )
             .pipe(
                 take(1),
-                finalize(() => this.isSending.set(false))
+                finalize(() => this.$isSending.set(false))
             )
             .subscribe((outcomes) => {
                 const failed = outcomes.filter((o): o is Extract<typeof o, { ok: false }> => !o.ok);
@@ -701,7 +701,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 // so a follow-up Send can't re-push them (was previously how a
                 // partial failure produced double pushes).
                 const failedIds = new Set(failed.map((o) => o.bundleId));
-                this.checkedBundleIds.update((prev) => prev.filter((id) => failedIds.has(id)));
+                this.$checkedBundleIds.update((prev) => prev.filter((id) => failedIds.has(id)));
 
                 this.#globalMessage.error(
                     this.#dotMessageService.get(
@@ -717,9 +717,9 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         if (!this.#userId) {
             return;
         }
-        this.bundlesStatus.set('loading');
-        const start = (this.bundlesPage() - 1) * BUNDLES_PER_PAGE;
-        const search = this.bundleSearch().trim();
+        this.$bundlesStatus.set('loading');
+        const start = (this.$bundlesPage() - 1) * BUNDLES_PER_PAGE;
+        const search = this.$bundleSearch().trim();
         const filter = search ? `*${search}*` : '*';
 
         this.#publishingService
@@ -728,7 +728,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 take(1),
                 catchError((error) => {
                     this.#httpErrorManager.handle(error);
-                    this.bundlesStatus.set('error');
+                    this.$bundlesStatus.set('error');
                     return EMPTY;
                 })
             )
@@ -740,19 +740,19 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 // the previous page and disable Next, so the empty "No bundles
                 // found" screen never renders. Only apply when past page 1;
                 // page 1 empty is a legitimate empty-state.
-                if (response.items.length === 0 && this.bundlesPage() > 1) {
-                    this.bundlesPage.update((p) => p - 1);
-                    this.bundlesHasMore.set(false);
-                    this.bundlesStatus.set('loaded');
+                if (response.items.length === 0 && this.$bundlesPage() > 1) {
+                    this.$bundlesPage.update((p) => p - 1);
+                    this.$bundlesHasMore.set(false);
+                    this.$bundlesStatus.set('loaded');
                     return;
                 }
-                this.bundles.set(response.items.map((item) => ({ id: item.id, name: item.name })));
+                this.$bundles.set(response.items.map((item) => ({ id: item.id, name: item.name })));
                 // Cursor-style: a full page means "possibly more"; a partial page is the last.
-                this.bundlesHasMore.set(response.items.length === BUNDLES_PER_PAGE);
-                this.bundlesStatus.set('loaded');
+                this.$bundlesHasMore.set(response.items.length === BUNDLES_PER_PAGE);
+                this.$bundlesStatus.set('loaded');
                 // Auto-select the first bundle on initial load so the right pane
                 // isn't empty by default (matches the design's "first row active").
-                if (!this.activeBundleId() && response.items.length > 0) {
+                if (!this.$activeBundleId() && response.items.length > 0) {
                     this.onSelectBundle({
                         id: response.items[0].id,
                         name: response.items[0].name
@@ -762,26 +762,26 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     #loadAssets(bundleId: string): void {
-        this.assetsStatus.set('loading');
-        this.assetEditUrls.set(new Map());
+        this.$assetsStatus.set('loading');
+        this.$assetEditUrls.set(new Map());
         this.#publishingService
             .getBundleAssets(bundleId)
             .pipe(
                 take(1),
                 catchError((error) => {
                     this.#httpErrorManager.handle(error);
-                    this.assetsStatus.set('error');
+                    this.$assetsStatus.set('error');
                     return EMPTY;
                 }),
                 finalize(() => {
-                    if (this.assetsStatus() === 'loading') {
-                        this.assetsStatus.set('loaded');
+                    if (this.$assetsStatus() === 'loading') {
+                        this.$assetsStatus.set('loaded');
                     }
                 })
             )
             .subscribe((assets) => {
-                this.assets.set(assets);
-                this.assetsStatus.set('loaded');
+                this.$assets.set(assets);
+                this.$assetsStatus.set('loaded');
                 this.#resolveAssetEditUrls(assets);
             });
     }
@@ -820,7 +820,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             );
 
             forkJoin(perAsset$).subscribe((entries) => {
-                this.assetEditUrls.update((prev) => {
+                this.$assetEditUrls.update((prev) => {
                     const next = new Map(prev);
                     for (const [key, url] of entries) {
                         if (url) {
@@ -836,7 +836,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     /** Template helper. Returns the edit URL for an asset if it's a linkable type
      * and the URL has been resolved, otherwise `null` (render as plain text). */
     editUrlFor(asset: BundleAssetView): string | null {
-        return this.assetEditUrls().get(asset.asset) ?? null;
+        return this.$assetEditUrls().get(asset.asset) ?? null;
     }
 
     /** Row click handler for the asset table. Opens the asset's editor in a

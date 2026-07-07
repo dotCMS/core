@@ -1,13 +1,13 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
-
-import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
+import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
     DotContentTypeService,
     DotCurrentUserService,
@@ -132,7 +132,21 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ],
-        schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
+        // Swap the embedded push-publish form for a minimal stub. The real
+        // component lives in apps/dotcms-ui, injects DotcmsConfigService/
+        // DotParseHtmlService/PushPublishService and drives an internal
+        // reactive form we don't exercise here — mocking it lets us drop
+        // CUSTOM_ELEMENTS_SCHEMA + NO_ERRORS_SCHEMA so a misspelled selector,
+        // wrong data-testid or missing import actually fails a test again.
+        overrideComponents: [
+            [
+                DotPublishingQueueSelectBundleDialogComponent,
+                {
+                    remove: { imports: [DotPushPublishFormComponent] },
+                    add: { imports: [MockComponent(DotPushPublishFormComponent)] }
+                }
+            ]
+        ]
     });
 
     beforeEach(() => {
@@ -162,6 +176,14 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         jest.clearAllMocks();
     });
 
+    /** Public-API helper: exercises `onCheckedChange` the way the template does
+     * (p-table emits `BundleRow` objects, not ids). Prefer this over
+     * `$checkedBundleIds.set(...)` so a broken template wire-up still fails the
+     * test. */
+    function checkBundles(ids: readonly string[]): void {
+        spectator.component.onCheckedChange(ids.map((id) => ({ id, name: `Bundle ${id}` })));
+    }
+
     describe('init', () => {
         it('fetches drafts via getUnsendBundles and renders both bundle rows', () => {
             spectator.detectChanges();
@@ -171,19 +193,19 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 0,
                 expect.any(Number)
             );
-            expect(spectator.component.bundles().length).toBe(2);
+            expect(spectator.component.$bundles().length).toBe(2);
         });
 
         it('auto-selects the first bundle and loads its assets', () => {
             spectator.detectChanges();
-            expect(spectator.component.activeBundleId()).toBe('bundle-1');
+            expect(spectator.component.$activeBundleId()).toBe('bundle-1');
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
-            expect(spectator.component.assets().length).toBe(2);
+            expect(spectator.component.$assets().length).toBe(2);
         });
 
         it('starts in the select step', () => {
             spectator.detectChanges();
-            expect(spectator.component.step()).toBe('select');
+            expect(spectator.component.$step()).toBe('select');
         });
     });
 
@@ -193,7 +215,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             (service.getBundleAssets as jest.Mock).mockClear();
 
             spectator.component.onSelectBundle({ id: 'bundle-2', name: 'Blog content sync' });
-            expect(spectator.component.activeBundleId()).toBe('bundle-2');
+            expect(spectator.component.$activeBundleId()).toBe('bundle-2');
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-2');
         });
 
@@ -208,37 +230,48 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
     describe('bundle list pagination', () => {
         it('clears the checked selection and any active warning when paging forward', () => {
+            // Configure the initial fetch to return a full page so `bundlesHasMore`
+            // ends up true and `onBundlesPageNext` isn't a no-op. `bundlesHasMore`
+            // and `validationWarningKey` are internal state set by the loadBundles
+            // response and validation paths — keep them as direct fixture writes
+            // here to isolate this test to the pagination side effects.
             spectator.detectChanges();
-            spectator.component.checkedBundleIds.set(['bundle-1', 'bundle-2']);
-            spectator.component.validationWarningKey.set('any-key');
-            spectator.component.bundlesHasMore.set(true);
+            checkBundles(['bundle-1', 'bundle-2']);
+            spectator.component.$validationWarningKey.set('any-key');
+            spectator.component.$bundlesHasMore.set(true);
 
             spectator.component.onBundlesPageNext();
 
-            expect(spectator.component.checkedBundleIds()).toEqual([]);
-            expect(spectator.component.validationWarningKey()).toBeNull();
-            expect(spectator.component.bundlesPage()).toBe(2);
+            expect(spectator.component.$checkedBundleIds()).toEqual([]);
+            expect(spectator.component.$validationWarningKey()).toBeNull();
+            expect(spectator.component.$bundlesPage()).toBe(2);
         });
 
         it('clears the checked selection when paging back', () => {
+            // `$bundlesPage` is only bumped through onBundlesPagePrev/Next; walking
+            // forward twice would be an equivalent public-API path but at the cost
+            // of extra service calls that aren't the target of this test.
             spectator.detectChanges();
-            spectator.component.bundlesPage.set(2);
-            spectator.component.checkedBundleIds.set(['bundle-1']);
+            spectator.component.$bundlesPage.set(2);
+            checkBundles(['bundle-1']);
 
             spectator.component.onBundlesPagePrev();
 
-            expect(spectator.component.checkedBundleIds()).toEqual([]);
-            expect(spectator.component.bundlesPage()).toBe(1);
+            expect(spectator.component.$checkedBundleIds()).toEqual([]);
+            expect(spectator.component.$bundlesPage()).toBe(1);
         });
 
         it('does not touch selection when page-forward is blocked (no more pages)', () => {
             spectator.detectChanges();
-            spectator.component.checkedBundleIds.set(['bundle-1']);
-            spectator.component.bundlesHasMore.set(false);
+            checkBundles(['bundle-1']);
+            // Fixture: no full-page response means bundlesHasMore stays false —
+            // and the initial mock already returns a partial page (2 items), so
+            // this call is really just documenting intent.
+            spectator.component.$bundlesHasMore.set(false);
 
             spectator.component.onBundlesPageNext();
 
-            expect(spectator.component.checkedBundleIds()).toEqual(['bundle-1']);
+            expect(spectator.component.$checkedBundleIds()).toEqual(['bundle-1']);
         });
     });
 
@@ -265,7 +298,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('opens the resolved edit URL in a new tab when the row has one', () => {
             // Prime the resolved URL map so editUrlFor() returns a non-null URL.
-            spectator.component.assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
+            spectator.component.$assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
             spectator.component.onSelectAssetRow({
                 asset: 'a1',
                 title: 'Spring Sale Landing',
@@ -275,7 +308,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('is a no-op when the asset has no resolved edit URL', () => {
-            spectator.component.assetEditUrls.set(new Map());
+            spectator.component.$assetEditUrls.set(new Map());
             spectator.component.onSelectAssetRow({
                 asset: 'a1',
                 title: 'x',
@@ -285,7 +318,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('renders the asset name as plain text, not as an anchor', () => {
-            spectator.component.assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
+            spectator.component.$assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
             spectator.detectChanges();
             const name = spectator.query(byTestId('pq-select-bundle-asset-name'));
             // The element tag must not be <a> — the row, not the name, is the
@@ -311,8 +344,20 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('is a no-op when no active bundle', () => {
+            // Recreate the component with an empty bundles response so ngOnInit's
+            // auto-select doesn't run — `activeBundleId` stays null through the
+            // public path instead of being mutated directly. `mockReturnValueOnce`
+            // scopes the empty response to this component's initial fetch only,
+            // so the default mock returns the fixture for the next test.
+            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+                of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
+            );
+            spectator = createComponent();
+            service = spectator.inject(
+                DotPublishingQueueService
+            ) as jest.Mocked<DotPublishingQueueService>;
             spectator.detectChanges();
-            spectator.component.activeBundleId.set(null);
+
             (service.removeAssetsFromBundle as jest.Mock).mockClear();
             spectator.component.onRemoveAsset({
                 asset: 'a1',
@@ -361,7 +406,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(confirmationService.confirm).toHaveBeenCalled();
             expect(service.deleteBundles).toHaveBeenCalledWith(['bundle-1']);
             // Active flips off the deleted bundle and re-selects the next remaining one.
-            expect(spectator.component.activeBundleId()).toBe('bundle-2');
+            expect(spectator.component.$activeBundleId()).toBe('bundle-2');
         });
 
         it('does not delete and surfaces the "select one" warning when nothing is checked', () => {
@@ -369,7 +414,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             (service.deleteBundles as jest.Mock).mockClear();
             spectator.component.onRemoveBundles();
             expect(service.deleteBundles).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.select-one'
             );
         });
@@ -382,7 +427,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('builds a 2-level menu: To Publish (with filters) + To Unpublish (leaf)', () => {
-            const items = spectator.component.downloadMenuItems();
+            const items = spectator.component.$downloadMenuItems();
             expect(items.length).toBe(2);
             // To Publish parent has the 3 fixture filters as children.
             expect(items[0].items?.length).toBe(3);
@@ -397,7 +442,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('picking a filter leaf calls generateBundle(bundleId, "0", filterKey)', () => {
-            const items = spectator.component.downloadMenuItems();
+            const items = spectator.component.$downloadMenuItems();
             const forcePush = items[0].items?.find((i) => i.label === 'Force Push Everything');
             forcePush?.command?.({} as never);
             expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '0', 'ForcePush.yml');
@@ -405,7 +450,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('picking To Unpublish calls generateBundle(bundleId, "1", "")', () => {
-            const items = spectator.component.downloadMenuItems();
+            const items = spectator.component.$downloadMenuItems();
             items[1].command?.({} as never);
             expect(service.generateBundle).toHaveBeenCalledWith('bundle-2', '1', '');
             expect(mockAnchorClick).toHaveBeenCalled();
@@ -415,12 +460,12 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             const subject = new Subject<{ blob: Blob; filename: string }>();
             (service.generateBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
 
-            expect(spectator.component.isDownloading()).toBe(false);
+            expect(spectator.component.$isDownloading()).toBe(false);
             spectator.component.onDownloadOption('1', '');
-            expect(spectator.component.isDownloading()).toBe(true);
+            expect(spectator.component.$isDownloading()).toBe(true);
             subject.next({ blob: new Blob(['x']), filename: 'bundle-2.tar.gz' });
             subject.complete();
-            expect(spectator.component.isDownloading()).toBe(false);
+            expect(spectator.component.$isDownloading()).toBe(false);
         });
 
         it('hands errors off to DotHttpErrorManagerService and releases isDownloading', () => {
@@ -428,12 +473,12 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             (service.generateBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
             spectator.component.onDownloadOption('0', 'ForcePush.yml');
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(spectator.component.isDownloading()).toBe(false);
+            expect(spectator.component.$isDownloading()).toBe(false);
             expect(mockAnchorClick).not.toHaveBeenCalled();
         });
 
         it('is a no-op when no bundles are checked', () => {
-            spectator.component.checkedBundleIds.set([]);
+            checkBundles([]);
             spectator.component.onDownloadOption('1', '');
             expect(service.generateBundle).not.toHaveBeenCalled();
         });
@@ -448,7 +493,14 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
 
         it('does not re-fire while a download is already in flight', () => {
-            spectator.component.isDownloading.set(true);
+            // Drive `$isDownloading` to true via the public path: kick off a
+            // download whose observable never resolves so the flag stays set.
+            const pending = new Subject<{ blob: Blob; filename: string }>();
+            (service.generateBundle as jest.Mock).mockReturnValueOnce(pending.asObservable());
+            spectator.component.onDownloadOption('1', '');
+            expect(spectator.component.$isDownloading()).toBe(true);
+            (service.generateBundle as jest.Mock).mockClear();
+
             spectator.component.onDownloadOption('1', '');
             expect(service.generateBundle).not.toHaveBeenCalled();
         });
@@ -457,8 +509,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // Fresh component instance with the filters service returning nothing
             // would yield an empty filter list. Here we simulate that state
             // directly on the signal to keep the rest of the suite stable.
-            spectator.component.downloadFilters.set([]);
-            const items = spectator.component.downloadMenuItems();
+            spectator.component.$downloadFilters.set([]);
+            const items = spectator.component.$downloadMenuItems();
             expect(items[0].disabled).toBe(true);
             // To Unpublish stays usable.
             expect(items[1].command).toBeDefined();
@@ -473,20 +525,20 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 { id: 'bundle-1', name: 'Spring campaign refresh' }
             ]);
             spectator.component.onOpenConfigureStep();
-            expect(spectator.component.step()).toBe('configure');
+            expect(spectator.component.$step()).toBe('configure');
         });
 
         it('Configure → does not transition and sets the "select one" warning when nothing is checked', () => {
-            spectator.component.checkedBundleIds.set([]);
+            checkBundles([]);
             spectator.component.onOpenConfigureStep();
-            expect(spectator.component.step()).toBe('select');
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$step()).toBe('select');
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.select-one'
             );
         });
 
         it('clicking Download with nothing checked sets the "select one" warning and does not open the menu', () => {
-            spectator.component.checkedBundleIds.set([]);
+            checkBundles([]);
             const toggleSpy = jest.fn();
             // Stub the menu's toggle so we can assert it was NOT called.
             (
@@ -500,7 +552,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             } as unknown as MouseEvent);
 
             expect(toggleSpy).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.select-one'
             );
         });
@@ -522,22 +574,22 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             } as unknown as MouseEvent);
 
             expect(toggleSpy).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.download.single-only'
             );
         });
 
         it('changing the selection clears any active warning', () => {
-            spectator.component.validationWarningKey.set(
+            spectator.component.$validationWarningKey.set(
                 'publishing-queue.select-bundle.warning.select-one'
             );
             spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
-            expect(spectator.component.validationWarningKey()).toBeNull();
+            expect(spectator.component.$validationWarningKey()).toBeNull();
         });
 
         it('renders the warning element in the footer when validationWarningKey is set', () => {
             spectator.detectChanges();
-            spectator.component.validationWarningKey.set(
+            spectator.component.$validationWarningKey.set(
                 'publishing-queue.select-bundle.warning.select-one'
             );
             spectator.detectChanges();
@@ -549,9 +601,9 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 { id: 'bundle-1', name: 'Spring campaign refresh' }
             ]);
             spectator.component.onOpenConfigureStep();
-            expect(spectator.component.step()).toBe('configure');
+            expect(spectator.component.$step()).toBe('configure');
             spectator.component.onBackToList();
-            expect(spectator.component.step()).toBe('select');
+            expect(spectator.component.$step()).toBe('select');
         });
 
         it('configureFormData carries the first checked bundle id and a count title for N>1', () => {
@@ -559,7 +611,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 { id: 'bundle-1', name: 'Spring campaign refresh' },
                 { id: 'bundle-2', name: 'Blog content sync' }
             ]);
-            const data = spectator.component.configureFormData();
+            const data = spectator.component.$configureFormData();
             expect(data.assetIdentifier).toBe('bundle-1');
             expect(data.title).toBe('2 bundles');
             expect(data.isBundle).toBe(true);
@@ -567,7 +619,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('configureFormData uses the bundle name as the title for a single checked bundle', () => {
             spectator.component.onCheckedChange([{ id: 'bundle-2', name: 'Blog content sync' }]);
-            const data = spectator.component.configureFormData();
+            const data = spectator.component.$configureFormData();
             expect(data.assetIdentifier).toBe('bundle-2');
             expect(data.title).toBe('Blog content sync');
         });
@@ -598,16 +650,14 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator.detectChanges();
 
             // Button is not disabled — only `isSending` disables it now.
-            const sendBtn = spectator
-                .query(byTestId('pq-select-bundle-send-btn'))
-                ?.querySelector('button');
+            const sendBtn = spectator.query(byTestId('pq-select-bundle-send-btn'));
             expect(sendBtn?.hasAttribute('disabled')).toBe(false);
 
             // Form has not emitted (value=null, valid=false) → clicking surfaces
             // the form-invalid warning inline in the footer instead of firing.
             spectator.component.onSend();
             expect(service.pushBundle).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.form-invalid'
             );
         });
@@ -617,11 +667,11 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator.component.onCheckedChange([{ id: 'bundle-1', name: 'a' }]);
             spectator.component.onOpenConfigureStep();
             spectator.component.onSend(); // triggers warning
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.form-invalid'
             );
             spectator.component.onConfigureFormValid(true);
-            expect(spectator.component.validationWarningKey()).toBeNull();
+            expect(spectator.component.$validationWarningKey()).toBeNull();
         });
 
         it('fans out one pushBundle call per checked bundle and closes the dialog on success', () => {
@@ -667,12 +717,12 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator.detectChanges();
 
             // Valid form, but no bundle checked → select-one warning.
-            spectator.component.checkedBundleIds.set([]);
+            checkBundles([]);
             spectator.component.onConfigureFormValue({} as never);
             spectator.component.onConfigureFormValid(true);
             spectator.component.onSend();
             expect(service.pushBundle).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.select-one'
             );
 
@@ -681,7 +731,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             spectator.component.onConfigureFormValid(false);
             spectator.component.onSend();
             expect(service.pushBundle).not.toHaveBeenCalled();
-            expect(spectator.component.validationWarningKey()).toBe(
+            expect(spectator.component.$validationWarningKey()).toBe(
                 'publishing-queue.select-bundle.warning.form-invalid'
             );
         });
@@ -691,9 +741,9 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             (service.pushBundle as jest.Mock).mockReturnValueOnce(subject.asObservable());
             primeSendableState(['bundle-1']);
 
-            expect(spectator.component.isSending()).toBe(false);
+            expect(spectator.component.$isSending()).toBe(false);
             spectator.component.onSend();
-            expect(spectator.component.isSending()).toBe(true);
+            expect(spectator.component.$isSending()).toBe(true);
             subject.next({
                 bundleId: 'bundle-1',
                 operation: 'publish',
@@ -703,7 +753,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 filterKey: 'default.yml'
             });
             subject.complete();
-            expect(spectator.component.isSending()).toBe(false);
+            expect(spectator.component.$isSending()).toBe(false);
         });
     });
 
@@ -741,7 +791,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     describe('empty states', () => {
         it('bundlesEmptyConfig uses the "no drafts" copy when there is no active search', () => {
             spectator.detectChanges();
-            const config = spectator.component.bundlesEmptyConfig();
+            const config = spectator.component.$bundlesEmptyConfig();
             expect(config.icon).toBe('pi-inbox');
             expect(config.title).toBe('publishing-queue.select-bundle.empty.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.subtitle');
@@ -749,17 +799,25 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('bundlesEmptyConfig switches to the "search" copy when a search is active', () => {
             spectator.detectChanges();
-            spectator.component.bundleSearch.set('anything');
-            const config = spectator.component.bundlesEmptyConfig();
+            // Public path: `onBundleSearch` debounces before setting the signal.
+            // For a synchronous unit test we prime the signal directly — the
+            // debounce is exercised in the search-input integration test.
+            spectator.component.$bundleSearch.set('anything');
+            const config = spectator.component.$bundlesEmptyConfig();
             expect(config.icon).toBe('pi-search');
             expect(config.title).toBe('publishing-queue.select-bundle.empty.search.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.empty.search.subtitle');
         });
 
         it('assetsEmptyConfig uses the "pick a bundle" copy when no bundle is active', () => {
+            // Recreate with an empty response so the ngOnInit auto-select
+            // doesn't run — activeBundleId stays null through the public path.
+            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+                of({ identifier: 'id', label: 'name', items: [], numRows: 0 })
+            );
+            spectator = createComponent();
             spectator.detectChanges();
-            spectator.component.activeBundleId.set(null);
-            const config = spectator.component.assetsEmptyConfig();
+            const config = spectator.component.$assetsEmptyConfig();
             expect(config.icon).toBe('pi-hand-point-left');
             expect(config.title).toBe('publishing-queue.select-bundle.no-active.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.no-active.subtitle');
@@ -767,8 +825,10 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         it('assetsEmptyConfig uses the "empty bundle" copy once a bundle is active', () => {
             spectator.detectChanges();
-            spectator.component.activeBundleId.set('bundle-1');
-            const config = spectator.component.assetsEmptyConfig();
+            // Public path: onSelectBundle sets `$activeBundleId` and drives the
+            // computed empty config the template renders.
+            spectator.component.onSelectBundle({ id: 'bundle-1', name: 'Spring campaign' });
+            const config = spectator.component.$assetsEmptyConfig();
             expect(config.icon).toBe('pi-box');
             expect(config.title).toBe('publishing-queue.select-bundle.asset-empty.title');
             expect(config.subtitle).toBe('publishing-queue.select-bundle.asset-empty.subtitle');
