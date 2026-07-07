@@ -46,6 +46,12 @@ export const DEFAULT_VERSIONS_PER_PAGE = 40;
 export const DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE = 40;
 
 /**
+ * Version-map key of the system default locale, used as compare fallback
+ * before the current locale is loaded.
+ */
+export const DEFAULT_LOCALE_ISO_KEY = 'en-us';
+
+/**
  * Feature store for managing content versions state
  */
 export function withHistory() {
@@ -65,7 +71,7 @@ export function withHistory() {
                               ? `${locale.languageCode}-${locale.countryCode}`
                               : locale.languageCode)
                       ).toLowerCase()
-                    : 'en-us';
+                    : DEFAULT_LOCALE_ISO_KEY;
 
                 return {
                     inode: store.compareContentlet()?.inode,

@@ -22,11 +22,13 @@ import {
     DotCMSResponse,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
+import { createFakeLanguage } from '@dotcms/utils-testing';
 
 import {
     withHistory,
     DEFAULT_VERSIONS_PER_PAGE,
-    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
+    DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE,
+    DEFAULT_LOCALE_ISO_KEY
 } from './history.feature';
 
 import {
@@ -1307,12 +1309,12 @@ describe('HistoryFeature', () => {
 
         it('should build the language key from languageCode and countryCode for a non-default locale', () => {
             patchState(store, {
-                currentLocale: {
+                currentLocale: createFakeLanguage({
                     id: 2,
                     language: 'Spanish',
                     languageCode: 'es',
                     countryCode: 'ES'
-                }
+                })
             });
 
             expect(store.compareData()).toEqual({
@@ -1324,45 +1326,45 @@ describe('HistoryFeature', () => {
 
         it('should use only the languageCode when the locale has no country code', () => {
             patchState(store, {
-                currentLocale: {
+                currentLocale: createFakeLanguage({
                     id: 3,
                     language: 'Italian',
-                    languageCode: 'it'
-                }
+                    languageCode: 'it',
+                    countryCode: ''
+                })
             });
 
             expect(store.compareData().language).toBe('it');
         });
 
-        it('should prefer the lowercased isoCode when present', () => {
+        it('should normalize a mixed-case isoCode to lowercase when present', () => {
             patchState(store, {
-                currentLocale: {
-                    id: 1,
-                    language: 'English',
-                    languageCode: 'en',
-                    countryCode: 'US',
-                    isoCode: 'en-US'
-                }
+                currentLocale: createFakeLanguage({
+                    id: 2,
+                    language: 'Spanish',
+                    languageCode: 'es',
+                    countryCode: 'ES',
+                    isoCode: 'ES-es'
+                })
             });
 
-            expect(store.compareData().language).toBe('en-us');
+            expect(store.compareData().language).toBe('es-es');
         });
 
-        it('should fall back to en-us when there is no current locale', () => {
+        it('should fall back to the default locale key when there is no current locale', () => {
             patchState(store, { currentLocale: null });
 
-            expect(store.compareData().language).toBe('en-us');
+            expect(store.compareData().language).toBe(DEFAULT_LOCALE_ISO_KEY);
         });
 
-        it('should keep en-us for the default en-US locale (regression)', () => {
+        it('should keep resolving en-us for the default en-US locale (regression)', () => {
             patchState(store, {
-                currentLocale: {
+                currentLocale: createFakeLanguage({
                     id: 1,
                     language: 'English',
                     languageCode: 'en',
-                    countryCode: 'US',
-                    defaultLanguage: true
-                }
+                    countryCode: 'US'
+                })
             });
 
             expect(store.compareData().language).toBe('en-us');
