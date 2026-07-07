@@ -138,7 +138,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
     describe('refresh', () => {
         it('clicking the refresh button calls store.refresh', () => {
-            const refreshBtn = spectator.query(byTestId('pq-refresh-btn'))?.querySelector('button');
+            const refreshBtn = spectator.query(byTestId('pq-refresh-btn'));
             expect(refreshBtn).toBeTruthy();
             spectator.click(refreshBtn as HTMLButtonElement);
             expect(store.refresh).toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
         it('clicking retry calls retryBundles with the selected ids', () => {
             bundlesSelectedIds.set(['b1', 'b2']);
             spectator.detectChanges();
-            const btn = spectator.query(byTestId('pq-bulk-retry'))?.querySelector('button');
+            const btn = spectator.query(byTestId('pq-bulk-retry'));
             spectator.click(btn as HTMLButtonElement);
             expect(store.retryBundles).toHaveBeenCalledWith({ bundleIds: ['b1', 'b2'] });
         });
@@ -193,7 +193,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
             spectator.detectChanges();
             const emit = jest.fn();
             spectator.component.$deleteClick.subscribe(emit);
-            const btn = spectator.query(byTestId('pq-bulk-delete'))?.querySelector('button');
+            const btn = spectator.query(byTestId('pq-bulk-delete'));
             spectator.click(btn as HTMLButtonElement);
             expect(emit).toHaveBeenCalled();
         });

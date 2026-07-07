@@ -22,19 +22,19 @@
                     [text]="true"
                     severity="danger"
                     (onClick)="$deleteClick.emit()"
-                    data-testid="pq-bulk-delete" />
+                    [pt]="{ root: { 'data-testid': 'pq-bulk-delete' } }" />
             }
             <p-button
                 [label]="'publishing-queue.refresh' | dm"
                 icon="pi pi-refresh"
                 [text]="true"
                 (onClick)="store.refresh()"
-                data-testid="pq-refresh-btn" />
+                [pt]="{ root: { 'data-testid': 'pq-refresh-btn' } }" />
             @if ($hasBulkActions()) {
                 <p-button
                     [label]="'publishing-queue.retry-send' | dm"
                     (onClick)="onBulkRetry()"
-                    data-testid="pq-bulk-retry" />
+                    [pt]="{ root: { 'data-testid': 'pq-bulk-retry' } }" />
             } @else {
                 <p-menu
                     #addBundleMenu
