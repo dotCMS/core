@@ -140,7 +140,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
         final SelectQuery sqlQuery = this.selectQuery(browserQuery);
-        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
+        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForFiltering(browserQuery);
 
         try {
             if (useElasticSearchForTextFiltering) {
@@ -1173,16 +1173,21 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Determines whether Elasticsearch should be used for text-based filtering instead of SQL ILIKE queries.
-     * This optimization is triggered when Elasticsearch filtering is enabled AND there are text search criteria.
+     * Determines whether Elasticsearch should be used for filtering instead of SQL ILIKE queries.
+     * This optimization is triggered when Elasticsearch filtering is enabled AND there is either a
+     * text/fileName criterion OR at least one index-routed per-field criterion (Content Drive field
+     * filters). Tag/Relationship criteria are DB-routed and do not flip this switch on their own.
      *
      * @param browserQuery The {@link BrowserQuery} containing filtering preferences and search criteria
-     * @return {@code true} if ES should be used for text filtering, {@code false} to use SQL filtering
+     * @return {@code true} if ES should be used for filtering, {@code false} to use SQL filtering
      */
-    boolean isUseElasticSearchForTextFiltering(final BrowserQuery browserQuery) {
+    boolean isUseElasticSearchForFiltering(final BrowserQuery browserQuery) {
         final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
                 UtilMethods.isSet(browserQuery.fileName);
-        return browserQuery.useElasticsearchFiltering && hasTextFilter;
+        final boolean hasIndexFieldCriteria = browserQuery.getFieldCriteria().stream()
+                .anyMatch(criteria ->
+                        criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
+        return browserQuery.useElasticsearchFiltering && (hasTextFilter || hasIndexFieldCriteria);
     }
 
     /**
