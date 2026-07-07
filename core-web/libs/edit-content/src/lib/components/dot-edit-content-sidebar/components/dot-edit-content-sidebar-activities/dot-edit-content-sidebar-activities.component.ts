@@ -226,9 +226,18 @@ export class DotEditContentSidebarActivitiesComponent {
 
         // Check for empty comment and mark as touched to trigger validation
         if (!comment) {
-            this.commentControl.setErrors({ required: true });
+            // Mark dirty/touched BEFORE setErrors: dot-field-validation-message
+            // recomputes its visibility synchronously off the setErrors()
+            // statusChanges emission, so dirty/touched must already be true by
+            // then or its `dirty` check fails and the message never renders.
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
+            // Custom error key (not Angular's built-in `required`) so
+            // dot-field-validation-message renders our specific copy instead
+            // of the shared, generic "This field is required" message.
+            this.commentControl.setErrors({
+                commentRequired: 'edit.content.sidebar.activities.required'
+            });
 
             return;
         }

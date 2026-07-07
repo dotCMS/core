@@ -43,7 +43,10 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            providers: [mockProvider(DotFormatDateService), mockProvider(DotMessageService)]
+            providers: [
+                mockProvider(DotFormatDateService),
+                mockProvider(DotMessageService, { get: (key: string) => key })
+            ]
         });
     });
 
@@ -209,7 +212,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             const control = spectator.component.form.get('comment');
             expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control.errors['commentRequired']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -302,52 +305,101 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.component.form.get('comment').untouched).toBe(true);
         });
 
-        it('should disable clear button when comment field is empty', () => {
-            // Initially check that it's disabled
-            let clearButtonComponent = spectator.query(byTestId('activities-clear'));
-            let actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
-            expect(actualButton?.disabled).toBe(true);
+        it('should keep clear button enabled regardless of comment field content', () => {
+            const getButton = () =>
+                spectator.query(byTestId('activities-clear'))?.querySelector('button') as
+                    | HTMLButtonElement
+                    | undefined;
 
-            // Type something to enable it
+            // Enabled when empty
+            expect(getButton()?.disabled).toBe(false);
+
+            // Enabled when it has content
             const commentInput = spectator.query(byTestId('activities-input'));
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
+            expect(getButton()?.disabled).toBe(false);
 
-            clearButtonComponent = spectator.query(byTestId('activities-clear'));
-            actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
-            expect(actualButton?.disabled).toBe(false);
-
-            // Delete the content to see if it gets disabled again
+            // Still enabled after clearing the content
             spectator.typeInElement('', commentInput);
             spectator.detectChanges();
+            expect(getButton()?.disabled).toBe(false);
+        });
 
-            clearButtonComponent = spectator.query(byTestId('activities-clear'));
-            actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+        it('should keep submit button enabled regardless of comment field content', () => {
+            const getButton = () =>
+                spectator.query(byTestId('activities-submit'))?.querySelector('button') as
+                    | HTMLButtonElement
+                    | undefined;
+
+            // Enabled when empty
+            expect(getButton()?.disabled).toBe(false);
+
+            // Enabled when it has content
+            const commentInput = spectator.query(byTestId('activities-input'));
+            spectator.typeInElement('Test comment', commentInput);
+            spectator.detectChanges();
+            expect(getButton()?.disabled).toBe(false);
+
+            // Still enabled after clearing the content
+            spectator.typeInElement('', commentInput);
+            spectator.detectChanges();
+            expect(getButton()?.disabled).toBe(false);
+        });
+
+        it('should disable clear button while saving', () => {
+            spectator.setInput('status', ComponentStatus.SAVING);
+            spectator.detectChanges();
+
+            const clearButtonComponent = spectator.query(byTestId('activities-clear'));
+            const actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+
             expect(actualButton?.disabled).toBe(true);
         });
 
-        it('should disable submit button when comment field is empty', () => {
-            // Initially check that it's disabled when comment is empty
-            let submitButtonComponent = spectator.query(byTestId('activities-submit'));
-            let actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
-            expect(actualButton?.disabled).toBe(true);
+        const getValidationErrorMsg = () =>
+            spectator.query(DotFieldValidationMessageComponent).errorMsg;
 
-            // Type something to enable it
+        it('should show "A message is required." error when submitting an empty comment', () => {
+            const form = spectator.query(byTestId('activities-form'));
+
+            spectator.dispatchFakeEvent(form, 'submit');
+            spectator.detectChanges();
+
+            expect(getValidationErrorMsg()).toBe('edit.content.sidebar.activities.required');
+        });
+
+        it('should clear the required error message once a non-empty message is entered', () => {
             const commentInput = spectator.query(byTestId('activities-input'));
-            spectator.typeInElement('Test comment', commentInput);
+            const form = spectator.query(byTestId('activities-form'));
+
+            spectator.dispatchFakeEvent(form, 'submit');
+            spectator.detectChanges();
+            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(true);
+
+            spectator.typeInElement('Now it has content', commentInput);
             spectator.detectChanges();
 
-            submitButtonComponent = spectator.query(byTestId('activities-submit'));
-            actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
-            expect(actualButton?.disabled).toBe(false);
+            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(
+                false
+            );
+            expect(getValidationErrorMsg()).toBeFalsy();
+        });
 
-            // Delete the content to see if it gets disabled again
-            spectator.typeInElement('', commentInput);
+        it('should clear the required error message when clear button is clicked', () => {
+            const form = spectator.query(byTestId('activities-form'));
+
+            spectator.dispatchFakeEvent(form, 'submit');
+            spectator.detectChanges();
+            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(true);
+
+            spectator.component.clearComment();
             spectator.detectChanges();
 
-            submitButtonComponent = spectator.query(byTestId('activities-submit'));
-            actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
-            expect(actualButton?.disabled).toBe(true);
+            expect(spectator.component.form.get('comment').hasError('commentRequired')).toBe(
+                false
+            );
+            expect(getValidationErrorMsg()).toBeFalsy();
         });
 
         it('should reset form state when clearComment is called', () => {
@@ -396,7 +448,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             // Now should have required error
             const control = spectator.component.form.get('comment');
             expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control.errors['commentRequired']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
