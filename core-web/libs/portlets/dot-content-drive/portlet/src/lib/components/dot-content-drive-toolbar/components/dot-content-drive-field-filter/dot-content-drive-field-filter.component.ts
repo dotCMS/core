@@ -276,7 +276,10 @@ export class DotContentDriveFieldFilterComponent {
             // (identifiers aren't user-readable, e.g. after a cold URL restore).
             const title = this.#relationshipTitleById()[raw];
 
-            return [title ?? this.#dotMessageService.get('content-drive.field-filter.selected-count', '1')];
+            return [
+                title ??
+                    this.#dotMessageService.get('content-drive.field-filter.selected-count', '1')
+            ];
         }
 
         if (control === 'multi-select' || control === 'checkbox') {
