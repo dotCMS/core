@@ -153,6 +153,103 @@ describe('DotHostFolderFieldComponent', () => {
         expect(overlayMock.hide).toHaveBeenCalled();
     });
 
+    describe('onOverlayShow', () => {
+        type ComponentWithPrivateScroll = {
+            scrollSelectedFolderIntoView: (attempt?: number) => void;
+        };
+
+        const componentWithScroll = () =>
+            spectator.component as unknown as ComponentWithPrivateScroll;
+
+        it('should open the overlay through the store', () => {
+            jest.spyOn(store, 'openOverlay');
+
+            spectator.component.onOverlayShow();
+
+            expect(store.openOverlay).toHaveBeenCalled();
+        });
+
+        it('should schedule a scroll to the selected folder once the overlay renders', async () => {
+            const scrollSpy = jest.spyOn(componentWithScroll(), 'scrollSelectedFolderIntoView');
+
+            spectator.component.onOverlayShow();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(scrollSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('scrollSelectedFolderIntoView', () => {
+        type ComponentWithPrivateScroll = {
+            scrollSelectedFolderIntoView: (attempt?: number) => void;
+        };
+
+        const callScroll = () =>
+            (spectator.component as unknown as ComponentWithPrivateScroll)
+                .scrollSelectedFolderIntoView();
+
+        const stubFolderTree = (root: HTMLElement | undefined) => {
+            spectator.component.$folderTree = jest.fn(
+                () => (root ? { el: { nativeElement: root } } : undefined) as never
+            );
+        };
+
+        it('should not scroll when the overlay is not open', () => {
+            const node = TREE_SELECT_MOCK[0].children[0];
+            store.setPendingNode(node);
+            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+
+            callScroll();
+
+            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not scroll when there is no selected folder', () => {
+            store.openOverlay();
+            const scrollIntoViewSpy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+
+            callScroll();
+
+            expect(scrollIntoViewSpy).not.toHaveBeenCalled();
+        });
+
+        it('should retry on the next animation frame while folders are still loading', () => {
+            const node = TREE_SELECT_MOCK[0].children[0];
+            store.setPendingNode(node);
+            store.openOverlay();
+            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
+            jest.spyOn(store, 'foldersLoading').mockReturnValue(true);
+            const rafSpy = jest
+                .spyOn(window, 'requestAnimationFrame')
+                .mockImplementation(() => 0);
+
+            callScroll();
+
+            expect(rafSpy).toHaveBeenCalled();
+        });
+
+        it('should scroll the selected node into view once folders finish loading', () => {
+            const node = TREE_SELECT_MOCK[0].children[0];
+            store.setPendingNode(node);
+            store.openOverlay();
+            jest.spyOn(store, 'treeSelection').mockReturnValue(node);
+
+            const selectedElement = document.createElement('div');
+            selectedElement.classList.add('p-tree-node-content', 'p-tree-node-selected');
+            const scrollIntoViewSpy = jest.fn();
+            selectedElement.scrollIntoView = scrollIntoViewSpy;
+
+            const treeRoot = document.createElement('div');
+            treeRoot.appendChild(selectedElement);
+            stubFolderTree(treeRoot);
+
+            callScroll();
+
+            expect(scrollIntoViewSpy).toHaveBeenCalledWith({ block: 'nearest' });
+        });
+    });
+
     it('should propagate the committed value through the form control accessor', () => {
         const onChange = jest.fn();
         const onTouched = jest.fn();

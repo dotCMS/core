@@ -51,13 +51,13 @@
 
 <p-popover
     (onHide)="store.closeOverlay()"
-    (onShow)="store.openOverlay()"
+    (onShow)="onOverlayShow()"
     [dismissable]="true"
     [style]="{ width: $overlayWidth() }"
     appendTo="body"
     [pt]="popoverPt"
     data-testid="host-folder-overlay">
-    <div class="flex h-96 w-full min-h-0">
+    <div class="flex h-96 min-h-0 w-full">
         <div
             class="flex h-full w-64 min-w-0 flex-none flex-col overflow-hidden border-r border-gray-300 p-4"
             data-testid="host-folder-sites">
@@ -119,6 +119,7 @@
             </p-iconField>
 
             <p-tree
+                #folderTree
                 class="min-h-0 flex-1"
                 [value]="store.displayedFolders()"
                 [selection]="store.treeSelection()"

@@ -1,11 +1,13 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
     forwardRef,
     inject,
+    Injector,
     input,
     signal,
     viewChild
@@ -19,7 +21,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ScrollerModule } from 'primeng/scroller';
 import { TooltipModule } from 'primeng/tooltip';
-import { TreeModule } from 'primeng/tree';
+import { Tree, TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
@@ -79,6 +81,11 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     $overlay = viewChild<Popover>(Popover);
     /**
+     * Reference to the folders tree, used to scroll the selected node into view when the
+     * overlay opens.
+     */
+    $folderTree = viewChild<Tree>('folderTree');
+    /**
      * A readonly instance of the HostFolderFiledStore injected into the component.
      * This store is used to manage the state and actions related to the host folder field.
      */
@@ -117,6 +124,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     };
 
     private readonly destroyRef = inject(DestroyRef);
+    private readonly injector = inject(Injector);
     private $copyResetTimer: ReturnType<typeof setTimeout> | undefined;
 
     constructor() {
@@ -138,6 +146,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         const trigger = event.currentTarget as HTMLElement;
         this.$overlayWidth.set(`${trigger.offsetWidth}px`);
         this.$overlay()?.toggle(event, trigger);
+    }
+
+    /**
+     * Opens the overlay and scrolls the currently selected folder into view once the tree
+     * has finished rendering (and loading, if the initial folders request is still pending).
+     */
+    onOverlayShow(): void {
+        this.store.openOverlay();
+        afterNextRender(() => this.scrollSelectedFolderIntoView(), { injector: this.injector });
     }
 
     /**
@@ -199,6 +216,32 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             this.$pathCopied.set(true);
             this.$copyResetTimer = setTimeout(() => this.$pathCopied.set(false), 1500);
         });
+    }
+
+    /**
+     * Scrolls the selected folder node into view within the tree. Retries on the next
+     * animation frame while the initial folders request is still loading, up to a small
+     * bound, since the selected node only exists in the DOM once its ancestors are rendered.
+     */
+    private scrollSelectedFolderIntoView(attempt = 0): void {
+        if (!this.store.overlayOpen() || !this.store.treeSelection()) {
+            return;
+        }
+
+        if (this.store.foldersLoading()) {
+            if (attempt < 10) {
+                requestAnimationFrame(() => this.scrollSelectedFolderIntoView(attempt + 1));
+            }
+
+            return;
+        }
+
+        const treeRoot = this.$folderTree()?.el?.nativeElement as HTMLElement | undefined;
+        const selectedNode = treeRoot?.querySelector<HTMLElement>(
+            '.p-tree-node-content.p-tree-node-selected'
+        );
+
+        selectedNode?.scrollIntoView({ block: 'nearest' });
     }
 
     /**
