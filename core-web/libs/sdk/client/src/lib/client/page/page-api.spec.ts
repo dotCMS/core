@@ -171,24 +171,32 @@ describe('PageClient', () => {
                         fireRules: false,
                         siteId: 'test-site'
                     }
-                }
+                },
+                errors: []
             });
         });
 
         // Regression: https://github.com/dotCMS/core/issues/36108
-        // The returned response must be JSON-serializable so consumers like Next.js Pages Router
+        // The full returned response must be JSON-serializable so consumers like Next.js Pages Router
         // can return it from getServerSideProps/getStaticProps without throwing on `undefined`.
-        it('returns a JSON-serializable response with no undefined values in graphql.variables', async () => {
+        // Next.js serializes the WHOLE props object, so we validate the entire response — not just
+        // graphql.variables — to catch any top-level field (e.g. `errors`) that leaks `undefined`.
+        it('returns a JSON-serializable response with no undefined values at the top level', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             const result = await pageClient.get('/graphql-page');
 
+            // No top-level field may be `undefined` (matches Next.js' strict prop serializer).
+            expect(Object.values(result).some((value) => value === undefined)).toBe(false);
+            expect(result.errors).toEqual([]);
+
+            // graphql.variables (the field originally reported) must also be free of undefined.
             const variables = result.graphql.variables;
             expect(Object.values(variables).some((value) => value === undefined)).toBe(false);
 
             // Round-trips without losing data and without throwing on undefined values.
-            expect(() => JSON.stringify(result.graphql.variables)).not.toThrow();
-            expect(JSON.parse(JSON.stringify(variables))).toEqual(variables);
+            expect(() => JSON.stringify(result)).not.toThrow();
+            expect(JSON.parse(JSON.stringify(result))).toEqual(result);
         });
 
         it('should print graphql errors', async () => {
@@ -671,13 +679,16 @@ describe('PageClient', () => {
             expect(result.errors?.[0].extensions?.code).toBe('PERMISSION_DENIED');
         });
 
-        it('should not include errors when there are none', async () => {
+        // Regression: https://github.com/dotCMS/core/issues/36108
+        // `errors` must be an empty array (never `undefined`) when there are none, otherwise the
+        // response is not JSON-serializable and breaks Next.js Pages Router serialization.
+        it('returns an empty errors array when there are none', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             const result = await pageClient.get('/graphql-page');
 
             expect(result.pageAsset).toBeDefined();
-            expect(result.errors).toBeUndefined();
+            expect(result.errors).toEqual([]);
         });
 
         describe('verbose logLevel', () => {
@@ -1245,7 +1256,7 @@ describe('PageClient', () => {
                 expect(result.graphql.variables).toEqual(getRequestBody().variables);
             });
 
-            it('result.errors is undefined when response has no errors', async () => {
+            it('result.errors is an empty array when response has no errors', async () => {
                 const pageClient = new PageClient(
                     validConfig,
                     requestOptions,
@@ -1253,7 +1264,7 @@ describe('PageClient', () => {
                 );
                 const result = await pageClient.get('/home');
 
-                expect(result.errors).toBeUndefined();
+                expect(result.errors).toEqual([]);
             });
 
             it('result.errors contains partial errors when page succeeds', async () => {

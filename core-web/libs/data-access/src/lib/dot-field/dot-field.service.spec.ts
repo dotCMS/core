@@ -1,8 +1,21 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    FieldType
+} from '@dotcms/dotcms-models';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 
 import { DotFieldService } from './dot-field.service';
+
+const mockFieldType: FieldType = {
+    clazz: 'TextField',
+    helpText: 'helpText',
+    id: 'text',
+    label: 'Text',
+    properties: []
+};
 
 describe('DotFieldService', () => {
     let spectator: SpectatorHttp<DotFieldService>;
@@ -76,6 +89,96 @@ describe('DotFieldService', () => {
             );
 
             req.flush('Not Found', errorResponse);
+        });
+    });
+
+    describe('loadFieldTypes', () => {
+        it('should load field types', () => {
+            const mockResponse = [mockFieldType];
+
+            spectator.service.loadFieldTypes().subscribe((res: FieldType[]) => {
+                expect(res).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne('/api/v1/fieldTypes', HttpMethod.GET);
+            req.flush({ entity: mockResponse });
+        });
+    });
+
+    describe('saveFields', () => {
+        it('should save fields', () => {
+            const mockData: DotCMSContentTypeLayoutRow[] = [
+                {
+                    divider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+                        name: 'Hello World'
+                    } as DotCMSContentTypeField
+                },
+                {
+                    divider: {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
+                    } as DotCMSContentTypeField
+                }
+            ];
+            const contentTypeId = '1';
+
+            spectator.service
+                .saveFields(contentTypeId, mockData)
+                .subscribe((res: DotCMSContentTypeLayoutRow[]) => {
+                    expect(res).toEqual(mockData);
+                });
+
+            const req = spectator.expectOne(
+                `/api/v3/contenttype/${contentTypeId}/fields/move`,
+                HttpMethod.PUT
+            );
+            expect(req.request.body).toEqual({ layout: mockData });
+            req.flush({ entity: mockData });
+        });
+    });
+
+    describe('deleteFields', () => {
+        it('should delete fields by id', () => {
+            const fieldIds = ['1', '2'];
+            const contentTypeId = '1';
+            const mockFields: DotCMSContentTypeLayoutRow[] = [];
+
+            spectator.service.deleteFields(contentTypeId, fieldIds).subscribe((res) => {
+                expect(res).toEqual({ deletedIds: fieldIds, fields: mockFields });
+            });
+
+            const req = spectator.expectOne(
+                `/api/v3/contenttype/${contentTypeId}/fields`,
+                HttpMethod.DELETE
+            );
+            expect(req.request.body).toEqual({ fieldsID: fieldIds });
+            req.flush({ entity: { deletedIds: fieldIds, fields: mockFields } });
+        });
+    });
+
+    describe('updateField', () => {
+        it('should update field', () => {
+            const field: DotCMSContentTypeField = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'test field',
+                id: '1',
+                sortOrder: 1
+            };
+            const mockResponse: DotCMSContentTypeLayoutRow = { divider: field };
+            const contentTypeId = '2';
+
+            spectator.service
+                .updateField(contentTypeId, field)
+                .subscribe((res: DotCMSContentTypeLayoutRow[]) => {
+                    expect(res[0]).toEqual(mockResponse);
+                });
+
+            const req = spectator.expectOne(
+                `/api/v3/contenttype/${contentTypeId}/fields/1`,
+                HttpMethod.PUT
+            );
+            expect(req.request.body).toEqual({ field });
+            req.flush({ entity: [mockResponse] });
         });
     });
 });

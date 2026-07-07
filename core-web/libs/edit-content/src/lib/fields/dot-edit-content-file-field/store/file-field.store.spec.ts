@@ -3,6 +3,9 @@ import { of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+
 import { FileFieldStore } from './file-field.store';
 
 import { UIMessage } from '../../../models/dot-edit-content-file.model';
@@ -16,7 +19,11 @@ describe('FileFieldStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [FileFieldStore, mockProvider(DotFileFieldUploadService)]
+            providers: [
+                FileFieldStore,
+                mockProvider(DotFileFieldUploadService),
+                mockProvider(DotWorkflowActionsFireService)
+            ]
         });
 
         store = TestBed.inject(FileFieldStore);
@@ -93,6 +100,16 @@ describe('FileFieldStore', () => {
                 icon: 'pi pi-upload',
                 args: [`${store.maxFileSize()}`, store.acceptedFiles().join(', ')]
             });
+        });
+    });
+
+    describe('Method: setValue', () => {
+        it('should update the store value without altering preview state', () => {
+            store.setValue('saved-file-id');
+
+            expect(store.value()).toBe('saved-file-id');
+            expect(store.uploadedFile()).toBeNull();
+            expect(store.fileStatus()).toBe('init');
         });
     });
 
@@ -244,6 +261,135 @@ describe('FileFieldStore', () => {
 
             expect(service.getContentById).toHaveBeenCalledWith('id');
             expect(store.fileStatus()).toBe('init');
+            expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
+        });
+    });
+
+    describe('Method: publishEditedAsset', () => {
+        let fire: SpyObject<DotWorkflowActionsFireService>;
+        const TEMP = { id: 'temp_1', fileName: 'edited.png' } as DotCMSTempFile;
+        const ASSET = {
+            identifier: 'ref-id',
+            inode: 'ref-inode',
+            languageId: 1
+        } as DotCMSContentlet;
+
+        beforeEach(() => {
+            fire = TestBed.inject(
+                DotWorkflowActionsFireService
+            ) as SpyObject<DotWorkflowActionsFireService>;
+            // Hydrate the preview with a referenced dotAsset.
+            service.getContentById.mockReturnValue(of(ASSET));
+            store.getAssetData('ref-id');
+        });
+
+        it('publishes a new version of the referenced dotAsset in its own language', () => {
+            fire.publishContentletByIdentifier.mockReturnValue(of(ASSET));
+
+            store.publishEditedAsset(TEMP);
+
+            expect(fire.publishContentletByIdentifier).toHaveBeenCalledWith(
+                { identifier: 'ref-id', asset: 'temp_1' },
+                1
+            );
+        });
+
+        it('targets the fileAsset field for a legacy FileAsset reference', () => {
+            service.getContentById.mockReturnValue(of({ ...ASSET, titleImage: 'fileAsset' }));
+            store.getAssetData('ref-id');
+            fire.publishContentletByIdentifier.mockReturnValue(of(ASSET));
+
+            store.publishEditedAsset(TEMP);
+
+            expect(fire.publishContentletByIdentifier).toHaveBeenCalledWith(
+                { identifier: 'ref-id', fileAsset: 'temp_1' },
+                1
+            );
+        });
+
+        it('refreshes the preview from the new version without changing the value', () => {
+            const newVersion = { ...ASSET, inode: 'new-inode' };
+            fire.publishContentletByIdentifier.mockReturnValue(of(ASSET));
+            service.getContentById.mockReturnValue(of(newVersion));
+
+            store.publishEditedAsset(TEMP);
+
+            expect(service.getContentById).toHaveBeenCalledWith('ref-id');
+            expect(store.uploadedFile()).toEqual({ source: 'contentlet', file: newVersion });
+            expect(store.value()).toBe('ref-id');
+            expect(store.fileStatus()).toBe('preview');
+        });
+
+        it('surfaces a server error when the publish fails', () => {
+            fire.publishContentletByIdentifier.mockReturnValue(throwError(() => 'error'));
+
+            store.publishEditedAsset(TEMP);
+
+            expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
+        });
+
+        it('surfaces a message and does not publish without a referenced asset', () => {
+            store.removeFile();
+
+            store.publishEditedAsset(TEMP);
+
+            expect(fire.publishContentletByIdentifier).not.toHaveBeenCalled();
+            expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
+        });
+    });
+
+    describe('Method: applyEditedImage', () => {
+        const TEMP = { id: 'temp_1', fileName: 'edited.png' } as DotCMSTempFile;
+        const ASSET = {
+            identifier: 'ref-id',
+            inode: 'ref-inode',
+            languageId: 1
+        } as DotCMSContentlet;
+        let fire: SpyObject<DotWorkflowActionsFireService>;
+
+        beforeEach(() => {
+            fire = TestBed.inject(
+                DotWorkflowActionsFireService
+            ) as SpyObject<DotWorkflowActionsFireService>;
+            fire.publishContentletByIdentifier.mockReturnValue(of(ASSET));
+            service.getContentById.mockReturnValue(of(ASSET));
+        });
+
+        it('routes Binary edits to the inline apply (no asset publish)', () => {
+            store.initLoad({ fieldVariable: 'bin', inputType: 'Binary' });
+
+            store.applyEditedImage(of(TEMP));
+
+            expect(fire.publishContentletByIdentifier).not.toHaveBeenCalled();
+            expect(store.value()).toBe('temp_1');
+            expect(store.uploadedFile()).toEqual({ source: 'temp', file: TEMP });
+        });
+
+        it('routes Image/File edits to the referenced-asset publish', () => {
+            store.initLoad({ fieldVariable: 'img', inputType: 'Image' });
+            store.getAssetData('ref-id'); // hydrate the referenced contentlet
+
+            store.applyEditedImage(of(TEMP));
+
+            expect(fire.publishContentletByIdentifier).toHaveBeenCalledWith(
+                { identifier: 'ref-id', asset: 'temp_1' },
+                1
+            );
+        });
+
+        it('ignores a closed editor (null) without persisting', () => {
+            store.initLoad({ fieldVariable: 'img', inputType: 'Image' });
+
+            store.applyEditedImage(of(null));
+
+            expect(fire.publishContentletByIdentifier).not.toHaveBeenCalled();
+        });
+
+        it('surfaces a server error when the launcher stream fails', () => {
+            store.initLoad({ fieldVariable: 'img', inputType: 'Image' });
+
+            store.applyEditedImage(throwError(() => 'error'));
+
             expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
         });
     });

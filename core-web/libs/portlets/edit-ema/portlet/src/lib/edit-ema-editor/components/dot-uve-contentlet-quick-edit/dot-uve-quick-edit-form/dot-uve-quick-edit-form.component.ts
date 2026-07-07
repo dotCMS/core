@@ -27,7 +27,6 @@ import { distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotEditContentBinaryFieldComponent,
     DotEditContentService,
     DotFileFieldComponent,
     DotTagFieldComponent
@@ -64,7 +63,6 @@ import { ContentletEditData, ContentletField } from '../types';
         RadioButtonModule,
         SelectModule,
         TextareaModule,
-        DotEditContentBinaryFieldComponent,
         DotFileFieldComponent,
         DotTagFieldComponent,
         DotMessagePipe

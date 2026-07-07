@@ -1,14 +1,21 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, Observable, of, pipe } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { computed, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { filter, switchMap, tap } from 'rxjs/operators';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
+
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
 
 import {
     INPUT_TYPE,
+    INPUT_TYPES,
+    UPLOAD_TYPE,
     FILE_STATUS,
     UIMessage,
     UploadedFile
@@ -20,6 +27,7 @@ import { getUiMessage } from '../utils/messages';
 export interface FileFieldState {
     value: string;
     inputType: INPUT_TYPE | null;
+    uploadType: UPLOAD_TYPE;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;
     isEnterprise: boolean;
@@ -38,6 +46,7 @@ export interface FileFieldState {
 const initialState: FileFieldState = {
     value: '',
     inputType: null,
+    uploadType: 'dotasset',
     fileStatus: 'init',
     dropZoneActive: false,
     isEnterprise: false,
@@ -51,6 +60,38 @@ const initialState: FileFieldState = {
     maxFileSize: null,
     fieldVariable: '',
     uploadedFile: null
+};
+
+/**
+ * Resolves the file metadata from a contentlet, supporting FileAsset (`metaData`),
+ * dotAsset (`assetMetaData`) and per-field (`{variable}MetaData`) shapes.
+ */
+const resolveContentletMetadata = (
+    contentlet: DotCMSContentlet,
+    fieldVariable: string
+): DotFileMetadata => {
+    const metadata =
+        contentlet?.metaData ||
+        contentlet?.['assetMetaData'] ||
+        contentlet?.[`${fieldVariable}MetaData`];
+
+    return (metadata || {}) as DotFileMetadata;
+};
+
+/**
+ * Resolves the versioned file URL of a contentlet field, used to fetch the text
+ * content of files flagged as `editableAsText`.
+ */
+const resolveContentletVersion = (
+    contentlet: DotCMSContentlet,
+    fieldVariable: string
+): string | null => {
+    return (
+        contentlet?.['assetVersion'] ||
+        contentlet?.fileAssetVersion ||
+        contentlet?.[`${fieldVariable}Version`] ||
+        null
+    );
 };
 
 export const FileFieldStore = signalStore(
@@ -75,6 +116,24 @@ export const FileFieldStore = signalStore(
     })),
     withMethods((store) => {
         const uploadService = inject(DotFileFieldUploadService);
+        const workflowActionsFire = inject(DotWorkflowActionsFireService);
+        const http = inject(HttpClient);
+
+        /**
+         * Fetches the text content of an `editableAsText` file so the preview can
+         * render it inline. Returns the same file when no content needs loading.
+         */
+        const hydrateTempContent = (file: DotCMSTempFile): Observable<DotCMSTempFile> => {
+            const editableAsText = file?.metadata?.editableAsText ?? false;
+
+            if (!editableAsText || !file?.referenceUrl) {
+                return of(file);
+            }
+
+            return http
+                .get(file.referenceUrl, { responseType: 'text' })
+                .pipe(map((content) => ({ ...file, content })));
+        };
 
         return {
             /**
@@ -85,8 +144,12 @@ export const FileFieldStore = signalStore(
                 inputType: INPUT_TYPE;
                 fieldVariable: FileFieldState['fieldVariable'];
                 isAIPluginInstalled?: boolean;
+                systemOptionsOverrides?: Partial<
+                    Pick<FileFieldState, 'allowURLImport' | 'allowCreateFile' | 'allowGenerateImg'>
+                >;
             }) => {
-                const { inputType, fieldVariable, isAIPluginInstalled } = initState;
+                const { inputType, fieldVariable, isAIPluginInstalled, systemOptionsOverrides } =
+                    initState;
 
                 const actions = INPUT_CONFIG[inputType] || {};
 
@@ -94,7 +157,12 @@ export const FileFieldStore = signalStore(
                     inputType,
                     fieldVariable,
                     isAIPluginInstalled,
-                    ...actions
+                    // Binary fields upload to the temp endpoint (legacy contract);
+                    // File/Image fields create a dotAsset contentlet directly.
+                    uploadType: inputType === INPUT_TYPES.Binary ? 'temp' : 'dotasset',
+                    ...actions,
+                    // Saved field-variable settings override the static INPUT_CONFIG defaults
+                    ...systemOptionsOverrides
                 });
             },
             /**
@@ -106,6 +174,14 @@ export const FileFieldStore = signalStore(
                 patchState(store, {
                     maxFileSize
                 });
+            },
+            /**
+             * Syncs the store value with the reactive form without altering preview state.
+             * Mirrors the legacy binary field {@link DotBinaryFieldStore.setValue} contract
+             * so mount-time store ticks stay aligned with `writeValue`.
+             */
+            setValue: (value: string) => {
+                patchState(store, { value });
             },
             /**
              * setUIMessage is used to set uiMessage
@@ -188,11 +264,24 @@ export const FileFieldStore = signalStore(
                         return uploadService
                             .uploadFile({
                                 file,
-                                uploadType: 'dotasset',
+                                uploadType: store.uploadType(),
                                 acceptedFiles: store.acceptedFiles(),
                                 maxSize: store.maxFileSize() ? `${store.maxFileSize()}` : null
                             })
                             .pipe(
+                                switchMap((uploadedFile) =>
+                                    uploadedFile.source === 'temp'
+                                        ? hydrateTempContent(uploadedFile.file).pipe(
+                                              map(
+                                                  (hydrated) =>
+                                                      ({
+                                                          source: 'temp',
+                                                          file: hydrated
+                                                      }) as UploadedFile
+                                              )
+                                          )
+                                        : of(uploadedFile)
+                                ),
                                 tapResponse({
                                     next: (uploadedFile) => {
                                         patchState(store, {
@@ -216,11 +305,168 @@ export const FileFieldStore = signalStore(
                 )
             ),
             /**
+             * applyTempFile applies an edited/generated temp file to the preview.
+             * Used by the image editor round-trip to swap the current asset.
+             * @param tempFile temp file returned by the image editor
+             */
+            applyTempFile: rxMethod<DotCMSTempFile>(
+                pipe(
+                    filter((tempFile) => !!tempFile),
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
+                    switchMap((tempFile) =>
+                        hydrateTempContent(tempFile).pipe(
+                            tapResponse({
+                                next: (file) => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value: file.id,
+                                        uploadedFile: { source: 'temp', file }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'init',
+                                        uiMessage: getUiMessage('SERVER_ERROR')
+                                    });
+                                }
+                            })
+                        )
+                    )
+                )
+            ),
+            /**
+             * publishEditedAsset versions the referenced asset (Image/File fields).
+             *
+             * Image/File fields store only an `identifier` referencing a separate
+             * `dotAsset`/`FileAsset` contentlet (the binary lives in its `asset` /
+             * `fileAsset` field). Saving an edit checks in and publishes a NEW version
+             * of that referenced contentlet in its own language, then re-hydrates the
+             * preview. The field value (the identifier) is unchanged, so the reference
+             * is preserved and other content sharing the asset sees the update.
+             *
+             * `switchMap` serializes concurrent saves: a re-triggered edit cancels an
+             * in-flight publish+refresh instead of racing it.
+             * @param tempFile edited image staged as a temp file by the image editor
+             */
+            publishEditedAsset: rxMethod<DotCMSTempFile>(
+                pipe(
+                    switchMap((tempFile) => {
+                        const uploaded = store.uploadedFile();
+
+                        // Only a resolved dotAsset/FileAsset reference can be versioned;
+                        // reaching here without one is unexpected — surface it instead of
+                        // silently discarding the edit.
+                        if (uploaded?.source !== 'contentlet') {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+
+                            return EMPTY;
+                        }
+
+                        const { identifier, languageId } = uploaded.file;
+                        // The binary field variable differs by referenced type: `asset`
+                        // for a dotAsset, `fileAsset` for a legacy FileAsset. titleImage
+                        // carries the server-computed field name; default to `asset`.
+                        const fieldVariable = (uploaded.file['titleImage'] as string) || 'asset';
+
+                        patchState(store, { fileStatus: 'uploading' });
+
+                        return workflowActionsFire
+                            .publishContentletByIdentifier<DotCMSContentlet>(
+                                { identifier, [fieldVariable]: tempFile.id },
+                                languageId
+                            )
+                            .pipe(
+                                switchMap(() => uploadService.getContentById(identifier)),
+                                tapResponse({
+                                    next: (file) => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            value: file.identifier,
+                                            uploadedFile: { source: 'contentlet', file }
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            uiMessage: getUiMessage('SERVER_ERROR')
+                                        });
+                                    }
+                                })
+                            );
+                    })
+                )
+            ),
+            /**
+             * setFileFromContentlet hydrates the preview from a saved contentlet.
+             * Used by the binary web component, which receives the contentlet
+             * imperatively (no reactive form value to drive {@link getAssetData}).
+             * @param params contentlet, field variable and the stored value
+             */
+            setFileFromContentlet: rxMethod<{
+                contentlet: DotCMSContentlet;
+                fieldVariable: string;
+                value: string;
+            }>(
+                pipe(
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
+                    switchMap(({ contentlet, fieldVariable, value }) => {
+                        const metadata = resolveContentletMetadata(contentlet, fieldVariable);
+                        const versionUrl = resolveContentletVersion(contentlet, fieldVariable);
+                        const content$ =
+                            metadata.editableAsText && versionUrl
+                                ? http.get(versionUrl, { responseType: 'text' })
+                                : of('');
+
+                        return content$.pipe(
+                            tapResponse({
+                                next: (content = '') => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value,
+                                        uploadedFile: {
+                                            source: 'contentlet',
+                                            file: {
+                                                ...contentlet,
+                                                metaData: metadata,
+                                                content,
+                                                fieldVariable
+                                            }
+                                        }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        fileStatus: 'preview',
+                                        value,
+                                        uiMessage: getUiMessage('SERVER_ERROR'),
+                                        uploadedFile: {
+                                            source: 'contentlet',
+                                            file: {
+                                                ...contentlet,
+                                                metaData: metadata,
+                                                fieldVariable
+                                            }
+                                        }
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
+            ),
+            /**
              * getAssetData is used to get asset data
              * @param File
              */
             getAssetData: rxMethod<string>(
                 pipe(
+                    tap(() => {
+                        patchState(store, { fileStatus: 'uploading' });
+                    }),
                     switchMap((id) => {
                         return uploadService.getContentById(id).pipe(
                             tapResponse({
@@ -242,6 +488,42 @@ export const FileFieldStore = signalStore(
                     })
                 )
             )
+        };
+    }),
+    withMethods((store) => {
+        const destroyRef = inject(DestroyRef);
+
+        return {
+            /**
+             * Consumes an image-editor launcher's close stream and persists the edit.
+             *
+             * Owns the whole apply flow so callers just hand over the launcher stream:
+             * ignores a closed editor (null), routes by input type (Binary applies the
+             * edit inline; Image/File version the referenced dotAsset/FileAsset), and
+             * surfaces a server error if the stream fails. The subscription is torn
+             * down with the store.
+             *
+             * @param result$ the launcher close stream emitting the edited temp file or null
+             */
+            applyEditedImage(result$: Observable<DotCMSTempFile | null>): void {
+                result$
+                    .pipe(
+                        filter((tempFile): tempFile is DotCMSTempFile => !!tempFile),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe({
+                        next: (tempFile) => {
+                            if (store.inputType() === INPUT_TYPES.Binary) {
+                                store.applyTempFile(tempFile);
+                            } else {
+                                store.publishEditedAsset(tempFile);
+                            }
+                        },
+                        error: () => {
+                            patchState(store, { uiMessage: getUiMessage('SERVER_ERROR') });
+                        }
+                    });
+            }
         };
     })
 );

@@ -1,5 +1,4 @@
-import { DotPageContainer } from '@dotcms/dotcms-models';
-
+import { DotPageContainer } from './dot-page-container.model';
 import { PageModelChangeEventType } from './page-model-change-event.type';
 
 export interface PageModelChangeEvent {

@@ -3,9 +3,14 @@ import { firstValueFrom } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 
 import { DotUploadFileService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { type DotImageData } from '../extensions/nodes/image.extension';
-import { type DotVideoData } from '../extensions/nodes/video.extension';
+import {
+    type DotVideoData,
+    type DotVideoMetaAttrs,
+    videoMetaAttrsFromContentlet
+} from '../extensions/nodes/video.extension';
 
 /** Resolves API asset paths to a browser-usable URL on the current origin. */
 function sameOriginAssetUrl(asset: string): string {
@@ -20,7 +25,7 @@ export interface UploadedImage {
     data: DotImageData;
 }
 
-export interface UploadedVideo {
+export interface UploadedVideo extends DotVideoMetaAttrs {
     src: string;
     data: DotVideoData;
 }
@@ -57,15 +62,18 @@ export class DotUploadService {
         const contentlet = await this.publishAsset(file);
         return {
             src: sameOriginAssetUrl(contentlet.asset),
-            data: toAssetData(contentlet) satisfies DotVideoData
+            data: toAssetData(contentlet) satisfies DotVideoData,
+            // mimeType / width / height / orientation from the published contentlet's metadata,
+            // matching what the dotCMS picker path stores (parity with legacy getVideoAttrs).
+            ...videoMetaAttrsFromContentlet(contentlet)
         };
     }
 
-    private async publishAsset(file: File): Promise<PublishedAsset> {
+    private async publishAsset(file: File): Promise<DotCMSContentlet> {
         const dotAssets = await firstValueFrom(
             this.uploadFileService.publishContent({ data: file })
         );
-        const wrapped = dotAssets?.[0] as Record<string, PublishedAsset> | undefined;
+        const wrapped = dotAssets?.[0] as Record<string, DotCMSContentlet> | undefined;
         if (!wrapped) {
             throw new Error('Publish: missing results');
         }
@@ -78,19 +86,7 @@ export class DotUploadService {
     }
 }
 
-/**
- * Subset of {@link DotCMSContentlet} the editor needs after a publish — `asset` is required
- * (it's the storage path for the uploaded file). Other fields default safely for narrowing.
- */
-interface PublishedAsset {
-    asset: string;
-    identifier: string;
-    inode: string;
-    languageId: number;
-    title: string;
-}
-
-function toAssetData(contentlet: PublishedAsset): DotImageData {
+function toAssetData(contentlet: DotCMSContentlet): DotImageData {
     return {
         identifier: contentlet.identifier,
         inode: contentlet.inode,
