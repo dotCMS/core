@@ -45,11 +45,15 @@ services:
           memory: 2G
 
   dotcms:
-    image: dotcms/dotcms:latest
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    #image: dotcms/dotcms:latest
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g '
+      CMS_JAVA_OPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000'
       LANG: 'C.UTF-8'
       TZ: 'UTC'
+      #DB_BASE_URL: "jdbc:postgresql://host.docker.internal:5432/msu"
+      #DB_USERNAME: 'postgres'
+      #DB_PASSWORD: 'postgres'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
       DB_USERNAME: 'dotcmsdbuser'
       DB_PASSWORD: 'password'
@@ -61,7 +65,14 @@ services:
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
-      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260629/starter-20260629.zip'
+      CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
+
+      DOT_ANALYTICS_BASE_URL: 'http://host.docker.internal:8080'
+      DOT_ANALYTICS_TENANT: 'cust-001'
+      DOT_ANALYTICS_PROJECT: 'dev'
+
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
+      #DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: 'true'
     depends_on:
       - db
       - opensearch      
