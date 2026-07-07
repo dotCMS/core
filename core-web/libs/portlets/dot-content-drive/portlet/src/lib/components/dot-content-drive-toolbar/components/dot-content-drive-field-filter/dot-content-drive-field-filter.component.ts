@@ -56,7 +56,11 @@ import {
     USER_SEARCHABLE_PREFIX
 } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
-import { isDateFieldFilterType, serializeUserSearchableValue } from '../../../../utils/functions';
+import {
+    isDateFieldFilterType,
+    parseMultiValue,
+    serializeUserSearchableValue
+} from '../../../../utils/functions';
 
 /** Which control a field renders and how its value is stored. */
 type FieldFilterControl =
@@ -210,11 +214,9 @@ export class DotContentDriveFieldFilterComponent {
 
     protected readonly $selectValue = linkedSignal<string | null>(() => this.$rawValue() || null);
 
-    protected readonly $multiValue = linkedSignal<string[]>(() => {
-        const raw = this.$rawValue();
-
-        return raw ? raw.split(',').filter(Boolean) : [];
-    });
+    protected readonly $multiValue = linkedSignal<string[]>(() =>
+        parseMultiValue(this.$rawValue())
+    );
 
     /**
      * A binary checkbox is a tri-state boolean filter: True / False / not-filtering. A single
@@ -288,10 +290,7 @@ export class DotContentDriveFieldFilterComponent {
         if (control === 'multi-select' || control === 'checkbox') {
             const labels = this.#labelByValue();
 
-            return raw
-                .split(',')
-                .filter(Boolean)
-                .map((value) => labels.get(value) || value);
+            return parseMultiValue(raw).map((value) => labels.get(value) || value);
         }
 
         if (control === 'single-select' || control === 'radio') {

@@ -335,15 +335,51 @@ export function parseUserSearchableValue(
     }
 
     if (isMultiValueFieldFilterType(fieldType)) {
-        const values = raw
-            .split(USER_SEARCHABLE_VALUE_SEPARATOR)
-            .map((value) => value.trim())
-            .filter(Boolean);
+        const values = parseMultiValue(raw);
 
         return values.length ? values : undefined;
     }
 
     return raw;
+}
+
+/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
+const safeDecode = (value: string): string => {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
+/**
+ * Splits a stored multi-value string back into its values. Each value is percent-encoded on
+ * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
+ * label like `"News, Press"` — round-trips intact.
+ *
+ * @param {string} raw
+ * @return {*}  {string[]}
+ */
+export function parseMultiValue(raw: string): string[] {
+    if (!raw) {
+        return [];
+    }
+
+    return raw
+        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
+        .map((value) => safeDecode(value.trim()))
+        .filter(Boolean);
+}
+
+/**
+ * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
+ * contain the separator. Inverse of {@link parseMultiValue}.
+ *
+ * @param {string[]} values
+ * @return {*}  {string}
+ */
+export function serializeMultiValue(values: string[]): string {
+    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
 }
 
 /**
@@ -373,7 +409,7 @@ export function serializeUserSearchableValue(
     }
 
     if (isMultiValueFieldFilterType(fieldType)) {
-        return (Array.isArray(value) ? value : []).join(USER_SEARCHABLE_VALUE_SEPARATOR);
+        return serializeMultiValue(Array.isArray(value) ? value : []);
     }
 
     return String(value);
@@ -381,10 +417,9 @@ export function serializeUserSearchableValue(
 
 /**
  * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
- * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. Binary
- * checkboxes always emit their boolean value (default `false` — a value, not a selection); every
- * other field type is included only when its value is non-empty. Returns `undefined` when there are
- * no active field filters.
+ * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
+ * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
+ * when its value is non-empty. Returns `undefined` when there are no active field filters.
  *
  * @param {DotContentDriveFilters} filters - The full filter bag.
  * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.

@@ -859,16 +859,6 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             expect(store.userSearchableActive()).toEqual(['title']);
         });
 
-        it('should remove a field from both the active list and the filter bag', () => {
-            store.addUserSearchableField('title');
-            store.patchFilters({ 'us.title': 'review' });
-
-            store.removeUserSearchableField('title');
-
-            expect(store.userSearchableActive()).toEqual([]);
-            expect(store.filters()['us.title']).toBeUndefined();
-        });
-
         it('should clear all field filters, the active list and the cached fields', () => {
             store.setUserSearchableFields([field({ variable: 'title' })]);
             store.addUserSearchableField('title');

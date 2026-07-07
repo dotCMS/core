@@ -38,8 +38,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
         providers: [
             mockProvider(DotContentDriveStore, {
                 getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeUserSearchableField: jest.fn()
+                patchFilters: jest.fn()
             }),
             mockProvider(DotTagsService, {
                 getSuggestions: jest.fn().mockReturnValue(of([{ label: 'angular' }]))
@@ -127,7 +126,6 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.triggerEventHandler('dot-chip-filter', 'removed', undefined);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
-            expect(store.removeUserSearchableField).not.toHaveBeenCalled();
         });
     });
 

@@ -861,6 +861,14 @@ describe('User-searchable field helpers', () => {
             expect(parseUserSearchableValue('a,b,c', 'Multi-Select')).toEqual(['a', 'b', 'c']);
         });
 
+        it('should round-trip a multi-value value that contains the separator', () => {
+            // A tag label like "News, Press" must survive serialize → parse intact.
+            const stored = serializeUserSearchableValue(['News, Press', 'cms'], 'Tag');
+
+            expect(stored).not.toContain('News, Press');
+            expect(parseUserSearchableValue(stored, 'Tag')).toEqual(['News, Press', 'cms']);
+        });
+
         it('should reshape date types into a from/to range', () => {
             expect(parseUserSearchableValue('2024-01-01,2024-12-31', 'Date')).toEqual({
                 from: '2024-01-01',

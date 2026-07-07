@@ -66,42 +66,51 @@ export const DotContentDriveStore = signalStore(
     withComputed(
         ({ path, filters, currentSite, pagination, sort, pages, userSearchableFields }) => {
             return {
-                $request: computed<DotContentDriveSearchRequest>(() => {
-                    const paginationSignal = pagination();
-                    const page = untracked(() => pages()[paginationSignal?.page - 1]);
+                $request: computed<DotContentDriveSearchRequest>(
+                    () => {
+                        const paginationSignal = pagination();
+                        const page = untracked(() => pages()[paginationSignal?.page - 1]);
 
-                    return {
-                        assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                        includeSystemHost: true,
-                        filters: {
-                            text: filters()?.title || '',
-                            filterFolders: true
-                        },
-                        language: filters()?.languageId,
-                        contentTypes: filters()?.contentType,
-                        baseTypes: filters()?.baseType?.map(
-                            (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                        ),
-                        workflow: filters()?.workflow?.length
-                            ? parseWorkflowFilter(filters()?.workflow)
-                            : undefined,
-                        userSearchable: buildUserSearchablePayload(
-                            filters(),
-                            userSearchableFields()
-                        ),
-                        contentCursor: page.contentCursor ?? 0,
-                        folderCursor: page.folderCursor ?? 0,
-                        maxResults: paginationSignal?.limit,
-                        sortBy: sort()?.field + ':' + sort()?.order,
-                        archived: false,
-                        showFolders:
-                            page.hasMoreFolders &&
-                            !filters()?.baseType?.length &&
-                            !filters()?.contentType?.length &&
-                            !filters()?.languageId?.length &&
-                            !filters()?.workflow?.length
-                    };
-                })
+                        return {
+                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            includeSystemHost: true,
+                            filters: {
+                                text: filters()?.title || '',
+                                filterFolders: true
+                            },
+                            language: filters()?.languageId,
+                            contentTypes: filters()?.contentType,
+                            baseTypes: filters()?.baseType?.map(
+                                (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                            ),
+                            workflow: filters()?.workflow?.length
+                                ? parseWorkflowFilter(filters()?.workflow)
+                                : undefined,
+                            userSearchable: buildUserSearchablePayload(
+                                filters(),
+                                userSearchableFields()
+                            ),
+                            contentCursor: page.contentCursor ?? 0,
+                            folderCursor: page.folderCursor ?? 0,
+                            maxResults: paginationSignal?.limit,
+                            sortBy: sort()?.field + ':' + sort()?.order,
+                            archived: false,
+                            showFolders:
+                                page.hasMoreFolders &&
+                                !filters()?.baseType?.length &&
+                                !filters()?.contentType?.length &&
+                                !filters()?.languageId?.length &&
+                                !filters()?.workflow?.length
+                        };
+                    },
+                    {
+                        // Dedupe structurally-identical requests so the search effect doesn't re-fire on
+                        // no-op recomputes — e.g. selecting a content type loads its fields
+                        // (setUserSearchableFields), which changes `userSearchableFields` but not the
+                        // payload when no `us.*` value is set. A real payload change still differs here.
+                        equal: (a, b) => JSON.stringify(a) === JSON.stringify(b)
+                    }
+                )
             };
         }
     ),
@@ -236,30 +245,6 @@ export const DotContentDriveStore = signalStore(
 
                 patchState(store, {
                     userSearchableActive: [...store.userSearchableActive(), variable]
-                });
-            },
-            /**
-             * Removes a field-filter chip: drop it from the active list and from `filters` (if it
-             * had a value). Only resets pagination when a value was actually removed.
-             */
-            removeUserSearchableField(variable: string) {
-                const key = `${USER_SEARCHABLE_PREFIX}${variable}`;
-                const hadValue = store.filters()[key] !== undefined;
-                const restFilters = Object.fromEntries(
-                    Object.entries(store.filters()).filter(([filterKey]) => filterKey !== key)
-                );
-
-                patchState(store, {
-                    filters: restFilters,
-                    userSearchableActive: store
-                        .userSearchableActive()
-                        .filter((active) => active !== variable),
-                    ...(hadValue
-                        ? {
-                              pagination: { ...store.pagination(), offset: 0, page: 1 },
-                              pages: [DEFAULT_PAGE]
-                          }
-                        : {})
                 });
             },
             /**
