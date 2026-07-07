@@ -110,12 +110,15 @@ export const FIELD_FILTER_MULTI_SELECT_TYPES = [
 export const FIELD_FILTER_TAG_TYPE = 'Tag';
 export const FIELD_FILTER_CATEGORY_TYPE = 'Category';
 export const FIELD_FILTER_RELATIONSHIP_TYPE = 'Relationship';
-/** Every field type whose value is a list stored comma-joined (multi-select, checkbox, tag, …). */
+/**
+ * Every field type whose value is a list stored comma-joined (multi-select, checkbox, tag,
+ * category). Relationship is intentionally excluded — the backend only supports a single related
+ * value, so it's stored as one identifier string.
+ */
 export const FIELD_FILTER_MULTI_VALUE_TYPES: readonly string[] = [
     ...FIELD_FILTER_MULTI_SELECT_TYPES,
     FIELD_FILTER_TAG_TYPE,
-    FIELD_FILTER_CATEGORY_TYPE,
-    FIELD_FILTER_RELATIONSHIP_TYPE
+    FIELD_FILTER_CATEGORY_TYPE
 ];
 export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as const;
 /** Date field type showing time; `Time` is time-only, `Date-and-Time` shows date + time. */

@@ -272,19 +272,11 @@ export class DotContentDriveFieldFilterComponent {
         }
 
         if (control === 'relationship') {
-            const ids = raw.split(',').filter(Boolean);
-            const titles = this.#relationshipTitleById();
-            const named = ids.map((id) => titles[id]).filter(Boolean);
+            // Single related item: show its title when resolved, otherwise a neutral count
+            // (identifiers aren't user-readable, e.g. after a cold URL restore).
+            const title = this.#relationshipTitleById()[raw];
 
-            // Show titles once resolved; otherwise a count (identifiers aren't user-readable).
-            return named.length === ids.length
-                ? named
-                : [
-                      this.#dotMessageService.get(
-                          'content-drive.field-filter.selected-count',
-                          `${ids.length}`
-                      )
-                  ];
+            return [title ?? this.#dotMessageService.get('content-drive.field-filter.selected-count', '1')];
         }
 
         if (control === 'multi-select' || control === 'checkbox') {
@@ -405,13 +397,10 @@ export class DotContentDriveFieldFilterComponent {
             return;
         }
 
-        // Stored value is identifiers; the picker preselects by inode, so map back via the cache.
+        // Single selection (the backend supports one related value). The stored value is the
+        // identifier; the picker preselects by inode, so map back via the cache.
         const inodeById = this.#relationshipInodeById();
-        const currentItemsIds = (
-            this.$rawValue() ? this.$rawValue().split(',').filter(Boolean) : []
-        )
-            .map((identifier) => inodeById[identifier])
-            .filter(Boolean);
+        const currentItemsIds = [inodeById[this.$rawValue()]].filter(Boolean);
 
         const ref = this.#dialogService.open(DotSelectExistingContentComponent, {
             header: field.name,
@@ -425,7 +414,7 @@ export class DotContentDriveFieldFilterComponent {
             templates: { footer: DotContentDriveRelationshipFooterComponent },
             data: {
                 contentTypeId,
-                selectionMode: 'multiple',
+                selectionMode: 'single',
                 currentItemsIds
             }
         });
@@ -437,26 +426,19 @@ export class DotContentDriveFieldFilterComponent {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items) => {
-                // Store identifiers (the search contract), and cache title + inode by identifier so
-                // chips can show titles and the picker can preselect (by inode) on reopen.
-                this.#relationshipTitleById.update((cache) => {
-                    const next = { ...cache };
-                    for (const item of items) next[item.identifier] = item.title ?? item.identifier;
-
-                    return next;
-                });
-                this.#relationshipInodeById.update((cache) => {
-                    const next = { ...cache };
-                    for (const item of items) next[item.identifier] = item.inode;
-
-                    return next;
-                });
-                this.#patch(
-                    serializeUserSearchableValue(
-                        items.map((item) => item.identifier),
-                        field.fieldType
-                    )
-                );
+                // Single selection → store the first (only) identifier, or clear when none.
+                const [selected] = items;
+                if (selected) {
+                    this.#relationshipTitleById.update((cache) => ({
+                        ...cache,
+                        [selected.identifier]: selected.title ?? selected.identifier
+                    }));
+                    this.#relationshipInodeById.update((cache) => ({
+                        ...cache,
+                        [selected.identifier]: selected.inode
+                    }));
+                }
+                this.#patch(selected?.identifier ?? '');
             });
     }
 

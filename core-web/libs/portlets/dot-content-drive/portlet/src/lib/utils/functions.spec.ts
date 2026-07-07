@@ -817,13 +817,14 @@ describe('User-searchable field helpers', () => {
             expect(isMultiValueFieldFilterType('Checkbox')).toBe(true);
             expect(isMultiValueFieldFilterType('Tag')).toBe(true);
             expect(isMultiValueFieldFilterType('Category')).toBe(true);
-            expect(isMultiValueFieldFilterType('Relationship')).toBe(true);
         });
 
         it('should be false for single-value types', () => {
             expect(isMultiValueFieldFilterType('Text')).toBe(false);
             expect(isMultiValueFieldFilterType('Select')).toBe(false);
             expect(isMultiValueFieldFilterType('Radio')).toBe(false);
+            // Relationship is single-value (one related identifier).
+            expect(isMultiValueFieldFilterType('Relationship')).toBe(false);
         });
     });
 
