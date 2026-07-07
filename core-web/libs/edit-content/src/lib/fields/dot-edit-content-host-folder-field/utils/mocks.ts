@@ -22,7 +22,10 @@ const FILE_MESSAGES_MOCK = {
     'dot.file.field.host.folder.action.select': 'Select',
     'dot.file.field.host.folder.action.load.more': 'Load {0} more',
     'dot.file.field.host.folder.copy.tooltip': 'Copy path',
-    'dot.file.field.host.folder.empty.folders': 'No folders found'
+    'dot.file.field.host.folder.empty.folders': 'No folders found',
+    'dot.file.field.host.folder.error.sites': 'Unable to load sites. Please try again.',
+    'dot.file.field.host.folder.error.folders': 'Unable to load folders. Please try again.',
+    'dot.file.field.host.folder.error.search': 'Unable to search folders. Please try again.'
 };
 
 export const MessageServiceMock = new MockDotMessageService(FILE_MESSAGES_MOCK);

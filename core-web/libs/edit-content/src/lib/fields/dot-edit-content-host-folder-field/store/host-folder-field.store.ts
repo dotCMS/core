@@ -3,10 +3,12 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, of, pipe } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
 import { debounceTime, distinctUntilChanged, filter, map, switchMap, tap } from 'rxjs/operators';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     CustomTreeNode,
@@ -180,7 +182,8 @@ export const HostFolderFiledStore = signalStore(
             searchTerm,
             searchResults,
             folders,
-            foldersStatus
+            foldersStatus,
+            searchStatus
         }) => ({
             /**
              * Icon classes for the field trigger: spinner while the initial sites/value
@@ -262,6 +265,13 @@ export const HostFolderFiledStore = signalStore(
                 return folders();
             }),
             foldersLoading: computed(() => foldersStatus() === ComponentStatus.LOADING),
+            sitesLoadFailed: computed(() => sitesStatus() === ComponentStatus.ERROR),
+            foldersLoadFailed: computed(
+                () =>
+                    foldersStatus() === ComponentStatus.ERROR &&
+                    searchTerm().length < MIN_SEARCH_LENGTH
+            ),
+            searchLoadFailed: computed(() => searchStatus() === ComponentStatus.ERROR),
             /**
              * The staged folder resolved to its matching object reference inside the folders
              * currently rendered by the tree, so `p-tree`'s `[selection]` binding (which relies
@@ -299,7 +309,7 @@ export const HostFolderFiledStore = signalStore(
             })
         })
     ),
-    withMethods((store) => {
+    withMethods((store, dotHttpErrorManagerService = inject(DotHttpErrorManagerService)) => {
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
@@ -389,10 +399,10 @@ export const HostFolderFiledStore = signalStore(
                                             });
                                         }
                                     },
-                                    error: () => {
+                                    error: (error: HttpErrorResponse) => {
+                                        dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
                                             foldersStatus: ComponentStatus.ERROR,
-                                            error: '',
                                             nodePagination: {
                                                 ...store.nodePagination(),
                                                 [params.key]: {
@@ -455,11 +465,13 @@ export const HostFolderFiledStore = signalStore(
                                             searchResults: folders,
                                             searchStatus: ComponentStatus.LOADED
                                         }),
-                                    error: () =>
+                                    error: (error: HttpErrorResponse) => {
+                                        dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
                                             searchResults: [],
                                             searchStatus: ComponentStatus.ERROR
-                                        })
+                                        });
+                                    }
                                 })
                             );
                     })
@@ -496,7 +508,7 @@ export const HostFolderFiledStore = signalStore(
             }
         };
     }),
-    withMethods((store) => {
+    withMethods((store, dotHttpErrorManagerService = inject(DotHttpErrorManagerService)) => {
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
@@ -536,11 +548,12 @@ export const HostFolderFiledStore = signalStore(
                                             sitesStatus: ComponentStatus.LOADED,
                                             isRequired
                                         }),
-                                    error: () =>
+                                    error: (error: HttpErrorResponse) => {
+                                        dotHttpErrorManagerService.handle(error);
                                         patchState(store, {
-                                            sitesStatus: ComponentStatus.ERROR,
-                                            error: ''
-                                        })
+                                            sitesStatus: ComponentStatus.ERROR
+                                        });
+                                    }
                                 }),
                                 map((sites) => ({
                                     path,
@@ -617,8 +630,7 @@ export const HostFolderFiledStore = signalStore(
                             // instead of leaving the store looking successfully-but-silently
                             // uninitialized.
                             patchState(store, {
-                                sitesStatus: ComponentStatus.ERROR,
-                                error: ''
+                                sitesStatus: ComponentStatus.ERROR
                             });
 
                             return;

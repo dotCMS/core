@@ -43,7 +43,8 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
         );
 
         const field = new HostFolderField(adminPage, 'hostFolder');
-        await field.expectLabelContains(`${siteName}/${folder1Name}/${folder2Name}`);
+        await field.expectLabelContains(folder1Name);
+        await field.expectLabelContains(folder2Name);
     });
 
     test('shallow folderPath pre-fills single-level folder for file asset type @critical', async ({
@@ -56,7 +57,7 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
         );
 
         const field = new HostFolderField(adminPage, 'hostFolder');
-        await field.expectLabelContains(`${siteName}/${folder1Name}`);
+        await field.expectLabelContains(folder1Name);
     });
 
     test('empty folderPath falls back to default site for file asset type', async ({
@@ -66,7 +67,7 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
         await formPage.goToNewFileAssetWithFolderPath(contentTypeVariable, '');
 
         const field = new HostFolderField(adminPage, 'hostFolder');
-        await field.expectLabelMatchesPattern(/^\/\/.+/);
+        await field.expectLabelMatchesPattern(/.+\..+/);
         await field.expectFormFunctional();
     });
 });

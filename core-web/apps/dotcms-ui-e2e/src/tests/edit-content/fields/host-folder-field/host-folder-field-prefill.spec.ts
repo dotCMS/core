@@ -6,10 +6,6 @@ import { expect, test } from '../../../../fixtures/host-folder.fixture';
 
 /**
  * Journey 2: Folder Context Pre-fill from Query Params (Issue #34588 Regression)
- *
- * Admin creates new content via a URL with ?folderPath=siteName/folder-1/,
- * simulating navigation from Site Browser. The Host/Folder field must be
- * pre-populated with the correct folder path.
  */
 test.describe('Folder Context Pre-fill (#34588)', () => {
     test.describe.configure({ mode: 'serial' });
@@ -38,7 +34,8 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await formPage.goToNewWithFolderPath(contentTypeVariable, `${siteName}/${folderName}/`);
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelContains(`${siteName}/${folderName}`);
+        await field.expectLabelContains(siteName);
+        await field.expectLabelContains(folderName);
     });
 
     test('save content with pre-filled folder and verify persistence @critical', async ({
@@ -50,7 +47,7 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
 
         const field = new HostFolderField(adminPage);
 
-        await field.expectLabelContains(`${siteName}/${folderName}`);
+        await field.expectLabelContains(folderName);
         await formPage.fillTextField(`Title Prefill ${testSuffix}`);
 
         const responsePromise = adminPage.waitForResponse(
@@ -65,7 +62,7 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         expect(savedContentIdentifier).toBeTruthy();
 
         await formPage.goToContent(savedContentIdentifier);
-        await field.expectLabelContains(`${siteName}/${folderName}`);
+        await field.expectLabelContains(folderName);
     });
 
     test('user can override the pre-filled folder value @smoke', async ({ adminPage }) => {
@@ -73,13 +70,19 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await formPage.goToNewWithFolderPath(contentTypeVariable, `${siteName}/${folderName}/`);
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelContains(`${siteName}/${folderName}`);
+        await field.expectLabelContains(folderName);
 
-        await field.openDropdown();
-        const newSiteName = await field.selectFirstNode();
+        await field.openOverlay();
+        const sites = field.sitesPanel.getByTestId('host-folder-site-item');
+        const alternateSite = sites.nth(1);
+        const alternateSiteName = (
+            (await alternateSite.locator('.truncate').textContent()) ?? ''
+        ).trim();
+        await alternateSite.click();
+        await field.confirmSelection();
 
-        await field.expectPanelClosed();
-        await field.expectLabelText(`//${newSiteName}`);
+        await field.expectLabelContains(alternateSiteName);
+        await expect(field.label).not.toContainText(folderName, { ignoreCase: true });
     });
 
     test('empty folderPath query param falls back to default', async ({ adminPage }) => {
@@ -87,7 +90,7 @@ test.describe('Folder Context Pre-fill (#34588)', () => {
         await formPage.goToNewWithFolderPath(contentTypeVariable, '');
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelMatchesPattern(/^\/\/.+/);
+        await field.expectLabelMatchesPattern(/.+\..+/);
         await field.expectFormFunctional();
     });
 });

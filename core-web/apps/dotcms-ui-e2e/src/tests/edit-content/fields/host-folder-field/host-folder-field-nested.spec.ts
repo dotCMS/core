@@ -6,9 +6,6 @@ import { expect, test } from '../../../../fixtures/host-folder.fixture';
 
 /**
  * Journey 3: Nested Folder Context Pre-fill
- *
- * Admin creates new content via a URL with ?folderPath=siteName/folder-1/folder-2/,
- * verifying that deep/nested folder path resolution works correctly.
  */
 test.describe('Nested Folder Pre-fill', () => {
     test.describe.configure({ mode: 'serial' });
@@ -38,7 +35,8 @@ test.describe('Nested Folder Pre-fill', () => {
         await formPage.goToNewWithFolderPath(contentTypeVariable, folderPath);
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelContains(`${siteName}/${folder1Name}/${folder2Name}`);
+        await field.expectLabelContains(folder1Name);
+        await field.expectLabelContains(folder2Name);
     });
 
     test('save nested folder selection and verify persistence @critical', async ({
@@ -51,7 +49,7 @@ test.describe('Nested Folder Pre-fill', () => {
 
         const field = new HostFolderField(adminPage);
 
-        await field.expectLabelContains(`${siteName}/${folder1Name}/${folder2Name}`);
+        await field.expectLabelContains(folder2Name);
         await formPage.fillTextField(`Title Nested ${testSuffix}`);
 
         const responsePromise = adminPage.waitForResponse(
@@ -66,7 +64,7 @@ test.describe('Nested Folder Pre-fill', () => {
         expect(savedContentIdentifier).toBeTruthy();
 
         await formPage.goToContent(savedContentIdentifier);
-        await field.expectLabelContains(`${siteName}/${folder1Name}/${folder2Name}`);
+        await field.expectLabelContains(folder2Name);
     });
 
     test('expanding tree shows the nested folder hierarchy @smoke', async ({ adminPage }) => {
@@ -75,9 +73,9 @@ test.describe('Nested Folder Pre-fill', () => {
         await formPage.goToNewWithFolderPath(contentTypeVariable, folderPath);
 
         const field = new HostFolderField(adminPage);
-        await field.expectLabelContains(`${siteName}/${folder1Name}/${folder2Name}`);
+        await field.expectLabelContains(folder2Name);
 
-        await field.openDropdown();
+        await field.openOverlay();
         await field.expectTreeNodeVisible(folder1Name);
         await field.expectTreeNodeVisible(folder2Name);
         await field.expectTreeNodeSelected(folder2Name);

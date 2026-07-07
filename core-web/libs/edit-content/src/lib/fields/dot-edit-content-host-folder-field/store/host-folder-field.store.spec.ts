@@ -1,8 +1,10 @@
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotPagination,
@@ -23,6 +25,7 @@ import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../utils/mocks';
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
     let service: SpyObject<DotBrowsingService>;
+    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
 
     const mockPagination: DotPagination = {
         currentPage: 1,
@@ -30,10 +33,15 @@ describe('HostFolderFiledStore', () => {
         totalEntries: 0
     };
 
+    const httpError = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 HostFolderFiledStore,
+                mockProvider(DotHttpErrorManagerService, {
+                    handle: jest.fn()
+                }),
                 mockProvider(DotBrowsingService, {
                     getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
                     searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
@@ -43,6 +51,9 @@ describe('HostFolderFiledStore', () => {
 
         store = TestBed.inject(HostFolderFiledStore);
         service = TestBed.inject(DotBrowsingService) as SpyObject<DotBrowsingService>;
+        httpErrorManager = TestBed.inject(
+            DotHttpErrorManagerService
+        ) as SpyObject<DotHttpErrorManagerService>;
     });
 
     describe('Method: loadSites', () => {
@@ -811,6 +822,42 @@ describe('HostFolderFiledStore', () => {
             tick(500);
             expect(store.searchResults()).toBe(null);
         }));
+
+        it('should surface search errors and delegate to DotHttpErrorManagerService', fakeAsync(() => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            store.selectSite(site);
+            service.searchFolders.mockReturnValue(throwError(() => httpError));
+
+            store.search('match');
+            tick(500);
+
+            expect(store.searchStatus()).toBe(ComponentStatus.ERROR);
+            expect(store.searchLoadFailed()).toBe(true);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+        }));
+    });
+
+    describe('Error handling', () => {
+        it('should surface loadSites HTTP errors and delegate to DotHttpErrorManagerService', () => {
+            service.getSitesTreePath.mockReturnValue(throwError(() => httpError));
+
+            store.loadSites({ path: null, isRequired: false });
+
+            expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
+            expect(store.sitesLoadFailed()).toBe(true);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+        });
+
+        it('should surface loadFolders HTTP errors and delegate to DotHttpErrorManagerService', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            service.searchFolders.mockReturnValue(throwError(() => httpError));
+
+            store.selectSite(site);
+
+            expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+            expect(store.foldersLoadFailed()).toBe(true);
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+        });
     });
 
     describe('Staged commit: setPendingNode / commit / openOverlay / closeOverlay', () => {

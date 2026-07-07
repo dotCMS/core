@@ -1,4 +1,6 @@
-import { test as base, type Page } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
+import { admin1 } from '@utils/credentials';
+import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 import {
     type ContentType,
@@ -36,6 +38,12 @@ function hostFolderContentTypePayload(suffix: string): CreateContentTypePayload 
 
 // ─── Fixture ─────────────────────────────────────────────────────
 
+function buildFolderPaths(prefix: string, count: number, parentPath = ''): string[] {
+    const base = parentPath ? `${parentPath}/` : '/';
+
+    return Array.from({ length: count }, (_, index) => `${base}${prefix}-${index + 1}`);
+}
+
 export const test = base.extend<{
     adminPage: Page;
     testSuffix: string;
@@ -43,7 +51,10 @@ export const test = base.extend<{
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
         createFolders: (siteName: string, paths: string[]) => Promise<void>;
+        createManyFolders: (siteName: string, paths: string[]) => Promise<void>;
+        buildFolderPaths: (prefix: string, count: number, parentPath?: string) => string[];
         getDefaultSite: () => Promise<Site>;
+        getCurrentSite: () => Promise<Site>;
         hostFolderPayload: (suffix: string) => CreateContentTypePayload;
     };
 }>({
@@ -60,6 +71,8 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
+            createManyFolders: (siteName, paths) => createFolders(request, siteName, paths),
+            buildFolderPaths: (prefix, count, parentPath) => buildFolderPaths(prefix, count, parentPath),
             getDefaultSite: async () => {
                 const sites = await getSites(request);
                 const site = sites.find((s) => s.default);
@@ -67,6 +80,16 @@ export const test = base.extend<{
                     throw new Error('No default site found');
                 }
                 return site;
+            },
+            getCurrentSite: async () => {
+                const response = await request.get('/api/v1/site/currentSite', {
+                    headers: {
+                        Authorization: generateBase64Credentials(admin1.username, admin1.password)
+                    }
+                });
+                expect(response.status()).toBe(200);
+                const responseData = await response.json();
+                return responseData.entity as Site;
             },
             hostFolderPayload: (suffix: string) => hostFolderContentTypePayload(suffix)
         });
