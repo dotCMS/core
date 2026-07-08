@@ -99,7 +99,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -118,7 +118,7 @@ describe('DotContainersService', () => {
                 });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=true`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=true`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -134,7 +134,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: mockContainers });
@@ -149,7 +149,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: mockContainers });
@@ -165,7 +165,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -181,7 +181,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=true`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=true`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -197,7 +197,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: multipleContainers });
@@ -211,7 +211,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: [] });
@@ -225,7 +225,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: [] });
@@ -246,7 +246,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush('Server Error', errorResponse);
@@ -264,7 +264,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush('Not Found', errorResponse);
