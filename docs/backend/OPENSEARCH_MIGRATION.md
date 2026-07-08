@@ -99,7 +99,9 @@ Phase 1 / 2  →  isDualWrite = true, ops == operationsOS  →  shadow = true  �
 Dual-write alone does not guarantee perfect sync between indices. Adopted strategy:
 dual-write for ~2 weeks on low-volume customers → validate → activate Phase 2.
 
-Full reindex on OS is not viable at scale (up to 1000 sites × 100k content pieces per customer).
+A full OS reindex is implemented — it fans out through the same dual-write journal — but a
+concurrent full rebuild is operationally expensive at scale (up to 1000 sites × 100k content
+pieces per customer); plan reindex windows accordingly.
 
 ---
 
@@ -325,8 +327,12 @@ so a future change of the literal — or its removal — does not require touchi
 - Creates a new index copy in the background
 - Inserts all rows from `contentlet_version_info` into `dist_reindex_journal`
 - Keeps the current index live during the process
-- **OS is excluded** — a user-triggered full reindex only rebuilds the ES index.
-  See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
+- **From Phase 1 on, the reindex fans out to OS too**: `initAndPointReindex` creates the OS
+  `reindex_working`/`reindex_live` slots (router fan-out), the journal worker dual-writes every
+  reindexed document to them (`DualIndexBulkRequest`), and the switchover is phase-aware
+  (`fullReindexSwitchover` mirrors the promotion to the OS store; Phase 3 delegates to
+  `fullReindexSwitchoverOS`). Only in **Phase 0** does a reindex rebuild ES alone — there is no
+  shadow index yet. See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
 
 ---
 
@@ -339,11 +345,32 @@ so a future change of the literal — or its removal — does not require touchi
 | Content-type create                  | ✅ Yes            |                                                              |
 | Content-type delete + content cleanup| ✅ Yes            |                                                              |
 | Permission update                    | ✅ Yes            |                                                              |
-| User-triggered reindex               | ❌ No             | Full reindex at OS scale is not viable — see Accepted Limitation |
-| User-triggered index shutdown        | ❌ No             | Lifecycle ops on the shadow index are not user-controllable  |
+| User-triggered index lifecycle (delete / clear / open / close / replicas) | ✅ Yes | Transparent-mirror principle — the operator sees one index; the action applies to both engines |
+| User-triggered reindex               | ✅ Yes (Phase 1+) | Fans out to OS: creates OS reindex slots, dual-writes docs, and switches over phase-aware. Phase 0 rebuilds ES alone (no shadow yet). A full OS reindex on a very large customer is operationally expensive — a caveat, not a code exclusion |
 | Site Search index operations         | ✅ Yes (deferred) | In scope, lower priority than core content index            |
 
 ---
+
+## Guiding principle: the OS index is a transparent mirror
+
+The operator must never need to know a migration is underway. They keep operating as if a single
+Elasticsearch index exists; **every user-triggered index operation is applied faithfully to the full
+mirror (ES + its OS twin)**, and the operator owns the outcome exactly as they would in a
+single-index cluster.
+
+- Migrated behavior must be **identical** to single-index behavior. If closing "the index" stops
+  search in a single-ES cluster, it stops search here too — that is expected, not a bug to guard
+  against.
+- User-triggered lifecycle ops (**delete / clear / open / close / updateReplicas**) therefore
+  **cascade to both engines**. Each op resolves the per-engine physical name (ES → bare,
+  OS → `.os`) so it targets the real index on each side. *(This supersedes the earlier stance that
+  lifecycle ops were "not user-controllable" on the shadow.)*
+- **Full reindex is no mirror exception**: from Phase 1 on it also rebuilds and switches over the
+  OS twin (create OS reindex slots → dual-write docs → phase-aware switchover). The old "not viable
+  at OS scale" note survives only as an *operational* caveat (a concurrent full OS rebuild is
+  expensive on very large customers), not as a code-level exclusion.
+- Safety guards (e.g. the active-index delete guard, which blocks deleting the live/working index)
+  exist to **reproduce** the single-index UX, not to protect OS from the operator.
 
 ## Design Rules
 
@@ -645,35 +672,30 @@ rollback, with no impact on normal operation.
 
 ---
 
-### ⚠ Open issue — fan-out error handling with divergent index names
+### Fan-out routing with divergent index names — resolved (#35640)
 
-**Status: unresolved — test coverage needed.**
+**Status: routing resolved via the transparent-mirror principle; log-noise refinement still open.**
 
-When a public method on an `@IndexRouter`-annotated class accepts an index name and the current
-migration phase requires fan-out to both providers, there is no agreed-upon error handling strategy
-for the case where the supplied name exists in one provider but not the other.
+When a public `@IndexRouter` method accepts an index name and the phase requires fan-out, the
+**routing** is settled: the caller passes the logical name and each provider derives its OWN
+physical name (ES → bare, OS → `.os`) before touching its cluster — the name is never sent verbatim
+to the wrong provider. This is implemented in `ContentletIndexAPIImpl.delete` (untag → broadcast)
+and in `IndexAPIImpl` for the maintenance/lifecycle ops:
 
-This is highly likely in production: ES and OS do **not** always hold indices with the same logical
-name (see "Index name divergence between providers" above). An ES-resolved name passed to an OS
-fan-out will produce a 404 or provider-level exception.
+- **List ops** (`flushCaches`, `optimize`) partition the incoming list by `IndexTag.resolve` and
+  hand each provider only the names it owns.
+- **Single-name lifecycle ops** (`clearIndex`, `openIndex`, `closeIndex`, `updateReplicas`) resolve
+  a per-provider name via `providerName(impl, name)` — the OS leg gets the `.os`-tagged name, ES the
+  bare name. (Site-search is the exception: its OS copy is not `.os`-tagged, so it stays bare.)
 
-**The gap:** The `IndexTag`-overloaded pattern handles the *routing* decision, but not the *failure*
-semantics when the wrong name is inadvertently passed to the wrong provider. Current code
-fire-and-forgets OS errors in dual-write phases, which means a 404 on OS may be silently swallowed
-even though it signals that the caller passed an incorrect index name rather than a transient
-cluster error.
+Covered in `OpenSearchUpgradeSuite` by `ContentletIndexAPIImplMigrationIntegrationTest`
+(delete/close/open/flush across both engines).
 
-**What needs to happen before this is production-safe:**
-
-- Define whether a "wrong index name" error on OS in dual-write phases should: (a) be swallowed
-  like other OS shadow errors, (b) log at ERROR severity with a distinct message, or (c) propagate.
-- Write test cases in `OpenSearchUpgradeSuite` that cover: fan-out with a name that exists only in
-  ES, fan-out with a name that exists only in OS, and fan-out with a name that exists in neither.
-- Verify that `loadProviderIndices` / `ProviderIndices` correctly returns `null` (skip) for a
-  provider whose store has no record yet, rather than silently passing a stale or wrong name.
-
-Until test coverage exists for these scenarios, treat any public `@IndexRouter` method that accepts
-a raw index name string in dual-write phases as **untested for the name-mismatch case**.
+**Still open — expected-miss log noise:** when an index genuinely exists in only one engine
+(divergent names after a catchup), the other leg's shadow attempt misses. That miss is fire-and-forget
+(the mirror op still succeeds where the index exists) but is currently logged at ERROR rather than
+being recognized as an expected divergent-name miss. An exists-check-and-skip on the shadow leg,
+logging through the shadow-write policy (`DOTCMS_SHADOW_WRITE_LOG_LEVEL`), is the pending refinement.
 
 ---
 
@@ -686,5 +708,4 @@ Never add migration tests to general test suites — keep them isolated and easy
 
 ## Deferred (lower priority)
 - **Site Search** (`site-search` index) — in scope, but separate pipeline; will be addressed after core content index migration is stable
-- **Full reindex orchestration for OS** — not viable at current scale; deferred until a targeted catchup strategy is defined
 - **User-facing query routing during dual-write phase** — search queries are not yet phase-aware beyond the read provider selection in `PhaseRouter`
