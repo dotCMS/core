@@ -1,0 +1,21 @@
+{
+    "name": "sdk-vue",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/vue/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/{projectRoot}"
+            }
+        }
+    },
+    "release": {
+        "version": {
+            "manifestRootsToUpdate": ["dist/{projectRoot}"],
+            "currentVersionResolver": "git-tag",
+            "fallbackCurrentVersionResolver": "disk"
+        }
+    }
+}
