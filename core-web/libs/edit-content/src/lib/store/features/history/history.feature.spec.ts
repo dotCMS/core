@@ -28,7 +28,8 @@ import {
     withHistory,
     DEFAULT_VERSIONS_PER_PAGE,
     DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE,
-    DEFAULT_LOCALE_ISO_KEY
+    DEFAULT_LOCALE_ISO_KEY,
+    HISTORY_SIDEBAR_TAB_INDEX
 } from './history.feature';
 
 import {
@@ -1038,6 +1039,91 @@ describe('HistoryFeature', () => {
                 2
             );
             expect(dotEditContentService.getPushPublishHistory).not.toHaveBeenCalled();
+        }));
+
+        it('should discard compare and historical state when the locale changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            patchState(store, {
+                compareContentlet: { ...mockContentlet, inode: 'compare-inode' },
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet,
+                isViewingHistoricalVersion: false
+            });
+
+            store.updateContentlet({ ...mockContentlet, languageId: 2 });
+            spectator.flushEffects();
+            tick();
+
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.historicalVersionInode()).toBeNull();
+            expect(store.originalContentlet()).toBeNull();
+            expect(store.isViewingHistoricalVersion()).toBe(false);
+        }));
+
+        it('should exit compare view when leaving the History sidebar tab', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            patchState(store, {
+                compareContentlet: { ...mockContentlet, inode: 'compare-inode' },
+                historicalVersionInode: 'compare-inode',
+                uiState: {
+                    ...store.uiState(),
+                    view: 'compare',
+                    activeSidebarTab: HISTORY_SIDEBAR_TAB_INDEX
+                }
+            });
+            spectator.flushEffects();
+
+            patchState(store, {
+                uiState: { ...store.uiState(), activeSidebarTab: 0 }
+            });
+            spectator.flushEffects();
+
+            expect(store.uiState().view).toBe('form');
+            expect(store.compareContentlet()).toBeNull();
+            expect(store.historicalVersionInode()).toBeNull();
+        }));
+
+        it('should keep compare view while switching within the History sidebar tab', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            const compareContent = { ...mockContentlet, inode: 'compare-inode' };
+            patchState(store, {
+                compareContentlet: compareContent,
+                uiState: {
+                    ...store.uiState(),
+                    view: 'compare',
+                    activeSidebarTab: HISTORY_SIDEBAR_TAB_INDEX
+                }
+            });
+            spectator.flushEffects();
+
+            expect(store.uiState().view).toBe('compare');
+            expect(store.compareContentlet()).toEqual(compareContent);
+        }));
+
+        it('should keep compare and historical state when only the version inode changes', fakeAsync(() => {
+            spectator.flushEffects();
+            tick();
+
+            const compareContent = { ...mockContentlet, inode: 'compare-inode' };
+            patchState(store, {
+                compareContentlet: compareContent,
+                historicalVersionInode: 'compare-inode',
+                originalContentlet: mockContentlet
+            });
+
+            store.updateContentlet({ ...mockContentlet, inode: 'another-version-inode' });
+            spectator.flushEffects();
+            tick();
+
+            expect(store.compareContentlet()).toEqual(compareContent);
+            expect(store.historicalVersionInode()).toBe('compare-inode');
+            expect(store.originalContentlet()).toEqual(mockContentlet);
         }));
 
         it('should not load data if contentlet has no identifier', fakeAsync(() => {

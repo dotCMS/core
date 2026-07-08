@@ -427,6 +427,36 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
+    describe('Loading Version Indicator', () => {
+        beforeEach(() => {
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('historyItems', mockHistoryItems);
+            spectator.detectChanges();
+        });
+
+        it('should mark only the item whose version is being fetched as loading', () => {
+            spectator.setInput('loadingVersionInode', mockHistoryItems[1].inode);
+            spectator.detectChanges();
+
+            const loadingFlags = spectator
+                .queryAll(DotHistoryTimelineItemComponent)
+                .map((item) => item.$isLoadingVersion());
+
+            expect(loadingFlags[1]).toBe(true);
+            expect(loadingFlags.filter(Boolean)).toHaveLength(1);
+            expect(spectator.queryAll(byTestId('version-loading-spinner'))).toHaveLength(1);
+        });
+
+        it('should not mark any item as loading when no version is being fetched', () => {
+            const loadingFlags = spectator
+                .queryAll(DotHistoryTimelineItemComponent)
+                .map((item) => item.$isLoadingVersion());
+
+            expect(loadingFlags.some(Boolean)).toBe(false);
+            expect(spectator.queryAll(byTestId('version-loading-spinner'))).toHaveLength(0);
+        });
+    });
+
     describe('Push Publish Functionality', () => {
         describe('Push Publish Computed Properties', () => {
             it('should compute hasPushPublishHistoryItems correctly', () => {

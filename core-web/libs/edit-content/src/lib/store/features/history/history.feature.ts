@@ -52,6 +52,12 @@ export const DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE = 40;
 export const DEFAULT_LOCALE_ISO_KEY = 'en-us';
 
 /**
+ * Index of the History tab in the sidebar tab list. A compare session only
+ * makes sense while this tab is active — leaving it exits compare view.
+ */
+export const HISTORY_SIDEBAR_TAB_INDEX = 1;
+
+/**
  * Feature store for managing content versions state
  */
 export function withHistory() {
@@ -776,7 +782,23 @@ export function withHistory() {
 
                         const versionsKey = `${contentlet.identifier}:${contentlet.languageId}`;
                         if (versionsKey !== loadedVersionsKey) {
+                            const isInitialLoad = loadedVersionsKey === null;
                             loadedVersionsKey = versionsKey;
+
+                            if (!isInitialLoad) {
+                                // The content identity (locale or identifier) changed under an
+                                // active compare/historical session — that state belongs to the
+                                // previous context, so discard it. Otherwise a stale
+                                // originalContentlet could later restore the previous locale's
+                                // content when exiting compare or historical view.
+                                patchState(store, {
+                                    compareContentlet: null,
+                                    historicalVersionInode: null,
+                                    originalContentlet: null,
+                                    isViewingHistoricalVersion: false
+                                });
+                            }
+
                             store.loadVersions({
                                 identifier: contentlet.identifier,
                                 page: 1
@@ -789,6 +811,30 @@ export function withHistory() {
                                 identifier: contentlet.identifier,
                                 page: 1
                             });
+                        }
+                    });
+                });
+
+                /**
+                 * Effect that exits compare view when the user leaves the History
+                 * sidebar tab — a compare session belongs to that tab's context.
+                 */
+                let previousSidebarTab: number | null = null;
+
+                effect(() => {
+                    const activeSidebarTab = store.uiState().activeSidebarTab;
+
+                    untracked(() => {
+                        const tabChanged =
+                            previousSidebarTab !== null && activeSidebarTab !== previousSidebarTab;
+                        previousSidebarTab = activeSidebarTab;
+
+                        if (
+                            tabChanged &&
+                            activeSidebarTab !== HISTORY_SIDEBAR_TAB_INDEX &&
+                            store.uiState().view === 'compare'
+                        ) {
+                            store.exitCompareView();
                         }
                     });
                 });
