@@ -2,7 +2,6 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeContentletIndexOperations;
@@ -23,13 +22,17 @@ import org.junit.Test;
  * Unit tests for {@link ContentletIndexAPIImpl#delete(String)} with divergent index names
  * across the two providers (the normal state after a migration catchup deployment).
  *
- * <p>Covers the fix for <a href="https://github.com/dotCMS/core/issues/36423">#36423</a>:</p>
+ * <p>Covers the fix for <a href="https://github.com/dotCMS/core/issues/36423">#36423</a>,
+ * reconciled onto the transparent-mirror routing from
+ * <a href="https://github.com/dotCMS/core/issues/35640">#35640</a>:</p>
  * <ul>
- *   <li>An explicitly {@code .os}-tagged name is tag-dispatched to the OS provider only,
- *       never fanned out to ES (where the physical {@code .os} name can never exist).</li>
- *   <li>For bare names, the shadow leg skips names its engine does not hold instead of
- *       attempting a delete that is guaranteed to miss.</li>
- *   <li>Real shadow failures remain fire-and-forget.</li>
+ *   <li>The shadow leg skips names its engine does not hold (exists-check) instead of
+ *       attempting a delete that is guaranteed to miss and logging an ERROR stack trace —
+ *       the expected divergent-name miss is logged through the shadow-write policy.</li>
+ *   <li>Real shadow failures remain fire-and-forget (swallowed).</li>
+ *   <li>A name is deleted through the transparent mirror: whether the caller passes the ES
+ *       (bare) or the OS ({@code .os}) name, the tag is stripped to the logical name and
+ *       broadcast to every provider, so both siblings are removed.</li>
  * </ul>
  */
 public class ContentletIndexAPIImplDeleteTest {
@@ -49,61 +52,46 @@ public class ContentletIndexAPIImplDeleteTest {
     }
 
     // =========================================================================
-    // Tag-dispatch: .os names go to the OS provider only
+    // Transparent mirror: deleting by the .os name strips the tag and cascades
     // =========================================================================
 
     /**
-     * Given Scenario: Phase 1 (dual-write). Caller deletes an explicitly {@code .os}-tagged
-     * name (e.g. an orphaned OS index left behind by a divergent catchup).
+     * Given Scenario: Phase 1 (dual-write). Both siblings exist and the caller deletes by the
+     * explicitly {@code .os}-tagged name (as the QA/preview UI shows the OS index).
      * When : delete("working_T0.os") is called.
-     * Then : only the OS provider's delete is invoked; ES is never asked to delete a
-     *        physical ".os" name it can never hold.
+     * Then : the tag is stripped to the logical name and broadcast to every provider, so BOTH
+     *        siblings are removed (bidirectional transparent mirror, #35640); the primary (ES)
+     *        result is returned.
      */
     @Test
-    public void test_delete_osTaggedName_tagDispatchedToOsOnly() {
+    public void test_delete_osTaggedName_phase1_cascadesToBothSiblings() {
         setPhase(1);
         final Rig rig = new Rig(Set.of(ES_PHYSICAL), Set.of(OS_PHYSICAL));
 
-        final boolean result = rig.api.delete(IndexTag.OS.tag(BARE_NAME));
-
-        assertTrue("OS delete must succeed", result);
-        assertEquals("ES provider must not be called for a .os-tagged name",
-                List.of(), rig.esIndexAPI.deleted);
+        assertTrue("Primary (ES) delete must succeed", rig.api.delete(IndexTag.OS.tag(BARE_NAME)));
+        assertEquals("ES sibling must be removed via the transparent mirror",
+                List.of(ES_PHYSICAL), rig.esIndexAPI.deleted);
         assertEquals(List.of(OS_PHYSICAL), rig.osIndexAPI.deleted);
     }
 
     /**
-     * Given Scenario: Phase 0 (migration not started). A leftover {@code .os} index is
-     * being cleaned up by name.
+     * Given Scenario: Phase 1. The caller passes the {@code .os} name but only the ES (bare)
+     * sibling actually exists — the {@code .os} index is absent (divergent names after catchup).
      * When : delete("working_T0.os") is called.
-     * Then : the delete is tag-dispatched to OS regardless of phase (per the IndexTag
-     *        contract, the tag carries routing intent and skips phase logic).
+     * Then : the tag is stripped and broadcast; the primary (ES) sibling is removed and the
+     *        shadow (OS) leg is skipped (no delete attempt against an index OS does not hold),
+     *        so no ERROR-level index_not_found noise is produced (#36423).
      */
     @Test
-    public void test_delete_osTaggedName_phase0_stillGoesToOs() {
-        setPhase(0);
-        final Rig rig = new Rig(Set.of(ES_PHYSICAL), Set.of(OS_PHYSICAL));
-
-        final boolean result = rig.api.delete(IndexTag.OS.tag(BARE_NAME));
-
-        assertTrue(result);
-        assertEquals(List.of(), rig.esIndexAPI.deleted);
-        assertEquals(List.of(OS_PHYSICAL), rig.osIndexAPI.deleted);
-    }
-
-    /**
-     * Given Scenario: Phase 1. The .os-tagged name does not exist in OS either
-     * (delete throws index-not-found).
-     * When : delete("working_T0.os") is called.
-     * Then : returns false; no exception propagates.
-     */
-    @Test
-    public void test_delete_osTaggedName_missingInOs_returnsFalse() {
+    public void test_delete_osTaggedName_shadowMissing_skipsShadowDelete() {
         setPhase(1);
         final Rig rig = new Rig(Set.of(ES_PHYSICAL), Set.of());
 
-        assertFalse(rig.api.delete(IndexTag.OS.tag(BARE_NAME)));
-        assertEquals(List.of(), rig.esIndexAPI.deleted);
+        assertTrue("Primary result must survive the missing .os sibling",
+                rig.api.delete(IndexTag.OS.tag(BARE_NAME)));
+        assertEquals(List.of(ES_PHYSICAL), rig.esIndexAPI.deleted);
+        assertEquals("Shadow delete must be skipped when the index does not exist",
+                List.of(), rig.osIndexAPI.deleted);
     }
 
     // =========================================================================

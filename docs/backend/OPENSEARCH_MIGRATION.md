@@ -99,7 +99,9 @@ Phase 1 / 2  →  isDualWrite = true, ops == operationsOS  →  shadow = true  �
 Dual-write alone does not guarantee perfect sync between indices. Adopted strategy:
 dual-write for ~2 weeks on low-volume customers → validate → activate Phase 2.
 
-Full reindex on OS is not viable at scale (up to 1000 sites × 100k content pieces per customer).
+A full OS reindex is implemented — it fans out through the same dual-write journal — but a
+concurrent full rebuild is operationally expensive at scale (up to 1000 sites × 100k content
+pieces per customer); plan reindex windows accordingly.
 
 ---
 
@@ -325,8 +327,12 @@ so a future change of the literal — or its removal — does not require touchi
 - Creates a new index copy in the background
 - Inserts all rows from `contentlet_version_info` into `dist_reindex_journal`
 - Keeps the current index live during the process
-- **OS is excluded** — a user-triggered full reindex only rebuilds the ES index.
-  See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
+- **From Phase 1 on, the reindex fans out to OS too**: `initAndPointReindex` creates the OS
+  `reindex_working`/`reindex_live` slots (router fan-out), the journal worker dual-writes every
+  reindexed document to them (`DualIndexBulkRequest`), and the switchover is phase-aware
+  (`fullReindexSwitchover` mirrors the promotion to the OS store; Phase 3 delegates to
+  `fullReindexSwitchoverOS`). Only in **Phase 0** does a reindex rebuild ES alone — there is no
+  shadow index yet. See [Operations to Replicate in Shadow Index](#operations-to-replicate-in-shadow-index).
 
 ---
 
@@ -339,11 +345,32 @@ so a future change of the literal — or its removal — does not require touchi
 | Content-type create                  | ✅ Yes            |                                                              |
 | Content-type delete + content cleanup| ✅ Yes            |                                                              |
 | Permission update                    | ✅ Yes            |                                                              |
-| User-triggered reindex               | ❌ No             | Full reindex at OS scale is not viable — see Accepted Limitation |
-| User-triggered index shutdown        | ❌ No             | Lifecycle ops on the shadow index are not user-controllable  |
+| User-triggered index lifecycle (delete / clear / open / close / replicas) | ✅ Yes | Transparent-mirror principle — the operator sees one index; the action applies to both engines |
+| User-triggered reindex               | ✅ Yes (Phase 1+) | Fans out to OS: creates OS reindex slots, dual-writes docs, and switches over phase-aware. Phase 0 rebuilds ES alone (no shadow yet). A full OS reindex on a very large customer is operationally expensive — a caveat, not a code exclusion |
 | Site Search index operations         | ✅ Yes (deferred) | In scope, lower priority than core content index            |
 
 ---
+
+## Guiding principle: the OS index is a transparent mirror
+
+The operator must never need to know a migration is underway. They keep operating as if a single
+Elasticsearch index exists; **every user-triggered index operation is applied faithfully to the full
+mirror (ES + its OS twin)**, and the operator owns the outcome exactly as they would in a
+single-index cluster.
+
+- Migrated behavior must be **identical** to single-index behavior. If closing "the index" stops
+  search in a single-ES cluster, it stops search here too — that is expected, not a bug to guard
+  against.
+- User-triggered lifecycle ops (**delete / clear / open / close / updateReplicas**) therefore
+  **cascade to both engines**. Each op resolves the per-engine physical name (ES → bare,
+  OS → `.os`) so it targets the real index on each side. *(This supersedes the earlier stance that
+  lifecycle ops were "not user-controllable" on the shadow.)*
+- **Full reindex is no mirror exception**: from Phase 1 on it also rebuilds and switches over the
+  OS twin (create OS reindex slots → dual-write docs → phase-aware switchover). The old "not viable
+  at OS scale" note survives only as an *operational* caveat (a concurrent full OS rebuild is
+  expensive on very large customers), not as a code-level exclusion.
+- Safety guards (e.g. the active-index delete guard, which blocks deleting the live/working index)
+  exist to **reproduce** the single-index UX, not to protect OS from the operator.
 
 ## Design Rules
 
@@ -643,39 +670,62 @@ rollback, with no impact on normal operation.
 > **Status**: Option 1 (runbook) is the only mitigation currently in place. Option 2 and 3 are
 > not yet implemented — tracked as technical debt before Phase 2 goes to production.
 
+#### Phase rollback during an in-flight full reindex (#36471)
+
+Rolling `FEATURE_FLAG_OPEN_SEARCH_PHASE` back to 0 **while a full reindex is draining the
+journal** is a distinct hazard from the mapping drift above. The phase is re-read per journal
+batch, so the remaining entries index to ES only and the OS reindex pair freezes partially
+populated. The ES switchover then completes in Phase 0.
+
+**Fixed behavior:** the Phase-0 switchover (and abort) now treats this state as an OS reindex
+abort — the active OS working/live rows survive in the store (the legacy `indicies` update is
+scoped to its own NULL-version rows), the OS reindex slots are cleared, and the partial physical
+`.os` pair is deleted from the cluster so a later boot catchup can never adopt it as active. The
+abort is logged at WARN with the deleted index names.
+
+**Operational rule:** the OS pair that survives the rollback is the *old* one — it stops
+receiving writes in Phase 0 and drifts exactly as described above. Before re-activating Phase 2,
+trigger a full reindex so OS is rebuilt in a dual-write phase. Prefer letting an in-flight
+reindex finish (or aborting it explicitly) over flipping the phase mid-drain.
+
 ---
 
-### ⚠ Open issue — fan-out error handling with divergent index names
+### Fan-out routing with divergent index names — resolved (#35640)
 
-**Status: routing/noise semantics resolved for `ContentletIndexAPIImpl.delete()` (#36423);
-primary-failure propagation for `delete()` tracked separately in #36430; still open for other
-fan-out methods.**
+**Status: routing resolved via the transparent-mirror principle (#35640); expected-miss log
+noise on the shadow leg resolved for `delete()` (#36423, QA #36219 TC-041); primary-failure
+propagation for `delete()` tracked in #36430; still open for other fan-out methods.**
 
-When a public method on an `@IndexRouter`-annotated class accepts an index name and the current
-migration phase requires fan-out to both providers, the supplied name may exist in one provider
-but not the other. This is highly likely in production: ES and OS do **not** always hold indices
-with the same logical name (see "Index name divergence between providers" above). An ES-resolved
-name passed to an OS fan-out will produce a 404 or provider-level exception.
+When a public `@IndexRouter` method accepts an index name and the phase requires fan-out, the
+**routing** is settled: the caller passes the logical name and each provider derives its OWN
+physical name (ES → bare, OS → `.os`) before touching its cluster — the name is never sent verbatim
+to the wrong provider. Deleting by **either** the ES (bare) or the OS (`.os`) name removes the index
+in every engine that holds it (bidirectional transparent mirror), so the mirror is never left
+half-deleted. This is implemented in `ContentletIndexAPIImpl.delete` (untag → broadcast) and in
+`IndexAPIImpl` for the maintenance/lifecycle ops:
 
-**Decided semantics for `delete()`** (QA #36219, TC-041):
+- **List ops** (`flushCaches`, `optimize`) partition the incoming list by `IndexTag.resolve` and
+  hand each provider only the names it owns.
+- **Single-name lifecycle ops** (`clearIndex`, `openIndex`, `closeIndex`, `updateReplicas`) resolve
+  a per-provider name via `providerName(impl, name)` — the OS leg gets the `.os`-tagged name, ES the
+  bare name. (Site-search is the exception: its OS copy is not `.os`-tagged, so it stays bare.)
 
-- An explicitly **tagged name is tag-dispatched** to its owning provider and never fanned out
-  (per "Why tagged names don't fan out" above).
-- For a bare-name fan-out, the **shadow leg skips** names its engine does not hold (exists-check)
-  and logs the skip through the shadow-write policy (`DOTCMS_SHADOW_WRITE_LOG_LEVEL`, default
-  WARN) — an expected divergent-name miss is not an ERROR.
-- Genuine shadow failures stay fire-and-forget (policy-level log); the primary leg still logs
-  at ERROR. Surfacing primary failures to the *caller* (the `PhaseRouter.writeBoolean`
-  contract: re-throw after all providers were called) is #36430.
-- Covered in `OpenSearchUpgradeSuite` by `ContentletIndexAPIImplMigrationIntegrationTest`
-  (name only in ES, only in OS via tag-dispatch, and paired; name-in-neither propagation
-  coverage lands with #36430).
+**Resolved for `delete()` — expected-miss log noise (#36423):** when an index genuinely exists in
+only one engine (divergent names after a catchup), the shadow leg now does an exists-check and
+**skips** the cluster delete instead of attempting it and logging an ERROR stack trace for the
+expected miss. The skip and any genuine shadow failure are logged through the shadow-write policy
+(`DOTCMS_SHADOW_WRITE_LOG_LEVEL`, default WARN); only the primary (read-provider) leg logs at ERROR.
+The DB pointer for each engine is still cleared even when its cluster delete is skipped. Surfacing
+primary failures to the *caller* (the `PhaseRouter.writeBoolean` contract: re-throw after all
+providers were called) is tracked separately in #36430. Covered in `OpenSearchUpgradeSuite` by
+`ContentletIndexAPIImplMigrationIntegrationTest` (name only in ES → shadow skip; deleting by the
+`.os` name → both engines via the transparent mirror).
 
 **Still open for other fan-out methods** (e.g. mapping and lifecycle operations):
 
-- The same "expected miss vs. genuine failure" distinction has not been applied outside
-  `delete()`; a 404 on OS may still be silently swallowed where it signals a caller bug rather
-  than a transient cluster error.
+- The same exists-check "expected miss vs. genuine failure" distinction has not been applied
+  outside `delete()`; a 404 on the shadow leg of those ops may still surface as ERROR noise where
+  it signals an expected divergent-name miss rather than a transient cluster error.
 - Verify that `loadProviderIndices` / `ProviderIndices` correctly returns `null` (skip) for a
   provider whose store has no record yet, rather than silently passing a stale or wrong name.
 
@@ -693,5 +743,4 @@ Never add migration tests to general test suites — keep them isolated and easy
 
 ## Deferred (lower priority)
 - **Site Search** (`site-search` index) — in scope, but separate pipeline; will be addressed after core content index migration is stable
-- **Full reindex orchestration for OS** — not viable at current scale; deferred until a targeted catchup strategy is defined
 - **User-facing query routing during dual-write phase** — search queries are not yet phase-aware beyond the read provider selection in `PhaseRouter`
