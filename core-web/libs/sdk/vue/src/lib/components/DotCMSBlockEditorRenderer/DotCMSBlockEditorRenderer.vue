@@ -31,22 +31,17 @@ const errorMessage = computed(() => {
 </script>
 
 <template>
-  <div
-    v-if="errorMessage && isDevMode"
-    data-testid="invalid-blocks-message"
-  >
-    {{ errorMessage }}
-  </div>
-  <div
-    v-else-if="!errorMessage"
-    :class="className"
-    :style="style"
-    data-testid="dot-block-editor-container"
-  >
-    <BlockEditorBlock
-      :content="blocks?.content"
-      :custom-renderers="customRenderers"
-      :is-dev-mode="isDevMode"
-    />
-  </div>
+    <div v-if="errorMessage && isDevMode" data-testid="invalid-blocks-message">
+        {{ errorMessage }}
+    </div>
+    <div
+        v-else-if="!errorMessage"
+        :class="className"
+        :style="style"
+        data-testid="dot-block-editor-container">
+        <BlockEditorBlock
+            :content="blocks?.content"
+            :custom-renderers="customRenderers"
+            :is-dev-mode="isDevMode" />
+    </div>
 </template>

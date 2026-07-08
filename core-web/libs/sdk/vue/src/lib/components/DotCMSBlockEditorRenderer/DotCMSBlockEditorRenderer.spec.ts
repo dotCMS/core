@@ -57,8 +57,10 @@ describe('DotCMSBlockEditorRenderer', () => {
 
     it('honors a custom renderer for a block type', () => {
         const CustomParagraph = defineComponent({
-            setup: (_p, { slots }) => () =>
-                h('div', { 'data-testid': 'custom' }, slots.default?.())
+            setup:
+                (_p, { slots }) =>
+                () =>
+                    h('div', { 'data-testid': 'custom' }, slots.default?.())
         });
         const blocks = doc([{ type: 'paragraph', content: [text('X')] } as BlockEditorNode]);
         const wrapper = mount(DotCMSBlockEditorRenderer, {

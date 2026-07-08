@@ -2,7 +2,6 @@ import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 import type { Component } from 'vue';
 
-
 /**
  * Props for {@link DotCMSLayoutBody}.
  */

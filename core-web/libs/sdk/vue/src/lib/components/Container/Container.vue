@@ -26,15 +26,11 @@ const props = defineProps<{ container: DotCMSColumnContainer }>();
 const ctx = useDotCMSPageContext();
 
 const containerData = computed(() => getContainersData(ctx.value.pageAsset, props.container));
-const contentlets = computed(() =>
-    getContentletsInContainer(ctx.value.pageAsset, props.container)
-);
+const contentlets = computed(() => getContentletsInContainer(ctx.value.pageAsset, props.container));
 const isEmpty = computed(() => contentlets.value.length === 0);
 
 const dotAttributes = computed(() =>
-    ctx.value.isDevMode && containerData.value
-        ? getDotContainerAttributes(containerData.value)
-        : {}
+    ctx.value.isDevMode && containerData.value ? getDotContainerAttributes(containerData.value) : {}
 );
 
 // Only serialized for the `data-dot-container` editor attribute, which is
@@ -45,23 +41,13 @@ const serializedContainer = computed(() =>
 </script>
 
 <template>
-  <ContainerNotFound
-    v-if="!containerData"
-    :identifier="container.identifier"
-  />
-  <EmptyContainer
-    v-else-if="isEmpty"
-    v-bind="dotAttributes"
-  />
-  <div
-    v-else
-    v-bind="dotAttributes"
-  >
-    <Contentlet
-      v-for="contentlet in contentlets"
-      :key="contentlet.identifier"
-      :contentlet="contentlet"
-      :container="serializedContainer"
-    />
-  </div>
+    <ContainerNotFound v-if="!containerData" :identifier="container.identifier" />
+    <EmptyContainer v-else-if="isEmpty" v-bind="dotAttributes" />
+    <div v-else v-bind="dotAttributes">
+        <Contentlet
+            v-for="contentlet in contentlets"
+            :key="contentlet.identifier"
+            :contentlet="contentlet"
+            :container="serializedContainer" />
+    </div>
 </template>

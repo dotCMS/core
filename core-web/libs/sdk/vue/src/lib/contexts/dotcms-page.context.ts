@@ -1,4 +1,11 @@
-import { computed, inject, provide, type Component, type ComputedRef, type InjectionKey } from 'vue';
+import {
+    computed,
+    inject,
+    provide,
+    type Component,
+    type ComputedRef,
+    type InjectionKey
+} from 'vue';
 
 import type { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 

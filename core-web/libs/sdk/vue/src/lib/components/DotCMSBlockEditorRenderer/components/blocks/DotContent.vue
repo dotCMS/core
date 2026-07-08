@@ -46,13 +46,6 @@ const state = computed<'no-data' | 'dev-warning' | 'no-component' | 'render'>(()
 </script>
 
 <template>
-  <NoComponentProvided
-    v-if="state === 'dev-warning'"
-    :content-type="contentType"
-  />
-  <component
-    :is="component"
-    v-else-if="state === 'render'"
-    :node="node"
-  />
+    <NoComponentProvided v-if="state === 'dev-warning'" :content-type="contentType" />
+    <component :is="component" v-else-if="state === 'render'" :node="node" />
 </template>

@@ -28,5 +28,5 @@ const show = useDotCMSShowWhen(props.when);
 </script>
 
 <template>
-  <slot v-if="show" />
+    <slot v-if="show" />
 </template>

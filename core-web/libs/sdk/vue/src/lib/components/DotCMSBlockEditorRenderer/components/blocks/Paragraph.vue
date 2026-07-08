@@ -10,7 +10,7 @@ const style = computed(() => (props.node?.attrs ?? {}) as CSSProperties);
 </script>
 
 <template>
-  <p :style="style">
-    <slot />
-  </p>
+    <p :style="style">
+        <slot />
+    </p>
 </template>
