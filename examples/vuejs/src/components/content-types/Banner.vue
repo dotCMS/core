@@ -1,26 +1,33 @@
 <script setup lang="ts">
 import { DotCMSEditableText } from '@dotcms/vue';
 import { cva } from 'class-variance-authority';
-import { computed } from 'vue';
+import { computed, useAttrs } from 'vue';
 
 import { BUTTON_COLORS, buttonColorVariants } from './styles';
 
 import { cn, variant } from '@/lib/utils';
-import type { ContentTypeProps, DotCMSImage } from '@/types/content';
+import type { DotCMSImage, DotStyleProperties } from '@/types/content';
 import { imageLoader } from '@/utils/imageLoader';
+
+// Don't render the spread contentlet fields as DOM attributes on the root.
+defineOptions({ inheritAttrs: false });
 
 const ALIGNMENTS = ['left', 'center', 'right'] as const;
 const OVERLAYS = ['dark', 'light', 'gradient', 'none'] as const;
 const BUTTON_SIZES = ['small', 'medium', 'large'] as const;
 
-const props = defineProps<
-    ContentTypeProps & {
-        caption?: string;
-        image?: DotCMSImage;
-        link?: string;
-        buttonText?: string;
-    }
->();
+// Declare only the fields this component reads. The whole contentlet is spread
+// onto it (`v-bind="contentlet"`), and Vue runtime-validates every *declared*
+// prop — so pulling in the full DotCMSBasicContentlet shape would flag system
+// fields (language, modDate, …) whose live types differ from the type defs.
+const props = defineProps<{
+    title?: string;
+    caption?: string;
+    image?: DotCMSImage;
+    link?: string;
+    buttonText?: string;
+    dotStyleProperties?: DotStyleProperties;
+}>();
 
 const overlayVariants = cva('pointer-events-none absolute inset-0', {
     variants: {
@@ -96,6 +103,12 @@ const buttonClasses = computed(() => {
 const imageSrc = computed(() =>
     props.image?.identifier ? imageLoader(props.image.identifier, 1600) : ''
 );
+
+// The full contentlet is spread onto this component; declared props + the
+// remaining fall-through attrs together reconstruct it for inline editing.
+const attrs = useAttrs();
+const contentlet = computed(() => ({ ...attrs, ...props }));
+
 </script>
 
 <template>
@@ -114,7 +127,7 @@ const imageSrc = computed(() =>
 
         <div :class="contentClass">
             <h1 :class="titleClasses">
-                <DotCMSEditableText :contentlet="(props as never)" field-name="title" />
+                <DotCMSEditableText :contentlet="(contentlet as never)" field-name="title" />
             </h1>
             <p v-if="caption" class="max-w-xl text-base text-bg/90 text-shadow sm:text-lg">
                 {{ caption }}

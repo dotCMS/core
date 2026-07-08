@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import ContactUs from '@/components/forms/ContactUs.vue';
 import { useIsEditMode } from '@/composables/useIsEditMode';
-import type { ContentTypeProps } from '@/types/content';
 
-const props = defineProps<ContentTypeProps & { formType?: string; description?: string }>();
+// Declare only the fields this component reads (the whole contentlet is spread
+// onto it, and Vue runtime-validates every declared prop).
+defineProps<{ formType?: string; description?: string }>();
 
 const isEditMode = useIsEditMode();
 </script>
