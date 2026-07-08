@@ -308,7 +308,6 @@
         "typedoc": "0.25.4",
         "typescript": "5.9.3",
         "typescript-eslint": "8.62.0",
-        "verdaccio": "^6.3.2",
         "vite": "7.3.2",
         "vite-plugin-dts": "4.5.4",
         "vitest": "4.0.18",
