@@ -19,6 +19,16 @@ const props = defineProps<{
 
 const rowClass = computed(() => combineClasses(['dot-row-container', props.row.styleClass || '']));
 const sectionId = computed(() => `${DOT_SECTION_ID_PREFIX}${props.index}`);
+
+// Inline grid style rather than a scoped <style>: a library <style> block is
+// extracted to a separate CSS file (dist/index.css) that consumers would have
+// to import, so it silently doesn't apply. Inline keeps the SDK CSS-free and
+// matches Column/GridBlock.
+const rowGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(12, 1fr)',
+    gap: '1rem'
+} as const;
 </script>
 
 <template>
@@ -29,6 +39,7 @@ const sectionId = computed(() => `${DOT_SECTION_ID_PREFIX}${props.index}`);
     <div
       class="dotcms-row"
       data-dot-object="row"
+      :style="rowGridStyle"
     >
       <Column
         v-for="(column, i) in row.columns"
@@ -38,11 +49,3 @@ const sectionId = computed(() => `${DOT_SECTION_ID_PREFIX}${props.index}`);
     </div>
   </div>
 </template>
-
-<style scoped>
-.dotcms-row {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 1rem;
-}
-</style>
